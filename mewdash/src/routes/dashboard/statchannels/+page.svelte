@@ -18,6 +18,17 @@
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+    import { createAutoSave } from "$lib/utils/autoSave.svelte";
+
+    const autoSave = createAutoSave({
+        onError: () => showMessage("Couldn't save stat channel settings. Use Retry to try again.", "error")
+    });
+
+    /**
+     * Every stat channel edit makes the bot refresh the channel straight away, and Discord only allows two channel
+     * renames per 10 minutes, so per-channel edits wait longer than the default before saving.
+     */
+    const CHANNEL_SAVE_DELAY = 2000;
 
     /** Mirrors StatChannelRequirement on the bot. */
     const REQUIREMENT = {
@@ -65,6 +76,8 @@
         defaultIntervalMinutes: 5,
         defaultDisplayStyle: 1
     });
+    /** The defaults as the server last confirmed them, so a failed save can put a selector back. */
+    let savedSettings: StatChannelSettings = { defaultMechanism: 2, defaultIntervalMinutes: 5, defaultDisplayStyle: 1 };
 
     let voiceChannels: Array<{ id: string; name: string }> = $state([]);
     let guildRoles: Array<{ id: string; name: string }> = $state([]);
@@ -174,7 +187,10 @@
 
             statChannels = channelsData ?? [];
             metadata = metaData;
-            if (settingsData) settings = settingsData;
+            if (settingsData) {
+                settings = settingsData;
+                savedSettings = { ...settingsData };
+            }
 
             voiceChannels = (voiceData || []).map((c: any) => ({ id: c.id.toString(), name: c.name }));
             categoryChannels = (catData || []).map((c: any) => ({ id: c.id.toString(), name: c.name }));
@@ -316,7 +332,23 @@
         }
     }
 
+    /** The edited channel's settings as the server last confirmed them, so a failed save can put a selector back. */
+    let savedEdit = { template: "", displayStyle: 1, updateMechanism: 2, updateIntervalMinutes: 5 };
+
+    function channelKey(id: number) {
+        return `channel:${id}`;
+    }
+
+    function intervalMinimum(mechanism: number) {
+        return metadata?.mechanisms.find((m) => m.mechanism === mechanism)?.minimumIntervalMinutes ?? 1;
+    }
+
+    function isValidInterval(value: unknown, min: number): value is number {
+        return typeof value === "number" && Number.isInteger(value) && value >= min && value <= 1440;
+    }
+
     function startEditing(sc: StatChannel) {
+        if (editingId !== null) void autoSave.flush(channelKey(editingId));
         editingId = sc.id;
         editForm = {
             template: sc.template,
@@ -324,37 +356,112 @@
             updateMechanism: sc.updateMechanism,
             updateIntervalMinutes: sc.updateIntervalMinutes
         };
+        savedEdit = { ...editForm };
     }
 
-    async function saveChannel(sc: StatChannel) {
-        if (!$currentGuild?.id) return;
-        saving = true;
-        try {
-            await statChannelsApi.updateStatChannel($currentGuild.id, sc.channelId, {
-                template: editForm.template,
-                displayStyle: editForm.displayStyle,
-                updateMechanism: editForm.updateMechanism,
-                updateIntervalMinutes: editForm.updateIntervalMinutes
-            });
-            editingId = null;
-            await loadData();
-        } catch (err) {
-            showMessage("Failed to update", "error");
-        } finally {
-            saving = false;
-        }
+    function stopEditing() {
+        if (editingId !== null) void autoSave.flush(channelKey(editingId));
+        editingId = null;
     }
 
-    async function saveSettings() {
+    /**
+     * Saves the channel being edited. All of a channel's fields share one key and one debounced save, so a burst of
+     * edits reaches the bot as a single update and costs a single rename.
+     */
+    function saveChannel(sc: StatChannel) {
         if (!$currentGuild?.id) return;
-        saving = true;
-        try {
-            settings = await statChannelsApi.updateSettings($currentGuild.id, settings);
-        } catch (err) {
-            showMessage("Failed to save defaults", "error");
-        } finally {
-            saving = false;
-        }
+        if (!editForm.template.trim()) return;
+        if (!isValidInterval(editForm.updateIntervalMinutes, intervalMinimum(editForm.updateMechanism))) return;
+
+        const guildId = $currentGuild.id;
+        const id = sc.id;
+        const fallbackChannelId = sc.channelId;
+        const request = { ...editForm };
+        const previous = { ...savedEdit };
+
+        autoSave.schedule(channelKey(id), async () => {
+            try {
+                // A recreate gives the channel a new Discord ID, so resolve it when the save runs rather than when it
+                // was queued. The stat channel's own id never changes.
+                const channelId =
+                    ($currentGuild?.id === guildId ? statChannels.find((c) => c.id === id)?.channelId : undefined) ??
+                    fallbackChannelId;
+                const updated = await statChannelsApi.updateStatChannel(guildId, channelId, request);
+                refreshChannelsSoon(guildId);
+                if ($currentGuild?.id !== guildId) return;
+                if (editingId === id) savedEdit = { ...request };
+                statChannels = statChannels.map((c) =>
+                    c.id === id
+                        ? {
+                              ...c,
+                              template: updated.template,
+                              displayStyle: updated.displayStyle,
+                              updateMechanism: updated.updateMechanism,
+                              updateIntervalMinutes: updated.updateIntervalMinutes,
+                              styleName:
+                                  metadata?.displayStyles.find((s) => s.style === updated.displayStyle)?.name ??
+                                  c.styleName,
+                              mechanismName:
+                                  metadata?.mechanisms.find((m) => m.mechanism === updated.updateMechanism)?.name ??
+                                  c.mechanismName
+                          }
+                        : c
+                );
+            } catch (err) {
+                if ($currentGuild?.id === guildId && editingId === id) {
+                    editForm.displayStyle = previous.displayStyle;
+                    editForm.updateMechanism = previous.updateMechanism;
+                }
+                throw err;
+            }
+        }, CHANNEL_SAVE_DELAY);
+    }
+
+    let channelRefreshTimer: ReturnType<typeof setTimeout> | undefined;
+
+    /**
+     * The bot refreshes a channel in the background after each edit, possibly recreating it under a new ID, so the
+     * list is reloaded once that has had time to finish.
+     */
+    function refreshChannelsSoon(guildId: bigint) {
+        clearTimeout(channelRefreshTimer);
+        channelRefreshTimer = setTimeout(async () => {
+            try {
+                const channels = await statChannelsApi.getStatChannels(guildId);
+                if ($currentGuild?.id === guildId) statChannels = channels ?? [];
+            } catch (err) {
+                logger.error("Failed to refresh stat channels:", err);
+            }
+        }, 4000);
+    }
+
+    function setDefaultSelect(field: "defaultMechanism" | "defaultDisplayStyle", value: number) {
+        if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const previous = savedSettings[field];
+        settings[field] = value;
+
+        autoSave.now(field, async () => {
+            try {
+                await statChannelsApi.updateSettings(guildId, { [field]: value });
+                if ($currentGuild?.id === guildId) savedSettings[field] = value;
+            } catch (err) {
+                if ($currentGuild?.id === guildId) settings[field] = previous;
+                throw err;
+            }
+        });
+    }
+
+    function saveDefaultInterval() {
+        if (!$currentGuild?.id) return;
+        const value = settings.defaultIntervalMinutes;
+        if (!isValidInterval(value, 1)) return;
+        const guildId = $currentGuild.id;
+
+        autoSave.schedule("defaultIntervalMinutes", async () => {
+            await statChannelsApi.updateSettings(guildId, { defaultIntervalMinutes: value });
+            if ($currentGuild?.id === guildId) savedSettings.defaultIntervalMinutes = value;
+        });
     }
 
     function showMessage(text: string, type: "success" | "error" | "info") {
@@ -395,6 +502,7 @@
 
 <DashboardPageLayout
   {actionButtons}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-chart-simple"
@@ -488,6 +596,8 @@
                                     <label for="edit-template-{sc.id}" class="block text-sm font-medium mb-2"
                                            style="color: {$colorStore.text}">Template</label>
                                     <input id="edit-template-{sc.id}" type="text" bind:value={editForm.template}
+                                           oninput={() => saveChannel(sc)}
+                                           onblur={() => autoSave.flush(channelKey(sc.id))}
                                            class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 46px;" />
                                 </div>
@@ -498,7 +608,7 @@
                                     <DiscordSelector id="edit-style-{sc.id}" type="custom" options={styleOptions}
                                                      selected={editForm.displayStyle.toString()}
                                                      placeholder="Select style"
-                                                     onchange={(detail) => { editForm.displayStyle = detail.selected ? parseInt(detail.selected as string) : 1; }} />
+                                                     onchange={(detail) => { editForm.displayStyle = detail.selected ? parseInt(detail.selected as string) : 1; saveChannel(sc); }} />
                                 </div>
 
                                 <div>
@@ -510,8 +620,9 @@
                                                      placeholder="Select mechanism"
                                                      onchange={(detail) => {
                                                          editForm.updateMechanism = detail.selected ? parseInt(detail.selected as string) : 2;
-                                                         const min = metadata?.mechanisms.find((m) => m.mechanism === editForm.updateMechanism)?.minimumIntervalMinutes ?? 1;
-                                                         if (editForm.updateIntervalMinutes < min) editForm.updateIntervalMinutes = min;
+                                                         const min = intervalMinimum(editForm.updateMechanism);
+                                                         if (!(editForm.updateIntervalMinutes >= min)) editForm.updateIntervalMinutes = min;
+                                                         saveChannel(sc);
                                                      }} />
                                 </div>
 
@@ -519,24 +630,25 @@
                                     <label for="edit-interval-{sc.id}" class="block text-sm font-medium mb-2"
                                            style="color: {$colorStore.text}">Refresh Interval (minutes)</label>
                                     <input id="edit-interval-{sc.id}" type="number"
-                                           min={metadata?.mechanisms.find((m) => m.mechanism === editForm.updateMechanism)?.minimumIntervalMinutes ?? 1}
+                                           min={intervalMinimum(editForm.updateMechanism)}
                                            max="1440" bind:value={editForm.updateIntervalMinutes}
+                                           oninput={() => saveChannel(sc)}
+                                           onblur={() => autoSave.flush(channelKey(sc.id))}
                                            class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 46px;" />
                                 </div>
 
-                                <div class="md:col-span-2 flex items-center gap-2">
-                                    <button class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02]"
-                                            style="background: #10b98120; color: #10b981; border: 1px solid #10b98130;"
-                                            onclick={() => saveChannel(sc)} disabled={saving}>
+                                <div class="md:col-span-2 flex flex-col sm:flex-row sm:items-center gap-2">
+                                    <button class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                                            style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                                            onclick={stopEditing}>
                                         <i class="fa-solid fa-check" style="font-size: 13px;"></i>
-                                        {saving ? "Saving..." : "Save"}
+                                        Done
                                     </button>
-                                    <button class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02]"
-                                            style="background: {$colorStore.primary}10; color: {$colorStore.muted};"
-                                            onclick={() => { editingId = null; }}>
-                                        Cancel
-                                    </button>
+                                    <p class="text-xs" style="color: {$colorStore.muted}">
+                                        Changes save automatically. Each save renames the channel, which Discord limits to
+                                        two per 10 minutes.
+                                    </p>
                                 </div>
                             </div>
                         {/if}
@@ -800,7 +912,7 @@
                         <DiscordSelector id="s-mechanism" type="custom" options={mechanismOptions}
                                          selected={settings.defaultMechanism.toString()}
                                          placeholder="Select mechanism"
-                                         onchange={(detail) => { settings.defaultMechanism = detail.selected ? parseInt(detail.selected as string) : 2; }} />
+                                         onchange={(detail) => setDefaultSelect("defaultMechanism", detail.selected ? parseInt(detail.selected as string) : 2)} />
                     </div>
 
                     <div>
@@ -809,7 +921,7 @@
                         <DiscordSelector id="s-style" type="custom" options={styleOptions}
                                          selected={settings.defaultDisplayStyle.toString()}
                                          placeholder="Select style"
-                                         onchange={(detail) => { settings.defaultDisplayStyle = detail.selected ? parseInt(detail.selected as string) : 1; }} />
+                                         onchange={(detail) => setDefaultSelect("defaultDisplayStyle", detail.selected ? parseInt(detail.selected as string) : 1)} />
                     </div>
 
                     <div>
@@ -817,17 +929,12 @@
                                style="color: {$colorStore.text}">Default Interval (minutes)</label>
                         <input id="s-interval" type="number" min="1" max="1440"
                                bind:value={settings.defaultIntervalMinutes}
+                               oninput={saveDefaultInterval}
+                               onblur={() => autoSave.flush("defaultIntervalMinutes")}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                 </div>
-
-                <button class="mt-6 flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
-                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                        onclick={saveSettings} disabled={saving}>
-                    <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}" style="font-size: 16px;"></i>
-                    {saving ? "Saving..." : "Save Defaults"}
-                </button>
             </div>
 
             {#if metadata}

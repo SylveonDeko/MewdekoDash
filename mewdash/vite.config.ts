@@ -47,6 +47,9 @@ export default defineConfig(() => ({
        socket to the bot on 127.0.0.1, which the web music player relies on. */
     mobileMusicWsPlugin,
   ],
+  server: {
+    allowedHosts: ["test.mewdeko.tech"],
+  },
   esbuild: {
     supported: {
       "top-level-await": true,

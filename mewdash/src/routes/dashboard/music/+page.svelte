@@ -2,7 +2,7 @@
 <script lang="ts">
 
 
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount, untrack } from "svelte";
   import { musicApi, clientApi } from "$lib/api/index.ts";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
     import type {PageData} from "./$types";
@@ -16,6 +16,11 @@
     import {colorStore} from "$lib/stores/colorStore.ts";
     import {logger} from "$lib/logger.ts";
     import type { TtsVcSetting, TtsVoice } from "$lib/api/music/models";
+    import { createAutoSave } from "$lib/utils/autoSave.svelte";
+
+    const autoSave = createAutoSave({
+      onError: () => showNotificationMessage("Couldn't save music settings. Your last change was undone.", "error")
+    });
 
     interface Props {
     data: PageData;
@@ -103,40 +108,125 @@
     }, 3000);
   }
 
+  type MusicSettings = typeof settings;
+  type TtsGeneralField = Exclude<keyof typeof ttsSettings, "vcSettings">;
+
+  /** Music settings as the server last confirmed them; a failed save restores from here. */
+  let savedSettings: MusicSettings = untrack(() => $state.snapshot(settings));
+  /** TTS settings as the server last confirmed them. */
+  let savedTts = untrack(() => $state.snapshot(ttsSettings));
+
+  function isValidQueueSize(value: unknown): value is number {
+    return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 50;
+  }
+
+  /**
+   * Saves the whole music settings object (the API only takes it in bulk). The payload is
+   * built now, so a save still waiting after a server switch cannot carry the new server's
+   * values. `field` is the setting that changed; it alone is rolled back if the save fails.
+   */
+  function saveMusicSettings(field: keyof MusicSettings, debounce = false) {
+    if (!$currentGuild?.id) return;
+    const guildId = BigInt($currentGuild.id);
+    const payload = $state.snapshot(settings) as MusicSettings;
+    const previous = savedSettings[field];
+    const run = async () => {
+      try {
+        await musicApi.updateMusicSettings(guildId, payload);
+        if ($currentGuild?.id === guildId) savedSettings = payload;
+      } catch (err) {
+        if ($currentGuild?.id === guildId) (settings as any)[field] = previous;
+        throw err;
+      }
+    };
+    if (debounce) autoSave.schedule("music", run);
+    else autoSave.now("music", run);
+  }
+
+  /**
+   * Saves the guild-wide TTS settings in bulk. An invalid queue size is never sent: the last
+   * confirmed one goes in its place. Typed fields are not rolled back on failure.
+   */
+  function saveTtsSettings(field: TtsGeneralField, debounce = false, rollback = true) {
+    if (!$currentGuild?.id) return;
+    const guildId = BigInt($currentGuild.id);
+    const current = $state.snapshot(ttsSettings);
+    const maxQueueSize = isValidQueueSize(current.maxQueueSize) ? current.maxQueueSize : savedTts.maxQueueSize;
+    const confirmed = { ...current, maxQueueSize, vcSettings: savedTts.vcSettings };
+    const previous = savedTts[field];
+    const run = async () => {
+      try {
+        await musicApi.updateTtsSettings(guildId, {
+          volume: current.volume,
+          speed: current.speed,
+          defaultVoice: current.defaultVoice ?? "",
+          replyContext: current.replyContext,
+          attachmentNarration: current.attachmentNarration,
+          consecutiveGrouping: current.consecutiveGrouping,
+          maxQueueSize,
+          roleId: current.roleId ?? BigInt(0)
+        });
+        if ($currentGuild?.id === guildId) savedTts = confirmed;
+      } catch (err) {
+        if (rollback && $currentGuild?.id === guildId) (ttsSettings as any)[field] = previous;
+        throw err;
+      }
+    };
+    if (debounce) autoSave.schedule("tts", run);
+    else autoSave.now("tts", run);
+  }
+
   function handleMusicChannelChange(detail: any) {
     if (detail.selected) {
       settings.musicChannelId = detail.selected === "null" ? null : BigInt(detail.selected);
+      saveMusicSettings("musicChannelId");
     }
   }
 
   function handleDjRoleChange(detail: any) {
     if (detail.selected) {
       settings.djRoleId = detail.selected === "null" ? null : BigInt(detail.selected);
+      saveMusicSettings("djRoleId");
     }
   }
 
   function handleRepeatModeChange(detail: any) {
     if (detail.selected && typeof detail.selected === "string") {
       settings.playerRepeat = parseInt(detail.selected);
+      saveMusicSettings("playerRepeat");
     }
   }
 
   function handleAutoDisconnectChange(detail: any) {
     if (detail.selected && typeof detail.selected === "string") {
       settings.autoDisconnect = parseInt(detail.selected);
+      saveMusicSettings("autoDisconnect");
     }
   }
 
   function handleAutoPlayChange(detail: any) {
     if (detail.selected && typeof detail.selected === "string") {
       settings.autoPlay = parseInt(detail.selected);
+      saveMusicSettings("autoPlay");
     }
   }
 
   function handleTtsRoleChange(detail: any) {
     if (detail.selected) {
       ttsSettings.roleId = detail.selected === "null" ? null : BigInt(detail.selected);
+      saveTtsSettings("roleId");
     }
+  }
+
+  function handleMaxQueueInput() {
+    if (!isValidQueueSize(ttsSettings.maxQueueSize)) return;
+    saveTtsSettings("maxQueueSize", true, false);
+  }
+
+  /** Leaving the field with an out-of-range size puts the saved one back rather than sending it. */
+  function handleMaxQueueBlur() {
+    if (!isValidQueueSize(ttsSettings.maxQueueSize)) ttsSettings.maxQueueSize = savedTts.maxQueueSize;
+    void autoSave.flush("tts");
   }
 
   async function fetchSettings() {
@@ -144,6 +234,7 @@
       if (!$currentGuild?.id) return;
       const response = await musicApi.getMusicSettings(BigInt($currentGuild.id));
       settings = { ...settings, ...response };
+      savedSettings = $state.snapshot(settings) as MusicSettings;
     } catch (err) {
       logger.error("Failed to fetch music settings:", err);
       error = err instanceof Error ? err.message : "Failed to fetch music settings";
@@ -205,6 +296,7 @@
           leaveFormat: vc.leaveFormat ?? null
         }))
       };
+      savedTts = $state.snapshot(ttsSettings);
     } catch (err) {
       logger.error("Failed to fetch TTS settings:", err);
     }
@@ -217,41 +309,6 @@
       ttsBlockedUsers = response || [];
     } catch (err) {
       logger.error("Failed to fetch TTS blocked users:", err);
-    }
-  }
-
-  async function updateSettings() {
-    try {
-      if (!$currentGuild?.id) return;
-      await musicApi.updateMusicSettings(BigInt($currentGuild.id), settings);
-      showNotificationMessage("Settings updated successfully");
-    } catch (error) {
-      showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to update settings",
-        "error"
-      );
-    }
-  }
-
-  async function updateTtsSettings() {
-    try {
-      if (!$currentGuild?.id) return;
-      await musicApi.updateTtsSettings(BigInt($currentGuild.id), {
-        volume: ttsSettings.volume,
-        speed: ttsSettings.speed,
-        defaultVoice: ttsSettings.defaultVoice ?? "",
-        replyContext: ttsSettings.replyContext,
-        attachmentNarration: ttsSettings.attachmentNarration,
-        consecutiveGrouping: ttsSettings.consecutiveGrouping,
-        maxQueueSize: ttsSettings.maxQueueSize,
-        roleId: ttsSettings.roleId ?? BigInt(0)
-      });
-      showNotificationMessage("TTS settings updated successfully");
-    } catch (error) {
-      showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to update TTS settings",
-        "error"
-      );
     }
   }
 
@@ -275,21 +332,32 @@
     }
   }
 
-  async function updateVcSetting(vc: TtsVcSetting) {
+  /**
+   * Saves one voice channel's TTS row, filed under that channel so rows save independently.
+   * `rollback` puts the changed field back if the save fails; typed formats pass none.
+   */
+  function updateVcSetting(vc: TtsVcSetting, rollback?: () => void, debounce = false) {
     if (!$currentGuild?.id) return;
-    try {
-      await musicApi.upsertTtsVcSetting(BigInt($currentGuild.id), {
-        voiceChannelId: vc.voiceChannelId,
-        enabled: vc.enabled,
-        linkedTextChannelId: vc.linkedTextChannelId,
-        announceJoinLeave: vc.announceJoinLeave,
-        joinFormat: vc.joinFormat,
-        leaveFormat: vc.leaveFormat
-      });
-      showNotificationMessage("VC setting updated");
-    } catch (err) {
-      showNotificationMessage("Failed to update VC setting", "error");
-    }
+    const guildId = BigInt($currentGuild.id);
+    const payload = {
+      voiceChannelId: vc.voiceChannelId,
+      enabled: vc.enabled,
+      linkedTextChannelId: vc.linkedTextChannelId,
+      announceJoinLeave: vc.announceJoinLeave,
+      joinFormat: vc.joinFormat,
+      leaveFormat: vc.leaveFormat
+    };
+    const key = `vc-${vc.voiceChannelId}`;
+    const run = async () => {
+      try {
+        await musicApi.upsertTtsVcSetting(guildId, payload);
+      } catch (err) {
+        if (rollback && $currentGuild?.id === guildId) rollback();
+        throw err;
+      }
+    };
+    if (debounce) autoSave.schedule(key, run);
+    else autoSave.now(key, run);
   }
 
   async function removeVcSetting(voiceChannelId: bigint) {
@@ -499,16 +567,6 @@
 
   let colors = $derived($colorStore);
 
-  let actionButtons = $derived([
-    {
-      label: "Save Changes",
-      icon: "fa-floppy-disk",
-      action: activeTab === "music" ? updateSettings : updateTtsSettings,
-      loading: false,
-      style: `background: linear-gradient(to right, ${colors.primary}, ${colors.secondary}); color: ${colors.text}; box-shadow: 0 0 20px ${colors.primary}20;`
-    }
-  ]);
-
   $effect(() => {
     if ($currentGuild) {
       fetchSettings();
@@ -534,7 +592,7 @@
   statusMessages={statusMessages}
   subtitle="Configure music playback and TTS settings"
   icon="fa-music"
-  {actionButtons}
+  {autoSave}
   guildName={$currentGuild?.name || "Dashboard"}
   title="Music Player Settings"
   {tabs}
@@ -694,6 +752,8 @@
                   min="0"
                   max="100"
                   bind:value={settings.volume}
+                  oninput={() => saveMusicSettings("volume", true)}
+                  onchange={() => autoSave.flush("music")}
                   class="w-full h-2 rounded-lg appearance-none cursor-pointer"
                   style="background: {colors.primary}20;"
                 >
@@ -823,6 +883,7 @@
                   <input
                     type="checkbox"
                     bind:checked={settings.voteSkipEnabled}
+                    onchange={() => saveMusicSettings("voteSkipEnabled")}
                     class="sr-only peer"
                   >
                   <span
@@ -852,6 +913,8 @@
                       min="1"
                       max="100"
                       bind:value={settings.voteSkipThreshold}
+                      oninput={() => saveMusicSettings("voteSkipThreshold", true)}
+                      onchange={() => autoSave.flush("music")}
                       class="w-full h-2 rounded-lg appearance-none cursor-pointer"
                       style="background: {colors.primary}20;"
                     >
@@ -983,6 +1046,8 @@
                   min="0"
                   max="100"
                   bind:value={ttsSettings.volume}
+                  oninput={() => saveTtsSettings("volume", true)}
+                  onchange={() => autoSave.flush("tts")}
                   class="w-full h-2 rounded-lg appearance-none cursor-pointer"
                   style="background: {colors.primary}20;"
                 >
@@ -1002,6 +1067,8 @@
                   max="3.0"
                   step="0.1"
                   bind:value={ttsSettings.speed}
+                  oninput={() => saveTtsSettings("speed", true)}
+                  onchange={() => autoSave.flush("tts")}
                   class="w-full h-2 rounded-lg appearance-none cursor-pointer"
                   style="background: {colors.primary}20;"
                 >
@@ -1020,6 +1087,8 @@
                   min="1"
                   max="50"
                   bind:value={ttsSettings.maxQueueSize}
+                  oninput={handleMaxQueueInput}
+                  onblur={handleMaxQueueBlur}
                   class="w-full px-3 py-2 rounded-lg border"
                   style="background: {colors.gradientStart}20; border-color: {colors.primary}30; color: {colors.text};"
                 >
@@ -1035,6 +1104,8 @@
                   id="tts-default-voice"
                   type="text"
                   bind:value={ttsSettings.defaultVoice}
+                  oninput={() => saveTtsSettings("defaultVoice", true, false)}
+                  onblur={() => autoSave.flush("tts")}
                   placeholder="e.g. Brian (leave empty for default)"
                   class="w-full px-3 py-2 rounded-lg border"
                   style="background: {colors.gradientStart}20; border-color: {colors.primary}30; color: {colors.text};"
@@ -1080,7 +1151,7 @@
             <div class="space-y-5">
               <!-- Reply Context -->
               <label class="flex items-center gap-3">
-                <input type="checkbox" bind:checked={ttsSettings.replyContext} class="sr-only peer">
+                <input type="checkbox" bind:checked={ttsSettings.replyContext} onchange={() => saveTtsSettings("replyContext")} class="sr-only peer">
                 <span
                   class="relative w-11 h-6 rounded-full transition-all duration-200 block"
                   style="background: {ttsSettings.replyContext ? colors.primary : colors.primary + '30'};"
@@ -1099,7 +1170,7 @@
 
               <!-- Attachment Narration -->
               <label class="flex items-center gap-3">
-                <input type="checkbox" bind:checked={ttsSettings.attachmentNarration} class="sr-only peer">
+                <input type="checkbox" bind:checked={ttsSettings.attachmentNarration} onchange={() => saveTtsSettings("attachmentNarration")} class="sr-only peer">
                 <span
                   class="relative w-11 h-6 rounded-full transition-all duration-200 block"
                   style="background: {ttsSettings.attachmentNarration ? colors.primary : colors.primary + '30'};"
@@ -1118,7 +1189,7 @@
 
               <!-- Consecutive Grouping -->
               <label class="flex items-center gap-3">
-                <input type="checkbox" bind:checked={ttsSettings.consecutiveGrouping} class="sr-only peer">
+                <input type="checkbox" bind:checked={ttsSettings.consecutiveGrouping} onchange={() => saveTtsSettings("consecutiveGrouping")} class="sr-only peer">
                 <span
                   class="relative w-11 h-6 rounded-full transition-all duration-200 block"
                   style="background: {ttsSettings.consecutiveGrouping ? colors.primary : colors.primary + '30'};"
@@ -1173,7 +1244,7 @@
                     <button
                       class="w-full text-left px-3 py-2 flex justify-between items-center transition-colors hover:opacity-80"
                       style="border-bottom: 1px solid {colors.primary}10;"
-                      onclick={() => { ttsSettings.defaultVoice = voice.name; showNotificationMessage(`Default voice set to ${voice.name}`); }}
+                      onclick={() => { ttsSettings.defaultVoice = voice.name; saveTtsSettings("defaultVoice"); }}
                     >
                       <div>
                         <span class="font-medium" style="color: {colors.text}">{voice.name}</span>
@@ -1256,7 +1327,7 @@
                     </div>
                     <div class="flex items-center gap-2">
                       <label class="flex items-center gap-2">
-                        <input type="checkbox" bind:checked={vc.enabled} class="sr-only peer" onchange={() => updateVcSetting(vc)}>
+                        <input type="checkbox" bind:checked={vc.enabled} class="sr-only peer" onchange={() => { const previous = !vc.enabled; updateVcSetting(vc, () => { vc.enabled = previous; }); }}>
                         <span
                           class="relative w-9 h-5 rounded-full transition-all duration-200 block"
                           style="background: {vc.enabled ? colors.primary : colors.primary + '30'};"
@@ -1290,8 +1361,9 @@
                         placeholder="Select channel..."
                         onchange={(d) => {
                           if (typeof d.selected === "string") {
+                            const previous = vc.linkedTextChannelId;
                             vc.linkedTextChannelId = d.selected === 'null' ? null : BigInt(d.selected);
-                            updateVcSetting(vc);
+                            updateVcSetting(vc, () => { vc.linkedTextChannelId = previous; });
                           }
                         }}
                       />
@@ -1301,7 +1373,7 @@
                     <div>
                       <span class="text-sm mb-1 block" style="color: {colors.muted}">Announce Join/Leave</span>
                       <label class="flex items-center gap-2 mt-2">
-                        <input type="checkbox" bind:checked={vc.announceJoinLeave} class="sr-only peer" onchange={() => updateVcSetting(vc)}>
+                        <input type="checkbox" bind:checked={vc.announceJoinLeave} class="sr-only peer" onchange={() => { const previous = !vc.announceJoinLeave; updateVcSetting(vc, () => { vc.announceJoinLeave = previous; }); }}>
                         <span
                           class="relative w-9 h-5 rounded-full transition-all duration-200 block"
                           style="background: {vc.announceJoinLeave ? colors.primary : colors.primary + '30'};"
@@ -1324,10 +1396,11 @@
                         <input
                           type="text"
                           bind:value={vc.joinFormat}
+                          oninput={() => updateVcSetting(vc, undefined, true)}
                           placeholder="%user.name% joined the channel"
                           class="w-full px-3 py-1.5 rounded-lg border text-sm"
                           style="background: {colors.gradientStart}20; border-color: {colors.primary}20; color: {colors.text};"
-                          onblur={() => updateVcSetting(vc)}
+                          onblur={() => autoSave.flush(`vc-${vc.voiceChannelId}`)}
                         >
                       </div>
                       <div>
@@ -1335,10 +1408,11 @@
                         <input
                           type="text"
                           bind:value={vc.leaveFormat}
+                          oninput={() => updateVcSetting(vc, undefined, true)}
                           placeholder="%user.name% left the channel"
                           class="w-full px-3 py-1.5 rounded-lg border text-sm"
                           style="background: {colors.gradientStart}20; border-color: {colors.primary}20; color: {colors.text};"
-                          onblur={() => updateVcSetting(vc)}
+                          onblur={() => autoSave.flush(`vc-${vc.voiceChannelId}`)}
                         >
                       </div>
                     </div>

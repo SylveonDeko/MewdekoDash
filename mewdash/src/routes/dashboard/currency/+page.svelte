@@ -30,6 +30,16 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
+
+  const autoSave = createAutoSave({
+    onError: (_err, key) => notify(
+      typeof savedConfig?.[key as keyof EconomyConfig] === "boolean"
+        ? "Couldn't save economy settings. Your last change was undone."
+        : "Couldn't save economy settings.",
+      "error",
+    ),
+  });
 
   Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip, Legend);
 
@@ -40,6 +50,15 @@
 
   let analytics = $state<EconomyAnalytics | null>(null);
   let config = $state<EconomyConfig | null>(null);
+  /** Last config the server confirmed, so a failed toggle can be put back. */
+  let savedConfig: EconomyConfig | null = null;
+
+  type KeysOfType<T, V> = { [K in keyof T]: T[K] extends V ? K : never }[keyof T];
+  type BoolSetting = KeysOfType<EconomyConfig, boolean>;
+  type NumberSetting = Exclude<KeysOfType<EconomyConfig, number>, "id">;
+
+  /** The only settings the API stores as decimals; every other number is a whole number. */
+  const DECIMAL_SETTINGS = new Set<NumberSetting>(["payoutMultiplier", "bankInterestPercent"]);
   let shopItems = $state<ShopItem[]>([]);
   let leaderboard = $state<LeaderboardEntry[]>([]);
   let leaderboardTotal = $state(0);
@@ -124,6 +143,10 @@
   async function loadAll() {
     if (!$currentGuild?.id) return;
 
+    // Let queued edits land first so the reload does not show stale values over them.
+    await autoSave.flush();
+    if (!$currentGuild?.id) return;
+
     loading = true;
     try {
       const [analyticsData, configData, shopData, leaderboardData, rolesData, membersData] = await Promise.all([
@@ -137,6 +160,7 @@
 
       analytics = analyticsData;
       config = configData;
+      savedConfig = configData ? { ...configData } : null;
       shopItems = shopData ?? [];
       leaderboard = leaderboardData?.entries ?? [];
       leaderboardTotal = leaderboardData?.total ?? 0;
@@ -185,20 +209,45 @@
     }
   }
 
-  async function saveConfig() {
+  /** Turns a setting on or off and saves it at once, rolling back if the save fails. */
+  function toggleSetting(key: BoolSetting) {
     if (!$currentGuild?.id || !config) return;
+    const guildId = $currentGuild.id;
+    const value = !config[key];
+    config[key] = value;
 
-    saving = true;
-    try {
-      const { id, guildId, ...changes } = config;
-      config = await currencyApi.updateConfig($currentGuild.id, changes);
-      notify("Economy settings saved");
-    } catch (err) {
-      logger.error("Failed to save economy config", err);
-      notify("Failed to save settings", "error");
-    } finally {
-      saving = false;
-    }
+    autoSave.now(key, async () => {
+      try {
+        const updated = await currencyApi.updateConfig(guildId, { [key]: value });
+        if ($currentGuild?.id === guildId && savedConfig) savedConfig[key] = updated[key];
+      } catch (err) {
+        if ($currentGuild?.id === guildId && config && savedConfig) config[key] = savedConfig[key];
+        throw err;
+      }
+    });
+  }
+
+  /**
+   * Saves a typed number once the field has been still for a moment. Empty, non-numeric and
+   * below-minimum values are not sent; whole-number settings also reject fractions. The server
+   * clamps some ranges, so its value is shown back when the field has not changed since.
+   */
+  function updateNumberSetting(key: NumberSetting, raw: string, min: number) {
+    if (!$currentGuild?.id || !config) return;
+    if (raw.trim() === "") return;
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value < min) return;
+    if (!DECIMAL_SETTINGS.has(key) && !Number.isInteger(value)) return;
+
+    const guildId = $currentGuild.id;
+    config[key] = value;
+
+    autoSave.schedule(key, async () => {
+      const updated = await currencyApi.updateConfig(guildId, { [key]: value });
+      if ($currentGuild?.id !== guildId) return;
+      if (savedConfig) savedConfig[key] = updated[key];
+      if (config && config[key] === value && updated[key] !== value) config[key] = updated[key];
+    });
   }
 
   async function resetConfig() {
@@ -207,7 +256,10 @@
 
     saving = true;
     try {
+      // Settle queued saves first so none of them lands on top of the reset.
+      await autoSave.flush();
       config = await currencyApi.resetConfig($currentGuild.id);
+      savedConfig = { ...config };
       notify("Economy settings reset to defaults");
     } catch (err) {
       logger.error("Failed to reset economy config", err);
@@ -497,6 +549,7 @@
 
 <DashboardPageLayout
   {actionButtons}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-money-bill"
@@ -735,12 +788,14 @@
           </div>
         {/snippet}
 
-        {#snippet numberField(label: string, hint: string, value: number, onInput: (v: number) => void, min = 0)}
+        {#snippet numberField(label: string, hint: string, key: NumberSetting, min = 0)}
           <div>
             <label for="cfg-{label.replace(/\W+/g, '-').toLowerCase()}" class="block text-sm font-medium mb-2"
                    style="color: {$colorStore.text}">{label}</label>
-            <input id="cfg-{label.replace(/\W+/g, '-').toLowerCase()}" type="number" min={min} value={value}
-                   oninput={(e) => onInput(Number((e.currentTarget as HTMLInputElement).value))}
+            <input id="cfg-{label.replace(/\W+/g, '-').toLowerCase()}" type="number" min={min} value={config?.[key]}
+                   step={DECIMAL_SETTINGS.has(key) ? "any" : 1}
+                   oninput={(e) => updateNumberSetting(key, (e.currentTarget as HTMLInputElement).value, min)}
+                   onblur={() => autoSave.flush(key)}
                    class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             {#if hint}
@@ -755,12 +810,12 @@
                     border-color: {$colorStore.primary}30;">
           <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Betting</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle("Enable gambling", "Turns every wagering game on or off", config.gamblingEnabled, () => (config!.gamblingEnabled = !config!.gamblingEnabled))}
-            {@render numberField("Minimum bet", "", config.minBet, (v) => (config!.minBet = v), 1)}
-            {@render numberField("Maximum bet", "0 for unlimited. A ceiling stops one lucky run ending the economy.", config.maxBet, (v) => (config!.maxBet = v))}
-            {@render numberField("Payout multiplier", "Scales winnings only, never the returned stake. Below 1.0 widens the house edge.", config.payoutMultiplier, (v) => (config!.payoutMultiplier = v))}
-            {@render numberField("Game cooldown (seconds)", formatDuration(config.gameCooldownSeconds), config.gameCooldownSeconds, (v) => (config!.gameCooldownSeconds = v))}
-            {@render numberField("Daily loss limit", "0 to disable. Cuts a user off after losing this much in 24h.", config.lossLimitPerDay, (v) => (config!.lossLimitPerDay = v))}
+            {@render toggle("Enable gambling", "Turns every wagering game on or off", config.gamblingEnabled, () => toggleSetting("gamblingEnabled"))}
+            {@render numberField("Minimum bet", "", "minBet", 1)}
+            {@render numberField("Maximum bet", "0 for unlimited. A ceiling stops one lucky run ending the economy.", "maxBet")}
+            {@render numberField("Payout multiplier", "Scales winnings only, never the returned stake. Below 1.0 widens the house edge.", "payoutMultiplier")}
+            {@render numberField("Game cooldown (seconds)", formatDuration(config.gameCooldownSeconds), "gameCooldownSeconds")}
+            {@render numberField("Daily loss limit", "0 to disable. Cuts a user off after losing this much in 24h.", "lossLimitPerDay")}
           </div>
         </div>
 
@@ -770,17 +825,17 @@
                     border-color: {$colorStore.primary}30;">
           <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Earning</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle("Enable work", "The low-risk, steady earning command", config.workEnabled, () => (config!.workEnabled = !config!.workEnabled))}
-            {@render numberField("Work minimum", "", config.workMinReward, (v) => (config!.workMinReward = v))}
-            {@render numberField("Work maximum", "", config.workMaxReward, (v) => (config!.workMaxReward = v))}
-            {@render numberField("Work cooldown (seconds)", formatDuration(config.workCooldownSeconds), config.workCooldownSeconds, (v) => (config!.workCooldownSeconds = v))}
-            {@render toggle("Enable crime", "Pays better than work but fails often enough to stay behind it on average", config.crimeEnabled, () => (config!.crimeEnabled = !config!.crimeEnabled))}
-            {@render numberField("Crime minimum", "", config.crimeMinReward, (v) => (config!.crimeMinReward = v))}
-            {@render numberField("Crime maximum", "", config.crimeMaxReward, (v) => (config!.crimeMaxReward = v))}
-            {@render numberField("Crime success chance (%)", "", config.crimeSuccessChance, (v) => (config!.crimeSuccessChance = v))}
-            {@render numberField("Crime fine minimum", "", config.crimeFineMin, (v) => (config!.crimeFineMin = v))}
-            {@render numberField("Crime fine maximum", "", config.crimeFineMax, (v) => (config!.crimeFineMax = v))}
-            {@render numberField("Crime cooldown (seconds)", formatDuration(config.crimeCooldownSeconds), config.crimeCooldownSeconds, (v) => (config!.crimeCooldownSeconds = v))}
+            {@render toggle("Enable work", "The low-risk, steady earning command", config.workEnabled, () => toggleSetting("workEnabled"))}
+            {@render numberField("Work minimum", "", "workMinReward")}
+            {@render numberField("Work maximum", "", "workMaxReward")}
+            {@render numberField("Work cooldown (seconds)", formatDuration(config.workCooldownSeconds), "workCooldownSeconds")}
+            {@render toggle("Enable crime", "Pays better than work but fails often enough to stay behind it on average", config.crimeEnabled, () => toggleSetting("crimeEnabled"))}
+            {@render numberField("Crime minimum", "", "crimeMinReward")}
+            {@render numberField("Crime maximum", "", "crimeMaxReward")}
+            {@render numberField("Crime success chance (%)", "", "crimeSuccessChance")}
+            {@render numberField("Crime fine minimum", "", "crimeFineMin")}
+            {@render numberField("Crime fine maximum", "", "crimeFineMax")}
+            {@render numberField("Crime cooldown (seconds)", formatDuration(config.crimeCooldownSeconds), "crimeCooldownSeconds")}
           </div>
         </div>
 
@@ -793,10 +848,10 @@
             Banked currency cannot be robbed. Interest is a faucet, so it is off by default.
           </p>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle("Enable bank", "Lets users move currency out of reach of robbery", config.bankEnabled, () => (config!.bankEnabled = !config!.bankEnabled))}
-            {@render numberField("Bank capacity", "0 for unlimited", config.bankCapacity, (v) => (config!.bankCapacity = v))}
-            {@render numberField("Interest (%)", "Paid per interval on the banked balance", config.bankInterestPercent, (v) => (config!.bankInterestPercent = v))}
-            {@render numberField("Interest interval (hours)", "", config.bankInterestHours, (v) => (config!.bankInterestHours = v), 1)}
+            {@render toggle("Enable bank", "Lets users move currency out of reach of robbery", config.bankEnabled, () => toggleSetting("bankEnabled"))}
+            {@render numberField("Bank capacity", "0 for unlimited", "bankCapacity")}
+            {@render numberField("Interest (%)", "Paid per interval on the banked balance", "bankInterestPercent")}
+            {@render numberField("Interest interval (hours)", "", "bankInterestHours", 1)}
           </div>
         </div>
 
@@ -809,10 +864,10 @@
             Transfer tax is a sink: the taxed portion is destroyed rather than moved.
           </p>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle("Enable transfers", "Lets users pay each other", config.payEnabled, () => (config!.payEnabled = !config!.payEnabled))}
-            {@render numberField("Transfer tax (%)", "", config.payTaxPercent, (v) => (config!.payTaxPercent = v))}
-            {@render numberField("Transfer cooldown (seconds)", formatDuration(config.payCooldownSeconds), config.payCooldownSeconds, (v) => (config!.payCooldownSeconds = v))}
-            {@render numberField("Minimum transfer", "", config.payMinimum, (v) => (config!.payMinimum = v), 1)}
+            {@render toggle("Enable transfers", "Lets users pay each other", config.payEnabled, () => toggleSetting("payEnabled"))}
+            {@render numberField("Transfer tax (%)", "", "payTaxPercent")}
+            {@render numberField("Transfer cooldown (seconds)", formatDuration(config.payCooldownSeconds), "payCooldownSeconds")}
+            {@render numberField("Minimum transfer", "", "payMinimum", 1)}
           </div>
         </div>
 
@@ -825,12 +880,12 @@
             Off by default because it is disruptive in servers that did not opt into it. Only wallets can be robbed.
           </p>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle("Enable robbery", "Lets users steal from each other's wallets", config.robEnabled, () => (config!.robEnabled = !config!.robEnabled))}
-            {@render numberField("Success chance (%)", "", config.robSuccessChance, (v) => (config!.robSuccessChance = v))}
-            {@render numberField("Maximum steal (%)", "Share of the target's wallet a success takes", config.robMaxStealPercent, (v) => (config!.robMaxStealPercent = v), 1)}
-            {@render numberField("Failure fine (%)", "Share of the robber's wallet destroyed on failure", config.robFinePercent, (v) => (config!.robFinePercent = v))}
-            {@render numberField("Protected below", "Targets holding less than this cannot be robbed", config.robMinimumWallet, (v) => (config!.robMinimumWallet = v))}
-            {@render numberField("Robbery cooldown (seconds)", formatDuration(config.robCooldownSeconds), config.robCooldownSeconds, (v) => (config!.robCooldownSeconds = v))}
+            {@render toggle("Enable robbery", "Lets users steal from each other's wallets", config.robEnabled, () => toggleSetting("robEnabled"))}
+            {@render numberField("Success chance (%)", "", "robSuccessChance")}
+            {@render numberField("Maximum steal (%)", "Share of the target's wallet a success takes", "robMaxStealPercent", 1)}
+            {@render numberField("Failure fine (%)", "Share of the robber's wallet destroyed on failure", "robFinePercent")}
+            {@render numberField("Protected below", "Targets holding less than this cannot be robbed", "robMinimumWallet")}
+            {@render numberField("Robbery cooldown (seconds)", formatDuration(config.robCooldownSeconds), "robCooldownSeconds")}
           </div>
         </div>
 
@@ -840,18 +895,13 @@
                     border-color: {$colorStore.primary}30;">
           <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Daily reward streaks</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle("Enable streaks", "Consecutive daily claims earn an escalating bonus", config.dailyStreakEnabled, () => (config!.dailyStreakEnabled = !config!.dailyStreakEnabled))}
-            {@render numberField("Bonus per day", "Added per consecutive day claimed", config.dailyStreakBonus, (v) => (config!.dailyStreakBonus = v))}
-            {@render numberField("Maximum bonus", "0 for uncapped", config.dailyStreakMaxBonus, (v) => (config!.dailyStreakMaxBonus = v))}
+            {@render toggle("Enable streaks", "Consecutive daily claims earn an escalating bonus", config.dailyStreakEnabled, () => toggleSetting("dailyStreakEnabled"))}
+            {@render numberField("Bonus per day", "Added per consecutive day claimed", "dailyStreakBonus")}
+            {@render numberField("Maximum bonus", "0 for uncapped", "dailyStreakMaxBonus")}
           </div>
         </div>
 
         <div class="flex flex-wrap gap-3">
-          <button onclick={saveConfig} disabled={saving}
-                  class="px-6 py-3 rounded-xl font-medium transition-all min-h-[44px] disabled:opacity-50"
-                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-            {saving ? "Saving..." : "Save settings"}
-          </button>
           <button onclick={resetConfig} disabled={saving}
                   class="px-6 py-3 rounded-xl font-medium transition-all min-h-[44px] disabled:opacity-50"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;">

@@ -11,6 +11,7 @@
     twitchApi,
     type TwitchAccountLinkResponse,
     type TwitchChatCommandResponse,
+    type TwitchConfigUpdateRequest,
     type TwitchCustomCommandResponse,
     type TwitchHealthResponse,
     type TwitchOAuthStatusResponse,
@@ -25,12 +26,25 @@
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
   interface Props {
     data: PageData;
   }
 
   let { data }: Props = $props();
+
+  /** Typed fields are not rolled back on failure, since that would fight the user mid-edit. */
+  const TEXT_FIELDS = new Set(["commandPrefix", "language", "subNotificationMessage", "raidNotificationMessage", "goLiveMessage"]);
+
+  const autoSave = createAutoSave({
+    onError: (_err, key) => showMessage(
+      TEXT_FIELDS.has(key)
+        ? "Couldn't save Twitch settings."
+        : "Couldn't save Twitch settings. Your last change was undone.",
+      "error"
+    ),
+  });
 
   const slashCommands = [
     { name: "/twitch set", usage: "<channel> [prefix]", description: "Set the Twitch channel this server's bot should join and enable chat commands.", permission: "Manage Server" },
@@ -125,8 +139,24 @@
     raidNotificationMessage: "",
   });
 
+  type ConfigField = keyof typeof configForm;
+
+  // Last values the server confirmed, so a failed save can put the field back.
+  let savedConfig: typeof configForm = {
+    commandPrefix: "!",
+    language: "",
+    useEventSub: true,
+    enabled: true,
+    goLiveChannelId: null,
+    subNotificationChannelId: null,
+    subNotificationMessage: "",
+    raidNotificationChannelId: null,
+    raidNotificationMessage: "",
+  };
+
   // Embed builder value for the go-live message (bound to FullscreenEmbedBuilder)
   let goLiveMessageValue: any = $state({});
+  let savedGoLiveMessage = serializeGoLiveMessage({});
   let commandForm = $state({
     name: "",
     response: "",
@@ -219,6 +249,11 @@
 
   async function loadData() {
     if (!$currentGuild?.id) return;
+
+    // Let anything still waiting land first, so the reload shows it.
+    await autoSave.flush();
+    if (!$currentGuild?.id) return;
+
     loading = true;
     try {
       const [
@@ -276,7 +311,9 @@
         raidNotificationChannelId: statusData.raidNotificationChannelId?.toString() ?? null,
         raidNotificationMessage: statusData.raidNotificationMessage || "",
       };
+      savedConfig = { ...configForm };
       goLiveMessageValue = parseGoLiveMessage(statusData.goLiveMessage);
+      savedGoLiveMessage = serializeGoLiveMessage(goLiveMessageValue);
     } catch (err) {
       logger.error("Failed to load Twitch data:", err);
       showMessage("Failed to load Twitch settings", "error");
@@ -330,34 +367,100 @@
     return { content: raw };
   }
 
-  async function saveSettings() {
-    if (!$currentGuild?.id) return;
-    saving = true;
-    try {
-      const goLiveMessageToSend = Object.keys(goLiveMessageValue).length > 0
-        ? JSON.stringify(goLiveMessageValue)
-        : null;
+  /** An empty string clears the message on the server; null would leave the old one in place. */
+  function serializeGoLiveMessage(value: any): string {
+    if (typeof value === "string") return value;
+    if (value && typeof value === "object" && Object.keys(value).length > 0) return JSON.stringify(value);
+    return "";
+  }
 
-      await twitchApi.updateConfig($currentGuild.id, {
-        commandPrefix: configForm.commandPrefix,
-        language: configForm.language || null,
-        enabled: configForm.enabled,
-        useEventSub: configForm.useEventSub,
-        goLiveChannelId: configForm.goLiveChannelId ? BigInt(configForm.goLiveChannelId) : BigInt(0),
-        goLiveMessage: goLiveMessageToSend,
-        subNotificationChannelId: configForm.subNotificationChannelId ? BigInt(configForm.subNotificationChannelId) : BigInt(0),
-        subNotificationMessage: configForm.subNotificationMessage || null,
-        raidNotificationChannelId: configForm.raidNotificationChannelId ? BigInt(configForm.raidNotificationChannelId) : BigInt(0),
-        raidNotificationMessage: configForm.raidNotificationMessage || null,
-      });
-      showMessage("Twitch settings saved", "success");
-      await loadData();
-    } catch (err) {
-      logger.error("Failed to save Twitch settings:", err);
-      showMessage("Failed to save Twitch settings", "error");
-    } finally {
-      saving = false;
+  /**
+   * Builds a partial update for one field. The API leaves missing fields alone, treats a
+   * zero channel id as "clear", and clears a text field when sent an empty string.
+   */
+  function configRequest(field: ConfigField): TwitchConfigUpdateRequest {
+    switch (field) {
+      case "commandPrefix":
+        return { commandPrefix: configForm.commandPrefix.trim() };
+      case "language":
+        return { language: configForm.language.trim() };
+      case "enabled":
+        return { enabled: configForm.enabled };
+      case "useEventSub":
+        return { useEventSub: configForm.useEventSub };
+      case "goLiveChannelId":
+        return { goLiveChannelId: configForm.goLiveChannelId ? BigInt(configForm.goLiveChannelId) : 0n };
+      case "subNotificationChannelId":
+        return { subNotificationChannelId: configForm.subNotificationChannelId ? BigInt(configForm.subNotificationChannelId) : 0n };
+      case "raidNotificationChannelId":
+        return { raidNotificationChannelId: configForm.raidNotificationChannelId ? BigInt(configForm.raidNotificationChannelId) : 0n };
+      case "subNotificationMessage":
+        return { subNotificationMessage: configForm.subNotificationMessage };
+      case "raidNotificationMessage":
+        return { raidNotificationMessage: configForm.raidNotificationMessage };
     }
+  }
+
+  /**
+   * Saves one config field: toggles and channel pickers straight away (rolled back on
+   * failure), typed fields once the user pauses.
+   */
+  function saveConfigField(field: ConfigField) {
+    if (!$currentGuild?.id) return;
+    const guildId = $currentGuild.id;
+    const value = configForm[field];
+    const request = configRequest(field);
+    const typed = TEXT_FIELDS.has(field);
+    const save = async () => {
+      try {
+        await twitchApi.updateConfig(guildId, request);
+        if ($currentGuild?.id !== guildId) return;
+        Object.assign(savedConfig, { [field]: value });
+        if (field === "useEventSub" && status) status = { ...status, useEventSub: value as boolean };
+      } catch (err) {
+        if (!typed && $currentGuild?.id === guildId) Object.assign(configForm, { [field]: savedConfig[field] });
+        throw err;
+      }
+    };
+    if (typed) autoSave.schedule(field, save);
+    else autoSave.now(field, save);
+  }
+
+  function setConfigField<K extends ConfigField>(field: K, value: (typeof configForm)[K]) {
+    configForm[field] = value;
+    saveConfigField(field);
+  }
+
+  /** The prefix can't be empty, so an empty field is not sent and is restored on blur. */
+  function savePrefix() {
+    if (!configForm.commandPrefix.trim()) {
+      autoSave.cancel("commandPrefix");
+      return;
+    }
+    saveConfigField("commandPrefix");
+  }
+
+  function flushPrefix() {
+    if (!configForm.commandPrefix.trim()) {
+      configForm.commandPrefix = savedConfig.commandPrefix;
+      return;
+    }
+    void autoSave.flush("commandPrefix");
+  }
+
+  /**
+   * Saves the go-live message when the embed builder closes. The builder's Cancel restores
+   * the old value before closing, so a cancelled edit is never sent.
+   */
+  function saveGoLiveMessage() {
+    if (!$currentGuild?.id) return;
+    const goLiveMessage = serializeGoLiveMessage(goLiveMessageValue);
+    if (goLiveMessage === savedGoLiveMessage) return;
+    const guildId = $currentGuild.id;
+    void autoSave.now("goLiveMessage", async () => {
+      await twitchApi.updateConfig(guildId, { goLiveMessage });
+      if ($currentGuild?.id === guildId) savedGoLiveMessage = goLiveMessage;
+    });
   }
 
   function editCommand(command: TwitchCustomCommandResponse) {
@@ -794,6 +897,7 @@
   {subTabs}
   bind:activeSubTab
   {actionButtons}
+  {autoSave}
   notificationMessage={message}
   notificationType={messageType}
   category="Community"
@@ -959,33 +1063,27 @@
               </h2>
               <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">Configure how Twitch chat commands behave in this channel.</p>
             </div>
-            <button
-              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
-              disabled={saving}
-              onclick={saveSettings}
-              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-            >{saving ? "Saving..." : "Save changes"}</button>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label class="grid gap-2 font-bold">
               <span style="color: {$colorStore.text}">Command prefix</span>
-              <input bind:value={configForm.commandPrefix} maxlength="8" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+              <input bind:value={configForm.commandPrefix} oninput={savePrefix} onblur={flushPrefix} maxlength="8" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
 
             <label class="grid gap-2 font-bold">
               <span style="color: {$colorStore.text}">Language override</span>
-              <input bind:value={configForm.language} placeholder="Use server default" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+              <input bind:value={configForm.language} oninput={() => saveConfigField("language")} onblur={() => autoSave.flush("language")} placeholder="Use server default" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
 
             <div class="flex items-center justify-between gap-2.5 py-2.5">
               <span style="color: {$colorStore.text}">Enable Twitch chat bot for this server</span>
-              {@render toggle(configForm.enabled, (v) => configForm.enabled = v)}
+              {@render toggle(configForm.enabled, (v) => setConfigField("enabled", v))}
             </div>
 
             <div class="flex items-center justify-between gap-2.5 py-2.5">
               <span style="color: {$colorStore.text}">Use EventSub for chat events</span>
-              {@render toggle(configForm.useEventSub, (v) => configForm.useEventSub = v)}
+              {@render toggle(configForm.useEventSub, (v) => setConfigField("useEventSub", v))}
             </div>
           </div>
 
@@ -1286,12 +1384,6 @@
               </h2>
               <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">Post a message when the connected channel goes live (and goes offline again).</p>
             </div>
-            <button
-              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
-              disabled={saving}
-              onclick={saveSettings}
-              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-            >{saving ? "Saving..." : "Save changes"}</button>
           </div>
 
           {#if status?.hasChannelAuthorization}
@@ -1308,7 +1400,7 @@
                 options={textChannels}
                 selected={configForm.goLiveChannelId}
                 placeholder="No channel selected"
-                onchange={(detail) => configForm.goLiveChannelId = detail.selected as string | null}
+                onchange={(detail) => setConfigField("goLiveChannelId", detail.selected as string | null)}
               />
             </div>
 
@@ -1317,6 +1409,7 @@
               <FullscreenEmbedBuilder
                 id="twitch-golive-message"
                 bind:value={goLiveMessageValue}
+                onclose={saveGoLiveMessage}
                 previewTitle="Go-Live Message"
                 previewDescription="Sent to the go-live channel when the connected streamer goes live"
                 icon="fa-signal"
@@ -1353,12 +1446,6 @@
               </h2>
               <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">Configure subscription and raid messages without touching slash commands.</p>
             </div>
-            <button
-              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
-              disabled={saving}
-              onclick={saveSettings}
-              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-            >{saving ? "Saving..." : "Save templates"}</button>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1369,12 +1456,12 @@
                 options={textChannels}
                 selected={configForm.subNotificationChannelId}
                 placeholder="No channel selected"
-                onchange={(detail) => configForm.subNotificationChannelId = detail.selected as string | null}
+                onchange={(detail) => setConfigField("subNotificationChannelId", detail.selected as string | null)}
               />
             </div>
             <label class="grid gap-2 font-bold">
               <span style="color: {$colorStore.text}">Sub message</span>
-              <textarea bind:value={configForm.subNotificationMessage} rows="3" placeholder="%display% subscribed to %channel%!" class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <textarea bind:value={configForm.subNotificationMessage} oninput={() => saveConfigField("subNotificationMessage")} onblur={() => autoSave.flush("subNotificationMessage")} rows="3" placeholder="%display% subscribed to %channel%!" class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
             <div class="grid gap-2 font-bold">
               <span style="color: {$colorStore.text}">Raid Discord channel</span>
@@ -1383,12 +1470,12 @@
                 options={textChannels}
                 selected={configForm.raidNotificationChannelId}
                 placeholder="No channel selected"
-                onchange={(detail) => configForm.raidNotificationChannelId = detail.selected as string | null}
+                onchange={(detail) => setConfigField("raidNotificationChannelId", detail.selected as string | null)}
               />
             </div>
             <label class="grid gap-2 font-bold">
               <span style="color: {$colorStore.text}">Raid message</span>
-              <textarea bind:value={configForm.raidNotificationMessage} rows="3" placeholder="%raider% raided %channel% with %viewers% viewers!" class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <textarea bind:value={configForm.raidNotificationMessage} oninput={() => saveConfigField("raidNotificationMessage")} onblur={() => autoSave.flush("raidNotificationMessage")} rows="3" placeholder="%raider% raided %channel% with %viewers% viewers!" class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
           </div>
 

@@ -11,6 +11,7 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
   // Component state
     let loading = $state(false);
@@ -156,6 +157,7 @@
                     enableAnonymous: repConfig.enableAnonymous,
                     notificationChannel: repConfig.notificationChannel
                 };
+                saved = { ...configForm };
             }
         } catch (err) {
             logger.error("Failed to load reputation data:", err);
@@ -165,54 +167,140 @@
         }
     }
 
-    // Save configuration
-    async function saveConfig() {
+    // Auto-save: each setting saves through its own setter as soon as it changes
+    type ConfigForm = typeof configForm;
+    type ToggleKey = "enabled" | "enableNegativeRep" | "enableAnonymous";
+    type NumberKey = "defaultCooldownMinutes" | "dailyLimit" | "minAccountAgeDays" | "minServerMembershipHours" | "minMessageCount";
+
+    /** Last values the server confirmed, so a failed save can be rolled back. */
+    let saved: ConfigForm = {
+        enabled: true,
+        defaultCooldownMinutes: 60,
+        dailyLimit: 10,
+        weeklyLimit: null,
+        minAccountAgeDays: 7,
+        minServerMembershipHours: 24,
+        minMessageCount: 10,
+        enableNegativeRep: false,
+        enableAnonymous: false,
+        notificationChannel: null
+    };
+
+    const toggleSetters: Record<ToggleKey, (guildId: bigint, value: boolean) => Promise<unknown>> = {
+        enabled: (guildId, value) => reputationApi.setEnabled(guildId, value),
+        enableNegativeRep: (guildId, value) => reputationApi.setNegativeReputation(guildId, value),
+        enableAnonymous: (guildId, value) => reputationApi.setAnonymousReputation(guildId, value)
+    };
+
+    const numberSetters: Record<NumberKey, { min: number; set: (guildId: bigint, value: number) => Promise<unknown> }> = {
+        defaultCooldownMinutes: { min: 1, set: (guildId, value) => reputationApi.setDefaultCooldown(guildId, value) },
+        dailyLimit: { min: 1, set: (guildId, value) => reputationApi.setDailyLimit(guildId, value) },
+        minAccountAgeDays: { min: 0, set: (guildId, value) => reputationApi.setMinAccountAge(guildId, value) },
+        minServerMembershipHours: { min: 0, set: (guildId, value) => reputationApi.setMinServerMembership(guildId, value) },
+        minMessageCount: { min: 0, set: (guildId, value) => reputationApi.setMinMessageCount(guildId, value) }
+    };
+
+    const autoSave = createAutoSave({
+        onError: () => showMessage("Couldn't save reputation settings. Your last change was undone.", "error")
+    });
+
+    function isValidCount(value: unknown, min: number): value is number {
+        return typeof value === "number" && Number.isInteger(value) && value >= min;
+    }
+
+    function toggleSetting(key: ToggleKey) {
         if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const value = !configForm[key];
+        const previous = saved[key];
+        configForm[key] = value;
+        configForm = { ...configForm };
+        autoSave.now(key, async () => {
+            try {
+                await toggleSetters[key](guildId, value);
+                if ($currentGuild?.id === guildId) saved[key] = value;
+            } catch (err) {
+                if ($currentGuild?.id === guildId) {
+                    configForm[key] = previous;
+                    configForm = { ...configForm };
+                }
+                throw err;
+            }
+        });
+    }
 
-        saving = true;
-        try {
-            const promises = [];
-
-            if (configForm.enabled !== repConfig?.enabled) {
-              promises.push(reputationApi.setEnabled($currentGuild.id, configForm.enabled));
-            }
-            if (configForm.defaultCooldownMinutes !== repConfig?.defaultCooldownMinutes) {
-              promises.push(reputationApi.setDefaultCooldown($currentGuild.id, configForm.defaultCooldownMinutes));
-            }
-            if (configForm.dailyLimit !== repConfig?.dailyLimit) {
-              promises.push(reputationApi.setDailyLimit($currentGuild.id, configForm.dailyLimit));
-            }
-            if (configForm.weeklyLimit !== repConfig?.weeklyLimit) {
-              promises.push(reputationApi.setWeeklyLimit($currentGuild.id, configForm.weeklyLimit));
-            }
-            if (configForm.minAccountAgeDays !== repConfig?.minAccountAgeDays) {
-              promises.push(reputationApi.setMinAccountAge($currentGuild.id, configForm.minAccountAgeDays));
-            }
-            if (configForm.minServerMembershipHours !== repConfig?.minServerMembershipHours) {
-              promises.push(reputationApi.setMinServerMembership($currentGuild.id, configForm.minServerMembershipHours));
-            }
-            if (configForm.minMessageCount !== repConfig?.minMessageCount) {
-              promises.push(reputationApi.setMinMessageCount($currentGuild.id, configForm.minMessageCount));
-            }
-            if (configForm.enableNegativeRep !== repConfig?.enableNegativeRep) {
-              promises.push(reputationApi.setNegativeReputation($currentGuild.id, configForm.enableNegativeRep));
-            }
-            if (configForm.enableAnonymous !== repConfig?.enableAnonymous) {
-              promises.push(reputationApi.setAnonymousReputation($currentGuild.id, configForm.enableAnonymous));
-            }
-            if (configForm.notificationChannel !== repConfig?.notificationChannel) {
-              promises.push(reputationApi.setNotificationChannel($currentGuild.id, configForm.notificationChannel));
-            }
-
-            await Promise.all(promises);
-            showMessage("Reputation configuration saved successfully!", "success");
-            await loadAllReputationData();
-        } catch (err) {
-            logger.error("Failed to save reputation config:", err);
-            showMessage("Failed to save configuration", "error");
-        } finally {
-            saving = false;
+    function saveNumber(key: NumberKey) {
+        if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const value = configForm[key];
+        const { min, set } = numberSetters[key];
+        if (!isValidCount(value, min)) {
+            autoSave.cancel(key);
+            return;
         }
+        autoSave.schedule(key, async () => {
+            try {
+                await set(guildId, value);
+                if ($currentGuild?.id === guildId) saved[key] = value;
+            } catch (err) {
+                // Only undo if the field still shows the value that failed, so typing isn't interrupted
+                if ($currentGuild?.id === guildId && configForm[key] === value) configForm[key] = saved[key];
+                throw err;
+            }
+        });
+    }
+
+    /** Saves on blur, and puts back the last saved value if the field was left invalid. */
+    function blurNumber(key: NumberKey) {
+        if (!isValidCount(configForm[key], numberSetters[key].min)) configForm[key] = saved[key];
+        autoSave.flush(key);
+    }
+
+    function saveWeeklyLimit() {
+        if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const raw = configForm.weeklyLimit as number | null | undefined;
+        // Empty means "no weekly limit"
+        const value = raw === null || raw === undefined ? null : raw;
+        if (value !== null && !isValidCount(value, 0)) {
+            autoSave.cancel("weeklyLimit");
+            return;
+        }
+        autoSave.schedule("weeklyLimit", async () => {
+            try {
+                await reputationApi.setWeeklyLimit(guildId, value);
+                if ($currentGuild?.id === guildId) saved.weeklyLimit = value;
+            } catch (err) {
+                if ($currentGuild?.id === guildId && configForm.weeklyLimit === value) configForm.weeklyLimit = saved.weeklyLimit;
+                throw err;
+            }
+        });
+    }
+
+    function blurWeeklyLimit() {
+        const value = configForm.weeklyLimit as number | null | undefined;
+        if (value === undefined) configForm.weeklyLimit = null;
+        else if (value !== null && !isValidCount(value, 0)) configForm.weeklyLimit = saved.weeklyLimit;
+        autoSave.flush("weeklyLimit");
+    }
+
+    function saveNotificationChannel() {
+        if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const value = configForm.notificationChannel;
+        const previous = saved.notificationChannel;
+        autoSave.now("notificationChannel", async () => {
+            try {
+                await reputationApi.setNotificationChannel(guildId, value);
+                if ($currentGuild?.id === guildId) saved.notificationChannel = value;
+            } catch (err) {
+                if ($currentGuild?.id === guildId) {
+                    configForm.notificationChannel = previous;
+                    configForm = { ...configForm };
+                }
+                throw err;
+            }
+        });
     }
 
     // Add role reward
@@ -315,6 +403,7 @@
     function handleNotificationChannelChange(detail: any) {
       configForm.notificationChannel = detail.selected ? BigInt(detail.selected) : null;
       configForm = { ...configForm };
+      saveNotificationChannel();
     }
 
     function handleRoleChange(detail: any) {
@@ -344,7 +433,10 @@
         {
             label: "Refresh",
           icon: "fa-arrows-rotate",
-            action: loadAllReputationData,
+            action: async () => {
+                await autoSave.flush();
+                await loadAllReputationData();
+            },
             loading: loading
         }
     ]);
@@ -375,6 +467,7 @@
 
 <DashboardPageLayout
   {actionButtons}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-star"
@@ -409,11 +502,10 @@
                                     Allow users to give and receive reputation points
                                 </div>
                             </div>
-                          <button aria-label="Delete"
-                                    onclick={() => {
-                                        configForm.enabled = !configForm.enabled;
-                                        configForm = { ...configForm };
-                                    }}
+                          <button aria-label="Enable reputation system"
+                                    role="switch"
+                                    aria-checked={configForm.enabled}
+                                    onclick={() => toggleSetting("enabled")}
                                     class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
                                   style="background: {configForm.enabled ? $colorStore.primary : $colorStore.muted};"
                             >
@@ -433,6 +525,8 @@
                                     type="number"
                                     min="1"
                                     bind:value={configForm.defaultCooldownMinutes}
+                                    oninput={() => saveNumber("defaultCooldownMinutes")}
+                                    onblur={() => blurNumber("defaultCooldownMinutes")}
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           >
@@ -448,6 +542,8 @@
                                     type="number"
                                     min="1"
                                     bind:value={configForm.dailyLimit}
+                                    oninput={() => saveNumber("dailyLimit")}
+                                    onblur={() => blurNumber("dailyLimit")}
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           >
@@ -463,6 +559,8 @@
                                     type="number"
                                     min="0"
                                     bind:value={configForm.weeklyLimit}
+                                    oninput={saveWeeklyLimit}
+                                    onblur={blurWeeklyLimit}
                                     placeholder="None"
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -479,6 +577,8 @@
                                     type="number"
                                     min="0"
                                     bind:value={configForm.minAccountAgeDays}
+                                    oninput={() => saveNumber("minAccountAgeDays")}
+                                    onblur={() => blurNumber("minAccountAgeDays")}
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           >
@@ -494,6 +594,8 @@
                                     type="number"
                                     min="0"
                                     bind:value={configForm.minServerMembershipHours}
+                                    oninput={() => saveNumber("minServerMembershipHours")}
+                                    onblur={() => blurNumber("minServerMembershipHours")}
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           >
@@ -509,6 +611,8 @@
                                     type="number"
                                     min="0"
                                     bind:value={configForm.minMessageCount}
+                                    oninput={() => saveNumber("minMessageCount")}
+                                    onblur={() => blurNumber("minMessageCount")}
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           >
@@ -538,11 +642,10 @@
                               <i class="fa-solid fa-message" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                                 <span style="color: {$colorStore.text}">Allow Negative Reputation</span>
                             </div>
-                          <button aria-label="Delete"
-                                    onclick={() => {
-                                        configForm.enableNegativeRep = !configForm.enableNegativeRep;
-                                        configForm = { ...configForm };
-                                    }}
+                          <button aria-label="Allow negative reputation"
+                                    role="switch"
+                                    aria-checked={configForm.enableNegativeRep}
+                                    onclick={() => toggleSetting("enableNegativeRep")}
                                     class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
                                   style="background: {configForm.enableNegativeRep ? $colorStore.primary : $colorStore.muted};"
                             >
@@ -557,11 +660,10 @@
                               <i class="fa-solid fa-eye" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                                 <span style="color: {$colorStore.text}">Enable Anonymous Reputation</span>
                             </div>
-                          <button aria-label="Delete"
-                                    onclick={() => {
-                                        configForm.enableAnonymous = !configForm.enableAnonymous;
-                                        configForm = { ...configForm };
-                                    }}
+                          <button aria-label="Enable anonymous reputation"
+                                    role="switch"
+                                    aria-checked={configForm.enableAnonymous}
+                                    onclick={() => toggleSetting("enableAnonymous")}
                                     class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
                                   style="background: {configForm.enableAnonymous ? $colorStore.primary : $colorStore.muted};"
                             >
@@ -571,16 +673,6 @@
                         </div>
                     </div>
 
-                <button aria-label="Save reputation configuration"
-                        aria-busy={saving}
-                        class="mt-6 flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-                            onclick={saveConfig}
-                            disabled={saving}
-                    >
-                  <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}" style="font-size: 18px;"></i>
-                        {saving ? "Saving..." : "Save Configuration"}
-                    </button>
                 </div>
             </div>
         </div>

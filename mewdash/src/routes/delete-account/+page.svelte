@@ -1,7 +1,7 @@
 <!-- routes/delete-account/+page.svelte -->
 <script>
   let email = "sylveon@mewdeko.tech";
-  let date = "20th August 2026";
+  let date = "12th October 2026";
 </script>
 
 <svelte:head>
@@ -86,6 +86,9 @@
         <li>Warnings recorded against you in a named server.</li>
         <li>Suggestions, form responses, or starboard entries you authored.</li>
         <li>Your birthday, AFK status, or highlight words.</li>
+        <li>Your AI chat history in a named server.</li>
+        <li>Confessions you submitted, or ticket transcripts you appear in.</li>
+        <li>Activity recorded about you by Server Stats in a named server.</li>
       </ul>
     </div>
 

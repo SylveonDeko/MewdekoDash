@@ -10,6 +10,7 @@
   import { logger } from "$lib/logger";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
   let guildConfig: GuildConfig | null = null;
   let loading = $state(true);
@@ -20,7 +21,7 @@
   let channels: Array<{ id: string; name: string }> = $state([]);
 
   // Only track settings that are unique to this page
-  let settings = $state({
+  const DEFAULT_SETTINGS = {
     prefix: ".",
     commandLogChannel: "0",
     currencyEmoji: "💰",
@@ -31,6 +32,15 @@
     previewLinks: false,
     muteRoleName: "",
     removeRolesOnMute: false
+  };
+  let settings = $state({ ...DEFAULT_SETTINGS });
+
+  /** The settings as the server last confirmed them, and which guild they belong to. */
+  let savedSettings = { ...DEFAULT_SETTINGS };
+  let loadedGuildId: string | null = null;
+
+  const autoSave = createAutoSave({
+    onError: () => showNotificationMessage("Couldn't save bot settings.", "error")
   });
 
   /** Languages the bot ships response strings for */
@@ -68,7 +78,6 @@
   /** Server timezone state, saved separately from the guild config */
   let timezones: Array<{ id: string; name: string; label: string; offset: string; value: string }> = $state([]);
   let guildTimezone = $state<string | null>(null);
-  let timezoneSaving = $state(false);
 
   async function fetchTimezone() {
     try {
@@ -84,18 +93,19 @@
     }
   }
 
-  async function saveTimezone(timezoneId: string | null) {
-    if (!$currentGuild?.id || !timezoneId) return;
-    timezoneSaving = true;
-    try {
-      await administrationApi.setGuildTimezone($currentGuild.id, { timezoneId });
-      guildTimezone = timezoneId;
-    } catch (err) {
-      logger.error("Failed to save timezone:", err);
-      showNotificationMessage("Failed to save timezone", "error");
-    } finally {
-      timezoneSaving = false;
-    }
+  function saveTimezone(timezoneId: string | null) {
+    if (!$currentGuild?.id || !timezoneId || timezoneId === guildTimezone) return;
+    const guildId = $currentGuild.id;
+    const previous = guildTimezone;
+    guildTimezone = timezoneId;
+    autoSave.now("timezone", async () => {
+      try {
+        await administrationApi.setGuildTimezone(guildId, { timezoneId });
+      } catch (err) {
+        if ($currentGuild?.id === guildId) guildTimezone = previous;
+        throw err;
+      }
+    });
   }
 
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
@@ -110,8 +120,11 @@
   async function fetchGuildSettings() {
     try {
       if (!$currentGuild?.id) return;
-      const config = await guildApi.getGuildConfig($currentGuild.id);
+      const guildId = $currentGuild.id;
+      const config = await guildApi.getGuildConfig(guildId);
+      if ($currentGuild?.id !== guildId) return;
       guildConfig = config;
+      loadedGuildId = guildId.toString();
 
       // Update local settings - only properties shown in this page
       settings = {
@@ -126,6 +139,7 @@
         muteRoleName: config.muteRoleName || "",
         removeRolesOnMute: config.removeroles === 1
       };
+      savedSettings = { ...settings };
     } catch (err) {
       logger.error("Failed to fetch guild settings:", err);
       error = err instanceof Error ? err.message : "Failed to fetch guild settings";
@@ -141,40 +155,100 @@
     }
   }
 
-  async function updateSettings() {
-    try {
-      if (!$currentGuild?.id || !guildConfig) return;
+  type Settings = typeof settings;
 
-      // Create updated config - only update the settings shown in this page
-      const updatedConfig: GuildConfig = {
-        ...guildConfig,
-        prefix: settings.prefix,
-        commandLogChannel: settings.commandLogChannel === "0" ? BigInt(0) : BigInt(settings.commandLogChannel),
-        currencyEmoji: settings.currencyEmoji,
-        warnlogChannelId: settings.warnlogChannelId === "0" ? BigInt(0) : BigInt(settings.warnlogChannelId),
-        warnExpireHours: settings.warnExpireHours,
-        locale: settings.locale || null,
-        snipeset: settings.snipeset,
-        previewLinks: settings.previewLinks ? 1 : 0,
-        muteRoleName: settings.muteRoleName.trim() || null,
-        removeroles: settings.removeRolesOnMute ? 1 : 0
-      };
+  function isValidWarnExpiry(value: unknown): value is number {
+    return typeof value === "number" && Number.isInteger(value) && value >= 0;
+  }
 
-      await guildApi.updateGuildConfig($currentGuild.id, updatedConfig);
-      showNotificationMessage("Settings updated successfully");
-      await fetchGuildSettings();
-    } catch (err) {
-      logger.error("Failed to update settings:", err);
-      showNotificationMessage("Failed to update settings", "error");
+  /**
+   * Builds a save of the whole guild config from the form as it is right now. Everything is
+   * captured here, not when the save runs, so a save still waiting after switching servers
+   * cannot carry the new server's state. A field that is currently invalid (empty prefix,
+   * bad warn expiry) is sent with its last saved value instead.
+   */
+  function buildSave(rollback?: () => void) {
+    if (!$currentGuild?.id || !guildConfig || loadedGuildId !== $currentGuild.id.toString()) return null;
+    const guildId = $currentGuild.id;
+    const snapshot: Settings = { ...settings };
+    if (!snapshot.prefix.trim()) snapshot.prefix = savedSettings.prefix;
+    if (!isValidWarnExpiry(snapshot.warnExpireHours)) snapshot.warnExpireHours = savedSettings.warnExpireHours;
+
+    const config: GuildConfig = {
+      ...guildConfig,
+      prefix: snapshot.prefix,
+      commandLogChannel: snapshot.commandLogChannel === "0" ? BigInt(0) : BigInt(snapshot.commandLogChannel),
+      currencyEmoji: snapshot.currencyEmoji,
+      warnlogChannelId: snapshot.warnlogChannelId === "0" ? BigInt(0) : BigInt(snapshot.warnlogChannelId),
+      warnExpireHours: snapshot.warnExpireHours,
+      locale: snapshot.locale || null,
+      snipeset: snapshot.snipeset,
+      previewLinks: snapshot.previewLinks ? 1 : 0,
+      muteRoleName: snapshot.muteRoleName.trim() || null,
+      removeroles: snapshot.removeRolesOnMute ? 1 : 0
+    };
+
+    return async () => {
+      try {
+        await guildApi.updateGuildConfig(guildId, config);
+        if ($currentGuild?.id === guildId) {
+          guildConfig = config;
+          savedSettings = snapshot;
+        }
+      } catch (err) {
+        if ($currentGuild?.id === guildId) rollback?.();
+        throw err;
+      }
+    };
+  }
+
+  /** Saves straight away (toggles, selectors), putting the field back if the save fails. */
+  function saveNow<K extends keyof Settings>(field: K, previous: Settings[K]) {
+    const save = buildSave(() => {
+      settings[field] = previous;
+    });
+    if (save) autoSave.now("config", save);
+  }
+
+  /** Saves once typing stops. Text fields are not rolled back on failure; the header offers Retry. */
+  function scheduleSave() {
+    const save = buildSave();
+    if (save) autoSave.schedule("config", save);
+  }
+
+  /** Leaving a field that must not be empty or invalid puts back its last saved value. */
+  function handleBlur(field: "prefix" | "warnExpireHours") {
+    switch (field) {
+      case "prefix":
+        if (!settings.prefix.trim()) settings.prefix = savedSettings.prefix;
+        break;
+      case "warnExpireHours":
+        if (!isValidWarnExpiry(settings.warnExpireHours)) settings.warnExpireHours = savedSettings.warnExpireHours;
+        break;
     }
+    void autoSave.flush("config");
   }
 
-  function handleCommandLogChannelChange(detail: any) {
-    settings.commandLogChannel = detail.selected || "0";
+  function handleCommandLogChannelChange(detail: { selected: string | string[] | null }) {
+    const previous = savedSettings.commandLogChannel;
+    settings.commandLogChannel = typeof detail.selected === "string" && detail.selected ? detail.selected : "0";
+    saveNow("commandLogChannel", previous);
   }
 
-  function handleWarnlogChannelChange(detail: any) {
-    settings.warnlogChannelId = detail.selected || "0";
+  function handleWarnlogChannelChange(detail: { selected: string | string[] | null }) {
+    const previous = savedSettings.warnlogChannelId;
+    settings.warnlogChannelId = typeof detail.selected === "string" && detail.selected ? detail.selected : "0";
+    saveNow("warnlogChannelId", previous);
+  }
+
+  function handleLocaleChange(detail: { selected: string | string[] | null }) {
+    const previous = savedSettings.locale;
+    settings.locale = typeof detail.selected === "string" ? detail.selected : "";
+    saveNow("locale", previous);
+  }
+
+  function handleToggle(field: "snipeset" | "previewLinks" | "removeRolesOnMute") {
+    saveNow(field, !settings[field]);
   }
 
   $effect(() => {
@@ -211,14 +285,7 @@
 {/snippet}
 
 <DashboardPageLayout
-  actionButtons={[
-    {
-      label: "Save Changes",
-      icon: "fa-floppy-disk",
-      action: updateSettings,
-      loading: false
-    }
-  ]}
+  {autoSave}
   statusMessages={statusMessages}
   icon="fa-gear"
   guildName={$currentGuild?.name || "Dashboard"}
@@ -272,6 +339,8 @@
             <input
               type="text"
               bind:value={settings.prefix}
+              oninput={scheduleSave}
+              onblur={() => handleBlur("prefix")}
               class="w-full p-3 rounded-lg border transition-all"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               placeholder="."
@@ -308,6 +377,8 @@
             <input
               type="text"
               bind:value={settings.currencyEmoji}
+              oninput={scheduleSave}
+              onblur={() => autoSave.flush("config")}
               class="w-full p-3 rounded-lg border transition-all"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               placeholder="💰"
@@ -344,6 +415,8 @@
             <input
               type="number"
               bind:value={settings.warnExpireHours}
+              oninput={scheduleSave}
+              onblur={() => handleBlur("warnExpireHours")}
               min="0"
               class="w-full p-3 rounded-lg border transition-all"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -366,7 +439,7 @@
               selected={settings.locale}
               placeholder="Bot default"
               ariaLabelledby="language-label"
-              onchange={(e) => { settings.locale = typeof e.selected === "string" ? e.selected : ""; }}
+              onchange={handleLocaleChange}
             />
           </div>
 
@@ -377,7 +450,7 @@
               <h3 id="timezone-label" class="font-semibold" style="color: {$colorStore.text}">Server Timezone</h3>
             </div>
             <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              Used for scheduled messages, reminders and time displays. Saves immediately.
+              Used for scheduled messages, reminders and time displays.
             </p>
             <DiscordSelector
               type="timezone"
@@ -385,7 +458,7 @@
               selected={guildTimezone}
               placeholder={timezones.length ? "Select timezone" : "Loading timezones..."}
               ariaLabelledby="timezone-label"
-              disabled={timezoneSaving || timezones.length === 0}
+              disabled={timezones.length === 0}
               onchange={(e) => saveTimezone(typeof e.selected === "string" ? e.selected : null)}
             />
           </div>
@@ -402,13 +475,15 @@
             <input
               type="text"
               bind:value={settings.muteRoleName}
+              oninput={scheduleSave}
+              onblur={() => autoSave.flush("config")}
               maxlength="100"
               class="w-full p-3 rounded-lg border transition-all"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               placeholder="Muted"
             >
             <label class="flex items-center gap-3 mt-3 cursor-pointer min-h-[32px]" style="color: {$colorStore.text};">
-              <input type="checkbox" bind:checked={settings.removeRolesOnMute} class="w-4 h-4 rounded" style="accent-color: {$colorStore.primary};">
+              <input type="checkbox" bind:checked={settings.removeRolesOnMute} onchange={() => handleToggle("removeRolesOnMute")} class="w-4 h-4 rounded" style="accent-color: {$colorStore.primary};">
               <span class="text-sm">Remove all other roles while muted</span>
             </label>
           </div>
@@ -421,14 +496,14 @@
             </div>
             <div class="space-y-3">
               <label class="flex items-start gap-3 cursor-pointer" style="color: {$colorStore.text};">
-                <input type="checkbox" bind:checked={settings.snipeset} class="w-4 h-4 rounded mt-0.5" style="accent-color: {$colorStore.primary};">
+                <input type="checkbox" bind:checked={settings.snipeset} onchange={() => handleToggle("snipeset")} class="w-4 h-4 rounded mt-0.5" style="accent-color: {$colorStore.primary};">
                 <span>
                   <span class="text-sm font-medium block">Message sniping</span>
                   <span class="text-xs" style="color: {$colorStore.muted}">Let members recover recently deleted or edited messages with the snipe commands</span>
                 </span>
               </label>
               <label class="flex items-start gap-3 cursor-pointer" style="color: {$colorStore.text};">
-                <input type="checkbox" bind:checked={settings.previewLinks} class="w-4 h-4 rounded mt-0.5" style="accent-color: {$colorStore.primary};">
+                <input type="checkbox" bind:checked={settings.previewLinks} onchange={() => handleToggle("previewLinks")} class="w-4 h-4 rounded mt-0.5" style="accent-color: {$colorStore.primary};">
                 <span>
                   <span class="text-sm font-medium block">Message link previews</span>
                   <span class="text-xs" style="color: {$colorStore.muted}">Show the contents of Discord message links when they are posted</span>

@@ -22,6 +22,11 @@
         "icon": "fa-bullhorn"
       },
       {
+        "id": "cards",
+        "label": "Cards",
+        "icon": "fa-id-card"
+      },
+      {
         "id": "members",
         "label": "Members",
         "icon": "fa-users"

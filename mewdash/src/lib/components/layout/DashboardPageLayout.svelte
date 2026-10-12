@@ -13,6 +13,8 @@
   import { page } from "$app/state";
   import { getWikiArticleForPath } from "$lib/wiki";
   import WikiDrawer from "$lib/components/wiki/WikiDrawer.svelte";
+  import SaveStatus from "$lib/components/ui/SaveStatus.svelte";
+  import type { AutoSave } from "$lib/utils/autoSave.svelte";
 
   // Props
   interface Props {
@@ -37,6 +39,8 @@
     basePath?: string;
     category?: string;
     statusMessages?: import("svelte").Snippet;
+    /** A page that saves as you go passes its controller here to show save progress in the header. */
+    autoSave?: AutoSave;
     children: import("svelte").Snippet;
     ontabChange?: (detail: { tabId: string }) => void;
     onsubTabChange?: (detail: { tabId: string }) => void;
@@ -57,6 +61,7 @@
     basePath = "/dashboard",
     category = "Settings",
     statusMessages,
+    autoSave,
     children,
     ontabChange,
     onsubTabChange
@@ -310,13 +315,16 @@
       </div>
     </div>
 
-    {#if actionButtons.length > 0 || wikiArticle}
+    {#if actionButtons.length > 0 || wikiArticle || autoSave}
       <!--
         On phones the row keeps one line: the wiki button collapses to its icon,
         and the action buttons share the remaining width without wrapping their
         labels. From the sm breakpoint up every button shows its full label.
       -->
       <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full lg:w-auto lg:shrink-0">
+        {#if autoSave}
+          <SaveStatus {autoSave} />
+        {/if}
         {#if wikiArticle}
           <button
             class="flex items-center justify-center gap-3 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] min-w-[44px] shrink-0 sm:flex-initial font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"

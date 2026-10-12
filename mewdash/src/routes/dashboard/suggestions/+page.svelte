@@ -20,9 +20,11 @@
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { loadingStore } from "$lib/stores/loadingStore";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
-  import { useUnsavedChangesGuard } from "$lib/utils/unsavedChanges";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
-  useUnsavedChangesGuard(() => hasChanges);
+  const autoSave = createAutoSave({
+    onError: () => showNotificationMessage("Couldn't save suggestion settings. Your last change was undone.", "error")
+  });
 
   interface Props {
     data: PageData;
@@ -36,7 +38,6 @@
   let activeTab = $state("suggestions");
   let activeSubTab = $state("general");
   let loading = $state(true);
-  let saving = $state(false);
   let error: string | null = $state(null);
   let showNotification = $state(false);
   let notificationMessage = $state("");
@@ -83,7 +84,6 @@
   let archiveOnAccept = $state(false);
   let archiveOnConsider = $state(false);
   let archiveOnImplement = $state(false);
-  let suggestButtonChannel: bigint | null = null;
 
   // Suggestion-specific placeholders
   const suggestionPlaceholders = [
@@ -123,7 +123,7 @@
     { category: "Suggestions", name: "%suggest.mod.message%", description: "The reason the suggestion was updated" }
   ];
 
-  // Original values (fetched from API)
+  // Values the server last confirmed (set on load and after each successful save)
   let originalValues = $state({
     minLength: 0,
     maxLength: 2000,
@@ -152,55 +152,10 @@
     archiveOnDeny: false,
     archiveOnAccept: false,
     archiveOnConsider: false,
-    archiveOnImplement: false,
-    suggestButtonChannel: null as bigint | null
+    archiveOnImplement: false
   });
 
   // Computed values
-  let hasChanges = $derived.by(() => {
-    // Helper to compare arrays
-    const arraysEqual = (a: any, b: any) => {
-      if (!Array.isArray(a) || !Array.isArray(b)) return a === b;
-      if (a.length !== b.length) return false;
-      return a.every((val, idx) => val === b[idx]);
-    };
-
-    // Helper to compare objects
-    const objectsEqual = (a: any, b: any) => {
-      if (typeof a !== "object" || typeof b !== "object") return a === b;
-      return JSON.stringify(a) === JSON.stringify(b);
-    };
-
-    return minLength !== originalValues.minLength ||
-      maxLength !== originalValues.maxLength ||
-      !objectsEqual(suggestionMessage, originalValues.suggestionMessage) ||
-      !objectsEqual(acceptMessage, originalValues.acceptMessage) ||
-      !objectsEqual(denyMessage, originalValues.denyMessage) ||
-      !objectsEqual(considerMessage, originalValues.considerMessage) ||
-      !objectsEqual(implementMessage, originalValues.implementMessage) ||
-      acceptChannel !== originalValues.acceptChannel ||
-      denyChannel !== originalValues.denyChannel ||
-      considerChannel !== originalValues.considerChannel ||
-      implementChannel !== originalValues.implementChannel ||
-      suggestChannel !== originalValues.suggestChannel ||
-      threadType !== originalValues.threadType ||
-      emoteMode !== originalValues.emoteMode ||
-      suggestButtonColor !== originalValues.suggestButtonColor ||
-      emote1Style !== originalValues.emote1Style ||
-      emote2Style !== originalValues.emote2Style ||
-      emote3Style !== originalValues.emote3Style ||
-      emote4Style !== originalValues.emote4Style ||
-      emote5Style !== originalValues.emote5Style ||
-      suggestButtonMessage !== originalValues.suggestButtonMessage ||
-      suggestButtonLabel !== originalValues.suggestButtonLabel ||
-      suggestButtonEmote !== originalValues.suggestButtonEmote ||
-      !arraysEqual(suggestEmotes, originalValues.suggestEmotes) ||
-      archiveOnDeny !== originalValues.archiveOnDeny ||
-      archiveOnAccept !== originalValues.archiveOnAccept ||
-      archiveOnConsider !== originalValues.archiveOnConsider ||
-      archiveOnImplement !== originalValues.archiveOnImplement ||
-      suggestButtonChannel !== originalValues.suggestButtonChannel;
-  });
   let sortedSuggestions = $derived.by(() => {
     // Use slice() instead of spread operator to avoid hydration issues
     const suggestionsCopy = Array.isArray(suggestions) ? suggestions.slice() : [];
@@ -357,8 +312,7 @@
           fetchedSuggestEmotes,
           fetchedButtonMessage,
           fetchedButtonLabel,
-          fetchedButtonEmote,
-          fetchedButtonChannel
+          fetchedButtonEmote
         ] = await Promise.all([
           suggestionsApi.getMinLength($currentGuild.id),
           suggestionsApi.getMaxLength($currentGuild.id),
@@ -387,8 +341,7 @@
           suggestionsApi.getSuggestEmotes($currentGuild.id),
           suggestionsApi.getSuggestButtonMessage($currentGuild.id),
           suggestionsApi.getSuggestButtonLabel($currentGuild.id),
-          suggestionsApi.getSuggestButtonEmote($currentGuild.id),
-          suggestionsApi.getSuggestButtonChannel($currentGuild.id)
+          suggestionsApi.getSuggestButtonEmote($currentGuild.id)
         ]);
 
         minLength = fetchedMinLength;
@@ -503,8 +456,6 @@
         // Set to null if empty, disabled, or "-"
         suggestButtonEmote = (rawButtonEmote && rawButtonEmote !== "disabled" && rawButtonEmote !== "-") ? String(rawButtonEmote) : null;
 
-        suggestButtonChannel = fetchedButtonChannel;
-
         // Store original values for comparison (with deep copies for objects)
         originalValues = {
           minLength,
@@ -534,8 +485,7 @@
           archiveOnDeny,
           archiveOnAccept,
           archiveOnConsider,
-          archiveOnImplement,
-          suggestButtonChannel
+          archiveOnImplement
         };
       } catch (err) {
         logger.error("Error loading settings:", err);
@@ -562,164 +512,175 @@
     }
   }
 
-  async function saveSettings() {
-    if (!$currentGuild?.id || !hasChanges) return;
+  type SavedValues = typeof originalValues;
 
-    saving = true;
-    return await loadingStore.wrap("save-settings", async () => {
+  /**
+   * Saves one setting through its own setter. The guild and value are captured now, so a save
+   * still waiting after a server switch cannot write to the wrong server. `restore` puts the
+   * field back to the last confirmed value if the save fails; typed fields pass none.
+   */
+  function persist<K extends keyof SavedValues>(
+    key: K,
+    value: SavedValues[K],
+    send: (guildId: bigint) => Promise<unknown>,
+    restore?: (previous: SavedValues[K]) => void,
+    debounce = false
+  ) {
+    if (!$currentGuild?.id) return;
+    const guildId = $currentGuild.id;
+    const previous = originalValues[key];
+    const run = async () => {
       try {
-        const updatePromises = [];
-
-        // Helper to convert embed object to JSON string for sending
-        const embedToString = (embed: any) => {
-          if (!embed || Object.keys(embed).length === 0) return null;
-          return JSON.stringify(embed);
-        };
-
-        // Only save settings that have actually changed
-        if (minLength !== originalValues.minLength) {
-          updatePromises.push(suggestionsApi.setMinLength($currentGuild.id, minLength));
-        }
-        if (maxLength !== originalValues.maxLength) {
-          updatePromises.push(suggestionsApi.setMaxLength($currentGuild.id, maxLength));
-        }
-        if (JSON.stringify(suggestionMessage) !== JSON.stringify(originalValues.suggestionMessage)) {
-          updatePromises.push(suggestionsApi.setSuggestionMessage($currentGuild.id, embedToString(suggestionMessage)));
-        }
-        if (JSON.stringify(acceptMessage) !== JSON.stringify(originalValues.acceptMessage)) {
-          updatePromises.push(suggestionsApi.setAcceptMessage($currentGuild.id, embedToString(acceptMessage)));
-        }
-        if (JSON.stringify(denyMessage) !== JSON.stringify(originalValues.denyMessage)) {
-          updatePromises.push(suggestionsApi.setDenyMessage($currentGuild.id, embedToString(denyMessage)));
-        }
-        if (JSON.stringify(considerMessage) !== JSON.stringify(originalValues.considerMessage)) {
-          updatePromises.push(suggestionsApi.setConsiderMessage($currentGuild.id, embedToString(considerMessage)));
-        }
-        if (JSON.stringify(implementMessage) !== JSON.stringify(originalValues.implementMessage)) {
-          updatePromises.push(suggestionsApi.setImplementMessage($currentGuild.id, embedToString(implementMessage)));
-        }
-        if (acceptChannel !== originalValues.acceptChannel) {
-          updatePromises.push(suggestionsApi.setAcceptChannel($currentGuild.id, acceptChannel ? BigInt(acceptChannel) : 0n));
-        }
-        if (denyChannel !== originalValues.denyChannel) {
-          updatePromises.push(suggestionsApi.setDenyChannel($currentGuild.id, denyChannel ? BigInt(denyChannel) : 0n));
-        }
-        if (considerChannel !== originalValues.considerChannel) {
-          updatePromises.push(suggestionsApi.setConsiderChannel($currentGuild.id, considerChannel ? BigInt(considerChannel) : 0n));
-        }
-        if (implementChannel !== originalValues.implementChannel) {
-          updatePromises.push(suggestionsApi.setImplementChannel($currentGuild.id, implementChannel ? BigInt(implementChannel) : 0n));
-        }
-        if (suggestChannel !== originalValues.suggestChannel) {
-          updatePromises.push(suggestionsApi.setSuggestChannel($currentGuild.id, suggestChannel ? BigInt(suggestChannel) : 0n));
-        }
-        if (threadType !== originalValues.threadType) {
-          updatePromises.push(suggestionsApi.setSuggestThreadsType($currentGuild.id, threadType));
-        }
-        if (emoteMode !== originalValues.emoteMode) {
-          updatePromises.push(suggestionsApi.setEmoteMode($currentGuild.id, emoteMode));
-        }
-        if (suggestButtonColor !== originalValues.suggestButtonColor) {
-          updatePromises.push(suggestionsApi.setSuggestButtonColor($currentGuild.id, suggestButtonColor));
-        }
-        if (emote1Style !== originalValues.emote1Style) {
-          updatePromises.push(suggestionsApi.setEmoteButtonStyle($currentGuild.id, 1, emote1Style));
-        }
-        if (emote2Style !== originalValues.emote2Style) {
-          updatePromises.push(suggestionsApi.setEmoteButtonStyle($currentGuild.id, 2, emote2Style));
-        }
-        if (emote3Style !== originalValues.emote3Style) {
-          updatePromises.push(suggestionsApi.setEmoteButtonStyle($currentGuild.id, 3, emote3Style));
-        }
-        if (emote4Style !== originalValues.emote4Style) {
-          updatePromises.push(suggestionsApi.setEmoteButtonStyle($currentGuild.id, 4, emote4Style));
-        }
-        if (emote5Style !== originalValues.emote5Style) {
-          updatePromises.push(suggestionsApi.setEmoteButtonStyle($currentGuild.id, 5, emote5Style));
-        }
-        if (archiveOnDeny !== originalValues.archiveOnDeny) {
-          updatePromises.push(suggestionsApi.setArchiveOnDeny($currentGuild.id, archiveOnDeny));
-        }
-        if (archiveOnAccept !== originalValues.archiveOnAccept) {
-          updatePromises.push(suggestionsApi.setArchiveOnAccept($currentGuild.id, archiveOnAccept));
-        }
-        if (archiveOnConsider !== originalValues.archiveOnConsider) {
-          updatePromises.push(suggestionsApi.setArchiveOnConsider($currentGuild.id, archiveOnConsider));
-        }
-        if (archiveOnImplement !== originalValues.archiveOnImplement) {
-          updatePromises.push(suggestionsApi.setArchiveOnImplement($currentGuild.id, archiveOnImplement));
-        }
-
-        // Compare arrays properly
-        const arraysEqual = (a: any, b: any) => {
-          if (!Array.isArray(a) || !Array.isArray(b)) return a === b;
-          if (a.length !== b.length) return false;
-          return a.every((val, idx) => val === b[idx]);
-        };
-
-        if (!arraysEqual(suggestEmotes, originalValues.suggestEmotes)) {
-          const emotesString = Array.isArray(suggestEmotes) ? suggestEmotes.join(",") : (suggestEmotes || null);
-          updatePromises.push(suggestionsApi.setSuggestEmotes($currentGuild.id, emotesString));
-        }
-        if (JSON.stringify(suggestButtonMessage) !== JSON.stringify(originalValues.suggestButtonMessage)) {
-          const messageToSend = Object.keys(suggestButtonMessage).length > 0 ? JSON.stringify(suggestButtonMessage) : null;
-          updatePromises.push(suggestionsApi.setSuggestButtonMessage($currentGuild.id, messageToSend));
-        }
-        if (suggestButtonLabel !== originalValues.suggestButtonLabel) {
-          updatePromises.push(suggestionsApi.setSuggestButtonLabel($currentGuild.id, suggestButtonLabel || null));
-        }
-        if (suggestButtonEmote !== originalValues.suggestButtonEmote) {
-          const emoteValue = Array.isArray(suggestButtonEmote) ? suggestButtonEmote[0] : suggestButtonEmote;
-          updatePromises.push(suggestionsApi.setSuggestButtonEmote($currentGuild.id, emoteValue || null));
-        }
-        if (suggestButtonChannel !== originalValues.suggestButtonChannel) {
-          updatePromises.push(suggestionsApi.setSuggestButtonChannel($currentGuild.id, suggestButtonChannel || 0n));
-        }
-
-        await Promise.all(updatePromises);
-
-        // Update original values after successful save (with deep copies for objects)
-        originalValues = {
-          minLength,
-          maxLength,
-          suggestionMessage: JSON.parse(JSON.stringify(suggestionMessage)),
-          acceptMessage: JSON.parse(JSON.stringify(acceptMessage)),
-          denyMessage: JSON.parse(JSON.stringify(denyMessage)),
-          considerMessage: JSON.parse(JSON.stringify(considerMessage)),
-          implementMessage: JSON.parse(JSON.stringify(implementMessage)),
-          acceptChannel,
-          denyChannel,
-          considerChannel,
-          implementChannel,
-          suggestChannel,
-          threadType,
-          emoteMode,
-          suggestButtonColor,
-          emote1Style,
-          emote2Style,
-          emote3Style,
-          emote4Style,
-          emote5Style,
-          suggestButtonMessage: JSON.parse(JSON.stringify(suggestButtonMessage)),
-          suggestButtonLabel,
-          suggestButtonEmote,
-          suggestEmotes: Array.isArray(suggestEmotes) ? [...suggestEmotes] : suggestEmotes,
-          archiveOnDeny,
-          archiveOnAccept,
-          archiveOnConsider,
-          archiveOnImplement,
-          suggestButtonChannel
-        };
-
-        showNotificationMessage("Settings saved successfully");
+        await send(guildId);
+        if ($currentGuild?.id === guildId) originalValues[key] = value;
       } catch (err) {
-        showNotificationMessage("Failed to save settings", "error");
-      } finally {
-        saving = false;
+        if (restore && $currentGuild?.id === guildId) restore(previous);
+        throw err;
       }
-    }, "operation", "Saving settings...");
+    };
+    if (debounce) autoSave.schedule(key, run);
+    else autoSave.now(key, run);
   }
 
+  function isValidLength(value: unknown): value is number {
+    return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 2000;
+  }
+
+  function saveMinLength() {
+    if (!isValidLength(minLength)) return;
+    const value = minLength;
+    persist("minLength", value, (guildId) => suggestionsApi.setMinLength(guildId, value), undefined, true);
+  }
+
+  function saveMaxLength() {
+    if (!isValidLength(maxLength)) return;
+    const value = maxLength;
+    persist("maxLength", value, (guildId) => suggestionsApi.setMaxLength(guildId, value), undefined, true);
+  }
+
+  /** Leaving a length field with an invalid number puts the saved one back rather than sending it. */
+  function flushLength(key: "minLength" | "maxLength") {
+    if (key === "minLength" && !isValidLength(minLength)) minLength = originalValues.minLength;
+    if (key === "maxLength" && !isValidLength(maxLength)) maxLength = originalValues.maxLength;
+    void autoSave.flush(key);
+  }
+
+  type ChannelKey = "suggestChannel" | "acceptChannel" | "denyChannel" | "considerChannel" | "implementChannel";
+
+  const channelSetters: Record<ChannelKey, (guildId: bigint, channelId: bigint) => Promise<unknown>> = {
+    suggestChannel: suggestionsApi.setSuggestChannel,
+    acceptChannel: suggestionsApi.setAcceptChannel,
+    denyChannel: suggestionsApi.setDenyChannel,
+    considerChannel: suggestionsApi.setConsiderChannel,
+    implementChannel: suggestionsApi.setImplementChannel
+  };
+
+  function setChannel(key: ChannelKey, value: string) {
+    const restore = (previous: string) => {
+      switch (key) {
+        case "suggestChannel": suggestChannel = previous; break;
+        case "acceptChannel": acceptChannel = previous; break;
+        case "denyChannel": denyChannel = previous; break;
+        case "considerChannel": considerChannel = previous; break;
+        case "implementChannel": implementChannel = previous; break;
+      }
+    };
+    restore(value);
+    persist(key, value, (guildId) => channelSetters[key](guildId, value ? BigInt(value) : 0n), restore);
+  }
+
+  function setThreadType(value: number) {
+    threadType = value;
+    persist("threadType", value, (guildId) => suggestionsApi.setSuggestThreadsType(guildId, value), (p) => threadType = p);
+  }
+
+  function setEmoteMode(value: number) {
+    emoteMode = value;
+    persist("emoteMode", value, (guildId) => suggestionsApi.setEmoteMode(guildId, value), (p) => emoteMode = p);
+  }
+
+  function setSuggestButtonColor(value: number) {
+    suggestButtonColor = value;
+    persist("suggestButtonColor", value, (guildId) => suggestionsApi.setSuggestButtonColor(guildId, value), (p) => suggestButtonColor = p);
+  }
+
+  type EmoteStyleKey = "emote1Style" | "emote2Style" | "emote3Style" | "emote4Style" | "emote5Style";
+
+  function setEmoteStyle(buttonId: 1 | 2 | 3 | 4 | 5, value: number) {
+    const key = `emote${buttonId}Style` as EmoteStyleKey;
+    const restore = (previous: number) => {
+      switch (buttonId) {
+        case 1: emote1Style = previous; break;
+        case 2: emote2Style = previous; break;
+        case 3: emote3Style = previous; break;
+        case 4: emote4Style = previous; break;
+        case 5: emote5Style = previous; break;
+      }
+    };
+    restore(value);
+    persist(key, value, (guildId) => suggestionsApi.setEmoteButtonStyle(guildId, buttonId, value), restore);
+  }
+
+  type ArchiveKey = "archiveOnAccept" | "archiveOnDeny" | "archiveOnConsider" | "archiveOnImplement";
+
+  /** Called after the bound checkbox has already flipped the value. */
+  function saveArchive(key: ArchiveKey) {
+    switch (key) {
+      case "archiveOnAccept":
+        persist(key, archiveOnAccept, (g) => suggestionsApi.setArchiveOnAccept(g, archiveOnAccept), (p) => archiveOnAccept = p);
+        break;
+      case "archiveOnDeny":
+        persist(key, archiveOnDeny, (g) => suggestionsApi.setArchiveOnDeny(g, archiveOnDeny), (p) => archiveOnDeny = p);
+        break;
+      case "archiveOnConsider":
+        persist(key, archiveOnConsider, (g) => suggestionsApi.setArchiveOnConsider(g, archiveOnConsider), (p) => archiveOnConsider = p);
+        break;
+      case "archiveOnImplement":
+        persist(key, archiveOnImplement, (g) => suggestionsApi.setArchiveOnImplement(g, archiveOnImplement), (p) => archiveOnImplement = p);
+        break;
+    }
+  }
+
+  function saveSuggestEmotes() {
+    const value = Array.isArray(suggestEmotes) ? [...suggestEmotes] : suggestEmotes;
+    const emotesString = Array.isArray(value) ? value.join(",") : (value || null);
+    persist("suggestEmotes", value, (guildId) => suggestionsApi.setSuggestEmotes(guildId, emotesString), (p) => suggestEmotes = p);
+  }
+
+  function saveSuggestButtonEmote() {
+    const value = suggestButtonEmote;
+    const emoteValue = Array.isArray(value) ? value[0] : value;
+    persist("suggestButtonEmote", value, (guildId) => suggestionsApi.setSuggestButtonEmote(guildId, emoteValue || null), (p) => suggestButtonEmote = p);
+  }
+
+  function saveSuggestButtonLabel() {
+    const value = suggestButtonLabel;
+    persist("suggestButtonLabel", value, (guildId) => suggestionsApi.setSuggestButtonLabel(guildId, value || null), undefined, true);
+  }
+
+  type MessageKey = "suggestionMessage" | "acceptMessage" | "denyMessage" | "considerMessage" | "implementMessage" | "suggestButtonMessage";
+
+  const messageSetters: Record<MessageKey, (guildId: bigint, message: string | null) => Promise<unknown>> = {
+    suggestionMessage: suggestionsApi.setSuggestionMessage,
+    acceptMessage: suggestionsApi.setAcceptMessage,
+    denyMessage: suggestionsApi.setDenyMessage,
+    considerMessage: suggestionsApi.setConsiderMessage,
+    implementMessage: suggestionsApi.setImplementMessage,
+    suggestButtonMessage: suggestionsApi.setSuggestButtonMessage
+  };
+
+  /**
+   * Message templates are authored in the embed builder and committed with its own Save, so
+   * they are saved when the builder closes, and only if the content differs from the server's.
+   * Not rolled back on failure: that would throw away the user's authoring; Retry resends it.
+   */
+  function saveMessage(key: MessageKey, value: any) {
+    const serialized = JSON.stringify(value ?? {});
+    if (serialized === JSON.stringify(originalValues[key] ?? {})) return;
+    const snapshot = JSON.parse(serialized);
+    const message = !value || Object.keys(value).length === 0 ? null : JSON.stringify(value);
+    persist(key, snapshot, (guildId) => messageSetters[key](guildId, message));
+  }
 
   async function deleteSuggestion(id: number) {
     return await loadingStore.wrap("delete-suggestion", async () => {
@@ -770,15 +731,7 @@
 
 
 <DashboardPageLayout
-  actionButtons={hasChanges ? [
-    {
-      label: saving ? "Saving..." : "Save Settings",
-      icon: "fa-floppy-disk",
-      action: saveSettings,
-      loading: saving,
-      style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
-    }
-  ] : []}
+  {autoSave}
   bind:activeSubTab
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
@@ -1149,6 +1102,8 @@
                   min="0"
                   max="2000"
                   bind:value={minLength}
+                  oninput={saveMinLength}
+                  onblur={() => flushLength("minLength")}
                   class="w-full p-3 rounded-lg"
                   style="background: {$colorStore.primary}10;
                            border: 1px solid {$colorStore.primary}30;
@@ -1165,6 +1120,8 @@
                   min="0"
                   max="2000"
                   bind:value={maxLength}
+                  oninput={saveMaxLength}
+                  onblur={() => flushLength("maxLength")}
                   class="w-full p-3 rounded-lg"
                   style="background: {$colorStore.primary}10;
                            border: 1px solid {$colorStore.primary}30;
@@ -1190,8 +1147,7 @@
                 placeholder="Select thread type..."
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
-                    threadType = parseInt(selected || "0");
-                    
+                    setThreadType(parseInt(selected || "0"));
                   }}
               />
             </div>
@@ -1213,6 +1169,7 @@
               </p>
               <FullscreenEmbedBuilder
                 bind:value={suggestionMessage}
+                onclose={() => saveMessage("suggestionMessage", suggestionMessage)}
                 previewTitle="Suggestion Message"
                 previewDescription="Message sent when a new suggestion is created"
                 allowComponents={false}
@@ -1235,6 +1192,7 @@
               </p>
               <FullscreenEmbedBuilder
                 bind:value={acceptMessage}
+                onclose={() => saveMessage("acceptMessage", acceptMessage)}
                 previewTitle="Accept Message"
                 previewDescription="Message sent when a suggestion is accepted"
                 allowComponents={false}
@@ -1257,6 +1215,7 @@
               </p>
               <FullscreenEmbedBuilder
                 bind:value={denyMessage}
+                onclose={() => saveMessage("denyMessage", denyMessage)}
                 previewTitle="Deny Message"
                 previewDescription="Message sent when a suggestion is denied"
                 allowComponents={false}
@@ -1279,6 +1238,7 @@
               </p>
               <FullscreenEmbedBuilder
                 bind:value={considerMessage}
+                onclose={() => saveMessage("considerMessage", considerMessage)}
                 previewTitle="Consider Message"
                 previewDescription="Message sent when a suggestion is being considered"
                 allowComponents={false}
@@ -1301,6 +1261,7 @@
               </p>
               <FullscreenEmbedBuilder
                 bind:value={implementMessage}
+                onclose={() => saveMessage("implementMessage", implementMessage)}
                 previewTitle="Implement Message"
                 previewDescription="Message sent when a suggestion is implemented"
                 allowComponents={false}
@@ -1330,8 +1291,7 @@
                 placeholder="Select suggest channel..."
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
-                    suggestChannel = selected || "";
-                    
+                    setChannel("suggestChannel", selected || "");
                   }}
               />
             </div>
@@ -1345,8 +1305,7 @@
                 placeholder="Select accept channel..."
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
-                    acceptChannel = selected || "";
-                    
+                    setChannel("acceptChannel", selected || "");
                   }}
               />
             </div>
@@ -1359,8 +1318,7 @@
                 placeholder="Select deny channel..."
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
-                    denyChannel = selected || "";
-                    
+                    setChannel("denyChannel", selected || "");
                   }}
               />
             </div>
@@ -1373,8 +1331,7 @@
                 placeholder="Select consider channel..."
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
-                    considerChannel = selected || "";
-                    
+                    setChannel("considerChannel", selected || "");
                   }}
               />
             </div>
@@ -1387,8 +1344,7 @@
                 placeholder="Select implement channel..."
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
-                    implementChannel = selected || "";
-                    
+                    setChannel("implementChannel", selected || "");
                   }}
               />
             </div>
@@ -1407,7 +1363,7 @@
                 type="checkbox"
                 class="sr-only peer"
                 bind:checked={archiveOnAccept}
-
+                onchange={() => saveArchive("archiveOnAccept")}
               >
               <div
                 class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer
@@ -1427,7 +1383,7 @@
                 type="checkbox"
                 class="sr-only peer"
                 bind:checked={archiveOnDeny}
-
+                onchange={() => saveArchive("archiveOnDeny")}
               >
               <div
                 class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer
@@ -1447,7 +1403,7 @@
                 type="checkbox"
                 class="sr-only peer"
                 bind:checked={archiveOnConsider}
-
+                onchange={() => saveArchive("archiveOnConsider")}
               >
               <div
                 class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer
@@ -1467,7 +1423,7 @@
                 type="checkbox"
                 class="sr-only peer"
                 bind:checked={archiveOnImplement}
-
+                onchange={() => saveArchive("archiveOnImplement")}
               >
               <div
                 class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer
@@ -1499,7 +1455,7 @@
                 placeholder="Select emote mode..."
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
-                    emoteMode = parseInt(selected || "0");
+                    setEmoteMode(parseInt(selected || "0"));
                   }}
               />
               <p class="text-xs" style="color: {$colorStore.muted}">
@@ -1513,6 +1469,7 @@
             <EmojiPicker id="f-+page-custom-emotes-1507"
               guildEmojis={guildEmojis}
               bind:selected={suggestEmotes}
+              onchange={saveSuggestEmotes}
               multiple={true}
               maxSelection={5}
               placeholder="Select up to 5 emotes..."
@@ -1533,7 +1490,8 @@
                   id="suggest-button-label"
                   type="text"
                   bind:value={suggestButtonLabel}
-
+                  oninput={saveSuggestButtonLabel}
+                  onblur={() => autoSave.flush("suggestButtonLabel")}
                   class="w-full p-3 rounded-lg"
                   style="background: {$colorStore.primary}10;
                            border: 1px solid {$colorStore.primary}30;
@@ -1546,6 +1504,7 @@
                 <EmojiPicker id="f-+page-button-emote-1540"
                   guildEmojis={guildEmojis}
                   bind:selected={suggestButtonEmote}
+                  onchange={saveSuggestButtonEmote}
                   placeholder="Select button emote..."
                   showUnicodeEmojis={true}
                 />
@@ -1560,6 +1519,7 @@
                 Message</label>
               <FullscreenEmbedBuilder
                 bind:value={suggestButtonMessage}
+                onclose={() => saveMessage("suggestButtonMessage", suggestButtonMessage)}
                 previewTitle="Button Message"
                 previewDescription="Configure the message sent when users click the suggestion button"
                 icon="fa-comments"
@@ -1588,7 +1548,7 @@
                 placeholder="Select button color..."
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
-                    suggestButtonColor = parseInt(selected || "1");
+                    setSuggestButtonColor(parseInt(selected || "1"));
                   }}
               />
             </div>
@@ -1609,7 +1569,7 @@
                   placeholder="Color..."
                   onchange={(e) => {
                       const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
-                      emote1Style = parseInt(selected || "1");
+                      setEmoteStyle(1, parseInt(selected || "1"));
                     }}
                 />
               </div>
@@ -1629,7 +1589,7 @@
                   placeholder="Color..."
                   onchange={(e) => {
                       const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
-                      emote2Style = parseInt(selected || "1");
+                      setEmoteStyle(2, parseInt(selected || "1"));
                     }}
                 />
               </div>
@@ -1649,7 +1609,7 @@
                   placeholder="Color..."
                   onchange={(e) => {
                       const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
-                      emote3Style = parseInt(selected || "1");
+                      setEmoteStyle(3, parseInt(selected || "1"));
                     }}
                 />
               </div>
@@ -1669,7 +1629,7 @@
                   placeholder="Color..."
                   onchange={(e) => {
                       const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
-                      emote4Style = parseInt(selected || "1");
+                      setEmoteStyle(4, parseInt(selected || "1"));
                     }}
                 />
               </div>
@@ -1689,7 +1649,7 @@
                   placeholder="Color..."
                   onchange={(e) => {
                       const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
-                      emote5Style = parseInt(selected || "1");
+                      setEmoteStyle(5, parseInt(selected || "1"));
                     }}
                 />
               </div>

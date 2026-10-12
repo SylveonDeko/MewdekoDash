@@ -8,7 +8,6 @@
     selectedNormalRoles = $bindable(),
     selectedBotRoles = $bindable(),
     availableRoles,
-    saving,
     saveNormalRoles,
     saveBotRoles
   } = $props();
@@ -43,15 +42,8 @@
         options={availableRoles}
         placeholder="Select roles to auto-assign to normal users"
         type="role"
+        onchange={() => saveNormalRoles()}
       />
-      <button
-        class="w-full px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
-        disabled={saving}
-        onclick={saveNormalRoles}
-        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-      >
-        {saving ? "Saving..." : "Save Normal User Roles"}
-      </button>
       <p class="text-sm" style="color: {$colorStore.muted}">
         Roles automatically assigned to new users when they join the server.
       </p>
@@ -71,15 +63,8 @@
         options={availableRoles}
         placeholder="Select roles to auto-assign to bot users"
         type="role"
+        onchange={() => saveBotRoles()}
       />
-      <button
-        class="w-full px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
-        disabled={saving}
-        onclick={saveBotRoles}
-        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-      >
-        {saving ? "Saving..." : "Save Bot User Roles"}
-      </button>
       <p class="text-sm" style="color: {$colorStore.muted}">
         Roles automatically assigned to bot users when they join the server.
       </p>

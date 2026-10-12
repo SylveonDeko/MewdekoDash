@@ -28,6 +28,7 @@
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import SettingToggle from "$lib/components/forms/SettingToggle.svelte";
@@ -75,6 +76,10 @@
     notificationType = type;
     setTimeout(() => (notificationMessage = ""), 4000);
   }
+
+  const autoSave = createAutoSave({
+    onError: () => notify("Couldn't save activity stats settings. Toggles were put back; use Retry for number fields.", "error"),
+  });
 
   function fail(err: unknown, fallback: string) {
     logger.error(fallback, err);
@@ -315,6 +320,8 @@
 
   /** Settings */
   let settings = $state<ServerStatsSettings | null>(null);
+  /** The settings as the server last confirmed them, for putting a toggle back when its save fails. */
+  let savedSettings: ServerStatsSettings | null = null;
   let exclusions = $state<StatsExclusions | null>(null);
   let activityFilters = $state<ActivityFilters | null>(null);
   let settingsLoading = $state(false);
@@ -349,6 +356,7 @@
         serverStatsApi.getActivityFilters(guildId),
       ]);
       settings = s;
+      savedSettings = { ...s };
       exclusions = ex;
       activityFilters = af;
       lookbackDraft = s.defaultLookbackDays;
@@ -362,22 +370,59 @@
     }
   }
 
-  async function update(request: Parameters<typeof serverStatsApi.updateSettings>[1], fallback = "Failed to save the setting") {
-    if (!$currentGuild?.id) return;
-    try {
-      settings = await serverStatsApi.updateSettings($currentGuild.id, request);
-    } catch (err) {
-      fail(err, fallback);
-    }
+  type SettingsRequest = Parameters<typeof serverStatsApi.updateSettings>[1];
+
+  /**
+   * Saves a partial settings change. The change shows straight away; the guild id and payload
+   * are taken now, so a save still queued after switching servers carries this server's values.
+   * Toggles and pickers save immediately and are put back if the save fails. Number fields wait
+   * for typing to stop and keep what was typed on failure, so the header offers a retry instead.
+   */
+  function update(request: SettingsRequest, debounced = false) {
+    if (!$currentGuild?.id || !settings) return;
+    const guildId = $currentGuild.id;
+    const keys = Object.keys(request) as Array<keyof SettingsRequest>;
+    const key = keys.join(",");
+    const previous: SettingsRequest = {};
+    for (const k of keys) (previous as Record<string, unknown>)[k] = savedSettings?.[k];
+    settings = { ...settings, ...request };
+
+    const save = async () => {
+      try {
+        const result = await serverStatsApi.updateSettings(guildId, request);
+        const confirmed: SettingsRequest = {};
+        for (const k of keys) (confirmed as Record<string, unknown>)[k] = result[k];
+        if (savedSettings) savedSettings = { ...savedSettings, ...confirmed };
+        if ($currentGuild?.id === guildId && settings) settings = { ...settings, ...confirmed };
+      } catch (err) {
+        if (!debounced && $currentGuild?.id === guildId && settings) settings = { ...settings, ...previous };
+        throw err;
+      }
+    };
+
+    if (debounced) autoSave.schedule(key, save);
+    else autoSave.now(key, save);
+  }
+
+  function saveLookback() {
+    const value = lookbackDraft;
+    if (!Number.isInteger(value) || value < 1 || value > 90) return;
+    update({ defaultLookbackDays: value }, true);
+  }
+
+  function saveCooldown() {
+    const value = cooldownDraft;
+    if (!Number.isInteger(value) || value < 0 || value > 300) return;
+    update({ messageCooldownSeconds: value }, true);
   }
 
   function voiceStateIgnored(flag: number): boolean {
     return ((settings?.voiceStates ?? 0) & flag) !== 0;
   }
 
-  async function toggleVoiceState(flag: number, ignored: boolean) {
+  function toggleVoiceState(flag: number, ignored: boolean) {
     const current = settings?.voiceStates ?? 0;
-    await update({ voiceStates: ignored ? current | flag : current & ~flag });
+    update({ voiceStates: ignored ? current | flag : current & ~flag });
   }
 
   async function addExclusion(kind: 0 | 1 | 2, target: string | null) {
@@ -461,6 +506,7 @@
   bind:activeTab
   bind:notificationMessage
   {notificationType}
+  {autoSave}
 >
   {#if activeTab === "overview"}
     <section>
@@ -691,16 +737,10 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <SettingField label="Default window (days)" hint="What stats commands and this page use when no window is picked, 1 to 90" id="lookback">
-              <div class="flex gap-2">
-                <input id="lookback" type="number" min="1" max="90" bind:value={lookbackDraft} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
-                <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={() => update({ defaultLookbackDays: lookbackDraft })}>Save</button>
-              </div>
+              <input id="lookback" type="number" min="1" max="90" step="1" bind:value={lookbackDraft} oninput={saveLookback} onblur={() => autoSave.flush("defaultLookbackDays")} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
             </SettingField>
             <SettingField label="Message cooldown (seconds)" hint="Messages from the same member count at most once per this many seconds. 0 counts every message." id="cooldown">
-              <div class="flex gap-2">
-                <input id="cooldown" type="number" min="0" max="300" bind:value={cooldownDraft} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
-                <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={() => update({ messageCooldownSeconds: cooldownDraft })}>Save</button>
-              </div>
+              <input id="cooldown" type="number" min="0" max="300" step="1" bind:value={cooldownDraft} oninput={saveCooldown} onblur={() => autoSave.flush("messageCooldownSeconds")} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
             </SettingField>
           </div>
 

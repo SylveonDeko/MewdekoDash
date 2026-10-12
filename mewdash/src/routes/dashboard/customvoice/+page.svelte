@@ -13,9 +13,7 @@
     type CustomVoiceUserPreference
   } from "$lib/api/index.ts";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
-  import { useUnsavedChangesGuard } from "$lib/utils/unsavedChanges";
-
-  useUnsavedChangesGuard(() => hasChanges);
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { colorStore } from "$lib/stores/colorStore";
   import { fade, slide } from "svelte/transition";
@@ -45,27 +43,50 @@
     let activeChannels: CustomVoiceChannelResponse[] = $state([]);
     let voiceChannels: Array<{ id: string; name: string }> = $state([]);
     let categories: Array<{ id: string; name: string }> = $state([]);
-    let hasChanges = $state(false);
 
   // Form data
+  const DEFAULT_NAME_FORMAT = "{username}'s Channel";
+  const DEFAULT_TOGGLES = {
+    deleteWhenEmpty: true,
+    allowMultipleChannels: false,
+    allowNameCustomization: true,
+    allowUserLimitCustomization: true,
+    allowBitrateCustomization: false,
+    allowLocking: true,
+    allowUserManagement: true,
+    persistUserPreferences: true,
+    autoPermission: true
+  };
+  type ToggleKey = keyof typeof DEFAULT_TOGGLES;
+
     let hubChannelId: string | null = $state(null);
     let categoryId: string | null = $state(null);
-    let defaultNameFormat = $state("{username}'s Channel");
+    let defaultNameFormat = $state(DEFAULT_NAME_FORMAT);
     let defaultUserLimit = $state(0);
   let defaultBitrate = $state(64);
-    let deleteWhenEmpty = $state(true);
     let emptyChannelTimeout = $state(60);
-    let allowMultipleChannels = $state(false);
-    let allowNameCustomization = $state(true);
-    let allowUserLimitCustomization = $state(true);
-    let allowBitrateCustomization = $state(false);
-    let allowLocking = $state(true);
-    let allowUserManagement = $state(true);
+  let toggles = $state({ ...DEFAULT_TOGGLES });
   let maxUserLimit = 99;
   let maxBitrate = 384;
-    let persistUserPreferences = $state(true);
-    let autoPermission = $state(true);
   let customVoiceAdminRoleId: string | null = null;
+
+  /** The configuration as the server last confirmed it, and which guild it belongs to. */
+  let saved = {
+    hubChannelId: null as string | null,
+    categoryId: null as string | null,
+    defaultNameFormat: DEFAULT_NAME_FORMAT,
+    defaultUserLimit: 0,
+    defaultBitrate: 64,
+    emptyChannelTimeout: 60
+  };
+  let loadedGuildId: string | null = null;
+
+  /** Nothing is saved until both the hub channel and the category are picked. */
+  const missingChannels = $derived(!hubChannelId || !categoryId);
+
+  const autoSave = createAutoSave({
+    onError: () => showNotificationMessage("Couldn't save custom voice settings.", "error")
+  });
 
   // Helper Functions
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
@@ -73,10 +94,6 @@
     notificationType = type;
     showNotification = true;
     setTimeout(() => showNotification = false, 3000);
-  }
-
-  function markAsChanged() {
-    hasChanges = true;
   }
 
   function getChannelName(channelId: bigint): string {
@@ -113,40 +130,60 @@
     voiceChannels = [];
     categories = [];
 
+    const guildId = $currentGuild.id;
     try {
+      // Anything still waiting belongs to the data on screen, so send it before replacing it
+      await autoSave.flush();
       const [configData, activeChannelsData, voiceChannelsData, categoriesData] = await Promise.all([
-        customVoiceApi.getCustomVoiceConfig($currentGuild.id),
-        customVoiceApi.getActiveCustomVoiceChannels($currentGuild.id),
-        clientApi.getVoiceChannels($currentGuild.id),
-        clientApi.getCategories($currentGuild.id)
+        customVoiceApi.getCustomVoiceConfig(guildId),
+        customVoiceApi.getActiveCustomVoiceChannels(guildId),
+        clientApi.getVoiceChannels(guildId),
+        clientApi.getCategories(guildId)
       ]);
+
+      if ($currentGuild?.id !== guildId) return;
 
       config = configData;
       activeChannels = activeChannelsData || [];
       voiceChannels = voiceChannelsData || [];
       categories = categoriesData || [];
 
-      // Populate form data
+      // Populate form data; a guild without a configuration starts from the defaults
       if (config && config.enabled) {
         hubChannelId = config.hubVoiceChannelId?.toString() || null;
         categoryId = config.channelCategoryId?.toString() || null;
-        defaultNameFormat = config.defaultNameFormat || "{username}'s Channel";
+        defaultNameFormat = config.defaultNameFormat || DEFAULT_NAME_FORMAT;
         defaultUserLimit = config.defaultUserLimit || 0;
         defaultBitrate = config.defaultBitrate || 64;
-        deleteWhenEmpty = config.deleteWhenEmpty ?? true;
         emptyChannelTimeout = config.emptyChannelTimeout || 60;
-        allowMultipleChannels = config.allowMultipleChannels ?? false;
-        allowNameCustomization = config.allowNameCustomization ?? true;
-        allowUserLimitCustomization = config.allowUserLimitCustomization ?? true;
-        allowBitrateCustomization = config.allowBitrateCustomization ?? false;
-        allowLocking = config.allowLocking ?? true;
-        allowUserManagement = config.allowUserManagement ?? true;
+        toggles = {
+          deleteWhenEmpty: config.deleteWhenEmpty ?? true,
+          allowMultipleChannels: config.allowMultipleChannels ?? false,
+          allowNameCustomization: config.allowNameCustomization ?? true,
+          allowUserLimitCustomization: config.allowUserLimitCustomization ?? true,
+          allowBitrateCustomization: config.allowBitrateCustomization ?? false,
+          allowLocking: config.allowLocking ?? true,
+          allowUserManagement: config.allowUserManagement ?? true,
+          persistUserPreferences: config.persistUserPreferences ?? true,
+          autoPermission: config.autoPermission ?? true
+        };
         maxUserLimit = config.maxUserLimit || 99;
         maxBitrate = config.maxBitrate || 96;
-        persistUserPreferences = config.persistUserPreferences ?? true;
-        autoPermission = config.autoPermission ?? true;
         customVoiceAdminRoleId = config.customVoiceAdminRoleId?.toString() || null;
+      } else {
+        hubChannelId = null;
+        categoryId = null;
+        defaultNameFormat = DEFAULT_NAME_FORMAT;
+        defaultUserLimit = 0;
+        defaultBitrate = 64;
+        emptyChannelTimeout = 60;
+        toggles = { ...DEFAULT_TOGGLES };
+        maxUserLimit = 99;
+        maxBitrate = 384;
+        customVoiceAdminRoleId = null;
       }
+      saved = { hubChannelId, categoryId, defaultNameFormat, defaultUserLimit, defaultBitrate, emptyChannelTimeout };
+      loadedGuildId = guildId.toString();
 
     } catch (err) {
       logger.error("Failed to load custom voice data:", err);
@@ -159,41 +196,114 @@
     }
   }
 
-  async function saveConfiguration() {
-    if (!$currentGuild || !hasChanges) return;
+  function isIntInRange(value: unknown, min: number, max: number): value is number {
+    return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max;
+  }
 
-    try {
-      const configData: CustomVoiceConfigurationRequest = {
-        hubVoiceChannelId: hubChannelId ? BigInt(hubChannelId) : BigInt(0),
-        channelCategoryId: categoryId ? BigInt(categoryId) : BigInt(0),
-        defaultNameFormat,
-        defaultUserLimit,
-        defaultBitrate,
-        deleteWhenEmpty,
-        emptyChannelTimeout,
-        allowMultipleChannels,
-        allowNameCustomization,
-        allowUserLimitCustomization,
-        allowBitrateCustomization,
-        allowLocking,
-        allowUserManagement,
-        maxUserLimit,
-        maxBitrate,
-        persistUserPreferences,
-        autoPermission,
-        customVoiceAdminRoleId: customVoiceAdminRoleId ? BigInt(customVoiceAdminRoleId) : null
-      };
+  /**
+   * Builds a save of the whole configuration from the form as it is right now. Everything is
+   * captured here, not when the save runs, so a save still waiting after switching servers
+   * cannot carry the new server's state. A field that is currently invalid is sent with its
+   * last saved value. Returns null while the hub channel or category is missing, since saving
+   * is what turns custom voice on.
+   */
+  function buildSave(rollback?: () => void) {
+    if (!$currentGuild || loadedGuildId !== $currentGuild.id.toString()) return null;
+    if (!hubChannelId || !categoryId) return null;
+    const guildId = $currentGuild.id;
+    const next = {
+      hubChannelId,
+      categoryId,
+      defaultNameFormat: defaultNameFormat.trim() ? defaultNameFormat : saved.defaultNameFormat,
+      defaultUserLimit: isIntInRange(defaultUserLimit, 0, 99) ? defaultUserLimit : saved.defaultUserLimit,
+      defaultBitrate,
+      emptyChannelTimeout: isIntInRange(emptyChannelTimeout, 5, 300) ? emptyChannelTimeout : saved.emptyChannelTimeout
+    };
+    const request: CustomVoiceConfigurationRequest = {
+      hubVoiceChannelId: BigInt(next.hubChannelId),
+      channelCategoryId: BigInt(next.categoryId),
+      defaultNameFormat: next.defaultNameFormat,
+      defaultUserLimit: next.defaultUserLimit,
+      defaultBitrate: next.defaultBitrate,
+      emptyChannelTimeout: next.emptyChannelTimeout,
+      ...toggles,
+      maxUserLimit,
+      maxBitrate,
+      customVoiceAdminRoleId: customVoiceAdminRoleId ? BigInt(customVoiceAdminRoleId) : null
+    };
 
-      await customVoiceApi.updateCustomVoiceConfig($currentGuild.id, configData);
-      hasChanges = false;
-      showNotificationMessage("Configuration saved successfully!", "success");
-      
-      // Reload data to get updated config
-      await loadData();
-    } catch (err) {
-      logger.error("Failed to save configuration:", err);
-      showNotificationMessage("Failed to save configuration", "error");
+    return async () => {
+      try {
+        await customVoiceApi.updateCustomVoiceConfig(guildId, request);
+        if ($currentGuild?.id === guildId) {
+          saved = next;
+          // The first save creates the configuration
+          if (!config?.enabled) config = { ...config, enabled: true } as CustomVoiceConfigurationResponse;
+        }
+      } catch (err) {
+        if ($currentGuild?.id === guildId) rollback?.();
+        throw err;
+      }
+    };
+  }
+
+  /** Saves straight away (toggles, selectors), running `rollback` if the save fails. */
+  function saveNow(rollback: () => void) {
+    const save = buildSave(rollback);
+    if (save) autoSave.now("config", save);
+  }
+
+  /** Saves once typing stops. Typed values are not rolled back on failure; the header offers Retry. */
+  function scheduleSave() {
+    const save = buildSave();
+    if (save) autoSave.schedule("config", save);
+  }
+
+  /** Leaving a field that holds an invalid value puts back its last saved value. */
+  function handleBlur(field: "defaultNameFormat" | "defaultUserLimit" | "emptyChannelTimeout") {
+    switch (field) {
+      case "defaultNameFormat":
+        if (!defaultNameFormat.trim()) defaultNameFormat = saved.defaultNameFormat;
+        break;
+      case "defaultUserLimit":
+        if (!isIntInRange(defaultUserLimit, 0, 99)) defaultUserLimit = saved.defaultUserLimit;
+        break;
+      case "emptyChannelTimeout":
+        if (!isIntInRange(emptyChannelTimeout, 5, 300)) emptyChannelTimeout = saved.emptyChannelTimeout;
+        break;
     }
+    void autoSave.flush("config");
+  }
+
+  function handleToggle(key: ToggleKey) {
+    const previous = !toggles[key];
+    saveNow(() => {
+      toggles[key] = previous;
+    });
+  }
+
+  function handleHubChange() {
+    const previous = saved.hubChannelId;
+    saveNow(() => {
+      hubChannelId = previous;
+    });
+  }
+
+  function handleCategoryChange() {
+    const previous = saved.categoryId;
+    saveNow(() => {
+      categoryId = previous;
+    });
+  }
+
+  function handleBitrateChange(detail: { selected: string | string[] | null }) {
+    if (!detail.selected || typeof detail.selected !== "string") return;
+    const value = parseInt(detail.selected);
+    const previous = saved.defaultBitrate;
+    defaultBitrate = value;
+    saveNow(() => {
+      defaultBitrate = previous;
+    });
   }
 
   /** Statistics, maintenance, and user preference state */
@@ -202,7 +312,6 @@
   let maintenanceBusy = $state(false);
   let prefUserId = $state("");
   let prefLoading = $state(false);
-  let prefSaving = $state(false);
   let prefError = $state("");
   let userPrefs: CustomVoiceUserPreference | null = $state(null);
   let prefForm = $state({ defaultName: "", defaultUserLimit: null as number | null, defaultBitrate: null as number | null });
@@ -259,6 +368,7 @@
 
   async function loadUserPreferences() {
     if (!$currentGuild) return;
+    await autoSave.flush("prefs");
     prefError = "";
     userPrefs = null;
     if (!/^\d{15,22}$/.test(prefUserId.trim())) {
@@ -281,22 +391,29 @@
     }
   }
 
-  async function saveUserPreferences() {
+  /** Saves the looked-up member's preferences once typing stops. Empty fields mean "server default". */
+  function scheduleUserPreferencesSave() {
     if (!$currentGuild || !userPrefs) return;
-    prefSaving = true;
-    try {
-      await customVoiceApi.updateCustomVoiceUserPreferences($currentGuild.id, userPrefs.userId, {
-        defaultName: prefForm.defaultName.trim() || null,
-        defaultUserLimit: prefForm.defaultUserLimit ?? null,
-        defaultBitrate: prefForm.defaultBitrate ?? null
-      });
-      showNotificationMessage("Preferences saved", "success");
-    } catch (err) {
-      logger.error("Failed to save user preferences:", err);
-      prefError = "Failed to save preferences.";
-    } finally {
-      prefSaving = false;
+    const { defaultUserLimit: limit, defaultBitrate: bitrate } = prefForm;
+    if (limit != null && !isIntInRange(limit, 0, 99)) {
+      prefError = "User limit must be a whole number from 0 to 99.";
+      autoSave.cancel("prefs");
+      return;
     }
+    if (bitrate != null && !isIntInRange(bitrate, 8, 384)) {
+      prefError = "Bitrate must be a whole number from 8 to 384.";
+      autoSave.cancel("prefs");
+      return;
+    }
+    prefError = "";
+    const guildId = $currentGuild.id;
+    const userId = userPrefs.userId;
+    const payload = {
+      defaultName: prefForm.defaultName.trim() || null,
+      defaultUserLimit: limit ?? null,
+      defaultBitrate: bitrate ?? null
+    };
+    autoSave.schedule("prefs", () => customVoiceApi.updateCustomVoiceUserPreferences(guildId, userId, payload));
   }
 
   $effect(() => {
@@ -390,14 +507,7 @@
     { id: "preferences", label: "User Preferences", icon: "fa-user" }
   ]}
   bind:activeTab
-  actionButtons={hasChanges ? [
-    {
-      label: "Save Configuration",
-      icon: "fa-circle-check",
-      action: saveConfiguration,
-      style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
-    }
-  ] : []}
+  {autoSave}
   title="Custom Voice Channels"
 >
   <!-- Content -->
@@ -416,6 +526,14 @@
         <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Basic Configuration</h3>
+
+          {#if missingChannels}
+            <div class="mb-4 p-3 rounded-lg flex items-center gap-2 text-sm"
+                 style="background: #f59e0b15; border: 1px solid #f59e0b30; color: #f59e0b;">
+              <i class="fa-solid fa-circle-info"></i>
+              <span>Pick a hub channel and a category. Changes on this page save once both are set.</span>
+            </div>
+          {/if}
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -429,7 +547,7 @@
                 options={voiceChannels}
                 bind:selected={hubChannelId}
                 placeholder="Select voice channel..."
-                onchange={markAsChanged} />
+                onchange={handleHubChange} />
               <p class="text-sm mt-1" style="color: {$colorStore.muted}">
                 Channel users join to create their own temporary voice channel
               </p>
@@ -446,7 +564,7 @@
                 options={categories}
                 bind:selected={categoryId}
                 placeholder="Select category..."
-                onchange={markAsChanged} />
+                onchange={handleCategoryChange} />
               <p class="text-sm mt-1" style="color: {$colorStore.muted}">
                 Category where temporary channels will be created
               </p>
@@ -465,7 +583,8 @@
               <input id="input-6869"
                 type="text"
                 bind:value={defaultNameFormat}
-                oninput={markAsChanged}
+                oninput={scheduleSave}
+                onblur={() => handleBlur("defaultNameFormat")}
                 class="w-full p-3 rounded-lg border"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                 placeholder="&#123;username&#125;'s Channel"
@@ -480,7 +599,8 @@
               <input id="input-7323"
                 type="number"
                 bind:value={defaultUserLimit}
-                oninput={markAsChanged}
+                oninput={scheduleSave}
+                onblur={() => handleBlur("defaultUserLimit")}
                 min="0"
                 max="99"
                 class="w-full p-3 rounded-lg border"
@@ -507,12 +627,7 @@
                 selected={defaultBitrate.toString()}
                 placeholder="Select bitrate..."
                 searchable={false}
-                onchange={(detail) => {
-                  if (detail.selected && typeof detail.selected === 'string') {
-                    defaultBitrate = parseInt(detail.selected);
-                    markAsChanged();
-                  }
-                }}
+                onchange={handleBitrateChange}
               />
             </div>
           </div>
@@ -528,21 +643,22 @@
               <label for="input-5476" class="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  bind:checked={deleteWhenEmpty}
-                  onchange={markAsChanged}
+                  bind:checked={toggles.deleteWhenEmpty}
+                  onchange={() => handleToggle("deleteWhenEmpty")}
                   class="w-4 h-4"
                 >
                 <span style="color: {$colorStore.text}">Delete channels when empty</span>
               </label>
 
-              {#if deleteWhenEmpty}
+              {#if toggles.deleteWhenEmpty}
                 <div class="ml-7">
                   <label for="input-5476" class="block mb-2" style="color: {$colorStore.text}">Empty timeout
                     (seconds)</label>
                   <input id="input-5476"
                     type="number"
                     bind:value={emptyChannelTimeout}
-                    oninput={markAsChanged}
+                    oninput={scheduleSave}
+                    onblur={() => handleBlur("emptyChannelTimeout")}
                     min="5"
                     max="300"
                     class="w-32 p-2 rounded-lg border"
@@ -554,8 +670,8 @@
               <label class="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  bind:checked={allowMultipleChannels}
-                  onchange={markAsChanged}
+                  bind:checked={toggles.allowMultipleChannels}
+                  onchange={() => handleToggle("allowMultipleChannels")}
                   class="w-4 h-4"
                 >
                 <span style="color: {$colorStore.text}">Allow multiple channels per user</span>
@@ -564,8 +680,8 @@
               <label class="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  bind:checked={persistUserPreferences}
-                  onchange={markAsChanged}
+                  bind:checked={toggles.persistUserPreferences}
+                  onchange={() => handleToggle("persistUserPreferences")}
                   class="w-4 h-4"
                 >
                 <span style="color: {$colorStore.text}">Remember user preferences</span>
@@ -574,8 +690,8 @@
               <label class="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  bind:checked={autoPermission}
-                  onchange={markAsChanged}
+                  bind:checked={toggles.autoPermission}
+                  onchange={() => handleToggle("autoPermission")}
                   class="w-4 h-4"
                 >
                 <span style="color: {$colorStore.text}">Auto-manage channel permissions</span>
@@ -586,8 +702,8 @@
               <label class="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  bind:checked={allowNameCustomization}
-                  onchange={markAsChanged}
+                  bind:checked={toggles.allowNameCustomization}
+                  onchange={() => handleToggle("allowNameCustomization")}
                   class="w-4 h-4"
                 >
                 <span style="color: {$colorStore.text}">Allow name customization</span>
@@ -596,8 +712,8 @@
               <label class="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  bind:checked={allowUserLimitCustomization}
-                  onchange={markAsChanged}
+                  bind:checked={toggles.allowUserLimitCustomization}
+                  onchange={() => handleToggle("allowUserLimitCustomization")}
                   class="w-4 h-4"
                 >
                 <span style="color: {$colorStore.text}">Allow user limit customization</span>
@@ -606,8 +722,8 @@
               <label class="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  bind:checked={allowBitrateCustomization}
-                  onchange={markAsChanged}
+                  bind:checked={toggles.allowBitrateCustomization}
+                  onchange={() => handleToggle("allowBitrateCustomization")}
                   class="w-4 h-4"
                 >
                 <span style="color: {$colorStore.text}">Allow bitrate customization</span>
@@ -616,8 +732,8 @@
               <label class="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  bind:checked={allowLocking}
-                  onchange={markAsChanged}
+                  bind:checked={toggles.allowLocking}
+                  onchange={() => handleToggle("allowLocking")}
                   class="w-4 h-4"
                 >
                 <span style="color: {$colorStore.text}">Allow channel locking</span>
@@ -626,8 +742,8 @@
               <label class="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  bind:checked={allowUserManagement}
-                  onchange={markAsChanged}
+                  bind:checked={toggles.allowUserManagement}
+                  onchange={() => handleToggle("allowUserManagement")}
                   class="w-4 h-4"
                 >
                 <span style="color: {$colorStore.text}">Allow user management</span>
@@ -780,30 +896,24 @@
             <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4" transition:slide>
               <div>
                 <label for="pref-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Default channel name</label>
-                <input id="pref-name" type="text" bind:value={prefForm.defaultName} placeholder="Use server default"
+                <input id="pref-name" type="text" bind:value={prefForm.defaultName}
+                       oninput={scheduleUserPreferencesSave} onblur={() => autoSave.flush("prefs")} placeholder="Use server default"
                        class="w-full p-3 rounded-lg border min-h-[44px]"
                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
               </div>
               <div>
                 <label for="pref-limit" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Default user limit</label>
-                <input id="pref-limit" type="number" min="0" max="99" bind:value={prefForm.defaultUserLimit} placeholder="Server default"
+                <input id="pref-limit" type="number" min="0" max="99" bind:value={prefForm.defaultUserLimit}
+                       oninput={scheduleUserPreferencesSave} onblur={() => autoSave.flush("prefs")} placeholder="Server default"
                        class="w-full p-3 rounded-lg border min-h-[44px]"
                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
               </div>
               <div>
                 <label for="pref-bitrate" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Default bitrate (kbps)</label>
-                <input id="pref-bitrate" type="number" min="8" max="384" bind:value={prefForm.defaultBitrate} placeholder="Server default"
+                <input id="pref-bitrate" type="number" min="8" max="384" bind:value={prefForm.defaultBitrate}
+                       oninput={scheduleUserPreferencesSave} onblur={() => autoSave.flush("prefs")} placeholder="Server default"
                        class="w-full p-3 rounded-lg border min-h-[44px]"
                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-              </div>
-              <div class="md:col-span-3 flex justify-end">
-                <button disabled={prefSaving}
-                        class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px] disabled:opacity-50"
-                        style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                        onclick={saveUserPreferences}>
-                  {#if prefSaving}<i class="fa-solid fa-spinner fa-spin"></i>{:else}<i class="fa-solid fa-floppy-disk"></i>{/if}
-                  Save preferences
-                </button>
               </div>
             </div>
           {/if}

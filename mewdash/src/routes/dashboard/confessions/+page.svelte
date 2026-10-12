@@ -11,6 +11,7 @@
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import { requestConfirmation } from "$lib/stores/confirmationStore";
+    import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
     // Component state
     let loading = $state(false);
@@ -97,31 +98,42 @@
         }
     }
 
-    // Save configuration
-    async function saveConfig() {
+    const autoSave = createAutoSave({
+        onError: () => showMessage("Couldn't save confession settings. Your last change was undone.", "error")
+    });
+
+    // Each channel saves as soon as it is picked. confessionChannel / confessionLogChannel hold
+    // the last values the server confirmed, so a failed save can be rolled back.
+    function saveConfessionChannel(value: bigint | null) {
         if (!$currentGuild?.id) return;
-
-        saving = true;
-        try {
-            const promises = [];
-
-            if (configForm.channelId !== confessionChannel) {
-                promises.push(confessionsApi.setConfessionChannel($currentGuild.id, configForm.channelId || BigInt(0)));
+        const guildId = $currentGuild.id;
+        const previous = confessionChannel;
+        configForm.channelId = value;
+        autoSave.now("channel", async () => {
+            try {
+                await confessionsApi.setConfessionChannel(guildId, value || BigInt(0));
+                if ($currentGuild?.id === guildId) confessionChannel = value;
+            } catch (err) {
+                if ($currentGuild?.id === guildId) configForm.channelId = previous;
+                throw err;
             }
+        });
+    }
 
-            if (configForm.logChannelId !== confessionLogChannel) {
-                promises.push(confessionsApi.setConfessionLogChannel($currentGuild.id, configForm.logChannelId || BigInt(0)));
+    function saveConfessionLogChannel(value: bigint | null) {
+        if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const previous = confessionLogChannel;
+        configForm.logChannelId = value;
+        autoSave.now("logChannel", async () => {
+            try {
+                await confessionsApi.setConfessionLogChannel(guildId, value || BigInt(0));
+                if ($currentGuild?.id === guildId) confessionLogChannel = value;
+            } catch (err) {
+                if ($currentGuild?.id === guildId) configForm.logChannelId = previous;
+                throw err;
             }
-
-            await Promise.all(promises);
-            showMessage("Confession configuration saved successfully!", "success");
-            await loadAllConfessionData();
-        } catch (err) {
-            logger.error("Failed to save confession config:", err);
-            showMessage("Failed to save configuration", "error");
-        } finally {
-            saving = false;
-        }
+        });
     }
 
     // Toggle role blacklist
@@ -208,7 +220,10 @@
         {
             label: "Refresh",
             icon: "fa-arrows-rotate",
-            action: loadAllConfessionData,
+            action: async () => {
+                await autoSave.flush();
+                await loadAllConfessionData();
+            },
             loading: loading
         }
     ]);
@@ -239,6 +254,7 @@
 
 <DashboardPageLayout
   {actionButtons}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-comment"
@@ -275,9 +291,7 @@
                                         options={guildChannels}
                                         selected={configForm.channelId?.toString() || null}
                                         placeholder="No channel selected"
-                                        onchange={(detail) => {
-                                            configForm.channelId = detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null;
-                                        }}
+                                        onchange={(detail) => saveConfessionChannel(detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null)}
                                 />
                             </div>
                         </div>
@@ -295,24 +309,12 @@
                                         options={guildChannels}
                                         selected={configForm.logChannelId?.toString() || null}
                                         placeholder="No log channel"
-                                        onchange={(detail) => {
-                                            configForm.logChannelId = detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null;
-                                        }}
+                                        onchange={(detail) => saveConfessionLogChannel(detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null)}
                                 />
                             </div>
                         </div>
                     </div>
 
-                  <button aria-label="Save confession configuration"
-                          aria-busy={saving}
-                          class="mt-6 flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-                            onclick={saveConfig}
-                            disabled={saving}
-                    >
-                    <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}" style="font-size: 18px;"></i>
-                        {saving ? "Saving..." : "Save Configuration"}
-                    </button>
                 </div>
 
                 <!-- Role Blacklist -->
@@ -335,6 +337,7 @@
                                     style="background: {isRoleBlacklisted(role.id) ? '#ef444420' : $colorStore.primary + '10'};
                                    border: 1px solid {isRoleBlacklisted(role.id) ? '#ef4444' : $colorStore.primary}30;"
                                     onclick={() => toggleRoleBlacklist(role.id)}
+                                    disabled={saving}
                             >
                                 {#if isRoleBlacklisted(role.id)}
                                     <i class="fa-solid fa-lock" style="color: #ef4444; font-size: 16px;"></i>

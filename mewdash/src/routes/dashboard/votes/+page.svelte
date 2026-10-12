@@ -11,6 +11,11 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
+
+  const autoSave = createAutoSave({
+    onError: () => showMessage("Couldn't save vote settings.", "error")
+  });
 
   // Component state
     let loading = $state(false);
@@ -49,6 +54,8 @@
 
         loading = true;
         try {
+            // Send anything still waiting before the form is replaced with fresh data
+            await autoSave.flush();
             const [
                 rolesData,
                 messageData,
@@ -114,37 +121,66 @@
         }
     }
 
-    // Save configuration
-    async function saveConfig() {
+    // Auto-save. voteMessage, votePassword and voteChannel hold the values the server last
+    // confirmed; the guild id and value are captured when each save is triggered.
+    function saveChannel(detail: { selected: string | string[] | null }) {
         if (!$currentGuild?.id) return;
-
-        saving = true;
-        try {
-            const promises = [];
-
-            if (configForm.message !== voteMessage) {
-              promises.push(votesApi.setVoteMessage($currentGuild.id, configForm.message));
+        const channelId = detail.selected && typeof detail.selected === "string" ? detail.selected : null;
+        configForm.channelId = channelId;
+        const previous = voteChannel ? voteChannel.toString() : null;
+        const guildId = $currentGuild.id;
+        const value = channelId ? BigInt(channelId) : null;
+        autoSave.now("channel", async () => {
+            try {
+                await votesApi.setVoteChannel(guildId, value || BigInt(0));
+                if ($currentGuild?.id === guildId) voteChannel = value;
+            } catch (err) {
+                if ($currentGuild?.id === guildId) configForm.channelId = previous;
+                throw err;
             }
+        });
+    }
 
-            if (configForm.password !== votePassword) {
-              promises.push(votesApi.setVotePassword($currentGuild.id, configForm.password));
-            }
+    /** Empty uses the default announcement, so an empty message is a valid value to save. */
+    function scheduleMessageSave() {
+        if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const value = configForm.message;
+        autoSave.schedule("message", async () => {
+            await votesApi.setVoteMessage(guildId, value);
+            if ($currentGuild?.id === guildId) voteMessage = value;
+        });
+    }
 
-          const newChannelId = configForm.channelId ? BigInt(configForm.channelId) : null;
-          const voteChannelStr = voteChannel ? voteChannel.toString() : null;
-          if (configForm.channelId !== voteChannelStr) {
-            promises.push(votesApi.setVoteChannel($currentGuild.id, newChannelId || BigInt(0)));
-            }
+    function savePassword(value: string, immediate: boolean) {
+        if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const save = async () => {
+            await votesApi.setVotePassword(guildId, value);
+            if ($currentGuild?.id === guildId) votePassword = value;
+        };
+        if (immediate) autoSave.now("password", save);
+        else autoSave.schedule("password", save);
+    }
 
-            await Promise.all(promises);
-            showMessage("Vote configuration saved successfully!", "success");
-            await loadAllVoteData();
-        } catch (err) {
-            logger.error("Failed to save vote config:", err);
-            showMessage("Failed to save configuration", "error");
-        } finally {
-            saving = false;
+    /**
+     * An empty password is never saved while typing, since clearing the field is often the
+     * first step of replacing it. Leaving the field empty is what clears the password.
+     */
+    function handlePasswordInput() {
+        if (!configForm.password) {
+            autoSave.cancel("password");
+            return;
         }
+        savePassword(configForm.password, false);
+    }
+
+    function handlePasswordBlur() {
+        if (!configForm.password && votePassword) {
+            savePassword("", true);
+            return;
+        }
+        void autoSave.flush("password");
     }
 
     // Add vote role
@@ -264,6 +300,7 @@
 
 <DashboardPageLayout
   {actionButtons}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-circle-check"
@@ -301,10 +338,7 @@
                                         options={guildChannels}
                                         selected={configForm.channelId}
                                         placeholder="No channel selected"
-                                        onchange={(detail) => {
-                                            configForm.channelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null;
-                                            configForm = { ...configForm };
-                                        }}
+                                        onchange={saveChannel}
                                 />
                             </div>
                         </div>
@@ -320,6 +354,8 @@
                                 <input
                                         type={showPasswordField ? "text" : "password"}
                                         bind:value={configForm.password}
+                                        oninput={handlePasswordInput}
+                                        onblur={handlePasswordBlur}
                                         placeholder="Enter API password"
                                         class="w-full p-3 pr-12 rounded-xl border transition-all min-h-[44px] text-base"
                                         style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -333,6 +369,9 @@
                                     {showPasswordField ? "Hide" : "Show"}
                                 </button>
                             </div>
+                            <p class="text-xs mt-2" style="color: {$colorStore.muted}">
+                                Leave the field empty to remove the password.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -353,6 +392,8 @@
                         </label>
                         <textarea
                                 bind:value={configForm.message}
+                                oninput={scheduleMessageSave}
+                                onblur={() => autoSave.flush("message")}
                                 placeholder="🗳️ Thanks %user.mention% for voting! You've received your rewards!"
                                 rows="3"
                                 class="w-full p-3 rounded-xl border transition-all resize-none min-h-[100px] text-base"
@@ -362,20 +403,6 @@
                             Available placeholders: %user.mention%, %user.name%, %user.id%, %server.name%. Leave empty for default message.
                         </p>
                     </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-4">
-                  <button aria-label="Save vote configuration"
-                          aria-busy={saving}
-                          class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-                            onclick={saveConfig}
-                            disabled={saving}
-                    >
-                    <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}" style="font-size: 18px;"></i>
-                        {saving ? "Saving..." : "Save Configuration"}
-                    </button>
                 </div>
             </div>
         </div>

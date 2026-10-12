@@ -21,9 +21,11 @@
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import { currentInstance } from "$lib/stores/instanceStore";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
-  import { useUnsavedChangesGuard } from "$lib/utils/unsavedChanges";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
-  useUnsavedChangesGuard(() => hasChanges);
+  const autoSave = createAutoSave({
+    onError: () => showNotificationMessage("Couldn't save logging settings. Your last change was undone.", "error")
+  });
 
   interface Props {
         data: PageData;
@@ -38,7 +40,6 @@
     let showNotification = $state(false);
     let notificationMessage = $state("");
     let notificationType: "success" | "error" = $state("success");
-    let hasChanges = $state(false);
 
   // Data
   let config: LoggingConfigurationResponse | null = null;
@@ -107,10 +108,6 @@
     setTimeout(() => showNotification = false, 3000);
   }
 
-  function markAsChanged() {
-    hasChanges = true;
-  }
-
   function getIconComponent(iconName: string): string {
     return iconMap[iconName] || "fa-file-lines";
   }
@@ -139,6 +136,7 @@
       }
 
       ignoredChannels = (config.ignoredChannels || []).map(id => id.toString());
+      savedLogChannels = { ...logChannels };
 
     } catch (err) {
       logger.error("Failed to load logging data:", err);
@@ -149,78 +147,103 @@
     }
   }
 
-  async function saveConfiguration() {
-    if (!$currentGuild || !hasChanges) return;
-
-    try {
-      // Prepare updates array for bulk update
-      const logTypeMappings = [];
-      for (const [logType, channelId] of Object.entries(logChannels)) {
-        logTypeMappings.push({
-          logType: logType,
-          channelId: channelId ? BigInt(channelId) : null
-        });
+  /**
+   * Saves every log channel assignment. The payload is taken now, not when the save runs,
+   * so a save still queued after switching servers cannot carry the new server's state.
+   */
+  function saveLogChannels(previous: Record<LogType, string | null>) {
+    if (!$currentGuild) return;
+    const guildId = $currentGuild.id;
+    const logTypeMappings = Object.entries(logChannels).map(([logType, channelId]) => ({
+      logType,
+      channelId: channelId ? BigInt(channelId) : null
+    }));
+    autoSave.now("channels", async () => {
+      try {
+        await loggingApi.bulkUpdateLogChannels(guildId, { logTypeMappings });
+      } catch (err) {
+        if ($currentGuild?.id === guildId) logChannels = previous;
+        throw err;
       }
-
-      // Save log channels using bulk update endpoint
-      await loggingApi.bulkUpdateLogChannels($currentGuild.id, { logTypeMappings });
-      
-      // Save ignored channels
-      await loggingApi.setIgnoredChannels($currentGuild.id, {
-        channelIds: ignoredChannels.map(id => BigInt(id))
-      });
-
-      hasChanges = false;
-      showNotificationMessage("Logging configuration saved successfully!", "success");
-      
-      // Reload data to get updated config
-      await loadData();
-    } catch (err) {
-      logger.error("Failed to save configuration:", err);
-      showNotificationMessage("Failed to save configuration", "error");
-    }
+    });
   }
 
-  async function setLogChannel(logType: LogType, channelId: string | null) {
+  function saveIgnoredChannels(previous: string[]) {
+    if (!$currentGuild) return;
+    const guildId = $currentGuild.id;
+    const channelIds = ignoredChannels.map(id => BigInt(id));
+    autoSave.now("ignored", async () => {
+      try {
+        await loggingApi.setIgnoredChannels(guildId, { channelIds });
+      } catch (err) {
+        if ($currentGuild?.id === guildId) ignoredChannels = previous;
+        throw err;
+      }
+    });
+  }
+
+  /** Remembers each selector's value before it changes, so a failed save can put it back. */
+  let savedLogChannels: Record<LogType, string | null> = {} as any;
+
+  function setLogChannel(logType: LogType, channelId: string | null) {
+    const previous = { ...savedLogChannels };
     logChannels = { ...logChannels, [logType]: channelId };
-    markAsChanged();
+    savedLogChannels = { ...logChannels };
+    saveLogChannels(previous);
   }
 
-  function clearCategory(category: string) {
+  async function clearCategory(category: string) {
+    const name = categories.find(c => c.id === category)?.name ?? category;
+    if (!(await requestConfirmation({
+      title: `Clear ${name} logging?`,
+      message: `Every ${name.toLowerCase()} log type will be unassigned from its channel.`,
+      confirmText: "Clear"
+    }))) return;
+
     // Get all log types in this category
     const categoryLogTypes = LOG_TYPE_MAPPINGS
       .filter(mapping => mapping.category === category)
       .map(mapping => mapping.logType);
 
     // Clear all channels for this category
+    const previous = { ...logChannels };
     const updatedChannels = { ...logChannels };
     for (const logType of categoryLogTypes) {
       updatedChannels[logType] = null;
     }
     logChannels = updatedChannels;
-    markAsChanged();
+    savedLogChannels = { ...logChannels };
+    saveLogChannels(previous);
   }
 
-  function clearAllChannels() {
-    // Clear all log channels
+  async function clearAllChannels() {
+    if (!(await requestConfirmation({
+      title: "Clear every log channel?",
+      message: "Every log type will be unassigned from its channel. Ignored channels are kept.",
+      confirmText: "Clear all"
+    }))) return;
+    const previous = { ...logChannels };
     const updatedChannels = { ...logChannels };
     for (const mapping of LOG_TYPE_MAPPINGS) {
       updatedChannels[mapping.logType] = null;
     }
     logChannels = updatedChannels;
-    markAsChanged();
+    savedLogChannels = { ...logChannels };
+    saveLogChannels(previous);
   }
 
   function addToIgnored(channelId: string) {
     if (!ignoredChannels.includes(channelId)) {
+      const previous = [...ignoredChannels];
       ignoredChannels = [...ignoredChannels, channelId];
-      markAsChanged();
+      saveIgnoredChannels(previous);
     }
   }
 
   function removeFromIgnored(channelId: string) {
+    const previous = [...ignoredChannels];
     ignoredChannels = ignoredChannels.filter(id => id !== channelId);
-    markAsChanged();
+    saveIgnoredChannels(previous);
   }
 
   // Event handlers
@@ -236,7 +259,6 @@
         {id: "channels", label: "Log Channels", icon: "fa-hashtag"},
         {id: "ignored", label: `Ignored Channels (${ignoredChannels.length})`, icon: "fa-xmark"}
     ]);
-    // Action buttons for save functionality
     /** Turns off every log type at once after confirmation */
     async function disableAllLogging() {
         if (!$currentGuild?.id) return;
@@ -246,8 +268,8 @@
             confirmText: "Disable all"
         }))) return;
         try {
+            await autoSave.flush();
             await loggingApi.disableAllLogging($currentGuild.id);
-            hasChanges = false;
             await loadData();
         } catch (err) {
             logger.error("Failed to disable all logging:", err);
@@ -258,12 +280,6 @@
     let hasAnyLogChannel = $derived(Object.values(logChannels).some(Boolean));
 
     let actionButtons = $derived([
-        ...(hasChanges ? [{
-            label: "Save Configuration",
-            icon: "fa-floppy-disk",
-            action: saveConfiguration,
-            style: `background: ${$colorStore.primary}20; color: ${$colorStore.primary}; border: 1px solid ${$colorStore.primary}30; box-shadow: 0 4px 12px ${$colorStore.primary}15;`
-        }] : []),
         ...(hasAnyLogChannel ? [{
             label: "Disable All",
             icon: "fa-power-off",
@@ -332,6 +348,7 @@
 
 <DashboardPageLayout
   {actionButtons}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-file"

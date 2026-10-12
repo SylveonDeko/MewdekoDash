@@ -4,8 +4,24 @@
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { searchWiki, wikiIconClass } from "$lib/wiki";
+  import ComponentEmbed from "$lib/components/layout/ComponentEmbed.svelte";
+  import { buttons, container, header, linkButton, SITE_ORIGIN, separator, text } from "$lib/componentEmbed";
 
   let { data } = $props();
+
+  const previewEmbed = $derived(
+    container(
+      header(
+        "## Mewdeko Wiki\nPlain language write-ups of every Mewdeko feature: what it does, how to set it up, and how servers use it.",
+        `${SITE_ORIGIN}/img/Mewdeko.png`
+      ),
+      text(
+        `${data.articles.length} articles · Start here: ${data.featured.map((a) => `[${a.title}](${SITE_ORIGIN}/wiki/${a.slug})`).join(", ")}`
+      ),
+      separator(),
+      buttons(linkButton("Open the wiki", `${SITE_ORIGIN}/wiki`))
+    )
+  );
 
   let query = $state("");
   let searching = $derived(query.trim().length > 0);
@@ -23,6 +39,8 @@
     return () => window.removeEventListener("keydown", handleGlobalKeydown);
   });
 </script>
+
+<ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
   <title>Mewdeko Wiki - Every feature explained</title>

@@ -23,6 +23,7 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import SettingToggle from "$lib/components/forms/SettingToggle.svelte";
@@ -61,6 +62,10 @@
     notificationType = type;
     setTimeout(() => (notificationMessage = ""), 4000);
   }
+
+  const autoSave = createAutoSave({
+    onError: () => notify("Couldn't save invite settings. Use Retry to try again.", "error"),
+  });
 
   function fail(err: unknown, fallback: string) {
     logger.error(fallback, err);
@@ -295,6 +300,8 @@
   let codesLoading = $state(false);
   let codesError = $state<string | null>(null);
   let labelDrafts = $state<Record<string, { label: string; roleId: string | null }>>({});
+  /** What the bot last confirmed for each code's label, so unchanged drafts are not resent. */
+  let savedLabels: Record<string, { label: string; roleId: string | null }> = {};
 
   async function loadCodes() {
     if (!$currentGuild?.id) return;
@@ -312,6 +319,7 @@
         drafts[code.code] = { label: code.label ?? "", roleId: code.labelRoleId ? code.labelRoleId.toString() : null };
       }
       labelDrafts = drafts;
+      savedLabels = Object.fromEntries(Object.entries(drafts).map(([code, d]) => [code, { ...d }]));
     } catch (err) {
       codesError = err instanceof Error ? err.message : "Failed to load invite codes";
       logger.error("Failed to load invite codes", err);
@@ -320,24 +328,67 @@
     }
   }
 
-  async function saveLabel(code: string) {
-    if (!$currentGuild?.id) return;
+  const labelKey = (code: string) => `label:${code}`;
+
+  /**
+   * Builds the save for a code's label and role from the drafts as they are right now.
+   * An empty label removes it, along with its role. Returns null when nothing changed.
+   */
+  function buildLabelSave(code: string, rollbackRole: boolean) {
+    if (!$currentGuild?.id) return null;
     const draft = labelDrafts[code];
-    if (!draft) return;
-    try {
-      if (!draft.label.trim()) {
-        await inviteTrackingApi.removeLabel($currentGuild.id, code);
-      } else {
-        await inviteTrackingApi.setLabel($currentGuild.id, {
-          code,
-          label: draft.label.trim(),
-          roleId: draft.roleId ? BigInt(draft.roleId) : null,
-        });
+    if (!draft) return null;
+    const guildId = $currentGuild.id;
+    const label = draft.label.trim();
+    const roleId = label ? draft.roleId : null;
+    const saved = savedLabels[code] ?? { label: "", roleId: null };
+    if (label === saved.label && roleId === (saved.label ? saved.roleId : null)) return null;
+    const previousRole = saved.roleId;
+
+    return async () => {
+      try {
+        if (!label) {
+          await inviteTrackingApi.removeLabel(guildId, code);
+        } else {
+          await inviteTrackingApi.setLabel(guildId, { code, label, roleId: roleId ? BigInt(roleId) : null });
+        }
+        if ($currentGuild?.id === guildId) savedLabels[code] = { label, roleId };
+      } catch (err) {
+        if (rollbackRole && $currentGuild?.id === guildId && labelDrafts[code]) labelDrafts[code].roleId = previousRole;
+        throw err;
       }
-      await loadCodes();
-    } catch (err) {
-      fail(err, "Failed to save the label");
+    };
+  }
+
+  /**
+   * Debounces the label while it is typed. Clearing the field is only saved when it is left,
+   * so wiping it to retype does not drop the label and its role in between.
+   */
+  function scheduleLabel(code: string) {
+    const key = labelKey(code);
+    if (!labelDrafts[code]?.label.trim()) {
+      autoSave.cancel(key);
+      return;
     }
+    const save = buildLabelSave(code, false);
+    if (save) autoSave.schedule(key, save);
+    else autoSave.cancel(key);
+  }
+
+  function flushLabel(code: string) {
+    const key = labelKey(code);
+    if (!labelDrafts[code]?.label.trim()) {
+      const save = buildLabelSave(code, false);
+      if (save) void autoSave.now(key, save);
+      return;
+    }
+    void autoSave.flush(key);
+  }
+
+  /** Saves the role on join as soon as it is picked, putting the old one back if the bot refuses. */
+  function saveLabelRole(code: string) {
+    const save = buildLabelSave(code, true);
+    if (save) void autoSave.now(labelKey(code), save);
   }
 
   async function deleteCode(code: string) {
@@ -390,6 +441,7 @@
       ]);
       settings = s;
       minAgeDays = timeSpanToDays(s.minAccountAge);
+      savedMinAgeDays = minAgeDays;
       blacklistedUsers = users.map((x) => x.toString());
       blacklistedRoles = roleIds.map((x) => x.toString());
       hiddenUsers = hidden.map((x) => x.toString());
@@ -410,10 +462,51 @@
     }
   }
 
-  async function saveMinAge() {
+  /**
+   * Saves a toggle or channel picker through the page's auto-save, so it shows in the header
+   * with the other settings. A failure reloads settings, which puts the control back.
+   */
+  function autoSaveSetting(key: string, work: () => Promise<unknown>) {
+    void autoSave.now(key, async () => {
+      try {
+        await work();
+      } finally {
+        await loadSettings();
+      }
+    });
+  }
+
+  /** The minimum account age the bot last confirmed, in days. */
+  let savedMinAgeDays = 0;
+
+  function clampMinAge(value: number): number {
+    return Math.max(0, Math.min(300, Math.round(value)));
+  }
+
+  /** Debounces the minimum account age; an empty field is never sent, and values are clamped to 0-300. */
+  function scheduleMinAge() {
     if (!$currentGuild?.id) return;
-    const days = Math.max(0, Math.min(300, Math.round(minAgeDays)));
-    await saveSetting(() => inviteTrackingApi.setMinAccountAge($currentGuild!.id, `${days}.00:00:00`), "Failed to save the minimum account age");
+    if (typeof minAgeDays !== "number" || !Number.isFinite(minAgeDays)) {
+      autoSave.cancel("minAge");
+      return;
+    }
+    const guildId = $currentGuild.id;
+    const days = clampMinAge(minAgeDays);
+    if (days === savedMinAgeDays) {
+      autoSave.cancel("minAge");
+      return;
+    }
+    autoSave.schedule("minAge", async () => {
+      await inviteTrackingApi.setMinAccountAge(guildId, `${days}.00:00:00`);
+      if ($currentGuild?.id === guildId) savedMinAgeDays = days;
+    });
+  }
+
+  /** Leaving the field saves it, and shows the value that actually applies (clamped, or the saved one if empty). */
+  function flushMinAge() {
+    if (typeof minAgeDays !== "number" || !Number.isFinite(minAgeDays)) minAgeDays = savedMinAgeDays;
+    else minAgeDays = clampMinAge(minAgeDays);
+    void autoSave.flush("minAge");
   }
 
   async function addExclusion(kind: 0 | 1 | 2, target: string | null) {
@@ -489,6 +582,7 @@
 </script>
 
 <DashboardPageLayout
+  {autoSave}
   title="Invite Tracking"
   subtitle="Who brings people in, how they arrive, and whether they stay"
   icon="fa-user-plus"
@@ -772,14 +866,13 @@
                 </div>
               </div>
               {#if labelDrafts[code.code]}
-                <div class="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 items-end">
                   <SettingField label="Label" hint="Shown in stats, exports and greet placeholders" id={`label-${code.code}`}>
-                    <input id={`label-${code.code}`} type="text" maxlength="64" placeholder="e.g. Twitter campaign" bind:value={labelDrafts[code.code].label} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
+                    <input id={`label-${code.code}`} type="text" maxlength="64" placeholder="e.g. Twitter campaign" bind:value={labelDrafts[code.code].label} oninput={() => scheduleLabel(code.code)} onblur={() => flushLabel(code.code)} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
                   </SettingField>
                   <SettingField label="Role on join" hint="Granted to everyone who joins through this code" id={`role-${code.code}`}>
-                    <DiscordSelector id={`role-${code.code}`} type="role" options={roles} bind:selected={labelDrafts[code.code].roleId} placeholder="No role" />
+                    <DiscordSelector id={`role-${code.code}`} type="role" options={roles} bind:selected={labelDrafts[code.code].roleId} disabled={!labelDrafts[code.code].label.trim()} placeholder={labelDrafts[code.code].label.trim() ? "No role" : "Add a label first"} onchange={() => saveLabelRole(code.code)} />
                   </SettingField>
-                  <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={() => saveLabel(code.code)}>Save</button>
                 </div>
               {/if}
             </div>
@@ -808,24 +901,21 @@
       <AsyncState loading={settingsLoading} error={settingsError} empty={!settings}>
         {#if settings}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
-            <SettingToggle id="tracking" label="Track invites" hint="Attribute every join to an invite, the vanity URL or an app" checked={settings.isEnabled} onchange={(v) => saveSetting(() => inviteTrackingApi.toggleInviteTracking($currentGuild!.id, v), "Failed to update tracking")} />
-            <SettingToggle id="remove-on-leave" label="Remove credit when members leave" hint="The inviter's left count goes up and their total goes down" checked={settings.removeInviteOnLeave} onchange={(v) => saveSetting(() => inviteTrackingApi.setRemoveOnLeave($currentGuild!.id, v), "Failed to update the setting")} />
-            <SettingToggle id="count-rejoins" label="Count rejoins" hint="Off flags members who have joined before as fake invites" checked={settings.countRejoins} onchange={(v) => saveSetting(() => inviteTrackingApi.setCountRejoins($currentGuild!.id, v), "Failed to update the setting")} />
-            <SettingToggle id="fake-no-avatar" label="Flag members without an avatar" hint="Joins from accounts with no avatar count as fake" checked={settings.fakeOnNoAvatar} onchange={(v) => saveSetting(() => inviteTrackingApi.setFakeOnNoAvatar($currentGuild!.id, v), "Failed to update the setting")} />
+            <SettingToggle id="tracking" label="Track invites" hint="Attribute every join to an invite, the vanity URL or an app" checked={settings.isEnabled} onchange={(v) => autoSaveSetting("tracking", () => inviteTrackingApi.toggleInviteTracking($currentGuild!.id, v))} />
+            <SettingToggle id="remove-on-leave" label="Remove credit when members leave" hint="The inviter's left count goes up and their total goes down" checked={settings.removeInviteOnLeave} onchange={(v) => autoSaveSetting("remove-on-leave", () => inviteTrackingApi.setRemoveOnLeave($currentGuild!.id, v))} />
+            <SettingToggle id="count-rejoins" label="Count rejoins" hint="Off flags members who have joined before as fake invites" checked={settings.countRejoins} onchange={(v) => autoSaveSetting("count-rejoins", () => inviteTrackingApi.setCountRejoins($currentGuild!.id, v))} />
+            <SettingToggle id="fake-no-avatar" label="Flag members without an avatar" hint="Joins from accounts with no avatar count as fake" checked={settings.fakeOnNoAvatar} onchange={(v) => autoSaveSetting("fake-no-avatar", () => inviteTrackingApi.setFakeOnNoAvatar($currentGuild!.id, v))} />
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <SettingField label="Minimum account age (days)" hint="Accounts younger than this are flagged as fake. 0 disables the check." id="min-age">
-              <div class="flex gap-2">
-                <input id="min-age" type="number" min="0" max="300" bind:value={minAgeDays} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
-                <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={saveMinAge}>Save</button>
-              </div>
+              <input id="min-age" type="number" min="0" max="300" bind:value={minAgeDays} oninput={scheduleMinAge} onblur={flushMinAge} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
             </SettingField>
             <SettingField label="Personal link channel" hint="Where links from the invitelink command point. Empty uses the system channel." id="link-channel">
-              <DiscordSelector id="link-channel" type="channel" options={channels} selected={settings.linkChannelId ? settings.linkChannelId.toString() : null} placeholder="System channel" onchange={(e) => saveSetting(() => inviteTrackingApi.setLinkChannel($currentGuild!.id, typeof e.selected === "string" && e.selected ? BigInt(e.selected) : null), "Failed to update the channel")} />
+              <DiscordSelector id="link-channel" type="channel" options={channels} selected={settings.linkChannelId ? settings.linkChannelId.toString() : null} placeholder="System channel" onchange={(e) => autoSaveSetting("link-channel", () => inviteTrackingApi.setLinkChannel($currentGuild!.id, typeof e.selected === "string" && e.selected ? BigInt(e.selected) : null))} />
             </SettingField>
             <SettingField label="Join and leave log channel" hint="Posts who invited whom and how, on every join and leave" id="log-channel">
-              <DiscordSelector id="log-channel" type="channel" options={channels} selected={settings.logChannelId ? settings.logChannelId.toString() : null} placeholder="Disabled" onchange={(e) => saveSetting(() => inviteTrackingApi.setLogChannel($currentGuild!.id, typeof e.selected === "string" && e.selected ? BigInt(e.selected) : null), "Failed to update the channel")} />
+              <DiscordSelector id="log-channel" type="channel" options={channels} selected={settings.logChannelId ? settings.logChannelId.toString() : null} placeholder="Disabled" onchange={(e) => autoSaveSetting("log-channel", () => inviteTrackingApi.setLogChannel($currentGuild!.id, typeof e.selected === "string" && e.selected ? BigInt(e.selected) : null))} />
             </SettingField>
           </div>
 

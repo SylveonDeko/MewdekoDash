@@ -177,3 +177,48 @@ export async function defaultInstanceURL(): Promise<string | null> {
   if (active.length === 1) return instanceUrl(active[0]);
   return primaryInstanceUrl();
 }
+
+/**
+ * Performs a keyed GET against a bot API. Snowflakes are kept as strings.
+ * Returns `null` on a non-ok response, a timeout or any other failure.
+ */
+export async function botApiGet<T>(base: string, path: string): Promise<T | null> {
+  try {
+    const response = await fetch(`${base}/${path}`, {
+      headers: { "X-API-Key": env.MEWDEKO_API_KEY },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!response.ok) return null;
+    return JSONbig({ storeAsString: true }).parse(await response.text()) as T;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Finds the first active instance whose bot is in the given guild.
+ * Returns its `botapi` URL and the guild summary, or `null` when none has it.
+ */
+export async function findInstanceWithGuild(
+  guildId: string,
+): Promise<{ base: string; guild: { guildName?: string; iconUrl?: string } } | null> {
+  let raw: RawInstance[];
+  try {
+    raw = await fetchInstances();
+  } catch {
+    return null;
+  }
+  const results = await Promise.all(
+    raw
+      .filter((i) => i.isActive)
+      .map(async (instance) => {
+        const base = instanceUrl(instance);
+        const guild = await botApiGet<{ hasGuild?: boolean; guildName?: string; iconUrl?: string }>(
+          base,
+          `ClientOperations/hasguild/${guildId}`,
+        );
+        return guild?.hasGuild ? { base, guild } : null;
+      }),
+  );
+  return results.find((r) => r !== null) ?? null;
+}

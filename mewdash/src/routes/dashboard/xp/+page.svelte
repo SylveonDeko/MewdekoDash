@@ -22,6 +22,7 @@
   import { browser } from "$app/environment";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
   import type { PageData } from "./$types";
 
   interface Props {
@@ -67,6 +68,14 @@
 
   // XP Settings
     let xpSettings: GuildXpSetting | null = $state(null);
+    /** The settings as the server last confirmed them, for putting a toggle back when its save fails. */
+    let savedXpSettings: GuildXpSetting | null = null;
+    /** The settings as of the last change, to tell which field the next change touched. */
+    let lastTriggeredXpSettings: GuildXpSetting | null = null;
+
+  const autoSave = createAutoSave({
+    onError: () => showNotificationMessage("Couldn't save XP settings. Toggles were put back; use Retry for typed fields.", "error")
+  });
 
   // XP Stats
     let serverStats = $state({
@@ -121,7 +130,10 @@
     let excludedRoles: string[] = $state([]);
 
   // Management
+    /** Unsaved template designer changes; settings auto-save and are not tracked here. */
     let changedSettings = $state(new Set<string>());
+    /** What XpSettings reads as its change set. It only ever adds to a copy, so this stays empty. */
+    const noXpSettingChanges = new Set<string>();
     let activeTab: "settings" | "stats" | "leaderboard" | "rewards" | "template" | "exclusions" = $state("settings");
     let guildChannels: Array<{ id: string; name: string }> = $state([]);
     let guildRoles: Array<{ id: string; name: string }> = $state([]);
@@ -296,6 +308,8 @@
       }
 
       xpSettings = await xpApi.getXpSettings($currentGuild.id);
+      savedXpSettings = $state.snapshot(xpSettings) as GuildXpSetting;
+      lastTriggeredXpSettings = null;
     } catch (err) {
       logger.error("Failed to fetch XP settings:", err);
       error.settings = err instanceof Error ? err.message : "Failed to fetch XP settings";
@@ -477,19 +491,65 @@
     }
   }
 
-  async function updateXpSettings() {
-    try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-      if (!xpSettings) throw new Error("No settings to update");
+  /** Settings that save at once and are put back if the save fails; everything else is typed. */
+  const instantXpFields = ["xpCurveType", "xpGainDisabled"] as const;
 
-      await xpApi.updateXpSettings($currentGuild.id, xpSettings);
-      showNotificationMessage("XP settings updated successfully", "success");
-      changedSettings = new Set();
-      await fetchXpSettings();
-    } catch (err) {
-      logger.error("Failed to update XP settings:", err);
-      showNotificationMessage("Failed to update XP settings", "error");
+  /**
+   * Builds the save for the whole settings object, as the API only takes it in bulk. The guild id
+   * and payload are taken now, so a save still queued after switching servers cannot carry the
+   * new server's values.
+   */
+  function buildXpSettingsSave(rollbackFields: readonly (keyof GuildXpSetting)[] = []) {
+    if (!$currentGuild?.id || !xpSettings) return null;
+    const guildId = $currentGuild.id;
+    const payload = $state.snapshot(xpSettings) as GuildXpSetting;
+    const previous = savedXpSettings;
+    return async () => {
+      try {
+        await xpApi.updateXpSettings(guildId, payload);
+        savedXpSettings = payload;
+      } catch (err) {
+        if ($currentGuild?.id === guildId && xpSettings && previous) {
+          for (const field of rollbackFields) {
+            (xpSettings as any)[field] = previous[field];
+            if (lastTriggeredXpSettings) (lastTriggeredXpSettings as any)[field] = previous[field];
+          }
+        }
+        throw err;
+      }
+    };
+  }
+
+  /** True when the focused number input is empty or out of its range, which should not be sent. */
+  function focusedNumberInputInvalid(): boolean {
+    if (!browser) return false;
+    const el = document.activeElement;
+    if (!(el instanceof HTMLInputElement) || el.type !== "number") return false;
+    return el.value === "" || el.validity.badInput || el.validity.rangeOverflow || el.validity.rangeUnderflow;
+  }
+
+  /**
+   * Called by XpSettings each time it marks a change. Toggles and pickers save straight away;
+   * typed fields wait for typing to stop, and on blur.
+   */
+  function onXpSettingsChanged(changes: Set<string>) {
+    if (!changes.has("xpSettings") || !xpSettings || !savedXpSettings) return;
+    const current = xpSettings;
+    const before = lastTriggeredXpSettings ?? savedXpSettings;
+    const changedFields = (Object.keys(current) as (keyof GuildXpSetting)[]).filter((k) => current[k] !== before[k]);
+    lastTriggeredXpSettings = $state.snapshot(xpSettings) as GuildXpSetting;
+
+    const instant = changedFields.length > 0
+      && changedFields.every((f) => (instantXpFields as readonly string[]).includes(f as string));
+    if (instant) {
+      const save = buildXpSettingsSave(changedFields);
+      if (save) autoSave.now("xpSettings", save);
+      return;
     }
+
+    if (focusedNumberInputInvalid()) return;
+    const save = buildXpSettingsSave();
+    if (save) autoSave.schedule("xpSettings", save);
   }
 
   async function updateXpTemplate() {
@@ -510,13 +570,24 @@
 
       await xpApi.updateXpTemplate($currentGuild.id, templateCopy);
 
-      if (imageUrl) {
-        // Update settings with new image URL
-        const updatedSettings: GuildXpSetting = {
-          ...xpSettings,
-          customXpImageUrl: imageUrl
-        };
-        await xpApi.updateXpSettings($currentGuild.id, updatedSettings);
+      if (imageUrl && imageUrl !== xpSettings.customXpImageUrl) {
+        // The image URL lives on the settings, so save it through the same queue as the
+        // settings tab; a separate write could land out of order with an auto-save.
+        xpSettings.customXpImageUrl = imageUrl;
+        const save = buildXpSettingsSave();
+        let settingsSaved = true;
+        if (save) {
+          await autoSave.now("xpSettings", async () => {
+            try {
+              await save();
+            } catch (err) {
+              settingsSaved = false;
+              throw err;
+            }
+          });
+        }
+        // The auto-save error toast has already said what went wrong.
+        if (!settingsSaved) return;
       }
 
       showNotificationMessage("XP template updated successfully", "success");
@@ -1094,16 +1165,9 @@
   <title>XP Management - Dashboard</title>
 </svelte:head>
 
-<DashboardPageLayout 
-  title="XP Management" 
-  actionButtons={changedSettings.size > 0 ? [
-    {
-      label: "Save Changes",
-      icon: "fa-floppy-disk",
-      action: updateXpSettings,
-      style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
-    }
-  ] : []}
+<DashboardPageLayout
+  title="XP Management"
+  {autoSave}
   icon="fa-star"
   bind:notificationMessage
   bind:activeTab
@@ -1135,27 +1199,15 @@
       class:hidden={activeTab !== 'settings'}
       id="settings-panel"
       role="tabpanel"
+      onfocusout={() => autoSave.flush("xpSettings")}
     >
-      <XpSettings 
+      <!-- XpSettings reports each edit by setting changedSettings; the setter turns that into a save. -->
+      <XpSettings
         bind:xpSettings={xpSettings}
         loading={loading.settings}
         error={error.settings}
-        bind:changedSettings={changedSettings}
+        bind:changedSettings={() => noXpSettingChanges, onXpSettingsChanged}
       />
-      
-      {#if changedSettings.has("xpSettings")}
-        <div class="flex justify-end mt-6">
-          <button
-            class="px-6 py-2 rounded-lg font-medium transition-all duration-200 min-h-[44px]"
-            onclick={updateXpSettings}
-            style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
-                   color: {$colorStore.text};"
-            aria-label="Save XP settings"
-          >
-            Save Settings
-          </button>
-        </div>
-      {/if}
     </div>
 
     <!-- Stats Panel -->

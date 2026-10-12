@@ -23,6 +23,19 @@
     import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
     import type { PageData } from "./$types";
     import { requestConfirmation } from "$lib/stores/confirmationStore";
+    import { createAutoSave } from "$lib/utils/autoSave.svelte";
+
+    const autoSave = createAutoSave({
+      onError: (_err, key) => showMessage(
+        key === "birthdayReminderDays"
+          ? "Couldn't save birthday settings."
+          : "Couldn't save birthday settings. Your last change was undone.",
+        "error"
+      )
+    });
+
+    // The birthday message is authored in the embed builder and saved explicitly,
+    // so it is the only thing on this page that can be left unsaved.
 
     interface Props {
       data: PageData;
@@ -93,36 +106,64 @@
     let upcomingBirthdays: BirthdayUser[] = $state([]);
     let todaysBirthdays: BirthdayUser[] = $state([]);
 
-    // Initialize data
-    $effect(() => {
-        if (birthdayConfig) {
-          // Parse birthdayMessage if it's a JSON string
-          let parsedMessage = birthdayConfig.birthdayMessage;
-          try {
-            if (typeof parsedMessage === "string" && parsedMessage.trim().startsWith("{")) {
-              parsedMessage = JSON.parse(parsedMessage);
-            } else if (typeof parsedMessage === "string" && parsedMessage) {
-              parsedMessage = { content: parsedMessage };
-            } else if (!parsedMessage) {
-              parsedMessage = {};
-            }
-          } catch {
-            parsedMessage = parsedMessage ? { content: parsedMessage } : {};
-          }
+    // Last values the server confirmed, so a failed save can put the field back.
+    type AutoSavedSettings = Pick<BirthdayConfigRequest,
+      "birthdayChannelId" | "birthdayRoleId" | "birthdayPingRoleId" | "birthdayReminderDays" | "defaultTimezone">;
+    let savedSettings: AutoSavedSettings = {};
+    let savedMessageJson = $state(serializeMessage({}));
 
-            configForm = {
-                birthdayChannelId: birthdayConfig.birthdayChannelId,
-                birthdayRoleId: birthdayConfig.birthdayRoleId,
-              birthdayMessage: parsedMessage,
-                birthdayPingRoleId: birthdayConfig.birthdayPingRoleId,
-                birthdayReminderDays: birthdayConfig.birthdayReminderDays,
-                defaultTimezone: birthdayConfig.defaultTimezone
-            };
+    let messageDirty = $derived(serializeMessage(configForm.birthdayMessage) !== savedMessageJson);
+
+    /**
+     * Turns the builder's value into what the API stores. An empty string clears the
+     * message on the server; null would leave the old one in place.
+     */
+    function serializeMessage(value: BirthdayConfigForm["birthdayMessage"]): string {
+      if (typeof value === "string") return value;
+      if (value && typeof value === "object" && Object.keys(value).length > 0) return JSON.stringify(value);
+      return "";
+    }
+
+    /** Copies a freshly loaded config into the form and the saved snapshot. */
+    function applyConfig(config: BirthdayConfig) {
+      // Parse birthdayMessage if it's a JSON string
+      let parsedMessage: string | Record<string, any> | null | undefined = config.birthdayMessage;
+      try {
+        if (typeof parsedMessage === "string" && parsedMessage.trim().startsWith("{")) {
+          parsedMessage = JSON.parse(parsedMessage);
+        } else if (typeof parsedMessage === "string" && parsedMessage) {
+          parsedMessage = { content: parsedMessage };
+        } else if (!parsedMessage) {
+          parsedMessage = {};
         }
-    });
+      } catch {
+        parsedMessage = parsedMessage ? { content: parsedMessage } : {};
+      }
+
+      configForm = {
+        birthdayChannelId: config.birthdayChannelId,
+        birthdayRoleId: config.birthdayRoleId,
+        birthdayMessage: parsedMessage ?? {},
+        birthdayPingRoleId: config.birthdayPingRoleId,
+        birthdayReminderDays: config.birthdayReminderDays,
+        defaultTimezone: config.defaultTimezone
+      };
+      savedSettings = {
+        birthdayChannelId: config.birthdayChannelId,
+        birthdayRoleId: config.birthdayRoleId,
+        birthdayPingRoleId: config.birthdayPingRoleId,
+        birthdayReminderDays: config.birthdayReminderDays,
+        defaultTimezone: config.defaultTimezone
+      };
+      savedMessageJson = serializeMessage(configForm.birthdayMessage);
+    }
 
     // Load all birthday data
     async function loadAllBirthdayData() {
+        if (!$currentGuild?.id) return;
+
+        // Let anything still waiting land first, so the reload shows it.
+        await autoSave.flush();
         if (!$currentGuild?.id) return;
 
         loading = true;
@@ -146,6 +187,7 @@
             ]);
 
             birthdayConfig = config;
+            if (config) applyConfig(config);
             birthdayUsers = users;
             birthdayStats = stats;
 
@@ -197,31 +239,68 @@
         }
     }
 
-    // Save configuration
-    async function saveConfig() {
+    /**
+     * Saves one channel or role picker. The API treats `0` as "clear" and a missing
+     * field as "leave alone", so an emptied picker is sent as `0n`.
+     */
+    function saveSnowflake(key: "birthdayChannelId" | "birthdayRoleId" | "birthdayPingRoleId", selected: string | string[] | null) {
         if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const value = selected && typeof selected === "string" ? BigInt(selected) : null;
+        configForm[key] = value;
+        const request: BirthdayConfigRequest = {};
+        request[key] = value ?? 0n;
+        autoSave.now(key, async () => {
+            try {
+                await birthdayApi.updateBirthdayConfig(guildId, request);
+                if ($currentGuild?.id === guildId) savedSettings[key] = value;
+            } catch (err) {
+                if ($currentGuild?.id === guildId) configForm[key] = savedSettings[key] ?? null;
+                throw err;
+            }
+        });
+    }
 
-        saving = true;
-        try {
-          const messageToSend = typeof configForm.birthdayMessage === "object" && configForm.birthdayMessage !== null && Object.keys(configForm.birthdayMessage).length > 0
-            ? JSON.stringify(configForm.birthdayMessage)
-            : (typeof configForm.birthdayMessage === "string" ? configForm.birthdayMessage : null);
+    function saveTimezone(selected: string | string[] | null) {
+        if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const value = selected && typeof selected === "string" ? selected : "UTC";
+        configForm.defaultTimezone = value;
+        autoSave.now("defaultTimezone", async () => {
+            try {
+                await birthdayApi.updateBirthdayConfig(guildId, { defaultTimezone: value });
+                if ($currentGuild?.id === guildId) savedSettings.defaultTimezone = value;
+            } catch (err) {
+                if ($currentGuild?.id === guildId) configForm.defaultTimezone = savedSettings.defaultTimezone ?? "UTC";
+                throw err;
+            }
+        });
+    }
 
-          const configToSave = {
-            ...configForm,
-            birthdayMessage: messageToSend
-          };
+    function saveReminderDays() {
+        if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const value = configForm.birthdayReminderDays;
+        // Mid-edit values (empty, fractional, out of range) are not sent.
+        if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value > 30) return;
+        autoSave.schedule("birthdayReminderDays", async () => {
+            await birthdayApi.updateBirthdayConfig(guildId, { birthdayReminderDays: value });
+            if ($currentGuild?.id === guildId) savedSettings.birthdayReminderDays = value;
+        });
+    }
 
-          await birthdayApi.updateBirthdayConfig($currentGuild.id, configToSave);
-            showMessage("Birthday configuration saved successfully!", "success");
-            // Reload to get updated config
-            await loadAllBirthdayData();
-        } catch (err) {
-            logger.error("Failed to save birthday config:", err);
-            showMessage("Failed to save configuration", "error");
-        } finally {
-            saving = false;
-        }
+    /**
+     * Saves the message when the embed builder closes. The builder's own Save is the explicit
+     * step, and its Cancel restores the old value first, so a cancelled edit is never sent.
+     */
+    function saveMessage() {
+        if (!$currentGuild?.id || !messageDirty) return;
+        const guildId = $currentGuild.id;
+        const message = serializeMessage(configForm.birthdayMessage);
+        void autoSave.now("birthdayMessage", async () => {
+            await birthdayApi.updateBirthdayConfig(guildId, { birthdayMessage: message });
+            if ($currentGuild?.id === guildId) savedMessageJson = message;
+        });
     }
 
     // Reset configuration
@@ -231,6 +310,8 @@
 
         saving = true;
         try {
+            // Settle queued saves first so none of them lands on top of the reset.
+            await autoSave.flush();
             await birthdayApi.resetBirthdayConfig($currentGuild.id);
             // Reload to get the reset config
             await loadAllBirthdayData();
@@ -244,23 +325,30 @@
     }
 
     // Toggle feature
-    async function toggleFeature(feature: number) {
+    function toggleFeature(feature: BirthdayFeatures) {
         if (!$currentGuild?.id || !birthdayConfig) return;
+        const guildId = $currentGuild.id;
+        const config = birthdayConfig;
+        const enable = !hasBirthdayFeature(config.enabledFeatures, feature);
 
-        try {
-            const hasFeature = hasBirthdayFeature(birthdayConfig.enabledFeatures, feature);
-            if (hasFeature) {
-                await birthdayApi.disableBirthdayFeature($currentGuild.id, feature);
-            } else {
-                await birthdayApi.enableBirthdayFeature($currentGuild.id, feature);
+        // Flip only this feature's bit, both now and on rollback, so toggling
+        // several features quickly cannot undo one another.
+        config.enabledFeatures = enable ? config.enabledFeatures | feature : config.enabledFeatures & ~feature;
+
+        autoSave.now(`feature-${feature}`, async () => {
+            try {
+                if (enable) {
+                    await birthdayApi.enableBirthdayFeature(guildId, feature);
+                } else {
+                    await birthdayApi.disableBirthdayFeature(guildId, feature);
+                }
+            } catch (err) {
+                if (birthdayConfig === config) {
+                    config.enabledFeatures = enable ? config.enabledFeatures & ~feature : config.enabledFeatures | feature;
+                }
+                throw err;
             }
-
-            // Reload config to get updated features
-            await loadAllBirthdayData();
-        } catch (err) {
-            logger.error("Failed to toggle birthday feature:", err);
-            showMessage("Failed to update feature", "error");
-        }
+        });
     }
 
     // Utility functions
@@ -365,6 +453,7 @@
 
 <DashboardPageLayout
   {actionButtons}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-cake-candles"
@@ -403,9 +492,7 @@
                                         options={guildChannels}
                                         selected={configForm.birthdayChannelId?.toString() || null}
                                         placeholder="No channel selected"
-                                        onchange={(detail) => {
-                    configForm.birthdayChannelId = detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null;
-                  }}
+                                        onchange={(detail) => saveSnowflake("birthdayChannelId", detail.selected)}
                                 />
                             </div>
                         </div>
@@ -423,9 +510,7 @@
                                         options={guildRoles}
                                         selected={configForm.birthdayRoleId?.toString() || null}
                                         placeholder="No role selected"
-                                        onchange={(detail) => {
-                    configForm.birthdayRoleId = detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null;
-                  }}
+                                        onchange={(detail) => saveSnowflake("birthdayRoleId", detail.selected)}
                                 />
                             </div>
                         </div>
@@ -443,9 +528,7 @@
                                         options={guildRoles}
                                         selected={configForm.birthdayPingRoleId?.toString() || null}
                                         placeholder="No ping role"
-                                        onchange={(detail) => {
-                    configForm.birthdayPingRoleId = detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null;
-                  }}
+                                        onchange={(detail) => saveSnowflake("birthdayPingRoleId", detail.selected)}
                                 />
                             </div>
                         </div>
@@ -469,9 +552,7 @@
                   }))}
                                         selected={configForm.defaultTimezone}
                                         placeholder="Select timezone"
-                                        onchange={(detail) => {
-                    configForm.defaultTimezone = (detail.selected && typeof detail.selected === 'string') ? detail.selected : "UTC";
-                  }}
+                                        onchange={(detail) => saveTimezone(detail.selected)}
                                 />
                             </div>
                         </div>
@@ -488,6 +569,8 @@
                                     min="0"
                                     max="30"
                                     bind:value={configForm.birthdayReminderDays}
+                                    oninput={saveReminderDays}
+                                    onblur={() => autoSave.flush("birthdayReminderDays")}
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           >
@@ -531,30 +614,19 @@
                         guildId={$currentGuild?.id}
                         user={data.user}
                         placeholder="Click to configure birthday message with rich embeds"
+                        onclose={saveMessage}
                       />
 
                       <p class="text-xs mt-3" style="color: {$colorStore.muted}">
                         Leave empty for default birthday message. Supports rich embeds and placeholders for
                         personalization.
                       </p>
+
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-4">
-                  <button
-                    class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-                    onclick={saveConfig}
-                    disabled={saving}
-                    aria-busy={saving}
-                    aria-label="Save Configuration"
-                  >
-                    <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}" style="font-size: 18px;"
-                       aria-hidden="true"></i>
-                    <span class="text-sm sm:text-base">{saving ? "Saving..." : "Save Configuration"}</span>
-                  </button>
-
                     <button
                       class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"

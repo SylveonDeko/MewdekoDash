@@ -1,6 +1,6 @@
 <!-- routes/privacy/+page.svelte -->
 <script>
-  let date = "20th August 2026";
+  let date = "12th October 2026";
   let email = "sylveon@mewdeko.tech";
 </script>
 
@@ -32,11 +32,26 @@
     <div class="flex justify-center">
       <ul class="list-disc text-left">
         <li>User ID</li>
-        <li>Usernames</li>
-        <li>Server ID</li>
+        <li>Usernames, nicknames and avatars</li>
+        <li>Server ID, and the channel and role IDs used in server settings</li>
         <li>
-          Messages sent to the bot in direct messages or mentioned in a server
-          (only while performing a command)
+          The content of messages, where a feature needs it (see
+          <a class="underline" href="#message-content">Message content</a>
+          below)
+        </li>
+        <li>
+          Activity in a server: message counts, voice time, XP, the invite you
+          joined with, when you joined or left, and the roles you held when you
+          left, so they can be restored if you return
+        </li>
+        <li>
+          Your Discord status and activities, where a feature needs them (see
+          <a class="underline" href="#presence">Status and activities</a>
+          below)
+        </li>
+        <li>
+          Things you create with the bot, such as suggestions, confessions,
+          tickets, reminders, birthdays, AFK messages and highlight words
         </li>
         <li>
           Your Discord avatar, when you sign in to the dashboard or the mobile
@@ -58,6 +73,11 @@
     <div class="flex justify-center">
       <ul class="list-disc text-left">
         <li>Interact with the bot through commands</li>
+        <li>
+          Send messages, join or leave, or change your roles, nickname or
+          status in a server where the bot is present and the relevant feature
+          is enabled
+        </li>
         <li>Use or view our bot via your browser’s cookies</li>
         <li>
           Sign in to the dashboard or the Mewdeko Mobile app with Discord. We
@@ -79,20 +99,79 @@
         </li>
         <li>Diagnose errors and faults so they can be fixed</li>
         <li>Make improvements based on user feedback</li>
+        <li>
+          Measure how the bot and dashboard are used, such as which commands
+          are run and which dashboard pages are visited, so we know what to
+          improve
+        </li>
       </ul>
+    </div>
 
     <p>
       We do not profile you, sell your data, or use it for advertising, and
-      Mewdeko contains no advertising or tracking software.
+      Mewdeko contains no advertising or tracking software. We do not use your
+      data, including message content, to train machine learning or AI models.
     </p>
+
+    <h2 class="text-2xl font-semibold" id="message-content">Message content</h2>
+
+    <p>
+      Mewdeko reads the messages in channels it can see so that its features
+      work. Most messages are checked and then forgotten: prefix commands,
+      chat triggers, word and link filters, anti-spam, highlights, counting,
+      games, AFK and XP all read a message without keeping its text. XP and
+      message statistics keep counts, never the text itself.
+    </p>
+
+    <p>Some features do keep message text:</p>
+    <div class="flex justify-center">
+      <ul class="list-disc text-left">
+        <li>
+          Message logs: when a server enables them, the old and new text of
+          edited and deleted messages is posted to that server's log channel
+          in Discord. It is not kept in our database.
+        </li>
+        <li>
+          Snipe: when a server turns it on, the most recent deleted and edited
+          messages in each channel are kept so members can view them. They are
+          deleted after 30 days.
+        </li>
+        <li>
+          Support tickets and Chat Saver: transcripts of ticket channels and
+          messages a server's staff choose to save, including attachments.
+        </li>
+        <li>Starboard: a copy of messages that reach a server's starboard.</li>
+        <li>
+          Suggestions, confessions, AFK messages and highlight words: the text
+          you submit to these features.
+        </li>
+        <li>
+          AI chat: messages sent in a channel a server has set up for AI chat,
+          kept as conversation history until you clear it by sending
+          "deletesession" in that channel.
+        </li>
+      </ul>
     </div>
+
+    <h2 class="text-2xl font-semibold" id="presence">Status and activities</h2>
+
+    <p>
+      Some features read your Discord status and activities, such as the game
+      you are playing, whether you are streaming, and your custom status. They
+      are used by Status Roles and Stream Roles to give or remove roles, by
+      game voice channels to move you to a channel for your game, and to show
+      how many members are online. If a server turns on activity tracking in
+      Server Stats, the bot also records which activities members spend time
+      on so that server's staff can see what is popular. Your custom status
+      text is read by Status Roles but never stored.
+    </p>
 
     <h2 class="text-2xl font-semibold">How do we store your data?</h2>
 
     <p>
-      Mewdeko stores your data in a PostgreSQL database hosted at Hetzner in
-      Germany. Access to it requires authentication and it is not reachable from
-      the public internet. Traffic between you and the dashboard or the mobile
+      Mewdeko stores your data in a PostgreSQL database and a Redis cache,
+      both hosted at Hetzner in Germany. Access to them requires authentication
+      and neither is reachable from the public internet. Traffic between you and the dashboard or the mobile
       app is encrypted with HTTPS.
     </p>
 
@@ -101,8 +180,9 @@
       suggestions, starboard entries, and tickets, is kept for as long as the
       bot remains in that server, because the features depend on it. It is
       removed when a server administrator deletes it, when a relevant command is
-      used, when the bot is removed from the server, or when you ask us to
-      remove it.
+      used, or when you ask us to remove it. When the bot is removed from a
+      server, that server's data is permanently deleted after 7 days, which
+      gives an administrator who removed it by mistake time to add it back.
     </p>
 
     <p>
@@ -110,6 +190,13 @@
       setting, which server administrators control. Others, such as XP and
       reputation, reduce scores over a period of inactivity rather than deleting
       the record.
+    </p>
+
+    <p>
+      Usage records, such as which commands were run in which server and
+      which dashboard pages were visited, are deleted after 30 days. They do
+      not contain your user ID; dashboard visits are recorded with a short
+      anonymous hash instead. Daily totals built from them are kept.
     </p>
 
     <p>
@@ -125,6 +212,14 @@
       Sentry, an error tracking service, so the fault can be diagnosed. These
       reports can include your Discord user ID and the action that failed. The
       Mewdeko Mobile app does not send error reports.
+    </p>
+
+    <p>
+      If a server sets up AI chat, the messages sent in that server's AI chat
+      channel, along with recent conversation history, are sent to the AI
+      provider that server chose (OpenAI, Groq or Anthropic) using that
+      server's own account with the provider. That provider's privacy policy
+      applies to what it receives.
     </p>
 
     <p>

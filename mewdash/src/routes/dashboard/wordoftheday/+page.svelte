@@ -12,6 +12,7 @@
     WordPartOfSpeech,
     WordSourceMode,
     type WordOfTheDayConfig,
+    type WordOfTheDayConfigRequest,
     type WordOfTheDayHistoryEntry,
     type WordOfTheDaySchedule,
     type WordOfTheDayWord
@@ -19,6 +20,7 @@
   import { logger } from "$lib/logger";
   import { TIMEZONE_OPTIONS } from "$lib/config/timezones";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
@@ -31,6 +33,18 @@
   }
 
   let { data }: Props = $props();
+
+  /** Typed fields are not rolled back on failure, since that would fight the user mid-edit. */
+  const TEXT_KEYS = new Set(["topic", "threadName", "messageTemplate"]);
+
+  const autoSave = createAutoSave({
+    onError: (_err, key) => showMessage(
+      TEXT_KEYS.has(key)
+        ? "Couldn't save Word of the Day settings."
+        : "Couldn't save Word of the Day settings. Your last change was undone.",
+      "error"
+    )
+  });
 
   const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const MONTH_NAMES = [
@@ -139,10 +153,34 @@
 
   let activeTab = $state("settings");
 
-  $effect(() => {
-    if (!config) return;
+  // Last values the server confirmed, so a failed save can put the field back.
+  type SavedSettings = Omit<typeof form, "messageTemplate">;
+  let saved: SavedSettings = {
+    channelId: null,
+    enabled: false,
+    postHour: 9,
+    timezone: "UTC",
+    pingRoleId: null,
+    topic: "",
+    partOfSpeech: WordPartOfSpeech.Any,
+    difficulty: WordDifficulty.Any,
+    sourceMode: WordSourceMode.Dictionary,
+    createThread: false,
+    threadName: "",
+    threadAutoArchiveMinutes: 1440
+  };
+  let savedTemplate = serializeTemplate({});
 
-    let parsed: string | Record<string, any> | null = config.messageTemplate;
+  /** Turns the builder's value into what the API stores. An empty string clears the template. */
+  function serializeTemplate(value: typeof form.messageTemplate): string {
+    if (typeof value === "string") return value;
+    if (value && typeof value === "object" && Object.keys(value).length > 0) return JSON.stringify(value);
+    return "";
+  }
+
+  /** Copies a freshly loaded config into the form and the saved snapshot. */
+  function applyConfig(cfg: WordOfTheDayConfig) {
+    let parsed: string | Record<string, any> | null = cfg.messageTemplate;
     try {
       if (typeof parsed === "string" && parsed.trim().startsWith("{")) {
         parsed = JSON.parse(parsed);
@@ -155,22 +193,23 @@
       parsed = parsed ? { content: parsed } : {};
     }
 
-    form = {
-      channelId: config.channelId,
-      enabled: config.enabled,
-      postHour: config.postHour,
-      timezone: config.timezone || "UTC",
-      pingRoleId: config.pingRoleId,
-      messageTemplate: parsed,
-      topic: config.topic ?? "",
-      partOfSpeech: config.partOfSpeech,
-      difficulty: config.difficulty,
-      sourceMode: config.sourceMode,
-      createThread: config.createThread,
-      threadName: config.threadName ?? "",
-      threadAutoArchiveMinutes: config.threadAutoArchiveMinutes || 1440
+    saved = {
+      channelId: cfg.channelId,
+      enabled: cfg.enabled,
+      postHour: cfg.postHour,
+      timezone: cfg.timezone || "UTC",
+      pingRoleId: cfg.pingRoleId,
+      topic: cfg.topic ?? "",
+      partOfSpeech: cfg.partOfSpeech,
+      difficulty: cfg.difficulty,
+      sourceMode: cfg.sourceMode,
+      createThread: cfg.createThread,
+      threadName: cfg.threadName ?? "",
+      threadAutoArchiveMinutes: cfg.threadAutoArchiveMinutes || 1440
     };
-  });
+    form = { ...saved, messageTemplate: parsed };
+    savedTemplate = serializeTemplate(parsed);
+  }
 
   $effect(() => {
     dayDrafts = DAY_NAMES.map((name, key) => buildDraft(ScheduleRuleType.DayOfWeek, key, name));
@@ -193,6 +232,11 @@
 
   async function loadAll() {
     if (!$currentGuild?.id) return;
+
+    // Let anything still waiting land first, so the reload shows it.
+    await autoSave.flush();
+    if (!$currentGuild?.id) return;
+
     loading = true;
     try {
       const [cfg, wordList, hist, ruleList, channels, roles] = await Promise.all([
@@ -205,6 +249,7 @@
       ]);
 
       config = cfg;
+      if (cfg) applyConfig(cfg);
       words = wordList;
       history = hist;
       rules = ruleList;
@@ -227,40 +272,127 @@
     }
   }
 
-  async function saveConfig() {
+  /**
+   * Sends a partial config update under `key`. `patch` holds the form fields the request
+   * changes; on success they become the saved snapshot (and the summary panel), and on
+   * failure they are put back when `rollback` is set. The API leaves missing fields alone.
+   */
+  function updateSettings(
+    key: string,
+    request: WordOfTheDayConfigRequest,
+    patch: Partial<SavedSettings>,
+    { rollback = true, debounce = false }: { rollback?: boolean; debounce?: boolean } = {}
+  ) {
     if (!$currentGuild?.id) return;
-    saving = true;
-    try {
-      const template =
-        typeof form.messageTemplate === "object" && form.messageTemplate !== null &&
-        Object.keys(form.messageTemplate).length > 0
-          ? JSON.stringify(form.messageTemplate)
-          : typeof form.messageTemplate === "string"
-            ? form.messageTemplate
-            : "";
+    const guildId = $currentGuild.id;
+    const fields = Object.keys(patch) as (keyof SavedSettings)[];
+    const save = async () => {
+      try {
+        await wordOfTheDayApi.updateConfig(guildId, request);
+        if ($currentGuild?.id !== guildId) return;
+        saved = { ...saved, ...patch };
+        if (config) config = { ...config, ...patch };
+      } catch (err) {
+        if (rollback && $currentGuild?.id === guildId) {
+          Object.assign(form, Object.fromEntries(fields.map((f) => [f, saved[f]])));
+        }
+        throw err;
+      }
+    };
+    if (debounce) autoSave.schedule(key, save);
+    else autoSave.now(key, save);
+  }
 
-      await wordOfTheDayApi.updateConfig($currentGuild.id, {
-        channelId: form.channelId ?? 0n,
-        enabled: form.enabled,
-        postHour: form.postHour,
-        timezone: form.timezone,
-        pingRoleId: form.pingRoleId ?? 0n,
-        messageTemplate: template,
-        topic: form.topic.trim(),
-        partOfSpeech: form.partOfSpeech,
-        difficulty: form.difficulty,
-        sourceMode: form.sourceMode,
-        createThread: form.createThread,
-        threadName: form.threadName.trim(),
-        threadAutoArchiveMinutes: form.threadAutoArchiveMinutes
-      });
-      config = await wordOfTheDayApi.getConfig($currentGuild.id);
-    } catch (err) {
-      logger.error("Failed to save word of the day config:", err);
-      showMessage("Failed to save configuration", "error");
-    } finally {
-      saving = false;
+  /**
+   * The channel and the enabled toggle share a key so their writes land in order: the API
+   * only keeps posting enabled while a channel is set.
+   */
+  function saveChannel(selected: string | string[] | null) {
+    const channelId = selected && typeof selected === "string" ? BigInt(selected) : null;
+    form.channelId = channelId;
+    const request: WordOfTheDayConfigRequest = { channelId: channelId ?? 0n };
+    const patch: Partial<SavedSettings> = { channelId };
+    if (!channelId) {
+      form.enabled = false;
+      request.enabled = false;
+      patch.enabled = false;
     }
+    updateSettings("posting", request, patch);
+  }
+
+  function saveEnabled(enabled: boolean) {
+    form.enabled = enabled;
+    updateSettings("posting", { enabled }, { enabled });
+  }
+
+  function savePostHour(postHour: number) {
+    form.postHour = postHour;
+    updateSettings("postHour", { postHour }, { postHour });
+  }
+
+  function saveTimezone(timezone: string) {
+    form.timezone = timezone;
+    updateSettings("timezone", { timezone }, { timezone });
+  }
+
+  function savePingRole(selected: string | string[] | null) {
+    const pingRoleId = selected && typeof selected === "string" ? BigInt(selected) : null;
+    form.pingRoleId = pingRoleId;
+    updateSettings("pingRoleId", { pingRoleId: pingRoleId ?? 0n }, { pingRoleId });
+  }
+
+  function saveSourceMode(sourceMode: number) {
+    form.sourceMode = sourceMode;
+    updateSettings("sourceMode", { sourceMode }, { sourceMode });
+  }
+
+  function savePartOfSpeech(partOfSpeech: number) {
+    form.partOfSpeech = partOfSpeech;
+    updateSettings("partOfSpeech", { partOfSpeech }, { partOfSpeech });
+  }
+
+  function saveDifficulty(difficulty: number) {
+    form.difficulty = difficulty;
+    updateSettings("difficulty", { difficulty }, { difficulty });
+  }
+
+  function saveCreateThread(createThread: boolean) {
+    form.createThread = createThread;
+    updateSettings("createThread", { createThread }, { createThread });
+  }
+
+  function saveThreadArchive(threadAutoArchiveMinutes: number) {
+    form.threadAutoArchiveMinutes = threadAutoArchiveMinutes;
+    updateSettings("threadAutoArchiveMinutes", { threadAutoArchiveMinutes }, { threadAutoArchiveMinutes });
+  }
+
+  /** An empty topic clears it, which is a valid setting. */
+  function saveTopic() {
+    const topic = form.topic.trim();
+    updateSettings("topic", { topic }, { topic }, { rollback: false, debounce: true });
+  }
+
+  /** An empty thread name falls back to the default, which is a valid setting. */
+  function saveThreadName() {
+    const threadName = form.threadName.trim();
+    updateSettings("threadName", { threadName }, { threadName }, { rollback: false, debounce: true });
+  }
+
+  /**
+   * Saves the template when the embed builder closes. The builder's Cancel restores the
+   * old value before closing, so a cancelled edit is never sent.
+   */
+  function saveTemplate() {
+    if (!$currentGuild?.id) return;
+    const template = serializeTemplate(form.messageTemplate);
+    if (template === savedTemplate) return;
+    const guildId = $currentGuild.id;
+    void autoSave.now("messageTemplate", async () => {
+      await wordOfTheDayApi.updateConfig(guildId, { messageTemplate: template });
+      if ($currentGuild?.id !== guildId) return;
+      savedTemplate = template;
+      if (config) config = { ...config, messageTemplate: template || null };
+    });
   }
 
   async function resetConfig() {
@@ -275,6 +407,8 @@
 
     saving = true;
     try {
+      // Settle queued saves first so none of them lands on top of the reset.
+      await autoSave.flush();
       await wordOfTheDayApi.resetConfig($currentGuild.id);
       await loadAll();
     } catch (err) {
@@ -496,6 +630,7 @@
 
 <DashboardPageLayout
   {actionButtons}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-book-open"
@@ -530,10 +665,7 @@
                 options={guildChannels}
                 selected={form.channelId?.toString() || null}
                 placeholder="No channel selected"
-                onchange={(detail) => {
-                  form.channelId = detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null;
-                  if (!form.channelId) form.enabled = false;
-                }}
+                onchange={(detail) => saveChannel(detail.selected)}
               />
             </div>
           </div>
@@ -550,7 +682,7 @@
                 selected={form.postHour.toString()}
                 placeholder="Hour"
                 searchable={false}
-                onchange={(detail) => { form.postHour = selectedNumber(detail, 9); }}
+                onchange={(detail) => savePostHour(selectedNumber(detail, 9))}
               />
             </div>
           </div>
@@ -566,9 +698,7 @@
                 options={TIMEZONE_OPTIONS}
                 selected={form.timezone}
                 placeholder="Select timezone"
-                onchange={(detail) => {
-                  form.timezone = detail.selected && typeof detail.selected === 'string' ? detail.selected : "UTC";
-                }}
+                onchange={(detail) => saveTimezone(detail.selected && typeof detail.selected === 'string' ? detail.selected : "UTC")}
               />
             </div>
           </div>
@@ -584,9 +714,7 @@
                 options={guildRoles}
                 selected={form.pingRoleId?.toString() || null}
                 placeholder="No ping role"
-                onchange={(detail) => {
-                  form.pingRoleId = detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null;
-                }}
+                onchange={(detail) => savePingRole(detail.selected)}
               />
             </div>
           </div>
@@ -599,7 +727,7 @@
             subtitle={form.channelId ? "Runs at the hour above in the selected timezone" : "Pick a channel first"}
             colors={$colorStore}
             disabled={!form.channelId}
-            onchange={(checked) => { form.enabled = checked; }}
+            onchange={saveEnabled}
           />
         </div>
       </div>
@@ -627,7 +755,7 @@
                 selected={form.sourceMode.toString()}
                 placeholder="Source"
                 searchable={false}
-                onchange={(detail) => { form.sourceMode = selectedNumber(detail, WordSourceMode.Dictionary); }}
+                onchange={(detail) => saveSourceMode(selectedNumber(detail, WordSourceMode.Dictionary))}
               />
             </div>
           </div>
@@ -640,6 +768,8 @@
             <input id="wotd-topic"
                    type="text"
                    bind:value={form.topic}
+                   oninput={saveTopic}
+                   onblur={() => autoSave.flush("topic")}
                    placeholder="e.g. science, cooking, space"
                    maxlength="80"
                    class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
@@ -659,7 +789,7 @@
                 selected={form.partOfSpeech.toString()}
                 placeholder="Any"
                 searchable={false}
-                onchange={(detail) => { form.partOfSpeech = selectedNumber(detail, WordPartOfSpeech.Any); }}
+                onchange={(detail) => savePartOfSpeech(selectedNumber(detail, WordPartOfSpeech.Any))}
               />
             </div>
           </div>
@@ -676,7 +806,7 @@
                 selected={form.difficulty.toString()}
                 placeholder="Any"
                 searchable={false}
-                onchange={(detail) => { form.difficulty = selectedNumber(detail, WordDifficulty.Any); }}
+                onchange={(detail) => saveDifficulty(selectedNumber(detail, WordDifficulty.Any))}
               />
             </div>
           </div>
@@ -702,7 +832,7 @@
           title="Create a thread under each post"
           subtitle="Invites people to use the word in a sentence"
           colors={$colorStore}
-          onchange={(checked) => { form.createThread = checked; }}
+          onchange={saveCreateThread}
         />
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-6">
@@ -714,6 +844,8 @@
             <input id="wotd-thread-name"
                    type="text"
                    bind:value={form.threadName}
+                   oninput={saveThreadName}
+                   onblur={() => autoSave.flush("threadName")}
                    placeholder={DEFAULT_THREAD_NAME}
                    maxlength="100"
                    disabled={!form.createThread}
@@ -738,7 +870,7 @@
                 placeholder="Auto-archive"
                 searchable={false}
                 disabled={!form.createThread}
-                onchange={(detail) => { form.threadAutoArchiveMinutes = selectedNumber(detail, 1440); }}
+                onchange={(detail) => saveThreadArchive(selectedNumber(detail, 1440))}
               />
             </div>
           </div>
@@ -757,6 +889,7 @@
 
         <FullscreenEmbedBuilder id="wotd-template"
                                 bind:value={form.messageTemplate}
+                                onclose={saveTemplate}
                                 previewTitle="Word of the Day"
                                 previewDescription="Message posted each day"
                                 icon="fa-book-open"
@@ -776,17 +909,6 @@
       </div>
 
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-2">
-        <button
-          class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-          onclick={saveConfig}
-          disabled={saving}
-          aria-busy={saving}
-        >
-          <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}" style="font-size: 18px;" aria-hidden="true"></i>
-          <span class="text-sm sm:text-base">{saving ? "Saving..." : "Save Configuration"}</span>
-        </button>
-
         <button
           class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
           style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30;"

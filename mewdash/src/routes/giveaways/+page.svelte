@@ -3,12 +3,14 @@
   import { onMount } from "svelte";
   import { page } from "$app/state";
   import { type Giveaway, giveawaysApi } from "$lib/api/index.ts";
-  import type { PageData } from "../../../.svelte-kit/types/src/routes/dashboard/suggestions/$types";
+  import type { PageData } from "./$types";
   import { goto } from "$app/navigation";
   import { browser } from "$app/environment";
   import { Turnstile } from "svelte-turnstile";
   import { colorStore } from "$lib/stores/colorStore";
   import { fade, fly } from "svelte/transition";
+  import ComponentEmbed from "$lib/components/layout/ComponentEmbed.svelte";
+  import { buttons, container, header, linkButton, plain, SITE_ORIGIN, separator, text } from "$lib/componentEmbed";
 
   let guildId: bigint;
   let giveawayId: number;
@@ -166,7 +168,28 @@
     if (!giveaway) return false;
     return new Date(giveaway.when).getTime() > Date.now();
   });
+
+  let previewEmbed = $derived.by(() => {
+    const preview = data.preview;
+    if (!preview) return null;
+    const unix = Math.floor(new Date(preview.endsAt).getTime() / 1000);
+    const details = [
+      preview.guildName ? `Hosted in **${plain(preview.guildName)}**` : null,
+      `${preview.winners} winner${preview.winners === 1 ? "" : "s"}`,
+      Number.isFinite(unix) ? `${preview.ended ? "Ended" : "Ends"} <t:${unix}:R>` : null
+    ].filter(Boolean);
+    return container(
+      header("## " + plain(preview.prize), preview.guildIcon),
+      text(details.join(" · ")),
+      separator(),
+      preview.ended
+        ? null
+        : buttons(linkButton("Enter giveaway", `${SITE_ORIGIN}/giveaways${page.url.search}`))
+    );
+  });
 </script>
+
+<ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
   <title>Enter Giveaway - Mewdeko</title>

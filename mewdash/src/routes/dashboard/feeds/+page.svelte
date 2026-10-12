@@ -13,6 +13,20 @@
     import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
     import { parseStoredMessage } from "$lib/utils/embedMessage";
     import { requestConfirmation } from "$lib/stores/confirmationStore";
+    import { createAutoSave } from "$lib/utils/autoSave.svelte";
+
+    const autoSave = createAutoSave({
+        onError: () => showMessage("Couldn't save the feed message.", "error")
+    });
+
+    /** Feed messages are saved under the feed's id, which, unlike its index, survives removals. */
+    function messageKey(feedId: number) {
+        return `feed-message-${feedId}`;
+    }
+
+    // Saves that have been sent but not answered. Removing a feed shifts the indexes the API
+    // uses, so a removal waits for these to land first.
+    const inFlight = new Set<Promise<void>>();
 
     // Component state
     let loading = $state(false);
@@ -43,6 +57,10 @@
 
     // Load all feed data
     async function loadAllFeedData() {
+        if (!$currentGuild?.id) return;
+
+        // Let anything still waiting land first, so the reload shows it.
+        await settleSaves();
         if (!$currentGuild?.id) return;
 
         loading = true;
@@ -94,33 +112,67 @@
         }
     }
 
-    // Update feed message
-    async function updateFeedMessage(index: number) {
-        if (!$currentGuild?.id) return;
+    /** Runs every waiting message save and waits for the ones already sent. */
+    async function settleSaves() {
+        await autoSave.flush();
+        await Promise.allSettled([...inFlight]);
+    }
 
-        saving = true;
-        try {
-            await feedsApi.setFeedMessage($currentGuild.id, index, editMessage);
-            showMessage("Feed message updated!", "success");
-            editingFeed = null;
-            editMessage = "";
-            await loadAllFeedData();
-        } catch (err) {
-            logger.error("Failed to update feed message:", err);
-            showMessage("Failed to update message", "error");
-        } finally {
-            saving = false;
-        }
+    /**
+     * Saves the message being edited once the user pauses. The feed's index is read now,
+     * when the edit happens, because that is what the API addresses the feed by.
+     */
+    function saveFeedMessage(feed: FeedSub) {
+        if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const feedId = feed.id;
+        const index = feed.index;
+        const text = editMessage;
+        autoSave.schedule(messageKey(feedId), async () => {
+            const request = feedsApi.setFeedMessage(guildId, index, text);
+            const tracked = request.then(() => {}, () => {});
+            inFlight.add(tracked);
+            try {
+                await request;
+            } finally {
+                inFlight.delete(tracked);
+            }
+            if ($currentGuild?.id !== guildId) return;
+            feeds = feeds.map((f) => f.id === feedId ? { ...f, message: text } : f);
+        });
+    }
+
+    /** Escape puts the last saved message back and drops the waiting save. */
+    function revertFeedMessage(feed: FeedSub) {
+        autoSave.cancel(messageKey(feed.id));
+        editMessage = feed.message || "";
+        editingFeed = null;
+    }
+
+    function finishEditing(feed: FeedSub) {
+        void autoSave.flush(messageKey(feed.id));
+        editingFeed = null;
+        editMessage = "";
     }
 
     // Remove feed
     async function removeFeed(index: number) {
         if (!$currentGuild?.id) return;
         if (!(await requestConfirmation({ message: "Are you sure you want to remove this RSS feed?", confirmText: "Remove" }))) return;
+        if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
 
         saving = true;
         try {
-            await feedsApi.removeFeed($currentGuild.id, index);
+            // A waiting edit to the removed feed would land on whichever feed takes its index.
+            const removed = feeds.find((f) => f.index === index);
+            if (removed) {
+                autoSave.cancel(messageKey(removed.id));
+                if (editingFeed === removed.id) editingFeed = null;
+            }
+            // Other feeds' edits were addressed by the old indexes, so they must land first.
+            await settleSaves();
+            await feedsApi.removeFeed(guildId, index);
             showMessage("Feed removed successfully!", "success");
             await loadAllFeedData();
         } catch (err) {
@@ -133,6 +185,7 @@
 
     // Start editing
     function startEditing(feed: FeedSub) {
+        if (editingFeed !== null) void autoSave.flush(messageKey(editingFeed));
         editingFeed = feed.id;
         editMessage = feed.message || "";
     }
@@ -208,6 +261,7 @@
 
 <DashboardPageLayout
   {actionButtons}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-newspaper"
@@ -274,6 +328,11 @@
                                     <div class="space-y-3 border-t pt-3" style="border-color: {$colorStore.primary}20;">
                                         <textarea
                                                 bind:value={editMessage}
+                                                oninput={() => saveFeedMessage(feed)}
+                                                onblur={() => autoSave.flush(messageKey(feed.id))}
+                                                onkeydown={(e) => { if (e.key === "Escape") revertFeedMessage(feed); }}
+                                                aria-label="Custom message for this feed"
+                                                readonly={saving}
                                                 placeholder="Custom message (optional)"
                                                 rows="2"
                                                 class="w-full p-3 rounded-xl border resize-none text-sm"
@@ -281,24 +340,12 @@
                                         ></textarea>
                                         <div class="flex gap-2">
                                             <button
-                                              aria-label="Save feed message"
-                                              aria-busy={saving}
-                                              class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                                              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-                                              onclick={() => updateFeedMessage(feed.index)}
-                                                    disabled={saving}
-                                            >
-                                              <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}"
-                                                 style="font-size: 16px;"></i>
-                                              {saving ? "Saving..." : "Save"}
-                                            </button>
-                                            <button
-                                              aria-label="Cancel editing"
+                                              aria-label="Done editing"
                                               class="flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                                                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                                                    onclick={() => editingFeed = null}
+                                                    onclick={() => finishEditing(feed)}
                                             >
-                                                Cancel
+                                                Done
                                             </button>
                                         </div>
                                     </div>

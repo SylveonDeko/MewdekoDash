@@ -9,6 +9,7 @@
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import { loadingStore } from "$lib/stores/loadingStore";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
   // Import tab components
   import OverviewTab from "./components/OverviewTab.svelte";
@@ -18,6 +19,10 @@
   import AdvancedTab from "./components/tabs/AdvancedTab.svelte";
 
   let { data } = $props();
+
+  // Auto-assign roles and self-assignable group names/levels save as they change. Failures show in the
+  // header (Couldn't save · Retry); this page has no toast system. Protection cards keep explicit Save.
+  const autoSave = createAutoSave();
 
   let loading = $state(true);
   let error: string | null = $state(null);
@@ -462,34 +467,64 @@
     showConfirmModal = true;
   }
 
-  async function saveNormalRoles() {
+  /**
+   * Saves the auto-assign roles for normal users as soon as the picker changes,
+   * restoring the last saved selection if the bot rejects it.
+   */
+  function saveNormalRoles() {
     if (!$currentGuild?.id) return;
-
-    try {
-      saving = true;
-      const roleIds = selectedNormalRoles.map(id => BigInt(id));
-      await administrationApi.setAutoAssignRoles($currentGuild.id, roleIds);
-      await fetchAllData();
-    } catch (error) {
-      logger.error("Failed to save normal auto-assign roles:", error);
-    } finally {
-      saving = false;
-    }
+    const guildId = $currentGuild.id;
+    const selection = [...selectedNormalRoles];
+    const previous = autoAssignRoles.normalRoles.map(id => id.toString());
+    autoSave.now("autoAssignNormalRoles", async () => {
+      try {
+        const roleIds = selection.map(id => BigInt(id));
+        await administrationApi.setAutoAssignRoles(guildId, roleIds);
+        if ($currentGuild?.id === guildId) autoAssignRoles = { ...autoAssignRoles, normalRoles: roleIds };
+      } catch (err) {
+        if ($currentGuild?.id === guildId) selectedNormalRoles = previous;
+        throw err;
+      }
+    });
   }
 
-  async function saveBotRoles() {
+  /**
+   * Saves the auto-assign roles for bots as soon as the picker changes,
+   * restoring the last saved selection if the bot rejects it.
+   */
+  function saveBotRoles() {
     if (!$currentGuild?.id) return;
+    const guildId = $currentGuild.id;
+    const selection = [...selectedBotRoles];
+    const previous = autoAssignRoles.botRoles.map(id => id.toString());
+    autoSave.now("autoAssignBotRoles", async () => {
+      try {
+        const roleIds = selection.map(id => BigInt(id));
+        await administrationApi.setBotAutoAssignRoles(guildId, roleIds);
+        if ($currentGuild?.id === guildId) autoAssignRoles = { ...autoAssignRoles, botRoles: roleIds };
+      } catch (err) {
+        if ($currentGuild?.id === guildId) selectedBotRoles = previous;
+        throw err;
+      }
+    });
+  }
 
-    try {
-      saving = true;
-      const roleIds = selectedBotRoles.map(id => BigInt(id));
-      await administrationApi.setBotAutoAssignRoles($currentGuild.id, roleIds);
-      await fetchAllData();
-    } catch (error) {
-      logger.error("Failed to save bot auto-assign roles:", error);
-    } finally {
-      saving = false;
-    }
+  /** Records a self-assignable group name the bot confirmed, without refetching the page. */
+  function applySelfAssignableGroupName(groupId: number, name: string | null) {
+    const groups = { ...selfAssignableRoles.groups };
+    if (name) groups[groupId] = name;
+    else delete groups[groupId];
+    selfAssignableRoles = { ...selfAssignableRoles, groups };
+  }
+
+  /** Records a self-assignable level requirement the bot confirmed, without refetching the page. */
+  function applySelfAssignableLevel(roleId: bigint, level: number) {
+    selfAssignableRoles = {
+      ...selfAssignableRoles,
+      roles: selfAssignableRoles.roles.map(r =>
+        r.model.roleId === roleId ? { ...r, model: { ...r.model, levelRequirement: level } } : r
+      )
+    };
   }
 
   async function saveServerSettings() {
@@ -1036,6 +1071,7 @@
   guildName={$currentGuild?.name || "Dashboard"}
   tabs={tabs}
   bind:activeTab
+  {autoSave}
 >
 
   {#if loading}
@@ -1117,8 +1153,11 @@
         {voiceChannels}
         {textChannels}
         {saving}
+        {autoSave}
         {saveNormalRoles}
         {saveBotRoles}
+        {applySelfAssignableGroupName}
+        {applySelfAssignableLevel}
         {showConfirm}
         {removeAutoBanRole}
         {addAutoBanRole}

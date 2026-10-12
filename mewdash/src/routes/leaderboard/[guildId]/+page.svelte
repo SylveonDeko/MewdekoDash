@@ -8,8 +8,31 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { currentInstance } from "$lib/stores/instanceStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import ComponentEmbed from "$lib/components/layout/ComponentEmbed.svelte";
+  import { buttons, container, header, linkButton, plain, SITE_ORIGIN, separator, text, withRows } from "$lib/componentEmbed";
 
   let { data } = $props();
+
+  let previewName = $derived(data.preview?.guildName ?? null);
+
+  let previewEmbed = $derived.by(() => {
+    const preview = data.preview;
+    if (!preview?.guildName) return null;
+    const rows = (preview.top ?? []).map(
+      (entry) => `**#${entry.rank}** ${plain(entry.username)} · Level ${entry.level}`
+    );
+    return withRows(
+      (list) =>
+        container(
+          header("## " + plain(preview.guildName) + "\nXP Leaderboard", preview.guildIcon),
+          separator(),
+          list.length ? text(list.join("\n")) : null,
+          list.length ? separator() : null,
+          buttons(linkButton("Open leaderboard", `${SITE_ORIGIN}/leaderboard/${$page.params.guildId}`))
+        ),
+      rows
+    );
+  });
 
   // Authentication required
   let currentUser = $derived(data.user);
@@ -273,9 +296,11 @@
   });
 </script>
 
+<ComponentEmbed embed={previewEmbed} />
+
 <svelte:head>
-  <title>XP Leaderboard - {guildInfo?.name || 'Server'}</title>
-  <meta name="description" content="View the XP leaderboard for {guildInfo?.name || 'this server'}" />
+  <title>XP Leaderboard - {guildInfo?.name || previewName || 'Server'}</title>
+  <meta name="description" content="View the XP leaderboard for {guildInfo?.name || previewName || 'this server'}" />
 </svelte:head>
 
 <div class="min-h-screen p-4 md:p-6"

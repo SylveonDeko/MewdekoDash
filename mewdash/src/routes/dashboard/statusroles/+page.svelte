@@ -13,6 +13,12 @@
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
   import type { PageData } from "./$types";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
+  import { serializeMessage } from "$lib/utils/embedMessage";
+
+  const autoSave = createAutoSave({
+    onError: () => showMessage("Couldn't save status role settings. Use Retry to try again.", "error")
+  });
 
   interface Props {
       data: PageData;
@@ -126,80 +132,113 @@
         }
     }
 
-    // Update status role settings
-    async function updateStatusRoleSettings(id: number) {
-        if (!$currentGuild?.id) return;
-
-        saving = true;
-        try {
-            const promises = [];
-
-            if (editForm.addRoles) {
-              promises.push(statusRolesApi.setAddRoles($currentGuild.id, id, editForm.addRoles));
-            }
-
-            if (editForm.removeRoles) {
-              promises.push(statusRolesApi.setRemoveRoles($currentGuild.id, id, editForm.removeRoles));
-            }
-
-            if (editForm.channelId) {
-              promises.push(statusRolesApi.setStatusChannel($currentGuild.id, id, BigInt(editForm.channelId)));
-            }
-
-          if (editForm.embedText && Object.keys(editForm.embedText).length > 0) {
-            const embedTextToSend = typeof editForm.embedText === "object"
-              ? JSON.stringify(editForm.embedText)
-              : editForm.embedText;
-            promises.push(statusRolesApi.setStatusEmbed($currentGuild.id, id, embedTextToSend));
-            }
-
-            await Promise.all(promises);
-            showMessage("Status role settings updated!", "success");
-            editingRole = null;
-          editForm = { addRoles: "", removeRoles: "", channelId: null, embedText: {} as any };
-            await loadAllStatusRoleData();
-        } catch (err) {
-            logger.error("Failed to update status role:", err);
-            showMessage("Failed to update settings", "error");
-        } finally {
-            saving = false;
-        }
+    /** Applies a confirmed change to one entry in the list, if the list still belongs to the guild it was saved for. */
+    function patchStatusRole(guildId: bigint, id: number, patch: Partial<StatusRole>) {
+        if ($currentGuild?.id !== guildId) return;
+        statusRoles = statusRoles.map(r => r.id === id ? { ...r, ...patch } : r);
     }
 
-    // Toggle remove added
-    async function toggleRemoveAdded(id: number) {
+    /** Saves a role list field. Text, so it is debounced and not rolled back while the user may still be typing. */
+    function saveRoleList(id: number, field: "addRoles" | "removeRoles") {
         if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const value = editForm[field].trim().split(/\s+/).filter(Boolean).join(" ");
 
-        saving = true;
-        try {
-          await statusRolesApi.toggleRemoveAdded($currentGuild.id, id);
-            await loadAllStatusRoleData();
-        } catch (err) {
-            logger.error("Failed to toggle remove added:", err);
-            showMessage("Failed to toggle setting", "error");
-        } finally {
-            saving = false;
-        }
+        autoSave.schedule(`${id}:${field}`, async () => {
+            if (field === "addRoles") {
+                await statusRolesApi.setAddRoles(guildId, id, value);
+                patchStatusRole(guildId, id, { toAdd: value });
+            } else {
+                await statusRolesApi.setRemoveRoles(guildId, id, value);
+                patchStatusRole(guildId, id, { toRemove: value });
+            }
+        });
     }
 
-    // Toggle readd removed
-    async function toggleReaddRemoved(id: number) {
+    function setStatusChannel(id: number, channelId: string | null) {
         if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const previous = statusRoles.find(r => r.id === id)?.statusChannelId ?? null;
+        editForm.channelId = channelId;
 
-        saving = true;
-        try {
-          await statusRolesApi.toggleReaddRemoved($currentGuild.id, id);
-            await loadAllStatusRoleData();
-        } catch (err) {
-            logger.error("Failed to toggle readd removed:", err);
-            showMessage("Failed to toggle setting", "error");
-        } finally {
-            saving = false;
-        }
+        autoSave.now(`${id}:channel`, async () => {
+            const value = channelId ? BigInt(channelId) : BigInt(0);
+            try {
+                await statusRolesApi.setStatusChannel(guildId, id, value);
+                patchStatusRole(guildId, id, { statusChannelId: channelId ? value : null });
+            } catch (err) {
+                if ($currentGuild?.id === guildId && editingRole === id) {
+                    editForm.channelId = previous && previous !== BigInt(0) ? previous.toString() : null;
+                }
+                throw err;
+            }
+        });
+    }
+
+    /** The notification message as last saved, so reopening and cancelling the builder does not write anything. */
+    let savedEmbedText = "";
+
+    /**
+     * The notification message is authored in the embed builder, whose own Save button is the explicit commit, so
+     * the message is stored when the builder saves rather than on every edit inside it.
+     */
+    function saveStatusEmbed(id: number, embedText: any) {
+        if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const value = serializeMessage(embedText);
+        if (value === savedEmbedText) return;
+        const previous = savedEmbedText;
+        savedEmbedText = value;
+
+        autoSave.now(`${id}:embed`, async () => {
+            try {
+                await statusRolesApi.setStatusEmbed(guildId, id, value);
+                patchStatusRole(guildId, id, { statusEmbed: value });
+            } catch (err) {
+                if ($currentGuild?.id === guildId && editingRole === id) savedEmbedText = previous;
+                throw err;
+            }
+        });
+    }
+
+    /**
+     * Flips a toggle immediately. The bot only exposes a toggle endpoint, so the value it reports back is the one
+     * kept, and a failed request flips the switch back.
+     */
+    function toggleSetting(id: number, field: "removeAdded" | "readdRemoved") {
+        if (!$currentGuild?.id) return;
+        const guildId = $currentGuild.id;
+        const role = statusRoles.find(r => r.id === id);
+        if (!role) return;
+        const previous = role[field];
+        patchStatusRole(guildId, id, { [field]: !previous });
+
+        autoSave.now(`${id}:${field}`, async () => {
+            try {
+                if (field === "removeAdded") {
+                    const result = await statusRolesApi.toggleRemoveAdded(guildId, id);
+                    patchStatusRole(guildId, id, { removeAdded: result.removeAdded });
+                } else {
+                    const result = await statusRolesApi.toggleReaddRemoved(guildId, id);
+                    patchStatusRole(guildId, id, { readdRemoved: result.readdRemoved });
+                }
+            } catch (err) {
+                patchStatusRole(guildId, id, { [field]: previous });
+                throw err;
+            }
+        });
+    }
+
+    function stopEditing() {
+        if (editingRole === null) return;
+        void autoSave.flush(`${editingRole}:addRoles`);
+        void autoSave.flush(`${editingRole}:removeRoles`);
+        editingRole = null;
     }
 
     // Start editing a role
     function startEditing(role: typeof statusRoles[0]) {
+        stopEditing();
         editingRole = role.id;
 
       // Parse embedText if it's a JSON string
@@ -222,6 +261,7 @@
             channelId: role.statusChannelId ? role.statusChannelId.toString() : null,
           embedText: parsedEmbedText
         };
+        savedEmbedText = serializeMessage(parsedEmbedText);
     }
 
     // Utility functions
@@ -245,11 +285,6 @@
             const role = guildRoles.find(r => r.id === id);
             return role ? role.name : `Unknown Role`;
         }).join(", ");
-    }
-
-    function handleChannelChange(detail: any) {
-      editForm.channelId = detail.selected;
-      editForm = { ...editForm };
     }
 
     onMount(() => {
@@ -305,6 +340,7 @@
 
 <DashboardPageLayout
   {actionButtons}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-user-check"
@@ -385,6 +421,8 @@
                                                   <input id="input-8035"
                                                             type="text"
                                                             bind:value={editForm.addRoles}
+                                                            oninput={() => saveRoleList(role.id, "addRoles")}
+                                                            onblur={() => autoSave.flush(`${role.id}:addRoles`)}
                                                             placeholder="123456789 987654321"
                                                             class="w-full p-3 rounded-xl border"
                                                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -399,6 +437,8 @@
                                                   <input id="input-6007"
                                                             type="text"
                                                             bind:value={editForm.removeRoles}
+                                                            oninput={() => saveRoleList(role.id, "removeRoles")}
+                                                            onblur={() => autoSave.flush(`${role.id}:removeRoles`)}
                                                             placeholder="123456789 987654321"
                                                             class="w-full p-3 rounded-xl border"
                                                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -416,7 +456,7 @@
                                                             options={guildChannels}
                                                             selected={editForm.channelId}
                                                             placeholder="No channel"
-                                                            onchange={handleChannelChange} />
+                                                            onchange={(detail) => setStatusChannel(role.id, typeof detail.selected === "string" && detail.selected ? detail.selected : null)} />
                                                 </div>
 
                                                 <div>
@@ -428,6 +468,7 @@
 
                                                   <FullscreenEmbedBuilder id="f-+page-notification-message-422"
                                                     bind:value={editForm.embedText}
+                                                    onchange={(value) => saveStatusEmbed(role.id, value)}
                                                     previewTitle="Status Role Notification"
                                                     previewDescription="Message sent when status is detected"
                                                     icon="fa-user-check"
@@ -447,26 +488,18 @@
                                                   />
                                                 </div>
 
-                                                <div class="flex gap-2">
+                                                <div class="flex items-center gap-3 flex-wrap">
                                                     <button
-                                                      class="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                                                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-                                                      onclick={() => updateStatusRoleSettings(role.id)}
-                                                      disabled={saving}
-                                                      aria-busy={saving}
-                                                      aria-label="Save Status Role Settings"
+                                                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                                                      style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                                      onclick={stopEditing}
                                                     >
-                                                      <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}"
-                                                         style="font-size: 18px;" aria-hidden="true"></i>
-                                                      <span class="text-sm sm:text-base">Save</span>
+                                                      <i class="fa-solid fa-check" style="font-size: 14px;" aria-hidden="true"></i>
+                                                      Done
                                                     </button>
-                                                    <button
-                                                      class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
-                                                            style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                                                            onclick={() => editingRole = null}
-                                                    >
-                                                        Cancel
-                                                    </button>
+                                                    <span class="text-xs" style="color: {$colorStore.muted}">
+                                                      Changes save automatically.
+                                                    </span>
                                                 </div>
                                             </div>
                                         {:else}
@@ -476,7 +509,7 @@
                                                      style="background: {$colorStore.primary}05;">
                                                     <span style="color: {$colorStore.muted}">Remove added roles when status removed:</span>
                                                   <button aria-label="Add role"
-                                                            onclick={() => toggleRemoveAdded(role.id)}
+                                                            onclick={() => toggleSetting(role.id, "removeAdded")}
                                                             class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
                                                           style="background: {role.removeAdded ? $colorStore.primary : $colorStore.muted};"
                                                     >
@@ -489,7 +522,7 @@
                                                      style="background: {$colorStore.primary}05;">
                                                     <span style="color: {$colorStore.muted}">Re-add removed roles when status removed:</span>
                                                   <button aria-label="Remove role"
-                                                            onclick={() => toggleReaddRemoved(role.id)}
+                                                            onclick={() => toggleSetting(role.id, "readdRemoved")}
                                                             class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
                                                           style="background: {role.readdRemoved ? $colorStore.primary : $colorStore.muted};"
                                                     >

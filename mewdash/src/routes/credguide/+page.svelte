@@ -4,8 +4,19 @@
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import ComponentEmbed from "$lib/components/layout/ComponentEmbed.svelte";
+    import { buttons, container, header, linkButton, SITE_ORIGIN, separator } from "$lib/componentEmbed";
 
     let mounted = $state(false);
+
+    const previewEmbed = container(
+      header(
+        "## Credentials Setup Guide\nA step-by-step walkthrough for setting up the credentials a self-hosted Mewdeko needs.",
+        `${SITE_ORIGIN}/img/Mewdeko.png`
+      ),
+      separator(),
+      buttons(linkButton("Start the guide", `${SITE_ORIGIN}/credguide`))
+    );
   let currentStep = $state(0);
   let completedSteps: Set<number> = $state(new Set());
   let showAllSteps = $state(false);
@@ -373,6 +384,8 @@
     }
   });
 </script>
+
+<ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
   <title>Mewdeko - Credentials Setup Wizard</title>

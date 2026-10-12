@@ -17,6 +17,7 @@
   import { logger } from "$lib/logger.ts";
   import { loadingStore } from "$lib/stores/loadingStore";
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
 
   interface Props {
@@ -39,7 +40,20 @@
   let afkType = $state(1);
   let afkTimeout = $state("0s");
   let customAfkMessage: any = $state({});
-  let changedSettings = $state(new Set());
+
+  /** Last values the server confirmed, so a failed save can be rolled back. */
+  let saved = {
+    deletion: 0,
+    maxLength: 0,
+    type: 1,
+    timeout: "0s",
+    customMessage: "",
+    disabledChannels: [] as string[]
+  };
+
+  const autoSave = createAutoSave({
+    onError: () => showNotificationMessage("Couldn't save AFK settings. Your last change was undone.", "error")
+  });
 
   // Channel management
   let availableChannels: Array<{ id: string; name: string }> = $state([]);
@@ -119,88 +133,139 @@
     return totalSeconds;
   }
 
-  function markAsChanged(setting: string) {
-    changedSettings = changedSettings.add(setting);
+  function isValidDeletionTime(value: unknown): value is number {
+    return typeof value === "number" && Number.isInteger(value) && value >= 0;
   }
 
-  function validateAfkMaxLength(length: number): boolean {
-    if (length < 1 || length > 4096) {
-      showNotificationMessage("AFK message length must be between 1 and 4096 characters", "error");
-      return false;
-    }
-    return true;
+  function isValidMaxLength(value: unknown): value is number {
+    return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 4096;
   }
 
-  function validateAfkDeletionTime(time: number): boolean {
-    if (time < 0) {
-      showNotificationMessage("Auto-deletion time cannot be negative", "error");
-      return false;
-    }
-    return true;
+  function isValidTimeout(value: string): boolean {
+    const seconds = timeStringToSeconds(value);
+    return seconds >= 1 && seconds <= 7200;
   }
 
-  async function updateAllAfkSettings() {
+  /** Serialises the embed builder's value the way the bot expects it. */
+  function serializeCustomMessage(message: any): string {
+    if (typeof message === "object" && message !== null && Object.keys(message).length > 0) return JSON.stringify(message);
+    return typeof message === "string" ? message : "";
+  }
+
+  function parseCustomMessage(raw: string): any {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-
-      // Validate settings before saving
-      if (changedSettings.has("deletion") && !validateAfkDeletionTime(afkDeletionTime)) {
-        return;
-      }
-      if (changedSettings.has("maxLength") && !validateAfkMaxLength(afkMaxLength)) {
-        return;
-      }
-      const afkTimeoutSeconds = timeStringToSeconds(afkTimeout);
-      if (changedSettings.has("timeout") && (afkTimeoutSeconds < 1 || afkTimeoutSeconds > 7200)) {
-        showNotificationMessage("AFK timeout must be between 1 second and 2 hours", "error");
-        return;
-      }
-
-      const updatePromises = [];
-      const settingsUpdated = [];
-
-      if (changedSettings.has("deletion")) {
-        updatePromises.push(afkApi.afkDelSet($currentGuild.id, afkDeletionTime));
-        settingsUpdated.push("auto-deletion time");
-      }
-      if (changedSettings.has("maxLength")) {
-        updatePromises.push(afkApi.afkLengthSet($currentGuild.id, afkMaxLength));
-        settingsUpdated.push("max message length");
-      }
-      if (changedSettings.has("type")) {
-        updatePromises.push(afkApi.afkTypeSet($currentGuild.id, afkType));
-        settingsUpdated.push("AFK type");
-      }
-      if (changedSettings.has("timeout")) {
-        updatePromises.push(afkApi.afkTimeoutSet($currentGuild.id, afkTimeout));
-        settingsUpdated.push("AFK timeout");
-      }
-      if (changedSettings.has("customMessage")) {
-        const messageToSend = typeof customAfkMessage === "object" && Object.keys(customAfkMessage).length > 0
-          ? JSON.stringify(customAfkMessage)
-          : (typeof customAfkMessage === "string" ? customAfkMessage : "");
-        updatePromises.push(afkApi.setCustomAfkMessage($currentGuild.id, messageToSend));
-        settingsUpdated.push("custom message");
-      }
-      if (changedSettings.has("disabledChannels")) {
-        const channelsString = selectedDisabledChannels.join(",");
-        updatePromises.push(afkApi.setDisabledAfkChannels($currentGuild.id, channelsString || "0"));
-        settingsUpdated.push("disabled channels");
-      }
-
-      if (updatePromises.length === 0) {
-        showNotificationMessage("No changes to save", "error");
-        return;
-      }
-
-      await Promise.all(updatePromises);
-      showNotificationMessage(`Successfully updated: ${settingsUpdated.join(", ")}`, "success");
-      changedSettings.clear();
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Unknown error";
-      logger.error("Failed to update AFK settings:", err);
-      showNotificationMessage(`Failed to update AFK settings: ${errorMsg}`, "error");
+      return raw && raw.trim().startsWith("{") ? JSON.parse(raw) : (raw ? { content: raw } : {});
+    } catch {
+      return raw ? { content: raw } : {};
     }
+  }
+
+  function saveDeletionTime() {
+    if (!$currentGuild?.id) return;
+    const guildId = $currentGuild.id;
+    const value = afkDeletionTime;
+    if (!isValidDeletionTime(value)) {
+      autoSave.cancel("deletion");
+      return;
+    }
+    autoSave.schedule("deletion", async () => {
+      try {
+        await afkApi.afkDelSet(guildId, value);
+        if ($currentGuild?.id === guildId) saved.deletion = value;
+      } catch (err) {
+        // Only undo if the field still shows the value that failed, so typing isn't interrupted
+        if ($currentGuild?.id === guildId && afkDeletionTime === value) afkDeletionTime = saved.deletion;
+        throw err;
+      }
+    });
+  }
+
+  function saveMaxLength() {
+    if (!$currentGuild?.id) return;
+    const guildId = $currentGuild.id;
+    const value = afkMaxLength;
+    if (!isValidMaxLength(value)) {
+      autoSave.cancel("maxLength");
+      return;
+    }
+    autoSave.schedule("maxLength", async () => {
+      try {
+        await afkApi.afkLengthSet(guildId, value);
+        if ($currentGuild?.id === guildId) saved.maxLength = value;
+      } catch (err) {
+        if ($currentGuild?.id === guildId && afkMaxLength === value) afkMaxLength = saved.maxLength;
+        throw err;
+      }
+    });
+  }
+
+  function saveType(value: number) {
+    if (!$currentGuild?.id) return;
+    const guildId = $currentGuild.id;
+    const previous = saved.type;
+    afkType = value;
+    autoSave.now("type", async () => {
+      try {
+        await afkApi.afkTypeSet(guildId, value);
+        if ($currentGuild?.id === guildId) saved.type = value;
+      } catch (err) {
+        if ($currentGuild?.id === guildId) afkType = previous;
+        throw err;
+      }
+    });
+  }
+
+  function saveTimeout() {
+    if (!$currentGuild?.id) return;
+    const guildId = $currentGuild.id;
+    const value = afkTimeout;
+    if (!isValidTimeout(value)) {
+      autoSave.cancel("timeout");
+      return;
+    }
+    autoSave.schedule("timeout", async () => {
+      try {
+        await afkApi.afkTimeoutSet(guildId, value);
+        if ($currentGuild?.id === guildId) saved.timeout = value;
+      } catch (err) {
+        if ($currentGuild?.id === guildId && afkTimeout === value) afkTimeout = saved.timeout;
+        throw err;
+      }
+    });
+  }
+
+  function saveDisabledChannels() {
+    if (!$currentGuild?.id) return;
+    const guildId = $currentGuild.id;
+    const value = [...selectedDisabledChannels];
+    const previous = [...saved.disabledChannels];
+    autoSave.now("disabledChannels", async () => {
+      try {
+        await afkApi.setDisabledAfkChannels(guildId, value.join(",") || "0");
+        if ($currentGuild?.id === guildId) saved.disabledChannels = value;
+      } catch (err) {
+        if ($currentGuild?.id === guildId) selectedDisabledChannels = previous;
+        throw err;
+      }
+    });
+  }
+
+  /** The embed builder has its own Save/Cancel, so this runs once it closes, and only if the message changed. */
+  function saveCustomMessage() {
+    if (!$currentGuild?.id) return;
+    const guildId = $currentGuild.id;
+    const value = serializeCustomMessage(customAfkMessage);
+    const previous = saved.customMessage;
+    if (value === previous) return;
+    autoSave.now("customMessage", async () => {
+      try {
+        await afkApi.setCustomAfkMessage(guildId, value);
+        if ($currentGuild?.id === guildId) saved.customMessage = value;
+      } catch (err) {
+        if ($currentGuild?.id === guildId) customAfkMessage = parseCustomMessage(previous);
+        throw err;
+      }
+    });
   }
 
   function showBulkRemoveConfirm() {
@@ -258,20 +323,40 @@
   function handleTimeoutInput(event: Event) {
     const target = event.target as HTMLInputElement;
     afkTimeout = target.value;
-    const afkTimeoutSeconds = timeStringToSeconds(afkTimeout);
 
     // Validate timeout range (1s to 2h = 7200s)
-    if (afkTimeoutSeconds < 1 || afkTimeoutSeconds > 7200) {
-      showNotificationMessage("AFK timeout must be between 1 second and 2 hours", "error");
-      return;
-    }
+    target.setCustomValidity(isValidTimeout(afkTimeout) ? "" : "Must be between 1 second and 2 hours");
+    saveTimeout();
+  }
 
-    markAsChanged("timeout");
+  function handleTimeoutBlur(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (!isValidTimeout(afkTimeout)) {
+      showNotificationMessage("AFK timeout must be between 1 second and 2 hours", "error");
+      afkTimeout = saved.timeout;
+      target.value = saved.timeout;
+      target.setCustomValidity("");
+    }
+    autoSave.flush("timeout");
+  }
+
+  function handleNumberBlur(event: Event, key: "deletion" | "maxLength") {
+    const target = event.currentTarget as HTMLInputElement;
+    switch (key) {
+      case "deletion":
+        if (!isValidDeletionTime(afkDeletionTime)) afkDeletionTime = saved.deletion;
+        break;
+      case "maxLength":
+        if (!isValidMaxLength(afkMaxLength)) afkMaxLength = saved.maxLength;
+        break;
+    }
+    target.setCustomValidity("");
+    autoSave.flush(key);
   }
 
   function handleDisabledChannelsChange(detail: { selected: string | string[] | null }) {
     selectedDisabledChannels = Array.isArray(detail.selected) ? detail.selected : [];
-    markAsChanged("disabledChannels");
+    saveDisabledChannels();
   }
 
   onMount(async () => {
@@ -320,13 +405,17 @@
         selectedDisabledChannels = disabledChannelIds;
 
         // Parse custom message - could be JSON string or plain text
-        const customMsgStr = customMsg || "";
-        try {
-          customAfkMessage = customMsgStr && customMsgStr.trim().startsWith("{") ? JSON.parse(customMsgStr) : (customMsgStr ? { content: customMsgStr } : {});
-        } catch {
-          customAfkMessage = customMsgStr ? { content: customMsgStr } : {};
-        }
+        customAfkMessage = parseCustomMessage(customMsg || "");
         availableChannels = channels;
+
+        saved = {
+          deletion,
+          maxLength,
+          type,
+          timeout: afkTimeout,
+          customMessage: serializeCustomMessage(customAfkMessage),
+          disabledChannels: [...disabledChannelIds]
+        };
 
         // Ensure the disabled channels are set after available channels are loaded
         // This helps with pre-population timing
@@ -433,6 +522,7 @@
       icon: "fa-arrows-rotate",
       action: async () => {
         loading = true;
+        await autoSave.flush();
         await Promise.all([fetchAfkUsers(), fetchAfkSettings()]);
         loading = false;
       },
@@ -458,6 +548,7 @@
 
 <DashboardPageLayout
   {actionButtons}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-clock"
@@ -503,14 +594,10 @@
             bind:value={afkDeletionTime}
             class="w-full p-3 rounded-lg border transition-all duration-200"
             oninput={(e) => {
-              const value = parseInt(e.currentTarget.value);
-              if (isNaN(value) || value < 0) {
-                e.currentTarget.setCustomValidity("Value must be 0 or greater");
-              } else {
-                e.currentTarget.setCustomValidity("");
-                markAsChanged("deletion");
-              }
+              e.currentTarget.setCustomValidity(isValidDeletionTime(afkDeletionTime) ? "" : "Value must be 0 or greater");
+              saveDeletionTime();
             }}
+            onblur={(e) => handleNumberBlur(e, "deletion")}
             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;
                    color: {$colorStore.text};
                    focus-visible:outline: none;
@@ -541,14 +628,10 @@
             bind:value={afkMaxLength}
             class="w-full p-3 rounded-lg border transition-all duration-200"
             oninput={(e) => {
-              const value = parseInt(e.currentTarget.value);
-              if (isNaN(value) || value < 1 || value > 4096) {
-                e.currentTarget.setCustomValidity("Value must be between 1 and 4096");
-              } else {
-                e.currentTarget.setCustomValidity("");
-                markAsChanged("maxLength");
-              }
+              e.currentTarget.setCustomValidity(isValidMaxLength(afkMaxLength) ? "" : "Value must be between 1 and 4096");
+              saveMaxLength();
             }}
+            onblur={(e) => handleNumberBlur(e, "maxLength")}
             style="background: {$colorStore.primary}08; border-color: {$colorStore.secondary}30;
                    color: {$colorStore.text};
                    focus-visible:outline: none;
@@ -583,8 +666,8 @@
             selected={afkType.toString()}
             onchange={(detail) => {
               if (detail.selected && typeof detail.selected === 'string') {
-                afkType = parseInt(detail.selected);
-                markAsChanged("type");
+                const value = parseInt(detail.selected);
+                if (!isNaN(value) && value !== afkType) saveType(value);
               }
             }}
           />
@@ -595,17 +678,6 @@
         </div>
       </div>
 
-      <!-- Save Button -->
-      <div class="mt-6 flex justify-end">
-        <button
-          class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-          disabled={changedSettings.size === 0}
-          onclick={updateAllAfkSettings}
-          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-        >
-          Save Changes
-        </button>
-      </div>
     </section>
   {/if}
 
@@ -645,6 +717,7 @@
             value={afkTimeout}
             class="w-full p-3 rounded-lg border transition-all duration-200"
             oninput={handleTimeoutInput}
+            onblur={handleTimeoutBlur}
             style="background: {$colorStore.primary}08; border-color: {$colorStore.secondary}30;
                    color: {$colorStore.text};
                    focus-visible:outline: none;
@@ -707,7 +780,7 @@
             guildId={$currentGuild?.id}
             user={data.user}
             placeholder="Click to configure AFK message with rich embeds"
-            onchange={() => markAsChanged("customMessage")}
+            onclose={saveCustomMessage}
           />
 
           <p class="mt-3 text-sm" style="color: {$colorStore.muted}">
@@ -719,17 +792,6 @@
         </div>
       </div>
 
-      <!-- Save Button -->
-      <div class="mt-6 flex justify-end">
-        <button
-          class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-          disabled={changedSettings.size === 0}
-          onclick={updateAllAfkSettings}
-          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-        >
-          Save Changes
-        </button>
-      </div>
     </section>
   {/if}
 

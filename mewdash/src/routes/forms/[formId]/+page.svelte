@@ -29,6 +29,8 @@
     sanitizeUrlPath
   } from "$lib/utils/sanitize";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import ComponentEmbed from "$lib/components/layout/ComponentEmbed.svelte";
+  import { buttons, container, header, linkButton, plain, SITE_ORIGIN, separator, text } from "$lib/componentEmbed";
 
   interface Props {
     data: PageData;
@@ -157,11 +159,33 @@
    * somebody reads before deciding whether to open the link at all.
    */
   let metaDescription = $derived.by(() => {
+    const preview = data.preview;
+    const owner = guildName ?? preview?.guildName ?? null;
     const summary =
-      form?.description?.trim() ||
-      (guildName ? `A form from ${guildName}` : "Fill out this form");
+      (form ? form.description?.trim() : preview?.description?.trim()) ||
+      (owner ? `A form from ${owner}` : "Fill out this form");
+    const anonymous = form ? form.allowAnonymous : preview?.allowAnonymous;
 
-    return form?.allowAnonymous ? `${summary} Your answers are submitted anonymously.` : summary;
+    return anonymous ? `${summary} Your answers are submitted anonymously.` : summary;
+  });
+
+  let metaTitle = $derived(form?.name || data.preview?.name || "Form");
+
+  let previewEmbed = $derived.by(() => {
+    const preview = data.preview;
+    if (!preview) return null;
+    const details = [
+      preview.guildName ? `From **${plain(preview.guildName)}**` : null,
+      preview.questionCount !== null
+        ? `${preview.questionCount} question${preview.questionCount === 1 ? "" : "s"}`
+        : null
+    ].filter(Boolean);
+    return container(
+      header("## " + plain(preview.name) + "\n" + plain(metaDescription), preview.guildIcon),
+      details.length ? text(details.join(" · ")) : null,
+      separator(),
+      buttons(linkButton("Open form", `${SITE_ORIGIN}/forms/${$page.params.formId}`))
+    );
   });
 
   /** How long until a temporary refusal lifts, phrased the way somebody would say it out loud. */
@@ -1023,20 +1047,22 @@
   });
 </script>
 
+<ComponentEmbed embed={previewEmbed} />
+
 <svelte:head>
-  <title>{form?.name || "Form"} - Mewdeko</title>
+  <title>{metaTitle} - Mewdeko</title>
   <meta content={metaDescription} name="description" />
 
   <!-- These forms get shared by pasting the link into Discord, so the unfurl is most of the first
        impression: whose server is asking, what for, and whether it is anonymous. -->
-  <meta content={form?.name || "Form"} property="og:title" />
+  <meta content={metaTitle} property="og:title" />
   <meta content={metaDescription} property="og:description" />
   <meta content="website" property="og:type" />
   {#if guildIconUrl}
     <meta content={guildIconUrl} property="og:image" />
   {/if}
   <meta content="summary" name="twitter:card" />
-  <meta content={form?.name || "Form"} name="twitter:title" />
+  <meta content={metaTitle} name="twitter:title" />
   <meta content={metaDescription} name="twitter:description" />
   {#if guildIconUrl}
     <meta content={guildIconUrl} name="twitter:image" />

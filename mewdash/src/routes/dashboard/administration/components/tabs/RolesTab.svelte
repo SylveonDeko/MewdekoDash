@@ -23,8 +23,11 @@
     voiceChannels,
     textChannels,
     saving,
+    autoSave,
     saveNormalRoles,
     saveBotRoles,
+    applySelfAssignableGroupName,
+    applySelfAssignableLevel,
     showConfirm,
     removeAutoBanRole,
     addAutoBanRole,
@@ -43,7 +46,6 @@
     bind:selectedNormalRoles
     {saveBotRoles}
     {saveNormalRoles}
-    {saving}
   />
 
   <AutoBanRolesCard
@@ -63,6 +65,9 @@
   />
 
   <SelfAssignableRolesCard
+    {applySelfAssignableGroupName}
+    {applySelfAssignableLevel}
+    {autoSave}
     {fetchAllData}
     {selfAssignableRoles}
     {toggleSelfAssignableRolesExclusive}

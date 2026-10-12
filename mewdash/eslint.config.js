@@ -40,7 +40,7 @@ export default [
   // Svelte files
   ...eslintPluginSvelte.configs["flat/recommended"],
   {
-    files: ["**/*.svelte"],
+    files: ["**/*.svelte", "**/*.svelte.ts"],
     languageOptions: {
       parserOptions: {
         parser: tsparser,

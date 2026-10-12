@@ -3,10 +3,13 @@
 
 
   import { createSearchStore, searchHandler } from "$lib/stores/commandSearch";
-    import {onDestroy, onMount, untrack} from "svelte";
+    import {onDestroy, onMount, tick, untrack} from "svelte";
     import {fade, fly} from "svelte/transition";
+    import { page } from "$app/state";
     import {colorStore} from "$lib/stores/colorStore";
+    import { buttons, container, linkButton, plain, SITE_ORIGIN, separator, text, withRows } from "$lib/componentEmbed";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import ComponentEmbed from "$lib/components/layout/ComponentEmbed.svelte";
     import type {PageData} from "./$types";
 
     interface Props {
@@ -14,6 +17,78 @@
     }
 
     let {data}: Props = $props();
+
+  const requestedCommand = page.url.searchParams.get("command")?.toLowerCase() ?? "";
+  const requestedModule = page.url.searchParams.get("module")?.toLowerCase() ?? "";
+
+  const previewEmbed = (() => {
+    const url = `${SITE_ORIGIN}/commands${page.url.search}`;
+    const viewAll = buttons(linkButton("View all commands", url));
+    const totalCommands = data.modules.reduce((count, module) => count + module.Commands.length, 0);
+
+    for (const module of data.modules) {
+      const command = module.Commands.find((c) => c.CommandName.toLowerCase() === requestedCommand);
+      if (!command) continue;
+      const details = [
+        command.Example?.length ? `Usage: \`${command.Example[0]}\`` : null,
+        command.GuildUserPermissions ? `Requires: ${command.GuildUserPermissions}` : null,
+        `Module: ${module.Name}`
+      ].filter(Boolean);
+      return container(
+        text(`## .${plain(command.CommandName)}\n${plain(command.Description)}`),
+        text(details.join("\n")),
+        separator(),
+        viewAll
+      );
+    }
+
+    const module = data.modules.find((m) => m.Name.toLowerCase() === requestedModule);
+    if (module) {
+      return withRows(
+        (rows) =>
+          container(
+            text(`## ${plain(module.Name)}\n${module.Commands.length} commands`),
+            separator(),
+            text(rows.join("\n")),
+            separator(),
+            viewAll
+          ),
+        module.Commands.map((c) => `\`.${c.CommandName}\` ${plain(c.Description)}`)
+      );
+    }
+
+    return container(
+      text(`## Mewdeko Commands\nFind out more about Mewdeko's commands and how to use them.`),
+      text(`${totalCommands} commands · ${data.modules.length} modules`),
+      separator(),
+      viewAll
+    );
+  })();
+
+  function commandAnchor(name: string): string {
+    return `cmd-${name.toLowerCase()}`;
+  }
+
+  async function openRequested() {
+    const name = requestedCommand || location.hash.replace(/^#cmd-/, "");
+    if (!name) {
+      const moduleIndex = data.modules.findIndex((m) => m.Name.toLowerCase() === requestedModule);
+      if (moduleIndex >= 0) activeTabIndex = moduleIndex;
+      return;
+    }
+    const moduleIndex = data.modules.findIndex((m) => m.Commands.some((c) => c.CommandName.toLowerCase() === name));
+    if (moduleIndex < 0) return;
+    activeTabIndex = moduleIndex;
+    await tick();
+    document.getElementById(commandAnchor(name))?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function linkCommand(name: string) {
+    const url = new URL(location.href);
+    url.searchParams.set("command", name.toLowerCase());
+    url.hash = commandAnchor(name);
+    history.replaceState(history.state, "", url);
+  }
 
   const searchStore = createSearchStore(untrack(() => data.modules));
     let mounted = $state(false);
@@ -102,13 +177,10 @@
 
   onMount(() => {
     mounted = true;
-  });
-
-  onMount(() => {
-    mounted = true;
     if (typeof window !== "undefined") {
       window.addEventListener("keydown", handleGlobalKeydown);
     }
+    void openRequested();
   });
 
   onDestroy(() => {
@@ -118,6 +190,8 @@
     }
   });
 </script>
+
+<ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
   <title>Mewdeko - Commands</title>
@@ -361,7 +435,8 @@
               <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
                 {#each activeModule.Commands as command, cmdIndex}
                   <article
-                    class="command-card  border rounded-xl p-4 transition-all duration-200 group focus-within:ring-2 overflow-hidden"
+                    id={commandAnchor(command.CommandName)}
+                    class="command-card  border rounded-xl p-4 transition-all duration-200 group focus-within:ring-2 overflow-hidden scroll-mt-24"
                     style="background: {$colorStore.primary}10;
                               border-color: {$colorStore.primary}20;
                               --tw-ring-color: {$colorStore.primary};"
@@ -369,7 +444,11 @@
 
                     <header class="mb-3">
                       <h3 class="text-lg font-semibold transition-colors" style="color: {$colorStore.text};">
-                        {capitalizeFirstLetter(command.CommandName)}
+                        <a
+                          href="?command={command.CommandName.toLowerCase()}#{commandAnchor(command.CommandName)}"
+                          onclick={(event) => { event.preventDefault(); linkCommand(command.CommandName); }}
+                          title="Link to this command"
+                          class="hover:underline">{capitalizeFirstLetter(command.CommandName)}</a>
                       </h3>
                     </header>
 

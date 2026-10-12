@@ -8,7 +8,24 @@
   import LatestProductUpdate from "$lib/components/home/LatestProductUpdate.svelte";
   import HomeHero from "$lib/components/home/HomeHero.svelte";
   import HomeTails from "$lib/components/home/HomeTails.svelte";
+  import ComponentEmbed from "$lib/components/layout/ComponentEmbed.svelte";
+  import { buttons, container, gallery, linkButton, SITE_ORIGIN, separator, text } from "$lib/componentEmbed";
   import { productUpdates } from "$lib/content/productUpdates";
+
+  const inviteUrl =
+    "https://discord.com/oauth2/authorize?client_id=752236274261426212&permissions=66186303&response_type=code&redirect_uri=https%3A%2F%2Fmewdeko.tech%2Fapi%2Fdiscord%2Fcallback&integration_type=0&scope=identify+guilds+bot";
+  const previewEmbed = container(
+    gallery(`${SITE_ORIGIN}/img/hero-dashboard.png`),
+    text(
+      "## Mewdeko\n1,082 commands across 34 modules: forms, XP, economy, music, protection, logging and more. Trusted by 11,400+ servers. Free and open source since 2020."
+    ),
+    separator(),
+    buttons(
+      linkButton("Add to Discord", inviteUrl),
+      linkButton("Dashboard", `${SITE_ORIGIN}/dashboard`),
+      linkButton("Commands", `${SITE_ORIGIN}/commands`)
+    )
+  );
 
   let guilds: RedisGuild[] = $state([]);
   let fetched = $state(false);
@@ -81,6 +98,8 @@
   }
 
 </script>
+
+<ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
   <title>Mewdeko - 1,082 Commands. Free & Open Source Discord Bot</title>

@@ -28,9 +28,16 @@
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import {currentInstance} from "$lib/stores/instanceStore";
     import { requestConfirmation } from "$lib/stores/confirmationStore";
-    import { useUnsavedChangesGuard } from "$lib/utils/unsavedChanges";
+    import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
-    useUnsavedChangesGuard(() => hasChanges);
+    const autoSave = createAutoSave({
+      onError: (_err, key) => showNotificationMessage(
+        TYPED_SETTINGS.has(key.slice(key.indexOf(":") + 1) as SettingKey)
+          ? "Couldn't save counting settings."
+          : "Couldn't save counting settings. Your last change was undone.",
+        "error"
+      )
+    });
 
     interface Props {
         data: PageData;
@@ -45,7 +52,6 @@
     let showNotification = $state(false);
     let notificationMessage = $state("");
     let notificationType: "success" | "error" = $state("success");
-    let hasChanges = $state(false);
 
   // Data
     let countingChannels: CountingChannelResponse[] = $state([]);
@@ -63,19 +69,47 @@
     let setupIncrement = $state(1);
 
   // Config form data
-    let allowRepeatedUsers = $state(false);
-    let cooldown = $state(0);
-    let requiredRoles: string[] = $state([]);
-    let bannedRoles: string[] = $state([]);
-    let maxNumber = $state(0);
-    let resetOnError = $state(true);
-    let deleteWrongMessages = $state(true);
-  let pattern = $state(CountingPattern.Sequential);
-    let numberBase = $state(10);
-    let successEmote = $state("");
-    let errorEmote = $state("");
-    let enableAchievements = $state(true);
-    let enableCompetitions = $state(false);
+  interface CountingSettings {
+    allowRepeatedUsers: boolean;
+    cooldown: number;
+    requiredRoles: string[];
+    bannedRoles: string[];
+    maxNumber: number;
+    resetOnError: boolean;
+    deleteWrongMessages: boolean;
+    pattern: CountingPattern;
+    numberBase: number;
+    successEmote: string;
+    errorEmote: string;
+    enableAchievements: boolean;
+    enableCompetitions: boolean;
+  }
+  type SettingKey = keyof CountingSettings;
+
+  /** Settings edited by typing. They save debounced and are not rolled back on failure. */
+  const TYPED_SETTINGS = new Set<SettingKey>(["cooldown", "maxNumber", "numberBase", "successEmote", "errorEmote"]);
+
+  function defaultSettings(): CountingSettings {
+    return {
+      allowRepeatedUsers: false,
+      cooldown: 0,
+      requiredRoles: [],
+      bannedRoles: [],
+      maxNumber: 0,
+      resetOnError: true,
+      deleteWrongMessages: true,
+      pattern: CountingPattern.Sequential,
+      numberBase: 10,
+      successEmote: "",
+      errorEmote: "",
+      enableAchievements: true,
+      enableCompetitions: false
+    };
+  }
+
+  let settings: CountingSettings = $state(defaultSettings());
+  /** Last values the server confirmed for the selected channel, so a failed save can roll back. */
+  let savedSettings: CountingSettings = defaultSettings();
 
   // Leaderboard settings
     let leaderboardType = $state("contributions");
@@ -94,10 +128,6 @@
     notificationType = type;
     showNotification = true;
     setTimeout(() => showNotification = false, 3000);
-  }
-
-  function markAsChanged() {
-    hasChanges = true;
   }
 
   function formatNumber(num: number): string {
@@ -172,7 +202,11 @@
 
   async function loadChannelDetails(channelId: bigint) {
     if (!$currentGuild) return;
-    
+
+    // Let queued edits land first so the reload does not show stale values over them.
+    await autoSave.flush();
+    if (!$currentGuild) return;
+
     try {
       const [configData, statsData, savePointsData] = await Promise.all([
         countingApi.getCountingConfig($currentGuild.id, channelId).catch(() => null),
@@ -186,22 +220,24 @@
 
       // Populate form data from config
       if (channelConfig) {
-        allowRepeatedUsers = channelConfig.allowRepeatedUsers;
-        cooldown = channelConfig.cooldown;
-        requiredRoles = channelConfig.requiredRoles ? channelConfig.requiredRoles.split(',').map(r => r.trim()).filter(r => r) : [];
-        bannedRoles = channelConfig.bannedRoles ? channelConfig.bannedRoles.split(',').map(r => r.trim()).filter(r => r) : [];
-        maxNumber = channelConfig.maxNumber;
-        resetOnError = channelConfig.resetOnError;
-        deleteWrongMessages = channelConfig.deleteWrongMessages;
-        pattern = channelConfig.pattern;
-        numberBase = channelConfig.numberBase;
-        successEmote = channelConfig.successEmote || "";
-        errorEmote = channelConfig.errorEmote || "";
-        enableAchievements = channelConfig.enableAchievements;
-        enableCompetitions = channelConfig.enableCompetitions;
+        const loaded: CountingSettings = {
+          allowRepeatedUsers: channelConfig.allowRepeatedUsers,
+          cooldown: channelConfig.cooldown,
+          requiredRoles: channelConfig.requiredRoles ? channelConfig.requiredRoles.split(',').map(r => r.trim()).filter(r => r) : [],
+          bannedRoles: channelConfig.bannedRoles ? channelConfig.bannedRoles.split(',').map(r => r.trim()).filter(r => r) : [],
+          maxNumber: channelConfig.maxNumber,
+          resetOnError: channelConfig.resetOnError,
+          deleteWrongMessages: channelConfig.deleteWrongMessages,
+          pattern: channelConfig.pattern,
+          numberBase: channelConfig.numberBase,
+          successEmote: channelConfig.successEmote || "",
+          errorEmote: channelConfig.errorEmote || "",
+          enableAchievements: channelConfig.enableAchievements,
+          enableCompetitions: channelConfig.enableCompetitions
+        };
+        settings = loaded;
+        savedSettings = { ...loaded, requiredRoles: [...loaded.requiredRoles], bannedRoles: [...loaded.bannedRoles] };
       }
-
-      hasChanges = false;
     } catch (err) {
       logger.error("Failed to load channel details:", err);
       showNotificationMessage("Failed to load channel details", "error");
@@ -255,36 +291,86 @@
     }
   }
 
-  async function saveConfiguration() {
-    if (!selectedChannel || !$currentGuild || !hasChanges) return;
+  function isIntInRange(value: unknown, min: number, max = Number.MAX_SAFE_INTEGER): value is number {
+    return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max;
+  }
 
-    try {
-      const request: UpdateCountingConfigRequest = {
-        allowRepeatedUsers,
-        cooldown,
-        requiredRoles: requiredRoles.length > 0 ? requiredRoles.join(',') : undefined,
-        bannedRoles: bannedRoles.length > 0 ? bannedRoles.join(',') : undefined,
-        maxNumber: maxNumber || undefined,
-        resetOnError,
-        deleteWrongMessages,
-        pattern,
-        numberBase,
-        successEmote: successEmote || undefined,
-        errorEmote: errorEmote || undefined,
-        enableAchievements,
-        enableCompetitions
-      };
-
-      await countingApi.updateCountingConfig($currentGuild.id, selectedChannel.channelId, request);
-      hasChanges = false;
-      showNotificationMessage("Configuration saved successfully!", "success");
-      
-      // Reload channel details
-      await loadChannelDetails(selectedChannel.channelId);
-    } catch (err) {
-      logger.error("Failed to save configuration:", err);
-      showNotificationMessage("Failed to save configuration", "error");
+  /**
+   * Builds the partial update for one setting, or null while the value is not valid to send.
+   * The API leaves omitted fields alone, so each setting is saved on its own. Empty role lists
+   * and emotes are sent as "" so clearing them actually reaches the server.
+   */
+  function buildRequest(key: SettingKey, s: CountingSettings): UpdateCountingConfigRequest | null {
+    switch (key) {
+      case "cooldown":
+        return isIntInRange(s.cooldown, 0, 300) ? { cooldown: s.cooldown } : null;
+      case "maxNumber":
+        return isIntInRange(s.maxNumber, 0) ? { maxNumber: s.maxNumber } : null;
+      case "numberBase":
+        return isIntInRange(s.numberBase, 2, 36) ? { numberBase: s.numberBase } : null;
+      case "requiredRoles":
+        return { requiredRoles: s.requiredRoles.join(",") };
+      case "bannedRoles":
+        return { bannedRoles: s.bannedRoles.join(",") };
+      case "successEmote":
+        return { successEmote: s.successEmote.trim() };
+      case "errorEmote":
+        return { errorEmote: s.errorEmote.trim() };
+      case "pattern":
+        return { pattern: s.pattern };
+      case "allowRepeatedUsers":
+        return { allowRepeatedUsers: s.allowRepeatedUsers };
+      case "resetOnError":
+        return { resetOnError: s.resetOnError };
+      case "deleteWrongMessages":
+        return { deleteWrongMessages: s.deleteWrongMessages };
+      case "enableAchievements":
+        return { enableAchievements: s.enableAchievements };
+      case "enableCompetitions":
+        return { enableCompetitions: s.enableCompetitions };
     }
+  }
+
+  function settingSaveKey(channelId: bigint, key: SettingKey) {
+    // Keyed by channel too, so switching channels mid-edit cannot replace another channel's queued save.
+    return `${channelId}:${key}`;
+  }
+
+  /**
+   * Saves one setting of the selected channel. Toggles, selects and role pickers save at once
+   * and roll back on failure; typed fields save after a pause and keep what the user typed.
+   */
+  function saveSetting(key: SettingKey) {
+    if (!selectedChannel || !$currentGuild) return;
+    const guildId = $currentGuild.id;
+    const channelId = selectedChannel.channelId;
+    const snapshot = $state.snapshot(settings) as CountingSettings;
+    const request = buildRequest(key, snapshot);
+    if (!request) return;
+
+    const isCurrent = () => $currentGuild?.id === guildId && selectedChannel?.channelId === channelId;
+    const typed = TYPED_SETTINGS.has(key);
+
+    const save = async () => {
+      try {
+        await countingApi.updateCountingConfig(guildId, channelId, request);
+        if (isCurrent()) savedSettings = { ...savedSettings, [key]: snapshot[key] };
+      } catch (err) {
+        if (!typed && isCurrent()) settings = { ...settings, [key]: savedSettings[key] };
+        throw err;
+      }
+    };
+
+    if (typed) {
+      autoSave.schedule(settingSaveKey(channelId, key), save);
+    } else {
+      autoSave.now(settingSaveKey(channelId, key), save);
+    }
+  }
+
+  function flushSetting(key: SettingKey) {
+    if (!selectedChannel) return;
+    autoSave.flush(settingSaveKey(selectedChannel.channelId, key));
   }
 
   async function resetChannel() {
@@ -565,14 +651,7 @@
 {/snippet}
 
 <DashboardPageLayout
-  actionButtons={hasChanges ? [
-    {
-      label: "Save Configuration",
-      icon: "fa-circle-check",
-      action: saveConfiguration,
-      style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
-    }
-  ] : []}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-list-numeric"
@@ -751,13 +830,13 @@
                 { id: "3", name: "Primes (2, 3, 5, 7...)", label: "Primes" },
                 { id: "4", name: "Powers of Two (2, 4, 8...)", label: "Powers of Two" }
               ]}
-              selected={pattern?.toString() ?? "0"}
+              selected={settings.pattern?.toString() ?? "0"}
               placeholder="Select pattern..."
               searchable={false}
               onchange={(detail) => {
                 if (detail.selected && typeof detail.selected === 'string') {
-                  pattern = parseInt(detail.selected);
-                  markAsChanged();
+                  settings.pattern = parseInt(detail.selected);
+                  saveSetting("pattern");
                 }
               }}
             />
@@ -767,8 +846,9 @@
             <label for="input-5192" class="block mb-2" style="color: {$colorStore.text}">Number Base</label>
             <input id="input-5192"
               type="number"
-              bind:value={numberBase}
-              oninput={markAsChanged}
+              bind:value={settings.numberBase}
+              oninput={() => saveSetting("numberBase")}
+              onblur={() => flushSetting("numberBase")}
               min="2"
               max="36"
               class="w-full p-3 rounded-lg border"
@@ -781,8 +861,9 @@
             <label for="input-2101" class="block mb-2" style="color: {$colorStore.text}">Cooldown (seconds)</label>
             <input id="input-2101"
               type="number"
-              bind:value={cooldown}
-              oninput={markAsChanged}
+              bind:value={settings.cooldown}
+              oninput={() => saveSetting("cooldown")}
+              onblur={() => flushSetting("cooldown")}
               min="0"
               max="300"
               class="w-full p-3 rounded-lg border"
@@ -794,8 +875,9 @@
             <label for="input-6772" class="block mb-2" style="color: {$colorStore.text}">Max Number</label>
             <input id="input-6772"
               type="number"
-              bind:value={maxNumber}
-              oninput={markAsChanged}
+              bind:value={settings.maxNumber}
+              oninput={() => saveSetting("maxNumber")}
+              onblur={() => flushSetting("maxNumber")}
               min="0"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -807,8 +889,9 @@
             <label for="input-1917" class="block mb-2" style="color: {$colorStore.text}">Success Emote</label>
             <input id="input-1917"
               type="text"
-              bind:value={successEmote}
-              oninput={markAsChanged}
+              bind:value={settings.successEmote}
+              oninput={() => saveSetting("successEmote")}
+              onblur={() => flushSetting("successEmote")}
               placeholder="✅"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -819,8 +902,9 @@
             <label for="input-9952" class="block mb-2" style="color: {$colorStore.text}">Error Emote</label>
             <input id="input-9952"
               type="text"
-              bind:value={errorEmote}
-              oninput={markAsChanged}
+              bind:value={settings.errorEmote}
+              oninput={() => saveSetting("errorEmote")}
+              onblur={() => flushSetting("errorEmote")}
               placeholder="❌"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -839,8 +923,8 @@
             <label for="input-2005" class="flex items-center gap-3">
               <input
                 type="checkbox"
-                bind:checked={allowRepeatedUsers}
-                onchange={markAsChanged}
+                bind:checked={settings.allowRepeatedUsers}
+                onchange={() => saveSetting("allowRepeatedUsers")}
                 class="w-4 h-4"
               >
               <span style="color: {$colorStore.text}">Allow repeated users</span>
@@ -849,8 +933,8 @@
             <label for="input-2005" class="flex items-center gap-3">
               <input
                 type="checkbox"
-                bind:checked={resetOnError}
-                onchange={markAsChanged}
+                bind:checked={settings.resetOnError}
+                onchange={() => saveSetting("resetOnError")}
                 class="w-4 h-4"
               >
               <span style="color: {$colorStore.text}">Reset count on error</span>
@@ -859,8 +943,8 @@
             <label for="input-2005" class="flex items-center gap-3">
               <input
                 type="checkbox"
-                bind:checked={deleteWrongMessages}
-                onchange={markAsChanged}
+                bind:checked={settings.deleteWrongMessages}
+                onchange={() => saveSetting("deleteWrongMessages")}
                 class="w-4 h-4"
               >
               <span style="color: {$colorStore.text}">Delete wrong messages</span>
@@ -871,8 +955,8 @@
             <label for="input-2005" class="flex items-center gap-3">
               <input
                 type="checkbox"
-                bind:checked={enableAchievements}
-                onchange={markAsChanged}
+                bind:checked={settings.enableAchievements}
+                onchange={() => saveSetting("enableAchievements")}
                 class="w-4 h-4"
               >
               <span style="color: {$colorStore.text}">Enable achievements</span>
@@ -881,8 +965,8 @@
             <label for="input-2005" class="flex items-center gap-3">
               <input
                 type="checkbox"
-                bind:checked={enableCompetitions}
-                onchange={markAsChanged}
+                bind:checked={settings.enableCompetitions}
+                onchange={() => saveSetting("enableCompetitions")}
                 class="w-4 h-4"
               >
               <span style="color: {$colorStore.text}">Enable competitions</span>
@@ -902,10 +986,10 @@
             <DiscordSelector
               type="role"
               options={guildRoles}
-              bind:selected={requiredRoles}
+              bind:selected={settings.requiredRoles}
               placeholder="Select required roles..."
               multiple={true}
-              onchange={markAsChanged}
+              onchange={() => saveSetting("requiredRoles")}
             />
             <p class="text-sm mt-1" style="color: {$colorStore.muted}">Users must have one of these roles</p>
           </div>
@@ -915,10 +999,10 @@
             <DiscordSelector
               type="role"
               options={guildRoles}
-              bind:selected={bannedRoles}
+              bind:selected={settings.bannedRoles}
               placeholder="Select banned roles..."
               multiple={true}
-              onchange={markAsChanged}
+              onchange={() => saveSetting("bannedRoles")}
             />
             <p class="text-sm mt-1" style="color: {$colorStore.muted}">Users with these roles cannot count</p>
           </div>

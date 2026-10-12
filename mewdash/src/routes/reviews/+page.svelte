@@ -10,6 +10,14 @@
     import DOMPurify from "dompurify";
     import type {DiscordUser} from "$lib/types/discord.ts";
     import {colorStore} from "$lib/stores/colorStore";
+    import ComponentEmbed from "$lib/components/layout/ComponentEmbed.svelte";
+    import { buttons, container, header, linkButton, SITE_ORIGIN, separator } from "$lib/componentEmbed";
+
+    const previewEmbed = container(
+      header("## Reviews\nWhat users think of Mewdeko, and where to leave your own review.", `${SITE_ORIGIN}/img/Mewdeko.png`),
+      separator(),
+      buttons(linkButton("Read the reviews", `${SITE_ORIGIN}/reviews`))
+    );
     import {logger} from "$lib/logger";
     import {fade, fly} from "svelte/transition";
 
@@ -157,6 +165,8 @@
     return text;
   }
 </script>
+
+<ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
   <title>Mewdeko - Reviews</title>

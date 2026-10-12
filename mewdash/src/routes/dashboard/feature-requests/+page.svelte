@@ -18,8 +18,12 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
   import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
   let { data } = $props();
+
+  // The report channel saves as it is typed; failures show inline under the field and in the header.
+  const autoSave = createAutoSave();
 
   let isOwner = $state(false);
   let activeTab = $state("browse");
@@ -49,7 +53,6 @@
   let stats = $state<FeatureRequestStats | null>(null);
   let settings = $state<FeatureRequestSettings | null>(null);
   let channelInput = $state("");
-  let savingSettings = $state(false);
   let settingsError: string | null = $state(null);
 
   let statusTarget = $state<FeatureRequestEntry | null>(null);
@@ -89,10 +92,6 @@
   ];
 
   let totalPages = $derived(Math.max(1, Math.ceil(total / pageSize)));
-
-  let channelDirty = $derived(
-    settings !== null && channelInput.trim() !== (settings.channelId === 0n ? "" : settings.channelId.toString()),
-  );
 
   let titleRemaining = $derived(120 - formTitle.length);
   let bodyRemaining = $derived(2000 - formBody.length);
@@ -335,26 +334,39 @@
     }
   }
 
-  async function saveChannel() {
+  /**
+   * Debounces the report channel while it is typed. Partial or malformed IDs are never sent;
+   * the inline error for them only appears once the field is left, so it does not flash while
+   * an ID is being typed. Failures keep what was typed so Retry in the header can resend it.
+   */
+  function scheduleChannel(showInvalid = false) {
+    if (!settings) return;
     const trimmed = channelInput.trim();
+    const saved = settings.channelId === 0n ? "" : settings.channelId.toString();
 
     if (trimmed && !/^\d{17,20}$/.test(trimmed)) {
-      settingsError = "That does not look like a channel ID";
+      autoSave.cancel("channel");
+      settingsError = showInvalid ? "That does not look like a channel ID" : null;
       return;
     }
 
-    try {
-      savingSettings = true;
-      settingsError = null;
-      settings = await featureRequestsApi.setSettings(trimmed ? BigInt(trimmed) : 0n);
-      channelInput = settings.channelId === 0n ? "" : settings.channelId.toString();
-    } catch (err) {
-      logger.error("Failed to save feature request settings:", err);
-      settingsError = err instanceof Error ? err.message : "Failed to save the settings";
-      await fetchSettings();
-    } finally {
-      savingSettings = false;
+    settingsError = null;
+    if (trimmed === saved) {
+      autoSave.cancel("channel");
+      return;
     }
+
+    const channelId = trimmed ? BigInt(trimmed) : 0n;
+    autoSave.schedule("channel", async () => {
+      try {
+        settings = await featureRequestsApi.setSettings(channelId);
+        settingsError = null;
+      } catch (err) {
+        logger.error("Failed to save feature request settings:", err);
+        settingsError = err instanceof Error ? err.message : "Failed to save the settings";
+        throw err;
+      }
+    });
   }
 
   onMount(async () => {
@@ -463,6 +475,7 @@
   title="Feature Requests"
   {tabs}
   bind:activeTab
+  {autoSave}
 >
   {#if error}
     <div
@@ -601,27 +614,17 @@
         <label class="block text-sm font-medium mb-1" for="fr-channel" style="color: {$colorStore.muted}">
           Channel ID new requests get posted to
         </label>
-        <div class="flex flex-col sm:flex-row gap-2">
-          <input
-            id="fr-channel"
-            type="text"
-            inputmode="numeric"
-            bind:value={channelInput}
-            disabled={savingSettings}
-            placeholder="Leave empty to use the join/leave channel"
-            class="flex-1 rounded-xl px-3 min-h-[44px] outline-none font-mono"
-            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-          />
-          <button
-            type="button"
-            onclick={saveChannel}
-            disabled={savingSettings || !channelDirty}
-            class="rounded-xl px-4 min-h-[44px] font-medium disabled:opacity-40"
-            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-          >
-            {savingSettings ? "Saving..." : "Save channel"}
-          </button>
-        </div>
+        <input
+          id="fr-channel"
+          type="text"
+          inputmode="numeric"
+          bind:value={channelInput}
+          oninput={() => scheduleChannel()}
+          onblur={() => { scheduleChannel(true); void autoSave.flush("channel"); }}
+          placeholder="Leave empty to use the join/leave channel"
+          class="w-full rounded-xl px-3 min-h-[44px] outline-none font-mono"
+          style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+        />
 
         {#if settingsError}
           <p class="mt-2 text-xs" style="color: {$colorStore.accent}">{settingsError}</p>

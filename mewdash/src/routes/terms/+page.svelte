@@ -1,6 +1,6 @@
 <!-- routes/terms/+page.svelte -->
 <script>
-  let date = "6th August 2023";
+  let date = "12th October 2026";
   let email = "sylveon@mewdeko.tech";
 </script>
 
@@ -15,6 +15,51 @@
       conditions ("Terms of Service").
     </p>
 
+    <h2 class="text-2xl font-semibold">The Service</h2>
+
+    <p>
+      These Terms cover the official Mewdeko Discord bot, this dashboard, and
+      the Mewdeko Mobile app for Android and iOS (together, the "Service").
+      Copies of Mewdeko run by other people, and dashboards they host, are not
+      operated by us and are not covered by these Terms. How we handle your
+      data is described in our
+      <a class="underline" href="/privacy">Privacy Policy</a>.
+    </p>
+
+    <h2 class="text-2xl font-semibold">Acceptable Use</h2>
+
+    <p>You agree not to use the Service to:</p>
+    <div class="flex justify-center">
+      <ul class="list-disc text-left">
+        <li>
+          Break Discord's Terms of Service or Community Guidelines, or any law
+          that applies to you
+        </li>
+        <li>
+          Harass, threaten or target other people, including through
+          confessions, suggestions, AI chat or messages the bot sends for you
+        </li>
+        <li>Spam, or flood servers or users with messages or commands</li>
+        <li>
+          Attempt to disrupt, overload, or gain unauthorised access to the
+          bot, the dashboard, or the systems they run on
+        </li>
+        <li>
+          Exploit bugs for an unfair advantage, such as in the economy, XP or
+          giveaways, instead of reporting them
+        </li>
+      </ul>
+    </div>
+
+    <h2 class="text-2xl font-semibold">Third-Party Services</h2>
+
+    <p>
+      Some features connect to services we do not control, such as the AI
+      providers a server chooses for AI chat, music sources, and social feeds.
+      Your use of those services is subject to their own terms, and we are not
+      responsible for what they provide.
+    </p>
+
     <h2 class="text-2xl font-semibold">Service Termination</h2>
 
     <p>
@@ -24,6 +69,16 @@
       their nature should survive termination shall survive termination,
       including, without limitation, ownership provisions, warranty disclaimers,
       indemnity and limitations of liability.
+    </p>
+
+    <h2 class="text-2xl font-semibold">No Warranty</h2>
+
+    <p>
+      The Service is provided free of charge, "as is" and "as available",
+      without warranties of any kind. We do not guarantee that it will always
+      be available or free of errors, or that data stored by it will never be
+      lost, and to the extent permitted by law we are not liable for any loss
+      resulting from your use of it.
     </p>
 
     <h2 class="text-2xl font-semibold">Changes To The Service</h2>
