@@ -358,6 +358,20 @@
       }
     ]
   },
+  "/dashboard/import": {
+    "tabs": [
+      {
+        "id": "import",
+        "label": "Import",
+        "icon": "fa-arrow-right-to-bracket"
+      },
+      {
+        "id": "history",
+        "label": "History",
+        "icon": "fa-clock-rotate-left"
+      }
+    ]
+  },
   "/dashboard/invites": {
     "tabs": [
       {
