@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { untrack } from "svelte";
   import { fade } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -195,7 +196,7 @@
   let guildEmojis = $derived<GuildEmojiInfo[]>(
     lookups && lookups.emojis.length > 0
       ? [{
-        guild: { id: $currentGuild?.id?.toString() ?? "", name: $currentGuild?.name ?? "This server" },
+        guild: { id: $currentGuild?.id?.toString() ?? "", name: $currentGuild?.name ?? m.roleMenus.editorThisServer() },
         emojis: lookups.emojis.map((e) => ({
           id: e.id.toString(),
           name: e.name,
@@ -214,22 +215,22 @@
 
   /** Choices for "Must keep at least". */
   let minChoices = $derived(
-    Array.from({ length: limitCeiling + 1 }, (_, i) => ({ id: i.toString(), name: i === 0 ? "None" : i.toString() }))
+    Array.from({ length: limitCeiling + 1 }, (_, i) => ({ id: i.toString(), name: i === 0 ? m.common.none() : i.toString() }))
   );
 
   /** Choices for "Can hold at most". */
   let maxChoices = $derived(
-    Array.from({ length: limitCeiling + 1 }, (_, i) => ({ id: i.toString(), name: i === 0 ? "No limit" : i.toString() }))
+    Array.from({ length: limitCeiling + 1 }, (_, i) => ({ id: i.toString(), name: i === 0 ? m.common.noLimit() : i.toString() }))
   );
 
   /** The first rule the draft breaks, or null when it can be saved. */
   let invalidReason = $derived.by(() => {
-    if (!draft.channelId) return "Pick a channel";
-    if (draft.options.length === 0) return "Add at least one option";
-    if (draft.options.some((o) => !o.roleId)) return "Every option needs a role";
+    if (!draft.channelId) return m.common.pickChannelPlaceholder();
+    if (draft.options.length === 0) return m.roleMenus.editorInvalidNoOptions();
+    if (draft.options.some((o) => !o.roleId)) return m.roleMenus.editorInvalidRole();
     const ids = draft.options.map((o) => o.roleId);
-    if (new Set(ids).size !== ids.length) return "Each role can only be on a menu once";
-    if (draft.options.some((o) => o.label.trim().length > LABEL_LENGTH)) return "Names can be up to 80 characters";
+    if (new Set(ids).size !== ids.length) return m.roleMenus.editorInvalidDuplicate();
+    if (draft.options.some((o) => o.label.trim().length > LABEL_LENGTH)) return m.roleMenus.editorInvalidNameLength({ max: LABEL_LENGTH });
     return null;
   });
 
@@ -359,7 +360,7 @@
       onsaved(saved, !menu);
     } catch (err: any) {
       logger.error("Failed to save role menu:", err);
-      onerror(err?.message || "Couldn't save the menu.");
+      onerror(err?.message || m.roleMenus.pageSaveFailed());
     } finally {
       saving = false;
     }
@@ -401,10 +402,10 @@
       onclick={oncancel}
     >
       <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-      All menus
+      {m.roleMenus.editorAllMenus()}
     </button>
     <h2 class="text-2xl font-bold truncate" style="color: {$colorStore.text}">
-      {menu ? `Edit ${menu.name}` : "New menu"}
+      {menu ? m.common.editName({ name: menu.name }) : m.roleMenus.actionNewMenu()}
     </h2>
   </div>
 
@@ -413,31 +414,31 @@
       <div class="relative rounded-2xl border p-6 md:p-8 shadow-2xl"
            style="z-index: 70; background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                   border-color: {$colorStore.primary}30;">
-        {@render sectionHeading("fa-circle-info", "Basics")}
+        {@render sectionHeading("fa-circle-info", m.common.basics())}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div>
-            <label for="rm-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Name</label>
+            <label for="rm-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.name()}</label>
             <input id="rm-name"
                    type="text"
                    bind:value={draft.name}
                    maxlength={NAME_LENGTH}
-                   placeholder="Pronouns"
+                   placeholder={m.common.pronouns()}
                    class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             >
             <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-              Only staff see this, and it titles the default message.
+              {m.roleMenus.editorNameHint()}
             </p>
           </div>
 
           <div>
-            <span id="rm-channel" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel</span>
+            <span id="rm-channel" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.channel()}</span>
             <div class="min-h-[44px]">
               <DiscordSelector
                 type="channel"
                 options={channelOptions}
                 selected={draft.channelId}
-                placeholder="Pick a channel"
+                placeholder={m.common.pickChannelPlaceholder()}
                 ariaLabelledby="rm-channel"
                 onchange={(detail) => {
                   draft.channelId = typeof detail.selected === "string" && detail.selected ? detail.selected : null;
@@ -453,7 +454,7 @@
             <i class="fa-utility-duo fa-regular fa-circle-exclamation"
                style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
             <span class="text-sm" style="color: {$colorStore.text}">
-              The bot can't post in the selected channel. Pick another one or fix its permissions.
+              {m.roleMenus.editorChannelBlocked()}
             </span>
           </div>
         {/if}
@@ -462,11 +463,11 @@
       <div class="relative rounded-2xl border p-6 md:p-8 shadow-2xl"
            style="z-index: 60; background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                   border-color: {$colorStore.primary}30;">
-        {@render sectionHeading("fa-comment", "Message")}
+        {@render sectionHeading("fa-comment", m.common.message())}
         <FullscreenEmbedBuilder id="rolemenu-message"
                                 bind:value={draft.message}
-                                previewTitle="Role menu message"
-                                previewDescription="Shown above the dropdown or buttons"
+                                previewTitle={m.roleMenus.editorMessagePreviewTitle()}
+                                previewDescription={m.roleMenus.editorMessagePreviewDescription()}
                                 icon="fa-list-ul"
                                 allowContent={true}
                                 allowMultipleEmbeds={true}
@@ -474,28 +475,28 @@
                                 allowComponents={false}
                                 guildId={$currentGuild?.id}
                                 user={user}
-                                placeholder="Click to write the message, or leave it empty for a simple list of the options"
+                                placeholder={m.roleMenus.editorMessagePlaceholder()}
         />
         <p class="text-xs mt-3" style="color: {$colorStore.muted}">
-          Leave empty to post the menu's name and a list of its options.
+          {m.roleMenus.editorMessageHint()}
         </p>
       </div>
 
       <div class="relative rounded-2xl border p-6 md:p-8 shadow-2xl"
            style="z-index: 50; background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                   border-color: {$colorStore.primary}30;">
-        {@render sectionHeading("fa-layer-group", "Menu type")}
+        {@render sectionHeading("fa-layer-group", m.roleMenus.importMenuType())}
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {@render choiceCard(draft.style === RoleMenuStyle.Dropdown, "fa-square-caret-down", "Dropdown",
-            "One tidy list with room for descriptions.", () => { draft.style = RoleMenuStyle.Dropdown; })}
-          {@render choiceCard(draft.style === RoleMenuStyle.Buttons, "fa-grip", "Buttons",
-            "A button per role, five to a row.", () => { draft.style = RoleMenuStyle.Buttons; })}
+          {@render choiceCard(draft.style === RoleMenuStyle.Dropdown, "fa-square-caret-down", m.common.dropdown(),
+            m.roleMenus.editorTypeDropdownText(), () => { draft.style = RoleMenuStyle.Dropdown; })}
+          {@render choiceCard(draft.style === RoleMenuStyle.Buttons, "fa-grip", m.common.buttons(),
+            m.roleMenus.editorTypeButtonsText(), () => { draft.style = RoleMenuStyle.Buttons; })}
         </div>
 
         {#if draft.style === RoleMenuStyle.Dropdown}
           <div class="mt-6">
             <label for="rm-placeholder" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-              Dropdown hint text
+              {m.roleMenus.editorHintTextLabel()}
             </label>
             <input id="rm-placeholder"
                    type="text"
@@ -505,7 +506,7 @@
                    class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             >
-            <p class="text-xs mt-2" style="color: {$colorStore.muted}">Shown in the dropdown before anyone picks.</p>
+            <p class="text-xs mt-2" style="color: {$colorStore.muted}">{m.roleMenus.editorHintTextHelp()}</p>
           </div>
         {/if}
       </div>
@@ -513,24 +514,24 @@
       <div class="relative rounded-2xl border p-6 md:p-8 shadow-2xl"
            style="z-index: 40; background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                   border-color: {$colorStore.primary}30;">
-        {@render sectionHeading("fa-hand", "Picking")}
+        {@render sectionHeading("fa-hand", m.roleMenus.editorSectionPicking())}
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {@render choiceCard(draft.mode === RoleMenuMode.PickAny, "fa-list-check", "Pick any",
-            "Members turn each role on or off.", () => setMode(RoleMenuMode.PickAny))}
-          {@render choiceCard(draft.mode === RoleMenuMode.PickOne, "fa-circle-dot", "Pick one",
-            "Choosing a role swaps out the one they had.", () => setMode(RoleMenuMode.PickOne))}
+          {@render choiceCard(draft.mode === RoleMenuMode.PickAny, "fa-list-check", m.roleMenus.menuModePickAny(),
+            m.roleMenus.editorPickAnyText(), () => setMode(RoleMenuMode.PickAny))}
+          {@render choiceCard(draft.mode === RoleMenuMode.PickOne, "fa-circle-dot", m.roleMenus.menuModePickOne(),
+            m.roleMenus.editorPickOneText(), () => setMode(RoleMenuMode.PickOne))}
         </div>
 
         {#if draft.mode === RoleMenuMode.PickAny}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-6">
             <div>
-              <span id="rm-min" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Must keep at least</span>
+              <span id="rm-min" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.roleMenus.editorMinRoles()}</span>
               <div class="min-h-[44px]">
                 <DiscordSelector
                   type="custom"
                   options={minChoices}
                   selected={draft.minRoles.toString()}
-                  placeholder="None"
+                  placeholder={m.common.none()}
                   searchable={false}
                   ariaLabelledby="rm-min"
                   onchange={(detail) => { draft.minRoles = selectedNumber(detail.selected, 0); clampDraft(); }}
@@ -538,13 +539,13 @@
               </div>
             </div>
             <div>
-              <span id="rm-max" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Can hold at most</span>
+              <span id="rm-max" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.roleMenus.editorMaxRoles()}</span>
               <div class="min-h-[44px]">
                 <DiscordSelector
                   type="custom"
                   options={maxChoices}
                   selected={draft.maxRoles.toString()}
-                  placeholder="No limit"
+                  placeholder={m.common.noLimit()}
                   searchable={false}
                   ariaLabelledby="rm-max"
                   onchange={(detail) => { draft.maxRoles = selectedNumber(detail.selected, 0); clampDraft(); }}
@@ -556,8 +557,8 @@
           <div class="mt-6">
             <ToggleRow
               checked={draft.minRoles >= 1}
-              title="Keep one once chosen"
-              subtitle="Members can switch roles but can't clear their pick."
+              title={m.roleMenus.editorKeepOneTitle()}
+              subtitle={m.roleMenus.editorKeepOneSubtitle()}
               colors={$colorStore}
               onchange={(checked) => { draft.minRoles = checked ? 1 : 0; draft.maxRoles = 1; }}
             />
@@ -568,14 +569,14 @@
       <div class="relative rounded-2xl border p-6 md:p-8 shadow-2xl"
            style="z-index: 30; background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                   border-color: {$colorStore.primary}30;">
-        {@render sectionHeading("fa-lock", "Who can use it")}
-        <span id="rm-required" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Required role</span>
+        {@render sectionHeading("fa-lock", m.roleMenus.editorSectionAccess())}
+        <span id="rm-required" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.requiredRole()}</span>
         <div class="min-h-[44px]">
           <DiscordSelector
             type="role"
             options={allRoleOptions}
             selected={draft.requiredRoleId}
-            placeholder="Anyone"
+            placeholder={m.roleMenus.editorAnyone()}
             ariaLabelledby="rm-required"
             onchange={(detail) => {
               draft.requiredRoleId = typeof detail.selected === "string" && detail.selected ? detail.selected : null;
@@ -583,24 +584,24 @@
           />
         </div>
         <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-          Members without this role get a private note saying they need it.
+          {m.roleMenus.editorRequiredRoleHint()}
         </p>
       </div>
 
       <div class="relative rounded-2xl border p-6 md:p-8 shadow-2xl"
            style="z-index: 20; background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                   border-color: {$colorStore.primary}30;">
-        {@render sectionHeading("fa-bell", "Confirmation")}
+        {@render sectionHeading("fa-bell", m.roleMenus.editorSectionConfirmation())}
         <ToggleRow
           checked={draft.replyMode === RoleMenuReplyMode.Private}
-          title="Tell members what changed"
-          subtitle="Sends a private note only they can see, listing the roles added and removed."
+          title={m.roleMenus.editorConfirmTitle()}
+          subtitle={m.roleMenus.editorConfirmSubtitle()}
           colors={$colorStore}
           onchange={(checked) => { draft.replyMode = checked ? RoleMenuReplyMode.Private : RoleMenuReplyMode.Silent; }}
         />
         {#if draft.replyMode !== RoleMenuReplyMode.Private}
           <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-            Members still get a private note if something goes wrong.
+            {m.roleMenus.editorConfirmSilentHint()}
           </p>
         {/if}
       </div>
@@ -612,7 +613,7 @@
           <div class="flex items-center gap-3">
             <i class="fa-utility-duo fa-regular fa-list-ol"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Options</h2>
+            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.options()}</h2>
           </div>
           <span class="text-sm px-2 py-1 rounded-lg"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
@@ -625,7 +626,7 @@
             {#if draft.style === RoleMenuStyle.Buttons && index % BUTTONS_PER_ROW === 0}
               <div class="flex items-center gap-3 pt-2">
                 <span class="text-xs font-medium uppercase tracking-wide" style="color: {$colorStore.muted}">
-                  Row {index / BUTTONS_PER_ROW + 1}
+                  {m.common.rowNumber({ number: index / BUTTONS_PER_ROW + 1 })}
                 </span>
                 <span class="flex-1 h-px" style="background: {$colorStore.muted}30;"></span>
               </div>
@@ -647,7 +648,7 @@
           {/each}
         </div>
 
-        <div class="mt-4" title={draft.options.length >= MAX_OPTIONS ? "25 is the most a menu can hold" : undefined}>
+        <div class="mt-4" title={draft.options.length >= MAX_OPTIONS ? m.roleMenus.editorMaxOptionsTitle({ max: MAX_OPTIONS }) : undefined}>
           <button
             type="button"
             class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all hover:scale-[1.01] min-h-[44px] font-medium disabled:opacity-50 disabled:hover:scale-100 disabled:pointer-events-none"
@@ -656,7 +657,7 @@
             disabled={draft.options.length >= MAX_OPTIONS}
           >
             <i class="fa-solid fa-plus" aria-hidden="true"></i>
-            Add option
+            {m.common.addOption()}
           </button>
         </div>
       </div>
@@ -672,7 +673,7 @@
             aria-busy={saving}
           >
             <i class="fa-solid {saving ? 'fa-spinner fa-spin' : menu ? 'fa-floppy-disk' : 'fa-paper-plane'}" aria-hidden="true"></i>
-            {menu ? "Save changes" : "Post menu"}
+            {menu ? m.common.saveChanges() : m.roleMenus.editorPost()}
           </button>
           <button
             type="button"
@@ -681,7 +682,7 @@
             onclick={oncancel}
             disabled={saving}
           >
-            Cancel
+            {m.common.cancel()}
           </button>
           {#if menu}
             <button
@@ -692,7 +693,7 @@
               disabled={saving}
             >
               <i class="fa-solid fa-trash" aria-hidden="true"></i>
-              Delete menu
+              {m.common.deleteMenu()}
             </button>
           {/if}
         </div>
@@ -706,7 +707,7 @@
       <div class="rounded-2xl border p-6 shadow-2xl"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                   border-color: {$colorStore.primary}30;">
-        {@render sectionHeading("fa-eye", "Preview")}
+        {@render sectionHeading("fa-eye", m.common.preview())}
         <RoleMenuPreview
           message={draft.message}
           name={draft.name}

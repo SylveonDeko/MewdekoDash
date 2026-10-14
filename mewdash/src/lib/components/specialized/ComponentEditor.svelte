@@ -1,5 +1,6 @@
 <!-- ComponentEditor.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -54,13 +55,13 @@
     });
 
   // Button style options
-  const buttonStyles = [
-    { id: "1", name: "Primary", icon: "🟦" },
-    { id: "2", name: "Secondary", icon: "⬜" },
-    { id: "3", name: "Success", icon: "🟩" },
-    { id: "4", name: "Danger", icon: "🟥" },
-    { id: "5", name: "Link", icon: "🔗" }
-  ];
+  const buttonStyles = $derived([
+    { id: "1", name: m.common.primary(), icon: "🟦" },
+    { id: "2", name: m.common.secondary(), icon: "⬜" },
+    { id: "3", name: m.common.success(), icon: "🟩" },
+    { id: "4", name: m.common.danger(), icon: "🟥" },
+    { id: "5", name: m.embedbuilder.personaAvatarLink(), icon: "🔗" }
+  ]);
 
   // Helper functions
   function updateComponent(field: string, value: any) {
@@ -108,7 +109,7 @@
 
     const newOption = {
       id: null,
-      name: `Option ${component.options.length + 1}`,
+      name: m.common.optionNumber({ number: component.options.length + 1 }),
       emoji: "",
       description: ""
     };
@@ -205,47 +206,47 @@
     <!-- Header -->
     <div class="flex justify-between items-center">
       <h3 class="text-base sm:text-lg font-semibold" style="color: {$colorStore.text};">
-        Edit {component.isSelect ? 'Select Menu' : 'Button'}
+        {component.isSelect ? m.embedbuilder.componentsEditSelect() : m.embedbuilder.componentsEditButton()}
       </h3>
 
       <div class="flex items-center gap-1 sm:gap-2">
         <!-- Validation Status -->
         <div class="w-2.5 sm:w-3 h-2.5 sm:h-3 rounded-full"
              style="background: {isValid ? '#57F287' : '#ED4245'};"
-             title="{isValid ? 'Valid' : 'Has validation errors'}">
+             title={isValid ? m.embedbuilder.componentsStatusValid() : m.embedbuilder.componentsStatusInvalid()}>
         </div>
 
         <!-- Done/Close Button -->
         <button
-          aria-label="Done editing"
+          aria-label={m.common.doneEditing()}
           class="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all hover:scale-[1.02] font-medium"
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
           onclick={() => onedit?.({ component })}
         >
           <i class="fa-solid fa-check" style="font-size: 10px;"></i>
-          <span class="hidden sm:inline">Done</span>
+          <span class="hidden sm:inline">{m.common.done()}</span>
         </button>
 
         <!-- Duplicate Button -->
         <button
-          aria-label="Duplicate component"
+          aria-label={m.embedbuilder.componentsDuplicateComponent()}
           class="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all hover:scale-[1.02] font-medium"
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
           onclick={() => onduplicate?.({ componentKey: component.componentKey })}
         >
           <i class="fa-solid fa-copy" style="font-size: 10px;"></i>
-          <span class="hidden sm:inline">Duplicate</span>
+          <span class="hidden sm:inline">{m.common.duplicate()}</span>
         </button>
 
         <!-- Delete Button -->
         <button
-          aria-label="Delete component"
+          aria-label={m.embedbuilder.componentsDeleteComponent()}
           class="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all hover:scale-[1.02] font-medium"
           style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
           onclick={() => onremove?.({ componentKey: component.componentKey })}
         >
           <i class="fa-solid fa-trash" style="font-size: 10px;"></i>
-          <span class="hidden sm:inline">Delete</span>
+          <span class="hidden sm:inline">{m.common.delete()}</span>
         </button>
       </div>
     </div>
@@ -257,7 +258,7 @@
         <div>
           <label for="input-6378" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
                  style="color: {$colorStore.text};">
-            Display Name
+            {m.common.displayName()}
             <span class="text-[10px] sm:text-xs ml-1 sm:ml-2" style="color: {$colorStore.muted};">
               {component.displayName?.length || 0}/80
             </span>
@@ -266,7 +267,7 @@
             type="text"
                  class="w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg border text-sm"
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            placeholder="Button text"
+            placeholder={m.embedbuilder.componentsButtonTextPlaceholder()}
             value={component.displayName || ''}
             maxlength="80"
                  oninput={(e) => handleInput(e, 'displayName')}
@@ -277,13 +278,13 @@
         <div>
           <span id="button-style-label" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
                 style="color: {$colorStore.text};">
-            Button Style
+            {m.embedbuilder.componentsButtonStyle()}
           </span>
           <DiscordSelector
             type="custom"
             options={buttonStyles}
             selected={component.style?.toString()}
-            placeholder="Select button style"
+            placeholder={m.embedbuilder.componentsButtonStylePlaceholder()}
             searchable={false}
             onchange={(detail) => {
               if (detail.selected && typeof detail.selected === 'string') {
@@ -297,13 +298,13 @@
         <div>
           <label for="button-emoji-picker" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
                  style="color: {$colorStore.text};">
-            Emoji <span class="text-[10px] sm:text-xs">(optional)</span>
+            {m.common.emoji()} <span class="text-[10px] sm:text-xs">{m.common.optionalSuffix()}</span>
           </label>
           <EmojiPicker
             {guildEmojis}
             selected={component.emoji || null}
             multiple={false}
-            placeholder="Select an emoji..."
+            placeholder={m.common.selectEmojiPlaceholder()}
             searchable={true}
             groupByGuild={true}
             onchange={(detail) => {
@@ -317,7 +318,7 @@
           <div>
             <label for="input-4138" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
                    style="color: {$colorStore.text};">
-              URL
+              {m.common.url()}
             </label>
             <input id="input-4138"
               type="url"
@@ -325,12 +326,12 @@
                    style="background: {$colorStore.primary}10;
                      border-color: {isValidUrl(component.url) ? $colorStore.primary + '30' : '#ED4245'};
                      color: {$colorStore.text};"
-              placeholder="https://example.com"
+              placeholder={m.embedbuilder.editorUrlPlaceholder()}
               value={component.url || ''}
                    oninput={(e) => handleInput(e, 'url')}
             >
             {#if component.url && !isValidUrl(component.url)}
-              <p class="text-[10px] sm:text-xs mt-0.5 sm:mt-1 text-red-400">Please enter a valid URL</p>
+              <p class="text-[10px] sm:text-xs mt-0.5 sm:mt-1 text-red-400">{m.embedbuilder.editorUrlInvalid()}</p>
             {/if}
           </div>
         {:else}
@@ -338,7 +339,7 @@
           <div>
             <span id="trigger-action-label" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
                   style="color: {$colorStore.text};">
-              Trigger Action
+              {m.embedbuilder.componentsTriggerAction()}
             </span>
             <div class="min-h-[40px] sm:min-h-[50px]">
               <DiscordSelector
@@ -346,11 +347,11 @@
                 customIcon="fa-bolt"
                 options={triggers.map(t => ({
                   id: t.id.toString(),
-                  name: t.trigger || 'Unnamed trigger',
-                  label: t.response || 'No response'
+                  name: t.trigger || m.embedbuilder.componentsTriggerUnnamed(),
+                  label: t.response || m.common.noResponse()
                 }))}
                 selected={component.id}
-                placeholder="Select a trigger"
+                placeholder={m.embedbuilder.componentsTriggerPlaceholder()}
                 onchange={(detail) => {
                   updateComponent('id', detail.selected);
                 }}
@@ -367,7 +368,7 @@
         <div>
           <label for="input-9302" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
                  style="color: {$colorStore.text};">
-            Placeholder Text
+            {m.common.placeholderText()}
             <span class="text-[10px] sm:text-xs ml-1 sm:ml-2" style="color: {$colorStore.muted};">
               {component.displayName?.length || 0}/150
             </span>
@@ -376,7 +377,7 @@
             type="text"
                  class="w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg border text-sm"
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            placeholder="Choose an option..."
+            placeholder={m.embedbuilder.componentsSelectPlaceholderExample()}
             value={component.displayName || ''}
             maxlength="150"
                  oninput={(e) => handleInput(e, 'displayName')}
@@ -388,8 +389,8 @@
           <div>
             <label for="input-1535" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
                    style="color: {$colorStore.text};">
-              <span class="hidden sm:inline">Min Options</span>
-              <span class="sm:hidden">Min</span>
+              <span class="hidden sm:inline">{m.embedbuilder.componentsMinOptions()}</span>
+              <span class="sm:hidden">{m.embedbuilder.componentsMinShort()}</span>
             </label>
             <input id="input-1535"
               type="number"
@@ -405,8 +406,8 @@
           <div>
             <label for="input-2620" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
                    style="color: {$colorStore.text};">
-              <span class="hidden sm:inline">Max Options</span>
-              <span class="sm:hidden">Max</span>
+              <span class="hidden sm:inline">{m.embedbuilder.componentsMaxOptions()}</span>
+              <span class="sm:hidden">{m.embedbuilder.componentsMaxShort()}</span>
             </label>
             <input id="input-2620"
               type="number"
@@ -424,18 +425,18 @@
         <div>
           <div class="flex justify-between items-center mb-3 sm:mb-4">
             <label for="input-9558" class="text-xs sm:text-sm font-medium" style="color: {$colorStore.text};">
-              Options ({component.options?.length || 0}/25)
+              {m.embedbuilder.componentsOptionsCount({ count: component.options?.length || 0 })}
             </label>
             <button
-              aria-label="Add option"
+              aria-label={m.common.addOption()}
               class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-1 disabled:opacity-50"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               disabled={(component.options?.length || 0) >= 25}
               onclick={addOption}
             >
               <i class="fa-solid fa-plus" style="font-size: 11px;"></i>
-              <span class="hidden sm:inline">Add Option</span>
-              <span class="sm:hidden">Add</span>
+              <span class="hidden sm:inline">{m.common.addOption()}</span>
+              <span class="sm:hidden">{m.common.add()}</span>
             </button>
           </div>
 
@@ -446,21 +447,21 @@
 
                 <div class="flex justify-between items-center mb-2 sm:mb-3">
                   <span class="text-xs sm:text-sm font-medium" style="color: {$colorStore.text};">
-                    Option {index + 1}
+                    {m.common.optionNumber({ number: index + 1 })}
                   </span>
                   <div class="flex gap-1">
-                    <button aria-label="Duplicate option"
+                    <button aria-label={m.embedbuilder.componentsDuplicateOption()}
                             class="p-0.5 sm:p-1 rounded-sm hover:bg-white/10 transition-colors"
                             style="color: {$colorStore.primary};"
                             onclick={() => duplicateOption(index)}
-                            title="Duplicate option"
+                            title={m.embedbuilder.componentsDuplicateOption()}
                     >
                       <i class="fa-solid fa-copy" style="font-size: 12px;"></i>
                     </button>
-                    <button aria-label="Remove option"
+                    <button aria-label={m.common.removeOption()}
                             class="p-0.5 sm:p-1 rounded-sm text-red-400 hover:bg-red-400/10 transition-colors"
                             onclick={() => removeOption(index)}
-                            title="Remove option"
+                            title={m.common.removeOption()}
                     >
                       <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
                     </button>
@@ -472,7 +473,7 @@
                   <div>
                     <label for="input-9558" class="block text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1"
                            style="color: {$colorStore.text};">
-                      Name
+                      {m.common.name()}
                       <span class="ml-1 sm:ml-2 text-[9px] sm:text-[10px]" style="color: {$colorStore.muted};">
                         {option.name?.length || 0}/100
                       </span>
@@ -481,7 +482,7 @@
                       type="text"
                            class="w-full px-2 sm:px-3 py-1 sm:py-2 rounded-sm border text-xs sm:text-sm"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      placeholder="Option name"
+                      placeholder={m.embedbuilder.componentsOptionNamePlaceholder()}
                       value={option.name || ''}
                       maxlength="100"
                            oninput={(e) => handleOptionInput(e, index, 'name')}
@@ -492,7 +493,7 @@
                   <div>
                     <label for="input-9067" class="block text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1"
                            style="color: {$colorStore.text};">
-                      Description
+                      {m.common.description()}
                       <span class="ml-1 sm:ml-2 text-[9px] sm:text-[10px]" style="color: {$colorStore.muted};">
                         {option.description?.length || 0}/100
                       </span>
@@ -501,7 +502,7 @@
                       type="text"
                            class="w-full px-2 sm:px-3 py-1 sm:py-2 rounded-sm border text-xs sm:text-sm"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      placeholder="Option description"
+                      placeholder={m.embedbuilder.componentsOptionDescriptionPlaceholder()}
                       value={option.description || ''}
                       maxlength="100"
                            oninput={(e) => handleOptionInput(e, index, 'description')}
@@ -513,13 +514,13 @@
                     <label for="option-emoji-picker-{index}"
                            class="block text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1"
                            style="color: {$colorStore.text};">
-                      Emoji <span class="text-[9px] sm:text-[10px]">(optional)</span>
+                      {m.common.emoji()} <span class="text-[9px] sm:text-[10px]">{m.common.optionalSuffix()}</span>
                     </label>
                     <EmojiPicker
                       {guildEmojis}
                       selected={option.emoji || null}
                       multiple={false}
-                      placeholder="Select an emoji..."
+                      placeholder={m.common.selectEmojiPlaceholder()}
                       searchable={true}
                       groupByGuild={true}
                       onchange={(detail) => {
@@ -533,7 +534,7 @@
                     <span id="option-trigger-label-{index}"
                           class="block text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1"
                           style="color: {$colorStore.text};">
-                      Trigger Action
+                      {m.embedbuilder.componentsTriggerAction()}
                     </span>
                     <div class="min-h-[36px] sm:min-h-[44px]">
                       <DiscordSelector
@@ -541,11 +542,11 @@
                         customIcon="fa-bolt"
                         options={triggers.map(t => ({
                           id: t.id.toString(),
-                          name: t.trigger || 'Unnamed trigger',
-                          label: t.response || 'No response'
+                          name: t.trigger || m.embedbuilder.componentsTriggerUnnamed(),
+                          label: t.response || m.common.noResponse()
                         }))}
                         selected={option.id}
-                        placeholder="Select a trigger"
+                        placeholder={m.embedbuilder.componentsTriggerPlaceholder()}
                         onchange={(detail) => {
                           updateOption(index, 'id', detail.selected);
                         }}
@@ -560,7 +561,7 @@
           {#if !component.options || component.options.length === 0}
             <div class="text-center py-6 sm:py-8">
               <p class="text-xs sm:text-sm" style="color: {$colorStore.muted};">
-                No options added yet. Click "Add" to get started.
+                {m.embedbuilder.componentsOptionsEmpty()}
               </p>
             </div>
           {/if}
@@ -572,21 +573,21 @@
     {#if !isValid}
       <div class="p-2 sm:p-3 rounded-md sm:rounded-lg border-l-4 border-red-400 bg-red-50 dark:bg-red-900/20">
         <div class="text-xs sm:text-sm text-red-700 dark:text-red-300">
-          <p class="font-medium mb-0.5 sm:mb-1">Validation Errors:</p>
+          <p class="font-medium mb-0.5 sm:mb-1">{m.embedbuilder.componentsValidationErrors()}</p>
           <ul class="list-disc list-inside space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs">
             {#if !component.isSelect && component.style !== 5 && !component.id}
-              <li>Please select a trigger for this button</li>
+              <li>{m.embedbuilder.componentsErrorSelectTrigger()}</li>
             {/if}
             {#if component.style === 5 && !isValidUrl(component.url)}
-              <li>Please enter a valid URL for link button</li>
+              <li>{m.embedbuilder.componentsErrorLinkUrl()}</li>
             {/if}
             {#if component.isSelect && component.options}
               {#each component.options as option, index}
                 {#if !option.id}
-                  <li>Option "{option.name || (index + 1)}" needs a trigger</li>
+                  <li>{m.embedbuilder.componentsErrorOptionNeedsTrigger({ name: option.name || (index + 1) })}</li>
                 {/if}
                 {#if !option.description?.trim()}
-                  <li>Option "{option.name || (index + 1)}" needs a description</li>
+                  <li>{m.embedbuilder.componentsErrorOptionNeedsDescription({ name: option.name || (index + 1) })}</li>
                 {/if}
               {/each}
             {/if}
@@ -606,12 +607,12 @@
 
     {#if component.isSelect}
       <!-- Select Menu Preview (full width) -->
-      <button aria-label="Click to edit select menu"
+      <button aria-label={m.embedbuilder.componentsSelectPreviewAria()}
               class="border border-transparent bg-[#2F3136] text-white text-xs sm:text-sm font-medium rounded-sm cursor-pointer box-border grid grid-cols-[1fr_auto] items-center w-full text-left"
               disabled
       >
         <span class="placeholder px-2 sm:px-3 py-1 sm:py-2">
-          {component.displayName || "Select an option..."}
+          {component.displayName || m.common.selectOptionPlaceholder()}
         </span>
         <span class="icon-container px-1.5 sm:px-2">
           <i class="fa-solid fa-chevron-down text-xs sm:text-base"></i>
@@ -622,7 +623,7 @@
       <button
         class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center grow-0 items-center box-border border-0 rounded-sm px-2 sm:px-4 py-[1px] sm:py-[2px] min-h-[24px] sm:min-h-[32px] text-[11px] sm:text-sm font-medium leading-[14px] sm:leading-[16px] transition-colors duration-200 select-none gap-1 sm:gap-2"
         disabled
-        aria-label="Click to edit button"
+        aria-label={m.embedbuilder.componentsButtonPreviewAria()}
       >
         {#if component.emoji}
           {@const parsedEmoji = parseEmojiForDisplay(component.emoji)}
@@ -650,7 +651,7 @@
       <span class="text-xs font-medium px-2 py-1 rounded-sm"
             style="background: {$colorStore.primary}40; color: {$colorStore.text};">
         <i class="fa-solid fa-pen-to-square mr-1"></i>
-        Click to edit
+        {m.embedbuilder.componentsClickToEdit()}
       </span>
     </div>
   </div>

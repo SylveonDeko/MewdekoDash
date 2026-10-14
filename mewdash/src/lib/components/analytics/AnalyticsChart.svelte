@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/AnalyticsChart.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onDestroy, onMount } from "svelte";
   import {
     BarController,
@@ -178,7 +179,7 @@
     aggList.forEach((a, ai) => {
       results[ai].series.forEach((s, si) => {
         let name = aggList.length > 1 ? a : s.name;
-        if (s.name === "Other" && s.labels?.count) name = `Other (${s.labels.count} more)`;
+        if (s.name === "Other" && s.labels?.count) name = m.analytics.chartOtherMore({ count: s.labels.count });
         const color = aggList.length > 1 ? PALETTE[ai % PALETTE.length] : single ? $colorStore.primary : seriesColor(s.name, si);
         datasets.push(dataset(name, color, s.points.map((p) => p.value), single, datasets.length));
       });
@@ -187,7 +188,7 @@
     if (prev?.series.length) {
       datasets.push({
         type: "line",
-        label: "Previous period",
+        label: m.analytics.chartPreviousPeriod(),
         data: prev.series[0].points.map((p) => p.value),
         borderColor: TEXT,
         borderDash: [4, 4],
@@ -378,7 +379,7 @@
       type="button"
       class="absolute -top-8 right-0 min-h-[32px] px-2 rounded text-xs font-mono z-10"
       style="background: {total ? $colorStore.primary + '30' : $colorStore.primary + '10'}; color: {$colorStore.text}"
-      title="Running total"
+      title={m.analytics.chartRunningTotal()}
       onclick={() => (total = !total)}
     >Σ</button>
   {/if}
@@ -386,27 +387,27 @@
     <canvas bind:this={canvas} class:opacity-30={loading && !empty}></canvas>
     {#if empty || failed}
       <div class="absolute inset-0 flex items-center justify-center text-xs" style="color: {$colorStore.muted}">
-        <i class="fa-solid fa-chart-line mr-2"></i>{failed ? "Could not load" : "No data"}
+        <i class="fa-solid fa-chart-line mr-2"></i>{failed ? m.analytics.chartCouldNotLoad() : m.common.noData()}
       </div>
     {/if}
   </div>
   {#if zoom && pointCount > 1}
     <div class="flex items-center gap-2 mt-1">
-      <input type="range" min="0" max={pointCount - 1} bind:value={zoomStart} class="flex-1 accent-current" style="color: {$colorStore.primary}" aria-label="Zoom start" />
-      <input type="range" min="0" max={pointCount - 1} bind:value={zoomEnd} class="flex-1" style="accent-color: {$colorStore.primary}" aria-label="Zoom end" />
+      <input type="range" min="0" max={pointCount - 1} bind:value={zoomStart} class="flex-1 accent-current" style="color: {$colorStore.primary}" aria-label={m.analytics.chartZoomStart()} />
+      <input type="range" min="0" max={pointCount - 1} bind:value={zoomEnd} class="flex-1" style="accent-color: {$colorStore.primary}" aria-label={m.analytics.chartZoomEnd()} />
     </div>
   {/if}
   {#if otherNote || showAll}
     <div class="flex flex-wrap items-center gap-2 mt-1 text-xs" style="color: {$colorStore.muted}">
       {#if otherNote}
-        <span class="truncate max-w-full" title={otherNote.names}>Other = {otherNote.names}</span>
+        <span class="truncate max-w-full" title={otherNote.names}>{m.analytics.chartOtherNames({ names: otherNote.names })}</span>
       {/if}
       <button
         type="button"
         class="min-h-[32px] px-2 rounded"
         style="background: {$colorStore.primary}10; color: {$colorStore.text}"
         onclick={() => (showAll = !showAll)}
-      >{showAll ? `Top ${max ?? 12} only` : `Show all ${seriesCount - 1 + (otherNote?.count ?? 0)} series`}</button>
+      >{showAll ? m.analytics.chartTopOnly({ count: max ?? 12 }) : m.analytics.chartShowAllSeries({ count: seriesCount - 1 + (otherNote?.count ?? 0) })}</button>
     </div>
   {/if}
 </div>

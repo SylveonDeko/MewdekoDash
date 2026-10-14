@@ -1,5 +1,6 @@
 <!-- PreviewCard.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { marked } from "marked";
   import DOMPurify from "dompurify";
   import { currentInstance } from "$lib/stores/instanceStore";
@@ -24,7 +25,7 @@
       embeds = [],
       componentRows = [],
       showEmpty = true,
-      emptyMessage = "Your embed preview will appear here",
+      emptyMessage = m.embedbuilder.previewEmptyMessage(),
       user = null,
       guild = null,
       guildId = null
@@ -37,7 +38,7 @@
   let actualGuildId = $derived(guildId || currentGuildData?.id);
 
   // Extract user data for use in all functions
-  let userName = $derived(user?.username || user?.globalName || "ExampleUser");
+  let userName = $derived(user?.username || user?.globalName || m.embedbuilder.previewSampleUser());
   let userId = $derived(user?.id || "123456789012345678");
 
   // Placeholder replacement function
@@ -73,7 +74,7 @@
     replaced = replaced.replace(/%user\.joined_date%/g, "22.03.2023");
 
     // Server/Guild placeholders - use real data if available
-    const guildName = actualGuild?.name || "Example Server";
+    const guildName = actualGuild?.name || m.embedbuilder.previewSampleServer();
     const guildIdStr = typeof actualGuildId === "bigint" ? actualGuildId.toString() : (actualGuildId?.toString() || "987654321098765432");
     replaced = replaced.replace(/%server%/g, guildName);
     replaced = replaced.replace(/%server\.name%/g, guildName);
@@ -102,17 +103,17 @@
     // Channel placeholders (use Discord mention format)
     replaced = replaced.replace(/%channel%/g, "<#123456789012345678>");
     replaced = replaced.replace(/%channel\.mention%/g, "<#123456789012345678>");
-    replaced = replaced.replace(/%channel\.name%/g, "general");
+    replaced = replaced.replace(/%channel\.name%/g, m.embedbuilder.previewSampleChannelName());
     replaced = replaced.replace(/%channel\.id%/g, "123456789012345678");
     replaced = replaced.replace(/%channel\.created%/g, "14:30 15.06.2020");
-    replaced = replaced.replace(/%channel\.nsfw%/g, "False");
-    replaced = replaced.replace(/%channel\.topic%/g, "Welcome to the chat!");
+    replaced = replaced.replace(/%channel\.nsfw%/g, m.embedbuilder.previewSampleFalse());
+    replaced = replaced.replace(/%channel\.topic%/g, m.embedbuilder.previewSampleChannelTopic());
 
     // Bot placeholders - use real instance data if available
     const botName = instance?.botName || "Mewdeko";
     const botId = instance?.botId || "752236274261426994";
     const botAvatar = instance?.botAvatar || "https://cdn.discordapp.com/embed/avatars/0.png";
-    replaced = replaced.replace(/%bot\.status%/g, "Online");
+    replaced = replaced.replace(/%bot\.status%/g, m.common.online());
     replaced = replaced.replace(/%bot\.latency%/g, "45");
     replaced = replaced.replace(/%bot\.name%/g, botName);
     replaced = replaced.replace(/%bot\.fullname%/g, botName);
@@ -215,21 +216,21 @@
 
     // User mentions: &lt;@userId&gt; or &lt;@!userId&gt;
     result = result.replace(/&lt;@!?(\d+)&gt;/g, (match, id) => {
-      const displayName = id === userId ? escapeHtml(userName) : "User";
+      const displayName = id === userId ? escapeHtml(userName) : m.common.user();
       return `<span class="dc-mention">@${displayName}</span>`;
     });
 
     // Channel mentions: &lt;#channelId&gt;
     result = result.replace(/&lt;#(\d+)&gt;/g, (match, id) => {
-      return `<span class="dc-mention">#general</span>`;
+      return `<span class="dc-mention">#${m.embedbuilder.previewSampleChannelName()}</span>`;
     });
 
     // Role mentions: &lt;@&amp;roleId&gt; or &lt;@&roleId&gt;
     result = result.replace(/&lt;@&amp;(\d+)&gt;/g, (match, id) => {
-      return `<span class="dc-mention dc-mention-role" style="--dc-mention-color-rgb: 114 137 218">@Role</span>`;
+      return `<span class="dc-mention dc-mention-role" style="--dc-mention-color-rgb: 114 137 218">@${m.common.role()}</span>`;
     });
     result = result.replace(/&lt;@&(\d+)&gt;/g, (match, id) => {
-      return `<span class="dc-mention dc-mention-role" style="--dc-mention-color-rgb: 114 137 218">@Role</span>`;
+      return `<span class="dc-mention dc-mention-role" style="--dc-mention-color-rgb: 114 137 218">@${m.common.role()}</span>`;
     });
 
     return result;
@@ -305,7 +306,7 @@
               {@const processedAuthorIcon = processText(embed.author.icon_url || "")}
               <div class="dc-embed-author">
                 {#if processedAuthorIcon && !processedAuthorIcon.includes('%')}
-                  <img src={processedAuthorIcon} alt="Author icon">
+                  <img src={processedAuthorIcon} alt={m.common.authorIcon()}>
                 {/if}
                 {#if processedAuthorUrl && !processedAuthorUrl.includes('%')}
                   <a href={safeUrl(processedAuthorUrl)}>
@@ -322,7 +323,7 @@
             {@const processedThumbnail = processText(embed.thumbnail.url)}
             {#if processedThumbnail && !processedThumbnail.includes('%')}
               <div class="dc-embed-thumbnail">
-                <img src={processedThumbnail} alt="Thumbnail">
+                <img src={processedThumbnail} alt={m.common.thumbnail()}>
               </div>
             {/if}
             {/if}
@@ -385,7 +386,7 @@
               {@const processedFooterText = processTextWithMentions(embed.footer.text || "")}
               <div class="dc-embed-footer">
                 {#if processedFooterIcon && !processedFooterIcon.includes('%')}
-                  <img src={processedFooterIcon} alt="Footer icon">
+                  <img src={processedFooterIcon} alt={m.embedbuilder.previewAltFooterIcon()}>
                 {/if}
                 <span>{@html processedFooterText}</span>
               </div>
@@ -411,7 +412,7 @@
                     onclick={() => toggleSelectMenu(selectIndex)}
                   >
                     <span class="placeholder px-3 py-2">
-                      {component.displayName || "Select an option..."}
+                      {component.displayName || m.common.selectOptionPlaceholder()}
                     </span>
                     <div class="icon-container px-2 transition-transform" class:rotate-180={isOpen}>
                       <svg

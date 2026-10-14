@@ -1,5 +1,6 @@
-<!-- routes/dashboard/performance/+page.svelte -->
+<!-- routes/owner/performance/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import PerformanceMonitor from "$lib/components/monitoring/PerformanceMonitor.svelte";
     import SystemInfoMonitor from "$lib/components/monitoring/SystemInfoMonitor.svelte";
     import EventMetricsMonitor from "$lib/components/monitoring/EventMetricsMonitor.svelte";
@@ -26,22 +27,22 @@
       } catch (error) {
         goto("/dashboard");
       }
-    }, "critical", "Checking permissions...");
+    }, "critical", m.common.checkingPermissions());
   });
 
-  const tabs = [
-    { id: "overview", label: "Overview", icon: "fa-chart-bar" },
-    { id: "methods", label: "Methods", icon: "fa-clock" },
-    { id: "events", label: "Events", icon: "fa-bell" },
-    { id: "modules", label: "Modules", icon: "fa-square" }
-  ];
+  const tabs = $derived([
+    { id: "overview", label: m.common.overview(), icon: "fa-chart-bar" },
+    { id: "methods", label: m.owner.performanceTabMethods(), icon: "fa-clock" },
+    { id: "events", label: m.common.events(), icon: "fa-bell" },
+    { id: "modules", label: m.common.modules(), icon: "fa-square" }
+  ]);
 </script>
 
 <DashboardPageLayout
   icon="fa-chart-simple"
-  subtitle="Monitor system resources, method performance, event processing, and module metrics"
-  title="Performance"
-  guildName="Bot Performance Dashboard"
+  subtitle={m.owner.performanceSubtitle()}
+  title={m.features.performanceName()}
+  guildName={m.owner.performanceGuildName()}
   basePath="/owner/performance"
   tabs={tabs}
   bind:activeTab

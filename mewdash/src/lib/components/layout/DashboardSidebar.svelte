@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { page } from "$app/state";
   import { fade, slide } from "svelte/transition";
   import { browser } from "$app/environment";
   import Mascot from "$lib/components/brand/Mascot.svelte";
+  import LocaleSwitcher from "$lib/components/layout/LocaleSwitcher.svelte";
   import { onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -77,13 +79,13 @@
     if (searchTerm.trim()) {
       features = features.filter(f =>
         matchesSearchTerms(
-          { title: f.label, description: f.description, category: f.category, keywords: f.keywords },
+          { title: f.label(), description: f.description?.() ?? "", category: f.category, keywords: f.keywords },
           searchTerm
         )
       );
     }
 
-    return [...features].sort((a, b) => a.label.localeCompare(b.label));
+    return [...features].sort((a, b) => a.label().localeCompare(b.label()));
   });
 
   /**
@@ -91,11 +93,11 @@
    * to jump between in a long list without reintroducing groups that have to be opened.
    */
   function letterFor(index: number): string | null {
-    const letter = filteredFeatures[index].label[0].toUpperCase();
+    const letter = filteredFeatures[index].label()[0].toUpperCase();
 
     if (index === 0) return letter;
 
-    return filteredFeatures[index - 1].label[0].toUpperCase() === letter ? null : letter;
+    return filteredFeatures[index - 1].label()[0].toUpperCase() === letter ? null : letter;
   }
 
   let filteredGuilds = $derived(
@@ -357,7 +359,7 @@
   style="width: {isMobile ? 'min(85vw, 320px)' : collapsed ? '68px' : '280px'};
          background: linear-gradient(180deg, {$colorStore.primary}15, {$colorStore.secondary}10, {$colorStore.accent}08);
          border-color: {$colorStore.primary}15;"
-  aria-label="Dashboard sidebar navigation"
+  aria-label={m.layout.sidebarAria()}
 >
 <div class="flex flex-col h-full shrink-0" style="width: {isMobile ? 'min(85vw, 320px)' : collapsed ? '68px' : '280px'};">
   <!-- Bot instance branding -->
@@ -379,8 +381,8 @@
         href="/"
         class="flex items-center justify-center w-8 h-8 rounded-lg transition-transform duration-200 hover:scale-[1.05] shrink-0"
         style="color: {$colorStore.muted}; background: {$colorStore.primary}08;"
-        title="Back to homepage"
-        aria-label="Back to homepage"
+        title={m.layout.sidebarBackToHome()}
+        aria-label={m.layout.sidebarBackToHome()}
       >
         <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
       </a>
@@ -401,7 +403,7 @@
           <span class="w-2 h-2 rounded-full shrink-0" style="background: {$currentInstance.isActive ? '#10B981' : $colorStore.accent};"></span>
         {:else}
           <i class="fa-solid fa-robot text-sm" style="color: {$colorStore.muted};" aria-hidden="true"></i>
-          <span class="flex-1 text-sm text-left" style="color: {$colorStore.muted};">Select Instance</span>
+          <span class="flex-1 text-sm text-left" style="color: {$colorStore.muted};">{m.layout.sidebarSelectInstance()}</span>
         {/if}
         <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"
            style="color: {$colorStore.muted}; transform: rotate({showInstancePicker ? '180deg' : '0deg'});"
@@ -479,9 +481,9 @@
                 <div class="flex items-center gap-1.5 text-xs" style="color: {$colorStore.muted};">
                   {#if $currentGuild.owner}
                     <span class="px-1.5 py-0.5 rounded-md text-xs font-medium"
-                          style="background: {$colorStore.accent}25; color: {$colorStore.accent};">Owner</span>
+                          style="background: {$colorStore.accent}25; color: {$colorStore.accent};">{m.common.owner()}</span>
                   {:else}
-                    <span>Admin</span>
+                    <span>{m.common.admin()}</span>
                   {/if}
                 </div>
               </div>
@@ -501,7 +503,7 @@
                 onclick={() => window.open(`https://discord.com/channels/${$currentGuild?.id}`, '_blank')}
               >
                 <i class="fa-solid fa-external-link text-[10px]" aria-hidden="true"></i>
-                View Server
+                {m.layout.sidebarViewServer()}
               </button>
             </div>
           {/if}
@@ -516,7 +518,7 @@
             {#if !collapsed}
               <div class="min-w-0 flex-1">
                 <div class="text-sm font-medium" style="color: {$colorStore.muted};">
-                  No server selected
+                  {m.layout.sidebarNoServerSelected()}
                 </div>
               </div>
             {/if}
@@ -538,7 +540,7 @@
         <div class="p-2 border-b" style="border-color: {$colorStore.primary}15;">
           <input
             type="text"
-            placeholder="Search servers..."
+            placeholder={m.common.searchServersPlaceholder()}
             bind:value={serverSearchTerm}
             onclick={(e) => e.stopPropagation()}
             class="w-full px-3 py-2 rounded-lg border text-xs"
@@ -566,7 +568,7 @@
                   {guild.name}
                 </div>
                 <div class="text-xs" style="color: {$colorStore.muted};">
-                  {guild.owner ? 'Owner' : 'Admin'}
+                  {guild.owner ? m.common.owner() : m.common.admin()}
                 </div>
               </div>
               {#if guild.id === $currentGuild?.id}
@@ -575,7 +577,7 @@
             </button>
           {:else}
             <div class="p-4 text-center text-xs" style="color: {$colorStore.muted};">
-              No servers found
+              {m.layout.sidebarNoServersFound()}
             </div>
           {/each}
         </div>
@@ -591,7 +593,7 @@
       <input
         bind:this={searchInputRef}
         type="text"
-        placeholder="Search features..."
+        placeholder={m.layout.sidebarSearchFeaturesPlaceholder()}
         bind:value={searchTerm}
         onkeydown={handleSearchKeydown}
         class="w-full pl-8 pr-3 py-2 rounded-lg text-sm border transition-colors duration-200"
@@ -604,7 +606,7 @@
           class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded transition-[color,background-color,border-color,transform] hover:scale-110"
           style="color: {$colorStore.muted};"
           onclick={() => { searchTerm = ""; }}
-          aria-label="Clear search"
+          aria-label={m.common.ariaClearSearch()}
         >
           <i class="fa-solid fa-xmark text-xs"></i>
         </button>
@@ -613,8 +615,8 @@
           class="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded-sm text-xs transition-colors"
           style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
           onclick={() => openSearch()}
-          title="Search everything, including settings inside each page"
-          aria-label="Open full search"
+          title={m.layout.sidebarOpenFullSearchTitle()}
+          aria-label={m.layout.sidebarOpenFullSearch()}
         >
           ⌘K
         </button>
@@ -623,7 +625,7 @@
   </div>
   {/if}
 
-  <nav class="flex-1 overflow-y-auto overflow-x-hidden py-2 sidebar-scrollbar" aria-label="Feature navigation">
+  <nav class="flex-1 overflow-y-auto overflow-x-hidden py-2 sidebar-scrollbar" aria-label={m.layout.sidebarFeatureNavAria()}>
     <div class="px-2 mb-1">
         {#if !isDashboardHome}
         <a
@@ -635,7 +637,7 @@
           style="background: transparent;
                  color: {$colorStore.muted};
                  border: 1px solid transparent;"
-          onmouseenter={(e) => showTooltip(e, noGuild ? 'Select a server first' : 'Dashboard Home')}
+          onmouseenter={(e) => showTooltip(e, noGuild ? m.common.selectAServerFirstPlaceholder() : m.layout.sidebarDashboardHome())}
           onmouseleave={hideTooltip}
         >
           <i class="fa-utility-duo fa-regular fa-home text-base shrink-0"
@@ -645,7 +647,7 @@
                     width: 20px; text-align: center;"
              aria-hidden="true"></i>
           {#if !collapsed}
-            <span class="text-[15px] font-medium">Dashboard</span>
+            <span class="text-[15px] font-medium">{m.common.dashboard()}</span>
           {/if}
         </a>
         {/if}
@@ -661,7 +663,7 @@
                  border: 1px solid {isActive('/dashboard/access') ? $colorStore.primary + '20' : 'transparent'};"
           aria-current={isActive('/dashboard/access') ? 'page' : undefined}
           aria-disabled={noGuild}
-          onmouseenter={(e) => showTooltip(e, noGuild ? 'Select a server first' : 'Dashboard Access')}
+          onmouseenter={(e) => showTooltip(e, noGuild ? m.common.selectAServerFirstPlaceholder() : m.features.accessName())}
           onmouseleave={hideTooltip}
         >
           <i class="fa-utility-duo fa-regular fa-key text-base shrink-0"
@@ -671,7 +673,7 @@
                     width: 20px; text-align: center;"
              aria-hidden="true"></i>
           {#if !collapsed}
-            <span class="text-[15px] font-medium">Dashboard Access</span>
+            <span class="text-[15px] font-medium">{m.features.accessName()}</span>
           {/if}
         </a>
 
@@ -680,7 +682,7 @@
             href="/owner"
             class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] group"
             style="background: transparent; color: {$colorStore.muted}; border: 1px solid transparent;"
-            onmouseenter={(e) => showTooltip(e, 'Owner Panel')}
+            onmouseenter={(e) => showTooltip(e, m.layout.ownerSidebarTitle())}
             onmouseleave={hideTooltip}
           >
             <i class="fa-utility-duo fa-regular fa-crown text-base shrink-0"
@@ -690,7 +692,7 @@
                       width: 20px; text-align: center;"
                aria-hidden="true"></i>
             {#if !collapsed}
-              <span class="text-[15px] font-medium flex-1">Owner Panel</span>
+              <span class="text-[15px] font-medium flex-1">{m.layout.ownerSidebarTitle()}</span>
               <i class="fa-solid fa-arrow-right text-[10px]" style="color: {$colorStore.muted};" aria-hidden="true"></i>
             {/if}
           </a>
@@ -701,7 +703,7 @@
           class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] group"
           style="background: transparent; color: {$colorStore.muted}; border: 1px solid transparent;"
           onclick={() => openProductUpdates()}
-          onmouseenter={(e) => showTooltip(e, "What's New")}
+          onmouseenter={(e) => showTooltip(e, m.layout.sidebarWhatsNew())}
           onmouseleave={hideTooltip}
         >
           <span class="relative shrink-0" style="width: 20px; text-align: center;">
@@ -716,7 +718,7 @@
             {/if}
           </span>
           {#if !collapsed}
-            <span class="text-[15px] font-medium">What's New</span>
+            <span class="text-[15px] font-medium">{m.layout.sidebarWhatsNew()}</span>
           {/if}
         </button>
       </div>
@@ -748,7 +750,7 @@
                          border: 1px solid {active ? $colorStore.primary + '20' : 'transparent'};"
                   aria-current={active ? 'page' : undefined}
                   aria-disabled={noGuild}
-                  onmouseenter={(e) => showTooltip(e, noGuild ? 'Select a server first' : feature.label)}
+                  onmouseenter={(e) => showTooltip(e, noGuild ? m.common.selectAServerFirstPlaceholder() : feature.label())}
                   onmouseleave={hideTooltip}
                 >
                   {#if active}
@@ -767,7 +769,7 @@
                   {#if !collapsed}
                     <span class="text-[15px] max-lg:text-base truncate flex-1 transition-colors duration-200"
                           style="color: {active ? $colorStore.text : $colorStore.muted};">
-                      {feature.label}
+                      {feature.label()}
                     </span>
                   {/if}
         </a>
@@ -777,13 +779,13 @@
     {#if searchTerm && filteredFeatures.length === 0}
       <div class="px-4 py-8 text-center">
         <i class="fa-solid fa-search text-2xl mb-2 block" style="color: {$colorStore.muted}; opacity: 0.3;"></i>
-        <p class="text-xs" style="color: {$colorStore.muted};">No features match "{searchTerm}"</p>
+        <p class="text-xs" style="color: {$colorStore.muted};">{m.layout.sidebarNoFeaturesMatch({ term: searchTerm })}</p>
         <button
           class="mt-3 rounded-lg px-3 py-2 text-xs font-medium min-h-[44px] w-full transition-colors"
           style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
           onclick={() => openSearch(searchTerm)}
         >
-          Search settings inside pages
+          {m.layout.sidebarSearchInsidePages()}
         </button>
       </div>
     {/if}
@@ -805,12 +807,12 @@
         <!-- Instance selector -->
         {#if visibleInstances.length > 1 || instancesLoading || stillCheckingInstances}
           <div class="px-2 py-1.5">
-            <div class="text-[11px] font-semibold uppercase tracking-wider mb-1.5" style="color: {$colorStore.muted}; opacity: 0.7;">Bot Instance</div>
+            <div class="text-[11px] font-semibold uppercase tracking-wider mb-1.5" style="color: {$colorStore.muted}; opacity: 0.7;">{m.layout.sidebarBotInstance()}</div>
             {#if instancesLoading || stillCheckingInstances}
               <div class="flex items-center gap-2 px-2 py-1 text-xs" style="color: {$colorStore.muted};">
                 <div class="animate-spin h-3 w-3 border-2 rounded-full"
                      style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
-                Loading...
+                {m.common.loading()}
               </div>
             {:else}
               {#each visibleInstances as instance (instance.botId)}
@@ -839,8 +841,10 @@
           style="color: {$colorStore.text};"
         >
           <i class="fa-solid fa-gear text-sm shrink-0" style="color: {$colorStore.primary}; width: 20px; text-align: center;" aria-hidden="true"></i>
-          <span class="text-sm">My Settings</span>
+          <span class="text-sm">{m.common.mySettings()}</span>
         </a>
+
+        <LocaleSwitcher />
 
         <!-- Dyslexia-friendly font -->
         <button
@@ -851,7 +855,7 @@
           aria-pressed={$dyslexicFontStore}
         >
           <i class="fa-solid fa-universal-access text-sm shrink-0" style="color: {$colorStore.primary}; width: 20px; text-align: center;" aria-hidden="true"></i>
-          <span class="text-sm flex-1 text-left">Dyslexia-friendly Font</span>
+          <span class="text-sm flex-1 text-left">{m.common.dyslexiaFriendlyFont()}</span>
           <span class="w-9 h-5 rounded-full transition-colors relative shadow-inner block shrink-0"
                 style="background: {$dyslexicFontStore ? $colorStore.primary : '#374151'};">
             <span
@@ -870,7 +874,7 @@
           aria-pressed={$themeStore === "aero"}
         >
           <i class="fa-solid fa-palette text-sm shrink-0" style="color: {$colorStore.primary}; width: 20px; text-align: center;" aria-hidden="true"></i>
-          <span class="text-sm flex-1 text-left">Frutiger Aero Theme</span>
+          <span class="text-sm flex-1 text-left">{m.layout.navAeroTheme()}</span>
           <span class="w-9 h-5 rounded-full transition-colors relative shadow-inner block shrink-0"
                 style="background: {$themeStore === 'aero' ? $colorStore.primary : '#374151'};">
             <span
@@ -888,7 +892,7 @@
             style="color: {$colorStore.accent};"
           >
             <i class="fa-solid fa-right-from-bracket text-sm shrink-0" style="width: 20px; text-align: center;" aria-hidden="true"></i>
-            <span class="text-sm">Logout</span>
+            <span class="text-sm">{m.layout.sidebarLogout()}</span>
           </button>
         </form>
       </div>
@@ -903,9 +907,9 @@
           class:justify-center={collapsed}
           style="background: {showUserMenu ? $colorStore.primary + '10' : 'transparent'}; color: {$colorStore.text};"
           onclick={() => { if (collapsed) { toggleSidebar(); } else { showUserMenu = !showUserMenu; } }}
-          onmouseenter={(e) => collapsed && showTooltip(e, "Expand sidebar (Ctrl+B)")}
+          onmouseenter={(e) => collapsed && showTooltip(e, m.layout.sidebarExpandTooltip())}
           onmouseleave={hideTooltip}
-          aria-label={collapsed ? "Expand sidebar" : "User menu"}
+          aria-label={collapsed ? m.layout.sidebarExpand() : m.layout.navUserMenu()}
           aria-expanded={showUserMenu}
         >
           <div class="relative shrink-0">
@@ -946,8 +950,8 @@
           class="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.05] shrink-0"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}08;"
           onclick={toggleSidebar}
-          title="Collapse (Ctrl+B)"
-          aria-label="Collapse sidebar"
+          title={m.layout.sidebarCollapseTitle()}
+          aria-label={m.layout.sidebarCollapse()}
         >
           <i class="fa-solid fa-angles-left text-xs" aria-hidden="true"></i>
         </button>
@@ -957,7 +961,7 @@
           class="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.05] shrink-0"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}08;"
           onclick={closeMobile}
-          aria-label="Close sidebar"
+          aria-label={m.layout.sidebarClose()}
         >
           <i class="fa-solid fa-xmark text-xs" aria-hidden="true"></i>
         </button>

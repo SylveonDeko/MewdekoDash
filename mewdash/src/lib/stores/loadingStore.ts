@@ -1,4 +1,5 @@
 import { writable, derived, get } from "svelte/store";
+import { m } from "$lib/i18n";
 import { browser } from "$app/environment";
 import { navigating } from "$app/stores";
 
@@ -80,11 +81,11 @@ function createLoadingStore() {
     
     // Default messages by type
     switch (primaryState?.type) {
-      case "critical": return "Processing...";
-      case "operation": return "Working...";
-      case "api": return "Loading...";
-      case "navigation": return "Navigating...";
-      default: return "Loading...";
+      case "critical": return m.common.processing();
+      case "operation": return m.shared.loadingWorking();
+      case "api": return m.common.loading();
+      case "navigation": return m.shared.loadingNavigating();
+      default: return m.common.loading();
     }
   }
 
@@ -220,7 +221,7 @@ function createLoadingStore() {
 
     if (isNavigating) {
       debounceTimer = setTimeout(() => {
-        startLoading("navigation", "navigation", "Navigating...", { 
+        startLoading("navigation", "navigation", m.shared.loadingNavigating(), { 
           minDisplayTime: 200 // Shorter for navigation
         });
       }, NAVIGATION_DEBOUNCE);
@@ -269,7 +270,7 @@ function createLoadingStore() {
     async apiCall<T>(
       id: string,
       operation: () => Promise<T>,
-      message = "Loading..."
+      message = m.common.loading()
     ): Promise<T> {
       return this.wrap(id, operation, "api", message);
     },
@@ -278,7 +279,7 @@ function createLoadingStore() {
     async critical<T>(
       id: string,
       operation: () => Promise<T>,
-      message = "Processing..."
+      message = m.common.processing()
     ): Promise<T> {
       return this.wrap(id, operation, "critical", message);
     }

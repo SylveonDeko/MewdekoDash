@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -25,39 +26,39 @@
       <i class="fa-utility-duo fa-regular fa-crown"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
     </div>
-    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Staff & Member Roles</h2>
+    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.features.wizardRolesStepCoreTitle()}</h2>
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <div class="space-y-4">
       <span class="block text-sm font-medium" id="staff-role-label" style="color: {$colorStore.text}">
-        Staff Role
+        {m.common.staffRole()}
       </span>
       <DiscordSelector
         bind:selected={newStaffRole}
         multiple={false}
         options={availableRoles}
-        placeholder="Select staff role..."
+        placeholder={m.administration.automationServerRolesStaffPlaceholder()}
         type="role"
       />
       <p class="text-xs" style="color: {$colorStore.muted}">
-        Role that grants administrative permissions
+        {m.administration.automationServerRolesStaffHint()}
       </p>
     </div>
 
     <div class="space-y-4">
       <span class="block text-sm font-medium" id="member-role-label" style="color: {$colorStore.text}">
-        Member Role
+        {m.administration.automationServerRolesMember()}
       </span>
       <DiscordSelector
         bind:selected={newMemberRole}
         multiple={false}
         options={availableRoles}
-        placeholder="Select member role..."
+        placeholder={m.administration.automationServerRolesMemberPlaceholder()}
         type="role"
       />
       <p class="text-xs" style="color: {$colorStore.muted}">
-        Role assigned to regular server members
+        {m.administration.automationServerRolesMemberHint()}
       </p>
     </div>
   </div>
@@ -75,7 +76,7 @@
         {:else}
           <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
         {/if}
-        Save Changes
+        {m.common.saveChanges()}
       </button>
     </div>
   {/if}

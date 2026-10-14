@@ -1,6 +1,7 @@
 <!-- TabNavigation.svelte -->
 <script lang="ts">
   import { colorStore } from "$lib/stores/colorStore";
+  import { m } from "$lib/i18n";
 
 
   interface Props {
@@ -19,7 +20,7 @@
     variant = 'desktop',
     orientation = 'horizontal',
     size = 'md',
-    ariaLabel = "Tab navigation",
+    ariaLabel = m.shortcuts.tabnavAriaLabel(),
     onchange
   }: Props = $props();
 

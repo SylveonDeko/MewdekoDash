@@ -4,6 +4,7 @@
     import { musicApi } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {logger} from "$lib/logger";
+    import { m } from "$lib/i18n";
     import type {MusicStatus} from "$lib/types/music";
     import {musicPlayerColors} from "$lib/stores/musicPlayerColorStore";
     import { musicSkinStore } from "$lib/stores/musicSkinStore";
@@ -19,7 +20,7 @@
   let shadeTitle = $derived(
     musicStatus?.CurrentTrack?.Track
       ? `${musicStatus.CurrentTrack.Track.Author} - ${musicStatus.CurrentTrack.Track.Title}`
-      : "*** nothing playing ***"
+      : m.music.playerNothingPlaying()
   );
   const shadeBars = [0, 1, 2, 3, 4, 5, 6, 7];
 
@@ -96,14 +97,14 @@
           <span class="wa-shade-bar" style="--i: {bar};"></span>
         {/each}
       </div>
-      <button type="button" class="wa-shade-marquee" onclick={openMusicDashboard} title="Open the music dashboard">
+      <button type="button" class="wa-shade-marquee" onclick={openMusicDashboard} title={m.common.openMusicDashboard()}>
         <span class="wa-shade-text" class:wa-shade-scroll={shadeTitle.length > 26}>{shadeTitle}{shadeTitle.length > 26 ? "   ***   " + shadeTitle : ""}</span>
       </button>
       {#if hasTrack}
         <div class="wa-shade-buttons">
-          <button type="button" class="wa-shade-btn" onclick={previousTrack} aria-label="Previous" title="Previous">⏮</button>
-          <button type="button" class="wa-shade-btn" onclick={togglePlayPause} aria-label={isPlaying ? "Pause" : "Play"} title={isPlaying ? "Pause" : "Play"}>{isPlaying ? "❚❚" : "▶"}</button>
-          <button type="button" class="wa-shade-btn" onclick={skipTrack} aria-label="Next" title="Next">⏭</button>
+          <button type="button" class="wa-shade-btn" onclick={previousTrack} aria-label={m.common.previous()} title={m.common.previous()}>⏮</button>
+          <button type="button" class="wa-shade-btn" onclick={togglePlayPause} aria-label={isPlaying ? m.common.pause() : m.music.playerPlay()} title={isPlaying ? m.common.pause() : m.music.playerPlay()}>{isPlaying ? "❚❚" : "▶"}</button>
+          <button type="button" class="wa-shade-btn" onclick={skipTrack} aria-label={m.common.next()} title={m.common.next()}>⏭</button>
         </div>
       {/if}
     </div>
@@ -125,7 +126,7 @@
         {#if currentTrack?.Track?.ArtworkUri}
           <img
             src={currentTrack.Track.ArtworkUri}
-            alt="Album artwork"
+            alt={m.music.playerAlbumArtwork()}
             class="w-full h-full object-cover"
           >
         {:else}
@@ -157,7 +158,7 @@
       <button
               class="flex-1 min-w-0 cursor-pointer text-left"
       onclick={openMusicDashboard}
-      aria-label="Open music dashboard"
+      aria-label={m.common.openMusicDashboard()}
     >
           {#if hasTrack}
       <div
@@ -179,13 +180,13 @@
                       class="font-medium text-xs truncate"
                       style="color: {colors.text};"
               >
-                  Ready to play
+                  {m.music.playerReady()}
               </div>
               <div
                       class="text-xs truncate opacity-80"
                       style="color: {colors.text}80;"
               >
-                  {channelName || "Voice channel"}
+                  {channelName || m.common.voiceChannel()}
               </div>
           {/if}
     </button>
@@ -194,7 +195,7 @@
       {#if hasTrack}
           <div class="flex items-center gap-0.5 shrink-0">
               <!-- Previous Button -->
-            <button aria-label="Button action"
+            <button aria-label={m.common.previous()}
                       class="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
                       style="background: {colors.foreground}20; color: {colors.foreground};"
                       onclick={previousTrack}
@@ -209,7 +210,7 @@
               class="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
               style="background: {colors.controlsHighlight}; color: {colors.text};"
         onclick={togglePlayPause}
-        aria-label={isPlaying ? "Pause" : "Play"}
+        aria-label={isPlaying ? m.common.pause() : m.music.playerPlay()}
       >
         {#if isPlaying}
             <i class="fa-utility-duo fa-regular fa-pause text-sm"
@@ -221,7 +222,7 @@
       </button>
 
       <!-- Skip Button -->
-            <button aria-label="Button action"
+            <button aria-label={m.common.next()}
               class="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
               style="background: {colors.foreground}20; color: {colors.foreground};"
         onclick={skipTrack}
@@ -234,7 +235,7 @@
       {:else}
           <!-- When bot is idle in channel, just show an arrow to open dashboard -->
           <div class="shrink-0">
-            <button aria-label="Navigate"
+            <button aria-label={m.common.openMusicDashboard()}
                       class="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
                       style="background: {colors.accent}20; color: {colors.accent};"
                       onclick={openMusicDashboard}

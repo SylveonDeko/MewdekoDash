@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/ScatterChart.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onDestroy } from "svelte";
   import { Chart, LinearScale, LogarithmicScale, PointElement, ScatterController, Tooltip } from "chart.js";
   import { colorStore } from "$lib/stores/colorStore";
@@ -24,7 +25,7 @@
     empty?: string;
   }
 
-  let { points, xLabel = "", yLabel = "", logX = true, height = 220, loading = false, empty = "No data" }: Props = $props();
+  let { points, xLabel = "", yLabel = "", logX = true, height = 220, loading = false, empty = m.common.noData() }: Props = $props();
 
   let canvas = $state<HTMLCanvasElement>();
   let chart: Chart<"scatter", ScatterPoint[], string> | null = null;
@@ -58,7 +59,7 @@
             callbacks: {
               label: (item) => {
                 const p = item.raw as ScatterPoint;
-                return `${p.label} · ${compact(p.x)} ${xLabel} · ${p.y} ${yLabel}`;
+                return m.analytics.scatterTooltip({ label: p.label, x: compact(p.x), xLabel, y: p.y, yLabel });
               },
             },
           },

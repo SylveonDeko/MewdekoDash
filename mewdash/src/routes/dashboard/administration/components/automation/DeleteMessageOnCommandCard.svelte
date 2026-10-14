@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -36,7 +37,7 @@
 
     try {
       saving = true;
-      const newState = await administrationApi.toggleDeleteMessageOnCommand($currentGuild.id);
+      await administrationApi.toggleDeleteMessageOnCommand($currentGuild.id);
       await loadSettings();
       await fetchAllData();
     } catch (err) {
@@ -84,8 +85,8 @@
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
       <div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Delete Message on Command</h2>
-        <p class="text-sm" style="color: {$colorStore.muted}">Auto-delete command messages</p>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.automationDeleteMessageTitle()}</h2>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.automationDeleteMessageSubtitle()}</p>
       </div>
     </div>
 
@@ -100,10 +101,10 @@
       >
         {#if deleteMessageOnCommand.enabled}
           <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
-          Enabled
+          {m.common.enabled()}
         {:else}
           <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
-          Disabled
+          {m.common.disabled()}
         {/if}
       </button>
 
@@ -118,7 +119,7 @@
           {:else}
             <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
           {/if}
-          {expanded ? 'Collapse' : 'Configure Channels'}
+          {expanded ? m.common.collapse() : m.administration.automationDeleteMessageConfigureChannels()}
         </button>
       {/if}
     </div>
@@ -127,45 +128,45 @@
   {#if deleteMessageOnCommand.enabled}
     <div class="p-4 rounded-xl" style="background: {$colorStore.primary}05;">
       <p class="text-sm" style="color: {$colorStore.muted}">
-        Command messages will be automatically deleted. Configure per-channel overrides below.
+        {m.administration.automationDeleteMessageEnabledInfo()}
       </p>
     </div>
 
     {#if expanded}
       <div transition:slide={{ duration: 300 }} class="mt-6 pt-6 border-t space-y-4"
            style="border-color: {$colorStore.primary}20;">
-        <h4 class="font-medium" style="color: {$colorStore.text}">Channel-Specific Settings</h4>
+        <h4 class="font-medium" style="color: {$colorStore.text}">{m.administration.automationDeleteMessageChannelSettings()}</h4>
 
         <!-- Add channel override -->
         <div class="p-4 rounded-xl border-2 border-dashed"
              style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
-          <h5 class="font-medium mb-3" style="color: {$colorStore.text}">Set Channel Override</h5>
+          <h5 class="font-medium mb-3" style="color: {$colorStore.text}">{m.administration.automationDeleteMessageSetOverride()}</h5>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel</span>
+              <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.channel()}</span>
               <DiscordSelector
                 type="channel"
                 options={textChannels}
                 bind:selected={selectedChannel}
-                placeholder="Select channel..."
+                placeholder={m.common.selectChannelPlaceholder()}
                 multiple={false}
               />
             </div>
 
             <div>
               <span class="block text-sm font-medium mb-2"
-                    style="color: {$colorStore.text}">State</span>
+                    style="color: {$colorStore.text}">{m.common.state()}</span>
               <DiscordSelector
                 type="custom"
                 customIcon="fa-gear"
                 options={[
-                  { id: "enable", name: "Enable (Always delete)" },
-                  { id: "disable", name: "Disable (Never delete)" },
-                  { id: "inherit", name: "Inherit (Use global setting)" }
+                  { id: "enable", name: m.administration.automationDeleteMessageStateEnable() },
+                  { id: "disable", name: m.administration.automationDeleteMessageStateDisable() },
+                  { id: "inherit", name: m.administration.automationDeleteMessageStateInherit() }
                 ]}
                 bind:selected={channelState}
-                placeholder="Select state..."
+                placeholder={m.administration.automationDeleteMessageStatePlaceholder()}
                 searchable={false}
               />
             </div>
@@ -182,22 +183,22 @@
             {:else}
               <i class="fa-solid fa-plus"></i>
             {/if}
-            Set Channel Override
+            {m.administration.automationDeleteMessageSetOverride()}
           </button>
         </div>
 
         <!-- Show existing channel overrides -->
         {#if deleteMessageOnCommand.channels?.length > 0}
           <div class="space-y-2">
-            <h5 class="font-medium text-sm" style="color: {$colorStore.text}">Channel Overrides</h5>
+            <h5 class="font-medium text-sm" style="color: {$colorStore.text}">{m.common.channelOverrides()}</h5>
             {#each deleteMessageOnCommand.channels as channel}
               <div class="flex items-center justify-between p-3 rounded-lg border"
                    style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-                <span style="color: {$colorStore.text}">Channel ID: {channel.channelId.toString()}</span>
+                <span style="color: {$colorStore.text}">{m.common.channelIdLabel({ id: channel.channelId.toString() })}</span>
                 <span class="text-xs px-2 py-1 rounded-full"
                       style="background: {channel.state ? $colorStore.secondary + '20' : $colorStore.muted + '20'};
                              color: {channel.state ? $colorStore.secondary : $colorStore.muted}">
-                  {channel.state ? 'Enabled' : 'Disabled'}
+                  {channel.state ? m.common.enabled() : m.common.disabled()}
                 </span>
               </div>
             {/each}
@@ -209,8 +210,8 @@
     <div class="text-center py-8">
       <i class="fa-utility-duo fa-regular fa-comment-slash"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-      <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">Delete Message on Command Disabled</p>
-      <p class="text-sm" style="color: {$colorStore.muted}">Enable to auto-delete command messages</p>
+      <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">{m.administration.automationDeleteMessageDisabledTitle()}</p>
+      <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.automationDeleteMessageDisabledHint()}</p>
     </div>
   {/if}
 </div>

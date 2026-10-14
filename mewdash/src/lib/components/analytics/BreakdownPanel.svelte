@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/BreakdownPanel.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { logger } from "$lib/logger";
   import { analyticsApi } from "$lib/api/analytics/analytics";
   import type { AnalyticsAgg, BreakdownRow } from "$lib/api/analytics/models";
@@ -32,7 +33,7 @@
     color,
     onSelect,
     selected = null,
-    empty = "No data",
+    empty = m.common.noData(),
   }: Props = $props();
 
   let rows = $state<BreakdownRow[]>([]);

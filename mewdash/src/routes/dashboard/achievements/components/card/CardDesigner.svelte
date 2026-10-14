@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onDestroy, untrack } from "svelte";
   import { fade } from "svelte/transition";
   import { flip } from "svelte/animate";
@@ -108,13 +109,13 @@
   let pxPerUnit = $derived(canvasWidth > 0 ? canvasWidth / outerWidth : 1);
   let sampleOptions = $derived(catalog.achievements.map((a) => ({ id: a.key, name: a.name })));
   let followOptions = $derived([
-    { id: "", name: "Nothing" },
+    { id: "", name: m.achievements.cardDesignerNothing() },
     ...draft.elements
       .filter((e) => e.id !== selectedId && TEXT_TYPES.includes(e.type))
       .map((e) => ({ id: e.id, name: elementName(e) }))
   ]);
   let besideOptions = $derived([
-    { id: "", name: "Nothing" },
+    { id: "", name: m.achievements.cardDesignerNothing() },
     ...draft.elements
       .filter((e) => e.id !== selectedId && PILL_TYPES.includes(e.type))
       .map((e) => ({ id: e.id, name: elementName(e) }))
@@ -165,7 +166,7 @@
     } catch (err: any) {
       if (seq === previewSeq) {
         logger.error("Failed to draw the card:", err);
-        onerror(err?.message || "Couldn't draw the card.");
+        onerror(err?.message || m.achievements.cardDesignerErrorDraw());
       }
     } finally {
       if (seq === previewSeq) previewing = false;
@@ -304,7 +305,7 @@
    */
   function add(type: AchievementCardCustomType) {
     if (draft.elements.length >= card.limits.maxElements) {
-      onerror(`A card holds at most ${card.limits.maxElements} elements.`);
+      onerror(m.achievements.cardDesignerErrorMaxElements({ max: card.limits.maxElements }));
       return;
     }
     const element = newElement(draft, type);
@@ -375,9 +376,9 @@
   /** Starts over from the built in design, after asking. */
   async function resetAll() {
     const ok = await requestConfirmation({
-      title: "Start over from the built in design?",
-      message: "Every change in this design is replaced. You can undo this until you leave the designer.",
-      confirmText: "Start over",
+      title: m.achievements.cardDesignerStartOverTitle(),
+      message: m.achievements.cardDesignerStartOverMessage(),
+      confirmText: m.common.startOver(),
       variant: "danger"
     });
     if (!ok) return;
@@ -389,7 +390,7 @@
   async function save() {
     const trimmed = draftName.trim();
     if (!trimmed) {
-      onerror("Give the design a name.");
+      onerror(m.achievements.cardDesignerErrorNameRequired());
       return;
     }
     saving = true;
@@ -398,7 +399,7 @@
       savedJson = json;
       savedName = trimmed;
     } catch (err: any) {
-      onerror(err?.message || "Couldn't save the design.");
+      onerror(err?.message || m.achievements.cardDesignerErrorSave());
     } finally {
       saving = false;
     }
@@ -408,9 +409,9 @@
   async function close() {
     if (dirty) {
       const ok = await requestConfirmation({
-        title: "Leave without saving?",
-        message: "Changes to this design since the last save are lost.",
-        confirmText: "Leave",
+        title: m.achievements.cardDesignerLeaveTitle(),
+        message: m.achievements.cardDesignerLeaveMessage(),
+        confirmText: m.common.leave(),
         variant: "danger"
       });
       if (!ok) return;
@@ -476,16 +477,16 @@
               border-color: {$colorStore.primary}30;">
     <div class="flex items-center gap-2 flex-1 min-w-0">
       <button type="button" class="w-[44px] h-[44px] rounded-xl flex items-center justify-center shrink-0"
-              style="background: {$colorStore.primary}10; color: {$colorStore.text};" aria-label="Back to designs"
+              style="background: {$colorStore.primary}10; color: {$colorStore.text};" aria-label={m.achievements.cardDesignerAriaBack()}
               onclick={close}>
         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
       </button>
-      <input type="text" bind:value={draftName} maxlength={card.limits.nameLength} aria-label="Design name"
+      <input type="text" bind:value={draftName} maxlength={card.limits.nameLength} aria-label={m.achievements.cardDesignerAriaDesignName()}
              class="flex-1 min-w-0 px-3 h-[44px] rounded-xl border text-base font-semibold" style={inputStyle} />
     </div>
     <div class="flex flex-wrap items-center gap-2">
-      <div class="flex h-[44px] rounded-xl p-1 gap-1" style="background: {$colorStore.primary}10;" role="group" aria-label="State">
-        {#each [{ id: false, label: "Unlocked" }, { id: true, label: "Locked" }] as option (option.label)}
+      <div class="flex h-[44px] rounded-xl p-1 gap-1" style="background: {$colorStore.primary}10;" role="group" aria-label={m.common.state()}>
+        {#each [{ id: false, label: m.common.unlocked() }, { id: true, label: m.common.locked() }] as option (option.id)}
           <button type="button" aria-pressed={locked === option.id}
                   class="px-3 h-full rounded-lg text-xs font-medium"
                   style="background: {locked === option.id ? $colorStore.primary + '30' : 'transparent'}; color: {locked === option.id ? $colorStore.primary : $colorStore.text};"
@@ -493,22 +494,22 @@
         {/each}
       </div>
       <div class="w-80">
-        <DiscordSelector type="custom" options={sampleOptions} selected={sample?.key ?? null} ariaLabel="Sample achievement"
-                         placeholder="Sample achievement" customIcon="fa-crown"
+        <DiscordSelector type="custom" options={sampleOptions} selected={sample?.key ?? null} ariaLabel={m.achievements.cardDesignerAriaSample()}
+                         placeholder={m.achievements.cardDesignerAriaSample()} customIcon="fa-crown"
                          onchange={(d) => { if (typeof d.selected === "string") sampleKey = d.selected; }} />
       </div>
-      <button type="button" class="w-[44px] h-[44px] rounded-xl disabled:opacity-40" aria-label="Undo"
+      <button type="button" class="w-[44px] h-[44px] rounded-xl disabled:opacity-40" aria-label={m.common.undo()}
               style="background: {$colorStore.primary}10; color: {$colorStore.text};" disabled={undoStack.length === 0} onclick={undo}>
         <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
       </button>
-      <button type="button" class="w-[44px] h-[44px] rounded-xl disabled:opacity-40" aria-label="Redo"
+      <button type="button" class="w-[44px] h-[44px] rounded-xl disabled:opacity-40" aria-label={m.common.redo()}
               style="background: {$colorStore.primary}10; color: {$colorStore.text};" disabled={redoStack.length === 0} onclick={redo}>
         <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
       </button>
       <button type="button" class="px-4 h-[44px] rounded-xl text-sm font-semibold disabled:opacity-50"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;" disabled={!(dirty || isNew) || saving} onclick={save}>
         <i class="fa-solid {saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'} mr-1" aria-hidden="true"></i>
-        {dirty || isNew ? "Save" : "Saved"}
+        {dirty || isNew ? m.common.save() : m.common.saved()}
       </button>
     </div>
   </div>
@@ -517,11 +518,11 @@
     <aside class="rounded-2xl border p-3 space-y-2 order-2 xl:order-1"
            style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
       <div class="flex items-center justify-between">
-        <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Layers</h3>
+        <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">{m.xp.editorLayers()}</h3>
         <button type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-medium min-h-[32px]"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary};" aria-expanded={showAdd}
                 onclick={() => { showAdd = !showAdd; }}>
-          <i class="fa-solid fa-plus mr-1" aria-hidden="true"></i>Add
+          <i class="fa-solid fa-plus mr-1" aria-hidden="true"></i>{m.common.add()}
         </button>
       </div>
       {#if showAdd}
@@ -529,7 +530,7 @@
           {#each CUSTOM_TYPES as type (type)}
             <button type="button" class="flex items-center gap-2 px-2 py-2 rounded-lg text-xs min-h-[36px]"
                     style="background: {$colorStore.primary}10; color: {$colorStore.text};" onclick={() => add(type)}>
-              <DuoIcon icon={ELEMENT_KINDS[type].icon} size={14} />{ELEMENT_KINDS[type].label}
+              <DuoIcon icon={ELEMENT_KINDS[type].icon} size={14} />{ELEMENT_KINDS[type].label()}
             </button>
           {/each}
         </div>
@@ -537,9 +538,9 @@
       <button type="button" class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm text-left min-h-[40px]"
               style="background: {selectedId === null ? $colorStore.primary + '20' : 'transparent'}; color: {$colorStore.text};"
               onclick={() => { selectedId = null; }}>
-        <DuoIcon icon="fa-id-card" size={14} />Card and background
+        <DuoIcon icon="fa-id-card" size={14} />{m.achievements.cardDesignerCardAndBackground()}
       </button>
-      <ul class="space-y-1 max-h-[520px] overflow-y-auto pr-1" aria-label="Layers"
+      <ul class="space-y-1 max-h-[520px] overflow-y-auto pr-1" aria-label={m.xp.editorLayers()}
           use:dragHandleZone={{ items: layerItems, flipDurationMs: 150, dropTargetStyle: {} }}
           onconsider={(e) => { layerItems = e.detail.items; }}
           onfinalize={dropLayer}>
@@ -549,7 +550,7 @@
           <li class="flex items-center gap-1 rounded-lg"
               style="background: {active ? $colorStore.primary + '20' : 'transparent'};"
               animate:flip={{ duration: 150 }}>
-            <span use:dragHandle aria-label="Drag {elementName(element)} to reorder"
+            <span use:dragHandle aria-label={m.achievements.categoriesDragLabel({ name: elementName(element) })}
                   class="w-5 h-[38px] flex items-center justify-center shrink-0 cursor-grab touch-none text-xs"
                   style="color: {$colorStore.muted};">
               <i class="fa-solid fa-grip-vertical" aria-hidden="true"></i>
@@ -560,15 +561,15 @@
               <DuoIcon icon={ELEMENT_KINDS[element.type]?.icon ?? "fa-square"} size={14} />
               <span class="truncate">{elementName(element)}</span>
             </button>
-            <button type="button" class="w-7 h-7 rounded-md text-xs" aria-label="{element.visible ? 'Hide' : 'Show'} {elementName(element)}"
+            <button type="button" class="w-7 h-7 rounded-md text-xs" aria-label={element.visible ? m.achievements.cardDesignerAriaHideLayer({ name: elementName(element) }) : m.achievements.cardDesignerAriaShowLayer({ name: elementName(element) })}
                     style="color: {$colorStore.muted};" onclick={() => { element.visible = !element.visible; }}>
               <i class="fa-solid {element.visible ? 'fa-eye' : 'fa-eye-slash'}" aria-hidden="true"></i>
             </button>
-            <button type="button" class="w-7 h-7 rounded-md text-xs" aria-label="Bring {elementName(element)} forward"
+            <button type="button" class="w-7 h-7 rounded-md text-xs" aria-label={m.achievements.cardDesignerAriaBringForward({ name: elementName(element) })}
                     style="color: {$colorStore.muted};" onclick={() => reorder(element.id, 1)}>
               <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
             </button>
-            <button type="button" class="w-7 h-7 rounded-md text-xs" aria-label="Send {elementName(element)} back"
+            <button type="button" class="w-7 h-7 rounded-md text-xs" aria-label={m.achievements.cardDesignerAriaSendBack({ name: elementName(element) })}
                     style="color: {$colorStore.muted};" onclick={() => reorder(element.id, -1)}>
               <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
             </button>
@@ -583,14 +584,14 @@
              style="aspect-ratio: {outerWidth} / {outerHeight};"
              role="presentation" onpointerdown={() => { selectedId = null; }}>
           {#if preview}
-            <img src={preview.image} alt="Card preview" class="absolute inset-0 w-full h-full pointer-events-none" draggable="false" />
+            <img src={preview.image} alt={m.achievements.cardDesignerAriaPreview()} class="absolute inset-0 w-full h-full pointer-events-none" draggable="false" />
           {/if}
           {#each draft.elements as element (element.id)}
             {#if element.visible}
               {@const box = boxOf(element)}
               {@const active = selectedId === element.id}
               <div class="absolute rounded-sm"
-                   role="button" tabindex="-1" aria-label="Select {elementName(element)}"
+                   role="button" tabindex="-1" aria-label={m.achievements.librarySelectLabel({ name: elementName(element) })}
                    style="left: {box.left}%; top: {box.top}%; width: {box.width}%; height: {box.height}%;
                           transform: rotate({element.rotation}deg);
                           outline: {active ? `2px solid ${$colorStore.primary}` : box.drawn ? `1px dashed ${$colorStore.text}25` : 'none'};
@@ -607,7 +608,7 @@
           {#if previewing}
             <span class="absolute top-2 right-2 text-xs px-2 py-1 rounded-md" style="background: #000a; color: #fff;">
               <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
-              <span class="sr-only">Drawing</span>
+              <span class="sr-only">{m.achievements.cardDesignerDrawing()}</span>
             </span>
           {/if}
         </div>
@@ -615,9 +616,9 @@
       <div class="flex flex-wrap items-center gap-3 text-xs" style="color: {$colorStore.muted}">
         <label class="flex items-center gap-2">
           <input type="checkbox" bind:checked={snap} style="accent-color: {$colorStore.primary}" />
-          Snap to 4px (hold Alt to place freely)
+          {m.achievements.cardDesignerSnap()}
         </label>
-        <span>Arrows nudge, Shift moves 10. Delete removes, Ctrl or Cmd with D duplicates.</span>
+        <span>{m.achievements.cardDesignerShortcutsHint()}</span>
       </div>
     </section>
 
@@ -629,53 +630,53 @@
           <DuoIcon icon={kind?.icon ?? "fa-square"} size={18} />
           <div class="flex-1 min-w-0">
             <h3 class="text-sm font-semibold truncate" style="color: {$colorStore.text}">{elementName(selected)}</h3>
-            <p class="text-xs" style="color: {$colorStore.muted}">{kind?.hint}</p>
+            <p class="text-xs" style="color: {$colorStore.muted}">{kind?.hint()}</p>
           </div>
         </div>
         <div class="flex flex-wrap gap-2">
           {#if isBuiltIn(selected.type)}
             <button type="button" class="px-2.5 py-1.5 rounded-lg text-xs min-h-[32px]"
-                    style="background: {$colorStore.primary}10; color: {$colorStore.text};" onclick={resetSelected}>Reset</button>
+                    style="background: {$colorStore.primary}10; color: {$colorStore.text};" onclick={resetSelected}>{m.common.reset()}</button>
           {:else}
             <button type="button" class="px-2.5 py-1.5 rounded-lg text-xs min-h-[32px]"
-                    style="background: {$colorStore.primary}10; color: {$colorStore.text};" onclick={() => duplicate(selected!)}>Duplicate</button>
+                    style="background: {$colorStore.primary}10; color: {$colorStore.text};" onclick={() => duplicate(selected!)}>{m.common.duplicate()}</button>
             <button type="button" class="px-2.5 py-1.5 rounded-lg text-xs min-h-[32px]"
-                    style="background: #ef444420; color: #ef4444;" onclick={() => removeElement(selected!.id)}>Delete</button>
+                    style="background: #ef444420; color: #ef4444;" onclick={() => removeElement(selected!.id)}>{m.common.delete()}</button>
           {/if}
         </div>
 
         <label class="block text-xs" style="color: {$colorStore.muted}">
-          Layer name
-          <input type="text" value={selected.name} maxlength="40" placeholder={kind?.label}
+          {m.achievements.cardDesignerLayerName()}
+          <input type="text" value={selected.name} maxlength="40" placeholder={kind?.label()}
                  class="mt-1 w-full px-2.5 py-2 rounded-lg border text-sm min-h-[40px]" style={inputStyle}
                  oninput={(e) => { selected!.name = e.currentTarget.value; }} />
         </label>
-        {@render segmented("Show on", [{ id: "always", label: "Every card" }, { id: "unlocked", label: "Unlocked" }, { id: "locked", label: "Locked" }],
+        {@render segmented(m.achievements.cardDesignerShowOn(), [{ id: "always", label: m.achievements.cardDesignerShowAll() }, { id: "unlocked", label: m.common.unlocked() }, { id: "locked", label: m.common.locked() }],
           selected.show, (v) => { selected!.show = v as AchievementCardElement["show"]; })}
 
-        {@render section("Position")}
+        {@render section(m.xp.editorPosition())}
         <div class="grid grid-cols-2 gap-2">
-          {@render field("X", selected.x, (v) => { selected!.x = v; })}
-          {@render field("Y", selected.y, (v) => { selected!.y = v; })}
-          {@render field("Width", selected.w, (v) => { selected!.w = Math.max(1, v); }, 1, 1)}
-          {@render field("Height", selected.h, (v) => { selected!.h = Math.max(1, v); }, 1, 1)}
-          {@render field("Rotation", selected.rotation, (v) => { selected!.rotation = v; }, 1, -360, 360)}
+          {@render field(m.achievements.cardDesignerX(), selected.x, (v) => { selected!.x = v; })}
+          {@render field(m.achievements.cardDesignerY(), selected.y, (v) => { selected!.y = v; })}
+          {@render field(m.xp.editorWidth(), selected.w, (v) => { selected!.w = Math.max(1, v); }, 1, 1)}
+          {@render field(m.xp.editorHeight(), selected.h, (v) => { selected!.h = Math.max(1, v); }, 1, 1)}
+          {@render field(m.xp.editorRotation(), selected.rotation, (v) => { selected!.rotation = v; }, 1, -360, 360)}
           <label class="block text-xs" style="color: {$colorStore.muted}">
-            Opacity {Math.round(selected.opacity * 100)}%
+            {m.xp.editorOpacityPercent({ percent: Math.round(selected.opacity * 100) })}
             <input type="range" min="0" max="1" step="0.05" value={selected.opacity} class="w-full mt-3"
                    style="accent-color: {$colorStore.primary}" oninput={(e) => { selected!.opacity = Number(e.currentTarget.value); }} />
           </label>
         </div>
         <div class="space-y-1">
-          <span class="text-xs block" style="color: {$colorStore.muted}">Moves down when this wraps</span>
+          <span class="text-xs block" style="color: {$colorStore.muted}">{m.achievements.cardDesignerMovesDownWhenWraps()}</span>
           <DiscordSelector type="custom" options={followOptions} selected={selected.followId} searchable={false}
-                           ariaLabel="Moves down when this wraps"
+                           ariaLabel={m.achievements.cardDesignerMovesDownWhenWraps()}
                            onchange={(d) => { selected!.followId = typeof d.selected === "string" ? d.selected : ""; }} />
         </div>
 
         {#if selected.type === "text"}
-          {@render section("Text")}
-          <textarea rows="3" maxlength={card.limits.maxText} aria-label="Text" value={selected.text}
+          {@render section(m.common.text())}
+          <textarea rows="3" maxlength={card.limits.maxText} aria-label={m.common.text()} value={selected.text}
                     class="w-full px-2.5 py-2 rounded-lg border text-sm" style={inputStyle}
                     oninput={(e) => { selected!.text = e.currentTarget.value; }}></textarea>
           <div class="flex flex-wrap gap-1">
@@ -688,121 +689,121 @@
         {/if}
 
         {#if selected.type === "glyph"}
-          {@render section("Icon")}
-          <GlyphField label="Icon" value={selected.glyph} {onerror} onchange={(v) => { selected!.glyph = v; }} />
-          <ColorTokenField label="Color" value={selected.color} palette={card.palette} grade={gradeColor}
+          {@render section(m.achievements.editorIconLabel())}
+          <GlyphField label={m.achievements.editorIconLabel()} value={selected.glyph} {onerror} onchange={(v) => { selected!.glyph = v; }} />
+          <ColorTokenField label={m.common.color()} value={selected.color} palette={card.palette} grade={gradeColor}
                            onchange={(v) => { selected!.color = v; }} />
-          <ColorTokenField label="Back layer" value={selected.color3} palette={card.palette} grade={gradeColor} allowNone
+          <ColorTokenField label={m.achievements.cardDesignerBackLayer()} value={selected.color3} palette={card.palette} grade={gradeColor} allowNone
                            onchange={(v) => { selected!.color3 = v; }} />
         {/if}
 
         {#if selected.type === "image"}
-          {@render section("Image")}
-          <CardImageField label="Image" value={selected.url} images={card.images} {onimages} {onerror}
+          {@render section(m.common.image())}
+          <CardImageField label={m.common.image()} value={selected.url} images={card.images} {onimages} {onerror}
                           onchange={(v) => { selected!.url = v; }} />
-          {@render segmented("Fit", [{ id: "cover", label: "Fill" }, { id: "contain", label: "Fit inside" }], selected.fit,
+          {@render segmented(m.achievements.cardDesignerFit(), [{ id: "cover", label: m.common.fill() }, { id: "contain", label: m.achievements.cardDesignerFitInside() }], selected.fit,
             (v) => { selected!.fit = v as "cover" | "contain"; })}
         {/if}
 
         {#if TEXT_TYPES.includes(selected.type) || PILL_TYPES.includes(selected.type)}
-          {@render section("Type")}
+          {@render section(m.common.type())}
           <div class="grid grid-cols-2 gap-2">
-            {@render field("Size", selected.fontSize, (v) => { selected!.fontSize = v; }, 1, 8, 200)}
-            {@render field("Letter spacing", selected.spacing, (v) => { selected!.spacing = v; }, 0.1, -5, 40)}
+            {@render field(m.xp.editorSize(), selected.fontSize, (v) => { selected!.fontSize = v; }, 1, 8, 200)}
+            {@render field(m.achievements.cardDesignerLetterSpacing(), selected.spacing, (v) => { selected!.spacing = v; }, 0.1, -5, 40)}
             {#if ["title", "description", "text"].includes(selected.type)}
-              {@render field("Line height", selected.lineHeight, (v) => { selected!.lineHeight = v; }, 0.05, 0.8, 3)}
-              {@render field("Max lines", selected.maxLines, (v) => { selected!.maxLines = Math.round(v); }, 1, 1, 6)}
+              {@render field(m.achievements.cardDesignerLineHeight(), selected.lineHeight, (v) => { selected!.lineHeight = v; }, 0.05, 0.8, 3)}
+              {@render field(m.achievements.cardDesignerMaxLines(), selected.maxLines, (v) => { selected!.maxLines = Math.round(v); }, 1, 1, 6)}
             {/if}
           </div>
-          {@render segmented("Align", [{ id: "left", label: "Left" }, { id: "center", label: "Center" }, { id: "right", label: "Right" }],
+          {@render segmented(m.achievements.cardDesignerAlign(), [{ id: "left", label: m.common.left() }, { id: "center", label: m.xp.editorTextAlignCenter() }, { id: "right", label: m.xp.editorDirectionRight() }],
             selected.align, (v) => { selected!.align = v as "left" | "center" | "right"; })}
-          <ToggleRow title="Bold" colors={$colorStore} checked={selected.bold} onchange={(v) => { selected!.bold = v; }} />
-          <ToggleRow title="Capitals" colors={$colorStore} checked={selected.uppercase} onchange={(v) => { selected!.uppercase = v; }} />
-          <ColorTokenField label={selected.type === "member" ? "Name color" : "Text color"} value={selected.color}
+          <ToggleRow title={m.achievements.cardDesignerBold()} colors={$colorStore} checked={selected.bold} onchange={(v) => { selected!.bold = v; }} />
+          <ToggleRow title={m.achievements.cardDesignerCapitals()} colors={$colorStore} checked={selected.uppercase} onchange={(v) => { selected!.uppercase = v; }} />
+          <ColorTokenField label={selected.type === "member" ? m.achievements.cardDesignerNameColor() : m.achievements.cardDesignerTextColor()} value={selected.color}
                            palette={card.palette} grade={gradeColor} onchange={(v) => { selected!.color = v; }} />
           {#if selected.type === "member"}
-            <ColorTokenField label="Server color" value={selected.color2} palette={card.palette} grade={gradeColor}
+            <ColorTokenField label={m.achievements.cardDesignerServerColor()} value={selected.color2} palette={card.palette} grade={gradeColor}
                              onchange={(v) => { selected!.color2 = v; }} />
           {/if}
           {#if ["label", "text", ...PILL_TYPES].includes(selected.type)}
-            <GlyphField label="Icon beside the text" value={selected.glyph} {onerror}
-                        emptyLabel={["label", "grade", "category"].includes(selected.type) ? "Automatic" : "No icon"}
+            <GlyphField label={m.achievements.cardDesignerIconBesideText()} value={selected.glyph} {onerror}
+                        emptyLabel={["label", "grade", "category"].includes(selected.type) ? m.achievements.cardDesignerAutomatic() : m.achievements.cardDesignerNoIcon()}
                         allowNone={["label", "grade", "category"].includes(selected.type)}
                         onchange={(v) => { selected!.glyph = v; }} />
-            <ColorTokenField label="Icon color" value={selected.color2} palette={card.palette} grade={gradeColor}
+            <ColorTokenField label={m.achievements.cardDesignerIconColor()} value={selected.color2} palette={card.palette} grade={gradeColor}
                              onchange={(v) => { selected!.color2 = v; }} />
-            <ColorTokenField label="Icon back layer" value={selected.color3} palette={card.palette} grade={gradeColor} allowNone
+            <ColorTokenField label={m.achievements.cardDesignerIconBackLayer()} value={selected.color3} palette={card.palette} grade={gradeColor} allowNone
                              onchange={(v) => { selected!.color3 = v; }} />
           {/if}
         {/if}
 
         {#if PILL_TYPES.includes(selected.type)}
-          {@render section("Badge")}
-          <ToggleRow title="Shrink to the text" subtitle="Sits at the alignment inside its box" colors={$colorStore}
+          {@render section(m.achievements.cardDesignerBadge())}
+          <ToggleRow title={m.achievements.cardDesignerShrinkToText()} subtitle={m.achievements.cardDesignerShrinkToTextHint()} colors={$colorStore}
                      checked={selected.autoWidth} onchange={(v) => { selected!.autoWidth = v; }} />
           <div class="space-y-1">
-            <span class="text-xs block" style="color: {$colorStore.muted}">Sits beside</span>
+            <span class="text-xs block" style="color: {$colorStore.muted}">{m.achievements.cardDesignerSitsBeside()}</span>
             <DiscordSelector type="custom" options={besideOptions} selected={selected.besideId} searchable={false}
-                             ariaLabel="Sits beside"
+                             ariaLabel={m.achievements.cardDesignerSitsBeside()}
                              onchange={(d) => { selected!.besideId = typeof d.selected === "string" ? d.selected : ""; }} />
           </div>
           {#if selected.besideId}
-            {@render field("Gap", selected.gap, (v) => { selected!.gap = v; }, 1, -200, 200)}
+            {@render field(m.achievements.cardDesignerGap(), selected.gap, (v) => { selected!.gap = v; }, 1, -200, 200)}
           {/if}
         {/if}
 
         {#if selected.type === "icon"}
-          {@render section("Icon")}
-          <ColorTokenField label="Icon color" value={selected.color} palette={card.palette} grade={gradeColor}
+          {@render section(m.achievements.editorIconLabel())}
+          <ColorTokenField label={m.achievements.cardDesignerIconColor()} value={selected.color} palette={card.palette} grade={gradeColor}
                            onchange={(v) => { selected!.color = v; }} />
-          <ColorTokenField label="Icon back layer" value={selected.color3} palette={card.palette} grade={gradeColor} allowNone
+          <ColorTokenField label={m.achievements.cardDesignerIconBackLayer()} value={selected.color3} palette={card.palette} grade={gradeColor} allowNone
                            onchange={(v) => { selected!.color3 = v; }} />
         {/if}
 
         {#if selected.type === "progress"}
-          {@render section("Bar")}
-          <ColorTokenField label="Bar" value={selected.color} palette={card.palette} grade={gradeColor}
+          {@render section(m.achievements.cardDesignerBar())}
+          <ColorTokenField label={m.achievements.cardDesignerBar()} value={selected.color} palette={card.palette} grade={gradeColor}
                            onchange={(v) => { selected!.color = v; }} />
-          <ColorTokenField label="Bar fades to" value={selected.fill2} palette={card.palette} grade={gradeColor} allowNone
+          <ColorTokenField label={m.achievements.cardDesignerBarFadesTo()} value={selected.fill2} palette={card.palette} grade={gradeColor} allowNone
                            onchange={(v) => { selected!.fill2 = v; }} />
-          <ColorTokenField label="Track" value={selected.fill} palette={card.palette} grade={gradeColor} allowNone
+          <ColorTokenField label={m.common.track()} value={selected.fill} palette={card.palette} grade={gradeColor} allowNone
                            onchange={(v) => { selected!.fill = v; }} />
-          <ColorTokenField label="Count text" value={selected.color2} palette={card.palette} grade={gradeColor} allowNone
+          <ColorTokenField label={m.achievements.cardDesignerCountText()} value={selected.color2} palette={card.palette} grade={gradeColor} allowNone
                            onchange={(v) => { selected!.color2 = v; }} />
-          {@render field("Count text size", selected.fontSize, (v) => { selected!.fontSize = v; }, 1, 8, 200)}
+          {@render field(m.achievements.cardDesignerCountTextSize(), selected.fontSize, (v) => { selected!.fontSize = v; }, 1, 8, 200)}
         {/if}
 
         {#if SHAPE_TYPES.includes(selected.type) && selected.type !== "progress" || selected.type === "image"}
-          {@render section("Shape")}
+          {@render section(m.achievements.cardDesignerShape())}
           {#if selected.type !== "image"}
-            <ColorTokenField label={selected.type === "avatar" ? "Fill without an avatar" : "Fill"} value={selected.fill}
+            <ColorTokenField label={selected.type === "avatar" ? m.achievements.cardDesignerFillWithoutAvatar() : m.common.fill()} value={selected.fill}
                              palette={card.palette} grade={gradeColor} allowNone onchange={(v) => { selected!.fill = v; }} />
             {#if selected.fill && ["rectangle", "ellipse", "icon", ...PILL_TYPES].includes(selected.type)}
-              <ColorTokenField label="Fill fades to" value={selected.fill2} palette={card.palette} grade={gradeColor} allowNone
+              <ColorTokenField label={m.achievements.cardDesignerFillFadesTo()} value={selected.fill2} palette={card.palette} grade={gradeColor} allowNone
                                onchange={(v) => { selected!.fill2 = v; }} />
               {#if selected.fill2}
-                {@render field("Fade angle", selected.fillAngle, (v) => { selected!.fillAngle = v; }, 1, -360, 360)}
+                {@render field(m.achievements.cardDesignerFadeAngle(), selected.fillAngle, (v) => { selected!.fillAngle = v; }, 1, -360, 360)}
               {/if}
             {/if}
           {/if}
-          <ColorTokenField label="Outline" value={selected.stroke} palette={card.palette} grade={gradeColor} allowNone
+          <ColorTokenField label={m.achievements.cardDesignerOutline()} value={selected.stroke} palette={card.palette} grade={gradeColor} allowNone
                            onchange={(v) => { selected!.stroke = v; }} />
           <div class="grid grid-cols-2 gap-2">
             {#if selected.stroke}
-              {@render field("Outline width", selected.strokeWidth, (v) => { selected!.strokeWidth = v; }, 0.5, 0, 40)}
+              {@render field(m.achievements.cardDesignerOutlineWidth(), selected.strokeWidth, (v) => { selected!.strokeWidth = v; }, 0.5, 0, 40)}
             {/if}
             {#if selected.type !== "ellipse"}
-              {@render field("Corner radius", selected.radius, (v) => { selected!.radius = v; }, 1, 0, 1000)}
+              {@render field(m.achievements.cardDesignerCornerRadius(), selected.radius, (v) => { selected!.radius = v; }, 1, 0, 1000)}
             {/if}
           </div>
           {#if selected.type === "rectangle" || selected.type === "ellipse"}
-            <ColorTokenField label="Shadow" value={selected.shadowColor} palette={card.palette} grade={gradeColor} allowNone
+            <ColorTokenField label={m.xp.editorShadow()} value={selected.shadowColor} palette={card.palette} grade={gradeColor} allowNone
                              onchange={(v) => { selected!.shadowColor = v; if (v && !selected!.shadowBlur) selected!.shadowBlur = 16; }} />
             {#if selected.shadowColor}
               <div class="grid grid-cols-3 gap-2">
-                {@render field("Blur", selected.shadowBlur, (v) => { selected!.shadowBlur = v; }, 1, 0, 60)}
-                {@render field("X", selected.shadowX, (v) => { selected!.shadowX = v; }, 1, -100, 100)}
-                {@render field("Y", selected.shadowY, (v) => { selected!.shadowY = v; }, 1, -100, 100)}
+                {@render field(m.achievements.cardDesignerBlur(), selected.shadowBlur, (v) => { selected!.shadowBlur = v; }, 1, 0, 60)}
+                {@render field(m.achievements.cardDesignerX(), selected.shadowX, (v) => { selected!.shadowX = v; }, 1, -100, 100)}
+                {@render field(m.achievements.cardDesignerY(), selected.shadowY, (v) => { selected!.shadowY = v; }, 1, -100, 100)}
               </div>
             {/if}
           {/if}
@@ -810,54 +811,54 @@
       {:else}
         <div class="flex items-center gap-2">
           <DuoIcon icon="fa-id-card" size={18} />
-          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Card and background</h3>
+          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">{m.achievements.cardDesignerCardAndBackground()}</h3>
         </div>
-        {@render section("Size")}
+        {@render section(m.xp.editorSize())}
         <div class="grid grid-cols-2 gap-2">
-          {@render field("Width", draft.width, (v) => { draft.width = Math.min(card.limits.maxWidth, Math.max(card.limits.minWidth, Math.round(v))); }, 10, card.limits.minWidth, card.limits.maxWidth)}
-          {@render field("Height", draft.height, (v) => { draft.height = Math.min(card.limits.maxHeight, Math.max(card.limits.minHeight, Math.round(v))); }, 10, card.limits.minHeight, card.limits.maxHeight)}
-          {@render field("Corner radius", draft.radius, (v) => { draft.radius = Math.max(0, v); }, 1, 0, 450)}
-          {@render field("Border width", draft.borderWidth, (v) => { draft.borderWidth = Math.max(0, v); }, 0.5, 0, 20)}
+          {@render field(m.xp.editorWidth(), draft.width, (v) => { draft.width = Math.min(card.limits.maxWidth, Math.max(card.limits.minWidth, Math.round(v))); }, 10, card.limits.minWidth, card.limits.maxWidth)}
+          {@render field(m.xp.editorHeight(), draft.height, (v) => { draft.height = Math.min(card.limits.maxHeight, Math.max(card.limits.minHeight, Math.round(v))); }, 10, card.limits.minHeight, card.limits.maxHeight)}
+          {@render field(m.achievements.cardDesignerCornerRadius(), draft.radius, (v) => { draft.radius = Math.max(0, v); }, 1, 0, 450)}
+          {@render field(m.xp.editorBorderWidth(), draft.borderWidth, (v) => { draft.borderWidth = Math.max(0, v); }, 0.5, 0, 20)}
         </div>
-        <ColorTokenField label="Border" value={draft.borderColor} palette={card.palette} grade={gradeColor} allowNone
+        <ColorTokenField label={m.xp.editorBorder()} value={draft.borderColor} palette={card.palette} grade={gradeColor} allowNone
                          onchange={(v) => { draft.borderColor = v; }} />
-        <ToggleRow title="Shadow under the card" colors={$colorStore} checked={draft.shadow}
+        <ToggleRow title={m.achievements.cardDesignerShadowUnderCard()} colors={$colorStore} checked={draft.shadow}
                    onchange={(v) => { draft.shadow = v; }} />
 
-        {@render section("Background")}
-        {@render segmented("Fill", [{ id: "palette", label: "Palette" }, { id: "solid", label: "Solid" }, { id: "gradient", label: "Gradient" }, { id: "image", label: "Image" }],
+        {@render section(m.xp.editorBackground())}
+        {@render segmented(m.common.fill(), [{ id: "palette", label: m.achievements.cardDesignerKindPalette() }, { id: "solid", label: m.achievements.cardDesignerKindSolid() }, { id: "gradient", label: m.achievements.cardDesignerKindGradient() }, { id: "image", label: m.common.image() }],
           draft.background.kind, (v) => { draft.background.kind = v as AchievementCardTemplate["background"]["kind"]; })}
         {#if draft.background.kind === "palette"}
-          <p class="text-xs" style="color: {$colorStore.muted}">The dashboard's own card look, tinted by the server icon's colors.</p>
+          <p class="text-xs" style="color: {$colorStore.muted}">{m.achievements.cardDesignerPaletteHint()}</p>
         {:else}
           {#if draft.background.kind === "solid" || draft.background.kind === "gradient"}
-            <ColorTokenField label={draft.background.kind === "solid" ? "Color" : "From"} value={draft.background.color}
+            <ColorTokenField label={draft.background.kind === "solid" ? m.common.color() : m.common.from()} value={draft.background.color}
                              palette={card.palette} grade={gradeColor} onchange={(v) => { draft.background.color = v; }} />
           {/if}
           {#if draft.background.kind === "gradient"}
-            <ColorTokenField label="To" value={draft.background.color2} palette={card.palette} grade={gradeColor}
+            <ColorTokenField label={m.achievements.cardDesignerTo()} value={draft.background.color2} palette={card.palette} grade={gradeColor}
                              onchange={(v) => { draft.background.color2 = v; }} />
-            {@render field("Angle", draft.background.angle, (v) => { draft.background.angle = v; }, 1, -360, 360)}
+            {@render field(m.xp.editorAngle(), draft.background.angle, (v) => { draft.background.angle = v; }, 1, -360, 360)}
           {/if}
           {#if draft.background.kind === "image"}
-            <CardImageField label="Image" value={draft.background.url} images={card.images} {onimages} {onerror}
+            <CardImageField label={m.common.image()} value={draft.background.url} images={card.images} {onimages} {onerror}
                             onchange={(v) => { draft.background.url = v; }} />
-            {@render segmented("Fit", [{ id: "cover", label: "Fill" }, { id: "contain", label: "Fit inside" }], draft.background.fit,
+            {@render segmented(m.achievements.cardDesignerFit(), [{ id: "cover", label: m.common.fill() }, { id: "contain", label: m.achievements.cardDesignerFitInside() }], draft.background.fit,
               (v) => { draft.background.fit = v as "cover" | "contain"; })}
             <label class="block text-xs" style="color: {$colorStore.muted}">
-              Darken {Math.round(draft.background.dim * 100)}%
+              {m.achievements.cardDesignerDarken({ percent: Math.round(draft.background.dim * 100) })}
               <input type="range" min="0" max="1" step="0.05" value={draft.background.dim} class="w-full"
                      style="accent-color: {$colorStore.primary}" oninput={(e) => { draft.background.dim = Number(e.currentTarget.value); }} />
             </label>
           {/if}
-          <ToggleRow title="Palette wash on top" subtitle="Tints the background with the server icon's colors" colors={$colorStore}
+          <ToggleRow title={m.achievements.cardDesignerPaletteWash()} subtitle={m.achievements.cardDesignerPaletteWashHint()} colors={$colorStore}
                      checked={draft.background.wash} onchange={(v) => { draft.background.wash = v; }} />
         {/if}
 
         <div class="pt-2">
           <button type="button" class="w-full px-3 py-2 rounded-lg text-sm min-h-[40px]"
                   style="background: {$colorStore.primary}10; color: {$colorStore.text};" onclick={resetAll}>
-            Start over from the built in design
+            {m.achievements.cardDesignerStartOver()}
           </button>
         </div>
       {/if}

@@ -2,6 +2,7 @@
 <svelte:options css="injected" />
 
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import {onMount} from "svelte";
     import { reviewsApi, type BotReview } from "$lib/api/index.ts";
     import type {PageData} from "./$types";
@@ -13,10 +14,12 @@
     import ComponentEmbed from "$lib/components/layout/ComponentEmbed.svelte";
     import { buttons, container, header, linkButton, SITE_ORIGIN, separator } from "$lib/componentEmbed";
 
-    const previewEmbed = container(
-      header("## Reviews\nWhat users think of Mewdeko, and where to leave your own review.", `${SITE_ORIGIN}/img/Mewdeko.png`),
-      separator(),
-      buttons(linkButton("Read the reviews", `${SITE_ORIGIN}/reviews`))
+    const previewEmbed = $derived(
+      container(
+        header(`## ${m.common.reviews()}\n${m.public.reviewsEmbedSummary()}`, `${SITE_ORIGIN}/img/Mewdeko.png`),
+        separator(),
+        buttons(linkButton(m.public.reviewsEmbedButton(), `${SITE_ORIGIN}/reviews`))
+      )
     );
     import {logger} from "$lib/logger";
     import {fade, fly} from "svelte/transition";
@@ -87,7 +90,7 @@
       }
     } catch (err: unknown) {
       logger.error("Failed to fetch reviews:", err);
-      error = "Failed to load reviews. Please try again later.";
+      error = m.public.reviewsLoadFailed();
     } finally {
       loading = false;
     }
@@ -95,12 +98,12 @@
 
   async function submitReview() {
     if (!user) {
-      error = "You must be logged in to submit a review.";
+      error = m.public.reviewsLoginRequired();
       return;
     }
 
     if (userHasReviewed) {
-      error = "You have already submitted a review.";
+      error = m.public.reviewsAlreadySubmitted();
       return;
     }
 
@@ -117,7 +120,7 @@
       error = null;
     } catch (err: unknown) {
       logger.error("Failed to submit review:", err);
-      error = "Failed to submit review. Please try again later.";
+      error = m.public.reviewsSubmitFailed();
     }
   }
 
@@ -149,17 +152,17 @@
     // Replace user mentions
     text = text.replace(
       userMentionPattern,
-      '<span class="mention user-mention">@User</span>',
+      `<span class="mention user-mention">${m.public.reviewsMentionUser()}</span>`,
     );
     // Replace channel mentions
     text = text.replace(
       channelMentionPattern,
-      '<span class="mention channel-mention">#channel</span>',
+      `<span class="mention channel-mention">${m.public.reviewsMentionChannel()}</span>`,
     );
     // Replace role mentions
     text = text.replace(
       roleMentionPattern,
-      '<span class="mention role-mention">@Role</span>',
+      `<span class="mention role-mention">${m.common.roleMention()}</span>`,
     );
 
     return text;
@@ -169,10 +172,10 @@
 <ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
-  <title>Mewdeko - Reviews</title>
-  <meta content="What users think of Mewdeko." name="description" />
-  <meta content="What users think of Mewdeko." property="og:description" />
-  <meta content="What users think of Mewdeko." name="twitter:description" />
+  <title>{m.public.reviewsTitle()}</title>
+  <meta content={m.public.reviewsDescription()} name="description" />
+  <meta content={m.public.reviewsDescription()} property="og:description" />
+  <meta content={m.public.reviewsDescription()} name="twitter:description" />
 </svelte:head>
 
 <main
@@ -194,8 +197,8 @@
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%); border-color: {$colorStore.primary}30;">
       <div class="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
         <div class="text-center">
-          <h1 class="text-lg lg:text-xl font-bold mb-1" style="color: {$colorStore.text};">Bot Reviews</h1>
-          <p class="text-sm" style="color: {$colorStore.muted};">What our community thinks about Mewdeko</p>
+          <h1 class="text-lg lg:text-xl font-bold mb-1" style="color: {$colorStore.text};">{m.public.reviewsHeading()}</h1>
+          <p class="text-sm" style="color: {$colorStore.muted};">{m.public.reviewsSubheading()}</p>
         </div>
       </div>
     </div>
@@ -205,12 +208,12 @@
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20); border: 1px solid {$colorStore.primary}30;"
          in:fly={{ y: 20, duration: 300, delay: 100 }}>
       <h2 class="text-2xl font-semibold mb-6" style="color: {$colorStore.text}">
-        Submit Your Review
+        {m.public.reviewsSubmitHeading()}
       </h2>
       <div class="flex items-center mb-6">
         <StarRating bind:value={newReview.stars} />
         <span class="ml-4" style="color: {$colorStore.muted}" aria-live="polite"
-          >{newReview.stars} out of 5 stars</span
+          >{m.public.reviewsStarsOfFive({ stars: newReview.stars ?? 0 })}</span
         >
       </div>
       <div class="mb-6">
@@ -218,27 +221,27 @@
           for="review-input"
           class="block text-sm font-medium mb-2"
           style="color: {$colorStore.muted}"
-          >Write your review (supports Markdown)</label
+          >{m.public.reviewsWriteLabel()}</label
         >
         <textarea
           id="review-input"
           bind:value={newReview.review}
           oninput={handleInput}
           onkeydown={handleKeydown}
-          placeholder="Write your review here..."
+          placeholder={m.public.reviewsWritePlaceholder()}
           class="w-full p-4 rounded-xl focus:ring-2 focus:outline-hidden min-h-[200px] resize-y transition-all duration-300 "
           style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text}; --tw-ring-color: {$colorStore.accent};"
           rows="8"
         ></textarea>
       </div>
       <div class="mb-6">
-        <h3 class="text-lg font-medium mb-2" style="color: {$colorStore.muted}">Preview</h3>
+        <h3 class="text-lg font-medium mb-2" style="color: {$colorStore.muted}">{m.common.preview()}</h3>
         <div
           class="p-4 rounded-xl prose prose-sm max-w-none  transition-all duration-300"
           style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
         >
           {@html previewContent ||
-          `<p style="color: ${$colorStore.muted}">Preview will appear here as you type...</p>`}
+          `<p style="color: ${$colorStore.muted}">${m.public.reviewsPreviewPlaceholder()}</p>`}
         </div>
       </div>
       <button
@@ -246,7 +249,7 @@
               class="w-full sm:w-auto mt-4 font-bold py-3 px-8 rounded-xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] focus:outline-hidden focus:ring-2 active:scale-95 "
         style="background: {$colorStore.primary}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
       >
-        Submit Review
+        {m.public.reviewsSubmitButton()}
       </button>
     </div>
   {:else if !user}
@@ -256,7 +259,7 @@
       role="alert"
       in:fly={{ y: 20, duration: 300 }}
     >
-      <p class="text-xl font-semibold">Please log in to submit a review.</p>
+      <p class="text-xl font-semibold">{m.public.reviewsLoginPrompt()}</p>
     </div>
   {:else if userHasReviewed}
     <div
@@ -265,7 +268,7 @@
       role="status"
       in:fly={{ y: 20, duration: 300 }}
     >
-      <p class="text-xl font-semibold">Thank you for your review!</p>
+      <p class="text-xl font-semibold">{m.public.reviewsThanks()}</p>
     </div>
   {/if}
 
@@ -304,7 +307,7 @@
           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
         ></path>
       </svg>
-      <p class="text-xl">Loading reviews...</p>
+      <p class="text-xl">{m.public.reviewsLoading()}</p>
     </div>
   {:else}
     <div class="grid grid-cols-1 gap-8">
@@ -336,7 +339,7 @@
           </div>
           <div class="mb-4">
             <StarRating value={review.stars} readonly />
-            <span class="ml-2" style="color: {$colorStore.muted}">{review.stars} out of 5 stars</span
+            <span class="ml-2" style="color: {$colorStore.muted}">{m.public.reviewsStarsOfFive({ stars: review.stars })}</span
             >
           </div>
           {#if review.review}

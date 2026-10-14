@@ -1,5 +1,6 @@
 <!-- routes/dashboard/suggestions/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import { onMount } from "svelte";
@@ -23,7 +24,7 @@
   import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
   const autoSave = createAutoSave({
-    onError: () => showNotificationMessage("Couldn't save suggestion settings. Your last change was undone.", "error")
+    onError: () => showNotificationMessage(m.suggestions.notifySaveFailed(), "error")
   });
 
   interface Props {
@@ -85,43 +86,50 @@
   let archiveOnConsider = $state(false);
   let archiveOnImplement = $state(false);
 
+  const buttonColorOptions = $derived([
+    { id: "1", name: m.common.blue(), label: m.common.blue() },
+    { id: "2", name: m.common.colorGrey(), label: m.common.colorGrey() },
+    { id: "3", name: m.common.colorGreen(), label: m.common.colorGreen() },
+    { id: "4", name: m.common.red(), label: m.common.red() }
+  ]);
+
   // Suggestion-specific placeholders
-  const suggestionPlaceholders = [
+  const suggestionPlaceholders = $derived([
     {
       category: "Suggestions",
       name: "%suggest.user%",
-      description: "The full username of the user who's suggestion got updated"
+      description: m.placeholders.suggestUser()
     },
     {
       category: "Suggestions",
       name: "%suggest.user.id%",
-      description: "The Id of the user who's suggestion got updated"
+      description: m.placeholders.suggestUserId()
     },
-    { category: "Suggestions", name: "%suggest.message%", description: "The original suggestion" },
-    { category: "Suggestions", name: "%suggest.number%", description: "The suggestion number that was updated" },
+    { category: "Suggestions", name: "%suggest.message%", description: m.placeholders.suggestMessage() },
+    { category: "Suggestions", name: "%suggest.number%", description: m.placeholders.suggestNumber() },
     {
       category: "Suggestions",
       name: "%suggest.user.name%",
-      description: "The name of the user who's suggestion got updated"
+      description: m.placeholders.suggestUserName()
     },
-    { category: "Suggestions", name: "%suggest.user.avatar%", description: "The avatar of the original suggester" },
+    { category: "Suggestions", name: "%suggest.user.avatar%", description: m.placeholders.suggestUserAvatar() },
     {
       category: "Suggestions",
       name: "%suggest.mod.user%",
-      description: "The full username of the one who updated the suggestion"
+      description: m.placeholders.suggestModUser()
     },
     {
       category: "Suggestions",
       name: "%suggest.mod.avatar%",
-      description: "The pfp of the one who updated the suggestion"
+      description: m.placeholders.suggestModAvatar()
     },
     {
       category: "Suggestions",
       name: "%suggest.mod.name%",
-      description: "The name of the person who updated the suggestion"
+      description: m.placeholders.suggestModName()
     },
-    { category: "Suggestions", name: "%suggest.mod.message%", description: "The reason the suggestion was updated" }
-  ];
+    { category: "Suggestions", name: "%suggest.mod.message%", description: m.placeholders.suggestModMessage() }
+  ]);
 
   // Values the server last confirmed (set on load and after each successful save)
   let originalValues = $state({
@@ -183,12 +191,12 @@
 
   function getStatusString(state: SuggestionState): string {
     return {
-      [SuggestionState.Suggested]: "Pending",
-      [SuggestionState.Accepted]: "Accepted",
-      [SuggestionState.Denied]: "Denied",
-      [SuggestionState.Considered]: "Considered",
-      [SuggestionState.Implemented]: "Implemented"
-    }[state] || "Unknown";
+      [SuggestionState.Suggested]: m.common.pending(),
+      [SuggestionState.Accepted]: m.common.accepted(),
+      [SuggestionState.Denied]: m.common.denied(),
+      [SuggestionState.Considered]: m.suggestions.actionConsidered(),
+      [SuggestionState.Implemented]: m.common.implemented()
+    }[state] || m.common.unknown();
   }
 
   function getStateColor(state: SuggestionState): string {
@@ -235,10 +243,10 @@
         });
 
         await fetchSuggestions();
-        showNotificationMessage("Status updated successfully");
+        showNotificationMessage(m.suggestions.notifyStatusUpdated());
         cancelInlineConfirm(suggestion.id);
       } catch (err) {
-        showNotificationMessage("Failed to update status", "error");
+        showNotificationMessage(m.common.failedToUpdateStatus(), "error");
         confirmingStatus[suggestion.id] = false;
       }
     }
@@ -250,7 +258,7 @@
       try {
         loading = true;
         error = null;
-        if (!$currentGuild?.id) throw new Error("No guild selected");
+        if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
 
         let fetched;
         try {
@@ -273,11 +281,11 @@
         // User data is now already included in the response from the backend
         suggestions = fetched;
       } catch (err) {
-        error = err instanceof Error ? err.message : "Failed to fetch suggestions";
+        error = err instanceof Error ? err.message : m.suggestions.errorFetch();
       } finally {
         loading = false;
       }
-    }, "api", "Loading suggestions...");
+    }, "api", m.suggestions.loadingSuggestions());
   }
 
   async function loadSettings() {
@@ -489,9 +497,9 @@
         };
       } catch (err) {
         logger.error("Error loading settings:", err);
-        showNotificationMessage("Failed to load settings", "error");
+        showNotificationMessage(m.common.notifyLoadSettingsFailed(), "error");
       }
-    }, "api", "Loading settings...");
+    }, "api", m.common.loadingSettings());
   }
 
   async function fetchChannels() {
@@ -499,7 +507,7 @@
       if (!$currentGuild?.id) throw new Error("No guild selected");
       channels = await clientApi.getTextChannels($currentGuild.id);
     } catch (err) {
-      showNotificationMessage("Failed to fetch channels", "error");
+      showNotificationMessage(m.common.failedToFetchChannels(), "error");
     }
   }
 
@@ -688,11 +696,11 @@
         if (!$currentGuild?.id) throw new Error("No guild selected");
         await suggestionsApi.deleteSuggestion($currentGuild.id, BigInt(id));
         await fetchSuggestions();
-        showNotificationMessage("Suggestion deleted successfully");
+        showNotificationMessage(m.suggestions.notifyDeleted());
       } catch (err) {
-        showNotificationMessage("Failed to delete suggestion", "error");
+        showNotificationMessage(m.suggestions.notifyDeleteFailed(), "error");
       }
-    }, "operation", "Deleting suggestion...");
+    }, "operation", m.suggestions.loadingDeleting());
   }
 
   onMount(async () => {
@@ -734,7 +742,7 @@
   {autoSave}
   bind:activeSubTab
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-comment"
   ontabChange={(detail) => {
     if (detail.tabId === 'suggestions') {
@@ -744,18 +752,18 @@
     }
   }}
   subTabs={[
-    { id: "general", label: "General", parentTab: "settings" },
-    { id: "messages", label: "Messages", parentTab: "settings" },
-    { id: "channels", label: "Channels", parentTab: "settings" },
-    { id: "archive", label: "Archive", parentTab: "settings" },
-    { id: "emotes", label: "Emotes", parentTab: "settings" }
+    { id: "general", label: m.common.basicSettings(), parentTab: "settings" },
+    { id: "messages", label: m.common.messages(), parentTab: "settings" },
+    { id: "channels", label: m.common.channels(), parentTab: "settings" },
+    { id: "archive", label: m.common.archive(), parentTab: "settings" },
+    { id: "emotes", label: m.suggestions.subtabEmotes(), parentTab: "settings" }
   ]}
-  subtitle="Manage and configure server suggestions"
+  subtitle={m.suggestions.pageSubtitle()}
   tabs={[
-    { id: "suggestions", label: "Suggestions", icon: "fa-inbox" },
-    { id: "settings", label: "Settings", icon: "fa-gear" }
+    { id: "suggestions", label: m.features.suggestionsName(), icon: "fa-inbox" },
+    { id: "settings", label: m.common.settings(), icon: "fa-gear" }
   ]}
-  title="Suggestions"
+  title={m.features.suggestionsName()}
 >
   {#snippet statusMessages()}
     {#if showNotification}
@@ -775,7 +783,7 @@
           <div class="flex flex-col items-center justify-center">
             <div class="w-12 h-12 border-4 rounded-full animate-spin mb-4"
                  style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"></div>
-            <p class="text-sm" style="color: {$colorStore.muted}">Loading suggestions...</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.suggestions.loadingSuggestions()}</p>
           </div>
         </div>
       {:else if error}
@@ -792,8 +800,8 @@
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
           <i class="fa-utility-duo fa-regular fa-inbox"
              style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"></i>
-          <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">No suggestions yet</h3>
-          <p style="color: {$colorStore.muted}">Suggestions from your community will appear here</p>
+          <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">{m.suggestions.emptyTitle()}</h3>
+          <p style="color: {$colorStore.muted}">{m.suggestions.emptyBody()}</p>
         </div>
       {:else}
         <!-- Sort Controls -->
@@ -802,17 +810,17 @@
           <div class="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 sm:items-center">
             <div class="flex items-center gap-2 w-full sm:w-auto">
               <span class="text-xs md:text-sm font-medium whitespace-nowrap"
-                    style="color: {$colorStore.text}">Sort:</span>
+                    style="color: {$colorStore.text}">{m.suggestions.sortLabel()}</span>
               <div class="flex-1 sm:flex-none">
                 <DiscordSelector
                   type="custom"
                   options={[
-                      { id: "dateAdded", name: "Date", label: "Date" },
-                      { id: "currentState", name: "Status", label: "Status" }
+                      { id: "dateAdded", name: m.suggestions.sortDate(), label: m.suggestions.sortDate() },
+                      { id: "currentState", name: m.common.status(), label: m.common.status() }
                     ]}
                   selected={sortBy}
                   searchable={false}
-                  placeholder="Sort..."
+                  placeholder={m.suggestions.sortPlaceholder()}
                   onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
                     if (selected === "dateAdded" || selected === "currentState") {
@@ -822,24 +830,24 @@
                 />
               </div>
             </div>
-            <button aria-label="Toggle sort direction"
+            <button aria-label={m.suggestions.sortToggleAria()}
                     class="px-3 py-1.5 md:px-4 md:py-2 rounded-lg border transition-all hover:scale-[1.02] flex items-center gap-1 md:gap-2 text-xs md:text-sm"
                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                     onclick={toggleSortDirection}
             >
               {#if sortDirection === 'asc'}
                 <i class="fa-solid fa-arrow-up" style="font-size: 12px;"></i>
-                <span class="hidden sm:inline">Ascending</span>
-                <span class="sm:hidden">Asc</span>
+                <span class="hidden sm:inline">{m.common.ascending()}</span>
+                <span class="sm:hidden">{m.suggestions.sortAscendingShort()}</span>
               {:else}
                 <i class="fa-solid fa-arrow-down" style="font-size: 12px;"></i>
-                <span class="hidden sm:inline">Descending</span>
-                <span class="sm:hidden">Desc</span>
+                <span class="hidden sm:inline">{m.common.descending()}</span>
+                <span class="sm:hidden">{m.suggestions.sortDescendingShort()}</span>
               {/if}
             </button>
             <div class="ml-auto">
               <span class="text-xs md:text-sm" style="color: {$colorStore.muted}">
-                {sortedSuggestions.length} {sortedSuggestions.length !== 1 ? 'items' : 'item'}
+                {sortedSuggestions.length === 1 ? m.common.itemsOne({ count: sortedSuggestions.length }) : m.common.itemsOther({ count: sortedSuggestions.length })}
               </span>
             </div>
           </div>
@@ -871,12 +879,12 @@
                       {suggestion.dateAdded ? new Date(suggestion.dateAdded).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric'
-                      }) : "Unknown"}
+                      }) : m.common.unknown()}
                       <span
                         class="hidden sm:inline"> • {suggestion.dateAdded ? new Date(suggestion.dateAdded).toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit'
-                      }) : "Unknown"}</span>
+                      }) : m.common.unknown()}</span>
                     </p>
                   </div>
                 </div>
@@ -901,18 +909,18 @@
                 <div class="flex flex-wrap gap-4 mb-4 text-xs" style="color: {$colorStore.muted}">
                   <div class="flex items-center gap-1">
                     <i class="fa-solid fa-hashtag" style="font-size: 12px;"></i>
-                    <span>ID: {suggestion.suggestionId}</span>
+                    <span>{m.common.idLabel({ id: String(suggestion.suggestionId) })}</span>
                   </div>
                   {#if suggestion.stateChangeUser}
                     <div class="flex items-center gap-1">
                       <i class="fa-solid fa-user" style="font-size: 12px;"></i>
-                      <span>Modified by: {suggestion.stateChangeUser}</span>
+                      <span>{m.suggestions.metaModifiedBy({ user: String(suggestion.stateChangeUser) })}</span>
                     </div>
                   {/if}
                   {#if suggestion.stateChangeCount}
                     <div class="flex items-center gap-1">
                       <i class="fa-solid fa-history" style="font-size: 12px;"></i>
-                      <span>Changes: {suggestion.stateChangeCount}</span>
+                      <span>{m.suggestions.metaChanges({ count: String(suggestion.stateChangeCount) })}</span>
                     </div>
                   {/if}
                 </div>
@@ -920,7 +928,7 @@
                 <!-- Emote Counts -->
                 {#if suggestion.emoteCounts}
                   <div class="flex flex-wrap gap-3 mb-4 p-3 rounded-lg" style="background: {$colorStore.primary}08;">
-                    <span class="text-xs font-medium" style="color: {$colorStore.muted}">Reactions:</span>
+                    <span class="text-xs font-medium" style="color: {$colorStore.muted}">{m.suggestions.reactionsLabel()}</span>
                     {#if suggestion.emoteCounts.emote1 !== undefined}
                       <div class="flex items-center gap-1">
                         <span class="text-sm">👍</span>
@@ -938,19 +946,19 @@
                     {#if suggestion.emoteCounts.emote3 !== undefined && suggestion.emoteCounts.emote3 > 0}
                       <div class="flex items-center gap-1">
                         <span class="text-xs font-medium"
-                              style="color: {$colorStore.text}">Emote 3: {suggestion.emoteCounts.emote3}</span>
+                              style="color: {$colorStore.text}">{m.suggestions.emoteCountLabel({ number: 3, count: suggestion.emoteCounts.emote3 })}</span>
                       </div>
                     {/if}
                     {#if suggestion.emoteCounts.emote4 !== undefined && suggestion.emoteCounts.emote4 > 0}
                       <div class="flex items-center gap-1">
                         <span class="text-xs font-medium"
-                              style="color: {$colorStore.text}">Emote 4: {suggestion.emoteCounts.emote4}</span>
+                              style="color: {$colorStore.text}">{m.suggestions.emoteCountLabel({ number: 4, count: suggestion.emoteCounts.emote4 })}</span>
                       </div>
                     {/if}
                     {#if suggestion.emoteCounts.emote5 !== undefined && suggestion.emoteCounts.emote5 > 0}
                       <div class="flex items-center gap-1">
                         <span class="text-xs font-medium"
-                              style="color: {$colorStore.text}">Emote 5: {suggestion.emoteCounts.emote5}</span>
+                              style="color: {$colorStore.text}">{m.suggestions.emoteCountLabel({ number: 5, count: suggestion.emoteCounts.emote5 })}</span>
                       </div>
                     {/if}
                   </div>
@@ -972,7 +980,7 @@
                       >
                         <i class="fa-solid fa-check" style="font-size: 14px;"></i>
                         <span
-                          class="hidden sm:inline">{suggestion.currentState === SuggestionState.Accepted ? 'Accepted' : 'Accept'}</span>
+                          class="hidden sm:inline">{suggestion.currentState === SuggestionState.Accepted ? m.common.accepted() : m.suggestions.actionAccept()}</span>
                       </button>
                       <button
                         class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] focus:ring-2 focus:ring-red-500/50 disabled:opacity-60"
@@ -984,7 +992,7 @@
                       >
                         <i class="fa-solid fa-xmark" style="font-size: 14px;"></i>
                         <span
-                          class="hidden sm:inline">{suggestion.currentState === SuggestionState.Denied ? 'Denied' : 'Deny'}</span>
+                          class="hidden sm:inline">{suggestion.currentState === SuggestionState.Denied ? m.common.denied() : m.common.deny()}</span>
                       </button>
                       <button
                         class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] focus:ring-2 disabled:opacity-60"
@@ -996,7 +1004,7 @@
                       >
                         <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
                         <span
-                          class="hidden sm:inline">{suggestion.currentState === SuggestionState.Considered ? 'Considered' : 'Consider'}</span>
+                          class="hidden sm:inline">{suggestion.currentState === SuggestionState.Considered ? m.suggestions.actionConsidered() : m.suggestions.actionConsider()}</span>
                       </button>
                       <button
                         class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] focus:ring-2 disabled:opacity-60"
@@ -1008,19 +1016,19 @@
                       >
                         <i class="fa-solid fa-code" style="font-size: 14px;"></i>
                         <span
-                          class="hidden sm:inline">{suggestion.currentState === SuggestionState.Implemented ? 'Implemented' : 'Implement'}</span>
+                          class="hidden sm:inline">{suggestion.currentState === SuggestionState.Implemented ? m.common.implemented() : m.suggestions.actionImplement()}</span>
                       </button>
                       <button
                         class="ml-auto px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] hover:bg-red-500/20 focus:ring-2"
                         style="background: {$colorStore.muted}10; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}20; --tw-ring-color: {$colorStore.muted}50;"
                         onclick={async () => {
-                            if (await requestConfirmation({ message: 'Are you sure you want to delete this suggestion?', confirmText: 'Delete' })) {
+                            if (await requestConfirmation({ message: m.suggestions.confirmDelete(), confirmText: m.common.delete() })) {
                               deleteSuggestion(suggestion.id);
                             }
                           }}
                       >
                         <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
-                        <span class="hidden sm:inline">Delete</span>
+                        <span class="hidden sm:inline">{m.common.delete()}</span>
                       </button>
                     </div>
                   {:else}
@@ -1032,13 +1040,13 @@
                            style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}20;"
                            transition:fade={{ duration: 200, delay: 100 }}>
                         <p class="text-xs md:text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                          Confirm {getStatusString(showInlineConfirm[suggestion.id] || SuggestionState.Suggested)}
+                          {m.suggestions.confirmStatus({ status: getStatusString(showInlineConfirm[suggestion.id] || SuggestionState.Suggested) })}
                         </p>
                         <textarea
                           bind:value={inlineReasons[suggestion.id]}
                           class="w-full min-h-[60px] p-2 rounded-lg text-xs md:text-sm resize-none transition-all focus:ring-2"
                           style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text}; --tw-ring-color: {$colorStore.primary}50;"
-                          placeholder="Reason (optional)..."
+                          placeholder={m.suggestions.confirmReasonPlaceholder()}
                         ></textarea>
                       </div>
                       <div class="flex gap-2 justify-end"
@@ -1049,7 +1057,7 @@
                           onclick={() => cancelInlineConfirm(suggestion.id)}
                           disabled={confirmingStatus[suggestion.id]}
                         >
-                          Cancel
+                          {m.common.cancel()}
                         </button>
                         <button
                           class="px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02] focus:ring-2 disabled:opacity-50 min-w-[80px]"
@@ -1066,10 +1074,10 @@
                                 <path class="opacity-75" fill="currentColor"
                                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
-                              <span class="text-xs">Updating...</span>
+                              <span class="text-xs">{m.suggestions.confirmUpdating()}</span>
                             </span>
                           {:else}
-                            Confirm
+                            {m.common.confirm()}
                           {/if}
                         </button>
                       </div>
@@ -1090,11 +1098,11 @@
         <div class=" rounded-xl border p-6 space-y-6 transition-all"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Length Settings</h3>
+            <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.suggestions.lengthTitle()}</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="space-y-2">
                 <label for="min-length" class="block text-sm" style="color: {$colorStore.muted}">
-                  Minimum Length
+                  {m.common.minimumLength()}
                 </label>
                 <input
                   id="min-length"
@@ -1112,7 +1120,7 @@
               </div>
               <div class="space-y-2">
                 <label for="max-length" class="block text-sm" style="color: {$colorStore.muted}">
-                  Maximum Length
+                  {m.common.maximumLength()}
                 </label>
                 <input
                   id="max-length"
@@ -1132,19 +1140,19 @@
           </div>
 
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Thread Settings</h3>
+            <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.suggestions.threadTitle()}</h3>
             <div class="space-y-2">
-              <span id="thread-type-label" class="block text-sm" style="color: {$colorStore.muted}">Thread Type</span>
+              <span id="thread-type-label" class="block text-sm" style="color: {$colorStore.muted}">{m.suggestions.threadType()}</span>
               <DiscordSelector
                 type="custom"
                 options={[
-                    { id: "0", name: "No Threads", label: "No Threads" },
-                    { id: "1", name: "Regular Threads", label: "Regular Threads" },
-                    { id: "2", name: "Private Threads", label: "Private Threads" }
+                    { id: "0", name: m.suggestions.threadNone(), label: m.suggestions.threadNone() },
+                    { id: "1", name: m.suggestions.threadRegular(), label: m.suggestions.threadRegular() },
+                    { id: "2", name: m.suggestions.threadPrivate(), label: m.suggestions.threadPrivate() }
                   ]}
                 selected={threadType.toString()}
                 searchable={false}
-                placeholder="Select thread type..."
+                placeholder={m.suggestions.threadTypePlaceholder()}
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
                     setThreadType(parseInt(selected || "0"));
@@ -1162,20 +1170,20 @@
             <!-- Suggestion Message -->
             <div>
               <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text};">
-                Suggestion Message
+                {m.suggestions.messageSuggestionTitle()}
               </h3>
               <p class="text-xs mb-3" style="color: {$colorStore.muted}">
-                Format for displaying new suggestions. Supports Discord embeds and placeholders.
+                {m.suggestions.messageSuggestionHint()}
               </p>
               <FullscreenEmbedBuilder
                 bind:value={suggestionMessage}
                 onclose={() => saveMessage("suggestionMessage", suggestionMessage)}
-                previewTitle="Suggestion Message"
-                previewDescription="Message sent when a new suggestion is created"
+                previewTitle={m.suggestions.messageSuggestionTitle()}
+                previewDescription={m.suggestions.messageSuggestionPreview()}
                 allowComponents={false}
                 allowContent={true}
                 additionalPlaceholders={suggestionPlaceholders}
-                placeholder="Click to configure the suggestion message"
+                placeholder={m.suggestions.messageSuggestionPlaceholder()}
                 icon="fa-comment"
                 guildId={$currentGuild?.id}
                 user={data.user}
@@ -1185,20 +1193,20 @@
             <!-- Accept Message -->
             <div>
               <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text};">
-                Accept Message
+                {m.suggestions.messageAcceptTitle()}
               </h3>
               <p class="text-xs mb-3" style="color: {$colorStore.muted}">
-                Message sent when a suggestion is accepted. Supports Discord embeds and placeholders.
+                {m.suggestions.messageAcceptHint()}
               </p>
               <FullscreenEmbedBuilder
                 bind:value={acceptMessage}
                 onclose={() => saveMessage("acceptMessage", acceptMessage)}
-                previewTitle="Accept Message"
-                previewDescription="Message sent when a suggestion is accepted"
+                previewTitle={m.suggestions.messageAcceptTitle()}
+                previewDescription={m.suggestions.messageAcceptPreview()}
                 allowComponents={false}
                 allowContent={true}
                 additionalPlaceholders={suggestionPlaceholders}
-                placeholder="Click to configure the accept message"
+                placeholder={m.suggestions.messageAcceptPlaceholder()}
                 icon="fa-check-circle"
                 guildId={$currentGuild?.id}
                 user={data.user}
@@ -1208,20 +1216,20 @@
             <!-- Deny Message -->
             <div>
               <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text};">
-                Deny Message
+                {m.suggestions.messageDenyTitle()}
               </h3>
               <p class="text-xs mb-3" style="color: {$colorStore.muted}">
-                Message sent when a suggestion is denied. Supports Discord embeds and placeholders.
+                {m.suggestions.messageDenyHint()}
               </p>
               <FullscreenEmbedBuilder
                 bind:value={denyMessage}
                 onclose={() => saveMessage("denyMessage", denyMessage)}
-                previewTitle="Deny Message"
-                previewDescription="Message sent when a suggestion is denied"
+                previewTitle={m.suggestions.messageDenyTitle()}
+                previewDescription={m.suggestions.messageDenyPreview()}
                 allowComponents={false}
                 allowContent={true}
                 additionalPlaceholders={suggestionPlaceholders}
-                placeholder="Click to configure the deny message"
+                placeholder={m.suggestions.messageDenyPlaceholder()}
                 icon="fa-close"
                 guildId={$currentGuild?.id}
                 user={data.user}
@@ -1231,20 +1239,20 @@
             <!-- Consider Message -->
             <div>
               <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text};">
-                Consider Message
+                {m.suggestions.messageConsiderTitle()}
               </h3>
               <p class="text-xs mb-3" style="color: {$colorStore.muted}">
-                Message sent when a suggestion is being considered. Supports Discord embeds and placeholders.
+                {m.suggestions.messageConsiderHint()}
               </p>
               <FullscreenEmbedBuilder
                 bind:value={considerMessage}
                 onclose={() => saveMessage("considerMessage", considerMessage)}
-                previewTitle="Consider Message"
-                previewDescription="Message sent when a suggestion is being considered"
+                previewTitle={m.suggestions.messageConsiderTitle()}
+                previewDescription={m.suggestions.messageConsiderPreview()}
                 allowComponents={false}
                 allowContent={true}
                 additionalPlaceholders={suggestionPlaceholders}
-                placeholder="Click to configure the consider message"
+                placeholder={m.suggestions.messageConsiderPlaceholder()}
                 icon="fa-lightbulb"
                 guildId={$currentGuild?.id}
                 user={data.user}
@@ -1254,20 +1262,20 @@
             <!-- Implement Message -->
             <div>
               <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text};">
-                Implement Message
+                {m.suggestions.messageImplementTitle()}
               </h3>
               <p class="text-xs mb-3" style="color: {$colorStore.muted}">
-                Message sent when a suggestion is implemented. Supports Discord embeds and placeholders.
+                {m.suggestions.messageImplementHint()}
               </p>
               <FullscreenEmbedBuilder
                 bind:value={implementMessage}
                 onclose={() => saveMessage("implementMessage", implementMessage)}
-                previewTitle="Implement Message"
-                previewDescription="Message sent when a suggestion is implemented"
+                previewTitle={m.suggestions.messageImplementTitle()}
+                previewDescription={m.suggestions.messageImplementPreview()}
                 allowComponents={false}
                 allowContent={true}
                 additionalPlaceholders={suggestionPlaceholders}
-                placeholder="Click to configure the implement message"
+                placeholder={m.suggestions.messageImplementPlaceholder()}
                 icon="fa-code"
                 guildId={$currentGuild?.id}
                 user={data.user}
@@ -1283,12 +1291,12 @@
           <div class="space-y-4">
             <div class="space-y-2">
               <span id="suggest-channel-label" class="block text-sm"
-                    style="color: {$colorStore.muted}">Suggest Channel</span>
+                    style="color: {$colorStore.muted}">{m.suggestions.channelSuggest()}</span>
               <DiscordSelector
                 type="channel"
                 options={channels}
                 selected={suggestChannel}
-                placeholder="Select suggest channel..."
+                placeholder={m.suggestions.channelSuggestPlaceholder()}
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
                     setChannel("suggestChannel", selected || "");
@@ -1297,12 +1305,12 @@
             </div>
             <div class="space-y-2">
               <span id="accept-channel-label" class="block text-sm"
-                    style="color: {$colorStore.muted}">Accept Channel</span>
+                    style="color: {$colorStore.muted}">{m.suggestions.channelAccept()}</span>
               <DiscordSelector
                 type="channel"
                 options={channels}
                 selected={acceptChannel}
-                placeholder="Select accept channel..."
+                placeholder={m.suggestions.channelAcceptPlaceholder()}
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
                     setChannel("acceptChannel", selected || "");
@@ -1310,12 +1318,12 @@
               />
             </div>
             <div class="space-y-2">
-              <span id="deny-channel-label" class="block text-sm" style="color: {$colorStore.muted}">Deny Channel</span>
+              <span id="deny-channel-label" class="block text-sm" style="color: {$colorStore.muted}">{m.suggestions.channelDeny()}</span>
               <DiscordSelector
                 type="channel"
                 options={channels}
                 selected={denyChannel}
-                placeholder="Select deny channel..."
+                placeholder={m.suggestions.channelDenyPlaceholder()}
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
                     setChannel("denyChannel", selected || "");
@@ -1323,12 +1331,12 @@
               />
             </div>
             <div class="space-y-2">
-              <span id="consider-channel-label" class="block text-sm" style="color: {$colorStore.muted}">Consider Channel</span>
+              <span id="consider-channel-label" class="block text-sm" style="color: {$colorStore.muted}">{m.suggestions.channelConsider()}</span>
               <DiscordSelector
                 type="channel"
                 options={channels}
                 selected={considerChannel}
-                placeholder="Select consider channel..."
+                placeholder={m.suggestions.channelConsiderPlaceholder()}
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
                     setChannel("considerChannel", selected || "");
@@ -1336,12 +1344,12 @@
               />
             </div>
             <div class="space-y-2">
-              <span id="implement-channel-label" class="block text-sm" style="color: {$colorStore.muted}">Implement Channel</span>
+              <span id="implement-channel-label" class="block text-sm" style="color: {$colorStore.muted}">{m.suggestions.channelImplement()}</span>
               <DiscordSelector
                 type="channel"
                 options={channels}
                 selected={implementChannel}
-                placeholder="Select implement channel..."
+                placeholder={m.suggestions.channelImplementPlaceholder()}
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
                     setChannel("implementChannel", selected || "");
@@ -1357,7 +1365,7 @@
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
           <div class="flex items-center justify-between p-3 rounded-lg transition-all hover:scale-[1.01]"
                style="background: {$colorStore.primary}08;">
-            <span style="color: {$colorStore.text}">Archive on Accept</span>
+            <span style="color: {$colorStore.text}">{m.suggestions.archiveOnAccept()}</span>
             <label class="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -1377,7 +1385,7 @@
 
           <div class="flex items-center justify-between p-3 rounded-lg transition-all hover:scale-[1.01]"
                style="background: {$colorStore.primary}08;">
-            <span style="color: {$colorStore.text}">Archive on Deny</span>
+            <span style="color: {$colorStore.text}">{m.suggestions.archiveOnDeny()}</span>
             <label class="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -1397,7 +1405,7 @@
 
           <div class="flex items-center justify-between p-3 rounded-lg transition-all hover:scale-[1.01]"
                style="background: {$colorStore.primary}08;">
-            <span style="color: {$colorStore.text}">Archive on Consider</span>
+            <span style="color: {$colorStore.text}">{m.suggestions.archiveOnConsider()}</span>
             <label class="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -1417,7 +1425,7 @@
 
           <div class="flex items-center justify-between p-3 rounded-lg transition-all hover:scale-[1.01]"
                style="background: {$colorStore.primary}08;">
-            <span style="color: {$colorStore.text}">Archive on Implement</span>
+            <span style="color: {$colorStore.text}">{m.suggestions.archiveOnImplement()}</span>
             <label class="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -1441,51 +1449,50 @@
         <div class=" rounded-xl border p-6 space-y-6 transition-all"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Emote Display Mode</h3>
+            <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.suggestions.emoteModeTitle()}</h3>
             <div class="space-y-2">
-              <span id="emote-mode-label" class="block text-sm" style="color: {$colorStore.muted}">Mode</span>
+              <span id="emote-mode-label" class="block text-sm" style="color: {$colorStore.muted}">{m.suggestions.emoteModeLabel()}</span>
               <DiscordSelector
                 type="custom"
                 options={[
-                    { id: "0", name: "Reactions", label: "Reactions" },
-                    { id: "1", name: "Buttons", label: "Buttons" }
+                    { id: "0", name: m.features.wizardReactionEventsName(), label: m.features.wizardReactionEventsName() },
+                    { id: "1", name: m.common.buttons(), label: m.common.buttons() }
                   ]}
                 selected={emoteMode.toString()}
                 searchable={false}
-                placeholder="Select emote mode..."
+                placeholder={m.suggestions.emoteModePlaceholder()}
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
                     setEmoteMode(parseInt(selected || "0"));
                   }}
               />
               <p class="text-xs" style="color: {$colorStore.muted}">
-                Choose how users interact with suggestions: traditional reactions or interactive buttons
+                {m.suggestions.emoteModeHint()}
               </p>
             </div>
           </div>
 
           <div class="space-y-2">
-            <label for="f-+page-custom-emotes-1507" class="block text-sm" style="color: {$colorStore.muted}">Custom Emotes</label>
+            <label for="f-+page-custom-emotes-1507" class="block text-sm" style="color: {$colorStore.muted}">{m.suggestions.emoteCustomLabel()}</label>
             <EmojiPicker id="f-+page-custom-emotes-1507"
               guildEmojis={guildEmojis}
               bind:selected={suggestEmotes}
               onchange={saveSuggestEmotes}
               multiple={true}
               maxSelection={5}
-              placeholder="Select up to 5 emotes..."
+              placeholder={m.suggestions.emoteCustomPlaceholder()}
               showUnicodeEmojis={true}
             />
             <p class="text-xs" style="color: {$colorStore.muted}">
-              Select up to 5 emotes. Supports Unicode and Discord custom emotes. Leave empty for default 👍/👎
+              {m.suggestions.emoteCustomHint()}
             </p>
           </div>
 
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Suggestion Button</h3>
+            <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.suggestions.buttonTitle()}</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="space-y-2">
-                <label for="suggest-button-label" class="block text-sm" style="color: {$colorStore.muted}">Button
-                  Label</label>
+                <label for="suggest-button-label" class="block text-sm" style="color: {$colorStore.muted}">{m.common.buttonLabel()}</label>
                 <input
                   id="suggest-button-label"
                   type="text"
@@ -1496,32 +1503,30 @@
                   style="background: {$colorStore.primary}10;
                            border: 1px solid {$colorStore.primary}30;
                            color: {$colorStore.text};"
-                  placeholder="Enter button label"
+                  placeholder={m.suggestions.buttonLabelPlaceholder()}
                 >
               </div>
               <div class="space-y-2">
-                <label for="f-+page-button-emote-1540" class="block text-sm" style="color: {$colorStore.muted}">Button Emote</label>
+                <label for="f-+page-button-emote-1540" class="block text-sm" style="color: {$colorStore.muted}">{m.suggestions.buttonEmote()}</label>
                 <EmojiPicker id="f-+page-button-emote-1540"
                   guildEmojis={guildEmojis}
                   bind:selected={suggestButtonEmote}
                   onchange={saveSuggestButtonEmote}
-                  placeholder="Select button emote..."
+                  placeholder={m.suggestions.buttonEmotePlaceholder()}
                   showUnicodeEmojis={true}
                 />
                 <p class="text-xs" style="color: {$colorStore.muted}">
-                  Single emote for the suggest button. Supports Unicode or Discord custom emotes. Leave empty for no
-                  emote.
+                  {m.suggestions.buttonEmoteHint()}
                 </p>
               </div>
             </div>
             <div class="space-y-2">
-              <label for="suggest-button-message" class="block text-sm" style="color: {$colorStore.muted}">Button
-                Message</label>
+              <label for="suggest-button-message" class="block text-sm" style="color: {$colorStore.muted}">{m.suggestions.buttonMessage()}</label>
               <FullscreenEmbedBuilder
                 bind:value={suggestButtonMessage}
                 onclose={() => saveMessage("suggestButtonMessage", suggestButtonMessage)}
-                previewTitle="Button Message"
-                previewDescription="Configure the message sent when users click the suggestion button"
+                previewTitle={m.suggestions.buttonMessage()}
+                previewDescription={m.suggestions.buttonMessagePreview()}
                 icon="fa-comments"
                 allowContent={true}
                 allowComponents={false}
@@ -1532,20 +1537,15 @@
           </div>
 
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Button Colors</h3>
+            <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.suggestions.colorsTitle()}</h3>
             <div class="space-y-2">
-              <span id="suggest-button-color-label" class="block text-sm" style="color: {$colorStore.muted}">Suggest Button Color</span>
+              <span id="suggest-button-color-label" class="block text-sm" style="color: {$colorStore.muted}">{m.suggestions.colorsSuggestButton()}</span>
               <DiscordSelector
                 type="custom"
-                options={[
-                    { id: "1", name: "Blue", label: "Blue" },
-                    { id: "2", name: "Grey", label: "Grey" },
-                    { id: "3", name: "Green", label: "Green" },
-                    { id: "4", name: "Red", label: "Red" }
-                  ]}
+                options={buttonColorOptions}
                 selected={suggestButtonColor.toString()}
                 searchable={false}
-                placeholder="Select button color..."
+                placeholder={m.suggestions.colorsSuggestPlaceholder()}
                 onchange={(e) => {
                     const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
                     setSuggestButtonColor(parseInt(selected || "1"));
@@ -1555,18 +1555,13 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div class="space-y-2">
-                <span class="block text-sm" style="color: {$colorStore.muted}">Emote 1 Button</span>
+                <span class="block text-sm" style="color: {$colorStore.muted}">{m.suggestions.colorsEmoteButton({ number: 1 })}</span>
                 <DiscordSelector
                   type="custom"
-                  options={[
-                      { id: "1", name: "Blue", label: "Blue" },
-                      { id: "2", name: "Grey", label: "Grey" },
-                      { id: "3", name: "Green", label: "Green" },
-                      { id: "4", name: "Red", label: "Red" }
-                    ]}
+                  options={buttonColorOptions}
                   selected={emote1Style.toString()}
                   searchable={false}
-                  placeholder="Color..."
+                  placeholder={m.suggestions.colorsPlaceholder()}
                   onchange={(e) => {
                       const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
                       setEmoteStyle(1, parseInt(selected || "1"));
@@ -1575,18 +1570,13 @@
               </div>
 
               <div class="space-y-2">
-                <span class="block text-sm" style="color: {$colorStore.muted}">Emote 2 Button</span>
+                <span class="block text-sm" style="color: {$colorStore.muted}">{m.suggestions.colorsEmoteButton({ number: 2 })}</span>
                 <DiscordSelector
                   type="custom"
-                  options={[
-                      { id: "1", name: "Blue", label: "Blue" },
-                      { id: "2", name: "Grey", label: "Grey" },
-                      { id: "3", name: "Green", label: "Green" },
-                      { id: "4", name: "Red", label: "Red" }
-                    ]}
+                  options={buttonColorOptions}
                   selected={emote2Style.toString()}
                   searchable={false}
-                  placeholder="Color..."
+                  placeholder={m.suggestions.colorsPlaceholder()}
                   onchange={(e) => {
                       const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
                       setEmoteStyle(2, parseInt(selected || "1"));
@@ -1595,18 +1585,13 @@
               </div>
 
               <div class="space-y-2">
-                <span class="block text-sm" style="color: {$colorStore.muted}">Emote 3 Button</span>
+                <span class="block text-sm" style="color: {$colorStore.muted}">{m.suggestions.colorsEmoteButton({ number: 3 })}</span>
                 <DiscordSelector
                   type="custom"
-                  options={[
-                      { id: "1", name: "Blue", label: "Blue" },
-                      { id: "2", name: "Grey", label: "Grey" },
-                      { id: "3", name: "Green", label: "Green" },
-                      { id: "4", name: "Red", label: "Red" }
-                    ]}
+                  options={buttonColorOptions}
                   selected={emote3Style.toString()}
                   searchable={false}
-                  placeholder="Color..."
+                  placeholder={m.suggestions.colorsPlaceholder()}
                   onchange={(e) => {
                       const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
                       setEmoteStyle(3, parseInt(selected || "1"));
@@ -1615,18 +1600,13 @@
               </div>
 
               <div class="space-y-2">
-                <span class="block text-sm" style="color: {$colorStore.muted}">Emote 4 Button</span>
+                <span class="block text-sm" style="color: {$colorStore.muted}">{m.suggestions.colorsEmoteButton({ number: 4 })}</span>
                 <DiscordSelector
                   type="custom"
-                  options={[
-                      { id: "1", name: "Blue", label: "Blue" },
-                      { id: "2", name: "Grey", label: "Grey" },
-                      { id: "3", name: "Green", label: "Green" },
-                      { id: "4", name: "Red", label: "Red" }
-                    ]}
+                  options={buttonColorOptions}
                   selected={emote4Style.toString()}
                   searchable={false}
-                  placeholder="Color..."
+                  placeholder={m.suggestions.colorsPlaceholder()}
                   onchange={(e) => {
                       const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
                       setEmoteStyle(4, parseInt(selected || "1"));
@@ -1635,18 +1615,13 @@
               </div>
 
               <div class="space-y-2">
-                <span class="block text-sm" style="color: {$colorStore.muted}">Emote 5 Button</span>
+                <span class="block text-sm" style="color: {$colorStore.muted}">{m.suggestions.colorsEmoteButton({ number: 5 })}</span>
                 <DiscordSelector
                   type="custom"
-                  options={[
-                      { id: "1", name: "Blue", label: "Blue" },
-                      { id: "2", name: "Grey", label: "Grey" },
-                      { id: "3", name: "Green", label: "Green" },
-                      { id: "4", name: "Red", label: "Red" }
-                    ]}
+                  options={buttonColorOptions}
                   selected={emote5Style.toString()}
                   searchable={false}
-                  placeholder="Color..."
+                  placeholder={m.suggestions.colorsPlaceholder()}
                   onchange={(e) => {
                       const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
                       setEmoteStyle(5, parseInt(selected || "1"));
@@ -1655,7 +1630,7 @@
               </div>
             </div>
             <p class="text-xs" style="color: {$colorStore.muted}">
-              Customize button colors for each emote when using button mode (applies to all 5 emote buttons)
+              {m.suggestions.colorsHint()}
             </p>
           </div>
         </div>

@@ -1,17 +1,56 @@
+import { m } from "$lib/i18n";
 // lib/components/analytics/tabs/alertText.ts
 import type { AlertRule, AlertRuleInput } from "$lib/api/analytics/models";
 import { compact, duration, utcParse } from "../format";
 
-export const COMPARATOR_SYMBOL: Record<string, string> = {
+const COMPARATOR_SYMBOL: Record<string, string> = {
   gt: ">",
   gte: "≥",
   lt: "<",
   lte: "≤",
-  outside: "outside",
   pct_change: "Δ%",
   deviates: "Δ%",
-  nodata: "no data",
 };
+
+/** The short symbol or word drawn for a comparator; words are localized. */
+export function comparatorSymbol(comparator: string): string {
+  if (comparator === "outside") return m.analytics.tabAlertsCmpOutside();
+  if (comparator === "nodata") return m.common.noDataLower();
+  return COMPARATOR_SYMBOL[comparator] ?? comparator;
+}
+
+/** Full comparator name for select options. */
+export function comparatorLabel(comparator: string): string {
+  switch (comparator) {
+    case "gt": return m.analytics.tabAlertsCmpLabelGt();
+    case "gte": return m.analytics.tabAlertsCmpLabelGte();
+    case "lt": return m.analytics.tabAlertsCmpLabelLt();
+    case "lte": return m.analytics.tabAlertsCmpLabelLte();
+    case "outside": return m.analytics.tabAlertsCmpLabelOutside();
+    case "pct_change": return m.analytics.tabAlertsCmpLabelPctChange();
+    case "deviates": return m.analytics.tabAlertsCmpLabelDeviates();
+    case "nodata": return m.common.noDataLower();
+    default: return comparator;
+  }
+}
+
+export function severityLabel(severity: string): string {
+  switch (severity) {
+    case "info": return m.analytics.tabAlertsSeverityInfo();
+    case "warning": return m.analytics.tabAlertsSeverityWarning();
+    case "critical": return m.analytics.tabAlertsSeverityCritical();
+    default: return severity;
+  }
+}
+
+export function stateLabel(state: "firing" | "pending" | "ok" | "off"): string {
+  switch (state) {
+    case "firing": return m.analytics.tabAlertsStateFiring();
+    case "pending": return m.analytics.tabAlertsStatePending();
+    case "off": return m.analytics.tabAlertsStateOff();
+    default: return m.analytics.tabAlertsStateOk();
+  }
+}
 
 export const WINDOWS = [60, 300, 900, 1800, 3600, 21600, 86400];
 export const FOR_SECONDS = [0, 60, 300, 900, 1800, 3600];
@@ -23,13 +62,14 @@ export const COMPARATORS = ["gt", "gte", "lt", "lte", "outside", "pct_change", "
 /** One line condition summary for a rule row. */
 export function describe(rule: AlertRuleInput): string {
   const head = `${rule.aggregation}(${rule.metric})`;
-  if (rule.comparator === "nodata") return `${rule.metric} reports nothing for ${duration(rule.windowSeconds)}`;
-  if (rule.comparator === "outside") return `${head} outside ${compact(rule.threshold)}–${compact(rule.thresholdHigh)} over ${duration(rule.windowSeconds)}`;
+  const window = duration(rule.windowSeconds);
+  if (rule.comparator === "nodata") return m.analytics.tabAlertsDescNodata({ metric: rule.metric, window });
+  if (rule.comparator === "outside") return m.analytics.tabAlertsDescOutside({ head, low: compact(rule.threshold), high: compact(rule.thresholdHigh), window });
   if (rule.comparator === "pct_change" || rule.comparator === "deviates") {
-    const dir = rule.direction === "up" ? "rises" : rule.direction === "down" ? "falls" : "moves";
-    return `${head} ${dir} ${compact(rule.threshold)}% vs ${rule.baselineDays ?? 7}d baseline over ${duration(rule.windowSeconds)}`;
+    const args = { head, pct: compact(rule.threshold), days: rule.baselineDays ?? 7, window };
+    return rule.direction === "up" ? m.analytics.tabAlertsDescRises(args) : rule.direction === "down" ? m.analytics.tabAlertsDescFalls(args) : m.analytics.tabAlertsDescMoves(args);
   }
-  return `${head} ${COMPARATOR_SYMBOL[rule.comparator] ?? rule.comparator} ${compact(rule.threshold)} over ${duration(rule.windowSeconds)}`;
+  return m.analytics.tabAlertsDescThreshold({ head, symbol: comparatorSymbol(rule.comparator), threshold: compact(rule.threshold), window });
 }
 
 export function worstState(rule: AlertRule): "firing" | "pending" | "ok" {
@@ -118,7 +158,7 @@ export function minutesToClock(minutes: number | null): string {
 }
 
 export function clockToMinutes(value: string): number | null {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
-  if (!m) return null;
-  return Number(m[1]) * 60 + Number(m[2]);
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
 }

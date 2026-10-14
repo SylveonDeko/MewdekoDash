@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/tabs/ShardTable.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { logger } from "$lib/logger";
   import { analyticsApi } from "$lib/api/analytics/analytics";
   import type { BreakdownRow } from "$lib/api/analytics/models";
@@ -20,20 +21,20 @@
   let loading = $state(true);
   let seq = 0;
 
-  const columns: Column<ShardRow>[] = [
-    { key: "shard", label: "Shard", num: true },
+  const columns: Column<ShardRow>[] = $derived([
+    { key: "shard", label: m.analytics.filterShard(), num: true },
     {
       key: "connected",
-      label: "State",
-      format: (r) => (r.connected === null ? "unknown" : r.connected ? "connected" : "down"),
+      label: m.common.state(),
+      format: (r) => (r.connected === null ? m.common.unknownLower() : r.connected ? m.analytics.tabShardsConnected() : m.analytics.tabShardsDown()),
       tone: (r) => (r.connected === null ? "muted" : r.connected ? "ok" : "crit"),
       sortValue: (r) => (r.connected === null ? -1 : r.connected ? 1 : 0),
     },
-    { key: "latency", label: "Latency", num: true, format: (r) => ms(r.latency) },
-    { key: "peak", label: "Peak", num: true, format: (r) => ms(r.peak), tone: (r) => (r.peak !== null && r.peak >= 1000 ? "crit" : r.peak !== null && r.peak >= 400 ? "warn" : null) },
-    { key: "guilds", label: "Guilds", num: true, format: (r) => n(r.guilds) },
-    { key: "reconnects", label: "Reconnects", num: true, format: (r) => n(r.reconnects) },
-  ];
+    { key: "latency", label: m.common.latency(), num: true, format: (r) => ms(r.latency) },
+    { key: "peak", label: m.analytics.tabShardsColPeak(), num: true, format: (r) => ms(r.peak), tone: (r) => (r.peak !== null && r.peak >= 1000 ? "crit" : r.peak !== null && r.peak >= 400 ? "warn" : null) },
+    { key: "guilds", label: m.analytics.pageTabGuilds(), num: true, format: (r) => n(r.guilds) },
+    { key: "reconnects", label: m.analytics.tabShardsColReconnects(), num: true, format: (r) => n(r.reconnects) },
+  ]);
 
   function groups(result: PromiseSettledResult<BreakdownRow[]>): Record<string, number | null> {
     if (result.status !== "fulfilled") return {};
@@ -74,4 +75,4 @@
   });
 </script>
 
-<AnalyticsTable {columns} {rows} {loading} empty="No shards reporting" sortKey="shard" sortDesc={false} pageSize={24} />
+<AnalyticsTable {columns} {rows} {loading} empty={m.analytics.tabShardsNoShardsReporting()} sortKey="shard" sortDesc={false} pageSize={24} />

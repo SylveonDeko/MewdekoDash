@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount, type Snippet } from "svelte";
   import { fade } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -11,6 +12,7 @@
     type AchievementCatalog
   } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
+  import { escapeHtml } from "$lib/utils/sanitize";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import AchievementIcon from "./AchievementIcon.svelte";
   import DuoIcon from "./DuoIcon.svelte";
@@ -54,12 +56,12 @@
   let targetOptions = $derived([
     ...catalog.categories
       .filter((c) => card?.assignments.categories[c.key] == null)
-      .map((c) => ({ id: `c:${c.key}`, name: `${c.name} (whole category)` })),
+      .map((c) => ({ id: `c:${c.key}`, name: m.achievements.cardsTabTargetCategoryOption({ name: c.name }) })),
     ...catalog.achievements
       .filter((a) => card?.assignments.achievements[a.key] == null)
       .map((a) => ({ id: `a:${a.key}`, name: a.name }))
   ]);
-  let defaultName = $derived(card?.designs.find((d) => d.id === card?.defaultId)?.name ?? "Built in");
+  let defaultName = $derived(card?.designs.find((d) => d.id === card?.defaultId)?.name ?? m.achievements.cardsTabBuiltIn());
 
   onMount(load);
 
@@ -71,7 +73,7 @@
       apply(await achievementsApi.card($currentGuild.id));
     } catch (err: any) {
       logger.error("Failed to load card designs:", err);
-      onerror(err?.message || "Couldn't load the card designs.");
+      onerror(err?.message || m.achievements.cardsTabErrorLoad());
     } finally {
       loading = false;
     }
@@ -128,7 +130,7 @@
   function startNew(name: string, template: AchievementCardTemplate, makeDefault = false) {
     if (!card) return;
     if (card.designs.length >= card.limits.maxDesigns) {
-      onerror(`A server keeps at most ${card.limits.maxDesigns} designs. Delete one first.`);
+      onerror(m.achievements.cardsTabErrorMaxDesigns({ max: card.limits.maxDesigns }));
       return;
     }
     session++;
@@ -149,8 +151,8 @@
   /** A name like "Design 3" that isn't taken. */
   function nextName(): string {
     let n = (card?.designs.length ?? 0) + 1;
-    while (card?.designs.some((d) => d.name === `Design ${n}`)) n++;
-    return `Design ${n}`;
+    while (card?.designs.some((d) => d.name === m.achievements.cardsTabDesignName({ number: n }))) n++;
+    return m.achievements.cardsTabDesignName({ number: n });
   }
 
   /**
@@ -179,13 +181,13 @@
   async function remove(id: number, name: string) {
     if (!$currentGuild?.id) return;
     const ok = await requestConfirmation({
-      title: `Delete ${name}?`,
-      message: "Categories and achievements using it go back to the server default. If it is the default, the built in design takes over.",
-      confirmText: "Delete design",
+      title: m.achievements.editorDeleteTitle({ name }),
+      message: m.achievements.cardsTabDeleteMessage(),
+      confirmText: m.achievements.cardsTabDeleteConfirm(),
       variant: "danger"
     });
     if (!ok) return;
-    await run(() => achievementsApi.deleteCardDesign($currentGuild!.id, id), "Couldn't delete the design.");
+    await run(() => achievementsApi.deleteCardDesign($currentGuild!.id, id), m.achievements.cardsTabErrorDelete());
   }
 
   /**
@@ -194,7 +196,7 @@
    */
   async function makeDefault(id: number | null) {
     if (!$currentGuild?.id) return;
-    await run(() => achievementsApi.setDefaultCard($currentGuild!.id, id), "Couldn't change the default design.");
+    await run(() => achievementsApi.setDefaultCard($currentGuild!.id, id), m.achievements.cardsTabErrorDefault());
   }
 
   /**
@@ -206,7 +208,7 @@
   async function assign(category: boolean, key: string, id: string | null) {
     if (!$currentGuild?.id) return;
     const designId = id ? Number(id) : null;
-    await run(() => achievementsApi.assignCard($currentGuild!.id, category, key, designId), "Couldn't change which design that uses.");
+    await run(() => achievementsApi.assignCard($currentGuild!.id, category, key, designId), m.achievements.cardsTabErrorAssign());
   }
 
   /**
@@ -218,8 +220,12 @@
     const categories = Object.values(card.assignments.categories).filter((v) => v === id).length;
     const achievements = Object.values(card.assignments.achievements).filter((v) => v === id).length;
     const parts = [];
-    if (categories) parts.push(`${categories} ${categories === 1 ? "category" : "categories"}`);
-    if (achievements) parts.push(`${achievements} ${achievements === 1 ? "achievement" : "achievements"}`);
+    if (categories) parts.push(categories === 1
+      ? m.achievements.cardsTabUsageCategoriesOne({ count: categories })
+      : m.achievements.cardsTabUsageCategoriesOther({ count: categories }));
+    if (achievements) parts.push(achievements === 1
+      ? m.achievements.cardsTabUsageAchievementsOne({ count: achievements })
+      : m.achievements.cardsTabUsageAchievementsOther({ count: achievements }));
     return parts.join(", ");
   }
 </script>
@@ -229,7 +235,7 @@
        style="background: {$colorStore.primary}05; border-color: {isDefault ? $colorStore.primary + '60' : $colorStore.primary + '20'};">
     <div class="aspect-[1280/500] w-full flex items-center justify-center" style="background: {$colorStore.primary}05;">
       {#if thumbnails[key]}
-        <img src={thumbnails[key]} alt="Preview of {title}" class="w-full h-full object-contain" />
+        <img src={thumbnails[key]} alt={m.achievements.cardsTabPreviewAlt({ title })} class="w-full h-full object-contain" />
       {:else}
         <i class="fa-solid fa-spinner fa-spin" style="color: {$colorStore.muted}" aria-hidden="true"></i>
       {/if}
@@ -238,7 +244,7 @@
       <div class="flex items-center gap-2">
         <span class="font-semibold text-sm truncate flex-1" style="color: {$colorStore.text}">{title}</span>
         {#if isDefault}
-          <span class="text-xs px-2 py-1 rounded-lg shrink-0" style="background: {$colorStore.primary}20; color: {$colorStore.primary}">Default</span>
+          <span class="text-xs px-2 py-1 rounded-lg shrink-0" style="background: {$colorStore.primary}20; color: {$colorStore.primary}">{m.common.default()}</span>
         {/if}
       </div>
       {#if subtitle}
@@ -262,7 +268,7 @@
 {#if loading}
   <div class="flex items-center justify-center py-16" style="color: {$colorStore.muted}">
     <i class="fa-solid fa-spinner fa-spin text-2xl" aria-hidden="true"></i>
-    <span class="sr-only">Loading</span>
+    <span class="sr-only">{m.common.loading()}</span>
   </div>
 {:else if card && editing}
   {#key session}
@@ -278,17 +284,16 @@
         <div class="flex-1 min-w-0">
           <h3 class="flex items-center gap-2 font-semibold" style="color: {$colorStore.text}">
             <DuoIcon icon="fa-id-card" />
-            Card designs
+            {m.achievements.cardsTabTitle()}
           </h3>
           <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-            The image attached to unlock messages and shown by achview. Every achievement uses the default,
-            <strong style="color: {$colorStore.text}">{defaultName}</strong>, unless its category or itself picks another design.
+            {@html m.achievements.cardsTabIntro({ name: `<strong style="color: ${$colorStore.text}">${escapeHtml(defaultName)}</strong>` })}
           </p>
         </div>
         <button type="button" class="px-4 h-[44px] rounded-xl text-sm font-medium shrink-0 transition-all hover:scale-[1.02] disabled:opacity-50"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 disabled={busy} onclick={() => startNew(nextName(), card!.builtIn)}>
-          <i class="fa-solid fa-plus mr-2" aria-hidden="true"></i>New design
+          <i class="fa-solid fa-plus mr-2" aria-hidden="true"></i>{m.achievements.cardsTabNewDesign()}
         </button>
       </div>
     </div>
@@ -296,22 +301,22 @@
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       {#snippet builtInActions()}
         {#if card!.defaultId == null}
-          {@render button("Edit", "fa-pen", () => startNew("Default", card!.builtIn, true))}
+          {@render button(m.common.edit(), "fa-pen", () => startNew(m.common.default(), card!.builtIn, true))}
         {:else}
-          {@render button("Make default", "fa-star", () => makeDefault(null))}
-          {@render button("Start from it", "fa-copy", () => startNew(nextName(), card!.builtIn))}
+          {@render button(m.achievements.cardsTabMakeDefault(), "fa-star", () => makeDefault(null))}
+          {@render button(m.achievements.cardsTabStartFromIt(), "fa-copy", () => startNew(nextName(), card!.builtIn))}
         {/if}
       {/snippet}
-      {@render tile("builtin", "Built in", card.defaultId == null, "Mewdeko's design in your server's colors.", builtInActions)}
+      {@render tile("builtin", m.achievements.cardsTabBuiltIn(), card.defaultId == null, m.achievements.cardsTabBuiltInSubtitle(), builtInActions)}
 
       {#each card.designs as design (design.id)}
         {#snippet designActions()}
-          {@render button("Edit", "fa-pen", () => openSaved(design.id))}
+          {@render button(m.common.edit(), "fa-pen", () => openSaved(design.id))}
           {#if card!.defaultId !== design.id}
-            {@render button("Make default", "fa-star", () => makeDefault(design.id))}
+            {@render button(m.achievements.cardsTabMakeDefault(), "fa-star", () => makeDefault(design.id))}
           {/if}
-          {@render button("Duplicate", "fa-copy", () => startNew(`${design.name} copy`.slice(0, card!.limits.nameLength), design.template))}
-          {@render button("Delete", "fa-trash", () => remove(design.id, design.name), true)}
+          {@render button(m.common.duplicate(), "fa-copy", () => startNew(m.achievements.cardsTabCopyName({ name: design.name }).slice(0, card!.limits.nameLength), design.template))}
+          {@render button(m.common.delete(), "fa-trash", () => remove(design.id, design.name), true)}
         {/snippet}
         {@render tile(`${design.id}:${design.dateUpdated}`, design.name, card.defaultId === design.id, usage(design.id), designActions)}
       {/each}
@@ -323,10 +328,10 @@
                   border-color: {$colorStore.primary}30;">
         <h3 class="flex items-center gap-2 font-semibold mb-1" style="color: {$colorStore.text}">
           <DuoIcon icon="fa-layer-group" />
-          Different designs for some unlocks
+          {m.achievements.cardsTabOverridesTitle()}
         </h3>
         <p class="text-sm mb-4" style="color: {$colorStore.muted}">
-          Optional. Give a whole category or a single achievement its own design. An achievement's own design wins over its category's.
+          {m.achievements.cardsTabOverridesHint()}
         </p>
         <div class="space-y-2">
           {#each rules as rule (`${rule.category}:${rule.key}`)}
@@ -336,34 +341,34 @@
               </span>
               <div class="flex-1 min-w-0">
                 <span class="block truncate text-sm font-medium" style="color: {$colorStore.text}">{rule.name}</span>
-                <span class="block text-xs" style="color: {$colorStore.muted}">{rule.category ? "Every achievement in this category" : "Achievement"}</span>
+                <span class="block text-xs" style="color: {$colorStore.muted}">{rule.category ? m.achievements.cardsTabRuleCategory() : m.achievements.cardsTabRuleAchievement()}</span>
               </div>
               <div class="w-40 sm:w-48 shrink-0">
-                <DiscordSelector type="custom" options={designOptions} searchable={false} ariaLabel="Design for {rule.name}"
+                <DiscordSelector type="custom" options={designOptions} searchable={false} ariaLabel={m.achievements.cardsTabRuleDesignLabel({ name: rule.name })}
                                  selected={rule.id.toString()}
                                  onchange={(d) => { if (typeof d.selected === "string") assign(rule.category, rule.key, d.selected); }} />
               </div>
               <button type="button" class="w-[44px] h-[44px] rounded-xl shrink-0 disabled:opacity-50"
                       style="background: #ef444415; color: #ef4444;" disabled={busy}
-                      aria-label="Use the default for {rule.name}" title="Use the default again"
+                      aria-label={m.achievements.cardsTabRuleResetLabel({ name: rule.name })} title={m.achievements.cardsTabRuleResetTitle()}
                       onclick={() => assign(rule.category, rule.key, null)}>
                 <i class="fa-solid fa-xmark" aria-hidden="true"></i>
               </button>
             </div>
           {:else}
             <p class="text-sm p-3 rounded-xl" style="background: {$colorStore.primary}08; color: {$colorStore.muted}">
-              Every unlock uses <strong style="color: {$colorStore.text}">{defaultName}</strong>.
+              {@html m.achievements.cardsTabRulesEmpty({ name: `<strong style="color: ${$colorStore.text}">${escapeHtml(defaultName)}</strong>` })}
             </p>
           {/each}
           <div class="flex flex-col sm:flex-row sm:items-center gap-2 pt-2">
             <div class="flex-1 min-w-0">
-              <DiscordSelector type="custom" options={targetOptions} selected={ruleTarget} ariaLabel="Category or achievement"
-                               placeholder="Pick a category or achievement" customIcon="fa-crown"
+              <DiscordSelector type="custom" options={targetOptions} selected={ruleTarget} ariaLabel={m.achievements.cardsTabTargetLabel()}
+                               placeholder={m.achievements.cardsTabTargetPlaceholder()} customIcon="fa-crown"
                                onchange={(d) => { ruleTarget = typeof d.selected === "string" ? d.selected : null; }} />
             </div>
             <div class="sm:w-48">
               <DiscordSelector type="custom" options={designOptions} selected={ruleDesign} searchable={false}
-                               ariaLabel="Design" placeholder="Pick a design"
+                               ariaLabel={m.achievements.cardsTabDesignLabel()} placeholder={m.achievements.cardsTabDesignPlaceholder()}
                                onchange={(d) => { ruleDesign = typeof d.selected === "string" ? d.selected : null; }} />
             </div>
             <button type="button" class="px-5 h-[44px] rounded-xl text-sm font-medium disabled:opacity-50"
@@ -374,7 +379,7 @@
                       ruleTarget = null;
                       ruleDesign = null;
                     }}>
-              Add
+              {m.common.add()}
             </button>
           </div>
         </div>

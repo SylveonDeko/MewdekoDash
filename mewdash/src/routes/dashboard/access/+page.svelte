@@ -1,5 +1,6 @@
 <!-- routes/dashboard/access/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import type { PageData } from "./$types";
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
@@ -13,7 +14,7 @@
     type DashboardAccessSettings,
   } from "$lib/api/dashboardaccess/models";
   import { dashboardAccessSectionGroups } from "$lib/config/dashboardAccessSections";
-  import { categoryOrder } from "$lib/config/navigationItems";
+  import { allDashboardFeatures, categoryOrder, categoryLabel } from "$lib/config/navigationItems";
   import { colorStore } from "$lib/stores/colorStore.ts";
   import { logger } from "$lib/logger.ts";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
@@ -80,13 +81,13 @@
 
       settings = settingsRes;
       guildRoles = rolesRes.map((r) => ({ id: r.id, name: r.name }));
-      guildMembers = membersRes.map((m) => ({ id: m.id, name: m.displayName || m.username }));
+      guildMembers = membersRes.map((u) => ({ id: u.id, name: u.displayName || u.username }));
 
       grants = settings.canManageAccess ? await dashboardAccessApi.getGrants(guildId) : [];
       managers = settings.isGuildOwner ? await dashboardAccessApi.getManagers(guildId) : [];
     } catch (error) {
       logger.error("Failed to load dashboard access data:", error);
-      showNotificationMessage("Failed to load dashboard access settings", "error");
+      showNotificationMessage(m.access.errorLoad(), "error");
     } finally {
       loading = false;
     }
@@ -111,12 +112,12 @@
       settings = { ...settings, adminsCanManageAccess: newValue };
       showNotificationMessage(
         newValue
-          ? "Administrators and Manage Guild members can now manage access"
-          : "Only you and appointed managers can manage access now",
+          ? m.access.notifyAdminsCanManage()
+          : m.access.notifyAdminsCannotManage(),
       );
     } catch (error) {
       logger.error("Failed to update dashboard access settings:", error);
-      showNotificationMessage("Failed to update setting", "error");
+      showNotificationMessage(m.common.notifyUpdateFailed(), "error");
     } finally {
       updatingToggle = false;
     }
@@ -130,7 +131,7 @@
     const idStr = targetId.toString();
     const found = targetOptions(targetType).find((o) => o.id === idStr);
     if (found) return found.name;
-    return targetType === DashboardAccessTargetType.Role ? `Role ${idStr}` : `User ${idStr}`;
+    return targetType === DashboardAccessTargetType.Role ? m.common.roleFallback({ id: idStr }) : m.common.userFallback({ id: idStr });
   }
 
   async function addManager() {
@@ -141,12 +142,12 @@
         targetType: managerTargetType,
         targetId: BigInt(managerTargetId),
       });
-      managers = [...managers.filter((m) => m.id !== manager.id), manager];
+      managers = [...managers.filter((mgr) => mgr.id !== manager.id), manager];
       managerTargetId = null;
-      showNotificationMessage("Manager added");
+      showNotificationMessage(m.access.notifyManagerAdded());
     } catch (error) {
       logger.error("Failed to add dashboard access manager:", error);
-      showNotificationMessage("Failed to add manager", "error");
+      showNotificationMessage(m.access.errorAddManager(), "error");
     } finally {
       addingManager = false;
     }
@@ -164,11 +165,11 @@
 
     try {
       await dashboardAccessApi.removeManager(BigInt($currentGuild.id), manager.id);
-      managers = managers.filter((m) => m.id !== manager.id);
-      showNotificationMessage("Manager removed");
+      managers = managers.filter((mgr) => mgr.id !== manager.id);
+      showNotificationMessage(m.access.notifyManagerRemoved());
     } catch (error) {
       logger.error("Failed to remove dashboard access manager:", error);
-      showNotificationMessage("Failed to remove manager", "error");
+      showNotificationMessage(m.access.errorRemoveManager(), "error");
     }
   }
 
@@ -213,7 +214,7 @@
 
   async function saveGrant() {
     if (!$currentGuild || !grantTargetId) {
-      showNotificationMessage("Select a user or role", "error");
+      showNotificationMessage(m.access.notifySelectTarget(), "error");
       return;
     }
 
@@ -222,7 +223,7 @@
       .map(([section, level]) => ({ section, level }));
 
     if (sections.length === 0) {
-      showNotificationMessage("Select at least one section", "error");
+      showNotificationMessage(m.access.notifySelectSection(), "error");
       return;
     }
 
@@ -234,11 +235,11 @@
         sections,
       });
       grants = await dashboardAccessApi.getGrants(BigInt($currentGuild.id));
-      showNotificationMessage("Access grant saved");
+      showNotificationMessage(m.access.notifyGrantSaved());
       startNewGrant();
     } catch (error) {
       logger.error("Failed to save dashboard access grant:", error);
-      showNotificationMessage("Failed to save access grant", "error");
+      showNotificationMessage(m.access.errorSaveGrant(), "error");
     } finally {
       savingGrant = false;
     }
@@ -258,18 +259,22 @@
       await dashboardAccessApi.removeGrant(BigInt($currentGuild.id), grant.id);
       grants = grants.filter((g) => g.id !== grant.id);
       if (editingGrantId === grant.id) startNewGrant();
-      showNotificationMessage("Access grant removed");
+      showNotificationMessage(m.access.notifyGrantRemoved());
     } catch (error) {
       logger.error("Failed to remove dashboard access grant:", error);
-      showNotificationMessage("Failed to remove access grant", "error");
+      showNotificationMessage(m.access.errorRemoveGrant(), "error");
     }
   }
 
-  const levelLabels: Record<DashboardAccessLevel, string> = {
-    [DashboardAccessLevel.None]: "None",
-    [DashboardAccessLevel.View]: "View",
-    [DashboardAccessLevel.Manage]: "Manage",
-  };
+  const levelLabels: Record<DashboardAccessLevel, string> = $derived({
+    [DashboardAccessLevel.None]: m.common.none(),
+    [DashboardAccessLevel.View]: m.common.view(),
+    [DashboardAccessLevel.Manage]: m.common.manage(),
+  });
+
+  function categoryDisplay(category: string): string {
+    return categoryLabel(category);
+  }
 
   let groupedSections = $derived(
     categoryOrder
@@ -290,8 +295,8 @@
 {/snippet}
 
 <DashboardPageLayout
-  title="Dashboard Access"
-  subtitle="Grant restricted dashboard access to specific users and roles, without giving them server admin"
+  title={m.features.accessName()}
+  subtitle={m.access.pageSubtitle()}
   icon="fa-key"
   guildName={$currentGuild?.name || "Dashboard"}
   statusMessages={statusMessageContent}
@@ -309,10 +314,9 @@
     >
       <i class="fa-utility-duo fa-regular fa-key"
          style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 40px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-      <h2 class="text-lg font-semibold mb-2" style="color: {$colorStore.text};">You can't manage dashboard access here</h2>
+      <h2 class="text-lg font-semibold mb-2" style="color: {$colorStore.text};">{m.access.deniedTitle()}</h2>
       <p class="text-sm" style="color: {$colorStore.muted};">
-        Only the server owner and users/roles appointed as access managers can grant or revoke restricted
-        dashboard access for this server.
+        {m.access.deniedHint()}
       </p>
     </div>
   {:else}
@@ -324,20 +328,20 @@
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                  border-color: {$colorStore.primary}30;"
         >
-          <h2 class="text-lg font-semibold mb-1" style="color: {$colorStore.text};">Delegation Settings</h2>
+          <h2 class="text-lg font-semibold mb-1" style="color: {$colorStore.text};">{m.access.delegationHeading()}</h2>
           <p class="text-sm mb-4" style="color: {$colorStore.muted};">
-            Owner-only. Controls who besides you may grant or revoke dashboard access for other people.
+            {m.access.delegationHint()}
           </p>
 
           <label class="flex items-center justify-between gap-4 p-4 rounded-xl min-h-[44px]"
                  style="background: {$colorStore.primary}10;">
             <span class="text-sm" style="color: {$colorStore.text};">
-              Allow Administrators and Manage Guild members to manage dashboard access
+              {m.access.delegationToggleLabel()}
             </span>
             <button
               role="switch"
               aria-checked={settings.adminsCanManageAccess}
-              aria-label="Toggle admins can manage access"
+              aria-label={m.access.delegationToggleAria()}
               disabled={updatingToggle}
               onclick={toggleAdminsCanManage}
               class="relative w-12 h-7 rounded-full transition-all shrink-0 disabled:opacity-50"
@@ -354,22 +358,22 @@
           <!-- Access managers -->
           <div class="mt-6">
             <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text};">
-              Access Managers ({managers.length})
+              {m.access.managersHeading({ count: managers.length })}
             </h3>
             <div class="flex flex-col sm:flex-row gap-2 mb-4">
               <div class="w-full sm:w-40">
                 <DiscordSelector
                   type="custom"
                   options={[
-                    { id: String(DashboardAccessTargetType.User), name: "User" },
-                    { id: String(DashboardAccessTargetType.Role), name: "Role" },
+                    { id: String(DashboardAccessTargetType.User), name: m.common.user() },
+                    { id: String(DashboardAccessTargetType.Role), name: m.common.role() },
                   ]}
                   selected={String(managerTargetType)}
                   onchange={(d) => {
                     managerTargetType = Number(d.selected) as DashboardAccessTargetType;
                     managerTargetId = null;
                   }}
-                  placeholder="Target type"
+                  placeholder={m.access.targetTypePlaceholder()}
                   searchable={false}
                 />
               </div>
@@ -379,7 +383,7 @@
                   options={targetOptions(managerTargetType)}
                   selected={managerTargetId}
                   onchange={(d) => (managerTargetId = d.selected as string | null)}
-                  placeholder={managerTargetType === DashboardAccessTargetType.Role ? "Select a role" : "Select a user"}
+                  placeholder={managerTargetType === DashboardAccessTargetType.Role ? m.common.selectARolePlaceholder() : m.common.selectUserPlaceholder()}
                 />
               </div>
               <button
@@ -388,12 +392,12 @@
                 disabled={addingManager || !managerTargetId}
                 onclick={addManager}
               >
-                {addingManager ? "Adding..." : "Add Manager"}
+                {addingManager ? m.common.adding() : m.access.addManager()}
               </button>
             </div>
 
             {#if managers.length === 0}
-              <p class="text-sm" style="color: {$colorStore.muted};">No appointed managers yet</p>
+              <p class="text-sm" style="color: {$colorStore.muted};">{m.access.managersEmpty()}</p>
             {:else}
               <div class="space-y-2">
                 {#each managers as manager (manager.id)}
@@ -405,12 +409,12 @@
                       {targetName(manager.targetType, manager.targetId)}
                     </span>
                     <button
-                      aria-label="Remove manager"
+                      aria-label={m.access.removeManagerAria()}
                       class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                       style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                       onclick={() => requestRemoveManager(manager)}
                     >
-                      Remove
+                      {m.common.remove()}
                     </button>
                   </div>
                 {/each}
@@ -427,11 +431,10 @@
                border-color: {$colorStore.primary}30;"
       >
         <h2 class="text-lg font-semibold mb-1" style="color: {$colorStore.text};">
-          {editingGrantId ? "Edit Access Grant" : "Grant Restricted Access"}
+          {editingGrantId ? m.access.grantHeadingEdit() : m.access.grantHeadingNew()}
         </h2>
         <p class="text-sm mb-4" style="color: {$colorStore.muted};">
-          Give a user or role View or Manage access to specific dashboard sections, without giving them full
-          server admin.
+          {m.access.grantHint()}
         </p>
 
         <div class="flex flex-col sm:flex-row gap-2 mb-6">
@@ -439,8 +442,8 @@
             <DiscordSelector
               type="custom"
               options={[
-                { id: String(DashboardAccessTargetType.User), name: "User" },
-                { id: String(DashboardAccessTargetType.Role), name: "Role" },
+                { id: String(DashboardAccessTargetType.User), name: m.common.user() },
+                { id: String(DashboardAccessTargetType.Role), name: m.common.role() },
               ]}
               selected={String(grantTargetType)}
               disabled={editingGrantId !== null}
@@ -448,7 +451,7 @@
                 grantTargetType = Number(d.selected) as DashboardAccessTargetType;
                 grantTargetId = null;
               }}
-              placeholder="Target type"
+              placeholder={m.access.targetTypePlaceholder()}
               searchable={false}
             />
           </div>
@@ -459,7 +462,7 @@
               selected={grantTargetId}
               disabled={editingGrantId !== null}
               onchange={(d) => (grantTargetId = d.selected as string | null)}
-              placeholder={grantTargetType === DashboardAccessTargetType.Role ? "Select a role" : "Select a user"}
+              placeholder={grantTargetType === DashboardAccessTargetType.Role ? m.common.selectARolePlaceholder() : m.common.selectUserPlaceholder()}
             />
           </div>
         </div>
@@ -468,16 +471,16 @@
           {#each groupedSections as { category, groups } (category)}
             <div>
               <h4 class="text-xs font-semibold uppercase tracking-wide mb-2" style="color: {$colorStore.muted};">
-                {category}
+                {categoryDisplay(category)}
               </h4>
               <div class="space-y-1.5">
-                {#each groups as group (group.label)}
+                {#each groups as group (group.sections.join())}
                   <div class="flex items-center justify-between gap-3 p-2.5 rounded-lg"
                        style="background: {$colorStore.primary}05;">
                     <span class="text-sm flex items-center gap-2" style="color: {$colorStore.text};">
                       <i class={group.icon.replace('fa-utility-duo ', '')}
                          style="color: {$colorStore.muted}; font-size: 13px;"></i>
-                      {group.label}
+                      {group.label()}
                     </span>
                     <div class="flex gap-1 shrink-0">
                       {#each [DashboardAccessLevel.None, DashboardAccessLevel.View, DashboardAccessLevel.Manage] as level (level)}
@@ -506,7 +509,7 @@
             disabled={savingGrant || !grantTargetId}
             onclick={saveGrant}
           >
-            {savingGrant ? "Saving..." : editingGrantId ? "Save Changes" : "Grant Access"}
+            {savingGrant ? m.common.saving() : editingGrantId ? m.common.saveChanges() : m.access.grantButton()}
           </button>
           {#if editingGrantId}
             <button
@@ -514,7 +517,7 @@
               style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
               onclick={startNewGrant}
             >
-              Cancel
+              {m.common.cancel()}
             </button>
           {/if}
         </div>
@@ -527,11 +530,11 @@
                border-color: {$colorStore.primary}30;"
       >
         <h2 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">
-          Access Grants ({grants.length})
+          {m.access.grantsHeading({ count: grants.length })}
         </h2>
 
         {#if grants.length === 0}
-          <p class="text-sm" style="color: {$colorStore.muted};">No restricted access grants yet</p>
+          <p class="text-sm" style="color: {$colorStore.muted};">{m.access.grantsEmpty()}</p>
         {:else}
           <div class="space-y-2">
             {#each grants as grant (grant.id)}
@@ -544,25 +547,25 @@
                     {targetName(grant.targetType, grant.targetId)}
                   </span>
                   <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                    {Object.keys(grant.sections).length} section{Object.keys(grant.sections).length === 1 ? "" : "s"}
+                    {Object.keys(grant.sections).length === 1 ? m.access.grantSectionsOne({ count: 1 }) : m.access.grantSectionsOther({ count: Object.keys(grant.sections).length })}
                   </p>
                 </div>
                 <div class="flex gap-2 shrink-0">
                   <button
-                    aria-label="Edit grant"
+                    aria-label={m.access.editGrantAria()}
                     class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                     onclick={() => editGrant(grant)}
                   >
-                    Edit
+                    {m.common.edit()}
                   </button>
                   <button
-                    aria-label="Remove grant"
+                    aria-label={m.access.removeGrantAria()}
                     class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                     style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                     onclick={() => requestRemoveGrant(grant)}
                   >
-                    Remove
+                    {m.common.remove()}
                   </button>
                 </div>
               </div>
@@ -577,9 +580,9 @@
 <!-- Delete Manager Confirmation -->
 <ConfirmationModal
   bind:isOpen={showDeleteManagerConfirm}
-  title="Remove Manager"
-  message={`Remove ${managerPendingDelete ? targetName(managerPendingDelete.targetType, managerPendingDelete.targetId) : "this manager"} from access managers? They will no longer be able to manage dashboard access for this server.`}
-  confirmText="Remove"
+  title={m.access.removeManagerAria()}
+  message={m.access.removeManagerMessage({ name: managerPendingDelete ? targetName(managerPendingDelete.targetType, managerPendingDelete.targetId) : m.access.removeManagerFallback() })}
+  confirmText={m.common.remove()}
   variant="danger"
   oncancel={() => (managerPendingDelete = null)}
   onconfirm={confirmRemoveManager}
@@ -588,9 +591,9 @@
 <!-- Delete Grant Confirmation -->
 <ConfirmationModal
   bind:isOpen={showDeleteGrantConfirm}
-  title="Remove Access Grant"
-  message={`Remove all restricted dashboard access for ${grantPendingDelete ? targetName(grantPendingDelete.targetType, grantPendingDelete.targetId) : "this target"}?`}
-  confirmText="Remove"
+  title={m.access.removeGrantTitle()}
+  message={m.access.removeGrantMessage({ name: grantPendingDelete ? targetName(grantPendingDelete.targetType, grantPendingDelete.targetId) : m.access.removeGrantFallback() })}
+  confirmText={m.common.remove()}
   variant="danger"
   oncancel={() => (grantPendingDelete = null)}
   onconfirm={confirmRemoveGrant}

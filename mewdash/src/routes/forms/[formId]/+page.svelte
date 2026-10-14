@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
@@ -150,8 +151,8 @@
   /** What a screen reader is told when the page changes. */
   let pageAnnouncement = $derived(
     pageHeading
-      ? `Page ${currentPage + 1} of ${pages.length}: ${renderFormTextPlain(pageHeading.questionText)}`
-      : `Page ${currentPage + 1} of ${pages.length}`
+      ? m.forms.publicPageAnnouncementTitled({ current: currentPage + 1, total: pages.length, heading: renderFormTextPlain(pageHeading.questionText) })
+      : m.forms.publicPageAnnouncement({ current: currentPage + 1, total: pages.length })
   );
 
   /**
@@ -163,28 +164,28 @@
     const owner = guildName ?? preview?.guildName ?? null;
     const summary =
       (form ? form.description?.trim() : preview?.description?.trim()) ||
-      (owner ? `A form from ${owner}` : "Fill out this form");
+      (owner ? m.forms.publicMetaFormFrom({ server: owner }) : m.forms.publicMetaFillOut());
     const anonymous = form ? form.allowAnonymous : preview?.allowAnonymous;
 
-    return anonymous ? `${summary} Your answers are submitted anonymously.` : summary;
+    return anonymous ? m.forms.publicMetaAnonymous({ summary }) : summary;
   });
 
-  let metaTitle = $derived(form?.name || data.preview?.name || "Form");
+  let metaTitle = $derived(form?.name || data.preview?.name || m.forms.publicMetaFormFallback());
 
   let previewEmbed = $derived.by(() => {
     const preview = data.preview;
     if (!preview) return null;
     const details = [
-      preview.guildName ? `From **${plain(preview.guildName)}**` : null,
+      preview.guildName ? m.forms.publicEmbedFrom({ server: plain(preview.guildName) }) : null,
       preview.questionCount !== null
-        ? `${preview.questionCount} question${preview.questionCount === 1 ? "" : "s"}`
+        ? (preview.questionCount === 1 ? m.forms.publicEmbedQuestionOne({ count: preview.questionCount }) : m.forms.publicEmbedQuestionOther({ count: preview.questionCount }))
         : null
     ].filter(Boolean);
     return container(
       header("## " + plain(preview.name) + "\n" + plain(metaDescription), preview.guildIcon),
       details.length ? text(details.join(" · ")) : null,
       separator(),
-      buttons(linkButton("Open form", `${SITE_ORIGIN}/forms/${$page.params.formId}`))
+      buttons(linkButton(m.forms.publicEmbedOpen(), `${SITE_ORIGIN}/forms/${$page.params.formId}`))
     );
   });
 
@@ -196,15 +197,15 @@
     if (seconds <= 0) return null;
 
     const days = Math.floor(seconds / 86400);
-    if (days >= 1) return `${days} day${days === 1 ? "" : "s"}`;
+    if (days >= 1) return days === 1 ? m.forms.publicCountdownDayOne({ count: days }) : m.common.daysCount({ count: days });
 
     const hours = Math.floor(seconds / 3600);
-    if (hours >= 1) return `${hours} hour${hours === 1 ? "" : "s"}`;
+    if (hours >= 1) return hours === 1 ? m.forms.publicCountdownHourOne({ count: hours }) : m.forms.publicCountdownHourOther({ count: hours });
 
     const minutes = Math.floor(seconds / 60);
-    if (minutes >= 1) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+    if (minutes >= 1) return minutes === 1 ? m.forms.publicCountdownMinuteOne({ count: minutes }) : m.forms.publicCountdownMinuteOther({ count: minutes });
 
-    return `${seconds} second${seconds === 1 ? "" : "s"}`;
+    return seconds === 1 ? m.forms.publicCountdownSecondOne({ count: seconds }) : m.common.secondsCount({ count: seconds });
   });
 
   // Comprehensive conditional evaluation
@@ -450,7 +451,7 @@
       const qId = parseInt(questionId);
       const answer = answers[qId];
 
-      if (!answer) return "[Not answered]";
+      if (!answer) return m.forms.publicNotAnswered();
 
       if (Array.isArray(answer)) {
         return answer.join(", ");
@@ -471,10 +472,10 @@
     const isRequired = question.isRequired || isQuestionConditionallyRequired(question);
     if (isRequired) {
       if (!answer || (typeof answer === "string" && !answer.trim())) {
-        return "This question is required";
+        return m.forms.publicErrorRequired();
       }
       if (Array.isArray(answer) && answer.length === 0) {
-        return "Please select at least one option";
+        return m.forms.publicErrorSelectOne();
       }
     }
 
@@ -482,7 +483,7 @@
 
     // Check for Zalgo text in answers
     if (typeof answer === "string" && containsZalgo(answer)) {
-      return "Answer contains invalid characters (excessive combining marks)";
+      return m.forms.publicErrorZalgo();
     }
 
     // Validate based on type
@@ -491,38 +492,38 @@
       case "long_text":
         const textAnswer = answer as string;
         if (question.minLength && textAnswer.length < question.minLength) {
-          return `Minimum length is ${question.minLength} characters`;
+          return m.forms.publicErrorMinLength({ count: question.minLength });
         }
         if (question.maxLength && textAnswer.length > question.maxLength) {
-          return `Maximum length is ${question.maxLength} characters`;
+          return m.forms.publicErrorMaxLength({ count: question.maxLength });
         }
         break;
 
       case "number":
         const numAnswer = parseFloat(answer as string);
         if (isNaN(numAnswer)) {
-          return "Please enter a valid number";
+          return m.forms.publicErrorNumber();
         }
         if (!isValidNumber(numAnswer, question.minValue, question.maxValue)) {
           if (question.minValue !== undefined && question.maxValue !== undefined) {
-            return `Value must be between ${question.minValue} and ${question.maxValue}`;
+            return m.forms.publicErrorValueBetween({ min: question.minValue, max: question.maxValue });
           } else if (question.minValue !== undefined) {
-            return `Value must be at least ${question.minValue}`;
+            return m.forms.publicErrorValueMin({ min: question.minValue });
           } else if (question.maxValue !== undefined) {
-            return `Value must be at most ${question.maxValue}`;
+            return m.forms.publicErrorValueMax({ max: question.maxValue });
           }
         }
         break;
 
       case "email":
         if (!isValidEmail(answer as string)) {
-          return "Please enter a valid email address";
+          return m.forms.publicErrorEmail();
         }
         break;
 
       case "url":
         if (!isValidUrl(answer as string)) {
-          return "Please enter a valid URL (must start with http:// or https://)";
+          return m.forms.publicErrorUrl();
         }
         break;
     }
@@ -606,7 +607,7 @@
         try {
           const eligibilityCheck = await formsApi.checkEligibility(formId, data.user.id);
           if (!eligibilityCheck.isEligible) {
-            error = eligibilityCheck.reason || "You are not eligible to submit this form";
+            error = eligibilityCheck.reason || m.forms.publicNotEligible();
             retryAt = eligibilityCheck.retryAt ? new Date(eligibilityCheck.retryAt) : null;
             // Clear the form so it's not displayed
             form = null;
@@ -614,7 +615,7 @@
             return;
           }
         } catch (err) {
-          error = "Failed to verify eligibility. Please try again later.";
+          error = m.forms.publicEligibilityFailed();
           // Clear the form so it's not displayed
           form = null;
           questions = [];
@@ -629,7 +630,7 @@
           const guild = userGuilds?.find((g) => g.id.toString() === form!.guildId.toString());
 
           if (!guild) {
-            error = "Preview mode is only available to server administrators";
+            error = m.forms.publicPreviewAdminOnly();
             // Clear the form so it's not displayed
             form = null;
             questions = [];
@@ -637,7 +638,7 @@
           }
           isAdmin = true;
         } catch {
-          error = "Failed to verify administrator permissions";
+          error = m.forms.publicAdminVerifyFailed();
           // Clear the form so it's not displayed
           form = null;
           questions = [];
@@ -654,9 +655,9 @@
     } catch (err: any) {
       // Check if it's a specific error message
       if (err?.message?.toLowerCase().includes("not found") || err?.status === 404) {
-        error = "Form not found. It may have been deleted or the link may be incorrect.";
+        error = m.forms.publicFormNotFound();
       } else {
-        error = err instanceof Error ? err.message : "Failed to load form";
+        error = err instanceof Error ? err.message : m.forms.editLoadFailed();
       }
       // Clear the form so nothing is displayed
       form = null;
@@ -683,7 +684,7 @@
 
       answers = existing;
     } catch {
-      error = "We could not load your answers. Try the link in your submission again.";
+      error = m.forms.publicAnswersLoadFailed();
       form = null;
       questions = [];
     }
@@ -779,7 +780,7 @@
     // Catching an error here rather than at the end means somebody is told about a missed
     // question while it is still on screen.
     if (!currentPageIsValid()) {
-      error = "Please fix the highlighted answers before continuing";
+      error = m.forms.publicFixBeforeContinue();
       return;
     }
 
@@ -805,7 +806,7 @@
     // Validate before showing confirmation
     if (!validateAllQuestions()) {
       const errorCount = Object.keys(validationErrors).length;
-      error = `Please fix ${errorCount} error${errorCount > 1 ? "s" : ""} highlighted below`;
+      error = errorCount > 1 ? m.forms.publicFixErrorsOther({ count: errorCount }) : m.forms.publicFixErrorsOne({ count: errorCount });
       return;
     }
 
@@ -889,9 +890,9 @@
         );
         if (firstBadPage >= 0) currentPage = firstBadPage;
 
-        error = "Some answers need fixing before this can be submitted";
+        error = m.forms.publicAnswersNeedFixing();
       } else {
-        error = err instanceof Error ? err.message : "Failed to submit form";
+        error = err instanceof Error ? err.message : m.forms.publicSubmitFailed();
       }
 
       success = false;
@@ -923,10 +924,10 @@
       // Zalgo detected and removed
       input.value = cleaned;
       answers[questionId] = cleaned;
-      error = "Excessive combining characters were removed from your answer";
+      error = m.forms.publicZalgoRemoved();
       // Clear error after 3 seconds
       setTimeout(() => {
-        if (error === "Excessive combining characters were removed from your answer") {
+        if (error === m.forms.publicZalgoRemoved()) {
           error = null;
         }
       }, 3000);
@@ -946,7 +947,7 @@
     try {
       instances = await instanceManagementApi.getBotInstances();
     } catch (err) {
-      error = "Failed to load bot instances. Please try again later.";
+      error = m.common.failedToLoadBotInstances();
       loading = false;
       return;
     }
@@ -991,7 +992,7 @@
     }
 
     if (!resolved || !targetInstance) {
-      error = "This form link is invalid or has expired. Please request a new link from the server administrator.";
+      error = m.forms.publicLinkInvalid();
       loading = false;
       // Clear the instance since we didn't find the form
       currentInstance.set(null);
@@ -1022,12 +1023,12 @@
           editToken = requestedEdit;
           editingResponseId = status.responseId;
         } else {
-          error = status.editReason ?? "This response can no longer be changed";
+          error = status.editReason ?? m.forms.publicEditUnavailable();
           loading = false;
           return;
         }
       } catch {
-        error = "That edit link is not valid any more";
+        error = m.forms.publicEditLinkInvalid();
         loading = false;
         return;
       }
@@ -1050,7 +1051,7 @@
 <ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
-  <title>{metaTitle} - Mewdeko</title>
+  <title>{m.forms.publicTitle({ title: metaTitle })}</title>
   <meta content={metaDescription} name="description" />
 
   <!-- These forms get shared by pasting the link into Discord, so the unfurl is most of the first
@@ -1089,11 +1090,11 @@
         </div>
 
         <h1 class="text-3xl font-bold mb-4" style="color: {$colorStore.text};">
-          Login Required
+          {m.common.loginRequired()}
         </h1>
 
         <p class="text-lg mb-6" style="color: {$colorStore.muted};">
-          You need to login with Discord to access this form
+          {m.forms.publicYouNeedToLoginWith()}
         </p>
 
         <div
@@ -1102,24 +1103,24 @@
         >
           <div class="font-semibold mb-3" style="color: {$colorStore.text};">
             <i class="fa-solid fa-shield-check mr-2" style="color: {$colorStore.primary};"></i>
-            Why login is required:
+            {m.forms.publicWhyLoginIsRequired()}
           </div>
           <ul class="space-y-2 text-sm" style="color: {$colorStore.muted};">
             <li class="flex items-start gap-2">
               <i class="fa-solid fa-check flex-shrink-0 mt-1" style="color: {$colorStore.primary};"></i>
-              <span>Verify you're a member of the server</span>
+              <span>{m.forms.publicVerifyYoureAMemberOf()}</span>
             </li>
             <li class="flex items-start gap-2">
               <i class="fa-solid fa-check flex-shrink-0 mt-1" style="color: {$colorStore.primary};"></i>
-              <span>Prevent spam and abuse</span>
+              <span>{m.forms.publicPreventSpamAndAbuse()}</span>
             </li>
             <li class="flex items-start gap-2">
               <i class="fa-solid fa-check flex-shrink-0 mt-1" style="color: {$colorStore.primary};"></i>
-              <span>Ensure only authorized members can access this form</span>
+              <span>{m.forms.publicEnsureOnlyAuthorizedMembersCan()}</span>
             </li>
             <li class="flex items-start gap-2">
               <i class="fa-solid fa-check flex-shrink-0 mt-1" style="color: {$colorStore.primary};"></i>
-              <span>Protect potentially sensitive information</span>
+              <span>{m.forms.publicProtectPotentiallySensitiveInformation()}</span>
             </li>
           </ul>
         </div>
@@ -1130,11 +1131,11 @@
           style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border-color: {$colorStore.primary}30; box-shadow: 0 4px 20px {$colorStore.primary}10;"
         >
           <i class="fa-brands fa-discord mr-2"></i>
-          Login with Discord
+          {m.common.loginWithDiscord()}
         </button>
 
         <p class="mt-6 text-sm" style="color: {$colorStore.muted};">
-          You'll be redirected back to this form after logging in
+          {m.forms.publicYoullBeRedirectedBackTo()}
         </p>
       </div>
     {:else if loading}
@@ -1147,7 +1148,7 @@
           class="w-12 h-12 border-4 rounded-full animate-spin mx-auto mb-4"
           style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"
         ></div>
-        <p style="color: {$colorStore.muted};">Loading form...</p>
+        <p style="color: {$colorStore.muted};">{m.forms.editLoading()}</p>
       </div>
     {:else if error && !form}
       <!-- Only show full error page for critical errors (when form failed to load) -->
@@ -1159,7 +1160,7 @@
         <div class="flex justify-center mb-4">
           <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 48px;"></i>
         </div>
-        <h2 class="text-2xl font-bold mb-4" style="color: #ef4444;">Error</h2>
+        <h2 class="text-2xl font-bold mb-4" style="color: #ef4444;">{m.common.error()}</h2>
         <p class="text-lg" style="color: {$colorStore.text};">{error}</p>
 
         <!-- Some refusals lift on their own. Saying when beats leaving somebody to keep checking. -->
@@ -1170,7 +1171,7 @@
           >
             <i class="fa-solid fa-hourglass-half" style="color: {$colorStore.primary};"></i>
             <span style="color: {$colorStore.text};">
-              You can try again in about {retryCountdown}
+              {m.forms.publicRetryIn({ time: retryCountdown })}
             </span>
           </div>
           {#if retryAt}
@@ -1191,19 +1192,19 @@
             <i class="fa-solid fa-check-circle" style="color: #10B981; font-size: 48px;"></i>
           </div>
           <h2 class="text-2xl font-bold mb-4" style="color: #10B981;">
-            {isEditing ? "Answers updated" : "Success!"}
+            {isEditing ? m.forms.publicSuccessUpdated() : m.forms.publicSuccessTitle()}
           </h2>
           <p class="text-lg mb-6" style="color: {$colorStore.text};">
             {#if isEditing}
-              Your changes have been saved and the reviewers can see them.
+              {m.forms.publicSuccessEdit()}
             {:else if form?.successMessage}
               {(form.successMessage)}
             {:else if form?.formType === 1}
-              Your ban appeal has been submitted and is now pending review.
+              {m.forms.publicSuccessAppeal()}
             {:else if form?.formType === 2}
-              Your join application has been submitted and is now pending review.
+              {m.forms.publicSuccessApplication()}
             {:else}
-              Your response has been submitted successfully.
+              {m.forms.publicSuccessResponse()}
             {/if}
           </p>
 
@@ -1214,34 +1215,34 @@
             >
               <div class="font-semibold mb-2" style="color: {$colorStore.text};">
                 <i class="fa-solid fa-info-circle mr-2" style="color: {$colorStore.primary};"></i>
-                What happens next?
+                {m.forms.publicWhatHappensNext()}
               </div>
               <ul class="space-y-2 text-sm" style="color: {$colorStore.muted};">
                 {#if form?.formType === 1}
                   <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check flex-shrink-0 mt-1" style="color: {$colorStore.primary};"></i>
-                    <span>Your appeal will be reviewed by the moderation team</span>
+                    <span>{m.forms.publicYourAppealWillBeReviewed()}</span>
                   </li>
                   <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check flex-shrink-0 mt-1" style="color: {$colorStore.primary};"></i>
-                    <span>If approved, you will be automatically unbanned</span>
+                    <span>{m.forms.publicIfApprovedYouWillBe()}</span>
                   </li>
                   <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check flex-shrink-0 mt-1" style="color: {$colorStore.primary};"></i>
-                    <span>Check your status on the page linked below</span>
+                    <span>{m.forms.publicCheckYourStatusOnThe()}</span>
                   </li>
                 {:else if form?.formType === 2}
                   <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check flex-shrink-0 mt-1" style="color: {$colorStore.primary};"></i>
-                    <span>Your application will be reviewed by the moderation team</span>
+                    <span>{m.forms.publicYourApplicationWillBeReviewed()}</span>
                   </li>
                   <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check flex-shrink-0 mt-1" style="color: {$colorStore.primary};"></i>
-                    <span>If approved, you'll receive an invite link to join the server</span>
+                    <span>{m.forms.publicIfApprovedYoullReceiveAn()}</span>
                   </li>
                   <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check flex-shrink-0 mt-1" style="color: {$colorStore.primary};"></i>
-                    <span>Your assigned roles will be applied automatically when you join</span>
+                    <span>{m.forms.publicYourAssignedRolesWillBe()}</span>
                   </li>
                 {/if}
               </ul>
@@ -1254,10 +1255,10 @@
             >
               <div class="font-semibold mb-2" style="color: {$colorStore.text};">
                 <i class="fa-solid fa-bookmark mr-2" style="color: {$colorStore.primary};"></i>
-                Check Your Status
+                {m.forms.publicCheckYourStatus()}
               </div>
               <p class="text-sm mb-3" style="color: {$colorStore.muted};">
-                Bookmark this link to check your submission status at any time:
+                {m.forms.publicBookmarkThisLinkToCheck()}
               </p>
               <a
                 href={statusCheckUrl}
@@ -1272,7 +1273,7 @@
                 style="background: {$colorStore.primary}20; color: {$colorStore.text};"
               >
                 <i class="fa-solid fa-copy mr-2"></i>
-                Copy Link
+                {m.common.copyLink()}
               </button>
             </div>
           {/if}
@@ -1282,7 +1283,7 @@
             class="px-6 py-3 rounded-lg font-medium transition-all hover:scale-[1.02]"
             style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
           >
-            Return to Dashboard
+            {m.common.returnToDashboard()}
           </button>
         </div>
       </div>
@@ -1298,9 +1299,9 @@
             <div class="flex items-center justify-center gap-3">
               <i class="fa-solid fa-eye" style="color: #f59e0b; font-size: 20px;"></i>
               <div>
-                <div class="font-bold" style="color: #f59e0b;">Preview Mode</div>
+                <div class="font-bold" style="color: #f59e0b;">{m.forms.publicPreviewMode()}</div>
                 <div class="text-sm" style="color: {$colorStore.muted};">
-                  You're previewing this form. Submissions are disabled.
+                  {m.forms.publicYourePreviewingThisFormSubmissions()}
                 </div>
               </div>
             </div>
@@ -1323,14 +1324,13 @@
               </div>
               <div>
                 <h3 class="font-bold text-lg mb-2" style="color: #ef4444;">
-                  Ban Appeal Form
+                  {m.forms.publicBanAppealForm()}
                 </h3>
                 <p class="text-sm mb-3" style="color: {$colorStore.text};">
-                  This is a ban appeal form. Your submission will be reviewed by the moderation team. If approved,
-                  you will be automatically unbanned from the server.
+                  {m.forms.publicThisIsABanAppeal()}
                 </p>
                 <p class="text-xs" style="color: {$colorStore.muted};">
-                  Please be honest and provide as much detail as possible in your responses.
+                  {m.forms.publicPleaseBeHonestAndProvide()}
                 </p>
               </div>
             </div>
@@ -1350,14 +1350,13 @@
               </div>
               <div>
                 <h3 class="font-bold text-lg mb-2" style="color: #3b82f6;">
-                  Join Application Form
+                  {m.forms.publicJoinApplicationForm()}
                 </h3>
                 <p class="text-sm mb-3" style="color: {$colorStore.text};">
-                  This is a join application form. Your submission will be reviewed by the moderation team. If approved,
-                  you'll receive an invite link to join the server with pre-assigned roles.
+                  {m.forms.publicThisIsAJoinApplication()}
                 </p>
                 <p class="text-xs" style="color: {$colorStore.muted};">
-                  Please provide accurate information to help us process your application.
+                  {m.forms.publicPleaseProvideAccurateInformationTo()}
                 </p>
               </div>
             </div>
@@ -1380,29 +1379,28 @@
               </div>
               <div>
                 <h3 class="font-bold text-lg mb-2" style="color: #8b5cf6;">
-                  Anonymous Submission
+                  {m.forms.publicAnonymousSubmission()}
                 </h3>
                 <p class="text-sm mb-3" style="color: {$colorStore.text};">
-                  This form accepts <strong>anonymous submissions</strong>. Your Discord login is required to verify
-                  guild membership and prevent spam, but your identity <strong>will not be stored</strong>.
+                  {@html m.forms.publicAnonymousIntro()}
                 </p>
                 <div
                   class="p-3 rounded-lg text-sm"
                   style="background: {$colorStore.primary}10; border-left: 3px solid #8b5cf6;"
                 >
-                  <div class="font-semibold mb-2" style="color: {$colorStore.text};">What we collect:</div>
+                  <div class="font-semibold mb-2" style="color: {$colorStore.text};">{m.forms.publicWhatWeCollect()}</div>
                   <ul class="space-y-1 text-xs" style="color: {$colorStore.muted};">
-                    <li>✓ Your answers to form questions</li>
-                    <li>✓ Submission timestamp</li>
+                    <li>{m.forms.publicYourAnswersToFormQuestions()}</li>
+                    <li>{m.forms.publicSubmissionTimestamp()}</li>
                   </ul>
-                  <div class="font-semibold mt-3 mb-2" style="color: {$colorStore.text};">What we DON'T collect:</div>
+                  <div class="font-semibold mt-3 mb-2" style="color: {$colorStore.text};">{m.forms.publicWhatWeDontCollect()}</div>
                   <ul class="space-y-1 text-xs" style="color: {$colorStore.muted};">
-                    <li>✗ Your username</li>
-                    <li>✗ Your user ID</li>
-                    <li>✗ Your IP address</li>
+                    <li>{m.forms.publicYourUsername()}</li>
+                    <li>{m.forms.publicYourUserId()}</li>
+                    <li>{m.forms.publicYourIpAddress()}</li>
                   </ul>
                   <p class="mt-3 text-xs italic" style="color: {$colorStore.muted};">
-                    Your Discord login is used only for verification and is not saved with your submission.
+                    {m.forms.publicYourDiscordLoginIsUsed()}
                   </p>
                 </div>
               </div>
@@ -1452,7 +1450,7 @@
             {#if form.maxResponses}
               <span class="text-sm" style="color: {$colorStore.muted};">
                 <i class="fa-solid fa-chart-bar mr-1"></i>
-                {form.responseCount || 0} / {form.maxResponses} responses
+                {m.forms.publicResponseLimit({ count: form.responseCount || 0, max: form.maxResponses })}
               </span>
             {/if}
             {#if form.expiresAt}
@@ -1464,13 +1462,13 @@
               >
                 <i class="fa-solid fa-clock mr-1"></i>
                 {#if isExpired}
-                  Expired
+                  {m.common.expired()}
                 {:else if timeRemaining < 3600000}
-                  Expires in {Math.floor(timeRemaining / 60000)}m
+                  {m.forms.publicExpiresMinutes({ minutes: Math.floor(timeRemaining / 60000) })}
                 {:else if timeRemaining < 86400000}
-                  Expires in {Math.floor(timeRemaining / 3600000)}h
+                  {m.forms.publicExpiresHours({ hours: Math.floor(timeRemaining / 3600000) })}
                 {:else}
-                  Expires {new Date(form.expiresAt).toLocaleDateString()}
+                  {m.forms.publicExpiresOn({ date: new Date(form.expiresAt).toLocaleDateString() })}
                 {/if}
               </span>
             {/if}
@@ -1488,10 +1486,10 @@
               <i class="fa-solid fa-pen" style="color: {$colorStore.primary};"></i>
               <div>
                 <div class="font-semibold" style="color: {$colorStore.text};">
-                  You are changing a response you already sent
+                  {m.forms.publicYouAreChangingAResponse()}
                 </div>
                 <div class="text-sm" style="color: {$colorStore.muted};">
-                  The reviewers keep a copy of what you wrote before, so they can see what changed.
+                  {m.forms.publicTheReviewersKeepACopy()}
                 </div>
               </div>
             </div>
@@ -1509,11 +1507,11 @@
               <i class="fa-solid fa-clock-rotate-left" style="color: {$colorStore.primary};"></i>
               <div>
                 <div class="font-semibold" style="color: {$colorStore.text};">
-                  We brought back what you had already written
+                  {m.forms.publicWeBroughtBackWhatYou()}
                 </div>
                 {#if draftSavedAt}
                   <div class="text-sm" style="color: {$colorStore.muted};">
-                    Saved {draftSavedAt.toLocaleString()}
+                    {m.forms.publicDraftSaved({ time: draftSavedAt.toLocaleString() })}
                   </div>
                 {/if}
               </div>
@@ -1524,7 +1522,7 @@
               class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
               style="background: {$colorStore.primary}15; color: {$colorStore.text};"
             >
-              Start over
+              {m.common.startOver()}
             </button>
           </div>
         {/if}
@@ -1554,9 +1552,9 @@
                   aria-hidden={isPaginated ? "true" : undefined}
                 >
                   {#if isPaginated}
-                    Page {currentPage + 1} of {pages.length}, {answeredQuestions.length} of {answerableQuestions.length} answered
+                    {m.forms.publicProgressPaged({ current: currentPage + 1, total: pages.length, answered: answeredQuestions.length, questions: answerableQuestions.length })}
                   {:else}
-                    Progress: {answeredQuestions.length} of {answerableQuestions.length} questions
+                    {m.forms.publicProgress({ answered: answeredQuestions.length, questions: answerableQuestions.length })}
                   {/if}
                 </span>
               </div>
@@ -1585,10 +1583,10 @@
           >
             <h2 class="text-2xl font-bold mb-4" style="color: {$colorStore.text};">
               <i class="fa-solid fa-clipboard-check mr-2" style="color: {$colorStore.primary};"></i>
-              Review Your Answers
+              {m.forms.publicReviewYourAnswers()}
             </h2>
             <p class="mb-6" style="color: {$colorStore.muted};">
-              Please review your responses before submitting. Click "Edit" to make changes.
+              {m.forms.publicPleaseReviewYourResponsesBefore()}
             </p>
 
             <div class="space-y-4 mb-6">
@@ -1633,8 +1631,8 @@
               >
                 <p class="text-sm mb-4 text-center" style="color: {$colorStore.muted};">
                   {turnstileExpired
-                    ? "That verification timed out, please complete it again"
-                    : "Please complete the verification below"}
+                    ? m.forms.publicCaptchaExpired()
+                    : m.forms.publicCaptchaPrompt()}
                 </p>
                 <div class="flex justify-center">
                   <Turnstile
@@ -1656,7 +1654,7 @@
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
               >
                 <i class="fa-solid fa-arrow-left mr-2"></i>
-                Edit Answers
+                {m.forms.publicEditAnswers()}
               </button>
               <button
                 onclick={submitForm}
@@ -1666,10 +1664,10 @@
               >
                 {#if submitting}
                   <i class="fa-solid fa-spinner fa-spin mr-2"></i>
-                  Submitting...
+                  {m.forms.publicSubmitting()}
                 {:else}
                   <i class="fa-solid fa-check mr-2"></i>
-                  Confirm & Submit
+                  {m.forms.publicConfirmSubmit()}
                 {/if}
               </button>
             </div>
@@ -1691,7 +1689,7 @@
                     <div class="font-semibold" style="color: #ef4444;">{error}</div>
                     {#if Object.keys(validationErrors).length > 0}
                       <div class="text-sm mt-1" style="color: {$colorStore.muted};">
-                        Questions with errors are highlighted in red. Scroll down to see them.
+                        {m.forms.publicQuestionsWithErrorsAreHighlighted()}
                       </div>
                     {/if}
                   </div>
@@ -1868,7 +1866,7 @@
                           name: option.optionText
                         }))}
                         selected={answers[question.id] ? String(answers[question.id]) : null}
-                        placeholder="Select an option..."
+                        placeholder={m.common.selectOptionPlaceholder()}
                         ariaLabel={renderFormTextPlain(question.questionText)}
                         onchange={(e) => {
                           answers[question.id] = typeof e.selected === "string" ? e.selected : "";
@@ -1908,18 +1906,18 @@
                   style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                 >
                   <i class="fa-solid fa-arrow-left mr-2"></i>
-                  Back
+                  {m.common.back()}
                 </button>
 
                 {#if savingDraft}
                   <span class="text-sm" style="color: {$colorStore.muted};">
                     <i class="fa-solid fa-cloud-arrow-up mr-1"></i>
-                    Saving
+                    {m.common.savingPlain()}
                   </span>
                 {:else if draftSavedAt && !isPreviewMode}
                   <span class="text-sm" style="color: {$colorStore.muted};">
                     <i class="fa-solid fa-check mr-1"></i>
-                    Saved
+                    {m.common.saved()}
                   </span>
                 {/if}
 
@@ -1929,7 +1927,7 @@
                   class="px-5 py-3 rounded-xl font-bold transition-all hover:scale-[1.02] border"
                   style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10); color: {$colorStore.text}; border-color: {$colorStore.secondary}30;"
                 >
-                  Next
+                  {m.common.next()}
                   <i class="fa-solid fa-arrow-right ml-2"></i>
                 </button>
               </div>
@@ -1945,7 +1943,7 @@
                   style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                 >
                   <i class="fa-solid fa-arrow-left mr-2"></i>
-                  Back
+                  {m.common.back()}
                 </button>
               {/if}
               {#if isPreviewMode}
@@ -1954,7 +1952,7 @@
                   style="background: #f59e0b20; color: #f59e0b; border: 2px dashed #f59e0b;"
                 >
                   <i class="fa-solid fa-eye mr-2"></i>
-                  Preview Mode - Submission Disabled
+                  {m.forms.publicPreviewModeSubmissionDisabled()}
                 </div>
               {:else}
                 <button
@@ -1965,10 +1963,10 @@
                 >
                   {#if submitting}
                     <i class="fa-solid fa-spinner fa-spin mr-2"></i>
-                    Submitting...
+                    {m.forms.publicSubmitting()}
                   {:else}
                     <i class="fa-solid fa-clipboard-check mr-2"></i>
-                    Review & Continue
+                    {m.forms.publicReviewContinue()}
                   {/if}
                 </button>
               {/if}

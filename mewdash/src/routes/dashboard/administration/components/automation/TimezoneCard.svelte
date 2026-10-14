@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -23,22 +24,22 @@
       <i class="fa-utility-duo fa-regular fa-globe"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
     </div>
-    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Timezone Settings</h2>
+    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.automationTimezoneTitle()}</h2>
   </div>
 
   <div class="space-y-4">
     <span class="block text-sm font-medium" id="server-timezone-label" style="color: {$colorStore.text}">
-      Server Timezone
+      {m.common.serverTimezone()}
     </span>
     <DiscordSelector
       bind:selected={newTimezone}
       multiple={false}
       options={availableTimezones}
-      placeholder="Select server timezone..."
+      placeholder={m.administration.automationTimezonePlaceholder()}
       type="timezone"
     />
     <p class="text-xs" style="color: {$colorStore.muted}">
-      Timezone used for time-based features and logging
+      {m.administration.automationTimezoneHint()}
     </p>
   </div>
 
@@ -55,7 +56,7 @@
         {:else}
           <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
         {/if}
-        Save Timezone
+        {m.administration.automationTimezoneSave()}
       </button>
     </div>
   {/if}

@@ -5,6 +5,7 @@ import { recordPageView } from "$lib/server/analyticsBeacon";
 import * as Sentry from "@sentry/sveltekit";
 import { sequence } from "@sveltejs/kit/hooks";
 import type { Handle } from "@sveltejs/kit";
+import { resolveLocale, runWithLocale } from "$lib/i18n/server";
 
 const dsn = env.PUBLIC_SENTRY_DSN;
 
@@ -100,7 +101,19 @@ const appHandle: Handle = async ({ event, resolve }) => {
 };
 
 /** Sentry request tracing runs first, then the app's auth/CSP handler. */
-export const handle = sequence(Sentry.sentryHandle(), appHandle);
+/**
+ * Serves the whole request in the viewer's locale: the message accessors read it during SSR and
+ * the <html lang> attribute follows it.
+ */
+const localeHandle: Handle = async ({ event, resolve }) => {
+  const locale = resolveLocale(event.cookies, event.request.headers.get("accept-language"));
+  event.locals.locale = locale;
+  return runWithLocale(locale, async () =>
+    resolve(event, { transformPageChunk: ({ html }) => html.replace("%lang%", locale) })
+  );
+};
+
+export const handle = sequence(Sentry.sentryHandle(), localeHandle, appHandle);
 
 /** Reports uncaught server-side errors to Sentry. */
 export const handleError = Sentry.handleErrorWithSentry();

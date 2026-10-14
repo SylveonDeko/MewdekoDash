@@ -1,5 +1,6 @@
 <!-- routes/dashboard/liveboards/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount, untrack } from "svelte";
   import { goto } from "$app/navigation";
   import {
@@ -37,10 +38,10 @@
 
   let { data }: Props = $props();
 
-  const tabs = [
-    { id: "boards", label: "Live Boards", icon: "fa-thumbtack" },
-    { id: "reports", label: "Server Reports", icon: "fa-newspaper" },
-  ];
+  const tabs = $derived([
+    { id: "boards", label: m.features.liveboardsName(), icon: "fa-thumbtack" },
+    { id: "reports", label: m.liveboards.tabReports(), icon: "fa-newspaper" },
+  ]);
 
   let activeTab = $state("boards");
   let notificationMessage = $state("");
@@ -101,7 +102,7 @@
     try {
       boards = await liveBoardsApi.list($currentGuild.id);
     } catch (err) {
-      boardsError = err instanceof Error ? err.message : "Failed to load live boards";
+      boardsError = err instanceof Error ? err.message : m.liveboards.errorLoadBoards();
       logger.error("Failed to load live boards", err);
     } finally {
       boardsLoading = false;
@@ -111,7 +112,7 @@
   async function createBoard() {
     if (!$currentGuild?.id) return;
     if (!newChannel) {
-      notify("Pick the channel to post in.", "error");
+      notify(m.liveboards.notifyPickChannel(), "error");
       return;
     }
     creating = true;
@@ -126,7 +127,7 @@
       });
       await loadBoards();
     } catch (err) {
-      fail(err, "Failed to create the live board");
+      fail(err, m.liveboards.errorCreate());
     } finally {
       creating = false;
     }
@@ -135,16 +136,16 @@
   async function removeBoard(board: LiveBoard) {
     if (!$currentGuild?.id) return;
     const ok = await requestConfirmation({
-      title: "Delete live board",
-      message: `Delete the ${liveBoardKindLabels[board.kind as LiveBoardKindValue]} in #${channelName(board.channelId)}? Its message is removed too.`,
-      confirmText: "Delete",
+      title: m.liveboards.confirmDeleteTitle(),
+      message: m.liveboards.confirmDeleteMessage({ kind: liveBoardKindLabels[board.kind as LiveBoardKindValue], channel: channelName(board.channelId) }),
+      confirmText: m.common.delete(),
     });
     if (!ok) return;
     try {
       await liveBoardsApi.remove($currentGuild.id, board.id);
       boards = boards.filter((b) => b.id !== board.id);
     } catch (err) {
-      fail(err, "Failed to delete the live board");
+      fail(err, m.liveboards.errorDelete());
     }
   }
 
@@ -155,7 +156,7 @@
       await liveBoardsApi.refresh($currentGuild.id);
       await loadBoards();
     } catch (err) {
-      fail(err, "Failed to refresh the live boards");
+      fail(err, m.liveboards.errorRefresh());
     } finally {
       refreshing = false;
     }
@@ -174,7 +175,7 @@
     try {
       report = await liveBoardsApi.getReport($currentGuild.id);
     } catch (err) {
-      reportError = err instanceof Error ? err.message : "Failed to load report settings";
+      reportError = err instanceof Error ? err.message : m.liveboards.errorLoadReport();
       logger.error("Failed to load report settings", err);
     } finally {
       reportLoading = false;
@@ -186,7 +187,7 @@
     try {
       report = await liveBoardsApi.updateReport($currentGuild.id, request);
     } catch (err) {
-      fail(err, "Failed to save report settings");
+      fail(err, m.liveboards.errorSaveReport());
     }
   }
 
@@ -195,10 +196,10 @@
     sending = true;
     try {
       const sent = await liveBoardsApi.sendReport($currentGuild.id);
-      notify(sent ? `Report posted in #${channelName(report?.channelId)}.` : "No report channel is set.", sent ? "success" : "error");
+      notify(sent ? m.liveboards.notifyReportPosted({ channel: channelName(report?.channelId) }) : m.liveboards.notifyNoReportChannel(), sent ? "success" : "error");
       await loadReport();
     } catch (err) {
-      fail(err, "Failed to send the report");
+      fail(err, m.liveboards.errorSendReport());
     } finally {
       sending = false;
     }
@@ -231,8 +232,8 @@
 </script>
 
 <DashboardPageLayout
-  title="Live Boards"
-  subtitle="Leaderboards and charts that keep themselves current, plus scheduled digests"
+  title={m.features.liveboardsName()}
+  subtitle={m.liveboards.pageSubtitle()}
   icon="fa-thumbtack"
   guildName={$currentGuild?.name || "Dashboard"}
   {tabs}
@@ -242,17 +243,17 @@
 >
   {#if activeTab === "boards"}
     <section>
-      <SectionHeader icon="fa-thumbtack" title="Live Boards" subtitle="Up to 10 per server, each refreshed on its own interval">
+      <SectionHeader icon="fa-thumbtack" title={m.features.liveboardsName()} subtitle={m.liveboards.boardsSubtitle()}>
         {#snippet actions()}
           <button type="button" class="px-3 min-h-[36px] rounded-lg text-sm font-medium" style="background: {$colorStore.primary}20; color: {$colorStore.primary};" onclick={refreshAll} disabled={refreshing}>
-            <i class="fa-solid fa-arrows-rotate mr-1" aria-hidden="true"></i> {refreshing ? "Refreshing…" : "Refresh all"}
+            <i class="fa-solid fa-arrows-rotate mr-1" aria-hidden="true"></i> {refreshing ? m.common.refreshing() : m.liveboards.refreshAll()}
           </button>
         {/snippet}
       </SectionHeader>
 
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div class="xl:col-span-2">
-          <AsyncState loading={boardsLoading} error={boardsError} empty={boards.length === 0} emptyMessage="No live boards yet. Add one and the bot posts and pins it right away." emptyIcon="fa-thumbtack">
+          <AsyncState loading={boardsLoading} error={boardsError} empty={boards.length === 0} emptyMessage={m.liveboards.boardsEmpty()} emptyIcon="fa-thumbtack">
             <div class="space-y-3">
               {#each boards as board (board.id)}
                 <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl p-4 border" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
@@ -260,42 +261,42 @@
                     <div class="flex flex-wrap items-center gap-2">
                       <h3 class="font-semibold" style="color: {$colorStore.text}">{liveBoardKindLabels[board.kind as LiveBoardKindValue] ?? board.kind}</h3>
                       <Pill tone="muted" text={statsRangeLabels[board.range as StatsRangeValue] ?? String(board.range)} />
-                      {#if board.pin}<Pill tone="ok" text="pinned" />{/if}
+                      {#if board.pin}<Pill tone="ok" text={m.liveboards.pillPinned()} />{/if}
                     </div>
                     <p class="text-sm" style="color: {$colorStore.muted}">
-                      #{channelName(board.channelId)} · every {board.intervalMinutes}m · updated {formatAgo(board.lastUpdateAt)}
-                      {#if board.entries && board.kind <= 2 || board.kind === 10} · {board.entries} rows{/if}
+                      {m.liveboards.boardMeta({ channel: channelName(board.channelId), minutes: board.intervalMinutes, updated: formatAgo(board.lastUpdateAt) })}
+                      {#if board.entries && board.kind <= 2 || board.kind === 10}{m.liveboards.boardRows({ count: board.entries })}{/if}
                     </p>
                   </div>
-                  <button type="button" class="min-h-[40px] px-3 rounded-lg text-sm font-medium" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={() => removeBoard(board)}>Delete</button>
+                  <button type="button" class="min-h-[40px] px-3 rounded-lg text-sm font-medium" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={() => removeBoard(board)}>{m.common.delete()}</button>
                 </div>
               {/each}
             </div>
           </AsyncState>
         </div>
 
-        <Card title="Add a live board">
+        <Card title={m.liveboards.addTitle()}>
           <div class="space-y-4">
-            <SettingField label="Channel" hint="Where the message is posted" id="lb-channel" required>
-              <DiscordSelector id="lb-channel" type="channel" options={textChannels} bind:selected={newChannel} placeholder="Pick a channel" />
+            <SettingField label={m.common.channel()} hint={m.liveboards.channelHint()} id="lb-channel" required>
+              <DiscordSelector id="lb-channel" type="channel" options={textChannels} bind:selected={newChannel} placeholder={m.common.pickChannelPlaceholder()} />
             </SettingField>
-            <SettingField label="Board" hint="What the message shows" id="lb-kind">
+            <SettingField label={m.liveboards.boardLabel()} hint={m.liveboards.boardHint()} id="lb-kind">
               <DiscordSelector id="lb-kind" type="custom" customIcon="fa-thumbtack" searchable={false} options={kindOptions} selected={String(newKind)} onchange={(e) => { if (typeof e.selected === "string") newKind = Number(e.selected); }} />
             </SettingField>
-            <SettingField label="Window" hint="Leaderboards use it directly; charts use up to 90 days for all time" id="lb-range">
+            <SettingField label={m.common.window()} hint={m.liveboards.windowHint()} id="lb-range">
               <WindowPicker bind:value={newRange} options={rangeOptions} />
             </SettingField>
             {#if isLeaderboard}
-              <SettingField label="Rows" hint="3 to 25" id="lb-entries">
+              <SettingField label={m.common.rows()} hint={m.liveboards.rowsHint()} id="lb-entries">
                 <input id="lb-entries" type="number" min="3" max="25" bind:value={newEntries} class="w-full rounded-lg p-2 min-h-[44px]" style={inputStyle} />
               </SettingField>
             {/if}
-            <SettingField label="Refresh every (minutes)" hint="At least 5" id="lb-interval">
+            <SettingField label={m.liveboards.intervalLabel()} hint={m.liveboards.intervalHint()} id="lb-interval">
               <input id="lb-interval" type="number" min="5" max="1440" bind:value={newInterval} class="w-full rounded-lg p-2 min-h-[44px]" style={inputStyle} />
             </SettingField>
-            <SettingToggle id="lb-pin" label="Pin the message" hint="Needs Manage Messages in the channel" checked={newPin} onchange={(v) => (newPin = v)} />
+            <SettingToggle id="lb-pin" label={m.liveboards.pinLabel()} hint={m.liveboards.pinHint()} checked={newPin} onchange={(v) => (newPin = v)} />
             <button type="button" class="w-full min-h-[48px] rounded-xl font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={createBoard} disabled={creating || boards.length >= 10}>
-              {creating ? "Posting…" : boards.length >= 10 ? "Limit reached" : "Add live board"}
+              {creating ? m.liveboards.posting() : boards.length >= 10 ? m.liveboards.limitReached() : m.liveboards.addBoard()}
             </button>
           </div>
         </Card>
@@ -305,44 +306,44 @@
 
   {#if activeTab === "reports"}
     <section>
-      <SectionHeader icon="fa-newspaper" title="Server Reports" subtitle="A digest of growth and activity posted daily, weekly or monthly" />
+      <SectionHeader icon="fa-newspaper" title={m.liveboards.tabReports()} subtitle={m.liveboards.reportsSubtitle()} />
 
       <AsyncState loading={reportLoading} error={reportError} empty={!report}>
         {#if report}
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <Card title="Schedule">
+            <Card title={m.common.schedule()}>
               <div class="space-y-4">
-                <SettingField label="Channel" hint="Where the report is posted. Clearing it disables reports." id="rp-channel">
-                  <DiscordSelector id="rp-channel" type="channel" options={textChannels} selected={report.channelId ? report.channelId.toString() : null} placeholder="No channel" onchange={(e) => (typeof e.selected === "string" && e.selected ? updateReport({ channelId: BigInt(e.selected), enabled: true }) : updateReport({ clearChannel: true }))} />
+                <SettingField label={m.common.channel()} hint={m.liveboards.reportChannelHint()} id="rp-channel">
+                  <DiscordSelector id="rp-channel" type="channel" options={textChannels} selected={report.channelId ? report.channelId.toString() : null} placeholder={m.common.noChannel()} onchange={(e) => (typeof e.selected === "string" && e.selected ? updateReport({ channelId: BigInt(e.selected), enabled: true }) : updateReport({ clearChannel: true }))} />
                 </SettingField>
-                <SettingField label="Frequency" hint="Daily at 00:00 UTC, weekly on Mondays, or on the first of the month" id="rp-frequency">
+                <SettingField label={m.liveboards.frequencyLabel()} hint={m.liveboards.frequencyHint()} id="rp-frequency">
                   <WindowPicker
                     value={report.frequency}
                     options={[
-                      { value: ReportFrequency.Daily, label: "Daily" },
-                      { value: ReportFrequency.Weekly, label: "Weekly" },
-                      { value: ReportFrequency.Monthly, label: "Monthly" },
+                      { value: ReportFrequency.Daily, label: m.common.daily() },
+                      { value: ReportFrequency.Weekly, label: m.liveboards.frequencyWeekly() },
+                      { value: ReportFrequency.Monthly, label: m.liveboards.frequencyMonthly() },
                     ]}
-                    ariaLabel="Report frequency"
+                    ariaLabel={m.liveboards.frequencyAria()}
                     onchange={(v) => updateReport({ frequency: v as 0 | 1 | 2 })}
                   />
                 </SettingField>
-                <SettingToggle id="rp-enabled" label="Reports enabled" hint="Turn scheduled reports on or off without losing the channel" checked={report.enabled} disabled={!report.channelId} onchange={(v) => updateReport({ enabled: v })} />
-                <p class="text-sm" style="color: {$colorStore.muted}">Last sent {formatAgo(report.lastSentAt)}.</p>
+                <SettingToggle id="rp-enabled" label={m.liveboards.reportsEnabledLabel()} hint={m.liveboards.reportsEnabledHint()} checked={report.enabled} disabled={!report.channelId} onchange={(v) => updateReport({ enabled: v })} />
+                <p class="text-sm" style="color: {$colorStore.muted}">{m.liveboards.lastSent({ when: formatAgo(report.lastSentAt) })}</p>
                 <button type="button" class="w-full min-h-[48px] rounded-xl font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={sendNow} disabled={sending || !report.channelId}>
-                  {sending ? "Sending…" : "Send a report now"}
+                  {sending ? m.common.sending() : m.liveboards.sendNow()}
                 </button>
               </div>
             </Card>
-            <Card title="What a report contains">
+            <Card title={m.liveboards.contentsTitle()}>
               <ul class="text-sm space-y-2" style="color: {$colorStore.text}">
-                <li>📥 Joins, 📤 leaves, net growth and retention for the period</li>
-                <li>💬 Messages, 🔊 voice time and active members</li>
-                <li>👥 Member count and how it changed</li>
-                <li>🏆 Top inviters, chatters, voice members and busiest channels</li>
-                <li>🔗 Top invite codes with their labels</li>
-                <li>🎮 Top games and apps, when game tracking is on</li>
-                <li>📈 A joins and leaves chart</li>
+                <li>{m.liveboards.contentsGrowth()}</li>
+                <li>{m.liveboards.contentsActivity()}</li>
+                <li>{m.liveboards.contentsMembers()}</li>
+                <li>{m.liveboards.contentsTop()}</li>
+                <li>{m.liveboards.contentsInvites()}</li>
+                <li>{m.liveboards.contentsGames()}</li>
+                <li>{m.liveboards.contentsChart()}</li>
               </ul>
             </Card>
           </div>

@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/SimpleLineChart.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onDestroy } from "svelte";
   import { CategoryScale, Chart, Filler, Legend, LineController, LineElement, LinearScale, PointElement, Tooltip, BarController, BarElement } from "chart.js";
   import { colorStore } from "$lib/stores/colorStore";
@@ -34,7 +35,7 @@
     unit = "",
     format = compact,
     loading = false,
-    empty = "No data",
+    empty = m.common.noData(),
     beginAtZero = false,
   }: Props = $props();
 

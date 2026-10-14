@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
@@ -23,14 +24,14 @@
       <i class="fa-utility-duo fa-regular fa-comment"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
     </div>
-    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Ban Message</h2>
+    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.advancedBanMessageTitle()}</h2>
   </div>
 
   <div class="space-y-4">
     <div>
       <label for="f-BanMessageCard-custom-ban-message-31" class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">
         <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
-        Custom Ban Message
+        {m.administration.advancedBanMessageLabel()}
       </label>
 
       <FullscreenEmbedBuilder id="f-BanMessageCard-custom-ban-message-31"
@@ -41,14 +42,14 @@
         guildId={guildId}
         icon="fa-comment"
         maxEmbeds={10}
-        placeholder="Click to configure ban message with rich embeds"
-        previewDescription="Message sent to users when they are banned"
-        previewTitle="Ban Message"
+        placeholder={m.administration.advancedBanMessagePlaceholder()}
+        previewDescription={m.administration.advancedBanMessagePreviewDescription()}
+        previewTitle={m.administration.advancedBanMessageTitle()}
         user={user}
       />
 
       <p class="text-xs mt-3" style="color: {$colorStore.muted}">
-        This message will be sent to users when they are banned. Supports rich embeds and Discord formatting.
+        {m.administration.advancedBanMessageHint()}
       </p>
     </div>
 
@@ -60,7 +61,7 @@
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
       >
         <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-        Save Message
+        {m.common.saveMessage()}
       </button>
     </div>
   </div>

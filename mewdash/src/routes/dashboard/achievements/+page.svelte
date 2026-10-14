@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -61,7 +62,7 @@
       ]);
 
       if (!overviewData || !catalogData) {
-        showMessage("Couldn't load achievements.", "error");
+        showMessage(m.achievements.pageLoadFailed(), "error");
       }
       overview = overviewData;
       catalog = catalogData;
@@ -163,25 +164,25 @@
     loadAll();
   });
 
-  const tabs = [
-    { id: "overview", label: "Overview", icon: "fa-gauge" },
-    { id: "library", label: "Achievements", icon: "fa-crown" },
-    { id: "categories", label: "Categories", icon: "fa-layer-group" },
-    { id: "announcements", label: "Announcements", icon: "fa-bullhorn" },
-    { id: "cards", label: "Cards", icon: "fa-id-card" },
-    { id: "members", label: "Members", icon: "fa-users" },
-    { id: "settings", label: "Settings", icon: "fa-sliders" }
-  ];
+  const tabs = $derived([
+    { id: "overview", label: m.common.overview(), icon: "fa-gauge" },
+    { id: "library", label: m.features.achievementsName(), icon: "fa-crown" },
+    { id: "categories", label: m.common.categories(), icon: "fa-layer-group" },
+    { id: "announcements", label: m.common.announcements(), icon: "fa-bullhorn" },
+    { id: "cards", label: m.achievements.tabCards(), icon: "fa-id-card" },
+    { id: "members", label: m.common.members(), icon: "fa-users" },
+    { id: "settings", label: m.common.settings(), icon: "fa-sliders" }
+  ]);
 
   let actionButtons = $derived([
     {
-      label: "New achievement",
+      label: m.achievements.editorNewTitle(),
       icon: "fa-plus",
       action: () => openEditor("new"),
       disabled: !catalog
     },
     {
-      label: "Refresh",
+      label: m.common.refresh(),
       icon: "fa-arrows-rotate",
       action: loadAll,
       loading: loading
@@ -214,13 +215,13 @@
       <div class="flex items-center gap-3 flex-1">
         <i class="fa-utility-duo fa-regular fa-circle-exclamation"
            style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
-        <span style="color: {$colorStore.text}">Earning is paused in this server, so nothing unlocks yet. You can still set everything up first.</span>
+        <span style="color: {$colorStore.text}">{m.achievements.pagePausedNotice()}</span>
       </div>
       <button type="button"
               class="px-4 py-2 rounded-lg min-h-[44px] text-sm font-medium transition-all hover:scale-[1.02]"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={() => { activeTab = "overview"; }}>
-        Start earning
+        {m.achievements.overviewStart()}
       </button>
     </div>
   {/if}
@@ -229,17 +230,17 @@
 <DashboardPageLayout
   {actionButtons}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-crown"
   statusMessages={statusMessageContent}
-  subtitle="Milestones, badges, and ranks members earn by taking part"
+  subtitle={m.achievements.pageSubtitle()}
   {tabs}
-  title="Achievements"
+  title={m.features.achievementsName()}
 >
   {#if !loaded}
     <div class="flex items-center justify-center py-16" style="color: {$colorStore.muted}">
       <i class="fa-solid fa-spinner fa-spin text-2xl" aria-hidden="true"></i>
-      <span class="sr-only">Loading</span>
+      <span class="sr-only">{m.common.loading()}</span>
     </div>
   {:else if overview && catalog}
     <div class:hidden={activeTab !== 'overview'}>

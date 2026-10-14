@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
 
@@ -17,15 +18,30 @@
   } = $props();
 
   function getRoleName(roleId: bigint | null): string {
-    if (!roleId) return "None";
+    if (!roleId) return m.common.none();
     const role = availableRoles.find((r: any) => BigInt(r.id) === roleId);
-    return role ? role.name : `Role ${roleId.toString()}`;
+    return role ? role.name : m.common.roleFallback({ id: roleId.toString() });
   }
 
   function getChannelName(channelId: bigint | null): string {
-    if (!channelId) return "None";
+    if (!channelId) return m.common.none();
     const channel = guildChannels.find((c: any) => BigInt(c.id) === channelId);
-    return channel ? channel.name : `Channel ${channelId.toString()}`;
+    return channel ? channel.name : m.common.channelFallback({ id: channelId.toString() });
+  }
+
+  function getProtectionName(key: string): string {
+    switch (key) {
+      case "antiRaid": return m.common.antiRaid();
+      case "antiSpam": return m.common.antiSpam();
+      case "antiAlt": return m.common.antiAlt();
+      case "antiMassMention": return m.common.antiMassMention();
+      case "antiPattern": return m.administration.overviewAntiPattern();
+      case "antiMassPost": return m.administration.overviewAntiMassPost();
+      case "antiPostChannel": return m.administration.overviewAntiPostChannel();
+      case "antiImageHash": return m.administration.overviewAntiImageHash();
+      case "antiExternalApp": return m.administration.overviewAntiExternalApp();
+      default: return key;
+    }
   }
 </script>
 
@@ -47,13 +63,13 @@
           <i class="fa-utility-duo fa-regular fa-shield"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
         </div>
-        <h3 class="font-semibold text-sm sm:text-base" style="color: {$colorStore.text}">Protection</h3>
+        <h3 class="font-semibold text-sm sm:text-base" style="color: {$colorStore.text}">{m.common.protection()}</h3>
       </div>
       <div class="space-y-2">
         <div class="text-2xl font-bold" style="color: {$colorStore.primary}">
           {Object.values(protectionStatus).filter((p: any) => p?.enabled).length}/7
         </div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Systems Active</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.overviewSystemsActive()}</div>
       </div>
     </div>
 
@@ -66,13 +82,13 @@
           <i class="fa-utility-duo fa-regular fa-users"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
         </div>
-        <h3 class="font-semibold" style="color: {$colorStore.text}">Roles</h3>
+        <h3 class="font-semibold" style="color: {$colorStore.text}">{m.common.roles()}</h3>
       </div>
       <div class="space-y-2">
         <div class="text-2xl font-bold" style="color: {$colorStore.secondary}">
           {selfAssignableRoles?.roles?.length || 0}
         </div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Self-Assignable</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.overviewSelfAssignable()}</div>
       </div>
     </div>
 
@@ -85,13 +101,13 @@
           <i class="fa-utility-duo fa-regular fa-users"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
         </div>
-        <h3 class="font-semibold" style="color: {$colorStore.text}">Auto-Assign</h3>
+        <h3 class="font-semibold" style="color: {$colorStore.text}">{m.common.autoAssign()}</h3>
       </div>
       <div class="space-y-2">
         <div class="text-2xl font-bold" style="color: {$colorStore.accent}">
           {(autoAssignRoles.normalRoles?.length || 0) + (autoAssignRoles.botRoles?.length || 0)}
         </div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Active Rules</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.overviewActiveRules()}</div>
       </div>
     </div>
 
@@ -104,13 +120,13 @@
           <i class="fa-utility-duo fa-regular fa-clock"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
         </div>
-        <h3 class="font-semibold" style="color: {$colorStore.text}">Cooldowns</h3>
+        <h3 class="font-semibold" style="color: {$colorStore.text}">{m.administration.overviewCooldowns()}</h3>
       </div>
       <div class="space-y-2">
         <div class="text-2xl font-bold" style="color: {$colorStore.primary}">
           {commandCooldowns.length}
         </div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Commands</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.common.commands()}</div>
       </div>
     </div>
   </div>
@@ -125,7 +141,7 @@
         <i class="fa-utility-duo fa-regular fa-bolt"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
-      <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Quick Actions</h2>
+      <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.quickActions()}</h2>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -137,10 +153,10 @@
         <div class="flex items-center gap-3 mb-2">
           <i class="fa-utility-duo fa-regular fa-shield"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <span class="font-medium" style="color: {$colorStore.text}">Configure Protection</span>
+          <span class="font-medium" style="color: {$colorStore.text}">{m.administration.overviewConfigureProtection()}</span>
         </div>
         <p class="text-sm" style="color: {$colorStore.muted}">
-          Set up anti-raid, anti-spam, and pattern detection
+          {m.administration.overviewConfigureProtectionHint()}
         </p>
       </button>
 
@@ -152,10 +168,10 @@
         <div class="flex items-center gap-3 mb-2">
           <i class="fa-utility-duo fa-regular fa-users"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <span class="font-medium" style="color: {$colorStore.text}">Manage Roles</span>
+          <span class="font-medium" style="color: {$colorStore.text}">{m.common.permManageRoles()}</span>
         </div>
         <p class="text-sm" style="color: {$colorStore.muted}">
-          Configure role assignment and permissions
+          {m.administration.overviewManageRolesHint()}
         </p>
       </button>
 
@@ -167,10 +183,10 @@
         <div class="flex items-center gap-3 mb-2">
           <i class="fa-utility-duo fa-regular fa-gear"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <span class="font-medium" style="color: {$colorStore.text}">Server Settings</span>
+          <span class="font-medium" style="color: {$colorStore.text}">{m.common.serverSettings()}</span>
         </div>
         <p class="text-sm" style="color: {$colorStore.muted}">
-          Configure timezone, channels, and automation
+          {m.administration.overviewServerSettingsHint()}
         </p>
       </button>
     </div>
@@ -188,24 +204,24 @@
           <i class="fa-utility-duo fa-regular fa-globe"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         </div>
-        <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Server Configuration</h3>
+        <h3 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.overviewServerConfiguration()}</h3>
       </div>
 
       <div class="space-y-3">
         <div class="flex justify-between items-center">
-          <span style="color: {$colorStore.muted}">Staff Role:</span>
+          <span style="color: {$colorStore.muted}">{m.administration.overviewStaffRole()}</span>
           <span style="color: {$colorStore.text}">{getRoleName(staffRole)}</span>
         </div>
         <div class="flex justify-between items-center">
-          <span style="color: {$colorStore.muted}">Member Role:</span>
+          <span style="color: {$colorStore.muted}">{m.administration.overviewMemberRole()}</span>
           <span style="color: {$colorStore.text}">{getRoleName(memberRole)}</span>
         </div>
         <div class="flex justify-between items-center">
-          <span style="color: {$colorStore.muted}">Timezone:</span>
+          <span style="color: {$colorStore.muted}">{m.common.timezoneLabel()}</span>
           <span style="color: {$colorStore.text}">{guildTimezone}</span>
         </div>
         <div class="flex justify-between items-center">
-          <span style="color: {$colorStore.muted}">Game Voice Channel:</span>
+          <span style="color: {$colorStore.muted}">{m.administration.overviewGameVoiceChannel()}</span>
           <span style="color: {$colorStore.text}">{getChannelName(gameVoiceChannel)}</span>
         </div>
       </div>
@@ -221,7 +237,7 @@
           <i class="fa-utility-duo fa-regular fa-shield"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         </div>
-        <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Protection Status</h3>
+        <h3 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.overviewProtectionStatus()}</h3>
       </div>
 
       <div class="space-y-3">
@@ -229,21 +245,13 @@
           {@const s = status as any}
           <div class="flex justify-between items-center">
             <span style="color: {$colorStore.muted}">
-              {key === 'antiRaid' ? 'Anti-Raid' :
-                key === 'antiSpam' ? 'Anti-Spam' :
-                  key === 'antiAlt' ? 'Anti-Alt' :
-                    key === 'antiMassMention' ? 'Anti-Mass Mention' :
-                      key === 'antiPattern' ? 'Anti-Pattern' :
-                        key === 'antiMassPost' ? 'Anti-Mass-Post' :
-                          key === 'antiPostChannel' ? 'Anti-Post-Channel' :
-                            key === 'antiImageHash' ? 'Anti-Image-Hash' :
-                              key === 'antiExternalApp' ? 'Anti-External App' : key}:
+              {m.administration.overviewStatusLabel({ name: getProtectionName(key) })}
             </span>
             <span class="flex items-center gap-2">
               <div class="w-2 h-2 rounded-full"
                    style="background: {s?.enabled ? $colorStore.primary : $colorStore.muted}40;"></div>
               <span style="color: {s?.enabled ? $colorStore.primary : $colorStore.muted}">
-                {s?.enabled ? 'Active' : 'Disabled'}
+                {s?.enabled ? m.common.active() : m.common.disabled()}
               </span>
             </span>
           </div>

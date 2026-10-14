@@ -1,5 +1,6 @@
 <!-- routes/dashboard/starboard/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import { onMount } from "svelte";
@@ -73,13 +74,13 @@
       loadingStarboards = true;
       errorStarboards = null;
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
 
       starboards = await starboardApi.getStarboards($currentGuild.id);
     } catch (err) {
       logger.error("Failed to fetch starboards:", err);
-      errorStarboards = err instanceof Error ? err.message : "Failed to fetch starboards";
+      errorStarboards = err instanceof Error ? err.message : m.starboard.errorFetch();
     } finally {
       loadingStarboards = false;
     }
@@ -88,7 +89,7 @@
   async function fetchGuildChannels() {
     try {
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
 
       guildTextChannels = await clientApi.getTextChannels($currentGuild.id);
@@ -100,8 +101,8 @@
   async function createStarboard() {
     try {
       creatingStarboard = true;
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-      if (!newStarboard.channelId) throw new Error("No channel selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
+      if (!newStarboard.channelId) throw new Error(m.common.noChannelSelected());
 
       await starboardApi.createStarboard(
         $currentGuild.id,
@@ -110,7 +111,7 @@
         newStarboard.threshold
       );
 
-      showNotificationMessage("Starboard created successfully", "success");
+      showNotificationMessage(m.starboard.notifyCreated(), "success");
 
       // Reset form
       newStarboard = {
@@ -122,7 +123,7 @@
       await fetchStarboards();
     } catch (err) {
       logger.error("Failed to create starboard:", err);
-      showNotificationMessage(err instanceof Error ? err.message : "Failed to create starboard", "error");
+      showNotificationMessage(err instanceof Error ? err.message : m.starboard.errorCreate(), "error");
     } finally {
       creatingStarboard = false;
     }
@@ -130,16 +131,16 @@
 
   async function deleteStarboard(starboardId: number) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
 
       await starboardApi.deleteStarboard($currentGuild.id, starboardId);
-      showNotificationMessage("Starboard deleted successfully", "success");
+      showNotificationMessage(m.starboard.notifyDeleted(), "success");
       await fetchStarboards();
       showDeleteModal = false;
       starboardToDelete = null;
     } catch (err) {
       logger.error("Failed to delete starboard:", err);
-      showNotificationMessage("Failed to delete starboard", "error");
+      showNotificationMessage(m.starboard.errorDelete(), "error");
     }
   }
 
@@ -191,7 +192,7 @@
       await refreshEditStarboard(starboardId);
     } catch (err: any) {
       logger.error("Failed to add starboard emote:", err);
-      showNotificationMessage(err?.message?.includes("already") ? "That emote is already used by another starboard" : "Failed to add emote", "error");
+      showNotificationMessage(err?.message?.includes("already") ? m.starboard.errorEmoteInUse() : m.starboard.errorAddEmote(), "error");
     } finally {
       emoteBusy = false;
     }
@@ -205,7 +206,7 @@
       await refreshEditStarboard(starboardId);
     } catch (err) {
       logger.error("Failed to remove starboard emote:", err);
-      showNotificationMessage("Failed to remove emote", "error");
+      showNotificationMessage(m.starboard.errorRemoveEmote(), "error");
     } finally {
       emoteBusy = false;
     }
@@ -213,66 +214,66 @@
 
   async function toggleAllowBots(starboardId: number, currentValue: boolean) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
 
       const result = await starboardApi.setAllowBots($currentGuild.id, starboardId, !currentValue);
-      showNotificationMessage(`Bot messages will ${result ? "be" : "not be"} starred`, "success");
+      showNotificationMessage(result ? m.starboard.notifyAllowBotsOn() : m.starboard.notifyAllowBotsOff(), "success");
       await fetchStarboards();
     } catch (err) {
       logger.error("Failed to toggle allow bots setting:", err);
-      showNotificationMessage("Failed to update setting", "error");
+      showNotificationMessage(m.common.notifyUpdateFailed(), "error");
     }
   }
 
   async function toggleRemoveOnDelete(starboardId: number, currentValue: boolean) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
 
       const result = await starboardApi.setRemoveOnDelete($currentGuild.id, starboardId, !currentValue);
-      showNotificationMessage(`Starred messages will ${result ? "be" : "not be"} removed when original is deleted`, "success");
+      showNotificationMessage(result ? m.starboard.notifyRemoveOnDeleteOn() : m.starboard.notifyRemoveOnDeleteOff(), "success");
       await fetchStarboards();
     } catch (err) {
       logger.error("Failed to toggle remove on delete setting:", err);
-      showNotificationMessage("Failed to update setting", "error");
+      showNotificationMessage(m.common.notifyUpdateFailed(), "error");
     }
   }
 
   async function toggleRemoveOnClear(starboardId: number, currentValue: boolean) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
 
       const result = await starboardApi.setRemoveOnClear($currentGuild.id, starboardId, !currentValue);
-      showNotificationMessage(`Starred messages will ${result ? "be" : "not be"} removed when reactions are cleared`, "success");
+      showNotificationMessage(result ? m.starboard.notifyRemoveOnClearOn() : m.starboard.notifyRemoveOnClearOff(), "success");
       await fetchStarboards();
     } catch (err) {
       logger.error("Failed to toggle remove on clear setting:", err);
-      showNotificationMessage("Failed to update setting", "error");
+      showNotificationMessage(m.common.notifyUpdateFailed(), "error");
     }
   }
 
   async function toggleRemoveBelowThreshold(starboardId: number, currentValue: boolean) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
 
       const result = await starboardApi.setRemoveBelowThreshold($currentGuild.id, starboardId, !currentValue);
-      showNotificationMessage(`Starred messages will ${result ? "be" : "not be"} removed when below threshold`, "success");
+      showNotificationMessage(result ? m.starboard.notifyRemoveBelowOn() : m.starboard.notifyRemoveBelowOff(), "success");
       await fetchStarboards();
     } catch (err) {
       logger.error("Failed to toggle remove below threshold setting:", err);
-      showNotificationMessage("Failed to update setting", "error");
+      showNotificationMessage(m.common.notifyUpdateFailed(), "error");
     }
   }
 
   async function toggleUseBlacklist(starboardId: number, currentValue: boolean) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
 
       const result = await starboardApi.setUseBlacklist($currentGuild.id, starboardId, !currentValue);
-      showNotificationMessage(`Now using ${result ? "blacklist" : "whitelist"} mode for channels`, "success");
+      showNotificationMessage(result ? m.starboard.notifyModeBlacklist() : m.starboard.notifyModeWhitelist(), "success");
       await fetchStarboards();
     } catch (err) {
       logger.error("Failed to toggle blacklist mode:", err);
-      showNotificationMessage("Failed to update setting", "error");
+      showNotificationMessage(m.common.notifyUpdateFailed(), "error");
     }
   }
 
@@ -281,11 +282,11 @@
       if (!$currentGuild?.id || !currentEditStarboard) throw new Error("No guild or starboard selected");
 
       await starboardApi.setStarThreshold($currentGuild.id, currentEditStarboard.id, editStarThreshold);
-      showNotificationMessage(`Star threshold updated to ${editStarThreshold}`, "success");
+      showNotificationMessage(m.starboard.notifyStarThreshold({ threshold: editStarThreshold }), "success");
       await fetchStarboards();
     } catch (err) {
       logger.error("Failed to update star threshold:", err);
-      showNotificationMessage("Failed to update threshold", "error");
+      showNotificationMessage(m.starboard.errorUpdateThreshold(), "error");
     }
   }
 
@@ -296,15 +297,15 @@
       await starboardApi.setRepostThreshold($currentGuild.id, currentEditStarboard.id, editRepostThreshold);
 
       if (editRepostThreshold === 0) {
-        showNotificationMessage("Reposting disabled", "success");
+        showNotificationMessage(m.starboard.notifyRepostDisabled(), "success");
       } else {
-        showNotificationMessage(`Repost threshold updated to ${editRepostThreshold}`, "success");
+        showNotificationMessage(m.starboard.notifyRepostThreshold({ threshold: editRepostThreshold }), "success");
       }
 
       await fetchStarboards();
     } catch (err) {
       logger.error("Failed to update repost threshold:", err);
-      showNotificationMessage("Failed to update threshold", "error");
+      showNotificationMessage(m.starboard.errorUpdateThreshold(), "error");
     }
   }
 
@@ -316,9 +317,9 @@
       const result = await starboardApi.toggleChannel($currentGuild.id, selectedStarboardId, BigInt(selectedChannelId));
 
       if (result.wasAdded) {
-        showNotificationMessage(`Channel added to ${result.config.useBlacklist ? "blacklist" : "whitelist"}`, "success");
+        showNotificationMessage(result.config.useBlacklist ? m.starboard.notifyChannelAddedBlacklist() : m.starboard.notifyChannelAddedWhitelist(), "success");
       } else {
-        showNotificationMessage(`Channel removed from ${result.config.useBlacklist ? "blacklist" : "whitelist"}`, "success");
+        showNotificationMessage(result.config.useBlacklist ? m.starboard.notifyChannelRemovedBlacklist() : m.starboard.notifyChannelRemovedWhitelist(), "success");
       }
 
       // Update the local checked channels
@@ -328,7 +329,7 @@
       selectedChannelId = "";
     } catch (err) {
       logger.error("Failed to toggle channel:", err);
-      showNotificationMessage("Failed to update channel list", "error");
+      showNotificationMessage(m.starboard.errorUpdateChannels(), "error");
     }
   }
 
@@ -341,7 +342,7 @@
 
   function getChannelName(channelId: string) {
     const channel = guildTextChannels.find(c => c.id === channelId);
-    return channel ? channel.name : `Channel ID: ${channelId}`;
+    return channel ? channel.name : m.common.channelIdLabel({ id: channelId });
   }
 
   function handleChannelChange(detail: any) {
@@ -367,7 +368,7 @@
 </script>
 
 <svelte:head>
-  <title>Starboard - Dashboard</title>
+  <title>{m.starboard.pageHeadTitle()}</title>
 </svelte:head>
 
 {#snippet statusMessages()}
@@ -381,7 +382,7 @@
 <DashboardPageLayout
   actionButtons={[
     {
-      label: "Create Starboard",
+      label: m.starboard.actionCreate(),
       icon: "fa-star",
       action: createStarboard,
       loading: creatingStarboard,
@@ -392,8 +393,8 @@
   statusMessages={statusMessages}
   icon="fa-star"
   guildName={$currentGuild?.name || "Dashboard"}
-  subtitle="Showcase your server's best messages in dedicated channels"
-  title="Starboard"
+  subtitle={m.starboard.pageSubtitle()}
+  title={m.features.starboardName()}
 >
 
     <!-- Create New Starboard Section -->
@@ -412,27 +413,27 @@
              class="fa-utility-duo fa-regular fa-envelope"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         </div>
-        <h2 class="text-lg md:text-xl font-bold" style="color: {$colorStore.text}">Create New Starboard</h2>
+        <h2 class="text-lg md:text-xl font-bold" style="color: {$colorStore.text}">{m.starboard.createHeading()}</h2>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <!-- Channel Selection -->
         <div>
           <span class="block text-sm mb-2" id="starboard-channel-label" style="color: {$colorStore.muted}">
-            Starboard Channel
+            {m.starboard.channelLabel()}
           </span>
           <DiscordSelector
             type="channel"
             options={guildTextChannels}
             selected={newStarboard.channelId}
-            placeholder="Select a channel"
+            placeholder={m.common.selectAChannelPlaceholder()}
             onchange={handleChannelChange} />
         </div>
 
         <!-- Emote Selection -->
         <div>
           <label class="block text-sm mb-2" for="starboard-emote" style="color: {$colorStore.muted}">
-            Emote
+            {m.starboard.emoteLabel()}
           </label>
           <div class="flex flex-col sm:flex-row gap-2">
             <div class="flex flex-wrap items-center gap-2">
@@ -476,7 +477,7 @@
               <input
                 bind:value={customEmojiInput}
                 class="flex-1 p-2 md:p-3 text-sm md:text-base rounded-l-lg bg-gray-900/50 border transition-all duration-200"
-                placeholder="Custom emoji"
+                placeholder={m.starboard.customEmojiPlaceholder()}
                 style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                 type="text"
               >
@@ -486,19 +487,19 @@
                 style="background: {$colorStore.primary}20;
                color: {$colorStore.text};"
               >
-                Set
+                {m.starboard.customEmojiSet()}
               </button>
             </div>
           </div>
           <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-            Current emote: {newStarboard.emote || "None selected"}
+            {m.starboard.currentEmote({ emote: newStarboard.emote || m.starboard.noEmoteSelected() })}
           </p>
         </div>
 
         <!-- Threshold -->
         <div>
           <label class="block text-sm mb-2" for="starboard-threshold" style="color: {$colorStore.muted}">
-            Threshold (reactions needed)
+            {m.starboard.thresholdLabel()}
           </label>
           <input
             bind:value={newStarboard.threshold}
@@ -529,7 +530,7 @@
             {:else}
               <i class="fa-solid fa-star" style="font-size: 16px;"></i>
             {/if}
-            <span>Create Starboard</span>
+            <span>{m.starboard.actionCreate()}</span>
           </button>
         </div>
       </div>
@@ -551,7 +552,7 @@
              class="fa-utility-duo fa-regular fa-star"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         </div>
-        <h2 class="text-lg md:text-xl font-bold" style="color: {$colorStore.text}">Manage Starboards</h2>
+        <h2 class="text-lg md:text-xl font-bold" style="color: {$colorStore.text}">{m.starboard.manageHeading()}</h2>
       </div>
 
       {#if loadingStarboards}
@@ -560,7 +561,7 @@
             class="w-8 h-8 border-3 rounded-full animate-spin"
             style="border-color: {$colorStore.primary}20;
                    border-top-color: {$colorStore.primary};"
-            aria-label="Loading"
+            aria-label={m.common.loading()}
           >
           </div>
         </div>
@@ -584,9 +585,9 @@
           <i class="fa-utility-duo fa-regular fa-star"
              style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"
              aria-hidden="true"></i>
-          <p style="color: {$colorStore.muted}">No starboards configured</p>
+          <p style="color: {$colorStore.muted}">{m.starboard.emptyTitle()}</p>
           <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-            Create your first starboard to showcase your server's best messages
+            {m.starboard.emptyHint()}
           </p>
         </div>
       {:else}
@@ -604,30 +605,28 @@
                     <i class="fa-utility-duo fa-regular fa-star"
                        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"
                        aria-hidden="true"></i>
-                    <h3 class="font-medium text-sm md:text-base" style="color: {$colorStore.text}">Starboard
-                      #{starboard.id}</h3>
+                    <h3 class="font-medium text-sm md:text-base" style="color: {$colorStore.text}">{m.starboard.itemHeading({ id: starboard.id })}</h3>
                   </div>
 
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 md:mb-4">
                     <div class="overflow-hidden">
-                      <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">Channel:</p>
+                      <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">{m.common.channelLabel()}</p>
                       <p class="text-sm md:text-base truncate" style="color: {$colorStore.text}">
                         #{getChannelName(starboard.starboardChannelId.toString())}
                       </p>
                     </div>
                     <div>
-                      <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">Emote:</p>
+                      <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">{m.starboard.itemEmote()}</p>
                       <p class="text-sm md:text-base" style="color: {$colorStore.text}">{starboard.emote}</p>
                     </div>
                     <div>
-                      <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">Threshold:</p>
-                      <p class="text-sm md:text-base" style="color: {$colorStore.text}">{starboard.threshold}
-                        reaction{starboard.threshold !== 1 ? 's' : ''}</p>
+                      <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">{m.starboard.itemThreshold()}</p>
+                      <p class="text-sm md:text-base" style="color: {$colorStore.text}">{starboard.threshold === 1 ? m.starboard.thresholdReactionsOne({ count: starboard.threshold }) : m.starboard.thresholdReactionsOther({ count: starboard.threshold })}</p>
                     </div>
                     <div>
-                      <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">Repost Threshold:</p>
+                      <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">{m.starboard.itemRepostThreshold()}</p>
                       <p class="text-sm md:text-base" style="color: {$colorStore.text}">
-                        {starboard.repostThreshold === 0 ? 'Disabled' : `${starboard.repostThreshold} message${starboard.repostThreshold !== 1 ? 's' : ''}`}
+                        {starboard.repostThreshold === 0 ? m.common.disabled() : starboard.repostThreshold === 1 ? m.starboard.repostMessagesOne({ count: starboard.repostThreshold }) : m.common.messagesCount({ count: starboard.repostThreshold })}
                       </p>
                     </div>
                   </div>
@@ -640,7 +639,7 @@
                         style="background-color: {starboard.useBlacklist ? $colorStore.accent : $colorStore.primary};"
                       ></div>
                       <span class="text-sm" style="color: {$colorStore.muted}">
-                        {starboard.useBlacklist ? 'Blacklist' : 'Whitelist'} Mode
+                        {starboard.useBlacklist ? m.starboard.modeBlacklist() : m.starboard.modeWhitelist()}
                       </span>
                     </div>
                     <div class="flex items-center gap-1">
@@ -649,7 +648,7 @@
                         style="background-color: {starboard.allowBots ? $colorStore.primary : $colorStore.accent};"
                       ></div>
                       <span class="text-sm" style="color: {$colorStore.muted}">
-                        {starboard.allowBots ? 'Allow' : 'Ignore'} Bots
+                        {starboard.allowBots ? m.starboard.botsAllow() : m.common.ignoreBots()}
                       </span>
                     </div>
                     <div class="flex items-center gap-1">
@@ -658,7 +657,7 @@
                         style="background-color: {starboard.removeOnDelete ? $colorStore.primary : $colorStore.accent};"
                       ></div>
                       <span class="text-sm" style="color: {$colorStore.muted}">
-                        {starboard.removeOnDelete ? 'Remove' : 'Keep'} on Delete
+                        {starboard.removeOnDelete ? m.starboard.onDeleteRemove() : m.starboard.onDeleteKeep()}
                       </span>
                     </div>
                     <div class="flex items-center gap-1">
@@ -667,7 +666,7 @@
                         style="background-color: {starboard.removeOnReactionsClear ? $colorStore.primary : $colorStore.accent};"
                       ></div>
                       <span class="text-sm" style="color: {$colorStore.muted}">
-                        {starboard.removeOnReactionsClear ? 'Remove' : 'Keep'} on Clear
+                        {starboard.removeOnReactionsClear ? m.starboard.onClearRemove() : m.starboard.onClearKeep()}
                       </span>
                     </div>
                     <div class="flex items-center gap-1">
@@ -676,7 +675,7 @@
                         style="background-color: {starboard.removeOnBelowThreshold ? $colorStore.primary : $colorStore.accent};"
                       ></div>
                       <span class="text-sm" style="color: {$colorStore.muted}">
-                        {starboard.removeOnBelowThreshold ? 'Remove' : 'Keep'} Below Threshold
+                        {starboard.removeOnBelowThreshold ? m.starboard.belowRemove() : m.starboard.belowKeep()}
                       </span>
                     </div>
                   </div>
@@ -689,7 +688,7 @@
                     onclick={() => openSettingsModal(starboard)}
                     style="background: {$colorStore.primary}20;
                            color: {$colorStore.text};"
-                    aria-label="Starboard settings"
+                    aria-label={m.starboard.settingsAria()}
                   >
                     <i class="fa-solid fa-gear" style="font-size: 20px;"></i>
                   </button>
@@ -698,7 +697,7 @@
                     onclick={() => openChannelsModal(starboard)}
                     style="background: {$colorStore.secondary}20;
                            color: {$colorStore.text};"
-                    aria-label="Manage channels"
+                    aria-label={m.common.permManageChannels()}
                   >
                     <i class="fa-solid fa-hashtag" style="font-size: 20px;"></i>
                   </button>
@@ -707,7 +706,7 @@
                     onclick={() => confirmDeleteStarboard(starboard.id)}
                     style="background: {$colorStore.accent}20;
                            color: {$colorStore.accent};"
-                    aria-label="Delete starboard"
+                    aria-label={m.starboard.deleteAria()}
                   >
                     <i class="fa-solid fa-trash" style="font-size: 20px;"></i>
                   </button>
@@ -729,9 +728,9 @@
         class="bg-gray-900/90 rounded-xl p-6 max-w-md w-full mx-4 border shadow-2xl"
         style="border-color: {$colorStore.accent}30;"
       >
-        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Confirm Delete</h3>
+        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.common.confirmDelete()}</h3>
         <p class="mb-6" style="color: {$colorStore.muted}">
-          Are you sure you want to delete this starboard? This action cannot be undone.
+          {m.starboard.deleteMessage()}
         </p>
         <div class="flex justify-end gap-3">
           <button
@@ -740,7 +739,7 @@
             style="background: {$colorStore.primary}20;
                    color: {$colorStore.text};"
           >
-            Cancel
+            {m.common.cancel()}
           </button>
           <button
             class="px-4 py-2 rounded-lg flex items-center gap-2"
@@ -749,7 +748,7 @@
                    color: {$colorStore.accent};"
           >
             <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
-            <span>Delete</span>
+            <span>{m.common.delete()}</span>
           </button>
         </div>
       </div>
@@ -766,13 +765,13 @@
         class="bg-gray-900/90 rounded-xl p-6 max-w-xl w-full mx-4 border shadow-2xl overflow-y-auto max-h-[90vh]"
         style="border-color: {$colorStore.primary}30;"
       >
-        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Starboard Settings</h3>
+        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.starboard.settingsAria()}</h3>
 
         <div class="space-y-4">
           <!-- Star Threshold -->
           <div>
             <label for="edit-star-threshold" class="block text-sm mb-2" style="color: {$colorStore.muted}">
-              Star Threshold
+              {m.starboard.starThresholdLabel()}
             </label>
             <div class="flex gap-2">
               <input
@@ -791,7 +790,7 @@
                        color: {$colorStore.text};
                        opacity: {editStarThreshold === currentEditStarboard.threshold ? '0.5' : '1'};"
               >
-                Update
+                {m.common.update()}
               </button>
             </div>
           </div>
@@ -799,7 +798,7 @@
           <!-- Repost Threshold -->
           <div>
             <label for="edit-repost-threshold" class="block text-sm mb-2" style="color: {$colorStore.muted}">
-              Repost Threshold (0 to disable)
+              {m.starboard.repostThresholdLabel()}
             </label>
             <div class="flex gap-2">
               <input
@@ -818,7 +817,7 @@
                        color: {$colorStore.text};
                        opacity: {editRepostThreshold === currentEditStarboard.repostThreshold ? '0.5' : '1'};"
               >
-                Update
+                {m.common.update()}
               </button>
             </div>
           </div>
@@ -828,15 +827,15 @@
             class="rounded-xl p-4"
             style="background: {$colorStore.primary}10;"
           >
-            <h4 class="font-medium mb-1" style="color: {$colorStore.text}">Star Emotes</h4>
-            <p class="text-sm mb-3" style="color: {$colorStore.muted}">Any of these reactions counts toward the threshold.</p>
+            <h4 class="font-medium mb-1" style="color: {$colorStore.text}">{m.starboard.emotesHeading()}</h4>
+            <p class="text-sm mb-3" style="color: {$colorStore.muted}">{m.starboard.emotesHint()}</p>
             <div class="flex flex-wrap gap-2 mb-3">
               {#each parseEmotes(currentEditStarboard.emote) as emote (emote)}
                 <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm"
                       style="background: {$colorStore.primary}15; color: {$colorStore.text};">
                   <span>{emote}</span>
                   <button class="rounded-sm hover:opacity-80 min-h-[24px] min-w-[24px] disabled:opacity-30"
-                          aria-label={`Remove emote ${emote}`}
+                          aria-label={m.starboard.removeEmoteAria({ emote })}
                           disabled={emoteBusy || parseEmotes(currentEditStarboard.emote).length <= 1}
                           onclick={() => removeStarEmote(currentEditStarboard.id, emote)}>
                     <i class="fa-solid fa-xmark" style="color: {$colorStore.muted}; font-size: 12px;"></i>
@@ -848,8 +847,8 @@
               <input
                 type="text"
                 bind:value={newStarEmote}
-                placeholder="⭐ or <:name:id>"
-                aria-label="New star emote"
+                placeholder={m.starboard.newEmotePlaceholder()}
+                aria-label={m.starboard.newEmoteAria()}
                 class="flex-1 p-3 rounded-lg border transition-all duration-200 min-h-[44px]"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               >
@@ -859,7 +858,7 @@
                 disabled={emoteBusy || !newStarEmote.trim()}
                 style="background: {$colorStore.primary}20; color: {$colorStore.text};"
               >
-                Add
+                {m.common.add()}
               </button>
             </form>
           </div>
@@ -869,17 +868,17 @@
             class="rounded-xl p-4"
             style="background: {$colorStore.primary}10;"
           >
-            <h4 class="font-medium mb-3" style="color: {$colorStore.text}">Toggle Settings</h4>
+            <h4 class="font-medium mb-3" style="color: {$colorStore.text}">{m.starboard.togglesHeading()}</h4>
 
             <div class="grid grid-cols-1 gap-3">
               <!-- Allow Bots -->
               <div class="flex items-center justify-between">
                 <div>
-                  <p style="color: {$colorStore.text}">Allow Bot Messages</p>
+                  <p style="color: {$colorStore.text}">{m.starboard.allowBotsLabel()}</p>
                   <p class="text-sm" style="color: {$colorStore.muted}">
                     {currentEditStarboard.allowBots
-                      ? 'Bot messages can be starred'
-                      : 'Bot messages are ignored'}
+                      ? m.starboard.allowBotsOn()
+                      : m.starboard.allowBotsOff()}
                   </p>
                 </div>
                 <button
@@ -887,7 +886,7 @@
                   onclick={() => toggleAllowBots(currentEditStarboard.id, currentEditStarboard.allowBots)}
                   style="background: {$colorStore.primary}20;
                          color: {$colorStore.text};"
-                  aria-label={currentEditStarboard.allowBots ? "Disable bot messages" : "Enable bot messages"}
+                  aria-label={currentEditStarboard.allowBots ? m.starboard.allowBotsDisableAria() : m.starboard.allowBotsEnableAria()}
                 >
                   {#if currentEditStarboard.allowBots}
                     <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
@@ -900,11 +899,11 @@
               <!-- Remove on Delete -->
               <div class="flex items-center justify-between">
                 <div>
-                  <p style="color: {$colorStore.text}">Remove on Delete</p>
+                  <p style="color: {$colorStore.text}">{m.starboard.onDeleteRemove()}</p>
                   <p class="text-sm" style="color: {$colorStore.muted}">
                     {currentEditStarboard.removeOnDelete
-                      ? 'Starred messages are removed when original is deleted'
-                      : 'Starred messages remain when original is deleted'}
+                      ? m.starboard.removeOnDeleteOn()
+                      : m.starboard.removeOnDeleteOff()}
                   </p>
                 </div>
                 <button
@@ -912,7 +911,7 @@
                   onclick={() => toggleRemoveOnDelete(currentEditStarboard.id, currentEditStarboard.removeOnDelete)}
                   style="background: {$colorStore.primary}20;
                          color: {$colorStore.text};"
-                  aria-label={currentEditStarboard.removeOnDelete ? "Disable remove on delete" : "Enable remove on delete"}
+                  aria-label={currentEditStarboard.removeOnDelete ? m.starboard.removeOnDeleteDisableAria() : m.starboard.removeOnDeleteEnableAria()}
                 >
                   {#if currentEditStarboard.removeOnDelete}
                     <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
@@ -925,11 +924,11 @@
               <!-- Remove on Reactions Clear -->
               <div class="flex items-center justify-between">
                 <div>
-                  <p style="color: {$colorStore.text}">Remove on Reactions Clear</p>
+                  <p style="color: {$colorStore.text}">{m.starboard.removeOnClearLabel()}</p>
                   <p class="text-sm" style="color: {$colorStore.muted}">
                     {currentEditStarboard.removeOnReactionsClear
-                      ? 'Starred messages are removed when reactions are cleared'
-                      : 'Starred messages remain when reactions are cleared'}
+                      ? m.starboard.removeOnClearOn()
+                      : m.starboard.removeOnClearOff()}
                   </p>
                 </div>
                 <button
@@ -937,7 +936,7 @@
                   onclick={() => toggleRemoveOnClear(currentEditStarboard.id, currentEditStarboard.removeOnReactionsClear)}
                   style="background: {$colorStore.primary}20;
                          color: {$colorStore.text};"
-                  aria-label={currentEditStarboard.removeOnReactionsClear ? "Disable remove on clear" : "Enable remove on clear"}
+                  aria-label={currentEditStarboard.removeOnReactionsClear ? m.starboard.removeOnClearDisableAria() : m.starboard.removeOnClearEnableAria()}
                 >
                   {#if currentEditStarboard.removeOnReactionsClear}
                     <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
@@ -950,11 +949,11 @@
               <!-- Remove Below Threshold -->
               <div class="flex items-center justify-between">
                 <div>
-                  <p style="color: {$colorStore.text}">Remove Below Threshold</p>
+                  <p style="color: {$colorStore.text}">{m.starboard.belowRemove()}</p>
                   <p class="text-sm" style="color: {$colorStore.muted}">
                     {currentEditStarboard.removeOnBelowThreshold
-                      ? 'Starred messages are removed when they fall below threshold'
-                      : 'Starred messages remain when they fall below threshold'}
+                      ? m.starboard.removeBelowOn()
+                      : m.starboard.removeBelowOff()}
                   </p>
                 </div>
                 <button
@@ -962,7 +961,7 @@
                   onclick={() => toggleRemoveBelowThreshold(currentEditStarboard.id, currentEditStarboard.removeOnBelowThreshold)}
                   style="background: {$colorStore.primary}20;
                          color: {$colorStore.text};"
-                  aria-label={currentEditStarboard.removeOnBelowThreshold ? "Disable remove below threshold" : "Enable remove below threshold"}
+                  aria-label={currentEditStarboard.removeOnBelowThreshold ? m.starboard.removeBelowDisableAria() : m.starboard.removeBelowEnableAria()}
                 >
                   {#if currentEditStarboard.removeOnBelowThreshold}
                     <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
@@ -975,11 +974,11 @@
               <!-- Use Blacklist Mode -->
               <div class="flex items-center justify-between">
                 <div>
-                  <p style="color: {$colorStore.text}">Channel Mode</p>
+                  <p style="color: {$colorStore.text}">{m.starboard.channelModeLabel()}</p>
                   <p class="text-sm" style="color: {$colorStore.muted}">
                     {currentEditStarboard.useBlacklist
-                      ? 'Blacklist: Listed channels are ignored'
-                      : 'Whitelist: Only listed channels are checked'}
+                      ? m.starboard.channelModeBlacklist()
+                      : m.starboard.channelModeWhitelist()}
                   </p>
                 </div>
                 <button
@@ -987,7 +986,7 @@
                   onclick={() => toggleUseBlacklist(currentEditStarboard.id, currentEditStarboard.useBlacklist)}
                   style="background: {$colorStore.primary}20;
                          color: {$colorStore.text};"
-                  aria-label={currentEditStarboard.useBlacklist ? "Use whitelist mode" : "Use blacklist mode"}
+                  aria-label={currentEditStarboard.useBlacklist ? m.starboard.useWhitelistAria() : m.starboard.useBlacklistAria()}
                 >
                   {#if currentEditStarboard.useBlacklist}
                     <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
@@ -1007,7 +1006,7 @@
             style="background: {$colorStore.primary}20;
                    color: {$colorStore.text};"
           >
-            Close
+            {m.common.close()}
           </button>
         </div>
       </div>
@@ -1024,18 +1023,18 @@
         class="bg-gray-900/90 rounded-xl p-6 max-w-xl w-full mx-4 border shadow-2xl overflow-y-auto max-h-[90vh]"
         style="border-color: {$colorStore.primary}30;"
       >
-        <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">Manage Channels</h3>
+        <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">{m.common.permManageChannels()}</h3>
         <p class="mb-4" style="color: {$colorStore.muted}">
           {currentEditStarboard.useBlacklist
-            ? 'Blacklist Mode: Listed channels will be ignored'
-            : 'Whitelist Mode: Only listed channels will be checked'}
+            ? m.starboard.channelsBlacklistHint()
+            : m.starboard.channelsWhitelistHint()}
         </p>
 
         <div class="space-y-4">
           <!-- Add Channel -->
           <div>
             <span id="addremove-channel-label" class="block text-sm mb-2" style="color: {$colorStore.muted}">
-              Add/Remove Channel
+              {m.starboard.addRemoveChannel()}
             </span>
             <div class="flex gap-2">
               <div class="flex-1">
@@ -1043,7 +1042,7 @@
                   type="channel"
                   options={guildTextChannels}
                   selected={selectedChannelId}
-                  placeholder="Select a channel"
+                  placeholder={m.common.selectAChannelPlaceholder()}
                   onchange={handleChannelListChange} />
               </div>
               <button
@@ -1055,7 +1054,7 @@
                        opacity: {!selectedChannelId ? '0.5' : '1'};"
               >
                 <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 16px;"></i>
-                <span>Toggle</span>
+                <span>{m.common.toggle()}</span>
               </button>
             </div>
           </div>
@@ -1063,7 +1062,7 @@
           <!-- Channel List -->
           <div>
             <h4 class="font-medium mb-2" style="color: {$colorStore.text}">
-              {currentEditStarboard.useBlacklist ? 'Blacklisted' : 'Whitelisted'} Channels
+              {currentEditStarboard.useBlacklist ? m.starboard.channelsListBlacklisted() : m.starboard.channelsListWhitelisted()}
             </h4>
             <div
               class="p-3 rounded-lg max-h-64 overflow-y-auto"
@@ -1071,7 +1070,7 @@
             >
               {#if parsedCheckedChannels.length === 0}
                 <p class="text-sm italic" style="color: {$colorStore.muted}">
-                  No channels {currentEditStarboard.useBlacklist ? 'blacklisted' : 'whitelisted'}
+                  {currentEditStarboard.useBlacklist ? m.starboard.channelsNoneBlacklisted() : m.starboard.channelsNoneWhitelisted()}
                 </p>
               {:else}
                 <ul class="space-y-2">
@@ -1084,7 +1083,7 @@
                         onclick={() => { selectedChannelId = channelId; toggleChannelInList(); }}
                         style="background: {$colorStore.accent}20;
                                color: {$colorStore.accent};"
-                        aria-label="Remove channel"
+                        aria-label={m.starboard.removeChannelAria()}
                       >
                         <i class="fa-solid fa-filter" style="font-size: 16px;"></i>
                       </button>
@@ -1103,7 +1102,7 @@
             style="background: {$colorStore.primary}20;
                    color: {$colorStore.text};"
           >
-            Close
+            {m.common.close()}
           </button>
         </div>
       </div>

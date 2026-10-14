@@ -1,6 +1,7 @@
 // lib/stores/searchStore.ts
 import { writable } from 'svelte/store';
-import { allFeatures, type NavigationItem } from '$lib/config/navigationItems';
+import { m } from '$lib/i18n';
+import { allFeatures, type NavigationItem, categoryLabel } from "$lib/config/navigationItems";
 import dashboardTabIndex from '$lib/config/dashboardTabIndex.json';
 
 export interface SearchableItem {
@@ -20,11 +21,16 @@ export interface SearchableItem {
 // Dynamic search registry
 let dynamicSearchRegistry: SearchableItem[] = [];
 
-const dashboardTabs: SearchableItem[] = [
+/**
+ * Built on demand rather than at module load so the display text follows the active locale.
+ * `category` stays an English key: the palette filters and groups by it.
+ */
+function buildDashboardTabs(): SearchableItem[] {
+  return [
   {
     id: 'overview-tab',
-    title: 'Overview',
-    description: 'Server stats and bot status',
+    title: m.common.overview(),
+    description: m.layout.tabbedOverviewDescription(),
     type: 'tab',
     path: '/dashboard?tab=overview',
     icon: 'fa-utility-duo fa-regular fa-house',
@@ -33,8 +39,8 @@ const dashboardTabs: SearchableItem[] = [
   },
   {
     id: 'community-tab',
-    title: 'Community',
-    description: 'XP, suggestions, tickets, birthdays',
+    title: m.features.categoryCommunity(),
+    description: m.layout.searchTabCommunityDescription(),
     type: 'tab',
     path: '/dashboard?tab=community',
     icon: 'fa-utility-duo fa-regular fa-users',
@@ -43,8 +49,8 @@ const dashboardTabs: SearchableItem[] = [
   },
   {
     id: 'entertainment-tab',
-    title: 'Entertainment',
-    description: 'Music, voice, giveaways',
+    title: m.features.categoryEntertainment(),
+    description: m.layout.tabbedEntertainmentDescription(),
     type: 'tab',
     path: '/dashboard?tab=entertainment',
     icon: 'fa-utility-duo fa-regular fa-music',
@@ -53,8 +59,8 @@ const dashboardTabs: SearchableItem[] = [
   },
   {
     id: 'actions-tab',
-    title: 'Actions',
-    description: 'Greets, triggers, embeds',
+    title: m.features.categoryActions(),
+    description: m.layout.tabbedActionsDescription(),
     type: 'tab',
     path: '/dashboard?tab=actions',
     icon: 'fa-utility-duo fa-regular fa-bolt',
@@ -63,8 +69,8 @@ const dashboardTabs: SearchableItem[] = [
   },
   {
     id: 'security-tab',
-    title: 'Security',
-    description: 'Moderation and protection',
+    title: m.features.categorySecurity(),
+    description: m.layout.tabbedSecurityDescription(),
     type: 'tab',
     path: '/dashboard?tab=security',
     icon: 'fa-utility-duo fa-regular fa-shield',
@@ -73,15 +79,16 @@ const dashboardTabs: SearchableItem[] = [
   },
   {
     id: 'settings-tab',
-    title: 'Settings',
-    description: 'Bot config and roles',
+    title: m.common.settings(),
+    description: m.layout.tabbedSettingsDescription(),
     type: 'tab',
     path: '/dashboard?tab=settings',
     icon: 'fa-utility-duo fa-regular fa-cog',
     keywords: ['settings', 'config', 'configuration', 'roles', 'setup'],
     category: 'Navigation'
   },
-];
+  ];
+}
 
 /**
  * The one matcher both the command palette and the sidebar filter run, so a term
@@ -98,6 +105,7 @@ export function matchesSearchTerms(
     fields.title.toLowerCase().includes(term) ||
     (fields.description?.toLowerCase().includes(term) ?? false) ||
     (fields.category?.toLowerCase().includes(term) ?? false) ||
+    (fields.category ? categoryLabel(fields.category).toLowerCase().includes(term) : false) ||
     (fields.keywords ?? []).some(keyword => keyword.toLowerCase().includes(term))
   );
 }
@@ -121,19 +129,18 @@ function toSearchableItem(item: NavigationItem): SearchableItem {
 
   return {
     id: `feature-${slug}`,
-    title: item.label,
-    description: item.description ?? '',
+    title: item.label(),
+    description: item.description?.() ?? "",
     type: 'feature',
     path: item.href,
     tab: tabForCategory[item.category],
     icon: item.icon,
-    keywords: [item.label.toLowerCase(), ...(item.keywords ?? [])],
+    keywords: [item.label().toLowerCase(), ...(item.keywords ?? [])],
     category: item.category,
     ownerOnly: item.ownerOnly,
   };
 }
 
-const featureSearchItems: SearchableItem[] = allFeatures.map(toSearchableItem);
 
 interface IndexedTab {
   id: string;
@@ -146,7 +153,8 @@ interface IndexedTab {
  * a setting inside a page is findable before that page has ever been opened. Live
  * registrations from DashboardPageLayout replace these by id once a page mounts.
  */
-const pageTabSearchItems: SearchableItem[] = Object.entries(
+function buildPageTabSearchItems(): SearchableItem[] {
+  return Object.entries(
   dashboardTabIndex as Record<string, { tabs: IndexedTab[]; subTabs?: IndexedTab[] }>
 ).flatMap(([basePath, entry]) => {
   const feature = allFeatures.find(item => item.href === basePath);
@@ -155,16 +163,17 @@ const pageTabSearchItems: SearchableItem[] = Object.entries(
   return [...entry.tabs, ...(entry.subTabs ?? [])].map(tab => ({
     id: `${basePath}-${tab.id}`,
     title: tab.label,
-    description: `${tab.label} in ${feature.label}`,
+    description: m.layout.searchTabInFeature({ tab: tab.label, feature: feature.label() }),
     type: 'setting' as const,
     path: `${basePath}#${tab.id}`,
     tab: tabForCategory[feature.category],
     icon: `fa-solid ${tab.icon}`,
-    keywords: [tab.label.toLowerCase(), feature.label.toLowerCase(), ...(feature.keywords ?? [])],
+    keywords: [tab.label.toLowerCase(), feature.label().toLowerCase(), ...(feature.keywords ?? [])],
     category: feature.category,
     ownerOnly: feature.ownerOnly,
   }));
-});
+  });
+}
 
 // Registration functions for dynamic features
 export function registerSearchFeatures(features: SearchableItem[]) {
@@ -196,7 +205,7 @@ export function registerTabFeatures(
     features.push({
       id: `${basePath}-${tab.id}`,
       title: tab.label,
-      description: `${tab.label} settings for ${pageTitle}`,
+      description: m.layout.searchTabSettingsForPage({ tab: tab.label, page: pageTitle }),
       type: 'setting',
       path: `${basePath}#${tab.id}`,
       tab: category.toLowerCase(),
@@ -213,7 +222,7 @@ export function registerTabFeatures(
     features.push({
       id: `${basePath}-${subTab.id}`,
       title: subTab.label,
-      description: `${subTab.label} in ${parentTab?.label || 'settings'}`,
+      description: m.layout.searchSubTabInTab({ subTab: subTab.label, tab: parentTab?.label || m.common.settings() }),
       type: 'setting',
       path: `${basePath}#${subTab.id}`,
       tab: category.toLowerCase(),
@@ -234,7 +243,7 @@ export function registerTabFeatures(
 export function getSearchableFeatures(isOwner: boolean = false): SearchableItem[] {
   const byId = new Map<string, SearchableItem>();
 
-  for (const item of [...dashboardTabs, ...featureSearchItems, ...pageTabSearchItems, ...dynamicSearchRegistry]) {
+  for (const item of [...buildDashboardTabs(), ...allFeatures.map(toSearchableItem), ...buildPageTabSearchItems(), ...dynamicSearchRegistry]) {
     byId.set(item.id, item);
   }
 

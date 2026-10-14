@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   /**
    * The page controls above a form's question list: the tab strip, and the heading and intro of
    * whichever page is being edited.
@@ -8,6 +9,7 @@
    */
   import { type FormPage, type PageableQuestion } from "$lib/api/forms/models";
   import * as pageOps from "$lib/utils/formPages";
+  import { pageLabel } from "./formLabels";
   import { colorStore } from "$lib/stores/colorStore";
 
   interface Props {
@@ -46,7 +48,7 @@
     const result = pageOps.movePage(questions, activePage, direction);
 
     if (!result) {
-      onNotify?.("Give the first page a heading before moving pages around", "error");
+      onNotify?.(m.forms.pageBarHeadingNeeded(), "error");
       return;
     }
 
@@ -87,9 +89,9 @@
         style="background: {activePage === index ? $colorStore.primary + '25' : $colorStore.primary + '08'};
                color: {activePage === index ? $colorStore.text : $colorStore.muted};
                border: 1px solid {activePage === index ? $colorStore.primary + '40' : $colorStore.primary + '20'};"
-        title={pageOps.pageLabel(pages, index)}
+        title={pageLabel(pages, index)}
       >
-        {index + 1}. {pageOps.pageLabel(pages, index)}
+        {index + 1}. {pageLabel(pages, index)}
       </button>
     {/each}
   </div>
@@ -103,7 +105,7 @@
     <div class="flex flex-wrap items-center justify-between gap-2">
       <span class="text-xs font-medium" style="color: {$colorStore.muted};">
         <i class="fa-solid fa-heading mr-1"></i>
-        Page {activePage + 1} heading
+        {m.forms.pageBarHeadingTitle({ number: activePage + 1 })}
       </span>
 
       <div class="flex flex-wrap items-center gap-1">
@@ -114,7 +116,7 @@
           class="text-xs px-2 py-1.5 rounded transition-colors disabled:opacity-30"
           style="background: {$colorStore.primary}10; color: {$colorStore.text};"
         >
-          <i class="fa-solid fa-arrow-left mr-1"></i>Move back
+          <i class="fa-solid fa-arrow-left mr-1"></i>{m.forms.pageBarMoveBack()}
         </button>
         <button
           type="button"
@@ -123,16 +125,16 @@
           class="text-xs px-2 py-1.5 rounded transition-colors disabled:opacity-30"
           style="background: {$colorStore.primary}10; color: {$colorStore.text};"
         >
-          Move forward<i class="fa-solid fa-arrow-right ml-1"></i>
+          {m.forms.pageBarMoveForward()}<i class="fa-solid fa-arrow-right ml-1"></i>
         </button>
         <button
           type="button"
           onclick={remove}
           class="text-xs px-2 py-1.5 rounded transition-colors"
           style="background: #ef444420; color: #ef4444;"
-          title="Removes the page break. Its questions join the page above."
+          title={m.forms.pageBarRemovePageHint()}
         >
-          <i class="fa-solid fa-trash mr-1"></i>Remove page
+          <i class="fa-solid fa-trash mr-1"></i>{m.forms.pageBarRemovePage()}
         </button>
       </div>
     </div>
@@ -142,10 +144,10 @@
       value={heading.questionText || ""}
       oninput={(e) => updateHeading("questionText", e.currentTarget.value)}
       maxlength="500"
-      placeholder="Page title, shown above its questions"
+      placeholder={m.forms.pageBarTitlePlaceholder()}
       class="w-full p-2 rounded-lg text-sm"
       style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}25; color: {$colorStore.text};"
-      aria-label="Page title"
+      aria-label={m.forms.pageBarTitleLabel()}
     />
 
     <textarea
@@ -153,10 +155,10 @@
       oninput={(e) => updateHeading("placeholder", e.currentTarget.value)}
       rows="2"
       maxlength="500"
-      placeholder="Optional introduction for this page"
+      placeholder={m.forms.pageBarIntroPlaceholder()}
       class="w-full p-2 rounded-lg text-sm resize-none"
       style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}25; color: {$colorStore.text};"
-      aria-label="Page introduction"
+      aria-label={m.forms.pageBarIntroLabel()}
     ></textarea>
   </div>
 {:else}
@@ -168,7 +170,7 @@
       style="background: {$colorStore.primary}10; color: {$colorStore.muted};"
     >
       <i class="fa-solid fa-heading mr-1"></i>
-      Add a heading to this page
+      {m.forms.pageBarAddHeading()}
     </button>
   </div>
 {/if}

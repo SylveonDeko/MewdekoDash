@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -30,8 +31,8 @@
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
       <div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Alt Protection</h2>
-        <p class="text-sm" style="color: {$colorStore.muted}">Block young accounts</p>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.protectionAltTitle()}</h2>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionAltSubtitle()}</p>
       </div>
     </div>
 
@@ -45,10 +46,10 @@
       >
         {#if protectionStatus.antiAlt.enabled}
           <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
-          Enabled
+          {m.common.enabled()}
         {:else}
           <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
-          Disabled
+          {m.common.disabled()}
         {/if}
       </button>
 
@@ -63,7 +64,7 @@
           {:else}
             <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
           {/if}
-          {expandedProtectionCard === 'antiAlt' ? 'Collapse' : 'Configure'}
+          {expandedProtectionCard === 'antiAlt' ? m.common.collapse() : m.common.configure()}
         </button>
       {/if}
     </div>
@@ -74,19 +75,19 @@
       <div class="text-center">
         <div class="text-2xl font-bold"
              style="color: {$colorStore.primary}">{Math.floor(protectionStatus.antiAlt.minAgeMinutes / 1440)}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Min Account Age (days)</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.common.minAccountAgeDays()}</div>
       </div>
       <div class="text-center">
         <div class="text-lg font-semibold"
              style="color: {$colorStore.primary}">{formatAction(protectionStatus.antiAlt.action)}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Punishment</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.common.punishment()}</div>
       </div>
       {#if protectionStatus.antiAlt.actionDurationMinutes > 0}
         <div class="text-center">
           <div class="text-2xl font-bold"
                style="color: {$colorStore.primary}">{protectionStatus.antiAlt.actionDurationMinutes}m
           </div>
-          <div class="text-sm" style="color: {$colorStore.muted}">Action Duration</div>
+          <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionCommonActionDuration()}</div>
         </div>
       {/if}
     </div>
@@ -98,7 +99,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label for="antialt-min-age" class="block text-sm font-medium mb-2"
-                   style="color: {$colorStore.text}">Minimum Account Age (minutes)</label>
+                   style="color: {$colorStore.text}">{m.common.minimumAccountAgeMinutes()}</label>
             <input id="antialt-min-age"
                    type="number"
                    bind:value={tempProtectionConfig.minAgeMinutes}
@@ -109,19 +110,18 @@
             >
           </div>
           <div>
-            <span id="antialt-action-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</span>
+            <span id="antialt-action-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.action()}</span>
             <DiscordSelector
               type="custom"
               options={actionOptions}
               bind:selected={tempProtectionConfig.action}
-              placeholder="Select action..."
+              placeholder={m.administration.protectionCommonSelectAction()}
               multiple={false}
             />
           </div>
           <div>
             <label for="antialt-action-duration" class="block text-sm font-medium mb-2"
-                   style="color: {$colorStore.text}">Action
-              Duration (minutes)</label>
+                   style="color: {$colorStore.text}">{m.administration.protectionCommonActionDurationMinutes()}</label>
             <input id="antialt-action-duration"
                    type="number"
                    bind:value={tempProtectionConfig.actionDurationMinutes}
@@ -139,7 +139,7 @@
             style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
             onclick={cancelProtectionEdit}
           >
-            Cancel
+            {m.common.cancel()}
           </button>
           <button
             class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
@@ -153,7 +153,7 @@
               {:else}
                 <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
               {/if}
-              <span>Save Configuration</span>
+              <span>{m.common.saveConfiguration()}</span>
             </div>
           </button>
         </div>
@@ -163,8 +163,8 @@
     <div class="text-center py-8">
       <i class="fa-utility-duo fa-regular fa-clock"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-      <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-Alt Protection Disabled</p>
-      <p class="text-sm" style="color: {$colorStore.muted}">Enable to block young accounts</p>
+      <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.administration.protectionAltDisabledTitle()}</p>
+      <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionAltDisabledHint()}</p>
     </div>
   {/if}
 </div>

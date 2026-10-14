@@ -1,5 +1,6 @@
 <!-- lib/components/SystemInfoMonitor.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onDestroy, onMount } from "svelte";
   import { systemInfoApi } from "$lib/api/index.ts";
   import { logger } from "$lib/logger.ts";
@@ -36,7 +37,7 @@
       systemInfo = await systemInfoApi.getSystemInfo(userId);
     } catch (err) {
       logger.error("Error fetching system info:", err);
-      error = "Failed to load system information";
+      error = m.monitoring.systemInfoLoadFailed();
     } finally {
       loading = false;
       refreshInProgress = false;
@@ -44,14 +45,14 @@
   };
 
   const formatTime = (ms: number) => {
-    if (ms < 1) return `${(ms * 1000).toFixed(2)}μs`;
-    if (ms < 1000) return `${ms.toFixed(2)}ms`;
-    return `${(ms / 1000).toFixed(2)}s`;
+    if (ms < 1) return m.monitoring.performanceTimeMicroseconds({ value: (ms * 1000).toFixed(2) });
+    if (ms < 1000) return m.monitoring.performanceTimeMilliseconds({ value: ms.toFixed(2) });
+    return m.monitoring.performanceTimeSeconds({ value: (ms / 1000).toFixed(2) });
   };
 
   const formatMemory = (mb: number) => {
-    if (mb < 1024) return `${mb.toFixed(2)} MB`;
-    return `${(mb / 1024).toFixed(2)} GB`;
+    if (mb < 1024) return m.monitoring.systemInfoMemoryMb({ value: mb.toFixed(2) });
+    return m.monitoring.systemInfoMemoryGb({ value: (mb / 1024).toFixed(2) });
   };
 
   const getCpuColor = (usage: number) => {
@@ -85,9 +86,9 @@
           <i class="fa-utility-duo fa-regular fa-circle"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
         </div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">System Resources</h2>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.monitoring.systemInfoTitle()}</h2>
       </div>
-      <button aria-label="Navigate"
+      <button aria-label={m.common.refresh()}
               class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
         disabled={refreshInProgress}
@@ -96,7 +97,7 @@
         <div class:animate-spin={refreshInProgress}>
           <i class="fa-solid fa-arrows-rotate" style="font-size: 16px;"></i>
         </div>
-        {refreshInProgress ? 'Refreshing...' : 'Refresh'}
+        {refreshInProgress ? m.common.refreshing() : m.common.refresh()}
       </button>
     </div>
 
@@ -120,7 +121,7 @@
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-utility-duo fa-regular fa-circle"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h3 class="text-base font-semibold" style="color: {$colorStore.text}">CPU Usage</h3>
+            <h3 class="text-base font-semibold" style="color: {$colorStore.text}">{m.monitoring.systemInfoCpuUsage()}</h3>
           </div>
           <div class="w-full rounded-full h-3 mb-2"
                style="background: {$colorStore.primary}10;">
@@ -138,7 +139,7 @@
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-utility-duo fa-regular fa-square"
                style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent}; font-size: 20px;"></i>
-            <h3 class="text-base font-semibold" style="color: {$colorStore.text}">Memory Usage</h3>
+            <h3 class="text-base font-semibold" style="color: {$colorStore.text}">{m.monitoring.systemInfoMemoryUsage()}</h3>
           </div>
           <div class="w-full rounded-full h-3 mb-2"
                style="background: {$colorStore.primary}10;">
@@ -158,7 +159,7 @@
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-utility-duo fa-regular fa-clock"
                style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
-            <h3 class="text-base font-semibold" style="color: {$colorStore.text}">Uptime</h3>
+            <h3 class="text-base font-semibold" style="color: {$colorStore.text}">{m.common.uptime()}</h3>
           </div>
           <div class="text-xl font-mono text-center" style="color: {$colorStore.text}">
             {systemInfo.uptime}
@@ -171,7 +172,7 @@
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-utility-duo fa-regular fa-square"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h3 class="text-base font-semibold" style="color: {$colorStore.text}">Thread Count</h3>
+            <h3 class="text-base font-semibold" style="color: {$colorStore.text}">{m.monitoring.systemInfoThreadCount()}</h3>
           </div>
           <div class="text-xl font-mono text-center" style="color: {$colorStore.text}">
             {systemInfo.threadCount}
@@ -184,14 +185,14 @@
           <div class="flex items-center gap-2 mb-4">
             <i class="fa-utility-duo fa-regular fa-bell"
                style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
-            <h3 class="text-base font-semibold" style="color: {$colorStore.text}">Top CPU Intensive Methods</h3>
+            <h3 class="text-base font-semibold" style="color: {$colorStore.text}">{m.monitoring.systemInfoTopMethods()}</h3>
           </div>
           <div class="overflow-x-auto rounded-lg" style="background: {$colorStore.primary}05;">
             <table class="w-full">
               <thead>
                 <tr style="background: {$colorStore.primary}15; border-bottom: 1px solid {$colorStore.primary}20;">
-                  <th class="px-4 py-3 text-left font-bold" style="color: {$colorStore.text}">Method</th>
-                  <th class="px-4 py-3 text-right font-bold" style="color: {$colorStore.text}">Avg Time</th>
+                  <th class="px-4 py-3 text-left font-bold" style="color: {$colorStore.text}">{m.monitoring.performanceColMethod()}</th>
+                  <th class="px-4 py-3 text-right font-bold" style="color: {$colorStore.text}">{m.monitoring.performanceColAvgTime()}</th>
                 </tr>
               </thead>
               <tbody>
@@ -210,8 +211,8 @@
       <div class="text-center p-8">
         <i class="fa-utility-duo fa-regular fa-circle"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-        <p class="font-medium mb-2" style="color: {$colorStore.text}">No system information available.</p>
-        <p class="text-sm" style="color: {$colorStore.muted}">System data will appear here once loaded.</p>
+        <p class="font-medium mb-2" style="color: {$colorStore.text}">{m.monitoring.systemInfoEmpty()}</p>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.monitoring.systemInfoEmptyHint()}</p>
       </div>
     {/if}
   </div>

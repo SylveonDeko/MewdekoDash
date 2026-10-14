@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fade, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -56,26 +57,26 @@
     }
   });
 
-  const filters: { id: Filter; label: string }[] = [
-    { id: "all", label: "All" },
-    { id: "on", label: "Active" },
-    { id: "off", label: "Inactive" },
-    { id: "custom", label: "Made here" },
-    { id: "changed", label: "Customized" },
-    { id: "hidden", label: "Secret" },
-    { id: "rewards", label: "Has rewards" }
-  ];
+  const filters: { id: Filter; label: string }[] = $derived([
+    { id: "all", label: m.common.all() },
+    { id: "on", label: m.common.active() },
+    { id: "off", label: m.common.inactive() },
+    { id: "custom", label: m.achievements.libraryMadeHere() },
+    { id: "changed", label: m.achievements.libraryCustomized() },
+    { id: "hidden", label: m.achievements.librarySecret() },
+    { id: "rewards", label: m.achievements.libraryFilterRewards() }
+  ]);
 
-  const sortOptions = [
-    { id: "order", name: "Category order" },
-    { id: "name", name: "Name" },
-    { id: "popular", name: "Most unlocked" },
-    { id: "rare", name: "Rarest" },
-    { id: "points", name: "Most points" }
-  ];
+  const sortOptions = $derived([
+    { id: "order", name: m.achievements.librarySortOrder() },
+    { id: "name", name: m.common.name() },
+    { id: "popular", name: m.achievements.librarySortPopular() },
+    { id: "rare", name: m.achievements.overviewRarest() },
+    { id: "points", name: m.achievements.librarySortPoints() }
+  ]);
 
   let gradeOptions = $derived([
-    { id: "any", name: "Any grade" },
+    { id: "any", name: m.achievements.libraryAnyGrade() },
     ...catalog.grades.map((g) => ({ id: g.value.toString(), name: g.name }))
   ]);
 
@@ -143,7 +144,7 @@
     onsaved(achievement);
     editor = null;
     if (created) {
-      onsuccess(`Made ${achievement.name}. Members who already qualify get it quietly within a few minutes.`);
+      onsuccess(m.achievements.libraryCreatedMessage({ name: achievement.name }));
     }
   }
 
@@ -161,7 +162,7 @@
       onsaved({ ...achievement, selfEnabled: next, enabled: next && categoryOn, isOverridden: achievement.isCustom ? false : true });
     } catch (err: any) {
       logger.error("Failed to switch an achievement:", err);
-      onerror(err?.message || "Couldn't save that.");
+      onerror(err?.message || m.common.saveFailedInline());
     } finally {
       busy[achievement.key] = false;
     }
@@ -180,7 +181,7 @@
       await onbulk();
     } catch (err: any) {
       logger.error("Failed to switch achievements:", err);
-      onerror(err?.message || "Couldn't save that.");
+      onerror(err?.message || m.common.saveFailedInline());
     } finally {
       bulkBusy = false;
     }
@@ -223,7 +224,7 @@
       await onbulk();
     } catch (err: any) {
       logger.error("Failed to reorder achievements:", err);
-      onerror(err?.message || "Couldn't reorder.");
+      onerror(err?.message || m.achievements.libraryErrorReorder());
     }
   }
 
@@ -233,9 +234,9 @@
    */
   function rewards(achievement: Achievement): string[] {
     const list: string[] = [];
-    if (achievement.roleRewardId) list.push(`@${achievement.roleRewardName ?? "deleted role"}`);
-    if (achievement.currencyReward > 0) list.push(`${achievement.currencyReward.toLocaleString()} currency`);
-    if (achievement.xpReward > 0) list.push(`${achievement.xpReward.toLocaleString()} XP`);
+    if (achievement.roleRewardId) list.push(`@${achievement.roleRewardName ?? m.common.deletedRole()}`);
+    if (achievement.currencyReward > 0) list.push(m.common.amountCurrency({ amount: achievement.currencyReward.toLocaleString() }));
+    if (achievement.xpReward > 0) list.push(m.achievements.libraryRewardXp({ amount: achievement.xpReward.toLocaleString() }));
     return list;
   }
 
@@ -250,14 +251,14 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 items-start" in:fade={{ duration: 200 }}>
   <aside class="lg:sticky lg:top-4">
-    <div class="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 -mx-1 px-1" role="tablist" aria-label="Categories">
+    <div class="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 -mx-1 px-1" role="tablist" aria-label={m.common.categories()}>
       <button type="button" role="tab" aria-selected={category === "all"}
               class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left min-h-[44px] shrink-0 transition-all"
               style="background: {category === 'all' ? $colorStore.primary + '20' : $colorStore.primary + '08'};
                      border: 1px solid {category === 'all' ? $colorStore.primary + '50' : 'transparent'};"
               onclick={() => { category = "all"; }}>
         <DuoIcon icon="fa-layer-group" class="w-5 text-center" />
-        <span class="flex-1 text-sm font-medium whitespace-nowrap" style="color: {category === 'all' ? $colorStore.primary : $colorStore.text}">Everything</span>
+        <span class="flex-1 text-sm font-medium whitespace-nowrap" style="color: {category === 'all' ? $colorStore.primary : $colorStore.text}">{m.achievements.libraryEverything()}</span>
         <span class="text-xs" style="color: {$colorStore.muted}">{catalog.achievements.length}</span>
       </button>
       {#each visibleCategories as c (c.key)}
@@ -273,7 +274,7 @@
           </span>
           <span class="flex-1 text-sm font-medium whitespace-nowrap" style="color: {active ? $colorStore.primary : $colorStore.text}">{c.name}</span>
           <span class="text-xs whitespace-nowrap" style="color: {$colorStore.muted}">
-            {c.enabled ? `${c.enabledCount}/${c.achievementCount}` : "inactive"}
+            {c.enabled ? `${c.enabledCount}/${c.achievementCount}` : m.common.inactiveLower()}
           </span>
         </button>
       {/each}
@@ -282,7 +283,7 @@
             style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px dashed {$colorStore.primary}40;"
             onclick={ongotocategories}>
       <DuoIcon icon="fa-layer-group" />
-      Arrange categories
+      {m.achievements.libraryArrangeCategories()}
     </button>
   </aside>
 
@@ -299,15 +300,15 @@
         <div class="flex-1 min-w-0">
           <h2 class="text-lg font-bold" style="color: {$colorStore.text}">{currentCategory.name}</h2>
           <p class="text-sm" style="color: {$colorStore.muted}">
-            {currentCategory.description || "Achievements this server made."}
-            {#if !currentCategory.enabled}<strong style="color: {$colorStore.accent}"> This category is inactive.</strong>{/if}
+            {currentCategory.description || m.achievements.libraryCategoryDefaultDescription()}
+            {#if !currentCategory.enabled}<strong style="color: {$colorStore.accent}"> {m.achievements.libraryCategoryInactiveNotice()}</strong>{/if}
           </p>
         </div>
         {#if currentCategory.key !== "global"}
           <button type="button" class="px-4 py-2 rounded-xl min-h-[44px] text-sm font-medium"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   onclick={startNew}>
-            <i class="fa-solid fa-plus mr-2" aria-hidden="true"></i>New here
+            <i class="fa-solid fa-plus mr-2" aria-hidden="true"></i>{m.achievements.libraryNewHere()}
           </button>
         {/if}
       </div>
@@ -315,32 +316,32 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_224px_224px] gap-3 items-end">
       <div class="sm:col-span-2 lg:col-span-1">
-        <span id="ach-search-label" class="block text-xs font-medium mb-1.5" style="color: {$colorStore.muted}">Search</span>
+        <span id="ach-search-label" class="block text-xs font-medium mb-1.5" style="color: {$colorStore.muted}">{m.common.search()}</span>
         <div class="relative">
           <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none" aria-hidden="true">
             <DuoIcon icon="fa-magnifying-glass" color={$colorStore.muted} />
           </span>
-          <input type="search" bind:value={search} placeholder="Name, description, or key"
+          <input type="search" bind:value={search} placeholder={m.achievements.librarySearchPlaceholder()}
                  aria-labelledby="ach-search-label"
                  class="w-full pl-10 pr-3 h-[44px] rounded-xl border text-sm"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
         </div>
       </div>
       <div>
-        <span id="ach-grade-label" class="block text-xs font-medium mb-1.5" style="color: {$colorStore.muted}">Show grade</span>
+        <span id="ach-grade-label" class="block text-xs font-medium mb-1.5" style="color: {$colorStore.muted}">{m.achievements.libraryGradeLabel()}</span>
         <DiscordSelector type="custom" options={gradeOptions} selected={gradeFilter} searchable={false}
                          ariaLabelledby="ach-grade-label" customIcon="fa-trophy"
                          onchange={(d) => { gradeFilter = typeof d.selected === "string" ? d.selected : "any"; }} />
       </div>
       <div>
-        <span id="ach-sort-label" class="block text-xs font-medium mb-1.5" style="color: {$colorStore.muted}">Sort by</span>
+        <span id="ach-sort-label" class="block text-xs font-medium mb-1.5" style="color: {$colorStore.muted}">{m.common.sortBy()}</span>
         <DiscordSelector type="custom" options={sortOptions} selected={sort} searchable={false}
                          ariaLabelledby="ach-sort-label" customIcon="fa-arrow-down-wide-short"
                          onchange={(d) => { if (typeof d.selected === "string") sort = d.selected as Sort; }} />
       </div>
     </div>
 
-    <div class="flex flex-wrap gap-2" role="group" aria-label="Filter">
+    <div class="flex flex-wrap gap-2" role="group" aria-label={m.achievements.libraryFilterLabel()}>
       {#each filters as f (f.id)}
         {@const active = filter === f.id}
         <button type="button" aria-pressed={active}
@@ -358,19 +359,19 @@
       <label class="flex items-center gap-2 text-sm min-h-[40px] cursor-pointer" style="color: {$colorStore.text}">
         <input type="checkbox" checked={allShownSelected} onchange={toggleSelectAll} class="w-5 h-5 rounded"
                style="accent-color: {$colorStore.primary}" />
-        {selected.size > 0 ? `${selected.size} selected` : `Select all ${selectableShown.length}`}
+        {selected.size > 0 ? m.common.selectedCount({ count: selected.size }) : m.achievements.librarySelectAll({ count: selectableShown.length })}
       </label>
       {#if selected.size > 0}
         <div class="flex flex-wrap gap-2 sm:ml-auto" transition:slide={{ duration: 150 }}>
           <button type="button" class="px-3 py-2 rounded-lg text-sm font-medium min-h-[40px] disabled:opacity-50"
                   style="background: #10b98120; color: #10b981; border: 1px solid #10b98130;"
-                  disabled={bulkBusy} onclick={() => bulkSet(true)}>Activate</button>
+                  disabled={bulkBusy} onclick={() => bulkSet(true)}>{m.common.activate()}</button>
           <button type="button" class="px-3 py-2 rounded-lg text-sm font-medium min-h-[40px] disabled:opacity-50"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                  disabled={bulkBusy} onclick={() => bulkSet(false)}>Deactivate</button>
+                  disabled={bulkBusy} onclick={() => bulkSet(false)}>{m.achievements.libraryDeactivate()}</button>
           <button type="button" class="px-3 py-2 rounded-lg text-sm min-h-[40px]"
                   style="background: {$colorStore.primary}08; color: {$colorStore.text};"
-                  onclick={() => { selected = new Set(); }}>Clear</button>
+                  onclick={() => { selected = new Set(); }}>{m.common.clear()}</button>
         </div>
       {/if}
     </div>
@@ -381,18 +382,18 @@
                   border-color: {$colorStore.primary}30;">
         <DuoIcon icon="fa-crown" size={40} />
         <h3 class="text-lg font-semibold mt-4" style="color: {$colorStore.text}">
-          {category === "custom" && filter === "all" && !search ? "No server achievements yet" : "Nothing matches"}
+          {category === "custom" && filter === "all" && !search ? m.achievements.libraryEmptyCustomTitle() : m.achievements.libraryEmptyTitle()}
         </h3>
         <p class="text-sm mt-2 max-w-md mx-auto" style="color: {$colorStore.muted}">
           {category === "custom" && filter === "all" && !search
-            ? "Make your own: hit a number, say a phrase, react with an emoji, or something staff hand out by hand."
-            : "Try another filter or search."}
+            ? m.achievements.libraryEmptyCustomText()
+            : m.achievements.libraryEmptyText()}
         </p>
         {#if category === "custom" || category === "all"}
           <button type="button" class="mt-5 px-5 py-3 rounded-xl min-h-[44px] font-medium"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   onclick={startNew}>
-            <i class="fa-solid fa-plus mr-2" aria-hidden="true"></i>Make an achievement
+            <i class="fa-solid fa-plus mr-2" aria-hidden="true"></i>{m.achievements.libraryMake()}
           </button>
         {/if}
       </div>
@@ -404,7 +405,7 @@
             <h3 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide pt-2" style="color: {$colorStore.muted}">
               <AchievementIcon icon={groupCategory.icon} iconUrl={groupCategory.iconUrl} color={$colorStore.primary}
                                size={14} bare />{groupCategory.name}
-              {#if !groupCategory.enabled}<span class="normal-case font-normal" style="color: {$colorStore.accent}">(inactive)</span>{/if}
+              {#if !groupCategory.enabled}<span class="normal-case font-normal" style="color: {$colorStore.accent}">{m.achievements.libraryGroupInactive()}</span>{/if}
             </h3>
           {/if}
           {#each group.items as a (a.key)}
@@ -419,7 +420,7 @@
               {#if !a.isGlobal}
                 <input type="checkbox" checked={selected.has(a.key)} onchange={() => toggleSelected(a.key)}
                        class="w-5 h-5 mt-3 rounded shrink-0" style="accent-color: {$colorStore.primary}"
-                       aria-label="Select {a.name}" />
+                       aria-label={m.achievements.librarySelectLabel({ name: a.name })} />
               {/if}
               <button type="button" class="flex-1 min-w-0 flex items-start gap-3 text-left" onclick={() => startEdit(a)}>
                 <AchievementIcon icon={a.icon} iconUrl={a.iconUrl} color={grade.color} />
@@ -427,14 +428,14 @@
                   <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span class="font-semibold truncate" style="color: {$colorStore.text}">{a.name}</span>
                     <span class="text-xs px-2 py-0.5 rounded-md font-medium" style="background: {grade.color}20; color: {grade.color}">{grade.name} · {a.points}</span>
-                    {#if a.hidden}<span class="text-xs px-2 py-0.5 rounded-md" style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">Secret</span>{/if}
-                    {#if a.isCustom}<span class="text-xs px-2 py-0.5 rounded-md" style="background: {$colorStore.accent}20; color: {$colorStore.accent}">Made here</span>{/if}
-                    {#if a.isOverridden}<span class="text-xs px-2 py-0.5 rounded-md" style="background: {$colorStore.primary}20; color: {$colorStore.primary}">Customized</span>{/if}
+                    {#if a.hidden}<span class="text-xs px-2 py-0.5 rounded-md" style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">{m.achievements.librarySecret()}</span>{/if}
+                    {#if a.isCustom}<span class="text-xs px-2 py-0.5 rounded-md" style="background: {$colorStore.accent}20; color: {$colorStore.accent}">{m.achievements.libraryMadeHere()}</span>{/if}
+                    {#if a.isOverridden}<span class="text-xs px-2 py-0.5 rounded-md" style="background: {$colorStore.primary}20; color: {$colorStore.primary}">{m.achievements.libraryCustomized()}</span>{/if}
                   </span>
                   <span class="block text-sm mt-1" style="color: {$colorStore.muted}">{a.description}</span>
                   <span class="flex flex-wrap gap-x-3 gap-y-1 text-xs mt-2" style="color: {$colorStore.muted}">
                     <span><DuoIcon icon="fa-circle-check" color={$colorStore.muted} class="mr-1" />{criteriaText(a, catalog)}</span>
-                    <span><DuoIcon icon="fa-users" color={$colorStore.muted} class="mr-1" />{a.unlockCount.toLocaleString()} unlocked</span>
+                    <span><DuoIcon icon="fa-users" color={$colorStore.muted} class="mr-1" />{m.achievements.libraryUnlockedCount({ count: a.unlockCount.toLocaleString() })}</span>
                     {#if rewardList.length > 0}
                       <span style="color: {$colorStore.primary}"><DuoIcon icon="fa-gift" class="mr-1" />{rewardList.join(", ")}</span>
                     {/if}
@@ -444,12 +445,12 @@
               <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2 shrink-0">
                 {#if a.isCustom && sort === "order" && siblingCount > 1}
                   <div class="flex gap-1">
-                    <button type="button" class="w-9 h-9 rounded-lg disabled:opacity-30" aria-label="Move {a.name} up"
+                    <button type="button" class="w-9 h-9 rounded-lg disabled:opacity-30" aria-label={m.common.ariaMoveNamedUp({ name: a.name })}
                             style="background: {$colorStore.primary}08; color: {$colorStore.text};"
                             disabled={siblingIndex <= 0} onclick={() => move(a, -1)}>
                       <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
                     </button>
-                    <button type="button" class="w-9 h-9 rounded-lg disabled:opacity-30" aria-label="Move {a.name} down"
+                    <button type="button" class="w-9 h-9 rounded-lg disabled:opacity-30" aria-label={m.common.ariaMoveNamedDown({ name: a.name })}
                             style="background: {$colorStore.primary}08; color: {$colorStore.text};"
                             disabled={siblingIndex >= siblingCount - 1} onclick={() => move(a, 1)}>
                       <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
@@ -458,7 +459,7 @@
                 {/if}
                 {#if !a.isGlobal}
                   <button type="button" role="switch" aria-checked={a.selfEnabled}
-                          aria-label="{a.selfEnabled ? 'Deactivate' : 'Activate'} {a.name}"
+                          aria-label={a.selfEnabled ? m.achievements.libraryDeactivateLabel({ name: a.name }) : m.achievements.libraryActivateLabel({ name: a.name })}
                           class="w-12 h-7 rounded-full relative transition-all shrink-0 disabled:opacity-50"
                           style="background: {a.selfEnabled ? $colorStore.primary : $colorStore.primary + '20'};"
                           disabled={busy[a.key]}

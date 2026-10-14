@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -69,7 +70,7 @@
       ]);
 
       if (menuList === null) {
-        showMessage("Couldn't load the role menus.", "error");
+        showMessage(m.roleMenus.pageLoadFailed(), "error");
       } else {
         menus = menuList;
       }
@@ -100,7 +101,7 @@
    * @param channelName The channel name, if it still exists
    */
   function channelLabel(channelName: string | null | undefined): string {
-    return channelName ? `#${channelName}` : "Deleted channel";
+    return channelName ? `#${channelName}` : m.roleMenus.channelDeleted();
   }
 
   /**
@@ -108,7 +109,7 @@
    * @param channelName The channel name, if it still exists
    */
   function channelRef(channelName: string | null | undefined): string {
-    return channelName ? `#${channelName}` : "the deleted channel";
+    return channelName ? `#${channelName}` : m.roleMenus.channelDeletedRef();
   }
 
   /**
@@ -118,13 +119,13 @@
   function statusLabel(status: RoleMenuStatus): string {
     switch (status) {
       case "live":
-        return "Live";
+        return m.roleMenus.statusLive();
       case "paused":
-        return "Paused";
+        return m.common.paused();
       case "not_posted":
-        return "Not posted";
+        return m.roleMenus.statusNotPosted();
       default:
-        return "Channel missing";
+        return m.roleMenus.statusChannelMissing();
     }
   }
 
@@ -160,9 +161,9 @@
   async function confirmDiscard(): Promise<boolean> {
     if (!editing || !editorDirty) return true;
     return requestConfirmation({
-      title: "Discard changes?",
-      message: "Your edits to this menu haven't been saved.",
-      confirmText: "Discard",
+      title: m.common.discardChanges(),
+      message: m.roleMenus.discardMessage(),
+      confirmText: m.common.discard(),
       variant: "danger"
     });
   }
@@ -200,11 +201,11 @@
    * @param menu The menu
    */
   function upsertMenu(menu: RoleMenu) {
-    const index = menus.findIndex((m) => m.id === menu.id);
+    const index = menus.findIndex((item) => item.id === menu.id);
     if (index === -1) {
       menus = [...menus, menu].sort((a, b) => a.id - b.id);
     } else {
-      menus = menus.map((m) => (m.id === menu.id ? menu : m));
+      menus = menus.map((item) => (item.id === menu.id ? menu : item));
     }
   }
 
@@ -218,7 +219,9 @@
     editing = null;
     editorDirty = false;
     showMessage(
-      created ? `Posted in ${channelRef(menu.channelName)}` : `Message updated in ${channelRef(menu.channelName)}`,
+      created
+        ? m.roleMenus.notifyPosted({ channel: channelRef(menu.channelName) })
+        : m.roleMenus.notifyUpdated({ channel: channelRef(menu.channelName) }),
       "success"
     );
   }
@@ -234,7 +237,7 @@
       upsertMenu(await roleMenusApi.setEnabled($currentGuild.id, menu.id, !menu.enabled));
     } catch (err: any) {
       logger.error("Failed to pause or resume a role menu:", err);
-      showMessage(err?.message || "Couldn't save the menu.", "error");
+      showMessage(err?.message || m.roleMenus.pageSaveFailed(), "error");
     } finally {
       busy[menu.id] = false;
     }
@@ -250,10 +253,10 @@
     try {
       const updated = await roleMenusApi.repost($currentGuild.id, menu.id, null);
       upsertMenu(updated);
-      showMessage(`Posted again in ${channelRef(updated.channelName)}`, "success");
+      showMessage(m.roleMenus.notifyReposted({ channel: channelRef(updated.channelName) }), "success");
     } catch (err: any) {
       logger.error("Failed to post a role menu again:", err);
-      showMessage(err?.message || "Couldn't save the menu.", "error");
+      showMessage(err?.message || m.roleMenus.pageSaveFailed(), "error");
     } finally {
       busy[menu.id] = false;
     }
@@ -266,9 +269,9 @@
   async function deleteMenu(menu: RoleMenu) {
     if (!$currentGuild?.id) return;
     const ok = await requestConfirmation({
-      title: "Delete this menu?",
-      message: `Its message in ${channelRef(menu.channelName)} is deleted too. Members keep the roles they already picked.`,
-      confirmText: "Delete menu",
+      title: m.common.deleteThisMenu(),
+      message: m.roleMenus.deleteMessage({ channel: channelRef(menu.channelName) }),
+      confirmText: m.common.deleteMenu(),
       variant: "danger"
     });
     if (!ok) return;
@@ -276,14 +279,14 @@
     busy[menu.id] = true;
     try {
       await roleMenusApi.remove($currentGuild.id, menu.id);
-      menus = menus.filter((m) => m.id !== menu.id);
+      menus = menus.filter((item) => item.id !== menu.id);
       if (editing?.menu?.id === menu.id) {
         editing = null;
         editorDirty = false;
       }
     } catch (err: any) {
       logger.error("Failed to delete a role menu:", err);
-      showMessage(err?.message || "Couldn't delete the menu.", "error");
+      showMessage(err?.message || m.roleMenus.pageDeleteFailed(), "error");
     } finally {
       busy[menu.id] = false;
     }
@@ -298,26 +301,26 @@
     importSources = importSources.filter((s) => s.id !== sourceId);
     upsertMenu(menu);
     activeTab = "menus";
-    showMessage(`Moved to a role menu in ${channelRef(menu.channelName)}`, "success");
+    showMessage(m.roleMenus.notifyMoved({ channel: channelRef(menu.channelName) }), "success");
   }
 
   onMount(() => {
     loadAll();
   });
 
-  const tabs = [
-    { id: "menus", label: "Menus", icon: "fa-list-check" },
-    { id: "move", label: "Move older setups", icon: "fa-arrow-right-arrow-left" }
-  ];
+  const tabs = $derived([
+    { id: "menus", label: m.roleMenus.tabMenus(), icon: "fa-list-check" },
+    { id: "move", label: m.roleMenus.tabMove(), icon: "fa-arrow-right-arrow-left" }
+  ]);
 
   let actionButtons = $derived([
     {
-      label: "New menu",
+      label: m.roleMenus.actionNewMenu(),
       icon: "fa-plus",
       action: startNew
     },
     {
-      label: "Refresh",
+      label: m.common.refresh(),
       icon: "fa-arrows-rotate",
       action: loadAll,
       loading: loading
@@ -348,7 +351,7 @@
          in:fly={{ x: -20, duration: 300 }}>
       <i class="fa-utility-duo fa-regular fa-circle-exclamation"
          style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
-      <span style="color: {$colorStore.text}">The bot doesn't have Manage Roles, so menus can't give out roles until it does.</span>
+      <span style="color: {$colorStore.text}">{m.roleMenus.warnBotManageRoles()}</span>
     </div>
   {/if}
 {/snippet}
@@ -356,12 +359,12 @@
 <DashboardPageLayout
   {actionButtons}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-list-ul"
   statusMessages={statusMessageContent}
-  subtitle="Dropdowns and buttons that let members pick their own roles"
+  subtitle={m.features.roleMenusDescription()}
   {tabs}
-  title="Role Menus"
+  title={m.features.roleMenusName()}
 >
   <div class:hidden={activeTab !== 'menus'}>
     {#if editing}
@@ -380,7 +383,7 @@
     {:else if !loaded}
       <div class="flex items-center justify-center py-16" style="color: {$colorStore.muted}">
         <i class="fa-solid fa-spinner fa-spin text-2xl" aria-hidden="true"></i>
-        <span class="sr-only">Loading</span>
+        <span class="sr-only">{m.roleMenus.listLoading()}</span>
       </div>
     {:else if menus.length === 0}
       <div class="rounded-2xl border p-8 md:p-12 shadow-2xl text-center"
@@ -389,10 +392,9 @@
            in:fade={{ duration: 200 }}>
         <i class="fa-solid fa-list-check"
            style="color: {$colorStore.primary}; font-size: 48px; opacity: 0.5;" aria-hidden="true"></i>
-        <h3 class="text-lg font-semibold mt-4 mb-2" style="color: {$colorStore.text}">No role menus yet</h3>
+        <h3 class="text-lg font-semibold mt-4 mb-2" style="color: {$colorStore.text}">{m.roleMenus.listEmptyTitle()}</h3>
         <p class="text-sm max-w-xl mx-auto" style="color: {$colorStore.muted}">
-          Post a message with a dropdown or buttons, and members pick their own roles. Pronouns, colors, pings, regions:
-          one menu each.
+          {m.roleMenus.listEmptyText()}
         </p>
         <button
           type="button"
@@ -401,12 +403,12 @@
           onclick={startNew}
         >
           <i class="fa-solid fa-plus" aria-hidden="true"></i>
-          Create your first menu
+          {m.roleMenus.listCreateFirst()}
         </button>
 
         {#if importSources.length > 0}
           <p class="text-sm mt-6" style="color: {$colorStore.muted}">
-            You have {importSources.length} older emoji role setups you can move over.
+            {m.roleMenus.listImportHint({ count: importSources.length })}
           </p>
           <button
             type="button"
@@ -415,13 +417,13 @@
             onclick={() => { activeTab = "move"; }}
           >
             <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i>
-            Move older setups
+            {m.roleMenus.tabMove()}
           </button>
         {/if}
       </div>
     {:else}
       <div class="w-full space-y-4" in:fade={{ duration: 200 }}>
-        <p class="text-sm" style="color: {$colorStore.muted}">{menus.length} of {MAX_MENUS} menus</p>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.roleMenus.listCount({ count: menus.length, max: MAX_MENUS })}</p>
 
         {#each menus as menu (menu.id)}
           {@const notPosted = menu.status === "not_posted"}
@@ -440,9 +442,9 @@
             <p class="text-sm" style="color: {$colorStore.muted}">
               {[
                 channelLabel(menu.channelName),
-                menu.style === RoleMenuStyle.Buttons ? "Buttons" : "Dropdown",
-                menu.mode === RoleMenuMode.PickOne ? "Pick one" : "Pick any",
-                `${menu.options.length} options`
+                menu.style === RoleMenuStyle.Buttons ? m.common.buttons() : m.common.dropdown(),
+                menu.mode === RoleMenuMode.PickOne ? m.roleMenus.menuModePickOne() : m.roleMenus.menuModePickAny(),
+                m.common.optionsCount({ count: menu.options.length })
               ].join(" · ")}
             </p>
 
@@ -478,7 +480,7 @@
               <div class="p-3 rounded-lg flex items-center gap-2 text-sm"
                    style="background: #ef444420; color: #ef4444;">
                 <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
-                <span>Its channel was deleted. Edit the menu, pick a new channel, and save to post it again.</span>
+                <span>{m.roleMenus.menuChannelMissing()}</span>
               </div>
             {/if}
 
@@ -492,7 +494,7 @@
                 onclick={() => startEdit(menu)}
               >
                 <i class="fa-solid fa-pen" aria-hidden="true"></i>
-                Edit
+                {m.common.edit()}
               </button>
               <button
                 type="button"
@@ -502,7 +504,7 @@
                 disabled={busy[menu.id]}
               >
                 <i class="fa-solid {menu.enabled ? 'fa-pause' : 'fa-play'}" aria-hidden="true"></i>
-                {menu.enabled ? "Pause" : "Resume"}
+                {menu.enabled ? m.common.pause() : m.roleMenus.menuResume()}
               </button>
               <button
                 type="button"
@@ -514,7 +516,7 @@
                 disabled={busy[menu.id]}
               >
                 <i class="fa-solid {busy[menu.id] ? 'fa-spinner fa-spin' : 'fa-paper-plane'}" aria-hidden="true"></i>
-                Post again
+                {m.roleMenus.menuPostAgain()}
               </button>
               {#if menu.jumpUrl}
                 <a href={menu.jumpUrl}
@@ -523,7 +525,7 @@
                    class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] text-sm font-medium"
                    style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;">
                   <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
-                  Open in Discord
+                  {m.roleMenus.menuOpenInDiscord()}
                 </a>
               {/if}
               <button
@@ -534,7 +536,7 @@
                 disabled={busy[menu.id]}
               >
                 <i class="fa-solid fa-trash" aria-hidden="true"></i>
-                Delete
+                {m.common.delete()}
               </button>
             </div>
           </div>

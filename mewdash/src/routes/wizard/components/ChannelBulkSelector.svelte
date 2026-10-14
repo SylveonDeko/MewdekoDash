@@ -4,6 +4,7 @@ Smart channel selector with bulk operations and pattern detection
 Supports single, multiple, category-based, and pattern-based selection
 -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
@@ -23,8 +24,8 @@ Supports single, multiple, category-based, and pattern-based selection
     categories = [],
     selected = $bindable(null),
     mode = $bindable("single"),
-    label = "Select Channel",
-    placeholder = "Choose a channel...",
+    label = m.common.selectAChannelPlaceholder(),
+    placeholder = m.wizard.bulkChooseAChannelPlaceholder(),
     detectedPattern = [],
     onchange
   }: Props = $props();
@@ -39,6 +40,15 @@ Supports single, multiple, category-based, and pattern-based selection
       ? channels.filter(ch => detectedPattern.includes(ch.id))
       : []
   );
+
+  let detectedMessage = $derived.by(() => {
+    const count = detectedChannels.length;
+    const names = detectedChannels.slice(0, 3).map(ch => `#${ch.name}`).join(", ");
+    const list = count > 3 ? m.wizard.channelSelectorAndMore({ channels: names, count: count - 3 }) : names;
+    return count === 1
+      ? m.wizard.channelSelectorDetectedOne({ count, channels: list })
+      : m.wizard.channelSelectorDetectedOther({ count, channels: list });
+  });
 
   function handleModeChange(newMode: "single" | "multiple") {
     mode = newMode;
@@ -93,7 +103,7 @@ Supports single, multiple, category-based, and pattern-based selection
                color: {mode === 'single' ? $colorStore.primary : $colorStore.muted};
                border: 1px solid {mode === 'single' ? $colorStore.primary + '40' : $colorStore.primary + '20'};"
       >
-        Single
+        {m.wizard.channelSelectorSingle()}
       </button>
       <button
         class="px-3 py-1 rounded-sm text-xs font-medium transition-all"
@@ -103,7 +113,7 @@ Supports single, multiple, category-based, and pattern-based selection
                color: {mode === 'multiple' ? $colorStore.primary : $colorStore.muted};
                border: 1px solid {mode === 'multiple' ? $colorStore.primary + '40' : $colorStore.primary + '20'};"
       >
-        Multiple
+        {m.common.multiple()}
       </button>
     </div>
   </div>
@@ -116,19 +126,17 @@ Supports single, multiple, category-based, and pattern-based selection
         <i class="fa-solid fa-lightbulb" style="color: {$colorStore.accent}; font-size: 16px; margin-top: 2px;"></i>
         <div class="flex-1">
           <p class="text-sm font-medium mb-1" style="color: {$colorStore.text};">
-            Smart Detection
+            {m.wizard.channelSelectorDetectionTitle()}
           </p>
           <p class="text-xs mb-2" style="color: {$colorStore.muted};">
-            We found {detectedChannels.length} channel{detectedChannels.length !== 1 ? 's' : ''} that might be relevant:
-            {detectedChannels.slice(0, 3).map(ch => `#${ch.name}`).join(', ')}
-            {detectedChannels.length > 3 ? ` and ${detectedChannels.length - 3} more` : ''}
+            {detectedMessage}
           </p>
           <button
             class="text-xs font-medium px-2 py-1 rounded-sm transition-all hover:scale-[1.02]"
             style="background: {$colorStore.accent}; color: white;"
             onclick={applyDetected}
           >
-            Use Detected Channels
+            {m.wizard.channelSelectorUseDetected()}
           </button>
         </div>
       </div>
@@ -152,7 +160,7 @@ Supports single, multiple, category-based, and pattern-based selection
       onclick={() => showAdvanced = !showAdvanced}
     >
       <i class="fa-solid {showAdvanced ? 'fa-chevron-up' : 'fa-chevron-down'}" style="font-size: 10px;"></i>
-      {showAdvanced ? 'Hide' : 'Show'} Advanced Options
+      {showAdvanced ? m.wizard.channelSelectorHideAdvanced() : m.wizard.channelSelectorShowAdvanced()}
     </button>
   {/if}
 
@@ -164,7 +172,7 @@ Supports single, multiple, category-based, and pattern-based selection
       {#if categories.length > 0}
         <div>
           <label for="cbs-category" class="text-xs font-medium mb-2 block" style="color: {$colorStore.text};">
-            Select All in Category
+            {m.wizard.channelSelectorSelectCategory()}
           </label>
           <div class="flex gap-2">
             <DiscordSelector
@@ -172,7 +180,7 @@ Supports single, multiple, category-based, and pattern-based selection
               type="custom"
               options={categories}
               bind:selected={selectedCategory}
-              placeholder="Choose a category..."
+              placeholder={m.wizard.channelSelectorCategoryPlaceholder()}
             />
             <button
               class="px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all hover:scale-[1.02]"
@@ -180,7 +188,7 @@ Supports single, multiple, category-based, and pattern-based selection
               onclick={applyCategory}
               disabled={!selectedCategory}
             >
-              Apply
+              {m.common.apply()}
             </button>
           </div>
         </div>
@@ -189,7 +197,7 @@ Supports single, multiple, category-based, and pattern-based selection
       <!-- Pattern Matching -->
       <div>
         <label for="cbs-pattern" class="text-xs font-medium mb-2 block" style="color: {$colorStore.text};">
-          Select by Name Pattern
+          {m.wizard.channelSelectorSelectPattern()}
         </label>
         <div class="flex gap-2">
           <input
@@ -197,7 +205,7 @@ Supports single, multiple, category-based, and pattern-based selection
             type="text"
             class="flex-1 px-3 py-2 rounded-lg border text-sm"
             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            placeholder="e.g., 'welcome', 'general'"
+            placeholder={m.wizard.channelSelectorPatternPlaceholder()}
             bind:value={patternFilter}
           />
           <button
@@ -206,7 +214,7 @@ Supports single, multiple, category-based, and pattern-based selection
             onclick={applyPattern}
             disabled={!patternFilter}
           >
-            Apply
+            {m.common.apply()}
           </button>
         </div>
       </div>
@@ -217,7 +225,7 @@ Supports single, multiple, category-based, and pattern-based selection
         style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
         onclick={selectAll}
       >
-        Select All Channels ({channels.length})
+        {m.wizard.channelSelectorSelectAll({ count: channels.length })}
       </button>
     </div>
   {/if}

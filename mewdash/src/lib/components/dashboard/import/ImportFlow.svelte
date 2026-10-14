@@ -1,5 +1,6 @@
 <!-- lib/components/dashboard/import/ImportFlow.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onDestroy } from "svelte";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -31,138 +32,154 @@
 
   interface SourceInfo {
     id: ImportSource;
-    name: string;
+    name: () => string;
     icon: string;
     input: "none" | "file" | "key";
-    brings: string;
-    how: string;
-    link?: { label: string; href: string };
+    brings: () => string;
+    how: () => string;
+    link?: { label: () => string; href: string };
   }
 
   const sources: SourceInfo[] = [
     {
       id: ImportSource.Mee6,
-      name: "MEE6",
+      name: () => "MEE6",
       icon: "fa-crown",
       input: "none",
-      brings: "XP, levels and level roles",
-      how: "Make the leaderboard public in MEE6's dashboard (Leveling, Leaderboard), then read it here. Nothing else is needed."
+      brings: m.import.flowSourceMee6Brings,
+      how: m.import.flowSourceMee6How
     },
     {
       id: ImportSource.Mee6Settings,
-      name: "MEE6 settings",
+      name: m.import.pageSourceMee6Settings,
       icon: "fa-sliders",
       input: "file",
-      brings: "Welcome messages, level settings, custom commands, reaction roles, filters, Twitch alerts and the shop",
-      how: "On a computer, open your server on MEE6's dashboard and run the export below, either from your bookmarks bar or pasted into the browser console. It downloads a file with your settings, which you upload here."
+      brings: m.import.flowSourceMee6settingsBrings,
+      how: m.import.flowSourceMee6settingsHow
     },
     {
       id: ImportSource.Lurkr,
-      name: "Lurkr",
+      name: () => "Lurkr",
       icon: "fa-chart-simple",
       input: "file",
-      brings: "XP and levels",
-      how: "Export your levels from Lurkr and upload the JSON file it gives you."
+      brings: m.import.flowSourceAmariBrings,
+      how: m.import.flowSourceLurkrHow
     },
     {
       id: ImportSource.Polaris,
-      name: "Polaris",
+      name: () => "Polaris",
       icon: "fa-star",
       input: "file",
-      brings: "XP, plus level roles and your curve with the Everything export",
-      how: "On Polaris' website, open your server and download your XP. Any format works. Pick Everything to bring level roles too."
+      brings: m.import.flowSourcePolarisBrings,
+      how: m.import.flowSourcePolarisHow
     },
     {
       id: ImportSource.Arcane,
-      name: "Arcane",
+      name: () => "Arcane",
       icon: "fa-wand-magic-sparkles",
       input: "file",
-      brings: "Levels",
-      how: "Arcane has no export. Open your server's leaderboard on arcane.bot, scroll until every member is loaded, run the export script in the browser console and upload the JSON it saves.",
-      link: { label: "Export script", href: "https://gist.github.com/SomeAspy/2b27a6d66b97db6bd1b62afac5343285" }
+      brings: m.import.flowSectionLevels,
+      how: m.import.flowSourceArcaneHow,
+      link: { label: m.import.flowSourceArcaneLink, href: "https://gist.github.com/SomeAspy/2b27a6d66b97db6bd1b62afac5343285" }
     },
     {
       id: ImportSource.Amari,
-      name: "Amari",
+      name: () => "Amari",
       icon: "fa-trophy",
       input: "key",
-      brings: "XP and levels",
-      how: "Apply for an Amari API key. Amari sends it to you in a DM, usually within a day. Paste it below.",
-      link: { label: "Get a key", href: "https://amaribot.com/developer" }
+      brings: m.import.flowSourceAmariBrings,
+      how: m.import.flowSourceAmariHow,
+      link: { label: m.import.flowSourceAmariLink, href: "https://amaribot.com/developer" }
     },
     {
       id: ImportSource.Tatsu,
-      name: "Tatsu",
+      name: () => "Tatsu",
       icon: "fa-sparkles",
       input: "key",
-      brings: "XP",
-      how: "Run t!apikey create in any channel. Tatsu sends you a key in a DM. Paste it below."
+      brings: m.common.xp,
+      how: m.import.flowSourceTatsuHow
     },
     {
       id: ImportSource.UnbelievaBoat,
-      name: "UnbelievaBoat",
+      name: () => "UnbelievaBoat",
       icon: "fa-money-bill",
       input: "key",
-      brings: "Cash and bank balances",
-      how: "Create an application on UnbelievaBoat's site, authorize it on this server from the application's page, then paste its token below.",
-      link: { label: "Applications", href: "https://unbelievaboat.com/applications" }
+      brings: m.import.flowSourceUnbelievaboatBrings,
+      how: m.import.flowSourceUnbelievaboatHow,
+      link: { label: m.common.applications, href: "https://unbelievaboat.com/applications" }
     },
     {
       id: ImportSource.File,
-      name: "Other file",
+      name: m.import.flowSourceFileName,
       icon: "fa-file",
       input: "file",
-      brings: "XP, levels or balances",
-      how: "Any JSON or CSV with a user ID for each member and an XP, level, cash or bank value."
+      brings: m.import.flowSourceFileBrings,
+      how: m.import.flowSourceFileHow
     }
   ];
 
-  const mergeOptions = [
-    { id: ImportMergeMode.Replace.toString(), name: "Replace what members have" },
-    { id: ImportMergeMode.KeepHigher.toString(), name: "Keep whichever is higher" },
-    { id: ImportMergeMode.Add.toString(), name: "Add on top" }
-  ];
+  let mergeOptions = $derived([
+    { id: ImportMergeMode.Replace.toString(), name: m.import.flowMergeReplace() },
+    { id: ImportMergeMode.KeepHigher.toString(), name: m.import.flowMergeKeepHigher() },
+    { id: ImportMergeMode.Add.toString(), name: m.import.flowMergeAdd() }
+  ]);
 
-  const curveNames: Record<number, string> = {
-    0: "Default",
-    1: "Linear",
-    2: "Quadratic",
-    3: "Exponential",
-    4: "Custom",
-    5: "Legacy",
-    6: "MEE6",
-    7: "Lurkr",
-    8: "Amari"
+  const curveNames: Record<number, () => string> = {
+    0: m.common.default,
+    1: m.common.linear,
+    2: m.common.quadratic,
+    3: m.common.exponential,
+    4: m.common.custom,
+    5: m.common.legacy,
+    6: () => "MEE6",
+    7: () => "Lurkr",
+    8: () => "Amari"
   };
 
-  const errorText: Record<string, string> = {
-    SourceFailed: "The other bot did not answer properly. Try again in a few minutes.",
-    LeaderboardPrivate: "This server's MEE6 leaderboard is private. Make it public in MEE6's dashboard, then try again.",
-    NotFound: "The other bot has no data for this server.",
-    BadKey: "That key was rejected. Check it was copied in full.",
-    KeyRequired: "Paste a key first.",
-    FileRequired: "Choose a file first.",
-    RateLimited: "The other bot is limiting requests right now. Try again in a few minutes.",
-    UnreadableFile: "That file could not be read. Use a JSON or CSV export with a user ID and an XP or level for each member.",
-    Empty: "No members were found in that data.",
-    GlobalCurrency: "This bot shares one balance across every server, so balances cannot be imported into one server.",
-    Busy: "Another import is already running on this server.",
-    JobMissing: "That import expired. Read the data again.",
-    NotReady: "That import is not ready yet.",
-    WrongKind: "That data does not match. XP sources need XP or levels, and UnbelievaBoat needs balances.",
-    WrongServer: "That file was exported from a different server. Run the export on this server's MEE6 dashboard."
+  /**
+   * The display name of an XP curve.
+   * @param id The curve id
+   */
+  function curveName(id: number | null | undefined): string {
+    return id === undefined || id === null ? "" : (curveNames[id]?.() ?? String(id));
+  }
+
+  const errorText: Record<string, () => string> = {
+    SourceFailed: m.import.flowErrorSourceFailed,
+    LeaderboardPrivate: m.import.flowErrorLeaderboardPrivate,
+    NotFound: m.import.flowErrorNotFound,
+    BadKey: m.import.flowErrorBadKey,
+    KeyRequired: m.import.flowErrorKeyRequired,
+    FileRequired: m.import.flowErrorFileRequired,
+    RateLimited: m.import.flowErrorRateLimited,
+    UnreadableFile: m.import.flowErrorUnreadableFile,
+    Empty: m.import.flowErrorEmpty,
+    GlobalCurrency: m.import.flowErrorGlobalCurrency,
+    Busy: m.import.flowErrorBusy,
+    JobMissing: m.import.flowErrorJobMissing,
+    NotReady: m.import.flowErrorNotReady,
+    WrongKind: m.import.flowErrorWrongKind,
+    WrongServer: m.import.flowErrorWrongServer
   };
 
-  const sectionNames: Record<string, string> = {
-    welcome: "Welcome and goodbye",
-    levels: "Levels",
-    birthdays: "Birthdays",
-    commands: "Custom commands",
-    reactionRoles: "Reaction roles",
-    automod: "Auto-moderation",
-    twitch: "Twitch alerts",
-    economy: "Economy"
+  const sectionNames: Record<string, () => string> = {
+    welcome: m.import.flowSectionWelcome,
+    levels: m.import.flowSectionLevels,
+    birthdays: m.features.birthdayName,
+    commands: m.common.customCommands,
+    reactionRoles: m.common.reactionRoles,
+    automod: m.import.flowSectionAutomod,
+    twitch: m.import.flowSectionTwitch,
+    economy: m.import.flowSectionEconomy
   };
+
+  /**
+   * The display name of a settings section.
+   * @param key The section key
+   */
+  function sectionName(key: string): string {
+    return sectionNames[key]?.() ?? key;
+  }
 
   let source = $state<SourceInfo | null>(null);
   let apiKey = $state("");
@@ -225,7 +242,7 @@
    */
   function describe(err: unknown): string {
     const code = err instanceof Error ? err.message : "";
-    return errorText[code] ?? "Something went wrong. Try again in a moment.";
+    return errorText[code]?.() ?? m.import.flowErrorGeneric();
   }
 
   /** Sends the source to the bot and follows the job until the data is read. */
@@ -257,7 +274,7 @@
       reading = false;
       chosenSections = preview.sections?.map((s) => s.key) ?? [];
       if (preview.status === ImportJobStatus.Failed) {
-        error = errorText[preview.error ?? ""] ?? errorText.SourceFailed;
+        error = (errorText[preview.error ?? ""] ?? errorText.SourceFailed)();
         preview = null;
       }
       return;
@@ -346,8 +363,7 @@
 <div class="space-y-6">
   {#if !compact}
     <p class="text-sm" style="color: {$colorStore.muted}">
-      Moving from another bot? Bring your members' XP, levels, level roles and balances with you. You see everything
-      before it is written, and an import can be undone for 24 hours.
+      {m.import.flowIntro()}
     </p>
   {/if}
 
@@ -364,7 +380,7 @@
       >
         <i class="fa-utility-duo fa-regular {option.icon}" aria-hidden="true"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 22px;"></i>
-        <span class="text-sm font-medium" style="color: {$colorStore.text}">{option.name}</span>
+        <span class="text-sm font-medium" style="color: {$colorStore.text}">{option.name()}</span>
       </button>
     {/each}
   </div>
@@ -373,12 +389,12 @@
     <div class="rounded-xl p-4 space-y-4" style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}20;"
          in:fly={{ y: 10, duration: 200 }}>
       <div>
-        <p class="text-sm font-medium" style="color: {$colorStore.text}">Brings over: {source.brings}</p>
+        <p class="text-sm font-medium" style="color: {$colorStore.text}">{m.import.flowBringsOver({ brings: source.brings() })}</p>
         <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-          {source.how}
+          {source.how()}
           {#if source.link}
             <a class="underline ml-1" href={source.link.href} rel="noopener noreferrer" target="_blank"
-               style="color: {$colorStore.primary}">{source.link.label}</a>
+               style="color: {$colorStore.primary}">{source.link.label()}</a>
           {/if}
         </p>
       </div>
@@ -391,10 +407,10 @@
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px dashed {$colorStore.primary}60;"
             onclick={(e) => e.preventDefault()}
             draggable="true"
-            title="Drag this onto your bookmarks bar, or right-click it and bookmark the link"
+            title={m.import.flowBookmarkletTitle()}
           >
             <i class="fa-solid fa-bookmark" aria-hidden="true"></i>
-            Export from MEE6
+            {m.import.flowExportFromMee6()}
           </a>
           <button
             type="button"
@@ -403,14 +419,11 @@
             onclick={copySnippet}
           >
             <i class="fa-solid {copied ? 'fa-check' : 'fa-copy'}" aria-hidden="true"></i>
-            {copied ? "Copied" : "Copy console script"}
+            {copied ? m.common.copied() : m.import.flowCopyScript()}
           </button>
         </div>
         <p class="text-xs" style="color: {$colorStore.muted}">
-          Drag Export from MEE6 onto your bookmarks bar, or right-click it and bookmark the link (Firefox and Vivaldi offer
-          this, Chrome and Edge need the drag). Then click the bookmark while your server is open on mee6.xyz. You can
-          also copy the script and paste it into the console there (Ctrl+Shift+J, or Cmd+Option+J on a Mac). Your MEE6
-          login stays in your browser and is not part of the file.
+          {m.import.flowMee6Instructions()}
         </p>
       {/if}
 
@@ -420,8 +433,8 @@
           autocomplete="off"
           class="w-full px-3 rounded-lg border min-h-[44px]"
           style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-          placeholder="Paste the key"
-          aria-label="{source.name} key"
+          placeholder={m.import.flowKeyPlaceholder()}
+          aria-label={m.import.flowKeyAria({ name: source.name() })}
           bind:value={apiKey}
         />
       {:else if source.input === "file"}
@@ -437,7 +450,7 @@
           <i class="fa-utility-duo fa-regular fa-cloud-arrow-up" aria-hidden="true"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 22px;"></i>
           <span class="text-sm" style="color: {$colorStore.text}">
-            {file ? `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)` : "Drop the file here or choose one"}
+            {file ? m.import.flowFileSummary({ name: file.name, size: (file.size / 1024 / 1024).toFixed(1) }) : m.import.flowDropFile()}
           </span>
         </button>
         <input bind:this={fileInput} type="file" accept=".json,.csv,.txt,application/json,text/csv,text/plain"
@@ -453,10 +466,10 @@
           onclick={read}
         >
           <i class="fa-solid {reading ? 'fa-arrows-rotate fa-spin' : 'fa-download'}" aria-hidden="true"></i>
-          {reading ? "Reading" : preview ? "Read again" : "Read data"}
+          {reading ? m.import.flowReading() : preview ? m.import.flowReadAgain() : m.import.flowReadData()}
         </button>
         {#if reading && preview}
-          <span class="text-sm" style="color: {$colorStore.muted}">{count(preview.progress)} members so far</span>
+          <span class="text-sm" style="color: {$colorStore.muted}">{m.import.flowMembersSoFar({ count: count(preview.progress) })}</span>
         {/if}
       </div>
     </div>
@@ -474,16 +487,15 @@
     <div class="rounded-xl p-4 space-y-4" style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}20;"
          in:fly={{ y: 10, duration: 200 }}>
       <p class="text-sm" style="color: {$colorStore.muted}">
-        Pick what to bring over. Names already in use and deleted channels or roles are skipped. Reaction roles keep
-        working on MEE6's messages, while button menus are posted again by Mewdeko.
+        {m.import.flowSettingsIntro()}
       </p>
       {#each preview.sections ?? [] as section (section.key)}
         <div class="space-y-2">
           <ToggleRow
             checked={chosenSections.includes(section.key)}
             colors={$colorStore}
-            title={sectionNames[section.key] ?? section.key}
-            subtitle={`${section.count} ${section.count === 1 ? "item" : "items"}`}
+            title={sectionName(section.key)}
+            subtitle={section.count === 1 ? m.common.itemsOne({ count: section.count }) : m.common.itemsOther({ count: section.count })}
             onchange={(value) => toggleSection(section.key, value)}
           />
           <ul class="pl-4 space-y-1">
@@ -491,7 +503,7 @@
               <li class="text-xs" style="color: {$colorStore.muted}">{line}</li>
             {/each}
             {#if section.details.length > 12}
-              <li class="text-xs" style="color: {$colorStore.muted}">and {section.details.length - 12} more</li>
+              <li class="text-xs" style="color: {$colorStore.muted}">{m.import.flowAndMore({ count: section.details.length - 12 })}</li>
             {/if}
           </ul>
         </div>
@@ -505,9 +517,9 @@
           onclick={write}
         >
           <i class="fa-solid {writing ? 'fa-arrows-rotate fa-spin' : 'fa-file-import'}" aria-hidden="true"></i>
-          {writing ? "Importing" : "Import settings"}
+          {writing ? m.import.flowImporting() : m.import.flowImportSettings()}
         </button>
-        <span class="text-xs" style="color: {$colorStore.muted}">You can undo this for 24 hours.</span>
+        <span class="text-xs" style="color: {$colorStore.muted}">{m.import.flowUndoHint()}</span>
       </div>
     </div>
   {/if}
@@ -517,8 +529,13 @@
          style="background: #10b98115; border: 1px solid #10b98130;">
       {#each settingsResult.sections as section (section.section)}
         <p class="text-sm" style="color: {section.failed ? '#ef4444' : $colorStore.text}">
-          {sectionNames[section.section] ?? section.section}:
-          {section.failed ? "could not be written" : `${section.written} written${section.skipped ? `, ${section.skipped} skipped` : ""}`}
+          {#if section.failed}
+            {m.import.flowSectionFailed({ section: sectionName(section.section) })}
+          {:else if section.skipped}
+            {m.import.flowSectionWrittenSkipped({ section: sectionName(section.section), written: section.written, skipped: section.skipped })}
+          {:else}
+            {m.import.flowSectionWritten({ section: sectionName(section.section), written: section.written })}
+          {/if}
         </p>
       {/each}
     </div>
@@ -529,16 +546,16 @@
          in:fly={{ y: 10, duration: 200 }}>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div class="p-3 rounded-lg" style="background: {$colorStore.primary}10;">
-          <p class="text-xs" style="color: {$colorStore.muted}">Members found</p>
+          <p class="text-xs" style="color: {$colorStore.muted}">{m.import.flowMembersFound()}</p>
           <p class="text-xl font-bold" style="color: {$colorStore.text}">{count(preview.memberCount)}</p>
         </div>
         <div class="p-3 rounded-lg" style="background: {$colorStore.primary}10;">
-          <p class="text-xs" style="color: {$colorStore.muted}">{isCurrency ? "Already have a balance" : "Already have XP"}</p>
+          <p class="text-xs" style="color: {$colorStore.muted}">{isCurrency ? m.import.flowHaveBalance() : m.import.flowHaveXp()}</p>
           <p class="text-xl font-bold" style="color: {$colorStore.text}">{count(preview.existingCount)}</p>
         </div>
         {#if !isCurrency}
           <div class="p-3 rounded-lg" style="background: {$colorStore.primary}10;">
-            <p class="text-xs" style="color: {$colorStore.muted}">Level roles</p>
+            <p class="text-xs" style="color: {$colorStore.muted}">{m.import.flowLevelRoles()}</p>
             <p class="text-xl font-bold" style="color: {$colorStore.text}">{readyRewards}</p>
           </div>
         {/if}
@@ -546,7 +563,7 @@
 
       {#if preview.top.length}
         <div>
-          <p class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Top members</p>
+          <p class="text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.topMembers()}</p>
           <ul class="space-y-1">
             {#each preview.top as member, i (member.userId)}
               <li class="flex items-center gap-3 px-3 rounded-lg min-h-[44px]" style="background: {$colorStore.primary}06;">
@@ -559,9 +576,9 @@
                 <span class="flex-1 truncate text-sm" style="color: {$colorStore.text}">{member.name ?? member.userId}</span>
                 <span class="text-sm" style="color: {$colorStore.muted}">
                   {#if isCurrency}
-                    {count(member.cash)} cash, {count(member.bank)} bank
+                    {m.import.flowMemberCurrency({ cash: count(member.cash), bank: count(member.bank) })}
                   {:else}
-                    {member.level !== undefined && member.level !== null ? `Level ${member.level}, ` : ""}{count(member.xp)} XP
+                    {member.level !== undefined && member.level !== null ? m.import.flowMemberXpLevel({ level: member.level, xp: count(member.xp) }) : m.common.xpXp({ xp: count(member.xp) })}
                   {/if}
                 </span>
               </li>
@@ -572,12 +589,12 @@
 
       {#if !isCurrency && preview.roleRewards.length}
         <div>
-          <p class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Level roles</p>
+          <p class="text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.import.flowLevelRoles()}</p>
           <div class="flex flex-wrap gap-2">
             {#each preview.roleRewards as reward (reward.level)}
               <span class="px-3 py-1.5 rounded-lg text-sm"
                     style="background: {reward.exists ? $colorStore.primary + '15' : '#ef444415'}; color: {reward.exists ? $colorStore.text : '#ef4444'};">
-                Level {reward.level}: {reward.exists ? reward.roleName : "deleted role, skipped"}
+                {reward.exists ? m.import.flowRewardRole({ level: reward.level, role: reward.roleName ?? '' }) : m.import.flowRewardDeleted({ level: reward.level })}
               </span>
             {/each}
           </div>
@@ -587,7 +604,7 @@
       <div class="space-y-3">
         <div>
           <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-            {isCurrency ? "Balances members already have" : "XP members already have"}
+            {isCurrency ? m.import.flowMergeBalances() : m.import.flowMergeXp()}
           </span>
           <DiscordSelector type="custom" options={mergeOptions} bind:selected={mergeMode} searchable={false} />
         </div>
@@ -597,10 +614,10 @@
             <ToggleRow
               checked={useSourceCurve}
               colors={$colorStore}
-              title="Use the {curveNames[preview.nativeCurve]} curve"
+              title={m.import.flowUseCurve({ curve: curveName(preview.nativeCurve) })}
               subtitle={useSourceCurve
-                ? `Every member keeps the exact same level and XP. This server switches from the ${curveNames[preview.currentCurve]} curve.`
-                : `Members keep their levels and progress on the ${curveNames[preview.currentCurve]} curve. Their XP numbers change.`}
+                ? m.import.flowCurveKeepExact({ curve: curveName(preview.currentCurve) })
+                : m.import.flowCurveKeepLevels({ curve: curveName(preview.currentCurve) })}
               onchange={(value) => { useSourceCurve = value; }}
             />
           {/if}
@@ -609,8 +626,8 @@
             <ToggleRow
               checked={importRoleRewards}
               colors={$colorStore}
-              title="Import level roles"
-              subtitle="Sets the same role for each level here. Existing roles on those levels are replaced."
+              title={m.import.flowImportRoles()}
+              subtitle={m.import.flowImportRolesHint()}
               onchange={(value) => { importRoleRewards = value; }}
             />
           {/if}
@@ -618,14 +635,14 @@
           <ToggleRow
             checked={syncRoles}
             colors={$colorStore}
-            title="Hand out level roles afterwards"
-            subtitle="Gives every imported member the roles for their level. Takes a while on big servers."
+            title={m.import.flowSyncRoles()}
+            subtitle={m.import.flowSyncRolesHint()}
             onchange={(value) => { syncRoles = value; }}
           />
 
           <div>
             <label for="import-min-level" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-              Skip members below level
+              {m.import.flowMinLevel()}
             </label>
             <input
               id="import-min-level"
@@ -648,9 +665,9 @@
           onclick={write}
         >
           <i class="fa-solid {writing ? 'fa-arrows-rotate fa-spin' : 'fa-file-import'}" aria-hidden="true"></i>
-          {writing ? "Importing" : `Import ${count(preview.memberCount)} members`}
+          {writing ? m.import.flowImporting() : m.import.flowImportMembers({ count: count(preview.memberCount) })}
         </button>
-        <span class="text-xs" style="color: {$colorStore.muted}">You can undo this for 24 hours.</span>
+        <span class="text-xs" style="color: {$colorStore.muted}">{m.import.flowUndoHint()}</span>
       </div>
     </div>
   {/if}
@@ -659,16 +676,16 @@
     <div class="p-4 rounded-xl space-y-1" role="status" in:fly={{ y: 10, duration: 200 }}
          style="background: #10b98115; border: 1px solid #10b98130;">
       <p class="text-sm font-medium" style="color: #10b981">
-        Imported {isCurrency ? "balances" : "XP"} for {count(result.members)} members.
+        {isCurrency ? m.import.flowResultBalances({ count: count(result.members) }) : m.import.flowResultXp({ count: count(result.members) })}
       </p>
       {#if result.skipped > 0}
-        <p class="text-sm" style="color: {$colorStore.text}">Skipped {count(result.skipped)} members.</p>
+        <p class="text-sm" style="color: {$colorStore.text}">{m.import.flowResultSkipped({ count: count(result.skipped) })}</p>
       {/if}
       {#if result.roleRewards > 0}
-        <p class="text-sm" style="color: {$colorStore.text}">Set {result.roleRewards} level roles.</p>
+        <p class="text-sm" style="color: {$colorStore.text}">{m.import.flowResultRoles({ count: result.roleRewards })}</p>
       {/if}
       {#if result.curveChanged !== undefined && result.curveChanged !== null}
-        <p class="text-sm" style="color: {$colorStore.text}">The XP curve is now {curveNames[result.curveChanged]}.</p>
+        <p class="text-sm" style="color: {$colorStore.text}">{m.import.flowResultCurve({ curve: curveName(result.curveChanged) })}</p>
       {/if}
     </div>
   {/if}

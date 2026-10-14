@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/Heatmap.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import { n } from "./format";
   import type { HeatmapCell } from "$lib/api/analytics/models";
@@ -12,7 +13,7 @@
     empty?: string;
   }
 
-  let { buckets, cells, loading = false, unit = "", empty = "No data" }: Props = $props();
+  let { buckets, cells, loading = false, unit = "", empty = m.common.noData() }: Props = $props();
 
   const hours = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, "0"));
 
@@ -34,7 +35,7 @@
   }
 
   function cellTitle(bucket: string, hour: number): string {
-    return `${bucket} · ${hours[hour]}:00 UTC · ${n(grid.map.get(`${bucket}|${hour}`) ?? 0)} ${unit}`.trim();
+    return m.analytics.heatmapCellTitle({ bucket, hour: hours[hour], value: n(grid.map.get(`${bucket}|${hour}`) ?? 0), unit }).trim();
   }
 </script>
 

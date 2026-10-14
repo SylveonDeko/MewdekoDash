@@ -1,5 +1,6 @@
 <!-- routes/me/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -14,31 +15,31 @@
   import MyAchievements from "./MyAchievements.svelte";
 
   /** Zodiac sign options for the profile editor */
-  const zodiacOptions = [
+  const zodiacOptions = $derived([
     { id: "", name: "Not specified" },
-    { id: "Aries", name: "♈ Aries" },
-    { id: "Taurus", name: "♉ Taurus" },
-    { id: "Gemini", name: "♊ Gemini" },
-    { id: "Cancer", name: "♋ Cancer" },
-    { id: "Leo", name: "♌ Leo" },
-    { id: "Virgo", name: "♍ Virgo" },
-    { id: "Libra", name: "♎ Libra" },
-    { id: "Scorpio", name: "♏ Scorpio" },
-    { id: "Sagittarius", name: "♐ Sagittarius" },
-    { id: "Capricorn", name: "♑ Capricorn" },
-    { id: "Aquarius", name: "♒ Aquarius" },
-    { id: "Pisces", name: "♓ Pisces" }
-  ];
+    { id: "Aries", name: `♈ ${m.me.zodiacAries()}` },
+    { id: "Taurus", name: `♉ ${m.me.zodiacTaurus()}` },
+    { id: "Gemini", name: `♊ ${m.me.zodiacGemini()}` },
+    { id: "Cancer", name: `♋ ${m.me.zodiacCancer()}` },
+    { id: "Leo", name: `♌ ${m.me.zodiacLeo()}` },
+    { id: "Virgo", name: `♍ ${m.me.zodiacVirgo()}` },
+    { id: "Libra", name: `♎ ${m.me.zodiacLibra()}` },
+    { id: "Scorpio", name: `♏ ${m.me.zodiacScorpio()}` },
+    { id: "Sagittarius", name: `♐ ${m.me.zodiacSagittarius()}` },
+    { id: "Capricorn", name: `♑ ${m.me.zodiacCapricorn()}` },
+    { id: "Aquarius", name: `♒ ${m.me.zodiacAquarius()}` },
+    { id: "Pisces", name: `♓ ${m.me.zodiacPisces()}` }
+  ]);
 
   /** Last.fm period options */
-  const lastFmPeriodOptions = [
-    { id: "7day", name: "Week" },
-    { id: "1month", name: "Month" },
-    { id: "3month", name: "3 Months" },
-    { id: "6month", name: "6 Months" },
-    { id: "12month", name: "Year" },
-    { id: "overall", name: "All Time" }
-  ];
+  const lastFmPeriodOptions = $derived([
+    { id: "7day", name: m.me.lastfmPeriodWeek() },
+    { id: "1month", name: m.me.lastfmPeriodMonth() },
+    { id: "3month", name: m.me.lastfmPeriod3Months() },
+    { id: "6month", name: m.me.lastfmPeriod6Months() },
+    { id: "12month", name: m.me.lastfmPeriodYear() },
+    { id: "overall", name: m.common.allTime() }
+  ]);
 
   let {data} = $props();
 
@@ -134,7 +135,7 @@
       };
     } catch (err) {
       logger.error("Failed to load profile:", err);
-      showMessage("Failed to load profile data", "error");
+      showMessage(m.me.failedToLoadProfileData(), "error");
     } finally {
       loading = false;
     }
@@ -207,7 +208,7 @@
       guildConfig = config;
     } catch (err) {
       logger.error("Failed to load server data:", err);
-      showMessage("Failed to load server data", "error");
+      showMessage(m.me.failedToLoadServerData(), "error");
     } finally {
       loading = false;
     }
@@ -219,9 +220,9 @@
     try {
       const result = await meApi.toggleGreetDms(BigInt("0"), userId);
       (userProfile as any).greetDmsOptOut = result.greetDmsOptOut;
-      showMessage(`Welcome DMs ${result.greetDmsOptOut ? 'blocked' : 'allowed'}!`, "success");
+      showMessage(result.greetDmsOptOut ? m.me.toastWelcomeDmsBlocked() : m.me.toastWelcomeDmsAllowed(), "success");
     } catch (err) {
-      showMessage("Failed to update setting", "error");
+      showMessage(m.common.notifyUpdateFailed(), "error");
     } finally {
       saving = false;
     }
@@ -232,9 +233,9 @@
     try {
       const result = await meApi.toggleStats(BigInt("0"), userId);
       (userProfile as any).statsOptOut = result.statsOptOut;
-      showMessage(`Stats tracking ${result.statsOptOut ? 'blocked' : 'allowed'}!`, "success");
+      showMessage(result.statsOptOut ? m.me.toastStatsTrackingBlocked() : m.me.toastStatsTrackingAllowed(), "success");
     } catch (err) {
-      showMessage("Failed to update setting", "error");
+      showMessage(m.common.notifyUpdateFailed(), "error");
     } finally {
       saving = false;
     }
@@ -245,9 +246,9 @@
     try {
       const result = await meApi.toggleLevelUpPings(BigInt("0"), userId);
       (userPreferences as any).levelUpPingsDisabled = result.levelUpPingsDisabled;
-      showMessage(`Level-up pings ${result.levelUpPingsDisabled ? 'disabled' : 'enabled'}!`, "success");
+      showMessage(result.levelUpPingsDisabled ? m.me.toastLevelUpPingsDisabled() : m.me.toastLevelUpPingsEnabled(), "success");
     } catch (err) {
-      showMessage("Failed to update preference", "error");
+      showMessage(m.me.failedToUpdatePreference(), "error");
     } finally {
       saving = false;
     }
@@ -258,9 +259,9 @@
     try {
       const result = await meApi.togglePronouns(BigInt("0"), userId);
       (userPreferences as any).pronounsDisabled = result.pronounsDisabled;
-      showMessage(`Pronoun fetching ${result.pronounsDisabled ? 'disabled' : 'enabled'}!`, "success");
+      showMessage(result.pronounsDisabled ? m.me.toastPronounFetchingDisabled() : m.me.toastPronounFetchingEnabled(), "success");
     } catch (err) {
-      showMessage("Failed to update preference", "error");
+      showMessage(m.me.failedToUpdatePreference(), "error");
     } finally {
       saving = false;
     }
@@ -271,9 +272,9 @@
     try {
       const result = await meApi.toggleBirthdayAnnouncements(BigInt("0"), userId);
       (userProfile as any).birthdayAnnouncementsEnabled = result.birthdayAnnouncementsEnabled;
-      showMessage(`Birthday announcements ${result.birthdayAnnouncementsEnabled ? 'enabled' : 'disabled'}!`, "success");
+      showMessage(result.birthdayAnnouncementsEnabled ? m.me.toastBirthdayAnnouncementsEnabled() : m.me.toastBirthdayAnnouncementsDisabled(), "success");
     } catch (err) {
-      showMessage("Failed to update setting", "error");
+      showMessage(m.common.notifyUpdateFailed(), "error");
     } finally {
       saving = false;
     }
@@ -284,9 +285,9 @@
     try {
       const result = await meApi.toggleGuidedSetup(BigInt("0"), userId);
       (userPreferences as any).prefersGuidedSetup = result.prefersGuidedSetup;
-      showMessage(`Guided setup ${result.prefersGuidedSetup ? 'enabled' : 'disabled'}!`, "success");
+      showMessage(result.prefersGuidedSetup ? m.me.toastGuidedSetupEnabled() : m.me.toastGuidedSetupDisabled(), "success");
     } catch (err) {
-      showMessage("Failed to update preference", "error");
+      showMessage(m.me.failedToUpdatePreference(), "error");
     } finally {
       saving = false;
     }
@@ -298,10 +299,10 @@
       const result = await meApi.resetWizard(BigInt("0"), userId);
       (userPreferences as any).hasCompletedAnyWizard = result.hasCompletedAnyWizard;
       (userPreferences as any).prefersGuidedSetup = result.prefersGuidedSetup;
-      showMessage("Wizard state reset! You'll see setup guides again.", "success");
+      showMessage(m.me.toastWizardReset(), "success");
       await loadGlobalData(); // Refresh data
     } catch (err) {
-      showMessage("Failed to reset wizard", "error");
+      showMessage(m.me.failedToResetWizard(), "error");
     } finally {
       saving = false;
     }
@@ -313,7 +314,7 @@
     saving = true;
     try {
       await meApi.resetGuildWizard(BigInt("0"), userId, selectedGuild.id);
-      showMessage(`Setup wizard reset for ${selectedGuild.name}!`, "success");
+      showMessage(m.me.toastGuildWizardReset({ server: selectedGuild.name }), "success");
 
       // Refresh server data to update guild config
       if (guildConfig) {
@@ -322,7 +323,7 @@
       }
       await loadServerData();
     } catch (err) {
-      showMessage("Failed to reset guild wizard", "error");
+      showMessage(m.me.failedToResetGuildWizard(), "error");
     } finally {
       saving = false;
     }
@@ -345,10 +346,10 @@
       });
       
       editingProfile = false;
-      showMessage("Profile updated!", "success");
+      showMessage(m.me.profileUpdated(), "success");
       await loadGlobalData();
     } catch (err) {
-      showMessage("Failed to save profile", "error");
+      showMessage(m.me.failedToSaveProfile(), "error");
     } finally {
       saving = false;
     }
@@ -361,10 +362,10 @@
     try {
       await meApi.addHighlight(selectedGuild.id, userId, newHighlightWord.trim());
       newHighlightWord = "";
-      showMessage("Highlight added!", "success");
+      showMessage(m.me.highlightAdded(), "success");
       await loadServerData();
     } catch (err) {
-      showMessage("Failed to add highlight", "error");
+      showMessage(m.me.failedToAddHighlight(), "error");
     }
   }
 
@@ -374,10 +375,10 @@
 
     try {
       await meApi.removeHighlight(selectedGuild.id, userId, highlightId);
-      showMessage("Highlight removed!", "success");
+      showMessage(m.me.highlightRemoved(), "success");
       await loadServerData();
     } catch (err) {
-      showMessage("Failed to remove highlight", "error");
+      showMessage(m.me.failedToRemoveHighlight(), "error");
     }
   }
 
@@ -393,10 +394,10 @@
         until: undefined
       });
       newAfkMessage = "";
-      showMessage("AFK status set!", "success");
+      showMessage(m.me.afkStatusSet(), "success");
       await loadServerData();
     } catch (err) {
-      showMessage("Failed to set AFK status", "error");
+      showMessage(m.me.failedToSetAfkStatus(), "error");
     } finally {
       saving = false;
     }
@@ -409,10 +410,10 @@
     saving = true;
     try {
       await meApi.removeAfkStatus(selectedGuild.id, userId);
-      showMessage("AFK status removed!", "success");
+      showMessage(m.me.afkStatusRemoved(), "success");
       await loadServerData();
     } catch (err) {
-      showMessage("Failed to remove AFK status", "error");
+      showMessage(m.me.failedToRemoveAfkStatus(), "error");
     } finally {
       saving = false;
     }
@@ -507,7 +508,7 @@
 </script>
 
 <svelte:head>
-  <title>My Settings - Mewdeko</title>
+  <title>{m.me.mySettingsMewdeko()}</title>
 </svelte:head>
 
 <div class="min-h-screen p-4 md:p-6"
@@ -522,9 +523,9 @@
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
       </div>
       <div>
-        <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">My Settings</h1>
+        <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">{m.common.mySettings()}</h1>
         <p class="text-lg mt-1" style="color: {$colorStore.muted}">
-          Your profile and server preferences
+          {m.me.yourProfileAndServerPreferences()}
         </p>
       </div>
     </div>
@@ -541,7 +542,7 @@
           <h2 class="text-xl font-bold flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-utility-duo fa-regular fa-user text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-            Personal Information
+            {m.me.personalInformation()}
           </h2>
           {#if !editingProfile}
             <button
@@ -549,7 +550,7 @@
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
               onclick={() => editingProfile = true}
             >
-              Edit
+              {m.common.edit()}
             </button>
           {/if}
         </div>
@@ -559,10 +560,10 @@
             <!-- Bio -->
             <div class="md:col-span-2">
               <label for="input-9136" class="block text-sm font-medium mb-2"
-                     style="color: {$colorStore.text}">Bio</label>
+                     style="color: {$colorStore.text}">{m.me.bio()}</label>
               <textarea
                 bind:value={profileForm.bio}
-                placeholder="Tell others about yourself..."
+                placeholder={m.me.tellOthersAboutYourself()}
                 rows="3"
                 class="w-full px-3 py-2 rounded-lg border resize-none"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
@@ -572,11 +573,11 @@
             <!-- Pronouns -->
             <div>
               <label for="input-9136" class="block text-sm font-medium mb-2"
-                     style="color: {$colorStore.text}">Pronouns</label>
+                     style="color: {$colorStore.text}">{m.common.pronouns()}</label>
               <input id="input-9136"
                 type="text"
                 bind:value={profileForm.pronouns}
-                placeholder="they/them, she/her, he/him..."
+                placeholder={m.me.theyThemSheHerHe()}
                 class="w-full px-3 py-2 rounded-lg border"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
               >
@@ -584,14 +585,13 @@
 
             <!-- Zodiac Sign -->
             <div>
-              <span id="zodiac-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Zodiac
-                Sign</span>
+              <span id="zodiac-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.me.zodiacSign()}</span>
               <DiscordSelector
                 type="custom"
                 options={zodiacOptions}
                 selected={profileForm.zodiacSign || ""}
                 ariaLabelledby="zodiac-label"
-                placeholder="Not specified"
+                placeholder={m.me.notSpecified()}
                 onchange={(e) => { profileForm.zodiacSign = typeof e.selected === "string" ? e.selected : ""; }}
               />
             </div>
@@ -599,7 +599,7 @@
             <!-- Birthday -->
             <div>
               <label for="input-1516" class="block text-sm font-medium mb-2"
-                     style="color: {$colorStore.text}">Birthday</label>
+                     style="color: {$colorStore.text}">{m.placeholders.categoryBirthday()}</label>
               <input id="input-1516"
                 type="date"
                 bind:value={profileForm.birthday}
@@ -611,25 +611,24 @@
             <!-- Timezone -->
             <div>
               <span id="birthday-timezone-label" class="block text-sm font-medium mb-2"
-                    style="color: {$colorStore.text}">Timezone</span>
+                    style="color: {$colorStore.text}">{m.common.timezone()}</span>
               <DiscordSelector
                 type="timezone"
                 options={TIMEZONE_OPTIONS}
                 selected={profileForm.birthdayTimezone || "UTC"}
                 ariaLabelledby="birthday-timezone-label"
-                placeholder="Select timezone"
+                placeholder={m.common.selectTimezonePlaceholder()}
                 onchange={(e) => { profileForm.birthdayTimezone = typeof e.selected === "string" ? e.selected : "UTC"; }}
               />
             </div>
 
             <!-- Switch Friend Code -->
             <div>
-              <label for="input-4352" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Switch
-                Friend Code</label>
+              <label for="input-4352" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.me.switchFriendCode()}</label>
               <input id="input-4352"
                 type="text"
                 bind:value={profileForm.switchFriendCode}
-                placeholder="SW-0000-0000-0000"
+                placeholder={m.me.sw000000000000()}
                 class="w-full px-3 py-2 rounded-lg border"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
               >
@@ -637,8 +636,7 @@
 
             <!-- Profile Color -->
             <div>
-              <label for="input-8750" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Profile
-                Color</label>
+              <label for="input-8750" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.me.profileColor()}</label>
               <input id="input-8750"
                 type="color"
                 bind:value={profileForm.profileColor}
@@ -655,47 +653,47 @@
                 onclick={() => editingProfile = false}
                 disabled={saving}
               >
-                Cancel
+                {m.common.cancel()}
               </button>
-              <button aria-label="Button action"
+              <button aria-label={m.me.buttonAction()}
                 class="px-4 py-2 rounded-lg text-sm flex items-center gap-2"
                 style="background: {$colorStore.primary}; color: white;"
                 onclick={saveProfile}
                 disabled={saving}
               >
                 <i class="fa-solid fa-floppy-disk" style="font-size: 12px;"></i>
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? m.common.saving() : m.common.save()}
               </button>
             </div>
           </div>
         {:else}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="md:col-span-2">
-              <span class="text-sm font-medium" style="color: {$colorStore.text}">Bio:</span>
+              <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.bio2()}</span>
               <p class="text-sm mt-1 p-2 rounded-lg min-h-[60px]" style="background: {$colorStore.primary}05; color: {$colorStore.muted}">
                 {userProfile.bio || "No bio set"}
               </p>
             </div>
             <div>
-              <span class="text-sm font-medium" style="color: {$colorStore.text}">Pronouns:</span>
+              <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.pronouns2()}</span>
               <span class="text-sm ml-2" style="color: {$colorStore.muted}">
                 {userProfile.pronouns || "Not specified"}
               </span>
             </div>
             <div>
-              <span class="text-sm font-medium" style="color: {$colorStore.text}">Zodiac:</span>
+              <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.zodiac()}</span>
               <span class="text-sm ml-2" style="color: {$colorStore.muted}">
                 {userProfile.zodiacSign || "Not specified"}
               </span>
             </div>
             <div>
-              <span class="text-sm font-medium" style="color: {$colorStore.text}">Birthday:</span>
+              <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.birthday2()}</span>
               <span class="text-sm ml-2" style="color: {$colorStore.muted}">
                 {userProfile.birthday ? new Date(userProfile.birthday).toLocaleDateString() : "Not set"}
               </span>
             </div>
             <div>
-              <span class="text-sm font-medium" style="color: {$colorStore.text}">Switch FC:</span>
+              <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.switchFc()}</span>
               <span class="text-sm ml-2" style="color: {$colorStore.muted}">
                 {userProfile.switchFriendCode || "Not set"}
               </span>
@@ -714,15 +712,15 @@
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-utility-duo fa-regular fa-shield text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-            Privacy
+            {m.common.privacy()}
           </h3>
 
           <div class="space-y-4">
             <!-- Block Welcome DMs -->
             <div class="flex items-center justify-between">
               <div>
-                <div class="text-sm font-medium" style="color: {$colorStore.text}">Block Welcome DMs</div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Prevent welcome messages</div>
+                <div class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.blockWelcomeDms()}</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.me.preventWelcomeMessages()}</div>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input
@@ -745,8 +743,8 @@
             <!-- Block Stats -->
             <div class="flex items-center justify-between">
               <div>
-                <div class="text-sm font-medium" style="color: {$colorStore.text}">Block Message Tracking</div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Prevent message count tracking</div>
+                <div class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.blockMessageTracking()}</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.me.preventMessageCountTracking()}</div>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input
@@ -769,8 +767,8 @@
             <!-- Birthday Announcements -->
             <div class="flex items-center justify-between">
               <div>
-                <div class="text-sm font-medium" style="color: {$colorStore.text}">Birthday Announcements</div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Allow birthday celebrations</div>
+                <div class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.birthdayAnnouncements()}</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.me.allowBirthdayCelebrations()}</div>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input
@@ -800,15 +798,15 @@
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-utility-duo fa-regular fa-gear text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-            Preferences
+            {m.me.preferences()}
           </h3>
 
           <div class="space-y-4">
             <!-- Level-up Pings -->
             <div class="flex items-center justify-between">
               <div>
-                <div class="text-sm font-medium" style="color: {$colorStore.text}">Level-up Pings</div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Disable level-up notifications</div>
+                <div class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.levelUpPings()}</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.me.disableLevelUpNotifications()}</div>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input
@@ -831,8 +829,8 @@
             <!-- Pronoun Fetching -->
             <div class="flex items-center justify-between">
               <div>
-                <div class="text-sm font-medium" style="color: {$colorStore.text}">Auto Pronoun Fetching</div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Disable PronounDB integration</div>
+                <div class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.autoPronounFetching()}</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.me.disablePronoundbIntegration()}</div>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input
@@ -855,8 +853,8 @@
             <!-- Dyslexia-friendly Font -->
             <div class="flex items-center justify-between">
               <div>
-                <div class="text-sm font-medium" style="color: {$colorStore.text}">Dyslexia-friendly Font</div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Use OpenDyslexic across the dashboard (this device only)</div>
+                <div class="text-sm font-medium" style="color: {$colorStore.text}">{m.common.dyslexiaFriendlyFont()}</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.me.useOpendyslexicAcrossTheDashboard()}</div>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input
@@ -878,8 +876,8 @@
             <!-- Guided Setup -->
             <div class="flex items-center justify-between">
               <div>
-                <div class="text-sm font-medium" style="color: {$colorStore.text}">Guided Setup</div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Prefer step-by-step guidance</div>
+                <div class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.guidedSetup()}</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.me.preferStepByStepGuidance()}</div>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input
@@ -904,8 +902,8 @@
               <div class="pt-4 border-t" style="border-color: {$colorStore.primary}20;">
                 <div class="flex items-center justify-between">
                   <div>
-                    <div class="text-sm font-medium" style="color: {$colorStore.text}">Reset Setup Wizard</div>
-                    <div class="text-xs" style="color: {$colorStore.muted}">See setup guides again for all servers</div>
+                    <div class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.resetSetupWizard()}</div>
+                    <div class="text-xs" style="color: {$colorStore.muted}">{m.me.seeSetupGuidesAgainFor()}</div>
                   </div>
                   <button
                     class="px-3 py-1.5 rounded-lg text-sm border transition-all hover:scale-[1.02]"
@@ -913,7 +911,7 @@
                     onclick={resetWizard}
                     disabled={saving}
                   >
-                    {saving ? 'Resetting...' : 'Reset'}
+                    {saving ? m.me.resetting() : m.common.reset()}
                   </button>
                 </div>
               </div>
@@ -928,17 +926,17 @@
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-brands fa-lastfm text-xl" style="color: #d51007;"></i>
-            Last.fm Scrobbling
+            {m.me.lastFmScrobbling()}
           </h3>
 
           {#if lastFmStatus?.linked}
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <div class="text-sm font-medium" style="color: {$colorStore.text}">
-                  Connected as: <strong>{lastFmStatus?.username}</strong>
+                  {m.me.connectedAs()} <strong>{lastFmStatus?.username}</strong>
                 </div>
                 <div class="text-xs" style="color: {$colorStore.muted}">
-                  Scrobbling: {lastFmStatus?.scrobblingEnabled ? 'Enabled' : 'Disabled'}
+                  {lastFmStatus?.scrobblingEnabled ? m.me.lastfmScrobblingEnabled() : m.me.lastfmScrobblingDisabled()}
                 </div>
               </div>
               <div class="flex gap-2 w-full sm:w-auto">
@@ -952,29 +950,29 @@
                     try {
                       await lastfmApi.toggleScrobbling(BigInt("0"), userId, !lastFmStatus?.scrobblingEnabled);
                       await loadGlobalData();
-                      showMessage(lastFmStatus?.scrobblingEnabled ? 'Scrobbling disabled' : 'Scrobbling enabled', 'success');
+                      showMessage(lastFmStatus?.scrobblingEnabled ? m.me.toastScrobblingDisabled() : m.me.toastScrobblingEnabled(), 'success');
                     } catch (err) {
-                      showMessage('Failed to toggle scrobbling', 'error');
+                      showMessage(m.me.failedToToggleScrobbling(), 'error');
                     } finally {
                       saving = false;
                     }
                   }}
                   disabled={saving}
                 >
-                  {lastFmStatus?.scrobblingEnabled ? 'Disable' : 'Enable'}
+                  {lastFmStatus?.scrobblingEnabled ? m.common.disable() : m.common.enable()}
                 </button>
                 <button
                   class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm border transition-all hover:scale-[1.02]"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;"
                   onclick={async () => {
-                    if (await requestConfirmation({ message: 'Are you sure you want to unlink your Last.fm account?', confirmText: 'Unlink' })) {
+                    if (await requestConfirmation({ message: m.me.lastfmUnlinkConfirm(), confirmText: m.common.unlink() })) {
                       saving = true;
                       try {
                         await lastfmApi.unlink(BigInt("0"), userId);
                         await loadGlobalData();
-                        showMessage('Last.fm account unlinked', 'success');
+                        showMessage(m.me.lastFmAccountUnlinked(), 'success');
                       } catch (err) {
-                        showMessage('Failed to unlink Last.fm', 'error');
+                        showMessage(m.me.failedToUnlinkLastFm(), 'error');
                       } finally {
                         saving = false;
                       }
@@ -982,14 +980,14 @@
                   }}
                   disabled={saving}
                 >
-                  Unlink
+                  {m.common.unlink()}
                 </button>
               </div>
             </div>
           {:else}
             <div class="text-center p-2">
               <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-                Link your Last.fm account to automatically scrobble music
+                {m.me.linkYourLastFmAccount()}
               </p>
               <button
                 class="w-full sm:w-auto px-4 py-2 rounded-lg transition-all hover:scale-[1.02]"
@@ -998,15 +996,15 @@
                   try {
                     const { authUrl } = await lastfmApi.getAuthUrl(BigInt("0"), userId);
                     window.open(authUrl, '_blank');
-                    showMessage('Complete authentication in the opened window', 'success');
+                    showMessage(m.me.completeAuthenticationInTheOpened(), 'success');
                   } catch (err) {
-                    showMessage('Failed to get Last.fm auth URL', 'error');
+                    showMessage(m.me.lastfmAuthUrlFailed(), 'error');
                   }
                 }}
                 disabled={saving}
               >
                 <i class="fa-brands fa-lastfm mr-2"></i>
-                Connect Last.fm
+                {m.me.connectLastFm()}
               </button>
             </div>
           {/if}
@@ -1025,7 +1023,7 @@
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-utility-duo fa-regular fa-music text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-            Recent Tracks
+            {m.me.recentTracks()}
           </h3>
 
           {#if loadingLastFmStats}
@@ -1057,7 +1055,7 @@
                     {#if track.isNowPlaying}
                       <div class="text-xs flex items-center gap-1" style="color: #10b981;">
                         <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        Now Playing
+                        {m.common.nowPlaying()}
                       </div>
                     {/if}
                   </div>
@@ -1066,7 +1064,7 @@
             </div>
           {:else}
             <p class="text-sm text-center py-4" style="color: {$colorStore.muted}">
-              No recent tracks
+              {m.me.noRecentTracks()}
             </p>
           {/if}
         </div>
@@ -1080,7 +1078,7 @@
             <h3 class="text-lg font-bold flex items-center gap-2" style="color: {$colorStore.text}">
               <i class="fa-utility-duo fa-regular fa-headphones text-xl"
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-              Top Artists
+              {m.me.topArtists()}
             </h3>
             <div class="w-36">
               <DiscordSelector
@@ -1088,7 +1086,7 @@
                 options={lastFmPeriodOptions}
                 selected={lastFmPeriod}
                 searchable={false}
-                ariaLabel="Last.fm period"
+                ariaLabel={m.me.lastfmPeriodAria()}
                 onchange={(e) => { lastFmPeriod = typeof e.selected === "string" ? e.selected : "7day"; loadLastFmStats(); }}
               />
             </div>
@@ -1116,7 +1114,7 @@
                       {artist.name}
                     </div>
                     <div class="text-xs" style="color: {$colorStore.muted}">
-                      {artist.playcount} plays
+                      {m.me.lastfmPlays({ count: artist.playcount })}
                     </div>
                   </div>
                 </div>
@@ -1124,7 +1122,7 @@
             </div>
           {:else}
             <p class="text-sm text-center py-4" style="color: {$colorStore.muted}">
-              No data for this period
+              {m.me.noDataForThisPeriod()}
             </p>
           {/if}
         </div>
@@ -1137,7 +1135,7 @@
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-utility-duo fa-regular fa-star text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-            Listening Stats
+            {m.me.listeningStats()}
           </h3>
 
           {#if loadingLastFmStats}
@@ -1155,25 +1153,25 @@
                 <div class="text-2xl font-bold" style="color: {$colorStore.text}">
                   {lastFmUserInfo?.playcount?.toLocaleString() || '0'}
                 </div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Total Scrobbles</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.me.totalScrobbles()}</div>
               </div>
               <div>
                 <div class="text-2xl font-bold" style="color: {$colorStore.text}">
                   {lastFmTopArtists.length}
                 </div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Top Artists</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.me.topArtists()}</div>
               </div>
               <div>
                 <div class="text-2xl font-bold" style="color: {$colorStore.text}">
                   {lastFmTopAlbums.length}
                 </div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Top Albums</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.me.topAlbums()}</div>
               </div>
               <div>
                 <div class="text-2xl font-bold" style="color: {$colorStore.text}">
-                  {lastFmUserInfo?.country || 'Unknown'}
+                  {lastFmUserInfo?.country || m.common.unknown()}
                 </div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Country</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.me.country()}</div>
               </div>
             </div>
           {/if}
@@ -1190,8 +1188,8 @@
              style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
         </div>
         <div>
-          <h2 class="text-2xl font-bold" style="color: {$colorStore.text}">Server Settings</h2>
-          <p class="text-sm" style="color: {$colorStore.muted}">Settings specific to each server</p>
+          <h2 class="text-2xl font-bold" style="color: {$colorStore.text}">{m.common.serverSettings()}</h2>
+          <p class="text-sm" style="color: {$colorStore.muted}">{m.me.settingsSpecificToEachServer()}</p>
         </div>
       </div>
 
@@ -1202,9 +1200,9 @@
                     border-color: {$colorStore.primary}30;">
           <i class="fa-utility-duo fa-regular fa-server text-6xl mx-auto mb-4 block"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-          <h3 class="text-xl font-semibold mb-3" style="color: {$colorStore.text}">Choose a Server</h3>
+          <h3 class="text-xl font-semibold mb-3" style="color: {$colorStore.text}">{m.me.chooseAServer()}</h3>
           <p class="mb-6" style="color: {$colorStore.muted}">
-            Select a server to manage your highlights, AFK status, and view your activity
+            {m.me.selectAServerToManage()}
           </p>
 
           {#if availableGuilds.length > 0}
@@ -1215,7 +1213,7 @@
                 onclick={() => showGuildDropdown = !showGuildDropdown}
               >
                 <i class="fa-solid fa-server" style="font-size: 20px;"></i>
-                Choose Server
+                {m.me.chooseServer()}
                 <i class="fa-solid fa-chevron-down transition-transform {showGuildDropdown ? 'rotate-180' : ''}" style="font-size: 16px;"></i>
               </button>
 
@@ -1228,7 +1226,7 @@
                   <div class="p-3 border-b" style="border-color: {$colorStore.primary}20;">
                     <input
                       type="text"
-                      placeholder="Search servers..."
+                      placeholder={m.common.searchServersPlaceholder()}
                       bind:value={guildSearchTerm}
                       class="w-full px-3 py-2 rounded-lg border text-sm"
                       style="background: rgba(0,0,0,0.5); border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -1255,7 +1253,7 @@
                             {guild.name}
                           </span>
                           <span class="text-xs block" style="color: {$colorStore.muted}">
-                            {guild.memberCount?.toLocaleString() || 'Unknown'} members
+                            {m.common.membersCount({ count: guild.memberCount?.toLocaleString() || m.common.unknown() })}
                           </span>
                         </span>
                       </button>
@@ -1265,7 +1263,7 @@
               {/if}
             </div>
           {:else}
-            <p style="color: {$colorStore.muted}">No servers available</p>
+            <p style="color: {$colorStore.muted}">{m.common.noServersAvailable()}</p>
           {/if}
         </div>
 
@@ -1289,8 +1287,8 @@
               <div class="text-center sm:text-left">
                 <h3 class="text-xl font-bold" style="color: {$colorStore.text}">{selectedGuild.name}</h3>
                 <p class="text-sm" style="color: {$colorStore.muted}">
-                  <span class="hidden sm:inline">Your personal settings and activity for this server</span>
-                  <span class="sm:hidden">{selectedGuild.memberCount?.toLocaleString() || 'N/A'} members</span>
+                  <span class="hidden sm:inline">{m.me.yourPersonalSettingsAndActivity()}</span>
+                  <span class="sm:hidden">{m.common.membersCount({ count: selectedGuild.memberCount?.toLocaleString() || m.common.notAvailable() })}</span>
                 </p>
               </div>
             </div>
@@ -1302,7 +1300,7 @@
                 onclick={changeServer}
               >
                 <i class="fa-solid fa-server" style="font-size: 16px;"></i>
-                Change Server
+                {m.me.changeServer()}
               </button>
 
               <!-- Guild Wizard Reset (only for admins with completed/skipped wizard) -->
@@ -1312,10 +1310,10 @@
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;"
                   onclick={resetGuildWizard}
                   disabled={saving}
-                  title="Reset setup wizard for this server"
+                  title={m.me.resetSetupWizardForThis()}
                 >
                   <i class="fa-solid fa-gear" style="font-size: 16px;"></i>
-                  <span class="hidden sm:inline">Reset Wizard</span>
+                  <span class="hidden sm:inline">{m.me.resetWizard()}</span>
                 </button>
               {/if}
             </div>
@@ -1333,8 +1331,8 @@
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
                 <i class="fa-utility-duo fa-regular fa-star text-2xl mx-auto mb-2 block"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-                <div class="text-xl font-bold" style="color: {$colorStore.text}">Level {serverData.xpStats.level}</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">Rank #{serverData.xpStats.rank}</div>
+                <div class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.levelNumber({ level: serverData.xpStats.level })}</div>
+                <div class="text-sm" style="color: {$colorStore.muted}">{m.common.rankNumber({ rank: serverData.xpStats.rank })}</div>
                 <div class="text-xs" style="color: {$colorStore.muted}">{serverData.xpStats.totalXp.toLocaleString()} XP</div>
               </div>
             {/if}
@@ -1345,8 +1343,8 @@
               <i class="fa-utility-duo fa-regular fa-star text-2xl mx-auto mb-2 block"
                  style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
               <div class="text-xl font-bold" style="color: {$colorStore.text}">{serverData.reputation.totalRep}</div>
-              <div class="text-sm" style="color: {$colorStore.muted}">Reputation</div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Rank #{serverData.reputation.rank}</div>
+              <div class="text-sm" style="color: {$colorStore.muted}">{m.features.reputationName()}</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.common.rankNumber({ rank: serverData.reputation.rank })}</div>
             </div>
 
             <!-- Message Stats -->
@@ -1355,8 +1353,8 @@
               <i class="fa-utility-duo fa-regular fa-list-numeric text-2xl mx-auto mb-2 block"
                  style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
               <div class="text-xl font-bold" style="color: {$colorStore.text}">{serverData.messages.totalMessages?.toLocaleString() || '0'}</div>
-              <div class="text-sm" style="color: {$colorStore.muted}">Messages</div>
-              <div class="text-xs" style="color: {$colorStore.muted}">{serverData.invites.inviteCount || 0} invites</div>
+              <div class="text-sm" style="color: {$colorStore.muted}">{m.common.messages()}</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.me.statInvites({ count: serverData.invites.inviteCount || 0 })}</div>
             </div>
           </div>
 
@@ -1374,7 +1372,7 @@
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-lightbulb text-xl"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-                Highlights ({serverData.highlights.length})
+                {m.me.sectionHighlights({ count: serverData.highlights.length })}
               </h3>
 
               <!-- Add highlight -->
@@ -1382,12 +1380,12 @@
                 <input
                   type="text"
                   bind:value={newHighlightWord}
-                  placeholder="Add highlight word..."
+                  placeholder={m.me.addHighlightWord()}
                   class="flex-1 px-3 py-2 rounded-lg border text-sm"
                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                   onkeydown={(e) => e.key === 'Enter' && addHighlight()}
                 >
-                <button aria-label="Add"
+                <button aria-label={m.common.add()}
                         class="px-4 py-2 rounded-lg transition-all hover:scale-[1.02]"
                   style="background: {$colorStore.primary}; color: white;"
                   onclick={addHighlight}
@@ -1403,7 +1401,7 @@
                   <div class="flex items-center justify-between p-2 rounded-lg"
                        style="background: {$colorStore.primary}08;">
                     <span class="text-sm" style="color: {$colorStore.text}">{highlight.word}</span>
-                    <button aria-label="Delete"
+                    <button aria-label={m.common.delete()}
                             class="p-1 rounded-sm transition-all hover:scale-110"
                       style="color: {$colorStore.accent};"
                       onclick={() => removeHighlight(highlight.id)}
@@ -1413,7 +1411,7 @@
                   </div>
                 {:else}
                   <p class="text-sm text-center py-4" style="color: {$colorStore.muted}">
-                    No highlight words set
+                    {m.me.noHighlightWordsSet()}
                   </p>
                 {/each}
               </div>
@@ -1427,13 +1425,13 @@
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-list-numeric text-xl"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-                Suggestions ({serverData.suggestions.length})
+                {m.common.suggestionsCount({ count: serverData.suggestions.length })}
               </h3>
 
               {#if serverData.currency.bank}
                 <div class="text-xs mb-3" style="color: {$colorStore.muted}">
-                  {serverData.currency.balance.toLocaleString()} in wallet ·
-                  {serverData.currency.bank.toLocaleString()} banked
+                  {m.me.currencyWallet({ amount: serverData.currency.balance.toLocaleString() })}
+                  {m.me.currencyBanked({ amount: serverData.currency.bank.toLocaleString() })}
                 </div>
               {/if}
 
@@ -1452,13 +1450,13 @@
                                             suggestion.currentState === 2 ? '#ef4444' : '#6b7280'}20;
                                   color: {suggestion.currentState === 1 ? '#10b981' :
                                          suggestion.currentState === 2 ? '#ef4444' : '#6b7280'};">
-                        {suggestion.currentState === 1 ? 'Accepted' : suggestion.currentState === 2 ? 'Denied' : 'Pending'}
+                        {suggestion.currentState === 1 ? m.common.accepted() : suggestion.currentState === 2 ? m.common.denied() : m.common.pending()}
                       </span>
                     </div>
                   </div>
                 {:else}
                   <p class="text-sm text-center py-4" style="color: {$colorStore.muted}">
-                    No suggestions made
+                    {m.me.noSuggestionsMade()}
                   </p>
                 {/each}
               </div>
@@ -1472,7 +1470,7 @@
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-star text-xl"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-                Currency: {(serverData.currency.netWorth ?? serverData.currency.balance).toLocaleString()}
+                {m.me.currencyNetWorth({ amount: (serverData.currency.netWorth ?? serverData.currency.balance).toLocaleString() })}
               </h3>
 
               <div class="space-y-2 max-h-32 overflow-y-auto">
@@ -1491,7 +1489,7 @@
                   </div>
                 {:else}
                   <p class="text-sm text-center py-4" style="color: {$colorStore.muted}">
-                    No recent transactions
+                    {m.me.noRecentTransactions()}
                   </p>
                 {/each}
               </div>
@@ -1505,7 +1503,7 @@
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-clock text-xl"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-                AFK Status
+                {m.me.afkStatus()}
               </h3>
 
               {#if serverData.afkStatus.isAfk}
@@ -1513,14 +1511,14 @@
                      style="background: {$colorStore.accent}15; border-color: {$colorStore.accent}30;">
                   <div class="flex items-center gap-2 mb-2">
                     <div class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
-                    <span class="text-sm font-medium" style="color: {$colorStore.text}">Currently AFK</span>
+                    <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.currentlyAfk()}</span>
                   </div>
                   {#if serverData.afkStatus.message}
                     <p class="text-sm" style="color: {$colorStore.muted}">"{serverData.afkStatus.message}"</p>
                   {/if}
                   {#if serverData.afkStatus.when}
                     <p class="text-xs" style="color: {$colorStore.muted}">
-                      Since {new Date(serverData.afkStatus.when).toLocaleString()}
+                      {m.me.afkSince({ time: new Date(serverData.afkStatus.when).toLocaleString() })}
                     </p>
                   {/if}
                 </div>
@@ -1530,7 +1528,7 @@
               <div class="space-y-3">
                 <textarea
                   bind:value={newAfkMessage}
-                  placeholder="Enter AFK message (optional)..."
+                  placeholder={m.me.enterAfkMessageOptional()}
                   rows="2"
                   class="w-full px-3 py-2 rounded-lg border resize-none text-sm"
                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
@@ -1543,7 +1541,7 @@
                     onclick={setAfkStatus}
                     disabled={saving}
                   >
-                    {saving ? 'Setting...' : 'Set AFK'}
+                    {saving ? m.me.afkSetting() : m.me.afkSet()}
                   </button>
                   {#if serverData.afkStatus.isAfk}
                     <button
@@ -1552,7 +1550,7 @@
                       onclick={removeAfkStatus}
                       disabled={saving}
                     >
-                      Remove
+                      {m.common.remove()}
                     </button>
                   {/if}
                 </div>
@@ -1567,25 +1565,25 @@
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-bell text-xl"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-                Recent Activity
+                {m.common.recentActivity()}
               </h3>
 
               <div class="grid grid-cols-2 gap-4 text-center">
                 <div>
                   <div class="text-lg font-bold" style="color: {$colorStore.text}">{serverData.giveaways.length}</div>
-                  <div class="text-xs" style="color: {$colorStore.muted}">Giveaways</div>
+                  <div class="text-xs" style="color: {$colorStore.muted}">{m.features.giveawaysName()}</div>
                 </div>
                 <div>
                   <div class="text-lg font-bold" style="color: {$colorStore.text}">{serverData.reminders.length}</div>
-                  <div class="text-xs" style="color: {$colorStore.muted}">Reminders</div>
+                  <div class="text-xs" style="color: {$colorStore.muted}">{m.common.reminders()}</div>
                 </div>
                 <div>
                   <div class="text-lg font-bold" style="color: {$colorStore.text}">{serverData.analytics.featureUsage?.totalTransactions || 0}</div>
-                  <div class="text-xs" style="color: {$colorStore.muted}">Transactions</div>
+                  <div class="text-xs" style="color: {$colorStore.muted}">{m.common.transactions()}</div>
                 </div>
                 <div>
                   <div class="text-lg font-bold" style="color: {$colorStore.text}">{serverData.starboard?.starsReceived || 0}</div>
-                  <div class="text-xs" style="color: {$colorStore.muted}">Stars</div>
+                  <div class="text-xs" style="color: {$colorStore.muted}">{m.me.stars()}</div>
                 </div>
               </div>
             </div>

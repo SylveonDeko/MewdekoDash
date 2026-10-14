@@ -16,10 +16,11 @@
     import {colorStore} from "$lib/stores/colorStore.ts";
     import {logger} from "$lib/logger.ts";
     import type { TtsVcSetting, TtsVoice } from "$lib/api/music/models";
+    import { m } from "$lib/i18n";
     import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
     const autoSave = createAutoSave({
-      onError: () => showNotificationMessage("Couldn't save music settings. Your last change was undone.", "error")
+      onError: () => showNotificationMessage(m.music.notifySaveFailed(), "error")
     });
 
     interface Props {
@@ -40,10 +41,10 @@
 
   // Tab state
   let activeTab = $state("music");
-  const tabs = [
-    { id: "music", label: "Music Settings", icon: "fa-music" },
-    { id: "tts", label: "TTS Settings", icon: "fa-microphone" }
-  ];
+  const tabs = $derived([
+    { id: "music", label: m.music.tabMusic(), icon: "fa-music" },
+    { id: "tts", label: m.music.tabTts(), icon: "fa-microphone" }
+  ]);
 
   // Settings based on your MusicPlayerSettings model
   let settings = $state({
@@ -237,7 +238,7 @@
       savedSettings = $state.snapshot(settings) as MusicSettings;
     } catch (err) {
       logger.error("Failed to fetch music settings:", err);
-      error = err instanceof Error ? err.message : "Failed to fetch music settings";
+      error = err instanceof Error ? err.message : m.music.errorFetchSettings();
     }
   }
 
@@ -293,7 +294,8 @@
           linkedTextChannelId: vc.linkedTextChannelId ?? null,
           announceJoinLeave: vc.announceJoinLeave,
           joinFormat: vc.joinFormat ?? null,
-          leaveFormat: vc.leaveFormat ?? null
+          leaveFormat: vc.leaveFormat ?? null,
+          autoJoin: vc.autoJoin ?? false
         }))
       };
       savedTts = $state.snapshot(ttsSettings);
@@ -321,14 +323,15 @@
         linkedTextChannelId: null,
         announceJoinLeave: false,
         joinFormat: null,
-        leaveFormat: null
+        leaveFormat: null,
+        autoJoin: false
       });
       showAddVc = false;
       newVcId = null;
       await fetchTtsSettings();
-      showNotificationMessage("Voice channel TTS enabled");
+      showNotificationMessage(m.music.notifyVcAdded());
     } catch (err) {
-      showNotificationMessage("Failed to add VC setting", "error");
+      showNotificationMessage(m.music.notifyVcAddFailed(), "error");
     }
   }
 
@@ -345,7 +348,8 @@
       linkedTextChannelId: vc.linkedTextChannelId,
       announceJoinLeave: vc.announceJoinLeave,
       joinFormat: vc.joinFormat,
-      leaveFormat: vc.leaveFormat
+      leaveFormat: vc.leaveFormat,
+      autoJoin: vc.autoJoin
     };
     const key = `vc-${vc.voiceChannelId}`;
     const run = async () => {
@@ -365,9 +369,9 @@
     try {
       await musicApi.removeTtsVcSetting(BigInt($currentGuild.id), voiceChannelId);
       await fetchTtsSettings();
-      showNotificationMessage("Voice channel TTS removed");
+      showNotificationMessage(m.music.notifyVcRemoved());
     } catch (err) {
-      showNotificationMessage("Failed to remove VC setting", "error");
+      showNotificationMessage(m.music.notifyVcRemoveFailed(), "error");
     }
   }
 
@@ -389,9 +393,9 @@
       await musicApi.setTtsUserBlocked(BigInt($currentGuild.id), BigInt(blockUserId), true);
       blockUserId = "";
       await fetchTtsBlockedUsers();
-      showNotificationMessage("User blocked from TTS");
+      showNotificationMessage(m.music.notifyUserBlocked());
     } catch (err) {
-      showNotificationMessage("Failed to block user", "error");
+      showNotificationMessage(m.music.notifyUserBlockFailed(), "error");
     }
   }
 
@@ -400,9 +404,9 @@
     try {
       await musicApi.setTtsUserBlocked(BigInt($currentGuild.id), userId, false);
       await fetchTtsBlockedUsers();
-      showNotificationMessage("User unblocked from TTS");
+      showNotificationMessage(m.music.notifyUserUnblocked());
     } catch (err) {
-      showNotificationMessage("Failed to unblock user", "error");
+      showNotificationMessage(m.music.notifyUserUnblockFailed(), "error");
     }
   }
 
@@ -419,16 +423,23 @@
   let queueBusy = $state(false);
 
   /** Filters the bot player supports, keyed by the API filter name */
-  const audioFilters = [
-    { key: "bassboost", label: "Bass boost" },
-    { key: "nightcore", label: "Nightcore" },
-    { key: "vaporwave", label: "Vaporwave" },
-    { key: "karaoke", label: "Karaoke" },
-    { key: "tremolo", label: "Tremolo" },
-    { key: "vibrato", label: "Vibrato" },
-    { key: "rotation", label: "8D rotation" },
-    { key: "distortion", label: "Distortion" }
-  ];
+  const audioFilters = $derived([
+    { key: "bassboost", label: m.music.filterBassboost() },
+    { key: "nightcore", label: m.music.filterNightcore() },
+    { key: "vaporwave", label: m.music.filterVaporwave() },
+    { key: "karaoke", label: m.music.filterKaraoke() },
+    { key: "tremolo", label: m.music.filterTremolo() },
+    { key: "vibrato", label: m.music.filterVibrato() },
+    { key: "rotation", label: m.music.filterRotation() },
+    { key: "distortion", label: m.music.filterDistortion() }
+  ]);
+
+  /** Live repeat buttons; labels resolved at render time */
+  const liveRepeatModes = $derived([
+    { id: "off", icon: "fa-xmark", label: m.common.off(), value: 0 },
+    { id: "track", icon: "fa-repeat-1", label: m.common.track(), value: 1 },
+    { id: "queue", icon: "fa-repeat", label: m.music.repeatLiveQueue(), value: 2 }
+  ]);
 
   /** Reads the active state of a filter from the player status regardless of casing */
   function isFilterActive(key: string): boolean {
@@ -449,7 +460,7 @@
       await fetchPlaybackStatus();
     } catch (err) {
       logger.error("Failed to shuffle queue:", err);
-      showNotificationMessage("Failed to shuffle queue", "error");
+      showNotificationMessage(m.music.notifyQueueShuffleFailed(), "error");
     } finally {
       queueBusy = false;
     }
@@ -457,14 +468,14 @@
 
   async function clearQueue() {
     if (!$currentGuild?.id) return;
-    if (!(await requestConfirmation({ message: "Remove every track from the queue? The current track keeps playing.", confirmText: "Clear queue" }))) return;
+    if (!(await requestConfirmation({ message: m.music.queueClearConfirm(), confirmText: m.music.queueClear() }))) return;
     queueBusy = true;
     try {
       await musicApi.clearQueue(BigInt($currentGuild.id));
       await fetchPlaybackStatus();
     } catch (err) {
       logger.error("Failed to clear queue:", err);
-      showNotificationMessage("Failed to clear queue", "error");
+      showNotificationMessage(m.music.notifyQueueClearFailed(), "error");
     } finally {
       queueBusy = false;
     }
@@ -478,7 +489,7 @@
       await fetchPlaybackStatus();
     } catch (err) {
       logger.error("Failed to set repeat mode:", err);
-      showNotificationMessage("Failed to change repeat mode", "error");
+      showNotificationMessage(m.music.notifyRepeatFailed(), "error");
     }
   }
 
@@ -490,7 +501,7 @@
       await fetchPlaybackStatus();
     } catch (err) {
       logger.error("Failed to toggle filter:", err);
-      showNotificationMessage("Failed to toggle filter", "error");
+      showNotificationMessage(m.music.notifyFilterFailed(), "error");
     } finally {
       queueBusy = false;
     }
@@ -498,12 +509,12 @@
 
   function getVcName(vcId: bigint): string {
     const vc = voiceChannels.find(v => v.id.toString() === vcId.toString());
-    return vc?.name ?? `Unknown (${vcId})`;
+    return vc?.name ?? m.music.unknownWithId({ id: vcId.toString() });
   }
 
   function getChannelName(chId: bigint): string {
     const ch = channels.find(c => c.id.toString() === chId.toString());
-    return ch?.name ?? `Unknown (${chId})`;
+    return ch?.name ?? m.music.unknownWithId({ id: chId.toString() });
   }
 
   async function fetchLinkChannels() {
@@ -521,9 +532,9 @@
       linkChannels = await musicApi.enableLinkChannel(BigInt($currentGuild.id), BigInt(newLinkChannelId));
       showAddLinkChannel = false;
       newLinkChannelId = null;
-      showNotificationMessage("Music link conversion enabled for channel");
+      showNotificationMessage(m.music.notifyLinkEnabled());
     } catch (err) {
-      showNotificationMessage("Failed to enable music link conversion", "error");
+      showNotificationMessage(m.music.notifyLinkEnableFailed(), "error");
     }
   }
 
@@ -531,9 +542,9 @@
     if (!$currentGuild?.id) return;
     try {
       linkChannels = await musicApi.disableLinkChannel(BigInt($currentGuild.id), channelId);
-      showNotificationMessage("Music link conversion disabled for channel");
+      showNotificationMessage(m.music.notifyLinkDisabled());
     } catch (err) {
-      showNotificationMessage("Failed to disable music link conversion", "error");
+      showNotificationMessage(m.music.notifyLinkDisableFailed(), "error");
     }
   }
 
@@ -544,7 +555,7 @@
       await Promise.all([fetchSettings(), fetchChannels(), fetchVoiceChannels(), fetchRoles(), fetchLinkChannels()]);
       musicInterval = setInterval(fetchPlaybackStatus, 5000);
     } catch (err) {
-      error = "Failed to fetch data";
+      error = m.common.failedToFetchData();
       logger.error(error, err);
     } finally {
       loading = false;
@@ -590,11 +601,11 @@
 
 <DashboardPageLayout
   statusMessages={statusMessages}
-  subtitle="Configure music playback and TTS settings"
+  subtitle={m.music.pageSubtitle()}
   icon="fa-music"
   {autoSave}
-  guildName={$currentGuild?.name || "Dashboard"}
-  title="Music Player Settings"
+  guildName={$currentGuild?.name || m.common.dashboard()}
+  title={m.music.pageTitle()}
   {tabs}
   bind:activeTab
 >
@@ -635,13 +646,13 @@
               >
                 <i class="fa-utility-duo fa-regular fa-music" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
               </div>
-              <h2 class="text-xl font-bold" style="color: {colors.text}">Now Playing</h2>
+              <h2 class="text-xl font-bold" style="color: {colors.text}">{m.common.nowPlaying()}</h2>
             </div>
 
             <div class="flex flex-col md:flex-row items-start md:items-center gap-4">
               <img
                 src={musicStatus.currentTrack.track.artworkUri || '/default-album.png'}
-                alt="Album Art"
+                alt={m.music.albumArtAlt()}
                 class="w-24 h-24 rounded-xl object-cover"
                 style="border: 2px solid {colors.primary}30;"
               >
@@ -653,7 +664,7 @@
                 <div class="flex items-center gap-2 mt-2">
                   <i class="fa-solid fa-list" style="color: {colors.primary}; font-size: 16px;"></i>
                   <span class="text-sm" style="color: {colors.muted}">
-                    Queue: {musicStatus.queue.length} tracks
+                    {musicStatus.queue.length === 1 ? m.music.queueCountOne({ count: 1 }) : m.music.queueCountOther({ count: musicStatus.queue.length })}
                   </span>
                 </div>
               </div>
@@ -668,7 +679,7 @@
                 onclick={shuffleQueue}
               >
                 <i class="fa-solid fa-shuffle"></i>
-                Shuffle queue
+                {m.music.queueShuffle()}
               </button>
               <button
                 class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
@@ -677,17 +688,17 @@
                 onclick={clearQueue}
               >
                 <i class="fa-solid fa-trash"></i>
-                Clear queue
+                {m.music.queueClear()}
               </button>
               <div class="flex items-center gap-1 ml-auto">
-                <span class="text-xs mr-1" style="color: {colors.muted}">Repeat</span>
-                {#each [{ id: "off", icon: "fa-xmark", label: "Off", value: 0 }, { id: "track", icon: "fa-repeat-1", label: "Track", value: 1 }, { id: "queue", icon: "fa-repeat", label: "Queue", value: 2 }] as mode}
+                <span class="text-xs mr-1" style="color: {colors.muted}">{m.common.repeat()}</span>
+                {#each liveRepeatModes as mode}
                   <button
                     class="px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[36px]"
                     style="background: {(musicStatus.repeatMode ?? settings.playerRepeat) === mode.value ? colors.primary + '30' : colors.primary + '08'}; color: {(musicStatus.repeatMode ?? settings.playerRepeat) === mode.value ? colors.primary : colors.muted}; border: 1px solid {(musicStatus.repeatMode ?? settings.playerRepeat) === mode.value ? colors.primary + '40' : 'transparent'};"
                     onclick={() => setLiveRepeat(mode.id, mode.value)}
                     aria-pressed={(musicStatus.repeatMode ?? settings.playerRepeat) === mode.value}
-                    aria-label={`Repeat ${mode.label}`}
+                    aria-label={m.music.repeatLiveAria({ mode: mode.label })}
                   >
                     <i class="fa-solid {mode.icon} mr-1"></i>{mode.label}
                   </button>
@@ -699,7 +710,7 @@
             <div class="mt-4">
               <div class="flex items-center gap-2 mb-2">
                 <i class="fa-solid fa-wave-square" style="color: {colors.primary}; font-size: 14px;"></i>
-                <span class="text-sm font-medium" style="color: {colors.text}">Audio filters</span>
+                <span class="text-sm font-medium" style="color: {colors.text}">{m.music.filtersTitle()}</span>
               </div>
               <div class="flex flex-wrap gap-2">
                 {#each audioFilters as filter}
@@ -734,7 +745,7 @@
               >
                 <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
               </div>
-              <h2 class="text-xl font-bold" style="color: {colors.text}">General Settings</h2>
+              <h2 class="text-xl font-bold" style="color: {colors.text}">{m.common.generalSettings()}</h2>
             </div>
 
             <div class="space-y-6">
@@ -743,7 +754,7 @@
                 <div class="flex items-center gap-2 mb-2">
                   <i class="fa-solid fa-volume" style="color: {colors.primary}; font-size: 16px;"></i>
                   <label for="default-volume" class="font-medium" style="color: {colors.text}">
-                    Default Volume
+                    {m.music.generalVolume()}
                   </label>
                 </div>
                 <input
@@ -765,14 +776,14 @@
                 <div class="flex items-center gap-2 mb-2">
                   <i class="fa-solid fa-music" style="color: {colors.secondary}; font-size: 16px;"></i>
                   <span id="music-channel-label" class="font-medium" style="color: {colors.text}">
-                    Music Channel
+                    {m.music.generalChannel()}
                   </span>
                 </div>
                 <DiscordSelector
                   type="channel"
-                  options={[{id: 'null', name: 'All Channels'}, ...channels]}
+                  options={[{id: 'null', name: m.music.generalChannelAll()}, ...channels]}
                   selected={settings.musicChannelId === null ? 'null' : settings.musicChannelId.toString()}
-                  placeholder="Select music channel..."
+                  placeholder={m.music.generalChannelPlaceholder()}
                   onchange={handleMusicChannelChange}
                 />
               </div>
@@ -782,14 +793,14 @@
                 <div class="flex items-center gap-2 mb-2">
                   <i class="fa-solid fa-users" style="color: {colors.accent}; font-size: 16px;"></i>
                   <span id="dj-role-label" class="font-medium" style="color: {colors.text}">
-                    DJ Role
+                    {m.music.generalDjRole()}
                   </span>
                 </div>
                 <DiscordSelector
                   type="role"
-                  options={[{id: 'null', name: 'No DJ Role'}, ...roles]}
+                  options={[{id: 'null', name: m.music.generalDjRoleNone()}, ...roles]}
                   selected={settings.djRoleId === null ? 'null' : settings.djRoleId.toString()}
-                  placeholder="Select DJ role..."
+                  placeholder={m.music.generalDjRolePlaceholder()}
                   onchange={handleDjRoleChange}
                 />
               </div>
@@ -799,18 +810,18 @@
                 <div class="flex items-center gap-2 mb-2">
                   <i class="fa-solid fa-clock" style="color: {colors.primary}; font-size: 16px;"></i>
                   <span id="repeat-mode-label" class="font-medium" style="color: {colors.text}">
-                    Repeat Mode
+                    {m.music.generalRepeatMode()}
                   </span>
                 </div>
                 <DiscordSelector
                   type="custom"
                   options={[
-                    {id: PlayerRepeatType.None.toString(), name: 'None'},
-                    {id: PlayerRepeatType.Track.toString(), name: 'Single Track'},
-                    {id: PlayerRepeatType.Queue.toString(), name: 'Queue'}
+                    {id: PlayerRepeatType.None.toString(), name: m.common.none()},
+                    {id: PlayerRepeatType.Track.toString(), name: m.music.repeatModeSingle()},
+                    {id: PlayerRepeatType.Queue.toString(), name: m.music.repeatLiveQueue()}
                   ]}
                   selected={settings.playerRepeat.toString()}
-                  placeholder="Select repeat mode..."
+                  placeholder={m.music.repeatModePlaceholder()}
                   onchange={handleRepeatModeChange}
                 />
               </div>
@@ -831,7 +842,7 @@
               >
                 <i class="fa-utility-duo fa-regular fa-sliders" style="--fa-primary-color: {colors.secondary}; --fa-secondary-color: {colors.primary}; font-size: 24px;"></i>
               </div>
-              <h2 class="text-xl font-bold" style="color: {colors.text}">Advanced Settings</h2>
+              <h2 class="text-xl font-bold" style="color: {colors.text}">{m.common.advancedSettings()}</h2>
             </div>
 
             <div class="space-y-6">
@@ -840,19 +851,19 @@
                 <div class="flex items-center gap-2 mb-2">
                   <i class="fa-solid fa-users" style="color: {colors.primary}; font-size: 16px;"></i>
                   <span id="auto-disconnect-label" class="font-medium" style="color: {colors.text}">
-                    Auto Disconnect
+                    {m.music.advancedAutoDisconnect()}
                   </span>
                 </div>
                 <DiscordSelector
                   type="custom"
                   options={[
-                    {id: AutoDisconnect.None.toString(), name: 'Never'},
-                    {id: AutoDisconnect.Voice.toString(), name: 'When Voice Empty'},
-                    {id: AutoDisconnect.Queue.toString(), name: 'When Queue Empty'},
-                    {id: AutoDisconnect.Either.toString(), name: 'Either Condition'}
+                    {id: AutoDisconnect.None.toString(), name: m.common.never()},
+                    {id: AutoDisconnect.Voice.toString(), name: m.music.autoDisconnectVoice()},
+                    {id: AutoDisconnect.Queue.toString(), name: m.music.autoDisconnectQueue()},
+                    {id: AutoDisconnect.Either.toString(), name: m.music.autoDisconnectEither()}
                   ]}
                   selected={settings.autoDisconnect.toString()}
-                  placeholder="Select auto disconnect..."
+                  placeholder={m.music.autoDisconnectPlaceholder()}
                   onchange={handleAutoDisconnectChange}
                 />
               </div>
@@ -862,17 +873,17 @@
                 <div class="flex items-center gap-2 mb-2">
                   <i class="fa-solid fa-music" style="color: {colors.secondary}; font-size: 16px;"></i>
                   <span id="auto-play-similar-label" class="font-medium" style="color: {colors.text}">
-                    Auto Play Similar
+                    {m.music.advancedAutoPlay()}
                   </span>
                 </div>
                 <DiscordSelector
                   type="custom"
                   options={[
-                    {id: '0', name: 'Disabled'},
-                    {id: '1', name: 'Enabled'}
+                    {id: '0', name: m.common.disabled()},
+                    {id: '1', name: m.common.enabled()}
                   ]}
                   selected={settings.autoPlay.toString()}
-                  placeholder="Select auto play..."
+                  placeholder={m.music.autoPlayPlaceholder()}
                   onchange={handleAutoPlayChange}
                 />
               </div>
@@ -896,7 +907,7 @@
                              transform: translateX({settings.voteSkipEnabled ? '20px' : '0'});"
                     ></span>
                   </span>
-                  <span style="color: {colors.text}">Enable Vote Skip</span>
+                  <span style="color: {colors.text}">{m.music.advancedVoteSkip()}</span>
                 </label>
 
                 {#if settings.voteSkipEnabled}
@@ -904,7 +915,7 @@
                     <div class="flex items-center gap-2 mb-2">
                       <i class="fa-solid fa-gear" style="color: {colors.accent}; font-size: 16px;"></i>
                       <label for="vote-skip-threshold" class="font-medium" style="color: {colors.text}">
-                        Vote Skip Threshold
+                        {m.music.advancedVoteSkipThreshold()}
                       </label>
                     </div>
                     <input
@@ -919,7 +930,7 @@
                       style="background: {colors.primary}20;"
                     >
                     <div class="text-sm mt-1" style="color: {colors.muted}">
-                      {settings.voteSkipThreshold}% of users must vote to skip
+                      {m.music.advancedVoteSkipThresholdHint({ percent: settings.voteSkipThreshold })}
                     </div>
                   </div>
                 {/if}
@@ -944,10 +955,9 @@
                 <i class="fa-utility-duo fa-regular fa-link" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
               </div>
               <div>
-                <h2 class="text-xl font-bold" style="color: {colors.text}">Music Link Conversion</h2>
+                <h2 class="text-xl font-bold" style="color: {colors.text}">{m.music.linkTitle()}</h2>
                 <p class="text-sm" style="color: {colors.muted}">
-                  Apple Music, Spotify, and YouTube links posted in these channels get replaced with a
-                  cross-platform embed showing links to every provider.
+                  {m.music.linkDescription()}
                 </p>
               </div>
             </div>
@@ -956,7 +966,7 @@
               class="px-4 py-2 rounded-lg font-medium transition-all"
               style="background: {colors.primary}; color: {colors.text};"
             >
-              <i class="fa-solid fa-plus mr-2"></i>Add Channel
+              <i class="fa-solid fa-plus mr-2"></i>{m.music.linkAddChannel()}
             </button>
           </div>
 
@@ -964,12 +974,12 @@
             <div class="mb-6 p-4 rounded-xl" style="background: {colors.gradientStart}20; border: 1px solid {colors.primary}20;">
               <div class="flex gap-3 items-end">
                 <div class="grow">
-                  <span class="text-sm font-medium mb-1 block" style="color: {colors.text}">Channel</span>
+                  <span class="text-sm font-medium mb-1 block" style="color: {colors.text}">{m.common.channel()}</span>
                   <DiscordSelector
                     type="channel"
                     options={channels}
                     selected={newLinkChannelId}
-                    placeholder="Select channel..."
+                    placeholder={m.common.selectChannelPlaceholder()}
                     onchange={(d) => { if (typeof d.selected === "string") newLinkChannelId = d.selected; }}
                   />
                 </div>
@@ -979,7 +989,7 @@
                   class="px-4 py-2 rounded-lg font-medium transition-all"
                   style="background: {colors.primary}; color: {colors.text}; opacity: {newLinkChannelId ? '1' : '0.5'};"
                 >
-                  Enable
+                  {m.common.enable()}
                 </button>
               </div>
             </div>
@@ -988,8 +998,8 @@
           {#if linkChannels.length === 0}
             <div class="text-center py-8" style="color: {colors.muted}">
               <i class="fa-regular fa-link-slash text-3xl mb-3 block" style="color: {colors.primary}30;"></i>
-              <p>No channels have music link conversion enabled</p>
-              <p class="text-sm mt-1">Click "Add Channel" to enable it for a channel</p>
+              <p>{m.music.linkEmpty()}</p>
+              <p class="text-sm mt-1">{m.music.linkEmptyHint()}</p>
             </div>
           {:else}
             <div class="space-y-2">
@@ -1003,7 +1013,7 @@
                     onclick={() => removeLinkChannel(channelId)}
                     class="p-1.5 rounded-lg transition-all hover:opacity-80"
                     style="color: {colors.accent};"
-                    title="Remove"
+                    title={m.common.remove()}
                   >
                     <i class="fa-solid fa-trash-can text-sm"></i>
                   </button>
@@ -1030,7 +1040,7 @@
               >
                 <i class="fa-utility-duo fa-regular fa-microphone" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
               </div>
-              <h2 class="text-xl font-bold" style="color: {colors.text}">General TTS Settings</h2>
+              <h2 class="text-xl font-bold" style="color: {colors.text}">{m.music.ttsGeneralTitle()}</h2>
             </div>
 
             <div class="space-y-6">
@@ -1038,7 +1048,7 @@
               <div>
                 <div class="flex items-center gap-2 mb-2">
                   <i class="fa-solid fa-volume" style="color: {colors.primary}; font-size: 16px;"></i>
-                  <label for="tts-volume" class="font-medium" style="color: {colors.text}">TTS Volume</label>
+                  <label for="tts-volume" class="font-medium" style="color: {colors.text}">{m.music.ttsVolume()}</label>
                 </div>
                 <input
                   id="tts-volume"
@@ -1058,7 +1068,7 @@
               <div>
                 <div class="flex items-center gap-2 mb-2">
                   <i class="fa-solid fa-gauge-high" style="color: {colors.secondary}; font-size: 16px;"></i>
-                  <label for="tts-speed" class="font-medium" style="color: {colors.text}">TTS Speed</label>
+                  <label for="tts-speed" class="font-medium" style="color: {colors.text}">{m.music.ttsSpeed()}</label>
                 </div>
                 <input
                   id="tts-speed"
@@ -1079,7 +1089,7 @@
               <div>
                 <div class="flex items-center gap-2 mb-2">
                   <i class="fa-solid fa-list-ol" style="color: {colors.accent}; font-size: 16px;"></i>
-                  <label for="tts-max-queue" class="font-medium" style="color: {colors.text}">Max Queue Size</label>
+                  <label for="tts-max-queue" class="font-medium" style="color: {colors.text}">{m.music.ttsMaxQueue()}</label>
                 </div>
                 <input
                   id="tts-max-queue"
@@ -1098,7 +1108,7 @@
               <div>
                 <div class="flex items-center gap-2 mb-2">
                   <i class="fa-solid fa-waveform-lines" style="color: {colors.primary}; font-size: 16px;"></i>
-                  <label for="tts-default-voice" class="font-medium" style="color: {colors.text}">Default Voice</label>
+                  <label for="tts-default-voice" class="font-medium" style="color: {colors.text}">{m.music.ttsDefaultVoice()}</label>
                 </div>
                 <input
                   id="tts-default-voice"
@@ -1106,27 +1116,27 @@
                   bind:value={ttsSettings.defaultVoice}
                   oninput={() => saveTtsSettings("defaultVoice", true, false)}
                   onblur={() => autoSave.flush("tts")}
-                  placeholder="e.g. Brian (leave empty for default)"
+                  placeholder={m.music.ttsDefaultVoicePlaceholder()}
                   class="w-full px-3 py-2 rounded-lg border"
                   style="background: {colors.gradientStart}20; border-color: {colors.primary}30; color: {colors.text};"
                 >
-                <div class="text-sm mt-1" style="color: {colors.muted}">Use the voice search below to find available voices</div>
+                <div class="text-sm mt-1" style="color: {colors.muted}">{m.music.ttsDefaultVoiceHint()}</div>
               </div>
 
               <!-- TTS Role -->
               <div>
                 <div class="flex items-center gap-2 mb-2">
                   <i class="fa-solid fa-user-shield" style="color: {colors.secondary}; font-size: 16px;"></i>
-                  <span class="font-medium" style="color: {colors.text}">Required Role</span>
+                  <span class="font-medium" style="color: {colors.text}">{m.common.requiredRole()}</span>
                 </div>
                 <DiscordSelector
                   type="role"
-                  options={[{id: 'null', name: 'No Role Required'}, ...roles]}
+                  options={[{id: 'null', name: m.music.ttsRequiredRoleNone()}, ...roles]}
                   selected={ttsSettings.roleId === null ? 'null' : ttsSettings.roleId.toString()}
-                  placeholder="Select required role..."
+                  placeholder={m.music.ttsRequiredRolePlaceholder()}
                   onchange={handleTtsRoleChange}
                 />
-                <div class="text-sm mt-1" style="color: {colors.muted}">Only users with this role can use TTS (admins always can)</div>
+                <div class="text-sm mt-1" style="color: {colors.muted}">{m.music.ttsRequiredRoleHint()}</div>
               </div>
             </div>
           </div>
@@ -1145,7 +1155,7 @@
               >
                 <i class="fa-utility-duo fa-regular fa-sliders" style="--fa-primary-color: {colors.secondary}; --fa-secondary-color: {colors.primary}; font-size: 24px;"></i>
               </div>
-              <h2 class="text-xl font-bold" style="color: {colors.text}">TTS Behavior</h2>
+              <h2 class="text-xl font-bold" style="color: {colors.text}">{m.music.ttsBehaviorTitle()}</h2>
             </div>
 
             <div class="space-y-5">
@@ -1163,8 +1173,8 @@
                   ></span>
                 </span>
                 <div>
-                  <span style="color: {colors.text}">Reply Context</span>
-                  <div class="text-sm" style="color: {colors.muted}">Read "replying to [user]" for replies</div>
+                  <span style="color: {colors.text}">{m.music.ttsReplyContext()}</span>
+                  <div class="text-sm" style="color: {colors.muted}">{m.music.ttsReplyContextHint()}</div>
                 </div>
               </label>
 
@@ -1182,8 +1192,8 @@
                   ></span>
                 </span>
                 <div>
-                  <span style="color: {colors.text}">Attachment Narration</span>
-                  <div class="text-sm" style="color: {colors.muted}">Announce "sent an image/video/file"</div>
+                  <span style="color: {colors.text}">{m.music.ttsAttachmentNarration()}</span>
+                  <div class="text-sm" style="color: {colors.muted}">{m.music.ttsAttachmentNarrationHint()}</div>
                 </div>
               </label>
 
@@ -1201,8 +1211,8 @@
                   ></span>
                 </span>
                 <div>
-                  <span style="color: {colors.text}">Consecutive Grouping</span>
-                  <div class="text-sm" style="color: {colors.muted}">Skip name for consecutive messages from the same user</div>
+                  <span style="color: {colors.text}">{m.music.ttsConsecutiveGrouping()}</span>
+                  <div class="text-sm" style="color: {colors.muted}">{m.music.ttsConsecutiveGroupingHint()}</div>
                 </div>
               </label>
             </div>
@@ -1216,14 +1226,14 @@
                 >
                   <i class="fa-solid fa-magnifying-glass" style="color: {colors.primary}; font-size: 16px;"></i>
                 </div>
-                <h3 class="text-lg font-bold" style="color: {colors.text}">Voice Search</h3>
+                <h3 class="text-lg font-bold" style="color: {colors.text}">{m.music.ttsVoiceSearchTitle()}</h3>
               </div>
 
               <div class="flex gap-2">
                 <input
                   type="text"
                   bind:value={ttsVoiceSearch}
-                  placeholder="Search voices (e.g. Brian, English)..."
+                  placeholder={m.music.ttsVoiceSearchPlaceholder()}
                   class="grow px-3 py-2 rounded-lg border"
                   style="background: {colors.gradientStart}20; border-color: {colors.primary}30; color: {colors.text};"
                   onkeydown={(e) => { if (e.key === 'Enter') searchVoices(); }}
@@ -1234,7 +1244,7 @@
                   class="px-4 py-2 rounded-lg font-medium transition-all"
                   style="background: {colors.primary}; color: {colors.text};"
                 >
-                  {searchingVoices ? 'Searching...' : 'Search'}
+                  {searchingVoices ? m.music.searchSearching() : m.common.search()}
                 </button>
               </div>
 
@@ -1274,14 +1284,14 @@
               >
                 <i class="fa-utility-duo fa-regular fa-headphones" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
               </div>
-              <h2 class="text-xl font-bold" style="color: {colors.text}">Voice Channel TTS</h2>
+              <h2 class="text-xl font-bold" style="color: {colors.text}">{m.music.ttsVcTitle()}</h2>
             </div>
             <button
               onclick={() => showAddVc = !showAddVc}
               class="px-4 py-2 rounded-lg font-medium transition-all"
               style="background: {colors.primary}; color: {colors.text};"
             >
-              <i class="fa-solid fa-plus mr-2"></i>Add Channel
+              <i class="fa-solid fa-plus mr-2"></i>{m.music.linkAddChannel()}
             </button>
           </div>
 
@@ -1289,12 +1299,12 @@
             <div class="mb-6 p-4 rounded-xl" style="background: {colors.gradientStart}20; border: 1px solid {colors.primary}20;">
               <div class="flex gap-3 items-end">
                 <div class="grow">
-                  <span class="text-sm font-medium mb-1 block" style="color: {colors.text}">Voice Channel</span>
+                  <span class="text-sm font-medium mb-1 block" style="color: {colors.text}">{m.common.voiceChannel()}</span>
                   <DiscordSelector
                     type="custom"
                     options={voiceChannels}
                     selected={newVcId}
-                    placeholder="Select voice channel..."
+                    placeholder={m.common.selectVoiceChannelPlaceholder()}
                     onchange={(d) => { if (typeof d.selected === "string") newVcId = d.selected; }}
                   />
                 </div>
@@ -1304,7 +1314,7 @@
                   class="px-4 py-2 rounded-lg font-medium transition-all"
                   style="background: {colors.primary}; color: {colors.text}; opacity: {newVcId ? '1' : '0.5'};"
                 >
-                  Enable TTS
+                  {m.music.ttsVcEnable()}
                 </button>
               </div>
             </div>
@@ -1313,8 +1323,8 @@
           {#if ttsSettings.vcSettings.length === 0}
             <div class="text-center py-8" style="color: {colors.muted}">
               <i class="fa-regular fa-volume-slash text-3xl mb-3 block" style="color: {colors.primary}30;"></i>
-              <p>No voice channels have TTS enabled</p>
-              <p class="text-sm mt-1">Click "Add Channel" to enable TTS for a voice channel</p>
+              <p>{m.music.ttsVcEmpty()}</p>
+              <p class="text-sm mt-1">{m.music.ttsVcEmptyHint()}</p>
             </div>
           {:else}
             <div class="space-y-4">
@@ -1343,7 +1353,7 @@
                         onclick={() => removeVcSetting(vc.voiceChannelId)}
                         class="p-1.5 rounded-lg transition-all hover:opacity-80"
                         style="color: {colors.accent};"
-                        title="Remove"
+                        title={m.common.remove()}
                       >
                         <i class="fa-solid fa-trash-can text-sm"></i>
                       </button>
@@ -1353,12 +1363,12 @@
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <!-- Linked Text Channel -->
                     <div>
-                      <span class="text-sm" style="color: {colors.muted}">Linked Text Channel</span>
+                      <span class="text-sm" style="color: {colors.muted}">{m.music.ttsVcLinkedTextChannel()}</span>
                       <DiscordSelector
                         type="channel"
-                        options={[{id: 'null', name: 'VC Text Chat Only'}, ...channels]}
+                        options={[{id: 'null', name: m.music.ttsVcLinkedTextOnly()}, ...channels]}
                         selected={vc.linkedTextChannelId === null ? 'null' : vc.linkedTextChannelId.toString()}
-                        placeholder="Select channel..."
+                        placeholder={m.common.selectChannelPlaceholder()}
                         onchange={(d) => {
                           if (typeof d.selected === "string") {
                             const previous = vc.linkedTextChannelId;
@@ -1371,7 +1381,7 @@
 
                     <!-- Announce Join/Leave -->
                     <div>
-                      <span class="text-sm mb-1 block" style="color: {colors.muted}">Announce Join/Leave</span>
+                      <span class="text-sm mb-1 block" style="color: {colors.muted}">{m.music.ttsVcAnnounce()}</span>
                       <label class="flex items-center gap-2 mt-2">
                         <input type="checkbox" bind:checked={vc.announceJoinLeave} class="sr-only peer" onchange={() => { const previous = !vc.announceJoinLeave; updateVcSetting(vc, () => { vc.announceJoinLeave = previous; }); }}>
                         <span
@@ -1384,32 +1394,52 @@
                                    transform: translateX({vc.announceJoinLeave ? '16px' : '0'});"
                           ></span>
                         </span>
-                        <span class="text-sm" style="color: {colors.text}">Announce Join/Leave</span>
+                        <span class="text-sm" style="color: {colors.text}">{m.music.ttsVcAnnounce()}</span>
                       </label>
+                    </div>
+
+                    <!-- Auto-Join -->
+                    <div>
+                      <span class="text-sm mb-1 block" style="color: {colors.muted}">{m.music.ttsVcAutoJoin()}</span>
+                      <label class="flex items-center gap-2 mt-2">
+                        <input type="checkbox" bind:checked={vc.autoJoin} class="sr-only peer" onchange={() => { const previous = !vc.autoJoin; updateVcSetting(vc, () => { vc.autoJoin = previous; }); }}>
+                        <span
+                          class="relative w-9 h-5 rounded-full transition-all duration-200 block"
+                          style="background: {vc.autoJoin ? colors.primary : colors.primary + '30'};"
+                        >
+                          <span
+                            class="absolute w-3 h-3 rounded-full top-1 left-1 transition-all duration-200 block"
+                            style="background: {colors.text};
+                                   transform: translateX({vc.autoJoin ? '16px' : '0'});"
+                          ></span>
+                        </span>
+                        <span class="text-sm" style="color: {colors.text}">{m.music.ttsVcAutoJoinToggle()}</span>
+                      </label>
+                      <div class="text-xs mt-1" style="color: {colors.muted}">{m.music.ttsVcAutoJoinHint()}</div>
                     </div>
                   </div>
 
                   {#if vc.announceJoinLeave}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                       <div>
-                        <span class="text-sm" style="color: {colors.muted}">Join Format</span>
+                        <span class="text-sm" style="color: {colors.muted}">{m.music.ttsVcJoinFormat()}</span>
                         <input
                           type="text"
                           bind:value={vc.joinFormat}
                           oninput={() => updateVcSetting(vc, undefined, true)}
-                          placeholder="%user.name% joined the channel"
+                          placeholder={m.music.ttsVcJoinFormatPlaceholder()}
                           class="w-full px-3 py-1.5 rounded-lg border text-sm"
                           style="background: {colors.gradientStart}20; border-color: {colors.primary}20; color: {colors.text};"
                           onblur={() => autoSave.flush(`vc-${vc.voiceChannelId}`)}
                         >
                       </div>
                       <div>
-                        <span class="text-sm" style="color: {colors.muted}">Leave Format</span>
+                        <span class="text-sm" style="color: {colors.muted}">{m.music.ttsVcLeaveFormat()}</span>
                         <input
                           type="text"
                           bind:value={vc.leaveFormat}
                           oninput={() => updateVcSetting(vc, undefined, true)}
-                          placeholder="%user.name% left the channel"
+                          placeholder={m.music.ttsVcLeaveFormatPlaceholder()}
                           class="w-full px-3 py-1.5 rounded-lg border text-sm"
                           style="background: {colors.gradientStart}20; border-color: {colors.primary}20; color: {colors.text};"
                           onblur={() => autoSave.flush(`vc-${vc.voiceChannelId}`)}
@@ -1417,7 +1447,7 @@
                       </div>
                     </div>
                     <div class="mt-2 text-xs" style="color: {colors.muted}">
-                      Available placeholders: <code style="color: {colors.primary}">%user.name%</code> <code style="color: {colors.primary}">%user.mention%</code> <code style="color: {colors.primary}">%user.id%</code> <code style="color: {colors.primary}">%server.name%</code> <code style="color: {colors.primary}">%server.members%</code> <code style="color: {colors.primary}">%channel.name%</code>
+                      {m.music.ttsVcPlaceholders()} <code style="color: {colors.primary}">%user.name%</code> <code style="color: {colors.primary}">%user.mention%</code> <code style="color: {colors.primary}">%user.id%</code> <code style="color: {colors.primary}">%server.name%</code> <code style="color: {colors.primary}">%server.members%</code> <code style="color: {colors.primary}">%channel.name%</code>
                     </div>
                   {/if}
                 </div>
@@ -1440,14 +1470,14 @@
             >
               <i class="fa-utility-duo fa-regular fa-user-xmark" style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary}; font-size: 24px;"></i>
             </div>
-            <h2 class="text-xl font-bold" style="color: {colors.text}">Blocked TTS Users</h2>
+            <h2 class="text-xl font-bold" style="color: {colors.text}">{m.music.ttsBlockedTitle()}</h2>
           </div>
 
           <div class="flex gap-2 mb-4">
             <input
               type="text"
               bind:value={blockUserId}
-              placeholder="Enter user ID to block..."
+              placeholder={m.music.ttsBlockedPlaceholder()}
               class="grow px-3 py-2 rounded-lg border"
               style="background: {colors.gradientStart}20; border-color: {colors.primary}30; color: {colors.text};"
               onkeydown={(e) => { if (e.key === 'Enter') blockUser(); }}
@@ -1458,13 +1488,13 @@
               class="px-4 py-2 rounded-lg font-medium transition-all"
               style="background: {colors.accent}; color: {colors.text}; opacity: {blockUserId.trim() ? '1' : '0.5'};"
             >
-              Block
+              {m.common.block()}
             </button>
           </div>
 
           {#if ttsBlockedUsers.length === 0}
             <div class="text-center py-4" style="color: {colors.muted}">
-              <p class="text-sm">No users are blocked from TTS</p>
+              <p class="text-sm">{m.music.ttsBlockedEmpty()}</p>
             </div>
           {:else}
             <div class="space-y-2">
@@ -1476,7 +1506,7 @@
                     class="px-3 py-1 rounded-lg text-sm font-medium transition-all hover:opacity-80"
                     style="background: {colors.primary}20; color: {colors.primary};"
                   >
-                    Unblock
+                    {m.common.unblock()}
                   </button>
                 </div>
               {/each}

@@ -1,5 +1,6 @@
 <!-- routes/dashboard/chat-triggers/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import { onMount } from "svelte";
@@ -29,8 +30,8 @@
   function summarizeResponse(response: string | Record<string, any> | null): string {
     const parsed = parseStoredMessage(response);
     if (parsed.content) return parsed.content;
-    if (parsed.embeds.length > 0) return `[${parsed.embeds.length} embed${parsed.embeds.length > 1 ? "s" : ""}]`;
-    if (parsed.componentRows.length > 0) return "[components]";
+    if (parsed.embeds.length > 0) return parsed.embeds.length === 1 ? m.chatTriggers.pageSummaryEmbedsOne({ count: 1 }) : m.chatTriggers.pageSummaryEmbedsOther({ count: parsed.embeds.length });
+    if (parsed.componentRows.length > 0) return m.chatTriggers.pageSummaryComponents();
     return "";
   }
 
@@ -184,9 +185,6 @@
     let newTriggerRegexTestString = $state("");
     let newTriggerRegexTestResult = $state("");
     let newTriggerRegexHighlightedString = $state("");
-  let regexTestString = "";
-  let regexTestResult = "";
-  let regexHighlightedString = "";
   let activeDropdown: string | null = null;
 
   // Function to load triggers
@@ -196,7 +194,7 @@
       error = null;
       const guild = get(currentGuild);
       if (!guild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
       triggers = await chatTriggersApi.getChatTriggers(guild.id);
       triggers = triggers.map((trigger) => {
@@ -233,7 +231,7 @@
       });
     } catch (err: any) {
       logger.error("Failed to fetch chat triggers:", err);
-      error = err.message || "Failed to fetch chat triggers";
+      error = err.message || m.chatTriggers.pageErrorFetchTriggers();
     } finally {
       loading = false;
     }
@@ -244,7 +242,7 @@
     try {
       const guild = get(currentGuild);
       if (!guild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
       guildRoles = await clientApi.getRoles(guild.id);
 
@@ -265,19 +263,19 @@
       : (typeof newTrigger.response === "string" ? newTrigger.response.trim() : false);
 
     if (!newTrigger.trigger?.trim() || !hasResponse) {
-      showNotificationMessage("Trigger and Response are required", "error");
+      showNotificationMessage(m.chatTriggers.pageNotifyRequired(), "error");
       return;
     }
 
     if (newTrigger.isRegex && !newTrigger.isValidRegex) {
-      showNotificationMessage("Invalid regex pattern", "error");
+      showNotificationMessage(m.chatTriggers.pageNotifyInvalidRegex(), "error");
       return;
     }
 
     try {
       const guild = get(currentGuild);
       if (!guild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
       
       // Convert boolean trigger types to bitwise integer
@@ -307,7 +305,7 @@
         triggerData as ChatTrigger
       );
       triggers = [...triggers, addedTrigger];
-      showNotificationMessage("Trigger added successfully", "success");
+      showNotificationMessage(m.chatTriggers.pageNotifyAdded(), "success");
       newTrigger = {
         guildId: guild.id,
         trigger: "",
@@ -338,7 +336,7 @@
       newTriggerRegexHighlightedString = "";
     } catch (error: any) {
       showNotificationMessage(
-        "Failed to add trigger: " + error.message,
+        m.chatTriggers.pageNotifyAddFailed({ error: error.message }),
         "error",
       );
     }
@@ -351,19 +349,19 @@
       : trigger.response?.trim();
 
     if (!trigger.trigger?.trim() || !hasResponse) {
-      showNotificationMessage("Trigger and Response are required", "error");
+      showNotificationMessage(m.chatTriggers.pageNotifyRequired(), "error");
       return;
     }
 
     if (trigger.isRegex && !trigger.isValidRegex) {
-      showNotificationMessage("Invalid regex pattern", "error");
+      showNotificationMessage(m.chatTriggers.pageNotifyInvalidRegex(), "error");
       return;
     }
 
     try {
       const guild = get(currentGuild);
       if (!guild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
       // Convert boolean trigger types to bitwise integer if they exist
       let validTriggerTypes = trigger.validTriggerTypes;
@@ -390,11 +388,11 @@
         guildId: guild.id,
       };
       await chatTriggersApi.updateChatTrigger(guild.id, updatedTrigger);
-      showNotificationMessage("Trigger updated successfully", "success");
+      showNotificationMessage(m.chatTriggers.pageNotifyUpdated(), "success");
       await loadTriggers();
     } catch (error: any) {
       showNotificationMessage(
-        "Failed to update trigger: " + error.message,
+        m.chatTriggers.pageNotifyUpdateFailed({ error: error.message }),
         "error",
       );
     }
@@ -403,28 +401,28 @@
   // Function to delete a trigger - Enhanced with accessibility
   async function deleteTrigger(triggerId: number) {
     const trigger = triggers.find(t => t.id === triggerId);
-    const triggerName = trigger?.trigger || 'trigger';
+    const triggerName = trigger?.trigger || m.chatTriggers.pageConfirmDeleteFallbackName();
     
-    if (!(await requestConfirmation({ message: `Are you sure you want to delete the trigger "${triggerName}"?`, confirmText: "Delete" }))) {
-      announceAction('Delete cancelled');
+    if (!(await requestConfirmation({ message: m.chatTriggers.pageConfirmDeleteMessage({ name: triggerName }), confirmText: m.common.delete() }))) {
+      announceAction(m.chatTriggers.pageAnnounceDeleteCancelled());
       return;
     }
 
     try {
       const guild = get(currentGuild);
       if (!guild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
       await chatTriggersApi.deleteChatTrigger(guild.id, triggerId);
-      showNotificationMessage("Trigger deleted successfully", "success");
-      announceAction(`Trigger ${triggerName} deleted`);
+      showNotificationMessage(m.chatTriggers.pageNotifyDeleted(), "success");
+      announceAction(m.chatTriggers.pageAnnounceDeleted({ name: triggerName }));
       await loadTriggers();
     } catch (error: any) {
       showNotificationMessage(
-        "Failed to delete trigger: " + error.message,
+        m.chatTriggers.pageNotifyDeleteFailed({ error: error.message }),
         "error",
       );
-      announceError('Failed to delete trigger');
+      announceError(m.chatTriggers.pageAnnounceDeleteFailed());
     }
   }
 
@@ -447,17 +445,17 @@
         const regex = new RegExp(newTrigger.trigger || "", "g");
         const matches = newTriggerRegexTestString.match(regex);
         if (matches) {
-          newTriggerRegexTestResult = `${matches.length} match${matches.length > 1 ? "es" : ""}`;
+          newTriggerRegexTestResult = matches.length === 1 ? m.chatTriggers.pageRegexMatchesOne({ count: 1 }) : m.chatTriggers.pageRegexMatchesOther({ count: matches.length });
           newTriggerRegexHighlightedString = highlightMatches(
             newTriggerRegexTestString,
             regex,
           );
         } else {
-          newTriggerRegexTestResult = "No matches";
+          newTriggerRegexTestResult = m.common.noMatches();
           newTriggerRegexHighlightedString = newTriggerRegexTestString;
         }
       } catch (e) {
-        newTriggerRegexTestResult = "Error testing regex";
+        newTriggerRegexTestResult = m.chatTriggers.pageRegexError();
         newTriggerRegexHighlightedString = newTriggerRegexTestString;
       }
     } else {
@@ -466,35 +464,7 @@
     }
   }
 
-  // Function to handle regex validation for existing triggers
-  function handleRegexChange(trigger: any) {
-    if (trigger.isRegex && trigger.trigger) {
-      trigger.isValidRegex = validateRegex(trigger.trigger);
-    }
-  }
 
-  // Function to test regex for existing triggers
-  function testRegex(trigger: any) {
-    if (trigger.isRegex && trigger.isValidRegex && trigger.trigger) {
-      try {
-        const regex = new RegExp(trigger.trigger, "g");
-        const matches = regexTestString.match(regex);
-        if (matches) {
-          regexTestResult = `${matches.length} match${matches.length > 1 ? "es" : ""}`;
-          regexHighlightedString = highlightMatches(regexTestString, regex);
-        } else {
-          regexTestResult = "No matches";
-          regexHighlightedString = regexTestString;
-        }
-      } catch (e) {
-        regexTestResult = "Error testing regex";
-        regexHighlightedString = regexTestString;
-      }
-    } else {
-      regexTestResult = "";
-      regexHighlightedString = "";
-    }
-  }
 
   // Helper functions - Enhanced with accessibility
   function toggleExpand(triggerId: number) {
@@ -624,8 +594,8 @@
    * Category choices for the filter, including the two catch-all entries.
    */
   let categoryFilterOptions = $derived([
-    { id: "all", name: "All triggers", icon: "fa-list" },
-    { id: "__none", name: "Ungrouped", icon: "fa-folder-open" },
+    { id: "all", name: m.chatTriggers.pageFilterAll(), icon: "fa-list" },
+    { id: "__none", name: m.common.ungrouped(), icon: "fa-folder-open" },
     ...categories.map(c => ({ id: c, name: c, icon: "fa-folder" }))
   ]);
 
@@ -679,7 +649,7 @@
       newCounterValue = 0;
     } catch (err) {
       logger.error("Failed to save counter:", err);
-      showNotificationMessage("Failed to save counter.", "error");
+      showNotificationMessage(m.chatTriggers.pageNotifyCounterSaveFailed(), "error");
     }
   }
 
@@ -695,7 +665,7 @@
       counters = await chatTriggersApi.getCounters(guild.id);
     } catch (err) {
       logger.error("Failed to delete counter:", err);
-      showNotificationMessage("Failed to delete counter.", "error");
+      showNotificationMessage(m.chatTriggers.pageNotifyCounterDeleteFailed(), "error");
     }
   }
 
@@ -712,12 +682,12 @@
         t.category === categoryFilter ? { ...t, isDisabled: disabled } : t
       );
       showNotificationMessage(
-        `${result.changed} trigger(s) ${disabled ? "paused" : "resumed"}.`,
+        disabled ? m.chatTriggers.pageNotifyCategoryPaused({ count: result.changed }) : m.chatTriggers.pageNotifyCategoryResumed({ count: result.changed }),
         "success"
       );
     } catch (err) {
       logger.error("Failed to toggle category:", err);
-      showNotificationMessage("Failed to update category.", "error");
+      showNotificationMessage(m.chatTriggers.pageNotifyCategoryFailed(), "error");
     }
   }
 
@@ -735,7 +705,7 @@
       });
     } catch (err) {
       logger.error("Failed to test trigger:", err);
-      showNotificationMessage("Failed to test trigger.", "error");
+      showNotificationMessage(m.chatTriggers.pageNotifyTestFailed(), "error");
     }
   }
 
@@ -760,15 +730,15 @@
   function triggerBadges(trigger: ChatTrigger): Array<{ label: string; icon: string }> {
     const badges: Array<{ label: string; icon: string }> = [];
 
-    if (trigger.isDisabled) badges.push({ label: "Paused", icon: "fa-circle-pause" });
+    if (trigger.isDisabled) badges.push({ label: m.common.paused(), icon: "fa-circle-pause" });
     if (trigger.category) badges.push({ label: trigger.category, icon: "fa-folder" });
-    if (trigger.eventType > 0) badges.push({ label: "On event", icon: "fa-bolt" });
-    if (trigger.isRegex) badges.push({ label: "Regex", icon: "fa-code" });
-    if (trigger.cooldownSeconds > 0) badges.push({ label: `${trigger.cooldownSeconds}s cooldown`, icon: "fa-hourglass-half" });
-    if (trigger.currencyCost > 0) badges.push({ label: `Costs ${trigger.currencyCost}`, icon: "fa-coins" });
-    if (trigger.requiredXpLevel > 0) badges.push({ label: `Level ${trigger.requiredXpLevel}+`, icon: "fa-arrow-up" });
-    if (trigger.maxUses != null) badges.push({ label: `${trigger.useCount ?? 0}/${trigger.maxUses} uses`, icon: "fa-gauge-high" });
-    if (trigger.allowBots) badges.push({ label: "Bots only", icon: "fa-robot" });
+    if (trigger.eventType > 0) badges.push({ label: m.chatTriggers.pageBadgeOnEvent(), icon: "fa-bolt" });
+    if (trigger.isRegex) badges.push({ label: m.chatTriggers.pageBadgeRegex(), icon: "fa-code" });
+    if (trigger.cooldownSeconds > 0) badges.push({ label: m.chatTriggers.pageBadgeCooldown({ seconds: Number(trigger.cooldownSeconds) }), icon: "fa-hourglass-half" });
+    if (trigger.currencyCost > 0) badges.push({ label: m.chatTriggers.pageBadgeCost({ amount: Number(trigger.currencyCost) }), icon: "fa-coins" });
+    if (trigger.requiredXpLevel > 0) badges.push({ label: m.common.levelMin({ level: Number(trigger.requiredXpLevel) }), icon: "fa-arrow-up" });
+    if (trigger.maxUses != null) badges.push({ label: m.chatTriggers.pageBadgeUses({ used: Number(trigger.useCount ?? 0), max: Number(trigger.maxUses) }), icon: "fa-gauge-high" });
+    if (trigger.allowBots) badges.push({ label: m.chatTriggers.pageBadgeBotsOnly(), icon: "fa-robot" });
 
     return badges;
   }
@@ -782,26 +752,13 @@
     await updateTrigger(trigger);
   }
 
-  // Boolean options for DiscordSelector
-    let booleanOptions = $derived([
-    { id: "true", name: "Yes" },
-    { id: "false", name: "No" }
-    ]);
 
   // Pattern type options for DiscordSelector
     let triggerTypeOptions = $derived([
-    { id: "false", name: "Normal Text Pattern" },
-    { id: "true", name: "Regular Expression Pattern" }
+    { id: "false", name: m.chatTriggers.pagePatternText() },
+    { id: "true", name: m.chatTriggers.pagePatternRegex() }
     ]);
 
-  // Format enum options for DiscordSelector
-  function getEnumOptionsForSelector(key: string) {
-    const enumOptions = getEnumOptions(key);
-    return Object.entries(enumOptions).map(([optionKey, optionValue]) => ({
-      id: String(optionValue),
-      name: optionKey
-    }));
-  }
 
   // Handle boolean selection change
   function handleBooleanChange(trigger: ChatTrigger, key: string, event: CustomEvent) {
@@ -827,37 +784,6 @@
     handleNewTriggerRegexChange();
   }
 
-  function getDescriptiveLabel(key: string): string {
-    const labels: { [key: string]: string } = {
-      useCount: "Usage Count",
-      isRegex: "Is Regular Expression",
-      ownerOnly: "Owner Only",
-      guildId: "Guild ID",
-      response: "Response Message",
-      trigger: "Trigger Text or Pattern",
-      prefixType: "Prefix Requirement",
-      customPrefix: "Custom Prefix",
-      autoDeleteTrigger: "Auto Delete Trigger Message",
-      reactToTrigger: "React to Trigger Message",
-      noRespond: "Don't Respond to Trigger",
-      dmResponse: "Send Response as DM",
-      containsAnywhere: "Trigger If Contained Anywhere",
-      allowTarget: "Allow Targeting",
-      reactions: "Trigger Reactions",
-      grantedRoles: "Roles to Grant",
-      removedRoles: "Roles to Remove",
-      roleGrantType: "Role Grant Target",
-      validTriggerTypes: "Valid Trigger Types",
-      applicationCommandId: "Application Command ID",
-      applicationCommandName: "Application Command Name",
-      applicationCommandDescription: "Application Command Description",
-      applicationCommandType: "Application Command Type",
-      ephemeralResponse: "Ephemeral Response",
-      crosspostingChannelId: "Crossposting Channel ID",
-      crosspostingWebhookUrl: "Crossposting Webhook URL",
-    };
-    return labels[key] || key;
-  }
 
   function showNotificationMessage(
     message: string,
@@ -882,7 +808,7 @@
     try {
       await Promise.all([loadTriggers(), loadGuildRoles(), loadExtras()]);
     } catch (err) {
-      error = "Failed to fetch data";
+      error = m.common.failedToFetchData();
       logger.error(error, err);
     } finally {
       loading = false;
@@ -909,10 +835,10 @@
   `);
   
   // Tabs configuration following birthday pattern
-  const tabs = [
-    { id: "simple", label: "Simple Mode", icon: "fa-bolt" },
-    { id: "advanced", label: "Advanced Mode", icon: "fa-gear" }
-  ];
+  const tabs = $derived([
+    { id: "simple", label: m.chatTriggers.tabSimple(), icon: "fa-bolt" },
+    { id: "advanced", label: m.chatTriggers.tabAdvanced(), icon: "fa-gear" }
+  ]);
 
   // Action buttons configuration
     let actionButtons = $derived([]);
@@ -920,7 +846,7 @@
   // Handle tab change
   function handleTabChange(tabId: string) {
     activeTab = tabId;
-    announceAction(`Switched to ${activeTab === 'simple' ? 'Simple Mode' : 'Advanced Mode'}`);
+    announceAction(m.chatTriggers.pageAnnounceSwitched({ mode: activeTab === 'simple' ? m.chatTriggers.tabSimple() : m.chatTriggers.tabAdvanced() }));
   }
   
   // Accessibility functions
@@ -941,15 +867,15 @@
       : quickResponseText?.trim();
 
     if (!quickTriggerText.trim() || !hasResponse) {
-      showNotificationMessage("Both trigger text and response are required", "error");
-      announceError("Both trigger text and response are required");
+      showNotificationMessage(m.chatTriggers.pageNotifyBothRequired(), "error");
+      announceError(m.chatTriggers.pageNotifyBothRequired());
       return;
     }
     
     try {
       const guild = get(currentGuild);
       if (!guild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
 
       const responseText = typeof quickResponseText === "object" && Object.keys(quickResponseText).length > 0
@@ -971,11 +897,11 @@
       quickTriggerText = "";
       quickResponseText = {};
 
-      showNotificationMessage("Trigger created successfully!", "success");
-      announceAction("Trigger created successfully");
+      showNotificationMessage(m.chatTriggers.pageNotifyCreated(), "success");
+      announceAction(m.chatTriggers.pageAnnounceCreated());
     } catch (error: any) {
-      showNotificationMessage("Failed to create trigger: " + error.message, "error");
-      announceError("Failed to create trigger");
+      showNotificationMessage(m.chatTriggers.pageNotifyCreateFailed({ error: error.message }), "error");
+      announceError(m.chatTriggers.pageAnnounceCreateFailed());
     }
   }
   
@@ -984,12 +910,12 @@
     switch (templateType) {
       case 'simple':
         quickTriggerText = "hello";
-        quickResponseText = { content: "Hello there! 👋" };
+        quickResponseText = { content: m.chatTriggers.pageTemplateSimpleResponse() };
         break;
       case 'role':
         activeTab = "advanced";
         newTrigger.trigger = "getrole";
-        newTrigger.response = { content: "Role assigned!" };
+        newTrigger.response = { content: m.chatTriggers.pageTemplateRoleResponse() };
         newTrigger.validTriggerTypesMessage = true;
         newTrigger.validTriggerTypesInteraction = false;
         newTrigger.validTriggerTypesButton = false;
@@ -998,7 +924,7 @@
       case 'slash':
         activeTab = "advanced";
         newTrigger.trigger = "info";
-        newTrigger.response = { content: "Server information: %server.name%" };
+        newTrigger.response = { content: m.chatTriggers.pageTemplateSlashResponse() };
         newTrigger.validTriggerTypesMessage = false;
         newTrigger.validTriggerTypesInteraction = true;
         newTrigger.validTriggerTypesButton = false;
@@ -1006,29 +932,29 @@
         // Set application command properties for slash command
         newTrigger.applicationCommandType = CtApplicationCommandType.Slash;
         newTrigger.applicationCommandName = "info";
-        newTrigger.applicationCommandDescription = "Get server information";
+        newTrigger.applicationCommandDescription = m.chatTriggers.pageTemplateSlashCommandDescription();
         break;
       case 'embed':
         activeTab = "advanced";
         newTrigger.trigger = "welcome";
         newTrigger.response = {
-          content: "Welcome to the server!",
+          content: m.chatTriggers.pageTemplateEmbedContent(),
           embeds: [{
-            title: "Welcome!",
-            description: "Thanks for joining %server.name%!",
+            title: m.chatTriggers.pageTemplateEmbedTitle(),
+            description: m.chatTriggers.pageTemplateEmbedDescription(),
             color: "0x5865F2",
             thumbnail: {
               url: "%user.avatar%"
             },
             footer: {
-              text: "Enjoy your stay!"
+              text: m.chatTriggers.pageTemplateEmbedFooter()
             }
           }]
         };
         newTrigger.validTriggerTypesMessage = true;
         break;
     }
-    announceAction(`${templateType} template applied`);
+    announceAction(m.chatTriggers.pageAnnounceTemplateApplied({ template: templateType === 'simple' ? m.chatTriggers.pageTemplateSimple() : templateType === 'role' ? m.chatTriggers.pageTemplateRole() : templateType === 'slash' ? m.common.slashCommands() : m.chatTriggers.pageTemplateEmbed() }));
   }
   
   // Validation functions
@@ -1036,13 +962,7 @@
     // Auto delete trigger and react to trigger are mutually exclusive
     if (newTrigger.autoDeleteTrigger && newTrigger.reactToTrigger) {
       newTrigger.reactToTrigger = false;
-      announceAction("React to trigger disabled - cannot be used with auto-delete");
-    }
-    
-    // React to trigger and auto delete trigger are mutually exclusive
-    if (newTrigger.reactToTrigger && newTrigger.autoDeleteTrigger) {
-      newTrigger.autoDeleteTrigger = false;
-      announceAction("Auto-delete disabled - cannot be used with react to trigger");
+      announceAction(m.chatTriggers.pageAnnounceReactDisabled());
     }
     
     // If no trigger types are selected, default to message
@@ -1052,14 +972,14 @@
         !newTrigger.validTriggerTypesReactions &&
         !newTrigger.validTriggerTypesReactionsRemoved) {
       newTrigger.validTriggerTypesMessage = true;
-      announceAction("Message triggers enabled - at least one trigger type is required");
+      announceAction(m.chatTriggers.pageAnnounceMessageEnabled());
     }
     
     // Slash commands require interaction trigger type
     if (newTrigger.applicationCommandType === CtApplicationCommandType.Slash && 
         !newTrigger.validTriggerTypesInteraction) {
       newTrigger.validTriggerTypesInteraction = true;
-      announceAction("Interaction triggers enabled for slash command");
+      announceAction(m.chatTriggers.pageAnnounceInteractionEnabled());
     }
     
     // Reaction triggers should use emoji-like patterns
@@ -1082,7 +1002,7 @@
           if (activeTab === 'simple') {
             document.getElementById('quick-trigger')?.focus();
           }
-          announceAction('Create new trigger focused');
+          announceAction(m.chatTriggers.pageAnnounceNewFocused());
           break;
         case 's':
         case 'S':
@@ -1097,38 +1017,10 @@
     // Tab navigation
     if (event.key === 'Escape') {
       expandedTriggerId = null;
-      announceAction('Collapsed all cards');
+      announceAction(m.chatTriggers.pageAnnounceCardsCollapsed());
     }
   }
   
-  function handleCardKeydown(event: KeyboardEvent, triggerId: number) {
-    switch(event.key) {
-      case 'Enter':
-      case ' ':
-        event.preventDefault();
-        toggleExpand(triggerId);
-        announceAction(`Trigger ${expandedTriggerId === triggerId ? 'expanded' : 'collapsed'}`);
-        break;
-      case 'e':
-      case 'E':
-        if (!event.ctrlKey) {
-          event.preventDefault();
-          // Focus first input in expanded card or expand if collapsed
-          if (expandedTriggerId !== triggerId) {
-            toggleExpand(triggerId);
-          }
-          announceAction('Edit mode activated');
-        }
-        break;
-      case 'd':
-      case 'D':
-        if (!event.ctrlKey) {
-          event.preventDefault();
-          deleteTrigger(triggerId);
-        }
-        break;
-    }
-  }
   
   
 </script>
@@ -1145,13 +1037,13 @@
 </div>
 
 <DashboardPageLayout
-  title="Chat Triggers"
-  subtitle="Create and manage automated responses to messages"
+  title={m.placeholders.categoryChatTrigger()}
+  subtitle={m.chatTriggers.pageSubtitle()}
   icon="fa-comment"
   {tabs}
   bind:activeTab
   {actionButtons}
-  guildName="Dashboard"
+  guildName={m.common.dashboard()}
 >
     <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
     <!-- Notifications -->
@@ -1202,27 +1094,27 @@
                  style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);">
               <i class="fa-utility-duo fa-regular fa-circle-plus" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
             </div>
-            <h2 class="text-xl font-bold" style="color: {colors.text}">Quick Setup</h2>
+            <h2 class="text-xl font-bold" style="color: {colors.text}">{m.common.quickSetup()}</h2>
           </div>
 
           <div class="space-y-4">
             <!-- Trigger Input -->
             <div>
               <label for="quick-trigger" class="block text-sm font-medium mb-2" style="color: {colors.text}">
-                When someone types:
-                <abbr title="required" aria-label="required">*</abbr>
+                {m.chatTriggers.pageQuickTriggerLabel()}
+                <abbr title={m.common.required()} aria-label={m.common.required()}>*</abbr>
               </label>
               <input 
                 id="quick-trigger"
                 class="w-full min-h-[44px] p-3 rounded-lg border text-base transition-all duration-200"
                 style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
-                placeholder="hello"
+                placeholder={m.common.helloPlaceholder()}
                 bind:value={quickTriggerText}
                 aria-describedby="trigger-help"
                 aria-required="true"
               >
               <div id="trigger-help" class="text-xs mt-1" style="color: {colors.muted}">
-                Simple text that will trigger the response
+                {m.chatTriggers.pageQuickTriggerHint()}
               </div>
             </div>
 
@@ -1230,14 +1122,14 @@
             <div>
               <label for="f-+page-label-980" class="block text-sm font-medium mb-3" style="color: {colors.text}">
                 <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
-                Bot responds with:
-                <abbr title="required" aria-label="required">*</abbr>
+                {m.chatTriggers.pageQuickResponseLabel()}
+                <abbr title={m.common.required()} aria-label={m.common.required()}>*</abbr>
               </label>
 
               <FullscreenEmbedBuilder id="f-+page-label-980"
                 bind:value={quickResponseText}
-                previewTitle="Quick Response"
-                previewDescription="Bot's response to the trigger"
+                previewTitle={m.chatTriggers.pageQuickPreviewTitle()}
+                previewDescription={m.chatTriggers.pageQuickPreviewDescription()}
                 icon="fa-comment"
                 allowContent={true}
                 allowMultipleEmbeds={true}
@@ -1245,11 +1137,11 @@
                 allowComponents={true}
                 guildId={$currentGuild?.id}
                 user={data.user}
-                placeholder="Click to configure response message with rich embeds and components"
+                placeholder={m.chatTriggers.pageQuickResponsePlaceholder()}
               />
 
               <div class="text-xs mt-2" style="color: {colors.muted}">
-                💡 Supports rich embeds, interactive buttons, select menus, and Discord formatting
+                {m.chatTriggers.pageQuickResponseHint()}
               </div>
             </div>
 
@@ -1264,7 +1156,7 @@
               >
                 <div class="flex items-center justify-center gap-2">
                   <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
-                  <span>Create Trigger</span>
+                  <span>{m.chatTriggers.pageQuickCreate()}</span>
                 </div>
               </button>
               
@@ -1274,12 +1166,12 @@
                 style="background: {colors.secondary}20; color: {colors.secondary}; border: 1px solid {colors.secondary}30;"
                 onclick={() => activeTab = 'advanced'}
               >
-                More Options →
+                {m.chatTriggers.pageQuickMoreOptions()}
               </button>
             </div>
             
             <div id="create-help" class="text-xs" style="color: {colors.muted}">
-              Creates a simple trigger that responds when users type your trigger text
+              {m.chatTriggers.pageQuickCreateHint()}
             </div>
           </div>
         </div>
@@ -1290,7 +1182,7 @@
                     border-color: {colors.primary}30;">
           
           <h3 class="text-lg font-semibold mb-4" style="color: {colors.text}">
-            Or choose a template:
+            {m.chatTriggers.pageTemplatesHeading()}
           </h3>
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1303,10 +1195,10 @@
             >
               <div class="flex items-center gap-3 mb-2">
                 <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 20px;"></i>
-                <span class="font-medium" style="color: {colors.text}">Simple Response</span>
+                <span class="font-medium" style="color: {colors.text}">{m.chatTriggers.pageTemplateSimple()}</span>
               </div>
               <p id="template-simple-desc" class="text-sm" style="color: {colors.muted}">
-                Bot says X when users type Y
+                {m.chatTriggers.pageTemplateSimpleDesc()}
               </p>
             </button>
 
@@ -1319,10 +1211,10 @@
             >
               <div class="flex items-center gap-3 mb-2">
                 <i class="fa-utility-duo fa-regular fa-crown" style="--fa-primary-color: {colors.secondary}; --fa-secondary-color: {colors.primary}; font-size: 20px;"></i>
-                <span class="font-medium" style="color: {colors.text}">Role Actions</span>
+                <span class="font-medium" style="color: {colors.text}">{m.chatTriggers.pageTemplateRole()}</span>
               </div>
               <p id="template-role-desc" class="text-sm" style="color: {colors.muted}">
-                Give/remove roles when triggered
+                {m.chatTriggers.pageTemplateRoleDesc()}
               </p>
             </button>
 
@@ -1335,10 +1227,10 @@
             >
               <div class="flex items-center gap-3 mb-2">
                 <i class="fa-utility-duo fa-regular fa-code" style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary}; font-size: 20px;"></i>
-                <span class="font-medium" style="color: {colors.text}">Slash Commands</span>
+                <span class="font-medium" style="color: {colors.text}">{m.common.slashCommands()}</span>
               </div>
               <p id="template-slash-desc" class="text-sm" style="color: {colors.muted}">
-                Create custom slash commands
+                {m.chatTriggers.pageTemplateSlashDesc()}
               </p>
             </button>
 
@@ -1351,10 +1243,10 @@
             >
               <div class="flex items-center gap-3 mb-2">
                 <i class="fa-utility-duo fa-regular fa-sparkles" style="--fa-primary-color: {colors.secondary}; --fa-secondary-color: {colors.primary}; font-size: 20px;"></i>
-                <span class="font-medium" style="color: {colors.text}">Rich Embeds</span>
+                <span class="font-medium" style="color: {colors.text}">{m.chatTriggers.pageTemplateEmbed()}</span>
               </div>
               <p id="template-embed-desc" class="text-sm" style="color: {colors.muted}">
-                Rich embeds with images, fields, and components
+                {m.chatTriggers.pageTemplateEmbedDesc()}
               </p>
             </button>
           </div>
@@ -1367,8 +1259,8 @@
                       border-color: {colors.primary}30;"
                transition:fade>
             <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {colors.muted}; --fa-secondary-color: {colors.muted}; font-size: 48px; opacity: 0.5;"></i>
-            <h3 class="text-lg font-semibold mb-2" style="color: {colors.text}">No Chat Triggers Found</h3>
-            <p style="color: {colors.muted}">Create your first trigger using the quick setup above</p>
+            <h3 class="text-lg font-semibold mb-2" style="color: {colors.text}">{m.chatTriggers.pageEmptyTitle()}</h3>
+            <p style="color: {colors.muted}">{m.chatTriggers.pageEmptyHint()}</p>
           </div>
         {:else}
           <!-- Server-wide tools: counters and the placeholder reference -->
@@ -1382,9 +1274,9 @@
             >
               <i class="fa-solid fa-hashtag" style="color: {colors.primary};"></i>
               <span class="flex-1">
-                <span class="block text-sm font-medium" style="color: {colors.text}">Counters</span>
+                <span class="block text-sm font-medium" style="color: {colors.text}">{m.chatTriggers.pageCountersTitle()}</span>
                 <span class="block text-xs" style="color: {colors.muted}">
-                  {counters.length} defined
+                  {m.chatTriggers.pageCountersSummary({ count: counters.length })}
                 </span>
               </span>
               <i class="fa-solid {showCounters ? 'fa-chevron-up' : 'fa-chevron-down'}"
@@ -1400,9 +1292,9 @@
             >
               <i class="fa-solid fa-code" style="color: {colors.primary};"></i>
               <span class="flex-1">
-                <span class="block text-sm font-medium" style="color: {colors.text}">Placeholders</span>
+                <span class="block text-sm font-medium" style="color: {colors.text}">{m.common.placeholders()}</span>
                 <span class="block text-xs" style="color: {colors.muted}">
-                  {availablePlaceholders.length} available in responses
+                  {m.chatTriggers.pagePlaceholdersSummary({ count: availablePlaceholders.length })}
                 </span>
               </span>
               <i class="fa-solid {showPlaceholders ? 'fa-chevron-up' : 'fa-chevron-down'}"
@@ -1414,8 +1306,7 @@
             <div transition:slide={{ duration: 150 }} class="mb-4 p-4 rounded-xl border space-y-3"
                  style="border-color: {colors.primary}25;">
               <p class="text-xs" style="color: {colors.muted}">
-                Counters are shared across the server. A response reads one with
-                <code>%counter:name%</code>, or adds to it with <code>%counter:name+%</code>.
+                {m.chatTriggers.pageCountersHint({ read: "%counter:name%", add: "%counter:name+%" })}
               </p>
 
               {#each counters as counter (counter.id)}
@@ -1432,7 +1323,7 @@
                   <button
                     class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all hover:brightness-110"
                     style="background: {colors.accent}20; color: {colors.accent};"
-                    aria-label="Delete counter {counter.name}"
+                    aria-label={m.chatTriggers.pageCountersDeleteAria({ name: counter.name })}
                     onclick={() => removeCounter(counter.name)}
                   >
                     <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
@@ -1445,7 +1336,7 @@
                 <input
                   type="text"
                   bind:value={newCounterName}
-                  placeholder="New counter name"
+                  placeholder={m.chatTriggers.pageCountersNewPlaceholder()}
                   class="flex-1 min-h-[44px] px-3 rounded-lg border text-base"
                   style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
                 />
@@ -1461,7 +1352,7 @@
                   disabled={!newCounterName.trim()}
                   onclick={() => saveCounter(newCounterName, newCounterValue)}
                 >
-                  Add
+                  {m.common.add()}
                 </button>
               </div>
             </div>
@@ -1471,8 +1362,7 @@
             <div transition:slide={{ duration: 150 }} class="mb-4 p-4 rounded-xl border"
                  style="border-color: {colors.primary}25;">
               <p class="text-xs mb-3" style="color: {colors.muted}">
-                Drop any of these into a response and the bot fills them in when the trigger fires.
-                Regex triggers can also use <code>%regex.1%</code> for capture groups.
+                {m.chatTriggers.pagePlaceholdersHint({ capture: "%regex.1%" })}
               </p>
               <div class="flex flex-wrap gap-1.5">
                 {#each availablePlaceholders as placeholder (placeholder)}
@@ -1486,12 +1376,12 @@
           <!-- Filter bar: keeps a long trigger list navigable -->
           <div class="flex flex-col sm:flex-row gap-3 mb-4">
             <div class="flex-1">
-              <label for="trigger-search" class="sr-only">Search triggers</label>
+              <label for="trigger-search" class="sr-only">{m.chatTriggers.pageSearchLabel()}</label>
               <input
                 id="trigger-search"
                 type="search"
                 bind:value={searchQuery}
-                placeholder="Search triggers and responses"
+                placeholder={m.chatTriggers.pageSearchPlaceholder()}
                 class="w-full min-h-[44px] p-3 rounded-lg border text-base transition-all duration-200"
                 style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
               />
@@ -1503,8 +1393,8 @@
                   options={categoryFilterOptions}
                   selected={categoryFilter}
                   searchable={false}
-                  ariaLabel="Filter triggers by category"
-                  placeholder="All triggers"
+                  ariaLabel={m.chatTriggers.pageFilterAria()}
+                  placeholder={m.chatTriggers.pageFilterAll()}
                   onchange={(detail) => categoryFilter = (detail.selected as string) ?? "all"}
                 />
               </div>
@@ -1515,21 +1405,21 @@
             <div class="flex flex-wrap items-center gap-3 mb-4 p-3 rounded-xl border"
                  style="border-color: {colors.primary}25; background: {colors.primary}08;">
               <span class="text-sm flex-1" style="color: {colors.text}">
-                Bulk actions for <strong>{categoryFilter}</strong>
+                {@html m.chatTriggers.pageBulkActions({ category: "<strong>" + escapeHtml(categoryFilter) + "</strong>" })}
               </span>
               <button
                 class="min-h-[44px] px-4 rounded-lg text-base font-medium transition-all hover:brightness-110"
                 style="background: {colors.primary}20; color: {colors.primary};"
                 onclick={() => toggleCategory(false)}
               >
-                Resume all
+                {m.chatTriggers.pageBulkResume()}
               </button>
               <button
                 class="min-h-[44px] px-4 rounded-lg text-base font-medium transition-all hover:brightness-110"
                 style="background: {colors.accent}20; color: {colors.accent};"
                 onclick={() => toggleCategory(true)}
               >
-                Pause all
+                {m.chatTriggers.pageBulkPause()}
               </button>
             </div>
           {/if}
@@ -1537,7 +1427,7 @@
           {#if visibleTriggers.length === 0}
             <div class="text-center py-10 rounded-2xl border"
                  style="border-color: {colors.primary}30; background: {colors.primary}08;" transition:fade>
-              <p style="color: {colors.muted}">No triggers match your search.</p>
+              <p style="color: {colors.muted}">{m.chatTriggers.pageNoMatches()}</p>
             </div>
           {/if}
 
@@ -1562,7 +1452,7 @@
                         </span>
                       </h3>
                       <div class="text-sm" style="color: {colors.muted}">
-                        Used {trigger.useCount || 0} times
+                        {Number(trigger.useCount || 0) === 1 ? m.chatTriggers.pageTriggerUsedOne({ count: 1 }) : m.chatTriggers.pageTriggerUsedOther({ count: Number(trigger.useCount || 0) })}
                       </div>
                       {#if triggerBadges(trigger).length > 0}
                         <div class="flex flex-wrap gap-1.5 mt-2">
@@ -1582,7 +1472,7 @@
                         class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all duration-200 hover:brightness-110"
                         style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
                         onclick={() => toggleTriggerEnabled(trigger)}
-                        aria-label="{trigger.isDisabled ? 'Resume' : 'Pause'} trigger {trigger.trigger}"
+                        aria-label={trigger.isDisabled ? m.chatTriggers.pageTriggerResumeAria({ name: trigger.trigger ?? "" }) : m.chatTriggers.pageTriggerPauseAria({ name: trigger.trigger ?? "" })}
                       >
                         <i class="fa-solid {trigger.isDisabled ? 'fa-play' : 'fa-pause'}"
                            style="color: {colors.primary}; font-size: 16px;"></i>
@@ -1592,7 +1482,7 @@
                         class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all duration-200 hover:brightness-110"
                         style="background: {colors.accent}20; color: {colors.accent}; border: 1px solid {colors.accent}30;"
                         onclick={() => deleteTrigger(trigger.id)}
-                        aria-label="Delete trigger {trigger.trigger}"
+                        aria-label={m.chatTriggers.pageTriggerDeleteAria({ name: trigger.trigger ?? "" })}
                       >
                         <i class="fa-solid fa-trash" style="color: {colors.accent}; font-size: 16px;"></i>
                       </button>
@@ -1602,7 +1492,7 @@
                         style="background: {colors.secondary}20; color: {colors.secondary}; border: 1px solid {colors.secondary}30;"
                         onclick={() => toggleExpand(trigger.id)}
                         aria-expanded={expandedTriggerId === trigger.id}
-                        aria-label="{expandedTriggerId === trigger.id ? 'Collapse' : 'Expand'} trigger settings"
+                        aria-label={expandedTriggerId === trigger.id ? m.chatTriggers.pageTriggerCollapseAria() : m.chatTriggers.pageTriggerExpandAria()}
                       >
                         <i class="fa-solid {expandedTriggerId === trigger.id ? 'fa-chevron-up' : 'fa-chevron-down'}" style="color: {colors.secondary}; font-size: 16px;"></i>
                       </button>
@@ -1613,13 +1503,13 @@
                     <div transition:slide={{ duration: 200 }} class="mt-4 pt-4 border-t space-y-4"
                          style="border-color: {colors.primary}20;"
                          role="region"
-                         aria-label="Advanced settings for {trigger.trigger}">
+                         aria-label={m.chatTriggers.pageTriggerSettingsAria({ name: trigger.trigger ?? "" })}>
                       
                       <!-- Basic Editing -->
                       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label for="edit-trigger-{trigger.id}" class="block text-sm font-medium mb-2" style="color: {colors.text}">
-                            Trigger Text
+                            {m.chatTriggers.pageEditTriggerLabel()}
                           </label>
                           <input
                             id="edit-trigger-{trigger.id}"
@@ -1629,20 +1519,20 @@
                             aria-describedby="edit-trigger-help-{trigger.id}"
                           >
                           <div id="edit-trigger-help-{trigger.id}" class="text-xs mt-1" style="color: {colors.muted}">
-                            Text that will trigger this response
+                            {m.chatTriggers.pageEditTriggerHint()}
                           </div>
                         </div>
 
                         <div>
                           <label for="f-+page-response-message-1191" class="block text-sm font-medium mb-3" style="color: {colors.text}">
                             <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
-                            Response Message
+                            {m.chatTriggers.pageLabelResponse()}
                           </label>
 
                           <FullscreenEmbedBuilder id="f-+page-response-message-1191"
                             value={toBuilderValue(trigger.response)}
-                            previewTitle="Trigger Response"
-                            previewDescription="Bot's response to this trigger"
+                            previewTitle={m.chatTriggers.pageEditPreviewTitle()}
+                            previewDescription={m.chatTriggers.pageEditPreviewDescription()}
                             icon="fa-comment"
                             allowContent={true}
                             allowMultipleEmbeds={true}
@@ -1650,7 +1540,7 @@
                             allowComponents={true}
                             guildId={$currentGuild?.id}
                             user={data.user}
-                            placeholder="Click to configure response message"
+                            placeholder={m.chatTriggers.pageEditResponsePlaceholder()}
                             onchange={(newValue) => {
                               trigger.response = newValue;
                               triggers = [...triggers];
@@ -1671,15 +1561,14 @@
 
                       <!-- Dry run: explains which of the many gates is blocking a trigger -->
                       <div class="space-y-3 pt-3 border-t" style="border-color: {colors.primary}20;">
-                        <h4 class="font-medium" style="color: {colors.text}">Test this trigger</h4>
+                        <h4 class="font-medium" style="color: {colors.text}">{m.chatTriggers.pageTestTitle()}</h4>
                         <p class="text-xs" style="color: {colors.muted}">
-                          Checks whether a message would fire this trigger, as you. Nothing is sent,
-                          charged or counted.
+                          {m.chatTriggers.pageTestHint()}
                         </p>
                         <div class="flex flex-col sm:flex-row gap-2">
                           <input
                             type="text"
-                            placeholder="Type a sample message"
+                            placeholder={m.chatTriggers.pageTestPlaceholder()}
                             value={testSample[trigger.id] ?? ""}
                             oninput={(e) => testSample[trigger.id] = (e.target as HTMLInputElement).value}
                             class="flex-1 min-h-[44px] px-3 rounded-lg border text-base"
@@ -1690,7 +1579,7 @@
                             style="background: {colors.primary}20; color: {colors.primary};"
                             onclick={() => runTest(trigger)}
                           >
-                            Test
+                            {m.common.test()}
                           </button>
                         </div>
 
@@ -1700,12 +1589,12 @@
                                style="background: {result?.wouldFire ? colors.primary : colors.accent}15;
                                       color: {result?.wouldFire ? colors.primary : colors.accent};">
                             {#if result?.wouldFire}
-                              <i class="fa-solid fa-check"></i> This message would fire the trigger.
+                              <i class="fa-solid fa-check"></i> {m.chatTriggers.pageTestWouldFire()}
                             {:else if !result?.matched}
                               <i class="fa-solid fa-xmark"></i>
-                              The message does not match this trigger's text, prefix or pattern.
+                              {m.chatTriggers.pageTestNoMatch()}
                             {:else}
-                              <i class="fa-solid fa-ban"></i> Matched, but blocked: {result?.blocker}
+                              <i class="fa-solid fa-ban"></i> {m.chatTriggers.pageTestBlocked({ blocker: result?.blocker ?? "" })}
                             {/if}
                           </div>
                         {/if}
@@ -1715,16 +1604,16 @@
                           style="color: {colors.muted}"
                           onclick={() => loadStats(trigger)}
                         >
-                          Show recent activity
+                          {m.chatTriggers.pageStatsShow()}
                         </button>
 
                         {#if triggerStats[trigger.id]}
                           {@const stats = triggerStats[trigger.id]}
                           <div class="text-xs space-y-1" style="color: {colors.muted}">
-                            <div>Fired {stats?.total ?? 0} time(s) in total.</div>
+                            <div>{Number(stats?.total ?? 0) === 1 ? m.chatTriggers.pageStatsTotalOne({ count: 1 }) : m.chatTriggers.pageStatsTotalOther({ count: Number(stats?.total ?? 0) })}</div>
                             {#each stats?.recent ?? [] as fire (String(fire.dateAdded) + String(fire.userId))}
                               <div>
-                                &lt;@{fire.userId}&gt; in &lt;#{fire.channelId}&gt;
+                                {m.chatTriggers.pageStatsFire({ user: String(fire.userId), channel: String(fire.channelId) })}
                                 {fire.dateAdded ? new Date(fire.dateAdded).toLocaleString() : ""}
                               </div>
                             {/each}
@@ -1741,7 +1630,7 @@
                         >
                           <div class="flex items-center gap-2">
                             <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-                            <span>Save Changes</span>
+                            <span>{m.common.saveChanges()}</span>
                           </div>
                         </button>
                       </div>
@@ -1763,7 +1652,7 @@
              style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                     border-color: {colors.primary}30;">
           
-          <h2 class="text-xl font-bold mb-6" style="color: {colors.text}">Advanced Trigger Creation</h2>
+          <h2 class="text-xl font-bold mb-6" style="color: {colors.text}">{m.chatTriggers.pageAdvancedTitle()}</h2>
           
           <!-- Basic Trigger Configuration -->
           <div class="space-y-6">
@@ -1771,8 +1660,8 @@
               <!-- Trigger Text -->
               <div>
                 <label for="new-trigger" class="block text-sm font-medium mb-2" style="color: {colors.text}">
-                  Trigger Text or Pattern
-                  <abbr title="required" aria-label="required">*</abbr>
+                  {m.chatTriggers.pageLabelTrigger()}
+                  <abbr title={m.common.required()} aria-label={m.common.required()}>*</abbr>
                 </label>
                 <input
                   id="new-trigger"
@@ -1780,13 +1669,13 @@
                   style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
                   bind:value={newTrigger.trigger}
                   oninput={handleNewTriggerRegexChange}
-                  placeholder="Enter trigger text or regex pattern"
+                  placeholder={m.chatTriggers.pageAdvancedTriggerPlaceholder()}
                   aria-required="true"
                   aria-describedby="trigger-validity"
                 >
                 {#if newTrigger.isRegex && !newTrigger.isValidRegex}
                   <div id="trigger-validity" class="text-xs mt-1" style="color: {colors.accent}" role="alert">
-                    Invalid regular expression syntax
+                    {m.chatTriggers.pageAdvancedRegexInvalid()}
                   </div>
                 {/if}
               </div>
@@ -1795,17 +1684,17 @@
               <div>
                 <label class="flex items-center gap-2 text-sm font-medium mb-3" style="color: {colors.text}">
                   <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
-                  Response Message
-                  <abbr title="required" aria-label="required">*</abbr>
+                  {m.chatTriggers.pageLabelResponse()}
+                  <abbr title={m.common.required()} aria-label={m.common.required()}>*</abbr>
                   <Tooltip
                     placement="bottom"
-                    text="Supports rich content including plain text, JSON embeds with images/fields/colors, interactive components, and placeholders like %user.name%. Try the Rich Embeds template!" />
+                    text={m.chatTriggers.pageAdvancedResponseTooltip()} />
                 </label>
 
                 <FullscreenEmbedBuilder
                   bind:value={newTrigger.response}
-                  previewTitle="Trigger Response"
-                  previewDescription="Bot's response to this trigger"
+                  previewTitle={m.chatTriggers.pageEditPreviewTitle()}
+                  previewDescription={m.chatTriggers.pageEditPreviewDescription()}
                   icon="fa-comment"
                   allowContent={true}
                   allowMultipleEmbeds={true}
@@ -1813,20 +1702,20 @@
                   allowComponents={true}
                   guildId={$currentGuild?.id}
                   user={data.user}
-                  placeholder="Click to configure response message with embeds/components"
+                  placeholder={m.chatTriggers.pageAdvancedResponsePlaceholder()}
                 />
               </div>
             </div>
 
             <!-- Pattern Type (Regex vs Normal) -->
             <div class="space-y-3">
-              <h3 class="text-lg font-semibold" style="color: {colors.text}">Pattern Type</h3>
+              <h3 class="text-lg font-semibold" style="color: {colors.text}">{m.chatTriggers.pageAdvancedPatternTitle()}</h3>
               <div class="flex items-center gap-4">
                 <DiscordSelector
                   type="custom"
                   options={triggerTypeOptions}
                   selected={newTrigger.isRegex ? "true" : "false"}
-                  placeholder="Select pattern type"
+                  placeholder={m.chatTriggers.pageAdvancedPatternPlaceholder()}
                   onchange={handleTriggerTypeChange}
                 />
               </div>
@@ -1835,10 +1724,10 @@
             <!-- Valid Trigger Types -->
             <div class="space-y-3">
               <h3 class="text-lg font-semibold flex items-center gap-2" style="color: {colors.text}">
-                Valid Trigger Types
+                {m.chatTriggers.pageLabelValidTypes()}
                 <Tooltip
                   placement="bottom"
-                  text="Choose how this trigger activates: Messages (regular chat), Slash Commands (requires setup), Buttons (interactive), or Reactions (emoji responses). Multiple types can be enabled." />
+                  text={m.chatTriggers.pageAdvancedTypesTooltip()} />
               </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
@@ -1853,7 +1742,7 @@
                             peer-checked:after:translate-x-full relative"
                        style="background: {newTrigger.validTriggerTypesMessage ? colors.primary : `${colors.primary}20`};">
                   </div>
-                  <span style="color: {colors.text}">Message triggers</span>
+                  <span style="color: {colors.text}">{m.chatTriggers.pageAdvancedTypeMessage()}</span>
                 </label>
 
                 <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
@@ -1868,7 +1757,7 @@
                             peer-checked:after:translate-x-full relative"
                        style="background: {newTrigger.validTriggerTypesInteraction ? colors.primary : `${colors.primary}20`};">
                   </div>
-                  <span style="color: {colors.text}">Slash command interactions</span>
+                  <span style="color: {colors.text}">{m.chatTriggers.pageAdvancedTypeInteraction()}</span>
                 </label>
 
                 <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
@@ -1883,7 +1772,7 @@
                             peer-checked:after:translate-x-full relative"
                        style="background: {newTrigger.validTriggerTypesButton ? colors.primary : `${colors.primary}20`};">
                   </div>
-                  <span style="color: {colors.text}">Button interactions</span>
+                  <span style="color: {colors.text}">{m.chatTriggers.pageAdvancedTypeButton()}</span>
                 </label>
 
                 <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
@@ -1898,7 +1787,7 @@
                             peer-checked:after:translate-x-full relative"
                        style="background: {newTrigger.validTriggerTypesReactions ? colors.primary : `${colors.primary}20`};">
                   </div>
-                  <span style="color: {colors.text}">Reaction added</span>
+                  <span style="color: {colors.text}">{m.chatTriggers.pageAdvancedTypeReactionAdded()}</span>
                 </label>
 
                 <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
@@ -1913,11 +1802,11 @@
                             peer-checked:after:translate-x-full relative"
                        style="background: {newTrigger.validTriggerTypesReactionsRemoved ? colors.primary : `${colors.primary}20`};">
                   </div>
-                  <span style="color: {colors.text}">Reaction removed</span>
+                  <span style="color: {colors.text}">{m.chatTriggers.pageAdvancedTypeReactionRemoved()}</span>
                 </label>
               </div>
               <div class="text-xs" style="color: {colors.muted}">
-                Select which types of interactions can trigger this response
+                {m.chatTriggers.pageAdvancedTypesHint()}
               </div>
             </div>
 
@@ -1925,15 +1814,15 @@
             {#if newTrigger.isRegex}
               <div class="space-y-3" transition:slide>
                 <h4 class="font-semibold flex items-center gap-2" style="color: {colors.text}">
-                  Regular Expression Testing
+                  {m.chatTriggers.pageAdvancedRegexTitle()}
                   <Tooltip
                     placement="bottom"
-                    text="Test your regex pattern against sample text to ensure it matches correctly and prevents unexpected behavior." />
+                    text={m.chatTriggers.pageAdvancedRegexTooltip()} />
                 </h4>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label for="regex-test-input" class="block text-sm font-medium mb-2" style="color: {colors.text}">
-                      Test String
+                      {m.chatTriggers.pageAdvancedRegexTestString()}
                     </label>
                     <input
                       id="regex-test-input"
@@ -1941,22 +1830,22 @@
                       style="border-color: {colors.accent}30; color: {colors.text}; background: {colors.primary}08;"
                       bind:value={newTriggerRegexTestString}
                       oninput={testNewTriggerRegex}
-                      placeholder="Enter text to test against your regex"
+                      placeholder={m.chatTriggers.pageAdvancedRegexTestPlaceholder()}
                     >
                   </div>
                   <div>
                     <label for="trigger-text" class="block text-sm font-medium mb-2" style="color: {colors.text}">
-                      Test Result
+                      {m.chatTriggers.pageAdvancedRegexTestResult()}
                     </label>
                     <div class="p-3 rounded-lg" style="background: {colors.accent}10; color: {colors.text};">
-                      {newTriggerRegexTestResult || 'Enter test string to see results'}
+                      {newTriggerRegexTestResult || m.chatTriggers.pageRegexResultPlaceholder()}
                     </div>
                   </div>
                 </div>
                 {#if newTriggerRegexHighlightedString}
                   <div>
                     <label for="response-text" class="block text-sm font-medium mb-2" style="color: {colors.text}">
-                      Highlighted Matches
+                      {m.chatTriggers.pageAdvancedRegexHighlighted()}
                     </label>
                     <div class="p-3 rounded-lg" style="background: {colors.primary}10; color: {colors.text};">
                       {@html newTriggerRegexHighlightedString}
@@ -1990,12 +1879,12 @@
               >
                 <div class="flex items-center gap-2">
                   <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
-                  <span>Create Advanced Trigger</span>
+                  <span>{m.chatTriggers.pageAdvancedCreate()}</span>
                 </div>
               </button>
             </div>
             <div id="create-help" class="text-xs text-right" style="color: {colors.muted}">
-              All required fields must be filled with valid data
+              {m.chatTriggers.pageAdvancedCreateHint()}
             </div>
           </div>
         </div>

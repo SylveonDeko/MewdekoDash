@@ -1,8 +1,10 @@
 <!-- lib/components/forms/ResponseStatusChecker.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { formsApi, RESPONSE_STATUS_LABELS, type ResponseStatusResponse } from "$lib/api/index.ts";
   import { colorStore } from "$lib/stores/colorStore";
+  import { responseStatusLabel } from "./formLabels";
   import { loadingStore } from "$lib/stores/loadingStore";
   import { fade, fly, slide } from "svelte/transition";
 
@@ -20,7 +22,7 @@
 
   async function loadStatus() {
     if (!token) {
-      error = "Missing token in URL.";
+      error = m.forms.statusCheckerMissingToken();
       return;
     }
     return await loadingStore.wrap("load-status", async () => {
@@ -29,11 +31,11 @@
         error = null;
         status = await formsApi.getResponseStatus(token!);
       } catch (err) {
-        error = err instanceof Error ? err.message : "Failed to load response status";
+        error = err instanceof Error ? err.message : m.forms.statusCheckerLoadFailed();
       } finally {
         loading = false;
       }
-    }, "api", "Loading status...");
+    }, "api", m.forms.statusCheckerLoadingOverlay());
   }
 
   /** Transient feedback shown under the copy button after a clipboard attempt */
@@ -50,9 +52,9 @@
     if (!status?.inviteCode) return;
     const inviteUrl = `https://discord.gg/${status.inviteCode}`;
     navigator.clipboard.writeText(inviteUrl).then(() => {
-      showCopyFeedback("Invite link copied to clipboard", true);
+      showCopyFeedback(m.forms.statusCheckerLinkCopied(), true);
     }).catch(() => {
-      showCopyFeedback(`Could not copy automatically. Link: ${inviteUrl}`, false);
+      showCopyFeedback(m.forms.statusCheckerCopyFailed({ url: inviteUrl }), false);
     });
   }
 
@@ -62,7 +64,7 @@
   }
 
   function formatDate(dateString: string | undefined): string {
-    if (!dateString) return "N/A";
+    if (!dateString) return m.common.notAvailable();
     const date = new Date(dateString);
     return date.toLocaleString();
   }
@@ -108,7 +110,7 @@
           class="w-12 h-12 border-4 rounded-full animate-spin mx-auto mb-4"
           style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"
         ></div>
-        <p style="color: {$colorStore.muted};">Loading your submission status...</p>
+        <p style="color: {$colorStore.muted};">{m.forms.statusCheckerLoading()}</p>
       </div>
     {:else if error}
       <div
@@ -117,7 +119,7 @@
         in:fly={{ y: 20, duration: 300 }}
       >
         <i class="fa-solid fa-triangle-exclamation mb-4" style="color: #ef4444; font-size: 48px; display: block;"></i>
-        <h2 class="text-2xl font-bold mb-4" style="color: #ef4444;">Error</h2>
+        <h2 class="text-2xl font-bold mb-4" style="color: #ef4444;">{m.common.error()}</h2>
         <p class="text-lg" style="color: {$colorStore.text};">{error}</p>
       </div>
     {:else if status}
@@ -135,7 +137,7 @@
             <i class="fa-solid fa-clipboard-check" style="color: {$colorStore.primary}; font-size: 32px;"></i>
           </div>
           <h1 class="text-3xl font-bold mb-3" style="color: {$colorStore.text};">
-            Submission Status
+            {m.forms.statusCheckerTitle()}
           </h1>
           <p class="text-xs font-mono" style="color: {$colorStore.muted};">
             {token}
@@ -160,42 +162,41 @@
             </div>
             <div class="flex-1">
               <h2 class="text-2xl font-bold mb-2" style="color: {RESPONSE_STATUS_LABELS[status.status].color};">
-                {RESPONSE_STATUS_LABELS[status.status].label}
+                {responseStatusLabel(status.status)}
               </h2>
               <div class="space-y-2 text-sm" style="color: {$colorStore.text};">
                 {#if status.status === "Pending"}
-                  <p>Your submission is awaiting review by the moderation team. You'll be notified once a decision is
-                    made.</p>
+                  <p>{m.forms.statusCheckerPendingBody()}</p>
                   <p class="text-xs" style="color: {$colorStore.muted};">
-                    💡 Tip: You can refresh this page or enable auto-refresh to check for updates.
+                    {m.forms.statusCheckerPendingTip()}
                   </p>
                 {:else if status.status === "UnderReview"}
-                  <p>Your submission is currently being reviewed by a moderator. A decision will be made soon.</p>
+                  <p>{m.forms.statusCheckerUnderReviewBody()}</p>
                 {:else if status.status === "Approved"}
-                  <p>Congratulations! Your submission has been approved.</p>
+                  <p>{m.forms.statusCheckerApprovedBody()}</p>
                   {#if status.reviewedAt}
                     <p class="text-xs" style="color: {$colorStore.muted};">
                       <i class="fa-solid fa-clock mr-1"></i>
-                      Reviewed on {formatDate(status.reviewedAt)}
+                      {m.forms.statusCheckerReviewedOn({ date: formatDate(status.reviewedAt) })}
                     </p>
                   {/if}
                   {#if status.reviewNotes}
                     <div class="mt-2 p-3 rounded-lg" style="background: {$colorStore.primary}10;">
-                      <div class="font-semibold mb-1" style="color: {$colorStore.text};">Moderator Notes:</div>
+                      <div class="font-semibold mb-1" style="color: {$colorStore.text};">{m.forms.statusCheckerModeratorNotes()}</div>
                       <p class="whitespace-pre-wrap">{status.reviewNotes}</p>
                     </div>
                   {/if}
                 {:else if status.status === "Rejected"}
-                  <p>Unfortunately, your submission has been rejected.</p>
+                  <p>{m.forms.statusCheckerRejectedBody()}</p>
                   {#if status.reviewedAt}
                     <p class="text-xs" style="color: {$colorStore.muted};">
                       <i class="fa-solid fa-clock mr-1"></i>
-                      Reviewed on {formatDate(status.reviewedAt)}
+                      {m.forms.statusCheckerReviewedOn({ date: formatDate(status.reviewedAt) })}
                     </p>
                   {/if}
                   {#if status.reviewNotes}
                     <div class="mt-2 p-3 rounded-lg" style="background: #ef444410; border: 1px solid #ef444430;">
-                      <div class="font-semibold mb-1" style="color: #ef4444;">Rejection Reason:</div>
+                      <div class="font-semibold mb-1" style="color: #ef4444;">{m.forms.statusCheckerRejectionReason()}</div>
                       <p class="whitespace-pre-wrap">{status.reviewNotes}</p>
                     </div>
                   {/if}
@@ -247,16 +248,15 @@
           >
             <div class="font-semibold mb-1" style="color: {$colorStore.text};">
               <i class="fa-solid fa-pen mr-2" style="color: {$colorStore.primary};"></i>
-              Need to change an answer?
+              {m.forms.statusCheckerChangeAnswerTitle()}
             </div>
             <p class="text-sm mb-4" style="color: {$colorStore.muted};">
-              You can still correct this while it is waiting to be reviewed. The reviewers keep a
-              copy of what you wrote before.
+              {m.forms.statusCheckerChangeAnswerBody()}
             </p>
 
             {#if status.editedAt}
               <p class="text-xs mb-4" style="color: {$colorStore.muted};">
-                Last changed on {formatDate(status.editedAt)}
+                {m.forms.statusCheckerLastChanged({ date: formatDate(status.editedAt) })}
               </p>
             {/if}
 
@@ -266,7 +266,7 @@
               style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
             >
               <i class="fa-solid fa-pen-to-square mr-2"></i>
-              Edit my answers
+              {m.forms.statusCheckerEditAnswers()}
             </a>
           </div>
         {:else if status.editedAt}
@@ -276,7 +276,7 @@
             in:slide
           >
             <i class="fa-solid fa-pen mr-2"></i>
-            You changed your answers on {formatDate(status.editedAt)}.
+            {m.forms.statusCheckerChangedAnswers({ date: formatDate(status.editedAt) })}
           </div>
         {/if}
 
@@ -289,11 +289,11 @@
           >
             <h3 class="text-xl font-bold mb-4 flex items-center gap-2" style="color: #10B981;">
               <i class="fa-solid fa-ticket"></i>
-              Your Server Invite
+              {m.forms.statusCheckerInviteTitle()}
             </h3>
 
             <p class="mb-4 text-sm" style="color: {$colorStore.text};">
-              Use this invite link to join the server. Your assigned roles will be automatically applied when you join!
+              {m.forms.statusCheckerInviteBody()}
             </p>
 
             <div class="mb-4">
@@ -317,13 +317,13 @@
                 <i class="fa-solid fa-clock mr-1" style="color: {isExpired ? '#ef4444' : $colorStore.primary};"></i>
                 {#if isExpired}
                   <span
-                    style="color: #ef4444;">This invite has expired. Please contact the server administrators.</span>
+                    style="color: #ef4444;">{m.forms.statusCheckerInviteExpired()}</span>
                 {:else if timeRemaining < 3600000}
-                  <span style="color: {$colorStore.text};">Expires in {Math.floor(timeRemaining / 60000)} minutes</span>
+                  <span style="color: {$colorStore.text};">{m.forms.statusCheckerExpiresMinutes({ count: Math.floor(timeRemaining / 60000) })}</span>
                 {:else if timeRemaining < 86400000}
-                  <span style="color: {$colorStore.text};">Expires in {Math.floor(timeRemaining / 3600000)} hours</span>
+                  <span style="color: {$colorStore.text};">{m.forms.statusCheckerExpiresHours({ count: Math.floor(timeRemaining / 3600000) })}</span>
                 {:else}
-                  <span style="color: {$colorStore.text};">Expires on {formatDate(status.inviteExpiresAt)}</span>
+                  <span style="color: {$colorStore.text};">{m.forms.statusCheckerExpiresOn({ date: formatDate(status.inviteExpiresAt) })}</span>
                 {/if}
               </div>
             {/if}
@@ -335,7 +335,7 @@
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
               >
                 <i class="fa-solid fa-copy mr-2"></i>
-                Copy Link
+                {m.common.copyLink()}
               </button>
               <button
                 onclick={openInvite}
@@ -343,7 +343,7 @@
                 style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.accent}10); color: {$colorStore.text}; border-color: {$colorStore.secondary}30; box-shadow: 0 4px 20px {$colorStore.secondary}10;"
               >
                 <i class="fa-brands fa-discord mr-2"></i>
-                Join Server
+                {m.forms.statusCheckerJoinServer()}
               </button>
             </div>
             {#if copyFeedback}
@@ -369,15 +369,13 @@
               <i class="fa-solid fa-gavel flex-shrink-0 mt-1" style="color: #10B981; font-size: 24px;"></i>
               <div>
                 <h3 class="text-lg font-bold mb-2" style="color: #10B981;">
-                  You Have Been Unbanned
+                  {m.forms.statusCheckerUnbannedTitle()}
                 </h3>
                 <p class="text-sm mb-3" style="color: {$colorStore.text};">
-                  Your ban appeal has been approved and you have been unbanned from the server.
-                  You can now rejoin using a server invite link.
+                  {m.forms.statusCheckerUnbannedBody()}
                 </p>
                 <p class="text-xs" style="color: {$colorStore.muted};">
-                  If you need help finding an invite link, please contact the server administrators or check the
-                  server's public channels.
+                  {m.forms.statusCheckerUnbannedHelp()}
                 </p>
               </div>
             </div>
@@ -394,10 +392,10 @@
             <div>
               <div class="font-semibold" style="color: {$colorStore.text};">
                 <i class="fa-solid fa-rotate mr-2" style="color: {$colorStore.primary};"></i>
-                Auto-Refresh
+                {m.forms.statusCheckerAutoRefresh()}
               </div>
               <p class="text-xs" style="color: {$colorStore.muted};">
-                Automatically check for status updates every 30 seconds
+                {m.forms.statusCheckerAutoRefreshHint()}
               </p>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
@@ -418,7 +416,7 @@
             style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
           >
             <i class="fa-solid fa-sync mr-2"></i>
-            Refresh Status
+            {m.forms.statusCheckerRefreshStatus()}
           </button>
         </div>
 
@@ -429,7 +427,7 @@
           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
         >
           <p class="text-sm mb-3" style="color: {$colorStore.muted};">
-            Everything you have submitted is listed in one place.
+            {m.forms.statusCheckerSubmissionsIntro()}
           </p>
           <a
             href="/forms/submissions"
@@ -437,7 +435,7 @@
             style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
           >
             <i class="fa-solid fa-clipboard-list"></i>
-            My submissions
+            {m.forms.submissionsHeading()}
           </a>
         </div>
 
@@ -447,7 +445,7 @@
           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
         >
           <p class="text-xs" style="color: {$colorStore.muted};">
-            💡 Bookmark this page to check your submission status at any time
+            {m.forms.statusCheckerBookmarkTip()}
           </p>
         </div>
       </div>

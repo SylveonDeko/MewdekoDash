@@ -1,5 +1,6 @@
 <!-- routes/dashboard/giveaways/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import { onMount } from "svelte";
@@ -34,11 +35,17 @@
   // Layout state
   let activeTab = $state("active");
 
-  const tabs = [
-    { id: "active", label: "Active Giveaways", icon: "fa-gift" },
-    { id: "create", label: "Create Giveaway", icon: "fa-plus" },
-    { id: "ended", label: "Ended Giveaways", icon: "fa-trophy" }
-  ];
+  const tabs = $derived([
+    { id: "active", label: m.common.activeGiveaways(), icon: "fa-gift" },
+    { id: "create", label: m.giveaways.pageTabCreate(), icon: "fa-plus" },
+    { id: "ended", label: m.giveaways.pageTabEnded(), icon: "fa-trophy" }
+  ]);
+
+  const entryMethods = $derived([
+    { id: "reaction", label: m.giveaways.pageEntryReaction(), icon: "fa-gift" },
+    { id: "button", label: m.common.button(), icon: "fa-bullseye" },
+    { id: "captcha", label: m.common.captcha(), icon: "fa-robot" }
+  ]);
 
   let newGiveaway: Partial<Giveaway> = $state({
     item: "",
@@ -60,19 +67,19 @@
 
   function validateGiveaway(): string | null {
     if (!newGiveaway.item || newGiveaway.item.trim() === "") {
-      return "Please enter a valid giveaway item.";
+      return m.giveaways.pageErrorItem();
     }
     if (!newGiveaway.winners || newGiveaway.winners < 1) {
-      return "The number of winners must be at least 1.";
+      return m.giveaways.pageErrorWinnersMin();
     }
     if (!newGiveaway.channelId || newGiveaway.channelId <= BigInt(0)) {
-      return "Please enter a valid channel ID.";
+      return m.giveaways.pageErrorChannel();
     }
     if (!newGiveaway.when || new Date(newGiveaway.when) <= new Date()) {
-      return "The end time must be in the future.";
+      return m.giveaways.pageErrorEndTime();
     }
     if (newGiveaway.messageCountReq !== undefined && newGiveaway.messageCountReq < BigInt(0)) {
-      return "The required message count cannot be negative.";
+      return m.giveaways.pageErrorMessageCount();
     }
     return null;
   }
@@ -88,20 +95,20 @@
       try {
         loading = true;
         error = null;
-        if (!$currentGuild?.id) throw new Error("No guild selected");
+        if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
         giveaways = await giveawaysApi.getGiveaways($currentGuild.id);
       } catch (err) {
         logger.error("Failed to fetch giveaways:", err);
-        error = (err as Error).message || "Failed to fetch giveaways";
+        error = (err as Error).message || m.giveaways.pageErrorFetch();
       } finally {
         loading = false;
       }
-    }, "api", "Loading giveaways...");
+    }, "api", m.giveaways.pageLoadingFetch());
   }
 
   async function loadGuildRoles() {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
       guildRoles = await clientApi.getRoles($currentGuild.id);
     } catch (err) {
       logger.error("Failed to fetch guild roles:", err);
@@ -110,7 +117,7 @@
 
   async function loadGuildChannels() {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
       const channels = await clientApi.getTextChannels($currentGuild.id);
       guildChannels = channels.map((channel: any) => ({
         id: channel.id.toString(),
@@ -123,7 +130,7 @@
 
   async function loadGuildEmojis() {
     try {
-      if (!data?.user?.id) throw new Error("User not authenticated");
+      if (!data?.user?.id) throw new Error(m.giveaways.pageErrorNotAuthenticated());
       guildEmojis = await clientApi.getEmojis(data.user.id, true);
     } catch (err) {
       logger.error("Failed to fetch guild emojis:", err);
@@ -137,8 +144,8 @@
         showNotificationMessage(validationError, "error");
         return;
       }
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-      if (!data?.user?.id) throw new Error("User not authenticated");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
+      if (!data?.user?.id) throw new Error(m.giveaways.pageErrorNotAuthenticated());
 
       // Set required fields
       newGiveaway.serverId = BigInt($currentGuild.id);
@@ -150,24 +157,24 @@
       }
 
       await giveawaysApi.createGiveaway($currentGuild.id, newGiveaway);
-      showNotificationMessage("Giveaway created successfully", "success");
+      showNotificationMessage(m.giveaways.pageNotifyCreated(), "success");
       await fetchGiveaways();
       resetNewGiveaway();
     } catch (error) {
-      const errMsg = (error as Error).message || "Unknown error";
-      showNotificationMessage("Failed to create giveaway: " + errMsg, "error");
+      const errMsg = (error as Error).message || m.common.unknownError();
+      showNotificationMessage(m.giveaways.pageErrorCreate({ error: errMsg }), "error");
     }
   }
 
   async function endGiveaway(giveawayId: number) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
       await giveawaysApi.endGiveaway($currentGuild.id, giveawayId);
-      showNotificationMessage("Giveaway ended successfully", "success");
+      showNotificationMessage(m.giveaways.pageNotifyEnded(), "success");
       await fetchGiveaways();
     } catch (error) {
-      const errMsg = (error as Error).message || "Unknown error";
-      showNotificationMessage("Failed to end giveaway: " + errMsg, "error");
+      const errMsg = (error as Error).message || m.common.unknownError();
+      showNotificationMessage(m.giveaways.pageErrorEnd({ error: errMsg }), "error");
     }
   }
 
@@ -214,7 +221,7 @@
     if (value < 1) {
       input.value = "1";
       newGiveaway.winners = 1;
-      showNotificationMessage("The number of winners must be at least 1.", "error");
+      showNotificationMessage(m.giveaways.pageErrorWinnersMin(), "error");
     } else {
       newGiveaway.winners = value;
     }
@@ -226,7 +233,7 @@
     if (value < BigInt(0)) {
       input.value = "0";
       newGiveaway.messageCountReq = BigInt(0);
-      showNotificationMessage("The required message count cannot be negative.", "error");
+      showNotificationMessage(m.giveaways.pageErrorMessageCount(), "error");
     } else {
       newGiveaway.messageCountReq = value;
     }
@@ -264,11 +271,11 @@
 
 <DashboardPageLayout
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-gift"
-  subtitle="Manage server giveaways and prizes"
+  subtitle={m.giveaways.pageSubtitle()}
   tabs={tabs}
-  title="Giveaways"
+  title={m.features.giveawaysName()}
   statusMessages={statusMessageContent}
 >
 
@@ -279,7 +286,7 @@
           class="w-16 h-16 border-4 rounded-full animate-spin"
           style="border-color: {colors.primary}20; border-top-color: {colors.primary}"
         ></div>
-        <span class="mt-4 block text-center" style="color: {colors.muted}">Loading giveaways...</span>
+        <span class="mt-4 block text-center" style="color: {colors.muted}">{m.giveaways.pageLoadingFetch()}</span>
       </div>
     </div>
   {:else if error}
@@ -291,7 +298,7 @@
       <div class="flex items-center gap-3">
         <i class="fa-solid fa-triangle-exclamation" style="color: {colors.accent}; font-size: 24px;"></i>
         <div style="color: {colors.accent}">
-          <div class="font-semibold text-lg">Error Occurred</div>
+          <div class="font-semibold text-lg">{m.common.errorOccurred()}</div>
           <div class="text-sm mt-1" style="color: {colors.accent}90">{error}</div>
         </div>
       </div>
@@ -307,7 +314,7 @@
       >
         <h2 class="text-xl font-semibold mb-6 flex items-center gap-2" style="color: {colors.text}">
           <i class="fa-solid fa-trophy" style="color: {colors.primary}; font-size: 24px;"></i>
-          Create New Giveaway
+          {m.giveaways.pageCreateTitle()}
         </h2>
 
         <form onsubmit={(e) => { e.preventDefault(); createGiveaway(); }} class="space-y-6">
@@ -317,12 +324,12 @@
               <label for="giveaway-item" class="flex items-center gap-2 text-sm font-medium"
                      style="color: {colors.text}">
                 <i class="fa-solid fa-gift" style="color: {colors.primary}; font-size: 16px;"></i>
-                Giveaway Item
+                {m.giveaways.pageFieldItem()}
               </label>
               <input
                 id="giveaway-item"
                 bind:value={newGiveaway.item}
-                placeholder="Enter the item to be given away"
+                placeholder={m.giveaways.pageFieldItemPlaceholder()}
                 class="w-full p-3 rounded-lg border focus:ring-2"
                 style="background: {colors.primary}08;
                       border-color: {colors.primary}30;
@@ -336,7 +343,7 @@
               <label for="giveaway-winners" class="flex items-center gap-2 text-sm font-medium"
                      style="color: {colors.text}">
                 <i class="fa-solid fa-star" style="color: {colors.primary}; font-size: 16px;"></i>
-                Number of Winners
+                {m.giveaways.pageFieldWinners()}
               </label>
               <input
                 id="giveaway-winners"
@@ -357,14 +364,14 @@
               <span id="giveaway-channel-label" class="flex items-center gap-2 text-sm font-medium"
                      style="color: {colors.text}">
                 <i class="fa-solid fa-hashtag" style="color: {colors.primary}; font-size: 16px;"></i>
-                Channel
+                {m.common.channel()}
               </span>
               <div class="min-h-[44px]">
                 <DiscordSelector
                   type="channel"
                   options={guildChannels}
                   selected={newGiveaway.channelId?.toString() || null}
-                  placeholder="Select a channel"
+                  placeholder={m.common.selectAChannelPlaceholder()}
                   onchange={(detail) => {
                     newGiveaway.channelId = detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : BigInt(0);
                   }}
@@ -377,7 +384,7 @@
               <label for="giveaway-duration" class="flex items-center gap-2 text-sm font-medium"
                      style="color: {colors.text}">
                 <i class="fa-solid fa-clock" style="color: {colors.primary}; font-size: 16px;"></i>
-                Duration
+                {m.giveaways.pageFieldDuration()}
               </label>
               <IntervalPicker onchange={handleDurationChange} />
             </div>
@@ -387,7 +394,7 @@
               <label for="giveaway-roles" class="flex items-center gap-2 text-sm font-medium"
                      style="color: {colors.text}">
                 <i class="fa-solid fa-users" style="color: {colors.primary}; font-size: 16px;"></i>
-                Required Roles
+                {m.common.requiredRoles()}
               </label>
               <DiscordSelector
                 type="role"
@@ -398,7 +405,7 @@
                   selectedRoles = Array.isArray(detail.selected) ? detail.selected : [];
                   newGiveaway.restrictTo = selectedRoles.join(" ");
                 }}
-                placeholder="Select required roles"
+                placeholder={m.giveaways.pageFieldRolesPlaceholder()}
               />
             </div>
 
@@ -407,7 +414,7 @@
               <label for="giveaway-message-count" class="flex items-center gap-2 text-sm font-medium"
                      style="color: {colors.text}">
                 <i class="fa-solid fa-message" style="color: {colors.primary}; font-size: 16px;"></i>
-                Required Message Count
+                {m.giveaways.pageFieldMessageCount()}
               </label>
               <input
                 id="giveaway-message-count"
@@ -429,18 +436,18 @@
               <label for="giveaway-emote" class="flex items-center gap-2 text-sm font-medium"
                      style="color: {colors.text}">
                 <i class="fa-solid fa-face-smile" style="color: {colors.primary}; font-size: 16px;"></i>
-                Reaction Emoji
+                {m.giveaways.pageFieldEmoji()}
               </label>
               <EmojiPicker
                 guildEmojis={guildEmojis}
                 bind:selected={newGiveaway.emote}
-                placeholder="Select an emoji..."
+                placeholder={m.common.selectEmojiPlaceholder()}
                 onchange={(detail) => {
                   newGiveaway.emote = typeof detail.selected === "string" ? detail.selected : "";
                 }}
               />
               <p class="text-xs" style="color: {colors.muted}">
-                Select a custom emoji or paste Discord emoji code
+                {m.giveaways.pageFieldEmojiHint()}
               </p>
             </div>
           </div>
@@ -449,17 +456,13 @@
           <div class="space-y-4 pt-4 border-t" style="border-color: {colors.primary}20">
             <div id="entry-method-label" class="flex items-center gap-2 mb-4">
               <i class="fa-solid fa-bullseye" style="color: {colors.primary}; font-size: 16px;"></i>
-              <span class="text-sm font-medium" style="color: {colors.text}">Entry Method</span>
+              <span class="text-sm font-medium" style="color: {colors.text}">{m.giveaways.pageFieldEntryMethod()}</span>
             </div>
             <div class="flex flex-wrap gap-3" role="radiogroup" aria-labelledby="entry-method-label">
-              {#each [
-                { id: 'reaction', label: 'Reaction', icon: 'fa-gift' },
-                { id: 'button', label: 'Button', icon: 'fa-bullseye' },
-                { id: 'captcha', label: 'Captcha', icon: 'fa-robot' }
-              ] as method}
+              {#each entryMethods as method}
                 <button
                   type="button"
-                  aria-label="Select {method.label} entry method"
+                  aria-label={m.giveaways.pageEntrySelectAria({ method: method.label })}
                   class="flex items-center gap-2 px-4 py-3 rounded-xl transition-all hover:scale-[1.02] font-medium"
                   style="background: {entryMethod === method.id ? `${colors.primary}20` : 'transparent'};
                         color: {entryMethod === method.id ? colors.primary : colors.muted};
@@ -475,12 +478,12 @@
 
           <button
             type="submit"
-            aria-label="Create giveaway"
+            aria-label={m.giveaways.pageTabCreate()}
             class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px] w-full"
             style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
           >
             <i class="fa-solid fa-trophy" style="font-size: 20px;"></i>
-            Create Giveaway
+            {m.giveaways.pageTabCreate()}
           </button>
         </form>
       </section>
@@ -495,14 +498,14 @@
       >
         <h2 class="text-xl font-semibold mb-6 flex items-center gap-2" style="color: {colors.text}">
           <i class="fa-solid fa-gift" style="color: {colors.primary}; font-size: 24px;"></i>
-          Active Giveaways
+          {m.common.activeGiveaways()}
         </h2>
 
         {#if giveaways.length === 0}
           <div class="text-center py-12" style="color: {colors.muted}">
             <i class="fa-solid fa-gift opacity-50" style="font-size: 48px; display: block; margin: 0 auto 16px;"></i>
-            <p class="text-lg">No active giveaways</p>
-            <p class="text-sm mt-2">Create your first giveaway using the form above</p>
+            <p class="text-lg">{m.giveaways.pageActiveEmpty()}</p>
+            <p class="text-sm mt-2">{m.giveaways.pageActiveEmptyHint()}</p>
           </div>
         {:else}
           <div class="space-y-4">
@@ -524,7 +527,7 @@
                     <div>
                       <h3 class="font-medium" style="color: {colors.text}">{giveaway.item}</h3>
                       <p class="text-sm" style="color: {colors.muted}">
-                        Ends {new Date(giveaway.when).toLocaleString()}
+                        {m.giveaways.pageEndsAt({ date: new Date(giveaway.when).toLocaleString() })}
                       </p>
                     </div>
                   </div>
@@ -542,18 +545,18 @@
                       <div class="space-y-2">
                         <p class="flex items-center gap-2 text-sm">
                           <i class="fa-solid fa-star" style="color: {colors.secondary}; font-size: 16px;"></i>
-                          <span style="color: {colors.muted}">Winners:</span>
+                          <span style="color: {colors.muted}">{m.giveaways.pageDetailWinners()}</span>
                           <span style="color: {colors.text}">{giveaway.winners}</span>
                         </p>
                         <p class="flex items-center gap-2 text-sm">
                           <i class="fa-solid fa-hashtag" style="color: {colors.secondary}; font-size: 16px;"></i>
-                          <span style="color: {colors.muted}">Channel:</span>
+                          <span style="color: {colors.muted}">{m.common.channelLabel()}</span>
                           <span style="color: {colors.text}">{giveaway.channelId.toString()}</span>
                         </p>
                         {#if giveaway.restrictTo}
                           <p class="flex items-center gap-2 text-sm">
                             <i class="fa-solid fa-users" style="color: {colors.secondary}; font-size: 16px;"></i>
-                            <span style="color: {colors.muted}">Required Roles:</span>
+                            <span style="color: {colors.muted}">{m.giveaways.pageDetailRoles()}</span>
                             <span style="color: {colors.text}">{giveaway.restrictTo}</span>
                           </p>
                         {/if}
@@ -561,14 +564,14 @@
                       <div class="space-y-2">
                         <p class="flex items-center gap-2 text-sm">
                           <i class="fa-solid fa-message" style="color: {colors.secondary}; font-size: 16px;"></i>
-                          <span style="color: {colors.muted}">Message Requirement:</span>
+                          <span style="color: {colors.muted}">{m.giveaways.pageDetailMessageRequirement()}</span>
                           <span style="color: {colors.text}">{giveaway.messageCountReq.toString()}</span>
                         </p>
                         <p class="flex items-center gap-2 text-sm">
                           <i class="fa-solid fa-bullseye" style="color: {colors.secondary}; font-size: 16px;"></i>
-                          <span style="color: {colors.muted}">Entry Method:</span>
+                          <span style="color: {colors.muted}">{m.giveaways.pageDetailEntryMethod()}</span>
                           <span style="color: {colors.text}">
-                           {giveaway.useButton ? "Button" : giveaway.useCaptcha ? "Captcha" : "Reaction"}
+                           {giveaway.useButton ? m.common.button() : giveaway.useCaptcha ? m.common.captcha() : m.giveaways.pageEntryReaction()}
                          </span>
                         </p>
                       </div>
@@ -576,7 +579,7 @@
 
                     {#if !giveaway.ended}
                       <button
-                        aria-label="End giveaway"
+                        aria-label={m.giveaways.pageEndAria()}
                         class="mt-6 w-full px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]
                               flex items-center justify-center gap-2"
                         style="background: {colors.accent}20;
@@ -585,7 +588,7 @@
                         onclick={() => endGiveaway(giveaway.id)}
                       >
                         <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
-                        End Giveaway
+                        {m.giveaways.pageEndAria()}
                       </button>
                     {/if}
                   </div>
@@ -606,11 +609,11 @@
       >
         <h2 class="text-xl font-semibold mb-6 flex items-center gap-2" style="color: {colors.text}">
           <i class="fa-solid fa-trophy" style="color: {colors.primary}; font-size: 24px;"></i>
-          Ended Giveaways
+          {m.giveaways.pageTabEnded()}
         </h2>
         <div class="text-center py-12" style="color: {colors.muted}">
           <i class="fa-solid fa-trophy opacity-50" style="font-size: 48px; display: block; margin: 0 auto 16px;"></i>
-          <p class="text-lg">No ended giveaways to display</p>
+          <p class="text-lg">{m.giveaways.pageEndedEmpty()}</p>
         </div>
       </section>
     {/if}

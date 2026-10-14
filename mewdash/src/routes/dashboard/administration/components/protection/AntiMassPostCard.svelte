@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -29,8 +30,8 @@
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
       <div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Mass-Post</h2>
-        <p class="text-sm" style="color: {$colorStore.muted}">Detect scam/spam across channels</p>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.overviewAntiMassPost()}</h2>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionMasspostSubtitle()}</p>
       </div>
     </div>
 
@@ -44,10 +45,10 @@
       >
         {#if protectionStatus.antiMassPost.enabled}
           <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
-          Enabled
+          {m.common.enabled()}
         {:else}
           <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
-          Disabled
+          {m.common.disabled()}
         {/if}
       </button>
 
@@ -62,7 +63,7 @@
           {:else}
             <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
           {/if}
-          {expandedProtectionCard === 'antiMassPost' ? 'Collapse' : 'Configure'}
+          {expandedProtectionCard === 'antiMassPost' ? m.common.collapse() : m.common.configure()}
         </button>
       {/if}
     </div>
@@ -73,23 +74,23 @@
       <div class="text-center">
         <div class="text-2xl font-bold"
              style="color: {$colorStore.primary}">{protectionStatus.antiMassPost.channelThreshold}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Channel Threshold</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionMasspostChannelThreshold()}</div>
       </div>
       <div class="text-center">
         <div class="text-2xl font-bold"
              style="color: {$colorStore.primary}">{protectionStatus.antiMassPost.timeWindowSeconds}s
         </div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Time Window</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.common.timeWindow()}</div>
       </div>
       <div class="text-center">
         <div class="text-2xl font-bold"
              style="color: {$colorStore.primary}">{protectionStatus.antiMassPost.userCount}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Users Tracked</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionMasspostUsersTracked()}</div>
       </div>
       <div class="text-center">
         <div class="text-2xl font-bold"
              style="color: {$colorStore.primary}">{protectionStatus.antiMassPost.counter}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Triggers</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.features.chatTriggersName()}</div>
       </div>
     </div>
 
@@ -99,8 +100,7 @@
            in:slide={{ duration: 300 }}>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label for="amp-channel-threshold" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel
-              Threshold</label>
+            <label for="amp-channel-threshold" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.administration.protectionMasspostChannelThreshold()}</label>
             <input id="amp-channel-threshold"
                    type="number"
                    bind:value={tempProtectionConfig.channelThreshold}
@@ -111,8 +111,7 @@
             >
           </div>
           <div>
-            <label for="amp-time-window" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Time
-              Window (seconds)</label>
+            <label for="amp-time-window" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.administration.protectionCommonTimeWindowSeconds()}</label>
             <input id="amp-time-window"
                    type="number"
                    bind:value={tempProtectionConfig.timeWindowSeconds}
@@ -124,17 +123,16 @@
           </div>
           <div>
             <span id="amp-action-label" class="block text-sm font-medium mb-2"
-                  style="color: {$colorStore.text}">Action</span>
+                  style="color: {$colorStore.text}">{m.common.action()}</span>
             <DiscordSelector
               type="custom"
               options={actionOptions}
               bind:selected={tempProtectionConfig.action}
-              placeholder="Select action..."
+              placeholder={m.administration.protectionCommonSelectAction()}
             />
           </div>
           <div>
-            <label for="amp-punish-duration" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Punishment
-              Duration (minutes)</label>
+            <label for="amp-punish-duration" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.administration.protectionCommonPunishmentDurationMinutes()}</label>
             <input id="amp-punish-duration"
                    type="number"
                    bind:value={tempProtectionConfig.punishDuration}
@@ -152,7 +150,7 @@
                      class="w-4 h-4 rounded transition-all"
                      style="accent-color: {$colorStore.primary};"
               />
-              <span style="color: {$colorStore.text}">Check Links Only (Recommended)</span>
+              <span style="color: {$colorStore.text}">{m.administration.protectionMasspostCheckLinksOnly()}</span>
             </label>
           </div>
         </div>
@@ -163,7 +161,7 @@
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
             onclick={cancelProtectionEdit}
           >
-            Cancel
+            {m.common.cancel()}
           </button>
           <button
             class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
@@ -177,7 +175,7 @@
               {:else}
                 <i class="fa-solid fa-save" style="font-size: 14px;"></i>
               {/if}
-              <span>Save</span>
+              <span>{m.common.save()}</span>
             </div>
           </button>
         </div>
@@ -187,8 +185,8 @@
     <div class="text-center py-8">
       <i class="fa-utility-duo fa-regular fa-comments"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-      <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-Mass-Post Protection Disabled</p>
-      <p class="text-sm" style="color: {$colorStore.muted}">Enable to detect cross-channel spam and scam links</p>
+      <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.administration.protectionMasspostDisabledTitle()}</p>
+      <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionMasspostDisabledHint()}</p>
     </div>
   {/if}
 </div>

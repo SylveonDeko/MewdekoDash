@@ -1,5 +1,6 @@
 <!-- components/tabs/PanelsTab.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -7,7 +8,6 @@
   import EmojiPicker from "$lib/components/forms/EmojiPicker.svelte";
   import TabNavigation from "$lib/components/specialized/TabNavigation.svelte";
   import ModalBuilder from "../editors/ModalBuilder.svelte";
-  import { onMount } from "svelte";
 
   interface Props {
     data: any;
@@ -104,11 +104,11 @@
   }: Props = $props();
 
   let activeTab = $state("buttons");
-  const tabs = [
-    { id: "buttons", label: "Buttons", icon: "fa-square-up-right" },
-    { id: "selectmenus", label: "Select Menus", icon: "fa-list" },
-    { id: "settings", label: "Panel Settings", icon: "fa-gear" }
-  ];
+  const tabs = $derived([
+    { id: "buttons", label: m.common.buttons(), icon: "fa-square-up-right" },
+    { id: "selectmenus", label: m.tickets.panelsTabSelectMenus(), icon: "fa-list" },
+    { id: "settings", label: m.tickets.panelsTabSettings(), icon: "fa-gear" }
+  ]);
 
   // Button editing state
   let editingButtonId = $state<number | null>(null);
@@ -118,22 +118,22 @@
   // Button creation section (same tabs as editing)
   let buttonCreatorSection = $state("basic");
 
-  const buttonSections = [
-    { id: "basic", label: "Basic", icon: "fa-pen" },
-    { id: "permissions", label: "Permissions", icon: "fa-shield" },
-    { id: "timing", label: "Timing", icon: "fa-clock" },
-    { id: "close", label: "Close", icon: "fa-door-closed" },
-    { id: "archive", label: "Archive", icon: "fa-box-archive" },
-    { id: "modal", label: "Modal", icon: "fa-window-maximize" },
-    { id: "message", label: "Message", icon: "fa-message" }
-  ];
+  const buttonSections = $derived([
+    { id: "basic", label: m.tickets.panelsSectionBasic(), icon: "fa-pen" },
+    { id: "permissions", label: m.common.permissions(), icon: "fa-shield" },
+    { id: "timing", label: m.tickets.panelsSectionTiming(), icon: "fa-clock" },
+    { id: "close", label: m.common.close(), icon: "fa-door-closed" },
+    { id: "archive", label: m.common.archive(), icon: "fa-box-archive" },
+    { id: "modal", label: m.tickets.panelsSectionModal(), icon: "fa-window-maximize" },
+    { id: "message", label: m.common.message(), icon: "fa-message" }
+  ]);
 
-  let buttonStyleOptions = [
-    { id: "1", name: "Primary", label: "Primary (Blue)" },
-    { id: "2", name: "Secondary", label: "Secondary (Gray)" },
-    { id: "3", name: "Success", label: "Success (Green)" },
-    { id: "4", name: "Danger", label: "Danger (Red)" }
-  ];
+  const buttonStyleOptions = $derived([
+    { id: "1", name: m.common.primary(), label: m.tickets.panelsStylePrimaryLabel() },
+    { id: "2", name: m.common.secondary(), label: m.tickets.panelsStyleSecondaryLabel() },
+    { id: "3", name: m.common.success(), label: m.tickets.panelsStyleSuccessLabel() },
+    { id: "4", name: m.common.danger(), label: m.tickets.panelsStyleDangerLabel() }
+  ]);
 
   // Select menu editing
   let editingMenuId = $state<number | null>(null);
@@ -174,38 +174,34 @@
   let editingOptionData = $state<any>(null);
   let optionEditSection = $state("basic");
 
-  const optionSections = [
-    { id: "basic", label: "Basic", icon: "fa-pen" },
-    { id: "permissions", label: "Permissions", icon: "fa-shield" },
-    { id: "timing", label: "Timing", icon: "fa-clock" },
-    { id: "close", label: "Close", icon: "fa-door-closed" },
-    { id: "archive", label: "Archive", icon: "fa-box-archive" },
-    { id: "modal", label: "Modal", icon: "fa-window-maximize" },
-    { id: "message", label: "Message", icon: "fa-message" }
-  ];
+  const optionSections = $derived([
+    { id: "basic", label: m.tickets.panelsSectionBasic(), icon: "fa-pen" },
+    { id: "permissions", label: m.common.permissions(), icon: "fa-shield" },
+    { id: "timing", label: m.tickets.panelsSectionTiming(), icon: "fa-clock" },
+    { id: "close", label: m.common.close(), icon: "fa-door-closed" },
+    { id: "archive", label: m.common.archive(), icon: "fa-box-archive" },
+    { id: "modal", label: m.tickets.panelsSectionModal(), icon: "fa-window-maximize" },
+    { id: "message", label: m.common.message(), icon: "fa-message" }
+  ]);
 
   type NewOptionBoolKey = {
     [K in keyof typeof newOption]: typeof newOption[K] extends boolean ? K : never
   }[keyof typeof newOption];
 
-  const closeOptions: { key: NewOptionBoolKey; label: string; desc: string; danger?: boolean }[] = [
-    { key: 'saveTranscript', label: 'Save Transcript', desc: 'Save chat history' },
-    { key: 'lockOnClose', label: 'Lock on Close', desc: 'Prevent messages' },
-    { key: 'renameOnClose', label: 'Rename on Close', desc: 'Add closed- prefix' },
-    { key: 'removeCreatorOnClose', label: 'Remove Creator', desc: 'Remove user permissions' },
-    { key: 'deleteOnClose', label: 'Delete on Close', desc: 'Permanently delete', danger: true }
-  ];
+  const closeOptions = $derived<{ key: NewOptionBoolKey; label: string; desc: string; danger?: boolean }[]>([
+    { key: 'saveTranscript', label: m.tickets.panelsOptSaveTranscript(), desc: m.tickets.panelsOptSaveTranscriptDesc() },
+    { key: 'lockOnClose', label: m.tickets.panelsOptLockOnClose(), desc: m.tickets.panelsOptPreventMessages() },
+    { key: 'renameOnClose', label: m.tickets.panelsOptRenameOnClose(), desc: m.tickets.panelsOptRenameOnCloseDesc() },
+    { key: 'removeCreatorOnClose', label: m.tickets.panelsOptRemoveCreator(), desc: m.tickets.panelsOptRemoveCreatorDesc() },
+    { key: 'deleteOnClose', label: m.tickets.panelsOptDeleteOnClose(), desc: m.tickets.panelsOptDeleteOnCloseDesc(), danger: true }
+  ]);
 
-  const archiveOptions: { key: NewOptionBoolKey; label: string; desc: string }[] = [
-    { key: 'autoArchiveOnClose', label: 'Auto Archive on Close', desc: 'Automatically archive' },
-    { key: 'lockOnArchive', label: 'Lock on Archive', desc: 'Prevent messages' },
-    { key: 'renameOnArchive', label: 'Rename on Archive', desc: 'Add archived- prefix' },
-    { key: 'removeCreatorOnArchive', label: 'Remove Creator', desc: 'Remove user permissions' }
-  ];
-
-  onMount(() => {
-    // Component mounted
-  });
+  const archiveOptions = $derived<{ key: NewOptionBoolKey; label: string; desc: string }[]>([
+    { key: 'autoArchiveOnClose', label: m.tickets.panelsOptAutoArchive(), desc: m.tickets.panelsOptAutoArchiveDesc() },
+    { key: 'lockOnArchive', label: m.tickets.panelsOptLockOnArchive(), desc: m.tickets.panelsOptPreventMessages() },
+    { key: 'renameOnArchive', label: m.tickets.panelsOptRenameOnArchive(), desc: m.tickets.panelsOptRenameOnArchiveDesc() },
+    { key: 'removeCreatorOnArchive', label: m.tickets.panelsOptRemoveCreator(), desc: m.tickets.panelsOptRemoveCreatorDesc() }
+  ]);
 
   // Status helper functions removed - status now only checked on-demand via Troubleshoot button
 
@@ -221,7 +217,7 @@
     if (match) {
       const [, animatedFlag, name, id] = match;
       const animated = animatedFlag === "a";
-      const url = `https://cdn.discordapp.com/emojis/${id}.${animated ? "png" : "png"}?size=32&quality=lossless`;
+      const url = `https://cdn.discordapp.com/emojis/${id}.${animated ? "gif" : "png"}?size=32&quality=lossless`;
       return { url, name, isCustom: true };
     }
 
@@ -439,12 +435,24 @@
     return { buttons, menus, total, remaining, canAddButtons, canAddMenus };
   });
 
+  const capacityText = $derived.by(() => {
+    const { canAddButtons: buttons, canAddMenus: menus } = componentCount();
+    if (buttons === 1) {
+      return menus === 1
+        ? m.tickets.panelsCapacityButtonOneMenuOne({ buttons, menus })
+        : m.tickets.panelsCapacityButtonOneMenuOther({ buttons, menus });
+    }
+    return menus === 1
+      ? m.tickets.panelsCapacityButtonOtherMenuOne({ buttons, menus })
+      : m.tickets.panelsCapacityButtonOtherMenuOther({ buttons, menus });
+  });
+
   let canAddButton = $derived(componentCount().canAddButtons >= 1);
   let canAddSelectMenu = $derived(componentCount().canAddMenus >= 1);
 
   // Select menu option limits (max 25 per menu)
   function getOptionCount(menuId: number): number {
-    const menu = panelSelectMenus.find(m => m.id === menuId);
+    const menu = panelSelectMenus.find(menu => menu.id === menuId);
     return menu?.options?.length || 0;
   }
 
@@ -479,7 +487,7 @@
               #{panel.channelName}
             </p>
             <p class="text-xs" style="color: {$colorStore.muted}">
-              {panel.buttonCount || 0}B • {panel.selectMenuCount || 0}M
+              {m.tickets.panelsCounts({ buttons: panel.buttonCount || 0, menus: panel.selectMenuCount || 0 })}
             </p>
           </div>
         </div>
@@ -500,7 +508,7 @@
              color: {showPanelCreator ? $colorStore.secondary : $colorStore.primary};"
     >
       <i class="fa-solid {showPanelCreator ? 'fa-xmark' : 'fa-plus'}"></i>
-      <span class="ml-2">{showPanelCreator ? 'Cancel' : 'New Panel'}</span>
+      <span class="ml-2">{showPanelCreator ? m.common.cancel() : m.tickets.panelsNewPanel()}</span>
     </button>
   </div>
 </div>
@@ -508,36 +516,36 @@
 {#if showPanelCreator}
   <!-- Inline Panel Creator -->
   <div class="space-y-6">
-    <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Create New Panel</h3>
+    <h3 class="text-xl font-bold" style="color: {$colorStore.text}">{m.tickets.panelsCreateNewTitle()}</h3>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="space-y-4">
         <div>
           <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-            Channel <span style="color: #ef4444;">*</span>
+            {m.common.channel()} <span style="color: #ef4444;">*</span>
           </span>
           <DiscordSelector
             type="channel"
             options={textChannels}
             bind:selected={newPanel.channelId}
-            placeholder="Select channel..."
+            placeholder={m.common.selectChannelPlaceholder()}
             multiple={false}
           />
         </div>
         <div class="p-4 rounded-xl"
              style="background: {$colorStore.primary}05; border: 1px solid {$colorStore.primary}15;">
-          <h4 class="font-semibold mb-4" style="color: {$colorStore.text}">Panel Embed</h4>
+          <h4 class="font-semibold mb-4" style="color: {$colorStore.text}">{m.tickets.panelsEmbedTitle()}</h4>
           <FullscreenEmbedBuilder
             bind:value={panelEmbed}
-            previewTitle="Panel Embed"
-            previewDescription="Embed shown in the ticket panel"
+            previewTitle={m.tickets.panelsEmbedTitle()}
+            previewDescription={m.tickets.panelsEmbedPreviewDescription()}
             icon="fa-rectangle"
             allowContent={false}
             maxEmbeds={10}
             allowComponents={false}
             guildId={$currentGuild?.id}
             user={data.user}
-            placeholder="Click to configure panel embed"
+            placeholder={m.tickets.panelsEmbedPlaceholder()}
           />
         </div>
       </div>
@@ -549,7 +557,7 @@
         style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
         onclick={() => showPanelCreator = false}
       >
-        Cancel
+        {m.common.cancel()}
       </button>
       <button
         class="px-4 py-3 rounded-xl font-medium flex items-center gap-2"
@@ -562,7 +570,7 @@
         {:else}
           <i class="fa-solid fa-plus"></i>
         {/if}
-        Create Panel
+        {m.tickets.panelsCreatePanel()}
       </button>
     </div>
   </div>
@@ -584,7 +592,7 @@
         {:else}
           <i class="fa-solid fa-stethoscope"></i>
         {/if}
-        Troubleshoot
+        {m.tickets.panelsTroubleshoot()}
       </button>
       {#if panelStatuses.get(selectedPanel.messageId) === 1}
         <button
@@ -593,21 +601,21 @@
           onclick={() => recreatePanel(selectedPanel.messageId)}
         >
           <i class="fa-solid fa-arrows-rotate"></i>
-          Recreate
+          {m.tickets.panelsRecreate()}
         </button>
       {/if}
       <button
         class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80"
         style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
         onclick={() => showConfirm(
-          "Delete Panel",
-          "Delete this panel?",
+          m.tickets.panelsDeletePanelTitle(),
+          m.tickets.panelsDeletePanelConfirm(),
           () => deletePanel(selectedPanel.messageId, false),
           "danger"
         )}
       >
         <i class="fa-solid fa-trash"></i>
-        Delete
+        {m.common.delete()}
       </button>
     </div>
   </div>
@@ -616,7 +624,7 @@
   <TabNavigation
     bind:activeTab
     {tabs}
-    ariaLabel="Panel configuration sections"
+    ariaLabel={m.tickets.panelsSectionsAria()}
   />
 
   <!-- Tab Content -->
@@ -626,11 +634,10 @@
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <h4 class="font-semibold" style="color: {$colorStore.text}">
-              Buttons ({panelButtons.length})
+              {m.tickets.panelsButtonsTitle({ count: panelButtons.length })}
             </h4>
             <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-              Can add {componentCount().canAddButtons} more button{componentCount().canAddButtons !== 1 ? 's' : ''}
-              or {componentCount().canAddMenus} more menu{componentCount().canAddMenus !== 1 ? 's' : ''}
+              {capacityText}
             </p>
           </div>
           <button
@@ -642,7 +649,7 @@
             onclick={() => showButtonCreator = !showButtonCreator}
           >
             <i class="fa-solid {showButtonCreator ? 'fa-xmark' : 'fa-plus'}"></i>
-            {showButtonCreator ? 'Cancel' : 'Add Button'}
+            {showButtonCreator ? m.common.cancel() : m.common.addButton()}
           </button>
         </div>
 
@@ -650,7 +657,7 @@
           <div class="p-3 rounded-lg" style="background: #f59e0b10; border: 1px solid #f59e0b30;">
             <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b;"></i>
             <span class="ml-2 text-sm" style="color: #f59e0b;">
-              Component limit reached. Remove buttons or select menus to add more.
+              {m.tickets.panelsLimitReached()}
             </span>
           </div>
         {/if}
@@ -660,14 +667,14 @@
           <div class="p-4 rounded-xl border-2"
                style="background: {$colorStore.secondary}10; border-color: {$colorStore.secondary}30;">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
-              <h5 class="font-semibold" style="color: {$colorStore.text}">New Button</h5>
+              <h5 class="font-semibold" style="color: {$colorStore.text}">{m.common.newButton()}</h5>
               <button
                 class="px-3 py-2 rounded text-sm min-h-[44px]"
                 style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                 onclick={() => { showButtonCreator = false; buttonCreatorSection = "basic"; }}
               >
                 <i class="fa-solid fa-xmark"></i>
-                Cancel
+                {m.common.cancel()}
               </button>
             </div>
 
@@ -675,48 +682,47 @@
             <TabNavigation
               bind:activeTab={buttonCreatorSection}
               tabs={buttonSections}
-              ariaLabel="Button configuration sections"
+              ariaLabel={m.tickets.panelsButtonSectionsAria()}
             />
 
             <div class="mt-4">
               {#if buttonCreatorSection === 'basic'}
                 <div class="space-y-4 max-w-xl">
                   <div>
-                    <label for="f-PanelsTab-label-675" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Label *</label>
+                    <label for="f-PanelsTab-label-675" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.label()} *</label>
                     <input id="f-PanelsTab-label-675"
                       type="text"
                       bind:value={newButton.label}
                       maxlength="80"
                       class="w-full px-3 py-2 rounded-lg border"
-                      placeholder="Support Ticket"
+                      placeholder={m.tickets.panelsButtonLabelPlaceholder()}
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                     />
-                    <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 80 characters</p>
+                    <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.tickets.panelsMaxCharacters({ count: 80 })}</p>
                   </div>
                   <div>
-                    <label for="f-PanelsTab-emoji-687" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Emoji</label>
+                    <label for="f-PanelsTab-emoji-687" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.emoji()}</label>
                     <EmojiPicker id="f-PanelsTab-emoji-687"
                       {guildEmojis}
                       bind:selected={newButton.emoji}
                       multiple={false}
-                      placeholder="Select emoji..."
+                      placeholder={m.common.selectEmojiPlaceholder()}
                       searchable={true}
                       groupByGuild={true}
                     />
                   </div>
                   <div>
-                    <label for="f-PanelsTab-style-698" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Style</label>
+                    <label for="f-PanelsTab-style-698" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.style()}</label>
                     <DiscordSelector id="f-PanelsTab-style-698"
                       type="custom"
                       options={buttonStyleOptions}
                       bind:selected={newButton.style}
-                      placeholder="Select style..."
+                      placeholder={m.tickets.modalBuilderStylePlaceholder()}
                       multiple={false}
                     />
                   </div>
                   <div>
-                    <label for="f-PanelsTab-channel-name-format-708" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel Name
-                      Format</label>
+                    <label for="f-PanelsTab-channel-name-format-708" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.channelNameFormat()}</label>
                     <input id="f-PanelsTab-channel-name-format-708"
                       type="text"
                       bind:value={newButton.channelFormat}
@@ -726,7 +732,7 @@
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                     />
                     <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                      Available: &#123;username&#125;, &#123;id&#125; • Max 100 characters
+                      {m.tickets.panelsChannelFormatHint({ username: "{username}", id: "{id}", count: 100 })}
                     </p>
                   </div>
                 </div>
@@ -734,45 +740,42 @@
               {:else if buttonCreatorSection === 'permissions'}
                 <div class="space-y-4 max-w-3xl">
                   <div>
-                    <label for="f-PanelsTab-ticket-category-727" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Ticket
-                      Category</label>
+                    <label for="f-PanelsTab-ticket-category-727" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.ticketCategory()}</label>
                     <DiscordSelector id="f-PanelsTab-ticket-category-727"
                       type="channel"
                       options={categories}
                       bind:selected={newButton.categoryId}
-                      placeholder="Select category..."
+                      placeholder={m.common.selectCategoryPlaceholder()}
                       multiple={false}
                     />
                   </div>
                   <div>
-                    <label for="f-PanelsTab-archive-category-738" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Archive
-                      Category</label>
+                    <label for="f-PanelsTab-archive-category-738" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsArchiveCategory()}</label>
                     <DiscordSelector id="f-PanelsTab-archive-category-738"
                       type="channel"
                       options={categories}
                       bind:selected={newButton.archiveCategoryId}
-                      placeholder="Select category..."
+                      placeholder={m.common.selectCategoryPlaceholder()}
                       multiple={false}
                     />
                   </div>
                   <div>
-                    <label for="f-PanelsTab-support-roles-749" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Support
-                      Roles</label>
+                    <label for="f-PanelsTab-support-roles-749" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.supportRoles()}</label>
                     <DiscordSelector id="f-PanelsTab-support-roles-749"
                       type="role"
                       options={availableRoles}
                       bind:selected={newButton.supportRoles}
-                      placeholder="Select roles..."
+                      placeholder={m.common.selectRolesPlaceholder()}
                       multiple={true}
                     />
                   </div>
                   <div>
-                    <label for="f-PanelsTab-viewer-roles-760" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Viewer Roles</label>
+                    <label for="f-PanelsTab-viewer-roles-760" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsViewerRoles()}</label>
                     <DiscordSelector id="f-PanelsTab-viewer-roles-760"
                       type="role"
                       options={availableRoles}
                       bind:selected={newButton.viewerRoles}
-                      placeholder="Select roles..."
+                      placeholder={m.common.selectRolesPlaceholder()}
                       multiple={true}
                     />
                   </div>
@@ -782,8 +785,7 @@
                 <div class="space-y-4 max-w-3xl">
                   <div class="grid grid-cols-2 gap-4">
                     <div>
-                      <label for="f-PanelsTab-max-active-tickets-775" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max Active
-                        Tickets</label>
+                      <label for="f-PanelsTab-max-active-tickets-775" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsMaxActiveTickets()}</label>
                       <input id="f-PanelsTab-max-active-tickets-775"
                         type="number"
                         bind:value={newButton.maxActiveTickets}
@@ -793,49 +795,45 @@
                       />
                     </div>
                     <div>
-                      <label for="f-PanelsTab-auto-close-hours-786" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto Close
-                        (hours)</label>
+                      <label for="f-PanelsTab-auto-close-hours-786" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsAutoCloseHours()}</label>
                       <input id="f-PanelsTab-auto-close-hours-786"
                         type="number"
                         bind:value={newButton.autoCloseTime}
                         min="1"
-                        placeholder="None"
+                        placeholder={m.common.none()}
                         class="w-full px-3 py-2 rounded-lg border"
                         style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       />
                     </div>
                     <div>
-                      <label for="f-PanelsTab-required-response-time-minutes-798" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Required Response
-                        Time (minutes)</label>
+                      <label for="f-PanelsTab-required-response-time-minutes-798" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsRequiredResponseMinutes()}</label>
                       <input id="f-PanelsTab-required-response-time-minutes-798"
                         type="number"
                         bind:value={newButton.requiredResponseTime}
                         min="1"
-                        placeholder="None"
+                        placeholder={m.common.none()}
                         class="w-full px-3 py-2 rounded-lg border"
                         style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       />
                     </div>
                   </div>
                   <div>
-                    <label for="f-PanelsTab-allowed-priorities-811" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Allowed
-                      Priorities</label>
+                    <label for="f-PanelsTab-allowed-priorities-811" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsAllowedPriorities()}</label>
                     <DiscordSelector id="f-PanelsTab-allowed-priorities-811"
                       type="custom"
                       options={priorities.map(p => ({ id: p.id, name: p.name, label: p.name }))}
                       bind:selected={newButton.allowedPriorities}
-                      placeholder="Select priorities..."
+                      placeholder={m.tickets.panelsSelectPrioritiesPlaceholder()}
                       multiple={true}
                     />
                   </div>
                   <div>
-                    <label for="f-PanelsTab-default-priority-822" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Default
-                      Priority</label>
+                    <label for="f-PanelsTab-default-priority-822" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsDefaultPriority()}</label>
                     <DiscordSelector id="f-PanelsTab-default-priority-822"
                       type="custom"
                       options={priorities.map(p => ({ id: p.id, name: p.name, label: p.name }))}
                       bind:selected={newButton.defaultPriority}
-                      placeholder="Select default..."
+                      placeholder={m.tickets.panelsSelectDefaultPlaceholder()}
                       multiple={false}
                     />
                   </div>
@@ -846,27 +844,27 @@
                   {#each [
                     {
                       key: 'saveTranscript',
-                      label: 'Save Transcript',
-                      desc: 'Save chat history',
+                      label: m.tickets.panelsOptSaveTranscript(),
+                      desc: m.tickets.panelsOptSaveTranscriptDesc(),
                       prop: 'saveTranscript'
                     },
-                    { key: 'lockOnClose', label: 'Lock on Close', desc: 'Prevent messages', prop: 'lockOnClose' },
+                    { key: 'lockOnClose', label: m.tickets.panelsOptLockOnClose(), desc: m.tickets.panelsOptPreventMessages(), prop: 'lockOnClose' },
                     {
                       key: 'renameOnClose',
-                      label: 'Rename on Close',
-                      desc: 'Add closed- prefix',
+                      label: m.tickets.panelsOptRenameOnClose(),
+                      desc: m.tickets.panelsOptRenameOnCloseDesc(),
                       prop: 'renameOnClose'
                     },
                     {
                       key: 'removeCreatorOnClose',
-                      label: 'Remove Creator',
-                      desc: 'Remove user permissions',
+                      label: m.tickets.panelsOptRemoveCreator(),
+                      desc: m.tickets.panelsOptRemoveCreatorDesc(),
                       prop: 'removeCreatorOnClose'
                     },
                     {
                       key: 'deleteOnClose',
-                      label: 'Delete on Close',
-                      desc: 'Permanently delete',
+                      label: m.tickets.panelsOptDeleteOnClose(),
+                      desc: m.tickets.panelsOptDeleteOnCloseDesc(),
                       danger: true,
                       prop: 'deleteOnClose'
                     }
@@ -886,17 +884,16 @@
                     </label>
                   {/each}
                   <div>
-                    <label for="f-PanelsTab-delete-delay-seconds-879" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Delete Delay
-                      (seconds)</label>
+                    <label for="f-PanelsTab-delete-delay-seconds-879" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsDeleteDelaySeconds()}</label>
                     <input id="f-PanelsTab-delete-delay-seconds-879"
                       type="number"
                       bind:value={newButton.deleteDelay}
                       min="0"
-                      placeholder="0 (instant)"
+                      placeholder={m.tickets.panelsDeleteDelayPlaceholder()}
                       class="w-full px-3 py-2 rounded-lg border"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                     />
-                    <p class="text-xs mt-1" style="color: {$colorStore.muted}">Delay before deleting ticket on close</p>
+                    <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.tickets.panelsDeleteDelayHint()}</p>
                   </div>
                 </div>
 
@@ -905,21 +902,21 @@
                   {#each [
                     {
                       key: 'autoArchiveOnClose',
-                      label: 'Auto Archive on Close',
-                      desc: 'Automatically archive',
+                      label: m.tickets.panelsOptAutoArchive(),
+                      desc: m.tickets.panelsOptAutoArchiveDesc(),
                       prop: 'autoArchiveOnClose'
                     },
-                    { key: 'lockOnArchive', label: 'Lock on Archive', desc: 'Prevent messages', prop: 'lockOnArchive' },
+                    { key: 'lockOnArchive', label: m.tickets.panelsOptLockOnArchive(), desc: m.tickets.panelsOptPreventMessages(), prop: 'lockOnArchive' },
                     {
                       key: 'renameOnArchive',
-                      label: 'Rename on Archive',
-                      desc: 'Add archived- prefix',
+                      label: m.tickets.panelsOptRenameOnArchive(),
+                      desc: m.tickets.panelsOptRenameOnArchiveDesc(),
                       prop: 'renameOnArchive'
                     },
                     {
                       key: 'removeCreatorOnArchive',
-                      label: 'Remove Creator',
-                      desc: 'Remove user permissions',
+                      label: m.tickets.panelsOptRemoveCreator(),
+                      desc: m.tickets.panelsOptRemoveCreatorDesc(),
                       prop: 'removeCreatorOnArchive'
                     }
                   ] as option}
@@ -944,20 +941,20 @@
               {:else if buttonCreatorSection === 'message'}
                 <FullscreenEmbedBuilder
                   bind:value={newButton.openMessageJson}
-                  previewTitle="Ticket Open Message"
-                  previewDescription="Message sent when ticket is opened"
+                  previewTitle={m.tickets.panelsOpenMessageTitle()}
+                  previewDescription={m.tickets.panelsOpenMessagePreviewDescription()}
                   icon="fa-ticket"
                   allowContent={true}
                   allowMultipleEmbeds={true}
                   maxEmbeds={10}
                   allowComponents={false}
                   additionalPlaceholders={[
-                    { category: "Ticket", name: "%ticket.id%", description: "Ticket ID" },
-                    { category: "Ticket", name: "%ticket.user.mention%", description: "Mention ticket creator" }
+                    { category: m.tickets.panelsPlaceholderCategory(), name: "%ticket.id%", description: m.tickets.panelsPlaceholderTicketId() },
+                    { category: m.tickets.panelsPlaceholderCategory(), name: "%ticket.user.mention%", description: m.tickets.panelsPlaceholderTicketCreator() }
                   ]}
                   guildId={$currentGuild?.id}
                   user={data.user}
-                  placeholder="Configure ticket open message"
+                  placeholder={m.tickets.panelsOpenMessagePlaceholder()}
                 />
               {/if}
             </div>
@@ -969,7 +966,7 @@
                 style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                 onclick={() => { showButtonCreator = false; buttonCreatorSection = "basic"; }}
               >
-                Cancel
+                {m.common.cancel()}
               </button>
               <button
                 class="px-4 py-3 rounded-xl font-medium transition-all hover:opacity-80 min-h-[44px] flex items-center gap-2"
@@ -982,7 +979,7 @@
                 {:else}
                   <i class="fa-solid fa-plus"></i>
                 {/if}
-                Create Button
+                {m.tickets.panelsCreateButton()}
               </button>
             </div>
           </div>
@@ -993,7 +990,7 @@
                style="background: {$colorStore.primary}08; border: 1px dashed {$colorStore.primary}20;">
             <i class="fa-solid fa-square-up-right"
                style="color: {$colorStore.muted}; font-size: 48px; opacity: 0.3;"></i>
-            <p class="mt-4" style="color: {$colorStore.muted}">No buttons yet</p>
+            <p class="mt-4" style="color: {$colorStore.muted}">{m.tickets.panelsButtonsEmpty()}</p>
           </div>
         {/if}
 
@@ -1005,14 +1002,14 @@
                 <!-- Inline Button Editor -->
                 <div class="space-y-4">
                   <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                    <h5 class="font-semibold" style="color: {$colorStore.text}">Editing: {button.label}</h5>
+                    <h5 class="font-semibold" style="color: {$colorStore.text}">{m.tickets.panelsEditing({ label: button.label })}</h5>
                     <button
                       class="px-3 py-2 rounded text-sm min-h-[44px]"
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                       onclick={cancelEditingButton}
                     >
                       <i class="fa-solid fa-xmark"></i>
-                      Cancel
+                      {m.common.cancel()}
                     </button>
                   </div>
 
@@ -1020,14 +1017,14 @@
                   <TabNavigation
                     bind:activeTab={buttonEditSection}
                     tabs={buttonSections}
-                    ariaLabel="Button configuration sections"
+                    ariaLabel={m.tickets.panelsButtonSectionsAria()}
                   />
 
                   <div class="mt-4">
                     {#if buttonEditSection === 'basic'}
                       <div class="space-y-4 max-w-xl">
                         <div>
-                          <label for="f-PanelsTab-label-1020" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Label</label>
+                          <label for="f-PanelsTab-label-1020" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.label()}</label>
                           <input id="f-PanelsTab-label-1020"
                             type="text"
                             bind:value={editingButtonData.label}
@@ -1035,26 +1032,26 @@
                             class="w-full px-3 py-2 rounded-lg border"
                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           />
-                          <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 80 characters</p>
+                          <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.tickets.panelsMaxCharacters({ count: 80 })}</p>
                         </div>
                         <div>
-                          <label for="f-PanelsTab-emoji-1031" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Emoji</label>
+                          <label for="f-PanelsTab-emoji-1031" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.emoji()}</label>
                           <EmojiPicker id="f-PanelsTab-emoji-1031"
                             {guildEmojis}
                             bind:selected={editingButtonData.emoji}
                             multiple={false}
-                            placeholder="Select emoji..."
+                            placeholder={m.common.selectEmojiPlaceholder()}
                             searchable={true}
                             groupByGuild={true}
                           />
                         </div>
                         <div>
-                          <label for="f-PanelsTab-style-1042" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Style</label>
+                          <label for="f-PanelsTab-style-1042" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.style()}</label>
                           <DiscordSelector id="f-PanelsTab-style-1042"
                             type="custom"
                             options={buttonStyleOptions}
                             bind:selected={editingButtonData.style}
-                            placeholder="Select style..."
+                            placeholder={m.tickets.modalBuilderStylePlaceholder()}
                             multiple={false}
                           />
                         </div>
@@ -1063,46 +1060,42 @@
                     {:else if buttonEditSection === 'permissions'}
                       <div class="space-y-4 max-w-3xl">
                         <div>
-                          <label for="f-PanelsTab-ticket-category-1056" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Ticket
-                            Category</label>
+                          <label for="f-PanelsTab-ticket-category-1056" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.ticketCategory()}</label>
                           <DiscordSelector id="f-PanelsTab-ticket-category-1056"
                             type="channel"
                             options={categories}
                             bind:selected={editingButtonData.categoryId}
-                            placeholder="Select category..."
+                            placeholder={m.common.selectCategoryPlaceholder()}
                             multiple={false}
                           />
                         </div>
                         <div>
-                          <label for="f-PanelsTab-archive-category-1067" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Archive
-                            Category</label>
+                          <label for="f-PanelsTab-archive-category-1067" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsArchiveCategory()}</label>
                           <DiscordSelector id="f-PanelsTab-archive-category-1067"
                             type="channel"
                             options={categories}
                             bind:selected={editingButtonData.archiveCategoryId}
-                            placeholder="Select category..."
+                            placeholder={m.common.selectCategoryPlaceholder()}
                             multiple={false}
                           />
                         </div>
                         <div>
-                          <label for="f-PanelsTab-support-roles-1078" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Support
-                            Roles</label>
+                          <label for="f-PanelsTab-support-roles-1078" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.supportRoles()}</label>
                           <DiscordSelector id="f-PanelsTab-support-roles-1078"
                             type="role"
                             options={availableRoles}
                             bind:selected={editingButtonData.supportRoles}
-                            placeholder="Select roles..."
+                            placeholder={m.common.selectRolesPlaceholder()}
                             multiple={true}
                           />
                         </div>
                         <div>
-                          <label for="f-PanelsTab-viewer-roles-1089" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Viewer
-                            Roles</label>
+                          <label for="f-PanelsTab-viewer-roles-1089" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsViewerRoles()}</label>
                           <DiscordSelector id="f-PanelsTab-viewer-roles-1089"
                             type="role"
                             options={availableRoles}
                             bind:selected={editingButtonData.viewerRoles}
-                            placeholder="Select roles..."
+                            placeholder={m.common.selectRolesPlaceholder()}
                             multiple={true}
                           />
                         </div>
@@ -1112,8 +1105,7 @@
                       <div class="space-y-4 max-w-3xl">
                         <div class="grid grid-cols-2 gap-4">
                           <div>
-                            <label for="f-PanelsTab-max-active-tickets-1105" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max Active
-                              Tickets</label>
+                            <label for="f-PanelsTab-max-active-tickets-1105" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsMaxActiveTickets()}</label>
                             <input id="f-PanelsTab-max-active-tickets-1105"
                               type="number"
                               bind:value={editingButtonData.maxActiveTickets}
@@ -1123,13 +1115,12 @@
                             />
                           </div>
                           <div>
-                            <label for="f-PanelsTab-auto-close-hours-1116" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto Close
-                              (hours)</label>
+                            <label for="f-PanelsTab-auto-close-hours-1116" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsAutoCloseHours()}</label>
                             <input id="f-PanelsTab-auto-close-hours-1116"
                               type="number"
                               bind:value={editingButtonData.autoCloseTime}
                               min="1"
-                              placeholder="None"
+                              placeholder={m.common.none()}
                               class="w-full px-3 py-2 rounded-lg border"
                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                             />
@@ -1140,11 +1131,11 @@
                     {:else if buttonEditSection === 'close'}
                       <div class="space-y-3 max-w-xl">
                         {#each [
-                          { key: 'saveTranscript', label: 'Save Transcript', desc: 'Save chat history' },
-                          { key: 'lockOnClose', label: 'Lock on Close', desc: 'Prevent messages' },
-                          { key: 'renameOnClose', label: 'Rename on Close', desc: 'Add closed- prefix' },
-                          { key: 'removeCreatorOnClose', label: 'Remove Creator', desc: 'Remove user permissions' },
-                          { key: 'deleteOnClose', label: 'Delete on Close', desc: 'Permanently delete', danger: true }
+                          { key: 'saveTranscript', label: m.tickets.panelsOptSaveTranscript(), desc: m.tickets.panelsOptSaveTranscriptDesc() },
+                          { key: 'lockOnClose', label: m.tickets.panelsOptLockOnClose(), desc: m.tickets.panelsOptPreventMessages() },
+                          { key: 'renameOnClose', label: m.tickets.panelsOptRenameOnClose(), desc: m.tickets.panelsOptRenameOnCloseDesc() },
+                          { key: 'removeCreatorOnClose', label: m.tickets.panelsOptRemoveCreator(), desc: m.tickets.panelsOptRemoveCreatorDesc() },
+                          { key: 'deleteOnClose', label: m.tickets.panelsOptDeleteOnClose(), desc: m.tickets.panelsOptDeleteOnCloseDesc(), danger: true }
                         ] as option}
                           <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer"
                                  style="background: {option.danger ? '#ef444410' : $colorStore.primary + '08'};">
@@ -1166,10 +1157,10 @@
                     {:else if buttonEditSection === 'archive'}
                       <div class="space-y-3 max-w-xl">
                         {#each [
-                          { key: 'autoArchiveOnClose', label: 'Auto Archive on Close', desc: 'Automatically archive' },
-                          { key: 'lockOnArchive', label: 'Lock on Archive', desc: 'Prevent messages' },
-                          { key: 'renameOnArchive', label: 'Rename on Archive', desc: 'Add archived- prefix' },
-                          { key: 'removeCreatorOnArchive', label: 'Remove Creator', desc: 'Remove user permissions' }
+                          { key: 'autoArchiveOnClose', label: m.tickets.panelsOptAutoArchive(), desc: m.tickets.panelsOptAutoArchiveDesc() },
+                          { key: 'lockOnArchive', label: m.tickets.panelsOptLockOnArchive(), desc: m.tickets.panelsOptPreventMessages() },
+                          { key: 'renameOnArchive', label: m.tickets.panelsOptRenameOnArchive(), desc: m.tickets.panelsOptRenameOnArchiveDesc() },
+                          { key: 'removeCreatorOnArchive', label: m.tickets.panelsOptRemoveCreator(), desc: m.tickets.panelsOptRemoveCreatorDesc() }
                         ] as option}
                           <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer"
                                  style="background: {$colorStore.primary}08;">
@@ -1193,20 +1184,20 @@
                     {:else if buttonEditSection === 'message'}
                       <FullscreenEmbedBuilder
                         bind:value={editingButtonData.openMessageJson}
-                        previewTitle="Ticket Open Message"
-                        previewDescription="Message sent when ticket is opened"
+                        previewTitle={m.tickets.panelsOpenMessageTitle()}
+                        previewDescription={m.tickets.panelsOpenMessagePreviewDescription()}
                         icon="fa-ticket"
                         allowContent={true}
                         allowMultipleEmbeds={true}
                         maxEmbeds={10}
                         allowComponents={false}
                         additionalPlaceholders={[
-                          { category: "Ticket", name: "%ticket.id%", description: "Ticket ID" },
-                          { category: "Ticket", name: "%ticket.user.mention%", description: "Mention ticket creator" }
+                          { category: m.tickets.panelsPlaceholderCategory(), name: "%ticket.id%", description: m.tickets.panelsPlaceholderTicketId() },
+                          { category: m.tickets.panelsPlaceholderCategory(), name: "%ticket.user.mention%", description: m.tickets.panelsPlaceholderTicketCreator() }
                         ]}
                         guildId={$currentGuild?.id}
                         user={data.user}
-                        placeholder="Configure ticket open message"
+                        placeholder={m.tickets.panelsOpenMessagePlaceholder()}
                       />
                     {/if}
                   </div>
@@ -1218,7 +1209,7 @@
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                       onclick={cancelEditingButton}
                     >
-                      Cancel
+                      {m.common.cancel()}
                     </button>
                     <button
                       class="px-4 py-3 rounded-xl font-medium transition-all hover:opacity-80 min-h-[44px] flex items-center gap-2"
@@ -1231,7 +1222,7 @@
                       {:else}
                         <i class="fa-solid fa-floppy-disk"></i>
                       {/if}
-                      Save Changes
+                      {m.common.saveChanges()}
                     </button>
                   </div>
                 </div>
@@ -1253,7 +1244,7 @@
                     <div class="min-w-0 flex-1">
                       <p class="font-medium truncate" style="color: {$colorStore.text}">{button.label}</p>
                       <p class="text-xs truncate" style="color: {$colorStore.muted}">
-                        Style: {button.style} • Max: {button.maxActiveTickets}
+                        {m.tickets.panelsButtonSummary({ style: button.style, max: button.maxActiveTickets })}
                       </p>
                     </div>
                   </div>
@@ -1264,15 +1255,15 @@
                       onclick={() => startEditingButton(button.id)}
                     >
                       <i class="fa-solid fa-pen"></i>
-                      <span class="ml-1">Edit</span>
+                      <span class="ml-1">{m.common.edit()}</span>
                     </button>
                     <button
                       class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-sm transition-all hover:opacity-80 min-h-[44px]"
                       style="background: #ef444420; color: #ef4444;"
-                      onclick={() => showConfirm("Delete Button", `Delete "${button.label}"?`, () => deleteButton(button.id), "danger")}
+                      onclick={() => showConfirm(m.tickets.panelsDeleteButtonTitle(), m.tickets.panelsDeleteButtonConfirm({ name: button.label }), () => deleteButton(button.id), "danger")}
                     >
                       <i class="fa-solid fa-trash"></i>
-                      <span class="ml-1 sm:hidden">Delete</span>
+                      <span class="ml-1 sm:hidden">{m.common.delete()}</span>
                     </button>
                   </div>
                 </div>
@@ -1287,11 +1278,10 @@
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <h4 class="font-semibold" style="color: {$colorStore.text}">
-              Select Menus ({panelSelectMenus.length})
+              {m.tickets.panelsSelectMenusTitle({ count: panelSelectMenus.length })}
             </h4>
             <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-              Can add {componentCount().canAddButtons} more button{componentCount().canAddButtons !== 1 ? 's' : ''}
-              or {componentCount().canAddMenus} more menu{componentCount().canAddMenus !== 1 ? 's' : ''}
+              {capacityText}
             </p>
           </div>
           <button
@@ -1303,7 +1293,7 @@
             onclick={() => showSelectMenuCreator = !showSelectMenuCreator}
           >
             <i class="fa-solid {showSelectMenuCreator ? 'fa-xmark' : 'fa-plus'}"></i>
-            {showSelectMenuCreator ? 'Cancel' : 'Add Menu'}
+            {showSelectMenuCreator ? m.common.cancel() : m.tickets.panelsAddMenu()}
           </button>
         </div>
 
@@ -1311,7 +1301,7 @@
           <div class="p-3 rounded-lg" style="background: #f59e0b10; border: 1px solid #f59e0b30;">
             <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b;"></i>
             <span class="ml-2 text-sm" style="color: #f59e0b;">
-              Component limit reached. Need 5 slots for a select menu. Remove components to add more.
+              {m.tickets.panelsLimitReachedMenu()}
             </span>
           </div>
         {/if}
@@ -1320,54 +1310,51 @@
         {#if showSelectMenuCreator}
           <div class="p-4 rounded-xl border-2"
                style="background: {$colorStore.accent}10; border-color: {$colorStore.accent}30;">
-            <h5 class="font-semibold mb-4" style="color: {$colorStore.text}">New Select Menu</h5>
+            <h5 class="font-semibold mb-4" style="color: {$colorStore.text}">{m.tickets.panelsNewSelectMenu()}</h5>
             <div class="space-y-3 max-w-2xl">
               <div>
-                <label for="f-PanelsTab-placeholder-1316" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Placeholder *</label>
+                <label for="f-PanelsTab-placeholder-1316" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.placeholder()} *</label>
                 <input id="f-PanelsTab-placeholder-1316"
                   type="text"
                   bind:value={newSelectMenu.placeholder}
                   maxlength="150"
                   class="w-full px-3 py-2 rounded-lg border"
-                  placeholder="Select a ticket type..."
+                  placeholder={m.tickets.panelsMenuPlaceholderExample()}
                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                 />
-                <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 150 characters</p>
+                <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.tickets.panelsMaxCharacters({ count: 150 })}</p>
               </div>
               <div>
-                <label for="f-PanelsTab-first-option-label-1328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">First Option Label
-                  *</label>
+                <label for="f-PanelsTab-first-option-label-1328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsFirstOptionLabel()} *</label>
                 <input id="f-PanelsTab-first-option-label-1328"
                   type="text"
                   bind:value={newSelectMenu.firstOptionLabel}
                   maxlength="100"
                   class="w-full px-3 py-2 rounded-lg border"
-                  placeholder="General Support"
+                  placeholder={m.tickets.panelsOptionLabelExample()}
                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                 />
-                <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 100 characters</p>
+                <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.tickets.panelsMaxCharacters({ count: 100 })}</p>
               </div>
               <div>
-                <label for="f-PanelsTab-first-option-description-1341" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">First Option
-                  Description</label>
+                <label for="f-PanelsTab-first-option-description-1341" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsFirstOptionDescription()}</label>
                 <input id="f-PanelsTab-first-option-description-1341"
                   type="text"
                   bind:value={newSelectMenu.firstOptionDescription}
                   maxlength="100"
                   class="w-full px-3 py-2 rounded-lg border"
-                  placeholder="Get help with general questions"
+                  placeholder={m.tickets.panelsOptionDescriptionExample()}
                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                 />
-                <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 100 characters</p>
+                <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.tickets.panelsMaxCharacters({ count: 100 })}</p>
               </div>
               <div>
-                <label for="f-PanelsTab-first-option-emoji-1354" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">First Option
-                  Emoji</label>
+                <label for="f-PanelsTab-first-option-emoji-1354" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsFirstOptionEmoji()}</label>
                 <EmojiPicker id="f-PanelsTab-first-option-emoji-1354"
                   {guildEmojis}
                   bind:selected={newSelectMenu.firstOptionEmoji}
                   multiple={false}
-                  placeholder="Select emoji..."
+                  placeholder={m.common.selectEmojiPlaceholder()}
                   searchable={true}
                   groupByGuild={true}
                 />
@@ -1378,7 +1365,7 @@
                   style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                   onclick={() => showSelectMenuCreator = false}
                 >
-                  Cancel
+                  {m.common.cancel()}
                 </button>
                 <button
                   class="px-3 py-2 rounded-lg text-sm"
@@ -1387,7 +1374,7 @@
                   onclick={addSelectMenu}
                 >
                   <i class="fa-solid fa-plus"></i>
-                  Add
+                  {m.common.add()}
                 </button>
               </div>
             </div>
@@ -1398,7 +1385,7 @@
           <div class="text-center py-12 rounded-xl"
                style="background: {$colorStore.primary}08; border: 1px dashed {$colorStore.primary}20;">
             <i class="fa-solid fa-list" style="color: {$colorStore.muted}; font-size: 48px; opacity: 0.3;"></i>
-            <p class="mt-4" style="color: {$colorStore.muted}">No select menus yet</p>
+            <p class="mt-4" style="color: {$colorStore.muted}">{m.tickets.panelsMenusEmpty()}</p>
           </div>
         {/if}
 
@@ -1422,7 +1409,7 @@
                       <button
                         class="px-3 py-2 rounded-lg min-h-[44px]"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-                        aria-label="Save placeholder"
+                        aria-label={m.tickets.panelsSavePlaceholderAria()}
                         onclick={savePlaceholder}
                       >
                         <i class="fa-solid fa-check"></i>
@@ -1430,7 +1417,7 @@
                       <button
                         class="px-3 py-2 rounded-lg min-h-[44px]"
                         style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                        aria-label="Cancel editing placeholder"
+                        aria-label={m.tickets.panelsCancelPlaceholderAria()}
                         onclick={cancelEditingPlaceholder}
                       >
                         <i class="fa-solid fa-xmark"></i>
@@ -1442,7 +1429,7 @@
                       <button
                         class="p-2 rounded hover:opacity-80 min-h-[44px] min-w-[44px]"
                         style="color: {$colorStore.muted};"
-                        aria-label="Edit placeholder"
+                        aria-label={m.tickets.panelsEditPlaceholderAria()}
                         onclick={() => startEditingPlaceholder(menu.id, menu.placeholder)}
                       >
                         <i class="fa-solid fa-pen text-xs"></i>
@@ -1450,16 +1437,16 @@
                     </div>
                   {/if}
                   <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                    {menu.options?.length || 0} options
+                    {(menu.options?.length || 0) === 1 ? m.tickets.panelsOptionsCountOne({ count: 1 }) : m.common.optionsCount({ count: menu.options?.length || 0 })}
                   </p>
                 </div>
                 <button
                   class="px-3 py-2 rounded-lg text-sm transition-all hover:opacity-80 min-h-[44px] w-full sm:w-auto"
                   style="background: #ef444420; color: #ef4444;"
-                  onclick={() => showConfirm("Delete Menu", "Delete this menu?", () => deleteSelectMenu(menu.id), "danger")}
+                  onclick={() => showConfirm(m.common.deleteMenu(), m.common.deleteThisMenu(), () => deleteSelectMenu(menu.id), "danger")}
                 >
                   <i class="fa-solid fa-trash"></i>
-                  <span class="ml-1">Delete Menu</span>
+                  <span class="ml-1">{m.common.deleteMenu()}</span>
                 </button>
               </div>
 
@@ -1472,14 +1459,14 @@
                         <!-- Inline Option Editor -->
                         <div class="space-y-4">
                           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                            <h5 class="font-semibold" style="color: {$colorStore.text}">Editing: {option.label}</h5>
+                            <h5 class="font-semibold" style="color: {$colorStore.text}">{m.tickets.panelsEditing({ label: option.label })}</h5>
                             <button
                               class="px-3 py-2 rounded text-sm min-h-[44px]"
                               style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                               onclick={cancelEditingOption}
                             >
                               <i class="fa-solid fa-xmark"></i>
-                              Cancel
+                              {m.common.cancel()}
                             </button>
                           </div>
 
@@ -1487,7 +1474,7 @@
                           <TabNavigation
                             bind:activeTab={optionEditSection}
                             tabs={optionSections}
-                            ariaLabel="Option configuration sections"
+                            ariaLabel={m.tickets.panelsOptionSectionsAria()}
                           />
 
                           <div class="mt-4">
@@ -1495,7 +1482,7 @@
                               <div class="space-y-4 max-w-xl">
                                 <div>
                                   <label for="f-PanelsTab-label-1487" class="block text-sm font-medium mb-2"
-                                         style="color: {$colorStore.text}">Label</label>
+                                         style="color: {$colorStore.text}">{m.common.label()}</label>
                                   <input id="f-PanelsTab-label-1487"
                                     type="text"
                                     bind:value={editingOptionData.label}
@@ -1503,36 +1490,34 @@
                                     class="w-full px-3 py-2 rounded-lg border"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                   />
-                                  <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 100 characters</p>
+                                  <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.tickets.panelsMaxCharacters({ count: 100 })}</p>
                                 </div>
                                 <div>
-                                  <label for="f-PanelsTab-description-1499" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Description
-                                    *</label>
+                                  <label for="f-PanelsTab-description-1499" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.description()} *</label>
                                   <input id="f-PanelsTab-description-1499"
                                     type="text"
                                     bind:value={editingOptionData.description}
                                     maxlength="100"
                                     class="w-full px-3 py-2 rounded-lg border"
-                                    placeholder="Describe this option"
+                                    placeholder={m.tickets.panelsOptionDescriptionPlaceholder()}
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                   />
-                                  <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 100 characters</p>
+                                  <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.tickets.panelsMaxCharacters({ count: 100 })}</p>
                                 </div>
                                 <div>
                                   <label for="f-PanelsTab-emoji-1512" class="block text-sm font-medium mb-2"
-                                         style="color: {$colorStore.text}">Emoji</label>
+                                         style="color: {$colorStore.text}">{m.common.emoji()}</label>
                                   <EmojiPicker id="f-PanelsTab-emoji-1512"
                                     {guildEmojis}
                                     bind:selected={editingOptionData.emoji}
                                     multiple={false}
-                                    placeholder="Select emoji..."
+                                    placeholder={m.common.selectEmojiPlaceholder()}
                                     searchable={true}
                                     groupByGuild={true}
                                   />
                                 </div>
                                 <div>
-                                  <label for="f-PanelsTab-channel-name-format-1524" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel
-                                    Name Format</label>
+                                  <label for="f-PanelsTab-channel-name-format-1524" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.channelNameFormat()}</label>
                                   <input id="f-PanelsTab-channel-name-format-1524"
                                     type="text"
                                     bind:value={editingOptionData.channelNameFormat}
@@ -1542,7 +1527,7 @@
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                   />
                                   <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                                    Available: &#123;username&#125;, &#123;id&#125; • Max 100 characters
+                                    {m.tickets.panelsChannelFormatHint({ username: "{username}", id: "{id}", count: 100 })}
                                   </p>
                                 </div>
                               </div>
@@ -1550,46 +1535,42 @@
                             {:else if optionEditSection === 'permissions'}
                               <div class="space-y-4 max-w-3xl">
                                 <div>
-                                  <label for="f-PanelsTab-ticket-category-1543" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Ticket
-                                    Category</label>
+                                  <label for="f-PanelsTab-ticket-category-1543" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.ticketCategory()}</label>
                                   <DiscordSelector id="f-PanelsTab-ticket-category-1543"
                                     type="channel"
                                     options={categories}
                                     bind:selected={editingOptionData.categoryId}
-                                    placeholder="Select category..."
+                                    placeholder={m.common.selectCategoryPlaceholder()}
                                     multiple={false}
                                   />
                                 </div>
                                 <div>
-                                  <label for="f-PanelsTab-archive-category-1554" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Archive
-                                    Category</label>
+                                  <label for="f-PanelsTab-archive-category-1554" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsArchiveCategory()}</label>
                                   <DiscordSelector id="f-PanelsTab-archive-category-1554"
                                     type="channel"
                                     options={categories}
                                     bind:selected={editingOptionData.archiveCategoryId}
-                                    placeholder="Select category..."
+                                    placeholder={m.common.selectCategoryPlaceholder()}
                                     multiple={false}
                                   />
                                 </div>
                                 <div>
-                                  <label for="f-PanelsTab-support-roles-1565" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Support
-                                    Roles</label>
+                                  <label for="f-PanelsTab-support-roles-1565" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.supportRoles()}</label>
                                   <DiscordSelector id="f-PanelsTab-support-roles-1565"
                                     type="role"
                                     options={availableRoles}
                                     bind:selected={editingOptionData.supportRoles}
-                                    placeholder="Select roles..."
+                                    placeholder={m.common.selectRolesPlaceholder()}
                                     multiple={true}
                                   />
                                 </div>
                                 <div>
-                                  <label for="f-PanelsTab-viewer-roles-1576" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Viewer
-                                    Roles</label>
+                                  <label for="f-PanelsTab-viewer-roles-1576" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsViewerRoles()}</label>
                                   <DiscordSelector id="f-PanelsTab-viewer-roles-1576"
                                     type="role"
                                     options={availableRoles}
                                     bind:selected={editingOptionData.viewerRoles}
-                                    placeholder="Select roles..."
+                                    placeholder={m.common.selectRolesPlaceholder()}
                                     multiple={true}
                                   />
                                 </div>
@@ -1599,8 +1580,7 @@
                               <div class="space-y-4 max-w-3xl">
                                 <div class="grid grid-cols-2 gap-4">
                                   <div>
-                                    <label for="f-PanelsTab-max-active-tickets-1592" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max
-                                      Active Tickets</label>
+                                    <label for="f-PanelsTab-max-active-tickets-1592" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsMaxActiveTickets()}</label>
                                     <input id="f-PanelsTab-max-active-tickets-1592"
                                       type="number"
                                       bind:value={editingOptionData.maxActiveTickets}
@@ -1610,13 +1590,12 @@
                                     />
                                   </div>
                                   <div>
-                                    <label for="f-PanelsTab-auto-close-hours-1603" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto
-                                      Close (hours)</label>
+                                    <label for="f-PanelsTab-auto-close-hours-1603" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsAutoCloseHours()}</label>
                                     <input id="f-PanelsTab-auto-close-hours-1603"
                                       type="number"
                                       bind:value={editingOptionData.autoCloseTime}
                                       min="1"
-                                      placeholder="None"
+                                      placeholder={m.common.none()}
                                       class="w-full px-3 py-2 rounded-lg border"
                                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                     />
@@ -1627,18 +1606,18 @@
                             {:else if optionEditSection === 'close'}
                               <div class="space-y-3 max-w-xl">
                                 {#each [
-                                  { key: 'saveTranscript', label: 'Save Transcript', desc: 'Save chat history' },
-                                  { key: 'lockOnClose', label: 'Lock on Close', desc: 'Prevent messages' },
-                                  { key: 'renameOnClose', label: 'Rename on Close', desc: 'Add closed- prefix' },
+                                  { key: 'saveTranscript', label: m.tickets.panelsOptSaveTranscript(), desc: m.tickets.panelsOptSaveTranscriptDesc() },
+                                  { key: 'lockOnClose', label: m.tickets.panelsOptLockOnClose(), desc: m.tickets.panelsOptPreventMessages() },
+                                  { key: 'renameOnClose', label: m.tickets.panelsOptRenameOnClose(), desc: m.tickets.panelsOptRenameOnCloseDesc() },
                                   {
                                     key: 'removeCreatorOnClose',
-                                    label: 'Remove Creator',
-                                    desc: 'Remove user permissions'
+                                    label: m.tickets.panelsOptRemoveCreator(),
+                                    desc: m.tickets.panelsOptRemoveCreatorDesc()
                                   },
                                   {
                                     key: 'deleteOnClose',
-                                    label: 'Delete on Close',
-                                    desc: 'Permanently delete',
+                                    label: m.tickets.panelsOptDeleteOnClose(),
+                                    desc: m.tickets.panelsOptDeleteOnCloseDesc(),
                                     danger: true
                                   }
                                 ] as opt}
@@ -1664,15 +1643,15 @@
                                 {#each [
                                   {
                                     key: 'autoArchiveOnClose',
-                                    label: 'Auto Archive on Close',
-                                    desc: 'Automatically archive'
+                                    label: m.tickets.panelsOptAutoArchive(),
+                                    desc: m.tickets.panelsOptAutoArchiveDesc()
                                   },
-                                  { key: 'lockOnArchive', label: 'Lock on Archive', desc: 'Prevent messages' },
-                                  { key: 'renameOnArchive', label: 'Rename on Archive', desc: 'Add archived- prefix' },
+                                  { key: 'lockOnArchive', label: m.tickets.panelsOptLockOnArchive(), desc: m.tickets.panelsOptPreventMessages() },
+                                  { key: 'renameOnArchive', label: m.tickets.panelsOptRenameOnArchive(), desc: m.tickets.panelsOptRenameOnArchiveDesc() },
                                   {
                                     key: 'removeCreatorOnArchive',
-                                    label: 'Remove Creator',
-                                    desc: 'Remove user permissions'
+                                    label: m.tickets.panelsOptRemoveCreator(),
+                                    desc: m.tickets.panelsOptRemoveCreatorDesc()
                                   }
                                 ] as opt}
                                   <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer"
@@ -1697,20 +1676,20 @@
                             {:else if optionEditSection === 'message'}
                               <FullscreenEmbedBuilder
                                 bind:value={editingOptionData.openMessageJson}
-                                previewTitle="Ticket Open Message"
-                                previewDescription="Message sent when ticket is opened"
+                                previewTitle={m.tickets.panelsOpenMessageTitle()}
+                                previewDescription={m.tickets.panelsOpenMessagePreviewDescription()}
                                 icon="fa-ticket"
                                 allowContent={true}
                                 allowMultipleEmbeds={true}
                                 maxEmbeds={10}
                                 allowComponents={false}
                                 additionalPlaceholders={[
-                                  { category: "Ticket", name: "%ticket.id%", description: "Ticket ID" },
-                                  { category: "Ticket", name: "%ticket.user.mention%", description: "Mention ticket creator" }
+                                  { category: m.tickets.panelsPlaceholderCategory(), name: "%ticket.id%", description: m.tickets.panelsPlaceholderTicketId() },
+                                  { category: m.tickets.panelsPlaceholderCategory(), name: "%ticket.user.mention%", description: m.tickets.panelsPlaceholderTicketCreator() }
                                 ]}
                                 guildId={$currentGuild?.id}
                                 user={data.user}
-                                placeholder="Configure ticket open message"
+                                placeholder={m.tickets.panelsOpenMessagePlaceholder()}
                               />
                             {/if}
                           </div>
@@ -1723,7 +1702,7 @@
                               style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                               onclick={cancelEditingOption}
                             >
-                              Cancel
+                              {m.common.cancel()}
                             </button>
                             <button
                               class="px-4 py-3 rounded-xl font-medium transition-all hover:opacity-80 min-h-[44px] flex items-center gap-2"
@@ -1738,7 +1717,7 @@
                               {:else}
                                 <i class="fa-solid fa-floppy-disk"></i>
                               {/if}
-                              Save Changes
+                              {m.common.saveChanges()}
                             </button>
                           </div>
                         </div>
@@ -1771,15 +1750,15 @@
                               onclick={() => startEditingOption(option.id)}
                             >
                               <i class="fa-solid fa-pen"></i>
-                              <span class="ml-1">Edit</span>
+                              <span class="ml-1">{m.common.edit()}</span>
                             </button>
                             <button
                               class="flex-1 sm:flex-none px-3 py-2 rounded text-sm min-h-[44px]"
                               style="background: #ef444420; color: #ef4444;"
-                              onclick={() => showConfirm("Delete Option", `Delete "${option.label}"?`, () => deleteSelectOption(option.id), "danger")}
+                              onclick={() => showConfirm(m.common.deleteOption(), m.tickets.panelsDeleteButtonConfirm({ name: option.label }), () => deleteSelectOption(option.id), "danger")}
                             >
                               <i class="fa-solid fa-trash"></i>
-                              <span class="ml-1 sm:hidden">Delete</span>
+                              <span class="ml-1 sm:hidden">{m.common.delete()}</span>
                             </button>
                           </div>
                         </div>
@@ -1793,7 +1772,7 @@
                 <div class="mt-3 p-3 rounded-lg text-sm text-center"
                      style="background: #f59e0b10; border: 1px solid #f59e0b30; color: #f59e0b;">
                   <i class="fa-solid fa-triangle-exclamation"></i>
-                  <span class="ml-2">Maximum 25 options per menu</span>
+                  <span class="ml-2">{m.tickets.panelsMaxOptions({ max: 25 })}</span>
                 </div>
               {/if}
 
@@ -1802,11 +1781,11 @@
                 <div class="mt-3 p-4 rounded-xl border-2"
                      style="background: {$colorStore.secondary}10; border-color: {$colorStore.secondary}30;">
                   <div class="flex items-center justify-between mb-4">
-                    <h5 class="font-semibold" style="color: {$colorStore.text}">New Option</h5>
+                    <h5 class="font-semibold" style="color: {$colorStore.text}">{m.common.newOption()}</h5>
                     <button
                       class="px-2 py-1 rounded text-sm"
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                      aria-label="Cancel option"
+                      aria-label={m.tickets.panelsCancelOptionAria()}
                       onclick={cancelCreatingOption}
                     >
                       <i class="fa-solid fa-xmark"></i>
@@ -1816,52 +1795,50 @@
                   <TabNavigation
                     bind:activeTab={optionCreatorSection}
                     tabs={optionSections}
-                    ariaLabel="New option configuration sections"
+                    ariaLabel={m.tickets.panelsNewOptionSectionsAria()}
                   />
 
                   <div class="mt-4">
                     {#if optionCreatorSection === 'basic'}
                       <div class="space-y-4 max-w-xl">
                         <div>
-                          <label for="f-PanelsTab-label-1816" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Label
-                            *</label>
+                          <label for="f-PanelsTab-label-1816" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.label()} *</label>
                           <input id="f-PanelsTab-label-1816"
                             type="text"
                             bind:value={newOption.label}
                             maxlength="100"
                             class="w-full px-3 py-2 rounded-lg border"
-                            placeholder="General Support"
+                            placeholder={m.tickets.panelsOptionLabelExample()}
                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           />
-                          <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 100 characters</p>
+                          <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.tickets.panelsMaxCharacters({ count: 100 })}</p>
                         </div>
                         <div>
                           <label for="f-PanelsTab-description-1829" class="block text-sm font-medium mb-2"
-                                 style="color: {$colorStore.text}">Description *</label>
+                                 style="color: {$colorStore.text}">{m.common.description()} *</label>
                           <input id="f-PanelsTab-description-1829"
                             type="text"
                             bind:value={newOption.description}
                             maxlength="100"
                             class="w-full px-3 py-2 rounded-lg border"
-                            placeholder="Get help with general questions"
+                            placeholder={m.tickets.panelsOptionDescriptionExample()}
                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           />
-                          <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 100 characters</p>
+                          <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.tickets.panelsMaxCharacters({ count: 100 })}</p>
                         </div>
                         <div>
-                          <label for="f-PanelsTab-emoji-1842" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Emoji</label>
+                          <label for="f-PanelsTab-emoji-1842" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.emoji()}</label>
                           <EmojiPicker id="f-PanelsTab-emoji-1842"
                             {guildEmojis}
                             bind:selected={newOption.emoji}
                             multiple={false}
-                            placeholder="Select emoji..."
+                            placeholder={m.common.selectEmojiPlaceholder()}
                             searchable={true}
                             groupByGuild={true}
                           />
                         </div>
                         <div>
-                          <label for="f-PanelsTab-channel-name-format-1853" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel Name
-                            Format</label>
+                          <label for="f-PanelsTab-channel-name-format-1853" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.channelNameFormat()}</label>
                           <input id="f-PanelsTab-channel-name-format-1853"
                             type="text"
                             bind:value={newOption.channelNameFormat}
@@ -1871,7 +1848,7 @@
                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           />
                           <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                            Available: &#123;username&#125;, &#123;id&#125; • Max 100 characters
+                            {m.tickets.panelsChannelFormatHint({ username: "{username}", id: "{id}", count: 100 })}
                           </p>
                         </div>
                       </div>
@@ -1879,46 +1856,42 @@
                     {:else if optionCreatorSection === 'permissions'}
                       <div class="space-y-4 max-w-3xl">
                         <div>
-                          <label for="f-PanelsTab-ticket-category-1872" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Ticket
-                            Category</label>
+                          <label for="f-PanelsTab-ticket-category-1872" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.ticketCategory()}</label>
                           <DiscordSelector id="f-PanelsTab-ticket-category-1872"
                             type="channel"
                             options={categories}
                             bind:selected={newOption.categoryId}
-                            placeholder="Select category..."
+                            placeholder={m.common.selectCategoryPlaceholder()}
                             multiple={false}
                           />
                         </div>
                         <div>
-                          <label for="f-PanelsTab-archive-category-1883" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Archive
-                            Category</label>
+                          <label for="f-PanelsTab-archive-category-1883" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsArchiveCategory()}</label>
                           <DiscordSelector id="f-PanelsTab-archive-category-1883"
                             type="channel"
                             options={categories}
                             bind:selected={newOption.archiveCategoryId}
-                            placeholder="Select category..."
+                            placeholder={m.common.selectCategoryPlaceholder()}
                             multiple={false}
                           />
                         </div>
                         <div>
-                          <label for="f-PanelsTab-support-roles-1894" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Support
-                            Roles</label>
+                          <label for="f-PanelsTab-support-roles-1894" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.supportRoles()}</label>
                           <DiscordSelector id="f-PanelsTab-support-roles-1894"
                             type="role"
                             options={availableRoles}
                             bind:selected={newOption.supportRoles}
-                            placeholder="Select roles..."
+                            placeholder={m.common.selectRolesPlaceholder()}
                             multiple={true}
                           />
                         </div>
                         <div>
-                          <label for="f-PanelsTab-viewer-roles-1905" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Viewer
-                            Roles</label>
+                          <label for="f-PanelsTab-viewer-roles-1905" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsViewerRoles()}</label>
                           <DiscordSelector id="f-PanelsTab-viewer-roles-1905"
                             type="role"
                             options={availableRoles}
                             bind:selected={newOption.viewerRoles}
-                            placeholder="Select roles..."
+                            placeholder={m.common.selectRolesPlaceholder()}
                             multiple={true}
                           />
                         </div>
@@ -1928,8 +1901,7 @@
                       <div class="space-y-4 max-w-3xl">
                         <div class="grid grid-cols-2 gap-4">
                           <div>
-                            <label for="f-PanelsTab-max-active-tickets-1921" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max Active
-                              Tickets</label>
+                            <label for="f-PanelsTab-max-active-tickets-1921" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsMaxActiveTickets()}</label>
                             <input id="f-PanelsTab-max-active-tickets-1921"
                               type="number"
                               bind:value={newOption.maxActiveTickets}
@@ -1939,13 +1911,12 @@
                             />
                           </div>
                           <div>
-                            <label for="f-PanelsTab-auto-close-hours-1932" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto Close
-                              (hours)</label>
+                            <label for="f-PanelsTab-auto-close-hours-1932" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.tickets.panelsAutoCloseHours()}</label>
                             <input id="f-PanelsTab-auto-close-hours-1932"
                               type="number"
                               bind:value={newOption.autoCloseTime}
                               min="1"
-                              placeholder="None"
+                              placeholder={m.common.none()}
                               class="w-full px-3 py-2 rounded-lg border"
                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                             />
@@ -1998,20 +1969,20 @@
                     {:else if optionCreatorSection === 'message'}
                       <FullscreenEmbedBuilder
                         bind:value={newOption.openMessageJson}
-                        previewTitle="Ticket Open Message"
-                        previewDescription="Message sent when ticket is opened"
+                        previewTitle={m.tickets.panelsOpenMessageTitle()}
+                        previewDescription={m.tickets.panelsOpenMessagePreviewDescription()}
                         icon="fa-ticket"
                         allowContent={true}
                         allowMultipleEmbeds={true}
                         maxEmbeds={10}
                         allowComponents={false}
                         additionalPlaceholders={[
-                          { category: "Ticket", name: "%ticket.id%", description: "Ticket ID" },
-                          { category: "Ticket", name: "%ticket.user.mention%", description: "Mention ticket creator" }
+                          { category: m.tickets.panelsPlaceholderCategory(), name: "%ticket.id%", description: m.tickets.panelsPlaceholderTicketId() },
+                          { category: m.tickets.panelsPlaceholderCategory(), name: "%ticket.user.mention%", description: m.tickets.panelsPlaceholderTicketCreator() }
                         ]}
                         guildId={$currentGuild?.id}
                         user={data.user}
-                        placeholder="Configure ticket open message"
+                        placeholder={m.tickets.panelsOpenMessagePlaceholder()}
                       />
                     {/if}
                   </div>
@@ -2022,7 +1993,7 @@
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                       onclick={cancelCreatingOption}
                     >
-                      Cancel
+                      {m.common.cancel()}
                     </button>
                     <button
                       class="px-4 py-3 rounded-xl font-medium transition-all hover:opacity-80 min-h-[44px] flex items-center gap-2"
@@ -2037,7 +2008,7 @@
                       {:else}
                         <i class="fa-solid fa-plus"></i>
                       {/if}
-                      Add Option
+                      {m.common.addOption()}
                     </button>
                   </div>
                 </div>
@@ -2051,7 +2022,7 @@
                   onclick={() => startCreatingOption(menu.id)}
                 >
                   <i class="fa-solid fa-plus"></i>
-                  Add Option ({optionCount}/25)
+                  {m.tickets.panelsAddOptionCount({ count: optionCount, max: 25 })}
                 </button>
               {/if}
             </div>
@@ -2062,7 +2033,7 @@
     {:else if activeTab === 'settings'}
       <div class="space-y-4">
         <div class="flex items-center justify-between">
-          <h4 class="font-semibold" style="color: {$colorStore.text}">Panel Settings</h4>
+          <h4 class="font-semibold" style="color: {$colorStore.text}">{m.tickets.panelsTabSettings()}</h4>
           <button
             class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80"
             style="background: {editingPanelEmbed ? $colorStore.muted + '20' : $colorStore.secondary + '20'};
@@ -2086,7 +2057,7 @@
             }}
           >
             <i class="fa-solid {editingPanelEmbed ? 'fa-xmark' : 'fa-pen'}"></i>
-            {editingPanelEmbed ? 'Cancel' : 'Edit Embed'}
+            {editingPanelEmbed ? m.common.cancel() : m.tickets.panelsEditEmbed()}
           </button>
         </div>
 
@@ -2095,8 +2066,8 @@
                style="background: {$colorStore.primary}05; border: 1px solid {$colorStore.primary}15;">
             <FullscreenEmbedBuilder
               bind:value={tempPanelEmbed}
-              previewTitle="Panel Embed"
-              previewDescription="Embed shown in the ticket panel"
+              previewTitle={m.tickets.panelsEmbedTitle()}
+              previewDescription={m.tickets.panelsEmbedPreviewDescription()}
               icon="fa-rectangle"
               allowContent={false}
 
@@ -2104,7 +2075,7 @@
               allowComponents={false}
               guildId={$currentGuild?.id}
               user={data.user}
-              placeholder="Click to configure panel embed"
+              placeholder={m.tickets.panelsEmbedPlaceholder()}
             />
           </div>
           <div class="flex justify-end gap-3">
@@ -2113,7 +2084,7 @@
               style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
               onclick={() => editingPanelEmbed = false}
             >
-              Cancel
+              {m.common.cancel()}
             </button>
             <button
               class="px-4 py-3 rounded-xl font-medium flex items-center gap-2"
@@ -2126,14 +2097,14 @@
               {:else}
                 <i class="fa-solid fa-floppy-disk"></i>
               {/if}
-              Save Embed
+              {m.common.saveEmbed()}
             </button>
           </div>
         {:else}
           <div class="p-6 rounded-xl text-center"
                style="background: {$colorStore.primary}08; border: 1px dashed {$colorStore.primary}20;">
             <i class="fa-solid fa-pen-to-square" style="color: {$colorStore.muted}; font-size: 48px; opacity: 0.3;"></i>
-            <p class="mt-4" style="color: {$colorStore.muted}">Click "Edit Embed" to customize this panel</p>
+            <p class="mt-4" style="color: {$colorStore.muted}">{m.tickets.panelsSettingsHint()}</p>
           </div>
         {/if}
       </div>
@@ -2143,8 +2114,8 @@
   <div class="text-center py-24 rounded-xl"
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px dashed {$colorStore.primary}20;">
     <i class="fa-solid fa-hand-pointer" style="color: {$colorStore.muted}; font-size: 64px; opacity: 0.2;"></i>
-    <p class="mt-6 text-lg font-medium" style="color: {$colorStore.text}">Select a panel above</p>
-    <p class="text-sm mt-2" style="color: {$colorStore.muted}">or create a new one to get started</p>
+    <p class="mt-6 text-lg font-medium" style="color: {$colorStore.text}">{m.tickets.panelsSelectPanel()}</p>
+    <p class="text-sm mt-2" style="color: {$colorStore.muted}">{m.tickets.casesSelectPromptHint()}</p>
   </div>
 {/if}
 

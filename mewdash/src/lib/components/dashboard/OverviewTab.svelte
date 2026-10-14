@@ -1,5 +1,6 @@
 <!-- lib/components/dashboard/OverviewTab.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import {fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {musicStore} from "$lib/stores/musicStore";
@@ -87,15 +88,15 @@
   let currentPosition = $derived(getCurrentPosition());
   let progressPercentage = $derived(getProgressPercentage());
   let memberTooltipData = $derived([
-    { label: "Human Members", value: guildMemberStats.humanMembers },
-    { label: "Bot Members", value: guildMemberStats.botMembers },
-    { label: "Total Members", value: guildMemberStats.totalMembers }
+    { label: m.dashboard.overviewHumanMembers(), value: guildMemberStats.humanMembers },
+    { label: m.dashboard.overviewBotMembers(), value: guildMemberStats.botMembers },
+    { label: m.common.totalMembers(), value: guildMemberStats.totalMembers }
   ]);
   let roleTooltipData = $derived([
-    { label: "Total Roles", value: roleStats.totalRoles },
-    { label: "Saved Roles", value: roleStats.savedRoles },
-    { label: "Role States", value: roleStats.totalRoleStates },
-    { label: "Role Greets", value: roleStats.activeRoleGreets }
+    { label: m.dashboard.overviewTotalRoles(), value: roleStats.totalRoles },
+    { label: m.dashboard.overviewSavedRoles(), value: roleStats.savedRoles },
+    { label: m.features.rolestatesName(), value: roleStats.totalRoleStates },
+    { label: m.features.rolegreetsName(), value: roleStats.activeRoleGreets }
   ]);
 </script>
 
@@ -117,7 +118,7 @@
           <i class="fa-utility-duo fa-regular fa-circle text-2xl"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         </div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Bot Status</h2>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.botStatus()}</h2>
       </div>
 
       <div class="space-y-4">
@@ -125,9 +126,9 @@
           animationDelay={0}
           icon="fa-wifi"
           iconColor="primary"
-          label="Latency"
+          label={m.common.latency()}
           trend={botStatus?.botLatency < 100 ? "up" : botStatus?.botLatency > 200 ? "down" : "neutral"}
-          trendValue={botStatus?.botLatency < 100 ? "Good" : botStatus?.botLatency > 200 ? "High" : ""}
+          trendValue={botStatus?.botLatency < 100 ? m.common.good() : botStatus?.botLatency > 200 ? m.common.high() : ""}
           value={`${botStatus?.botLatency || 0}ms`}
         />
 
@@ -135,8 +136,8 @@
           animationDelay={100}
           icon="fa-check-circle"
           iconColor="secondary"
-          label="Status"
-          value={botStatus?.botStatus || 'Unknown'}
+          label={m.common.status()}
+          value={botStatus?.botStatus || m.common.unknown()}
         />
       </div>
     </div>
@@ -151,7 +152,7 @@
           <i class="fa-utility-duo fa-regular fa-server text-2xl"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         </div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Server Stats</h2>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.dashboard.overviewServerStats()}</h2>
       </div>
 
       <div class="space-y-4">
@@ -159,8 +160,8 @@
           animationDelay={200}
           icon="fa-users"
           iconColor="primary"
-          label="Members"
-          subtitle={`${guildMemberStats.humanMembers} humans, ${guildMemberStats.botMembers} bots`}
+          label={m.common.members()}
+          subtitle={m.dashboard.overviewMembersSubtitle({ humans: guildMemberStats.humanMembers, bots: guildMemberStats.botMembers })}
           tooltipData={memberTooltipData}
           value={guildMemberStats.totalMembers}
         />
@@ -169,8 +170,8 @@
           animationDelay={300}
           icon="fa-shield"
           iconColor="accent"
-          label="Roles"
-          subtitle={`${roleStats.savedRoles} saved`}
+          label={m.common.roles()}
+          subtitle={m.dashboard.overviewRolesSubtitle({ saved: roleStats.savedRoles })}
           tooltipData={roleTooltipData}
           trend={calculateRoleTrend().trend}
           trendValue={calculateRoleTrend().value}
@@ -189,7 +190,7 @@
           <i class="fa-utility-duo fa-regular fa-info-circle text-2xl"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         </div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Bot Info</h2>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.dashboard.overviewBotInfo()}</h2>
       </div>
 
       <div class="space-y-4">
@@ -197,11 +198,11 @@
           animationDelay={400}
           icon="fa-code"
           iconColor="primary"
-          label="Commands"
+          label={m.common.commands()}
           tooltipData={[
-            { label: "Modules", value: botStatus?.modulesCount || 0 },
-            { label: "Text Commands", value: botStatus?.textCommandsCount || 0 },
-            { label: "Slash Commands", value: botStatus?.slashCommandsCount || 0 }
+            { label: m.common.modules(), value: botStatus?.modulesCount || 0 },
+            { label: m.dashboard.overviewTextCommands(), value: botStatus?.textCommandsCount || 0 },
+            { label: m.common.slashCommands(), value: botStatus?.slashCommandsCount || 0 }
           ]}
           value={botStatus?.commandsCount || 0}
         />
@@ -227,11 +228,11 @@
           <i class="fa-utility-duo fa-regular fa-bolt text-2xl"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         </div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Quick Actions</h2>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.quickActions()}</h2>
       </div>
 
       <div class="space-y-4">
-        <button aria-label="Button action"
+        <button aria-label={m.dashboard.pageRefreshAria()}
                 class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-[1.02]"
           disabled={refreshing}
           onclick={onRefresh}
@@ -239,7 +240,7 @@
         >
           <i class="fa-utility-duo fa-regular fa-sync {refreshing ? 'fa-spin' : ''}"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-          {refreshing ? 'Refreshing...' : 'Refresh Data'}
+          {refreshing ? m.common.refreshing() : m.common.refreshData()}
         </button>
 
         <a
@@ -249,7 +250,7 @@
         >
           <i class="fa-utility-duo fa-regular fa-music"
              style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
-          Music Player
+          {m.common.musicPlayer()}
         </a>
 
         <a
@@ -259,7 +260,7 @@
         >
           <i class="fa-utility-duo fa-regular fa-flag"
              style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
-          Moderation
+          {m.features.categoryModeration()}
         </a>
       </div>
     </div>

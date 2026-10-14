@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   /**
    * One labelled setting, with the hint that says what it actually does.
    *
@@ -29,7 +30,7 @@
     {label}
     {#if required}
       <span style="color: #ef4444;" aria-hidden="true">*</span>
-      <span class="sr-only">(required)</span>
+      <span class="sr-only">{m.common.requiredSuffix()}</span>
     {/if}
   </label>
 

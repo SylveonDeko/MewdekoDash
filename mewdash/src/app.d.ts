@@ -5,6 +5,8 @@ declare global {
 
     interface Locals {
       user: User | null;
+      /** The locale this request is rendered in, resolved in hooks.server.ts. */
+      locale: string;
     }
 
 

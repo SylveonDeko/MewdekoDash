@@ -22,6 +22,32 @@ const pageRoots = {
   "/owner": path.join(root, "src/routes/owner"),
 };
 const outFile = path.join(root, "src/lib/config/dashboardTabIndex.json");
+const i18nDir = path.join(root, "src/lib/i18n/en-US");
+
+/**
+ * The en-US message catalogs keyed by their generated accessor path, so a label written as
+ * `m.music.tabTts()` resolves to its English text. Mirrors the naming in generate-i18n.js.
+ */
+const messages = (() => {
+  const table = new Map();
+  if (!fs.existsSync(i18nDir)) return table;
+  const camel = (s) => s.replace(/[-_]([a-z0-9])/g, (_, c) => c.toUpperCase());
+  for (const file of fs.readdirSync(i18nDir)) {
+    if (!file.endsWith(".json")) continue;
+    const moduleName = camel(file.slice(0, -".json".length).replace(/^_/, ""));
+    const entries = JSON.parse(fs.readFileSync(path.join(i18nDir, file), "utf8"));
+    for (const [key, text] of Object.entries(entries)) table.set(`${moduleName}.${camel(key)}`, text);
+  }
+  return table;
+})();
+
+/** Resolves a `m.module.key(...)` label to its catalog text; returns null for anything else. */
+function resolveMessageLabel(expression) {
+  const match = /^m\.([A-Za-z0-9]+)\.([A-Za-z0-9]+)\s*\(/.exec(expression.trim());
+  if (!match) return null;
+  const text = messages.get(`${match[1]}.${match[2]}`);
+  return text === undefined ? null : text.replace(/\{[a-zA-Z_][a-zA-Z0-9_]*\}/g, "").trim();
+}
 
 /**
  * Finds the array literal that follows a declaration and returns its source text,
@@ -61,11 +87,14 @@ function readArrayLiteral(source, fromIndex) {
 /**
  * Pulls {id, label, icon} entries out of an array literal. Labels built with a
  * template literal keep only their static head, so "Ignored Channels (${n})"
- * indexes as "Ignored Channels".
+ * indexes as "Ignored Channels". Labels written as `m.module.key()` are resolved
+ * through the en-US catalogs in src/lib/i18n.
  */
 function parseEntries(arraySource) {
   const entries = [];
-  const flattened = arraySource.replace(/\$\{[^{}]*\}/g, "");
+  // Drop template-literal holes and accessor call arguments such as `m.x.y({ count })`, so the
+  // object matcher below is not derailed by the inner braces.
+  const flattened = arraySource.replace(/\$\{[^{}]*\}/g, "").replace(/(m\.[A-Za-z0-9]+\.[A-Za-z0-9]+)\s*\(\s*\{[^{}]*\}\s*\)/g, "$1()");
   const objectPattern = /\{[^{}]*\}/g;
   let match;
 
@@ -73,14 +102,17 @@ function parseEntries(arraySource) {
     const body = match[0];
     const id = body.match(/\bid:\s*["'`]([^"'`]+)["'`]/);
     const label = body.match(/\blabel:\s*["'`]([^"'`]*)/);
+    const messageLabel = body.match(/\blabel:\s*(m\.[A-Za-z0-9]+\.[A-Za-z0-9]+\s*\()/);
     const icon = body.match(/\bicon:\s*["'`]([^"'`]+)["'`]/);
 
-    if (!id || !label) continue;
+    if (!id || (!label && !messageLabel)) continue;
 
-    const cleanLabel = label[1]
-      .replace(/\s*\(\s*\)\s*$/, "")
-      .replace(/\s*\($/, "")
-      .trim();
+    const cleanLabel = label
+      ? label[1]
+          .replace(/\s*\(\s*\)\s*$/, "")
+          .replace(/\s*\($/, "")
+          .trim()
+      : resolveMessageLabel(messageLabel[1]);
     if (!cleanLabel) continue;
 
     entries.push({

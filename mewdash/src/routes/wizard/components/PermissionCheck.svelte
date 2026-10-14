@@ -3,6 +3,7 @@
 Permission check component for verifying bot permissions during wizard
 -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
 
   interface Props {
@@ -37,10 +38,10 @@ Permission check component for verifying bot permissions during wizard
     let statusIcon = $derived(hasPermission ? "fa-check" : "fa-xmark");
 
   let importanceInfo = $derived({
-    "critical": { label: "Critical", color: "#ef4444", icon: "fa-bell" },
-    "recommended": { label: "Recommended", color: "#f59e0b", icon: "fa-bell" },
-    "optional": { label: "Optional", color: $colorStore.muted, icon: "fa-circle-info" }
-  }[importanceString] || { label: "Unknown", color: $colorStore.muted, icon: "fa-circle-info" });
+    "critical": { label: m.common.critical(), color: "#ef4444", icon: "fa-bell" },
+    "recommended": { label: m.wizard.recommended(), color: "#f59e0b", icon: "fa-bell" },
+    "optional": { label: m.common.optional(), color: $colorStore.muted, icon: "fa-circle-info" }
+  }[importanceString] || { label: m.common.unknown(), color: $colorStore.muted, icon: "fa-circle-info" });
 </script>
 
 <div 
@@ -89,7 +90,7 @@ Permission check component for verifying bot permissions during wizard
     <!-- Required for features -->
     {#if requiredForFeatures.length > 0}
       <div class="flex flex-wrap gap-1 mb-3">
-        <span class="text-xs font-medium" style="color: {$colorStore.muted};">Required for:</span>
+        <span class="text-xs font-medium" style="color: {$colorStore.muted};">{m.wizard.permissionCheckRequiredFor()}</span>
         {#each requiredForFeatures as feature (feature)}
           <span class="px-2 py-1 rounded-sm text-xs font-medium"
                 style="background: {$colorStore.primary}10; color: {$colorStore.primary};">
@@ -104,13 +105,13 @@ Permission check component for verifying bot permissions during wizard
       <div class="flex items-center gap-1 text-sm font-medium"
            style="color: {statusColor};">
         <i class="fa-solid {statusIcon}" style="font-size: 16px;"></i>
-        {hasPermission ? 'Permission granted' : 'Permission missing'}
+        {hasPermission ? m.wizard.permissionCheckGranted() : m.wizard.permissionCheckMissing()}
       </div>
       
       {#if !hasPermission && importance === 'critical'}
         <span class="text-xs px-2 py-1 rounded-sm font-medium"
               style="background: #ef444415; color: #ef4444;">
-          Action required
+          {m.wizard.permissionCheckActionRequired()}
         </span>
       {/if}
     </div>

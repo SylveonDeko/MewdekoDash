@@ -1,3 +1,4 @@
+import { m } from "$lib/i18n";
 import type {
   Achievement,
   AchievementCatalog,
@@ -108,20 +109,24 @@ export function criteriaText(achievement: Achievement, catalog: AchievementCatal
   switch (achievement.trigger) {
     case AchievementTrigger.Metric: {
       const metric = metricOf(catalog, achievement.metric);
-      if (!metric) return `Reach ${achievement.threshold.toLocaleString()}`;
+      if (!metric) return m.achievements.helpersCriteriaReach({ threshold: achievement.threshold.toLocaleString() });
       const unit = achievement.threshold === 1 ? metric.unit : metric.unitPlural;
-      return `${metric.label}: ${achievement.threshold.toLocaleString()} ${unit}`;
+      return m.achievements.helpersCriteriaMetric({
+        label: metric.label,
+        threshold: achievement.threshold.toLocaleString(),
+        unit,
+      });
     }
     case AchievementTrigger.Keyword:
-      return `Says "${achievement.keyword ?? ""}"`;
+      return m.achievements.helpersCriteriaKeyword({ keyword: achievement.keyword ?? "" });
     case AchievementTrigger.Reaction:
-      return `Reacts with ${achievement.keyword ?? ""}`;
+      return m.achievements.helpersCriteriaReaction({ emoji: achievement.keyword ?? "" });
     case AchievementTrigger.Manual:
-      return "Handed out by staff";
+      return m.achievements.helpersCriteriaManual();
     case AchievementTrigger.Feat:
-      return "A one time moment";
+      return m.achievements.helpersCriteriaFeat();
     case AchievementTrigger.Completion:
-      return "Finish a category";
+      return m.achievements.helpersCriteriaCompletion();
     default:
       return "";
   }
@@ -176,13 +181,13 @@ export function serializeMessage(value: unknown): string {
  * @param iso An ISO timestamp
  */
 export function timeAgo(iso: string | null | undefined): string {
-  if (!iso) return "never";
+  if (!iso) return m.common.neverLower();
   const stamp = iso.endsWith("Z") || iso.includes("+") ? iso : `${iso}Z`;
   const seconds = Math.max(0, (Date.now() - new Date(stamp).getTime()) / 1000);
-  if (seconds < 60) return "just now";
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  if (seconds < 86400 * 30) return `${Math.floor(seconds / 86400)}d ago`;
+  if (seconds < 60) return m.common.justNowLower();
+  if (seconds < 3600) return m.common.agoMinutes({ count: Math.floor(seconds / 60) });
+  if (seconds < 86400) return m.common.agoHours({ count: Math.floor(seconds / 3600) });
+  if (seconds < 86400 * 30) return m.common.agoDays({ count: Math.floor(seconds / 86400) });
   return new Date(stamp).toLocaleDateString();
 }
 

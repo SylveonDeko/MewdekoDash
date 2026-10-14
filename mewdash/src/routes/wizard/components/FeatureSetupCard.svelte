@@ -4,6 +4,7 @@ Three-state feature selection card: Full Setup, Quick Enable, or Skip
 Replaces the binary enable/disable pattern with progressive options
 -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import { fly } from "svelte/transition";
 
@@ -32,7 +33,7 @@ Replaces the binary enable/disable pattern with progressive options
     icon,
     setupState = "skip",
     recommended = false,
-    setupTime = "2 min",
+    setupTime = m.features.setupTimeSingle({ minutes: 2 }),
     difficulty = "easy",
     disabled = false,
     benefits = [],
@@ -49,6 +50,14 @@ Replaces the binary enable/disable pattern with progressive options
    */
   let fullStepHint = $derived(stepCount > 0 ? `+${stepCount}` : "");
 
+  let fullDescription = $derived(
+    stepCount === 0
+      ? m.wizard.setupCardFullDescription()
+      : stepCount === 1
+        ? m.wizard.setupCardFullDescriptionScreensOne({ count: stepCount })
+        : m.wizard.setupCardFullDescriptionScreensOther({ count: stepCount })
+  );
+
   function setState(newState: "full" | "quick" | "skip") {
     if (disabled) return;
     setupState = newState;
@@ -60,6 +69,12 @@ Replaces the binary enable/disable pattern with progressive options
     showBenefits = !showBenefits;
   }
 
+  let difficultyLabel = $derived({
+    "easy": m.wizard.difficultyEasy(),
+    "medium": m.common.medium(),
+    "advanced": m.common.advanced()
+  }[difficulty]);
+
   let difficultyColor = $derived({
     "easy": $colorStore.accent,
     "medium": "#f59e0b",
@@ -69,21 +84,21 @@ Replaces the binary enable/disable pattern with progressive options
   let stateConfig = $derived({
     full: {
       color: $colorStore.primary,
-      label: "Full Setup",
+      label: m.wizard.featuresSummaryFull(),
       icon: "fa-sliders",
-      description: "Configure all settings now"
+      description: m.wizard.setupCardFullDescription()
     },
     quick: {
       color: $colorStore.secondary,
-      label: "Quick Enable",
+      label: m.wizard.featuresSummaryQuick(),
       icon: "fa-bolt",
-      description: "Enable with smart defaults"
+      description: m.wizard.setupCardQuickDescription()
     },
     skip: {
       color: $colorStore.muted,
-      label: "Skip",
+      label: m.wizard.setupCardSkipLabel(),
       icon: "fa-forward",
-      description: "Configure later"
+      description: m.wizard.setupCardSkipDescription()
     }
   });
 </script>
@@ -130,7 +145,7 @@ Replaces the binary enable/disable pattern with progressive options
               class="px-2 py-0.5 rounded-full text-xs font-medium"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
             >
-              Recommended
+              {m.wizard.recommended()}
             </span>
           {/if}
           {#if benefits.length > 0}
@@ -138,7 +153,7 @@ Replaces the binary enable/disable pattern with progressive options
               class="p-1 rounded-full transition-all hover:scale-110"
               style="background: {setupState !== 'skip' ? stateConfig[setupState].color + '20' : $colorStore.primary + '20'}; color: {setupState !== 'skip' ? stateConfig[setupState].color : $colorStore.primary};"
               onclick={toggleBenefits}
-              aria-label="Show benefits"
+              aria-label={m.wizard.setupCardShowBenefits()}
             >
               <i class="fa-solid fa-circle-info" style="font-size: 14px;"></i>
             </button>
@@ -158,7 +173,7 @@ Replaces the binary enable/disable pattern with progressive options
           <span class="flex items-center gap-1">
             <span class="w-2 h-2 rounded-full" style="background: {difficultyColor};"></span>
             <span style="color: {difficultyColor};">
-              {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+              {difficultyLabel}
             </span>
           </span>
         </div>
@@ -190,7 +205,7 @@ Replaces the binary enable/disable pattern with progressive options
           {/if}
         </div>
         <p class="text-xs hidden sm:block" style="color: {$colorStore.muted};">
-          {stateConfig.full.description}{stepCount > 0 ? ` (+${stepCount} ${stepCount === 1 ? "screen" : "screens"})` : ""}
+          {fullDescription}
         </p>
       </button>
 
@@ -251,12 +266,12 @@ Replaces the binary enable/disable pattern with progressive options
         <span class="text-sm font-bold flex items-center gap-2"
               style="color: {stateConfig[setupState !== 'skip' ? setupState : 'full'].color};">
           <i class="fa-solid fa-sparkles" style="font-size: 14px;"></i>
-          What You'll Get
+          {m.wizard.setupCardBenefitsTitle()}
         </span>
         <button
           class="p-1 rounded-full hover:opacity-70 transition-all"
           onclick={toggleBenefits}
-          aria-label="Close benefits"
+          aria-label={m.wizard.setupCardCloseBenefits()}
         >
           <i class="fa-solid fa-xmark"
              style="color: {stateConfig[setupState !== 'skip' ? setupState : 'full'].color}; font-size: 16px;"></i>

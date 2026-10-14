@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/tabs/CommandTables.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
   import { analyticsApi } from "$lib/api/analytics/analytics";
@@ -33,44 +34,44 @@
   let samplesLoading = $state(false);
   let seq = 0;
 
-  const topColumns: Column<TopCommandRow>[] = [
-    { key: "command", label: "Command", mono: true },
-    { key: "count", label: "Count", num: true },
-    { key: "guilds", label: "Guilds", num: true },
+  const topColumns: Column<TopCommandRow>[] = $derived([
+    { key: "command", label: m.common.command(), mono: true },
+    { key: "count", label: m.common.count(), num: true },
+    { key: "guilds", label: m.analytics.pageTabGuilds(), num: true },
     { key: "p95Ms", label: "p95", num: true, format: (r) => ms(r.p95Ms ?? r.avgMs), sortValue: (r) => r.p95Ms ?? r.avgMs },
-    { key: "failureRate", label: "Err", num: true, format: (r) => pct(r.failureRate * 100), tone: (r) => (r.failureRate >= 0.25 ? "crit" : r.failureRate >= 0.05 ? "warn" : null) },
-    { key: "module", label: "Module", muted: true, format: (r) => r.module ?? "—" },
-  ];
+    { key: "failureRate", label: m.analytics.tableColErr(), num: true, format: (r) => pct(r.failureRate * 100), tone: (r) => (r.failureRate >= 0.25 ? "crit" : r.failureRate >= 0.05 ? "warn" : null) },
+    { key: "module", label: m.common.module(), muted: true, format: (r) => r.module ?? "—" },
+  ]);
 
-  const invocationColumns: Column<InvocationPage["items"][number]>[] = [
-    { key: "at", label: "When", muted: true, format: (r) => clock(r.at), sortValue: (r) => Date.parse(r.at) },
-    { key: "bot", label: "Bot", mono: true },
-    { key: "guildId", label: "Guild", mono: true, format: (r) => r.guildId ?? "—" },
-    { key: "shard", label: "Shard", num: true, format: (r) => (r.shard === null ? "—" : String(r.shard)) },
-    { key: "command", label: "Command", mono: true },
-    { key: "kind", label: "Kind", tone: () => "muted" },
-    { key: "durationMs", label: "ms", num: true },
-    { key: "ackMs", label: "Ack", num: true, format: (r) => (r.ackMs === null ? "—" : ms(r.ackMs)) },
-    { key: "ok", label: "Result", format: (r) => (r.ok ? "ok" : r.errorClass ?? "error"), tone: (r) => (r.ok ? "ok" : "crit"), title: (r) => r.errorMessage ?? "" },
-  ];
+  const invocationColumns: Column<InvocationPage["items"][number]>[] = $derived([
+    { key: "at", label: m.common.when(), muted: true, format: (r) => clock(r.at), sortValue: (r) => Date.parse(r.at) },
+    { key: "bot", label: m.placeholders.categoryBot(), mono: true },
+    { key: "guildId", label: m.analytics.tableColGuild(), mono: true, format: (r) => r.guildId ?? "—" },
+    { key: "shard", label: m.analytics.filterShard(), num: true, format: (r) => (r.shard === null ? "—" : String(r.shard)) },
+    { key: "command", label: m.common.command(), mono: true },
+    { key: "kind", label: m.analytics.tableColKind(), tone: () => "muted" },
+    { key: "durationMs", label: m.analytics.tableColMs(), num: true },
+    { key: "ackMs", label: m.analytics.tableColAck(), num: true, format: (r) => (r.ackMs === null ? "—" : ms(r.ackMs)) },
+    { key: "ok", label: m.analytics.tableColResult(), format: (r) => (r.ok ? m.analytics.tabAlertsStateOk() : r.errorClass ?? m.common.error()), tone: (r) => (r.ok ? "ok" : "crit"), title: (r) => r.errorMessage ?? "" },
+  ]);
 
-  const failingColumns: Column<FailingCommandRow>[] = [
-    { key: "command", label: "Command", mono: true },
-    { key: "module", label: "Module", muted: true, format: (r) => r.module ?? "—" },
-    { key: "errorClass", label: "Error class", tone: () => "crit" },
-    { key: "count", label: "Failures", num: true },
-    { key: "lastSeen", label: "Last seen", muted: true, format: (r) => stamp(r.lastSeen), sortValue: (r) => Date.parse(r.lastSeen) },
-    { key: "lastMessage", label: "Last message", muted: true, format: (r) => truncate(r.lastMessage, 70) || "—", title: (r) => r.lastMessage ?? "" },
-  ];
+  const failingColumns: Column<FailingCommandRow>[] = $derived([
+    { key: "command", label: m.common.command(), mono: true },
+    { key: "module", label: m.common.module(), muted: true, format: (r) => r.module ?? "—" },
+    { key: "errorClass", label: m.analytics.tableColErrorClass(), tone: () => "crit" },
+    { key: "count", label: m.analytics.tableColFailures(), num: true },
+    { key: "lastSeen", label: m.analytics.tableColLastSeen(), muted: true, format: (r) => stamp(r.lastSeen), sortValue: (r) => Date.parse(r.lastSeen) },
+    { key: "lastMessage", label: m.analytics.tableColLastMessage(), muted: true, format: (r) => truncate(r.lastMessage, 70) || "—", title: (r) => r.lastMessage ?? "" },
+  ]);
 
-  const sampleColumns: Column<CommandErrorSampleRow>[] = [
-    { key: "at", label: "When", muted: true, format: (r) => stamp(r.at), sortValue: (r) => Date.parse(r.at) },
-    { key: "guildId", label: "Guild", mono: true, format: (r) => r.guildId ?? "—" },
-    { key: "kind", label: "Kind", tone: () => "muted" },
-    { key: "module", label: "Module", muted: true, format: (r) => r.module ?? "—" },
-    { key: "durationMs", label: "ms", num: true },
-    { key: "message", label: "Message", format: (r) => truncate(r.message, 90) || "—", title: (r) => r.message ?? "" },
-  ];
+  const sampleColumns: Column<CommandErrorSampleRow>[] = $derived([
+    { key: "at", label: m.common.when(), muted: true, format: (r) => stamp(r.at), sortValue: (r) => Date.parse(r.at) },
+    { key: "guildId", label: m.analytics.tableColGuild(), mono: true, format: (r) => r.guildId ?? "—" },
+    { key: "kind", label: m.analytics.tableColKind(), tone: () => "muted" },
+    { key: "module", label: m.common.module(), muted: true, format: (r) => r.module ?? "—" },
+    { key: "durationMs", label: m.analytics.tableColMs(), num: true },
+    { key: "message", label: m.common.message(), format: (r) => truncate(r.message, 90) || "—", title: (r) => r.message ?? "" },
+  ]);
 
   async function loadAll() {
     const my = ++seq;
@@ -119,10 +120,10 @@
 </script>
 
 <div class="grid grid-cols-1 xl:grid-cols-5 gap-4">
-  <Card title="Top commands" class="xl:col-span-2">
+  <Card title={m.analytics.tabCommandsCardTop()} class="xl:col-span-2">
     <AnalyticsTable columns={topColumns} rows={top} loading={topLoading} sortKey="count" />
   </Card>
-  <Card title="Invocation log" note="no user ids" class="xl:col-span-3">
+  <Card title={m.analytics.tabCommandsCardLog()} note={m.analytics.tabCommandsLogNote()} class="xl:col-span-3">
     <AnalyticsTable
       columns={invocationColumns}
       rows={invocations.items}
@@ -136,7 +137,7 @@
   </Card>
 </div>
 
-<Card title="Top failing commands" note="row → samples">
+<Card title={m.analytics.tabCommandsCardFailing()} note={m.analytics.tabCommandsFailingNote()}>
   <AnalyticsTable
     columns={failingColumns}
     rows={failing}
@@ -148,8 +149,8 @@
 </Card>
 
 {#if selected}
-  <Card title="Samples" note="exception messages only">
+  <Card title={m.analytics.tabCommandsCardSamples()} note={m.analytics.tabCommandsSamplesNote()}>
     <p class="text-xs mb-2 font-mono" style="color: {$colorStore.muted}">{selected.command} · {selected.errorClass}</p>
-    <AnalyticsTable columns={sampleColumns} rows={samples} loading={samplesLoading} empty="No samples" sortKey="at" />
+    <AnalyticsTable columns={sampleColumns} rows={samples} loading={samplesLoading} empty={m.analytics.tabCommandsNoSamples()} sortKey="at" />
   </Card>
 {/if}

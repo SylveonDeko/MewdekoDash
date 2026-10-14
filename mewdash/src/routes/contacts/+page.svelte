@@ -1,12 +1,14 @@
 <!-- routes/contacts/+page.svelte -->
-<script lang="ts"></script>
+<script lang="ts">
+  import { m } from "$lib/i18n";
+</script>
 
 <svelte:head>
-  <title>Mewdeko - Ways to contact us!</title>
-  <meta content="Mewdeko - Ways to contact us!" property="og:title" />
-  <meta content="Ways to contact us!" name="description" />
-  <meta content="Ways to contact us!" property="og:description" />
-  <meta content="Ways to contact us!" name="twitter:description" />
+  <title>{m.public.contactsTitle()}</title>
+  <meta content={m.public.contactsTitle()} property="og:title" />
+  <meta content={m.public.contactsDescription()} name="description" />
+  <meta content={m.public.contactsDescription()} property="og:description" />
+  <meta content={m.public.contactsDescription()} name="twitter:description" />
 </svelte:head>
 
 <div
@@ -15,7 +17,7 @@
   <h2
     class="text-4xl font-bold mb-12 text-center text-mewd-green animate-fade-in"
   >
-    Connect with Us
+    {m.public.contactsConnectWithUs()}
   </h2>
 
   <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -37,7 +39,7 @@
       class="contact-card"
     >
       <i class="fa-brands fa-discord text-5xl mb-4 text-mewd-offwhite"></i>
-      <span class="text-lg font-semibold">Join Our Discord</span>
+      <span class="text-lg font-semibold">{m.public.contactsJoinOurDiscord()}</span>
       <span class="text-sm text-mewd-offwhite mt-2"
       >https://discord.gg/twQw45rBjN</span
       >

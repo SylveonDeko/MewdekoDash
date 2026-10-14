@@ -1,5 +1,6 @@
 <!-- routes/dashboard/birthday/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
     import { onMount } from "svelte";
@@ -28,8 +29,8 @@
     const autoSave = createAutoSave({
       onError: (_err, key) => showMessage(
         key === "birthdayReminderDays"
-          ? "Couldn't save birthday settings."
-          : "Couldn't save birthday settings. Your last change was undone.",
+          ? m.birthday.notifySaveFailed()
+          : m.birthday.notifySaveFailedUndone(),
         "error"
       )
     });
@@ -50,30 +51,30 @@
 
     function getBirthdayFeatureNames(enabledFeatures: number): string[] {
         const names: string[] = [];
-        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.Announcements)) names.push("Announcements");
-        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.BirthdayRole)) names.push("Birthday Role");
-        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.Reminders)) names.push("Reminders");
-        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.PingRole)) names.push("Ping Role");
-        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.TimezoneSupport)) names.push("Timezone Support");
+        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.Announcements)) names.push(m.common.announcements());
+        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.BirthdayRole)) names.push(m.birthday.featureRole());
+        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.Reminders)) names.push(m.common.reminders());
+        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.PingRole)) names.push(m.common.pingRole());
+        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.TimezoneSupport)) names.push(m.birthday.featureTimezone());
         return names;
     }
 
     // Common timezones
-    const TIMEZONES = [
-        { value: "UTC", label: "UTC (GMT+0)", offset: "+00:00" },
-        { value: "America/New_York", label: "Eastern Time (GMT-5)", offset: "-05:00" },
-        { value: "America/Chicago", label: "Central Time (GMT-6)", offset: "-06:00" },
-        { value: "America/Denver", label: "Mountain Time (GMT-7)", offset: "-07:00" },
-        { value: "America/Los_Angeles", label: "Pacific Time (GMT-8)", offset: "-08:00" },
-        { value: "Europe/London", label: "London (GMT+0)", offset: "+00:00" },
-        { value: "Europe/Paris", label: "Paris (GMT+1)", offset: "+01:00" },
-        { value: "Europe/Berlin", label: "Berlin (GMT+1)", offset: "+01:00" },
-        { value: "Europe/Moscow", label: "Moscow (GMT+3)", offset: "+03:00" },
-        { value: "Asia/Tokyo", label: "Tokyo (GMT+9)", offset: "+09:00" },
-        { value: "Asia/Shanghai", label: "Shanghai (GMT+8)", offset: "+08:00" },
-        { value: "Asia/Dubai", label: "Dubai (GMT+4)", offset: "+04:00" },
-        { value: "Australia/Sydney", label: "Sydney (GMT+10)", offset: "+10:00" }
-    ];
+    const TIMEZONES = $derived([
+        { value: "UTC", label: m.birthday.tzUtc(), offset: "+00:00" },
+        { value: "America/New_York", label: m.birthday.tzEastern(), offset: "-05:00" },
+        { value: "America/Chicago", label: m.birthday.tzCentral(), offset: "-06:00" },
+        { value: "America/Denver", label: m.birthday.tzMountain(), offset: "-07:00" },
+        { value: "America/Los_Angeles", label: m.birthday.tzPacific(), offset: "-08:00" },
+        { value: "Europe/London", label: m.birthday.tzLondon(), offset: "+00:00" },
+        { value: "Europe/Paris", label: m.birthday.tzParis(), offset: "+01:00" },
+        { value: "Europe/Berlin", label: m.birthday.tzBerlin(), offset: "+01:00" },
+        { value: "Europe/Moscow", label: m.birthday.tzMoscow(), offset: "+03:00" },
+        { value: "Asia/Tokyo", label: m.birthday.tzTokyo(), offset: "+09:00" },
+        { value: "Asia/Shanghai", label: m.birthday.tzShanghai(), offset: "+08:00" },
+        { value: "Asia/Dubai", label: m.birthday.tzDubai(), offset: "+04:00" },
+        { value: "Australia/Sydney", label: m.birthday.tzSydney(), offset: "+10:00" }
+    ]);
 
     // Component state
     let loading = $state(false);
@@ -215,7 +216,7 @@
             todaysBirthdays = today;
         } catch (err) {
             logger.error("Failed to load birthday data:", err);
-            showMessage("Failed to load birthday data", "error");
+            showMessage(m.birthday.notifyLoadFailed(), "error");
         } finally {
             loading = false;
         }
@@ -235,7 +236,7 @@
             todaysBirthdays = today;
         } catch (err) {
             logger.error("Failed to load birthday data:", err);
-            showMessage("Failed to load birthday data", "error");
+            showMessage(m.birthday.notifyLoadFailed(), "error");
         }
     }
 
@@ -306,7 +307,7 @@
     // Reset configuration
     async function resetConfig() {
         if (!$currentGuild?.id) return;
-        if (!(await requestConfirmation({ message: "Are you sure you want to reset the birthday configuration to defaults?", confirmText: "Reset" }))) return;
+        if (!(await requestConfirmation({ message: m.birthday.resetConfirm(), confirmText: m.common.reset() }))) return;
 
         saving = true;
         try {
@@ -315,10 +316,10 @@
             await birthdayApi.resetBirthdayConfig($currentGuild.id);
             // Reload to get the reset config
             await loadAllBirthdayData();
-            showMessage("Birthday configuration reset to defaults", "success");
+            showMessage(m.birthday.notifyReset(), "success");
         } catch (err) {
             logger.error("Failed to reset birthday config:", err);
-            showMessage("Failed to reset configuration", "error");
+            showMessage(m.common.failedToResetConfiguration(), "error");
         } finally {
             saving = false;
         }
@@ -361,27 +362,27 @@
     }
 
     function formatDate(dateString: string | Date | null | undefined): string {
-        if (!dateString) return "Not set";
+        if (!dateString) return m.common.notSet();
         return new Date(dateString).toLocaleDateString();
     }
 
     function getChannelName(channelId: bigint | null | undefined): string {
-        if (!channelId) return "Not set";
+        if (!channelId) return m.common.notSet();
         const channel = guildChannels.find(c => c.id === channelId.toString());
-        return channel ? `#${channel.name}` : "Unknown channel";
+        return channel ? `#${channel.name}` : m.common.unknownChannel();
     }
 
     function getRoleName(roleId: bigint | null | undefined): string {
-        if (!roleId) return "Not set";
+        if (!roleId) return m.common.notSet();
         const role = guildRoles.find(r => r.id === roleId.toString());
-        return role ? `@${role.name}` : "Unknown role";
+        return role ? `@${role.name}` : m.common.unknownRole();
     }
 
     // Day options for DiscordSelector
     let dayOptions = $derived([
-        { id: "7", name: "Next 7 days" },
-        { id: "14", name: "Next 14 days" },
-        { id: "30", name: "Next 30 days" }
+        { id: "7", name: m.birthday.period7() },
+        { id: "14", name: m.birthday.period14() },
+        { id: "30", name: m.birthday.period30() }
     ]);
 
     // Handle day selection change
@@ -397,16 +398,16 @@
     });
 
     // Tabs configuration
-    const tabs = [
-        { id: "config", label: "Configuration", icon: "fa-gear" },
-        { id: "users", label: "Users", icon: "fa-users" },
-        { id: "stats", label: "Statistics", icon: "fa-chart-column" }
-    ];
+    const tabs = $derived([
+        { id: "config", label: m.common.configuration(), icon: "fa-gear" },
+        { id: "users", label: m.common.users(), icon: "fa-users" },
+        { id: "stats", label: m.common.statistics(), icon: "fa-chart-column" }
+    ]);
 
     // Action buttons configuration
     let actionButtons = $derived([
         {
-            label: "Refresh",
+            label: m.common.refresh(),
             icon: "fa-arrows-rotate",
             action: loadAllBirthdayData,
             loading: loading
@@ -445,7 +446,7 @@
             <i class="fa-utility-duo fa-regular fa-gift"
                style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
             <span style="color: {$colorStore.text}">
-        🎉 {todaysBirthdays.length} birthday{todaysBirthdays.length !== 1 ? 's' : ''} today!
+        🎉 {todaysBirthdays.length === 1 ? m.birthday.alertTodayOne({ count: todaysBirthdays.length }) : m.birthday.alertTodayOther({ count: todaysBirthdays.length })}
       </span>
         </div>
     {/if}
@@ -455,12 +456,12 @@
   {actionButtons}
   {autoSave}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-cake-candles"
   statusMessages={statusMessageContent}
-  subtitle="Configure birthday announcements and celebrations"
+  subtitle={m.features.birthdayDescription()}
   {tabs}
-  title="Birthday Management"
+  title={m.birthday.pageTitle()}
 >
 
 
@@ -475,7 +476,7 @@
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Basic Settings</h2>
+                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.basicSettings()}</h2>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -484,14 +485,14 @@
                             <span id="birthday-channel-label" class="block text-sm font-medium mb-2"
                                   style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-hashtag" style="font-size: 14px;"></i>
-                                Birthday Channel
+                                {m.birthday.configChannel()}
                             </span>
                             <div class="min-h-[44px]">
                                 <DiscordSelector
                                         type="channel"
                                         options={guildChannels}
                                         selected={configForm.birthdayChannelId?.toString() || null}
-                                        placeholder="No channel selected"
+                                        placeholder={m.common.noChannelSelected()}
                                         onchange={(detail) => saveSnowflake("birthdayChannelId", detail.selected)}
                                 />
                             </div>
@@ -502,14 +503,14 @@
                             <span id="birthday-role-24-hour-temporary-label" class="block text-sm font-medium mb-2"
                                   style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-crown" style="font-size: 14px;"></i>
-                                Birthday Role (24-hour temporary)
+                                {m.birthday.configRole()}
                             </span>
                             <div class="min-h-[44px]">
                                 <DiscordSelector
                                         type="role"
                                         options={guildRoles}
                                         selected={configForm.birthdayRoleId?.toString() || null}
-                                        placeholder="No role selected"
+                                        placeholder={m.common.noRoleSelected()}
                                         onchange={(detail) => saveSnowflake("birthdayRoleId", detail.selected)}
                                 />
                             </div>
@@ -520,14 +521,14 @@
                             <span id="ping-role-notifies-when-announcing-label" class="block text-sm font-medium mb-2"
                                   style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-bell" style="font-size: 14px;"></i>
-                                Ping Role (notifies when announcing)
+                                {m.birthday.configPingRole()}
                             </span>
                             <div class="min-h-[44px]">
                                 <DiscordSelector
                                         type="role"
                                         options={guildRoles}
                                         selected={configForm.birthdayPingRoleId?.toString() || null}
-                                        placeholder="No ping role"
+                                        placeholder={m.common.noPingRole()}
                                         onchange={(detail) => saveSnowflake("birthdayPingRoleId", detail.selected)}
                                 />
                             </div>
@@ -538,7 +539,7 @@
                             <span id="server-timezone-label" class="block text-sm font-medium mb-2"
                                   style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-location-dot" style="font-size: 14px;"></i>
-                                Server Timezone
+                                {m.common.serverTimezone()}
                             </span>
                             <div class="min-h-[44px]">
                                 <DiscordSelector
@@ -551,7 +552,7 @@
                     value: tz.value
                   }))}
                                         selected={configForm.defaultTimezone}
-                                        placeholder="Select timezone"
+                                        placeholder={m.common.selectTimezonePlaceholder()}
                                         onchange={(detail) => saveTimezone(detail.selected)}
                                 />
                             </div>
@@ -562,7 +563,7 @@
                           <label for="input-1955" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-clock" style="font-size: 14px;"></i>
-                                Reminder Days Before Birthday
+                                {m.birthday.configReminderDays()}
                             </label>
                           <input id="input-1955"
                                     type="number"
@@ -584,42 +585,41 @@
                     border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Birthday Message</h2>
+                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.features.wizardBirthdayStepMessageTitle()}</h2>
                     </div>
 
                     <div>
                       <label for="f-+page-custom-birthday-announcement-507" class="block text-sm font-medium mb-3"
                              style="color: {$colorStore.text}">
                         <i class="fa-solid fa-gift" style="font-size: 14px;"></i>
-                        Custom Birthday Announcement
+                        {m.birthday.messageCustom()}
                       </label>
 
                       <FullscreenEmbedBuilder id="f-+page-custom-birthday-announcement-507"
                         bind:value={configForm.birthdayMessage}
-                        previewTitle="Birthday Message"
-                        previewDescription="Message sent when it's someone's birthday"
+                        previewTitle={m.features.wizardBirthdayStepMessageTitle()}
+                        previewDescription={m.birthday.messagePreviewDescription()}
                         icon="fa-gift"
                         allowContent={true}
                         allowMultipleEmbeds={true}
                         maxEmbeds={10}
                         allowComponents={true}
                         additionalPlaceholders={[
-                          { category: "Birthday", name: "%user.mention%", description: "Mention the birthday user" },
-                          { category: "Birthday", name: "%user.name%", description: "Birthday user's name" },
-                          { category: "Birthday", name: "%user.displayname%", description: "Birthday user's display name" },
-                          { category: "Birthday", name: "%birthday.age%", description: "User's new age" },
-                          { category: "Server", name: "%server.name%", description: "Server name" },
-                          { category: "Server", name: "%server.time%", description: "Current server time" }
+                          { category: "Birthday", name: "%user.mention%", description: m.placeholders.userMention() },
+                          { category: "Birthday", name: "%user.name%", description: m.placeholders.userName() },
+                          { category: "Birthday", name: "%user.displayname%", description: m.placeholders.userDisplayname() },
+                          { category: "Birthday", name: "%birthday.age%", description: m.placeholders.birthdayAge() },
+                          { category: "Server", name: "%server.name%", description: m.placeholders.serverName() },
+                          { category: "Server", name: "%server.time%", description: m.placeholders.serverTime() }
                         ]}
                         guildId={$currentGuild?.id}
                         user={data.user}
-                        placeholder="Click to configure birthday message with rich embeds"
+                        placeholder={m.birthday.messagePlaceholder()}
                         onclose={saveMessage}
                       />
 
                       <p class="text-xs mt-3" style="color: {$colorStore.muted}">
-                        Leave empty for default birthday message. Supports rich embeds and placeholders for
-                        personalization.
+                        {m.birthday.messageHint()}
                       </p>
 
                     </div>
@@ -634,7 +634,7 @@
                             disabled={saving}
                     >
                         <i class="fa-solid fa-arrows-rotate" style="font-size: 20px;"></i>
-                        Reset to Default
+                        {m.common.resetToDefault()}
                     </button>
                 </div>
             </div>
@@ -647,7 +647,7 @@
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fa-utility-duo fa-regular fa-gift" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Birthday Features</h2>
+                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.birthday.featuresTitle()}</h2>
                     </div>
 
                     <div class="space-y-4">
@@ -658,8 +658,8 @@
                                 <div class="flex items-center gap-3">
                                     <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                     <div>
-                                        <div class="font-medium" style="color: {$colorStore.text}">Announcements</div>
-                                        <div class="text-sm" style="color: {$colorStore.muted}">Send birthday messages in channel</div>
+                                        <div class="font-medium" style="color: {$colorStore.text}">{m.common.announcements()}</div>
+                                        <div class="text-sm" style="color: {$colorStore.muted}">{m.birthday.featureAnnouncementsHint()}</div>
                                     </div>
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
@@ -680,8 +680,8 @@
                                 <div class="flex items-center gap-3">
                                     <i class="fa-utility-duo fa-regular fa-crown" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                     <div>
-                                        <div class="font-medium" style="color: {$colorStore.text}">Birthday Role</div>
-                                        <div class="text-sm" style="color: {$colorStore.muted}">Assign temporary role for 24 hours</div>
+                                        <div class="font-medium" style="color: {$colorStore.text}">{m.birthday.featureRole()}</div>
+                                        <div class="text-sm" style="color: {$colorStore.muted}">{m.birthday.featureRoleHint()}</div>
                                     </div>
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
@@ -703,8 +703,8 @@
                                 <div class="flex items-center gap-3">
                                     <i class="fa-utility-duo fa-regular fa-bell" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                     <div>
-                                        <div class="font-medium" style="color: {$colorStore.text}">Reminders</div>
-                                        <div class="text-sm" style="color: {$colorStore.muted}">Send birthday reminders to users</div>
+                                        <div class="font-medium" style="color: {$colorStore.text}">{m.common.reminders()}</div>
+                                        <div class="text-sm" style="color: {$colorStore.muted}">{m.birthday.featureRemindersHint()}</div>
                                     </div>
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
@@ -725,8 +725,8 @@
                                 <div class="flex items-center gap-3">
                                     <i class="fa-utility-duo fa-regular fa-bell-ring" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                     <div>
-                                        <div class="font-medium" style="color: {$colorStore.text}">Ping Role</div>
-                                        <div class="text-sm" style="color: {$colorStore.muted}">Ping specified role with announcements</div>
+                                        <div class="font-medium" style="color: {$colorStore.text}">{m.common.pingRole()}</div>
+                                        <div class="text-sm" style="color: {$colorStore.muted}">{m.birthday.featurePingRoleHint()}</div>
                                     </div>
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
@@ -748,8 +748,8 @@
                                 <div class="flex items-center gap-3">
                                     <i class="fa-utility-duo fa-regular fa-location-dot" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                     <div>
-                                        <div class="font-medium" style="color: {$colorStore.text}">Timezone Support</div>
-                                        <div class="text-sm" style="color: {$colorStore.muted}">Respect user-specific timezones</div>
+                                        <div class="font-medium" style="color: {$colorStore.text}">{m.birthday.featureTimezone()}</div>
+                                        <div class="text-sm" style="color: {$colorStore.muted}">{m.birthday.featureTimezoneHint()}</div>
                                     </div>
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
@@ -774,30 +774,30 @@
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Current Configuration</h2>
+                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.currentConfiguration()}</h2>
                     </div>
 
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
-                            <span style="color: {$colorStore.muted}">Channel:</span>
+                            <span style="color: {$colorStore.muted}">{m.common.channelLabel()}</span>
                             <span style="color: {$colorStore.text}">{getChannelName(configForm.birthdayChannelId)}</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span style="color: {$colorStore.muted}">Birthday Role:</span>
+                            <span style="color: {$colorStore.muted}">{m.birthday.summaryRole()}</span>
                             <span style="color: {$colorStore.text}">{getRoleName(configForm.birthdayRoleId)}</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span style="color: {$colorStore.muted}">Ping Role:</span>
+                            <span style="color: {$colorStore.muted}">{m.common.pingRoleLabel()}</span>
                             <span style="color: {$colorStore.text}">{getRoleName(configForm.birthdayPingRoleId)}</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span style="color: {$colorStore.muted}">Timezone:</span>
+                            <span style="color: {$colorStore.muted}">{m.common.timezoneLabel()}</span>
                             <span style="color: {$colorStore.text}">{configForm.defaultTimezone}</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span style="color: {$colorStore.muted}">Active Features:</span>
+                            <span style="color: {$colorStore.muted}">{m.birthday.summaryFeatures()}</span>
                             <span style="color: {$colorStore.text}">
-                {birthdayConfig ? getBirthdayFeatureNames(birthdayConfig.enabledFeatures).join(", ") || "None" : "None"}
+                {birthdayConfig ? getBirthdayFeatureNames(birthdayConfig.enabledFeatures).join(", ") || m.common.none() : m.common.none()}
               </span>
                         </div>
                     </div>
@@ -815,14 +815,14 @@
                     <div class="flex items-center justify-between mb-6">
                         <div class="flex items-center gap-3">
                             <i class="fa-utility-duo fa-regular fa-calendar" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Upcoming Birthdays</h2>
+                            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.birthday.usersUpcomingTitle()}</h2>
                         </div>
                         <div class="min-w-[140px]">
                             <DiscordSelector
                                     type="custom"
                                     options={dayOptions}
                                     selected={upcomingDays.toString()}
-                                    placeholder="Select period"
+                                    placeholder={m.birthday.usersPeriodPlaceholder()}
                                     onchange={handleDayChange}
                                     searchable={false}
                             />
@@ -849,9 +849,9 @@
                             <!-- Empty state -->
                             <div class="text-center py-8">
                                 <i class="fa-utility-duo fa-regular fa-calendar" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5;"></i>
-                                <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Upcoming Birthdays</h3>
+                                <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.birthday.usersUpcomingEmptyTitle()}</h3>
                                 <p class="text-sm" style="color: {$colorStore.muted}">
-                                    No birthdays in the next {upcomingDays} days.
+                                    {m.birthday.usersUpcomingEmpty({ days: upcomingDays })}
                                 </p>
                             </div>
                         {:else}
@@ -865,17 +865,17 @@
                                             {user.nickname || user.username}
                                         </div>
                                         <div class="text-sm" style="color: {$colorStore.muted}">
-                                            {user.birthdayAnnouncementsEnabled ? formatDate(user.birthday) : 'Private'} • {user.birthdayTimezone || 'UTC'}
+                                            {user.birthdayAnnouncementsEnabled ? formatDate(user.birthday) : m.birthday.usersPrivate()} • {user.birthdayTimezone || 'UTC'}
                                         </div>
                                     </div>
                                     <div class="text-right">
                                         <div class="text-sm font-medium" style="color: {$colorStore.primary}">
-                                            {user.daysUntil === 0 ? 'Today!' :
-                                                user.daysUntil === 1 ? 'Tomorrow' :
-                                                    `${user.daysUntil} days`}
+                                            {user.daysUntil === 0 ? m.birthday.usersToday() :
+                                                user.daysUntil === 1 ? m.birthday.usersTomorrow() :
+                                                    m.common.daysCount({ count: user.daysUntil ?? 0 })}
                                         </div>
                                         <div class="text-xs" style="color: {$colorStore.muted}">
-                                            {user.birthdayAnnouncementsEnabled ? 'Public' : 'Private'}
+                                            {user.birthdayAnnouncementsEnabled ? m.birthday.usersPublic() : m.birthday.usersPrivate()}
                                         </div>
                                     </div>
                                 </div>
@@ -890,16 +890,16 @@
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">All Users ({birthdayUsers.length})</h2>
+                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.birthday.usersAllTitle({ count: birthdayUsers.length })}</h2>
                     </div>
 
                     <div class="space-y-3 max-h-96 overflow-y-auto">
                         {#if birthdayUsers.length === 0}
                             <div class="text-center py-8">
                                 <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5;"></i>
-                                <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Birthdays Set</h3>
+                                <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.birthday.usersNoneTitle()}</h3>
                                 <p class="text-sm" style="color: {$colorStore.muted}">
-                                    No users have configured their birthdays yet.
+                                    {m.birthday.usersNoneHint()}
                                 </p>
                             </div>
                         {:else}
@@ -913,13 +913,13 @@
                                             {user.nickname || user.username}
                                         </div>
                                         <div class="text-sm" style="color: {$colorStore.muted}">
-                                            {user.birthdayAnnouncementsEnabled ? formatDate(user.birthday) : 'Private'} • {user.birthdayTimezone || 'UTC'}
+                                            {user.birthdayAnnouncementsEnabled ? formatDate(user.birthday) : m.birthday.usersPrivate()} • {user.birthdayTimezone || 'UTC'}
                                         </div>
                                     </div>
                                     <div class="text-xs px-2 py-1 rounded-lg"
                                          style="background: {user.birthdayAnnouncementsEnabled ? $colorStore.primary + '20' : $colorStore.muted + '20'};
                             color: {user.birthdayAnnouncementsEnabled ? $colorStore.primary : $colorStore.muted};">
-                                        {user.birthdayAnnouncementsEnabled ? 'Public' : 'Private'}
+                                        {user.birthdayAnnouncementsEnabled ? m.birthday.usersPublic() : m.birthday.usersPrivate()}
                                     </div>
                                 </div>
                             {/each}
@@ -935,45 +935,45 @@
                 {#if birthdayStats}
                     <StatCard
                             icon="fa-users"
-                            label="Total Users"
+                            label={m.common.totalUsers()}
                             value={birthdayStats.totalUsers}
-                            subtitle="server members"
+                            subtitle={m.birthday.statsMembersSubtitle()}
                             iconColor="primary"
                             animationDelay={0}
                     />
 
                     <StatCard
                             icon="fa-cake-candles"
-                            label="Birthdays Set"
+                            label={m.birthday.statsSet()}
                             value={birthdayStats.usersWithBirthdays}
-                            subtitle={`${Number(birthdayStats.birthdaySetPercentage || 0).toFixed(1)}% of members`}
+                            subtitle={m.birthday.statsSetSubtitle({ percent: Number(birthdayStats.birthdaySetPercentage || 0).toFixed(1) })}
                             iconColor="secondary"
                             animationDelay={100}
                     />
 
                     <StatCard
                             icon="fa-gift"
-                            label="Public Birthdays"
+                            label={m.birthday.statsPublic()}
                             value={birthdayStats.usersWithAnnouncementsEnabled || 0}
-                            subtitle="announcements enabled"
+                            subtitle={m.birthday.statsPublicSubtitle()}
                             iconColor="accent"
                             animationDelay={200}
                     />
 
                     <StatCard
                             icon="fa-calendar"
-                            label="Today's Birthdays"
+                            label={m.birthday.statsToday()}
                             value={birthdayStats.todaysBirthdayCount}
-                            subtitle="celebrating today"
+                            subtitle={m.birthday.statsTodaySubtitle()}
                             iconColor="primary"
                             animationDelay={300}
                     />
                 {:else}
                     <div class="col-span-full text-center py-12">
                         <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5;"></i>
-                        <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">No Statistics Available</h3>
+                        <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">{m.common.noStatisticsAvailable()}</h3>
                         <p style="color: {$colorStore.muted}">
-                            Birthday statistics will appear here once the system is configured.
+                            {m.birthday.statsEmpty()}
                         </p>
                     </div>
                 {/if}

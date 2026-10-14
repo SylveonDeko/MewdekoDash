@@ -1,5 +1,6 @@
 <!-- routes/+layout.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import "../app.css";
@@ -65,30 +66,30 @@
   });
 
   // Main navigation items
-  const navItems = [
-    { title: "Home", elements: [{ href: "/" }] },
-    { title: "Dashboard", elements: [{ href: "/dashboard" }] },
-    { title: "Commands", elements: [{ href: "/commands" }] },
-    { title: "Wiki", elements: [{ href: "/wiki" }] },
+  const navItems = $derived([
+    { title: m.home.navHome(), elements: [{ href: "/" }] },
+    { title: m.common.dashboard(), elements: [{ href: "/dashboard" }] },
+    { title: m.common.commands(), elements: [{ href: "/commands" }] },
+    { title: m.common.wiki(), elements: [{ href: "/wiki" }] },
     {
-      title: "About",
+      title: m.home.navAbout(),
       elements: [
-        { href: "/contacts", title: "Contact Us" },
-        { href: "/staff", title: "Staff" }
+        { href: "/contacts", title: m.home.navContactUs() },
+        { href: "/staff", title: m.home.navStaff() }
       ]
     },
     {
-      title: "Misc",
+      title: m.home.navMisc(),
       elements: [
-        { href: "/placeholders", title: "Placeholders" },
-        { href: "/credguide", title: "Credentials Guide" },
-        { title: "Privacy", href: "/privacy" },
-        { title: "Terms", href: "/terms" }
+        { href: "/placeholders", title: m.common.placeholders() },
+        { href: "/credguide", title: m.home.navCredentialsGuide() },
+        { title: m.common.privacy(), href: "/privacy" },
+        { title: m.home.navTerms(), href: "/terms" }
       ]
     },
-    { title: "Reviews", elements: [{ href: "/reviews" }] },
-    { title: "Donate", elements: [{ href: "https://ko-fi.com/mewdeko" }] }
-  ];
+    { title: m.common.reviews(), elements: [{ href: "/reviews" }] },
+    { title: m.layout.navDonate(), elements: [{ href: "https://ko-fi.com/mewdeko" }] }
+  ]);
 
     // Keep user store in sync with server data and handle color extraction
     let lastExtractedUserId: string | null = null;
@@ -185,7 +186,7 @@
   </div>
 {/if}
 
-<ErrorBoundary fallback="The page encountered an unexpected error. Please try refreshing." showDetails={true}>
+<ErrorBoundary fallback={m.home.errorBoundaryFallback()} showDetails={true}>
   <main class="bg-mewd-dark-grey w-full">
       {@render children?.()}
   </main>

@@ -34,6 +34,8 @@ export interface WizardFeature {
   category: string;
   recommended: boolean;
   setupTime: string;
+  /** Estimated setup time in minutes, used for totals. */
+  setupMinutes: number;
   icon?: string;
   conflictsWith?: string[];
   dependsOn?: string[];

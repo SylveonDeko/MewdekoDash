@@ -1,4 +1,5 @@
 // lib/api/repeaters/models/Repeater.ts
+import { m } from "$lib/i18n";
 
 /**
  * Sticky trigger modes
@@ -172,52 +173,52 @@ export interface MessageCountingStatus {
   message?: string;
 }
 
-// Time schedule presets for UI
+// Time schedule presets for UI. Labels are accessor functions so they resolve at render time.
 export const TIME_SCHEDULE_PRESETS = [
-  { value: "business", label: "Business Hours (9-5)" },
-  { value: "evening", label: "Evening Hours" },
-  { value: "weekend", label: "Weekends Only" },
-  { value: "custom", label: "Custom Schedule" },
+  { value: "business", label: m.repeaters.timePresetBusiness },
+  { value: "evening", label: m.repeaters.timePresetEvening },
+  { value: "weekend", label: m.repeaters.timePresetWeekend },
+  { value: "custom", label: m.repeaters.timePresetCustom },
 ] as const;
 
 // Helper functions for repeaters
 export function getTriggerModeLabel(mode: StickyTriggerMode): string {
   switch (mode) {
     case StickyTriggerMode.TimeInterval:
-      return "Time Interval";
+      return m.repeaters.modeLabelTimeInterval();
     case StickyTriggerMode.OnActivity:
-      return "On Activity";
+      return m.repeaters.modeLabelOnActivity();
     case StickyTriggerMode.OnNoActivity:
-      return "On No Activity";
+      return m.repeaters.modeLabelOnNoActivity();
     case StickyTriggerMode.AfterMessages:
-      return "After Messages";
+      return m.repeaters.modeLabelAfterMessages();
     case StickyTriggerMode.Immediate:
-      return "Immediate";
+      return m.repeaters.modeLabelImmediate();
     default:
-      return "Unknown";
+      return m.common.unknown();
   }
 }
 
 export function getTriggerModeDescription(mode: StickyTriggerMode): string {
   switch (mode) {
     case StickyTriggerMode.TimeInterval:
-      return "Repeats at fixed time intervals";
+      return m.repeaters.modeDescriptionTimeInterval();
     case StickyTriggerMode.OnActivity:
-      return "Triggers when activity is detected";
+      return m.repeaters.modeDescriptionOnActivity();
     case StickyTriggerMode.OnNoActivity:
-      return "Triggers when no activity is detected";
+      return m.repeaters.modeDescriptionOnNoActivity();
     case StickyTriggerMode.AfterMessages:
-      return "Triggers after a certain number of messages";
+      return m.repeaters.modeDescriptionAfterMessages();
     case StickyTriggerMode.Immediate:
-      return "Triggers immediately";
+      return m.repeaters.modeDescriptionImmediate();
     default:
-      return "Unknown trigger mode";
+      return m.repeaters.modeDescriptionUnknown();
   }
 }
 
 export function formatInterval(interval: string): string {
   // Parse interval (format: "HH:mm:ss" or timespan string)
-  if (!interval) return "Not set";
+  if (!interval) return m.common.notSet();
 
   const parts = interval.split(":");
   if (parts.length >= 2) {
@@ -225,11 +226,11 @@ export function formatInterval(interval: string): string {
     const minutes = Number.parseInt(parts[1]);
 
     if (hours > 0 && minutes > 0) {
-      return `${hours}h ${minutes}m`;
+      return m.repeaters.formatHoursMinutes({ hours, minutes });
     } else if (hours > 0) {
-      return `${hours}h`;
+      return m.repeaters.formatHours({ hours });
     } else if (minutes > 0) {
-      return `${minutes}m`;
+      return m.repeaters.formatMinutes({ minutes });
     }
   }
 
@@ -237,23 +238,23 @@ export function formatInterval(interval: string): string {
 }
 
 export function formatTimeUntilNext(nextExecution: string | null): string {
-  if (!nextExecution) return "Not scheduled";
+  if (!nextExecution) return m.repeaters.formatNextNotScheduled();
 
   const now = new Date();
   const next = new Date(nextExecution);
   const diff = next.getTime() - now.getTime();
 
-  if (diff < 0) return "Overdue";
+  if (diff < 0) return m.repeaters.formatNextOverdue();
 
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
   if (hours > 24) {
     const days = Math.floor(hours / 24);
-    return `${days}d ${hours % 24}h`;
+    return m.repeaters.formatDaysHours({ days, hours: hours % 24 });
   } else if (hours > 0) {
-    return `${hours}h ${minutes}m`;
+    return m.repeaters.formatHoursMinutes({ hours, minutes });
   } else {
-    return `${minutes}m`;
+    return m.repeaters.formatMinutes({ minutes });
   }
 }

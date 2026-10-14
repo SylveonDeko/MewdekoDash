@@ -1,5 +1,6 @@
 <!-- lib/components/InviteStats.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import {colorStore} from "$lib/stores/colorStore";
     import {inviteStore} from "$lib/stores/inviteStore";
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -23,13 +24,13 @@
         <i class="fa-utility-duo fa-regular fa-link text-2xl"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
       </div>
-      <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Invite Stats</h2>
+      <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.monitoring.inviteStatsTitle()}</h2>
     </div>
 
     <div class="space-y-4">
       <StatCard
         icon="fa-users"
-        label="Total Invites"
+        label={m.common.totalInvites()}
         value={new Intl.NumberFormat().format(stats.totalInvites)}
         iconColor="primary"
         animationDelay={animationDelay}
@@ -37,9 +38,9 @@
 
       <StatCard
         icon="fa-users"
-        label="Average Joins"
+        label={m.common.averageJoins()}
         value={stats.averageJoins}
-        subtitle="per day"
+        subtitle={m.monitoring.inviteStatsPerDay()}
         iconColor="secondary"
         animationDelay={animationDelay + 150}
       />
@@ -47,10 +48,10 @@
       {#if stats.topInviters.length > 0}
         <div class="mt-6 space-y-3">
           <div class="flex items-center gap-2">
-            <span class="text-sm font-medium" style="color: {$colorStore.text}">Top Inviters</span>
+            <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.common.topInviters()}</span>
             <span class="text-xs px-2 py-0.5 rounded-full"
                   style="background: {$colorStore.primary}20; color: {$colorStore.muted}">
-                Top {stats.topInviters.length}
+                {m.monitoring.inviteStatsTopCount({ count: stats.topInviters.length })}
               </span>
           </div>
 

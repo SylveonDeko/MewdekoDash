@@ -1,5 +1,6 @@
 <!-- lib/components/StatsGraph.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onDestroy, onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import type { GraphStatsResponse } from "$lib/api/joinleave/models/GraphStats";
@@ -21,8 +22,8 @@
     data,
     type = "join",
     totalLabel,
-    averageLabel = "Average per Day",
-    peakLabel = "Peak Day",
+    averageLabel,
+    peakLabel,
     valueLabel,
     formatLabelsAsDates = true
   }: Props = $props();
@@ -36,7 +37,7 @@
   }
 
   function defaultValueLabel(): string {
-    return type === "join" ? "Joins" : "Leaves";
+    return type === "join" ? m.common.joins() : m.common.leaves();
   }
 
   function formatLabel(label: string): string {
@@ -81,7 +82,7 @@
           tooltip: {
             callbacks: {
               title: (items) => items[0]?.label || "",
-              label: (item) => `${valueLabel || defaultValueLabel()}: ${item.raw}`,
+              label: (item) => m.common.labelValue({ label: valueLabel || defaultValueLabel(), value: String(item.raw) }),
             }
           }
         },
@@ -129,19 +130,19 @@
   <div class="space-y-6">
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10">
-        <div class="text-sm" style="color: {$colorStore.muted}">{totalLabel || `Total ${defaultValueLabel()}`}</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{totalLabel || (type === "join" ? m.monitoring.statsGraphTotalJoins() : m.monitoring.statsGraphTotalLeaves())}</div>
         <div class="text-lg font-semibold" style="color: {$colorStore.text}">{data.summary.total}</div>
       </div>
 
       <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10">
-        <div class="text-sm" style="color: {$colorStore.muted}">{averageLabel}</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{averageLabel || m.common.averagePerDay()}</div>
         <div class="text-lg font-semibold" style="color: {$colorStore.text}">
           {formatAverage(data.summary.average)}
         </div>
       </div>
 
       <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10">
-        <div class="text-sm" style="color: {$colorStore.muted}">{peakLabel}</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{peakLabel || m.common.peakDay()}</div>
         <div class="text-lg font-semibold" style="color: {$colorStore.text}">
           {formatLabel(data.summary.peakDate)}
           <span class="text-sm" style="color: {$colorStore.muted}">({data.summary.peakCount})</span>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
     import { onDestroy, onMount } from "svelte";
     import { safeLocalStorage, safeSessionStorage } from "$lib/safeStorage";
@@ -107,16 +108,16 @@
 
     // Tooltip data for stats
     let memberTooltipData = $derived([
-        {label: "Human Members", value: guildMemberStats.humanMembers},
-        {label: "Bot Members", value: guildMemberStats.botMembers},
-        {label: "Total Members", value: guildMemberStats.totalMembers}
+        {label: m.dashboard.overviewHumanMembers(), value: guildMemberStats.humanMembers},
+        {label: m.dashboard.overviewBotMembers(), value: guildMemberStats.botMembers},
+        {label: m.common.totalMembers(), value: guildMemberStats.totalMembers}
     ]);
 
     let roleTooltipData = $derived([
-        {label: "Total Roles", value: roleStats.totalRoles},
-        {label: "Saved Roles", value: roleStats.savedRoles},
-        {label: "Role States", value: roleStats.totalRoleStates},
-        {label: "Role Greets", value: roleStats.activeRoleGreets}
+        {label: m.dashboard.overviewTotalRoles(), value: roleStats.totalRoles},
+        {label: m.dashboard.overviewSavedRoles(), value: roleStats.savedRoles},
+        {label: m.features.rolestatesName(), value: roleStats.totalRoleStates},
+        {label: m.features.rolegreetsName(), value: roleStats.activeRoleGreets}
     ]);
 
     // Unified data fetching
@@ -267,7 +268,7 @@
 
             dashboardStore.setLastUpdated(new Date());
         } catch (err) {
-            error = (err as any).message || "An error occurred while fetching data";
+            error = (err as any).message || m.dashboard.pageErrorFetch();
             logger.error("Dashboard data fetch error:", err);
         } finally {
             fetchingData = false;
@@ -280,7 +281,7 @@
             botStatus = await botStatusApi.getBotStatus();
         } catch (err) {
             logger.error("Failed to fetch bot status:", err);
-            error = "Failed to fetch bot status";
+            error = m.dashboard.pageErrorBotStatus();
         }
     }
 
@@ -351,11 +352,11 @@
 
       // Random witch messages
       const messages = [
-        "Your colors are MINE! 🎃",
-        "Trick or treat! 🧙‍♀️",
-        "Happy Halloween! 👻",
-        "Color swap spell cast! ✨",
-        "Boo! 🦇"
+        m.dashboard.pageWitchMessage1(),
+        m.dashboard.pageWitchMessage2(),
+        m.dashboard.pageWitchMessage3(),
+        m.dashboard.pageWitchMessage4(),
+        m.dashboard.pageWitchMessage5()
       ];
       witchMessage = messages[Math.floor(Math.random() * messages.length)];
 
@@ -516,7 +517,7 @@
               };
             }
         } catch (err) {
-            error = "Failed to fetch dashboard data";
+            error = m.dashboard.pageErrorDashboard();
             logger.error(error, err);
         } finally {
             loading = false;
@@ -666,7 +667,7 @@
                         <i class="fa-utility-duo fa-regular fa-microchip text-2xl"
                            style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.accent};"></i>
                         <div style="color: {$colorStore.accent}">
-                            <div class="font-semibold text-lg">Error Occurred</div>
+                            <div class="font-semibold text-lg">{m.common.errorOccurred()}</div>
                             <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
                         </div>
                     </div>
@@ -679,14 +680,14 @@
                         >
                             <i class="fa-utility-duo fa-regular fa-sync"
                                style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.accent};"></i>
-                            Retry
+                            {m.common.retry()}
                         </button>
                     </div>
                 </div>
             {:else}
                 <!-- Refresh button -->
                 <div class="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-30" class:hidden={refreshing}>
-                    <button aria-label="Button action"
+                    <button aria-label={m.dashboard.pageRefreshAria()}
                             class="flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all hover:scale-[1.02]"
                             style="background: {$colorStore.primary}; color: white"
                             onclick={() => fetchAllData(true)}
@@ -715,16 +716,16 @@
                             </div>
                             <div class="flex-1">
                                 <div class="font-semibold" style="color: {$colorStore.text};">
-                                    Music Started Playing!
+                                    {m.dashboard.pageMusicStartedTitle()}
                                 </div>
                                 <div class="text-sm mt-1" style="color: {$colorStore.muted};">
-                                    Now playing music in your server
+                                    {m.dashboard.pageMusicStartedBody()}
                                 </div>
                             </div>
                             <button
                                     class="p-1 hover:bg-black hover:bg-opacity-10 rounded-full transition-colors"
                                     onclick={() => showMusicNotification = false}
-                                    aria-label="Close notification"
+                                    aria-label={m.dashboard.pageCloseNotificationAria()}
                             >
                                 <i class="fa-utility-duo fa-regular fa-times"
                                    style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
@@ -733,7 +734,7 @@
 
                         <div class="mt-3 flex gap-2">
                             <button
-                              aria-label="Open Music Player"
+                              aria-label={m.dashboard.pageOpenMusicPlayer()}
                               class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                                     onclick={() => {
@@ -741,15 +742,15 @@
                 goto('/dashboard/music');
               }}
                             >
-                                Open Music Player
+                                {m.dashboard.pageOpenMusicPlayer()}
                             </button>
                             <button
-                              aria-label="Dismiss notification"
+                              aria-label={m.common.ariaDismissNotification()}
                               class="flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                               style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                                     onclick={() => showMusicNotification = false}
                             >
-                                Dismiss
+                                {m.common.dismiss()}
                             </button>
                         </div>
                     </div>
@@ -785,10 +786,10 @@
             <!-- Last Updated Indicator -->
             {#if $dashboardStore.lastUpdated && !loading}
                 <div class="text-center text-sm py-4 opacity-60" style="color: {$colorStore.muted}">
-                    Last updated: {$dashboardStore.lastUpdated.toLocaleTimeString()}
+                    {m.dashboard.pageLastUpdated({ time: $dashboardStore.lastUpdated.toLocaleTimeString() })}
                     <!-- Press R to refresh (hidden for screen readers) -->
                     <span class="ml-2 hidden md:inline" aria-hidden="true">
-          (Press <kbd class="px-1 py-0.5 rounded-sm" style="background: {$colorStore.primary}20">R</kbd> to refresh)
+          {@html m.dashboard.pagePressToRefresh({ key: `<kbd class="px-1 py-0.5 rounded-sm" style="background: ${$colorStore.primary}20">R</kbd>` })}
         </span>
                 </div>
             {/if}

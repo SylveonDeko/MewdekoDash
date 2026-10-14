@@ -1,5 +1,6 @@
 <!-- routes/dashboard/votes/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -14,7 +15,7 @@
   import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
   const autoSave = createAutoSave({
-    onError: () => showMessage("Couldn't save vote settings.", "error")
+    onError: () => showMessage(m.votes.pageErrorAutosave(), "error")
   });
 
   // Component state
@@ -115,7 +116,7 @@
             };
         } catch (err) {
             logger.error("Failed to load vote data:", err);
-            showMessage("Failed to load vote data", "error");
+            showMessage(m.votes.pageErrorLoad(), "error");
         } finally {
             loading = false;
         }
@@ -190,12 +191,12 @@
         saving = true;
         try {
           await votesApi.addVoteRole($currentGuild.id, BigInt(newVoteRole.roleId), newVoteRole.timer);
-            showMessage("Vote role added successfully!", "success");
+            showMessage(m.votes.pageNotifyRoleAdded(), "success");
             newVoteRole = { roleId: null, timer: 0 };
             await loadAllVoteData();
         } catch (err) {
             logger.error("Failed to add vote role:", err);
-            showMessage("Failed to add vote role", "error");
+            showMessage(m.votes.pageErrorRoleAdd(), "error");
         } finally {
             saving = false;
         }
@@ -208,11 +209,11 @@
         saving = true;
         try {
           await votesApi.removeVoteRole($currentGuild.id, roleId);
-            showMessage("Vote role removed successfully!", "success");
+            showMessage(m.votes.pageNotifyRoleRemoved(), "success");
             await loadAllVoteData();
         } catch (err) {
             logger.error("Failed to remove vote role:", err);
-            showMessage("Failed to remove vote role", "error");
+            showMessage(m.votes.pageErrorRoleRemove(), "error");
         } finally {
             saving = false;
         }
@@ -221,16 +222,16 @@
     // Clear all vote roles
     async function clearAllVoteRoles() {
         if (!$currentGuild?.id) return;
-        if (!(await requestConfirmation({ message: "Are you sure you want to remove all vote roles?", confirmText: "Remove all" }))) return;
+        if (!(await requestConfirmation({ message: m.votes.pageConfirmClear(), confirmText: m.votes.pageConfirmClearConfirm() }))) return;
 
         saving = true;
         try {
           await votesApi.clearVoteRoles($currentGuild.id);
-            showMessage("All vote roles cleared!", "success");
+            showMessage(m.votes.pageNotifyCleared(), "success");
             await loadAllVoteData();
         } catch (err) {
             logger.error("Failed to clear vote roles:", err);
-            showMessage("Failed to clear vote roles", "error");
+            showMessage(m.votes.pageErrorClear(), "error");
         } finally {
             saving = false;
         }
@@ -246,11 +247,11 @@
     }
 
     function formatDuration(seconds: number): string {
-        if (seconds === 0) return "Permanent";
-        if (seconds < 60) return `${seconds}s`;
-        if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
-        return `${Math.floor(seconds / 86400)}d`;
+        if (seconds === 0) return m.common.permanent();
+        if (seconds < 60) return m.widgets.intervalSecondsShort({ count: seconds });
+        if (seconds < 3600) return m.common.minutesShort({ count: Math.floor(seconds / 60) });
+        if (seconds < 86400) return m.common.hoursShort({ count: Math.floor(seconds / 3600) });
+        return m.common.daysShort({ count: Math.floor(seconds / 86400) });
     }
 
     onMount(() => {
@@ -258,16 +259,16 @@
     });
 
     // Tabs configuration
-    const tabs = [
-      { id: "config", label: "Configuration", icon: "fa-gear" },
-      { id: "roles", label: "Vote Roles", icon: "fa-crown" },
-      { id: "stats", label: "Statistics", icon: "fa-chart-column" }
-    ];
+    const tabs = $derived([
+      { id: "config", label: m.common.configuration(), icon: "fa-gear" },
+      { id: "roles", label: m.votes.pageTabRoles(), icon: "fa-crown" },
+      { id: "stats", label: m.common.statistics(), icon: "fa-chart-column" }
+    ]);
 
     // Action buttons configuration
     let actionButtons = $derived([
         {
-            label: "Refresh",
+            label: m.common.refresh(),
           icon: "fa-arrows-rotate",
             action: loadAllVoteData,
             loading: loading
@@ -302,12 +303,12 @@
   {actionButtons}
   {autoSave}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-circle-check"
   statusMessages={statusMessageContent}
-  subtitle="Configure voting rewards and tracking"
+  subtitle={m.votes.pageSubtitle()}
   {tabs}
-  title="Vote Management"
+  title={m.votes.pageTitle()}
 >
 
     <!-- Tab Content -->
@@ -321,7 +322,7 @@
                     <div class="flex items-center gap-3 mb-6">
                       <i class="fa-utility-duo fa-regular fa-gear"
                          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Basic Settings</h2>
+                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.basicSettings()}</h2>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -330,14 +331,14 @@
                             <span id="vote-announcement-channel-label" class="block text-sm font-medium mb-2"
                                   style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-hashtag inline mr-1" style="font-size: 14px;"></i>
-                                Vote Announcement Channel
+                                {m.common.voteAnnouncementChannel()}
                             </span>
                             <div class="min-h-[44px]">
                                 <DiscordSelector
                                         type="channel"
                                         options={guildChannels}
                                         selected={configForm.channelId}
-                                        placeholder="No channel selected"
+                                        placeholder={m.common.noChannelSelected()}
                                         onchange={saveChannel}
                                 />
                             </div>
@@ -345,18 +346,19 @@
 
                         <!-- Password -->
                         <div>
-                          <label for="input-6068" class="block text-sm font-medium mb-2"
+                          <label for="vote-password" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text}">
                             <i class="fa-solid fa-key inline mr-1" style="font-size: 14px;"></i>
-                                API Password (for webhooks)
+                                {m.votes.pageConfigPassword()}
                             </label>
                             <div class="relative">
                                 <input
+                                        id="vote-password"
                                         type={showPasswordField ? "text" : "password"}
                                         bind:value={configForm.password}
                                         oninput={handlePasswordInput}
                                         onblur={handlePasswordBlur}
-                                        placeholder="Enter API password"
+                                        placeholder={m.votes.pageConfigPasswordPlaceholder()}
                                         class="w-full p-3 pr-12 rounded-xl border transition-all min-h-[44px] text-base"
                                         style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                 >
@@ -366,11 +368,11 @@
                                         onclick={() => showPasswordField = !showPasswordField}
                                         style="color: {$colorStore.muted}"
                                 >
-                                    {showPasswordField ? "Hide" : "Show"}
+                                    {showPasswordField ? m.common.hide() : m.common.show()}
                                 </button>
                             </div>
                             <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-                                Leave the field empty to remove the password.
+                                {m.votes.pageConfigPasswordHint()}
                             </p>
                         </div>
                     </div>
@@ -383,24 +385,25 @@
                     <div class="flex items-center gap-3 mb-6">
                       <i class="fa-utility-duo fa-regular fa-comment"
                          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Vote Message</h2>
+                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.votes.pageMessageTitle()}</h2>
                     </div>
 
                     <div>
-                      <label for="input-6068" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                            Custom Vote Announcement
+                      <label for="vote-message" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                            {m.votes.pageMessageLabel()}
                         </label>
                         <textarea
+                                id="vote-message"
                                 bind:value={configForm.message}
                                 oninput={scheduleMessageSave}
                                 onblur={() => autoSave.flush("message")}
-                                placeholder="🗳️ Thanks %user.mention% for voting! You've received your rewards!"
+                                placeholder={m.votes.pageMessagePlaceholder()}
                                 rows="3"
                                 class="w-full p-3 rounded-xl border transition-all resize-none min-h-[100px] text-base"
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                         ></textarea>
                         <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-                            Available placeholders: %user.mention%, %user.name%, %user.id%, %server.name%. Leave empty for default message.
+                            {m.votes.pageMessageHint({ tokens: "%user.mention%, %user.name%, %user.id%, %server.name%" })}
                         </p>
                     </div>
                 </div>
@@ -416,7 +419,7 @@
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-utility-duo fa-regular fa-circle-plus"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Add Vote Role</h2>
+                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.votes.pageRoleAddAria()}</h2>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4">
@@ -424,13 +427,13 @@
                         <span id="role-to-grant-label" class="block text-sm font-medium mb-2"
                               style="color: {$colorStore.text}">
                             <i class="fa-solid fa-crown inline mr-1" style="font-size: 14px;"></i>
-                            Role to Grant
+                            {m.votes.pageRoleToGrant()}
                         </span>
                         <DiscordSelector
                                 type="role"
                                 options={guildRoles}
                                 selected={newVoteRole.roleId}
-                                placeholder="Select role"
+                                placeholder={m.common.selectRolePlaceholder()}
                                 onchange={(detail) => {
                                     newVoteRole.roleId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null;
                                     newVoteRole = { ...newVoteRole };
@@ -439,11 +442,11 @@
                     </div>
 
                     <div>
-                      <label for="input-6068" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                      <label for="vote-role-duration" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                         <i class="fa-solid fa-clock inline mr-1" style="font-size: 14px;"></i>
-                            Duration (seconds, 0 for permanent)
+                            {m.votes.pageRoleDurationLabel()}
                         </label>
-                      <input id="input-6068"
+                      <input id="vote-role-duration"
                                 type="number"
                                 min="0"
                                 bind:value={newVoteRole.timer}
@@ -454,7 +457,7 @@
                 </div>
 
                 <button
-                  aria-label="Add vote role"
+                  aria-label={m.votes.pageRoleAddAria()}
                   aria-busy={saving}
                   class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
@@ -462,7 +465,7 @@
                         disabled={saving || !newVoteRole.roleId}
                 >
                   <i class="fa-solid fa-plus {saving ? 'fa-spin' : ''}" style="font-size: 18px;"></i>
-                  {saving ? "Adding..." : "Add Vote Role"}
+                  {saving ? m.common.adding() : m.votes.pageRoleAddAria()}
                 </button>
             </div>
 
@@ -474,7 +477,7 @@
                     <div class="flex items-center gap-3">
                       <i class="fa-utility-duo fa-regular fa-crown"
                          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Vote Roles ({voteRoles.length})</h2>
+                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.votes.pageRolesTitle({ count: voteRoles.length })}</h2>
                     </div>
                     {#if voteRoles.length > 0}
                         <button
@@ -482,7 +485,7 @@
                                 style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                                 onclick={clearAllVoteRoles}
                         >
-                            Clear All
+                            {m.common.clearAll()}
                         </button>
                     {/if}
                 </div>
@@ -492,9 +495,9 @@
                         <div class="text-center py-8">
                           <i class="fa-utility-duo fa-regular fa-crown"
                              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Vote Roles</h3>
+                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.votes.pageRolesEmptyTitle()}</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
-                                Add roles to grant users when they vote for your server.
+                                {m.votes.pageRolesEmptyHint()}
                             </p>
                         </div>
                     {:else}
@@ -509,11 +512,11 @@
                                           {voteRole.roleName}
                                         </div>
                                         <div class="text-sm" style="color: {$colorStore.muted}">
-                                          Duration: {formatDuration(voteRole.seconds)}
+                                          {m.votes.pageRoleDuration({ duration: formatDuration(voteRole.seconds) })}
                                         </div>
                                     </div>
                                 </div>
-                              <button aria-label="Delete"
+                              <button aria-label={m.common.delete()}
                                         class="p-2 rounded-lg transition-all hover:scale-110"
                                         style="background: #ef444420; color: #ef4444;"
                                         onclick={() => removeVoteRole(voteRole.roleId)}
@@ -532,27 +535,27 @@
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                 <StatCard
                   icon="fa-circle-check"
-                        label="Total Votes"
+                        label={m.votes.pageStatTotal()}
                         value={votes.length}
-                        subtitle="all time"
+                        subtitle={m.common.allTimeLower()}
                         iconColor="primary"
                         animationDelay={0}
                 />
 
                 <StatCard
                   icon="fa-crown"
-                        label="Vote Roles"
+                        label={m.votes.pageTabRoles()}
                         value={voteRoles.length}
-                        subtitle="configured rewards"
+                        subtitle={m.votes.pageStatRolesSub()}
                         iconColor="secondary"
                         animationDelay={100}
                 />
 
                 <StatCard
                   icon="fa-trophy"
-                        label="Top Voter"
+                        label={m.votes.pageStatTop()}
                         value={leaderboard[0]?.voteCount || 0}
-                        subtitle={leaderboard.length > 0 ? "votes" : "no data"}
+                        subtitle={leaderboard.length > 0 ? m.votes.pageStatTopSubVotes() : m.common.noDataLower()}
                         iconColor="accent"
                         animationDelay={200}
                 />
@@ -565,7 +568,7 @@
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-utility-duo fa-regular fa-chart-simple"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Vote Leaderboard</h2>
+                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.votes.pageLeaderboardTitle()}</h2>
                 </div>
 
                 <div class="space-y-3">
@@ -573,9 +576,9 @@
                         <div class="text-center py-8">
                           <i class="fa-utility-duo fa-regular fa-trophy"
                              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Votes Yet</h3>
+                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.votes.pageLeaderboardEmptyTitle()}</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
-                                Vote statistics will appear here once users start voting.
+                                {m.votes.pageLeaderboardEmptyHint()}
                             </p>
                         </div>
                     {:else}
@@ -588,10 +591,10 @@
                                 </div>
                                 <div class="flex-1">
                                     <div class="font-semibold" style="color: {$colorStore.text}">
-                                        User {entry.userId.toString()}
+                                        {m.common.userFallback({ id: entry.userId.toString() })}
                                     </div>
                                     <div class="text-sm" style="color: {$colorStore.muted}">
-                                        {entry.voteCount} vote{entry.voteCount !== 1 ? 's' : ''}
+                                        {entry.voteCount === 1 ? m.common.votesOne({ count: entry.voteCount }) : m.common.votesOther({ count: entry.voteCount })}
                                     </div>
                                 </div>
                                 {#if index === 0}

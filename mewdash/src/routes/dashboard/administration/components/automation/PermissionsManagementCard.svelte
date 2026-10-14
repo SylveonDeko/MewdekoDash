@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { administrationApi, clientApi, type Module } from "$lib/api/index.ts";
@@ -37,24 +38,24 @@
   /** Mirrors SecondaryPermissionType in the bot */
   const SECONDARY = { Module: 0, Command: 1, AllModules: 2 } as const;
 
-  const primaryOptions = [
-    { id: "3", name: "Whole server" },
-    { id: "2", name: "A role" },
-    { id: "1", name: "A channel" },
-    { id: "4", name: "A category" },
-    { id: "0", name: "A specific user" }
-  ];
+  const primaryOptions = $derived([
+    { id: "3", name: m.administration.automationPermissionsManagementPrimaryServer() },
+    { id: "2", name: m.administration.automationPermissionsManagementPrimaryRole() },
+    { id: "1", name: m.administration.automationPermissionsManagementPrimaryChannel() },
+    { id: "4", name: m.administration.automationPermissionsManagementPrimaryCategory() },
+    { id: "0", name: m.administration.automationPermissionsManagementPrimaryUser() }
+  ]);
 
-  const secondaryOptions = [
-    { id: "2", name: "All modules" },
-    { id: "0", name: "One module" },
-    { id: "1", name: "One command" }
-  ];
+  const secondaryOptions = $derived([
+    { id: "2", name: m.common.allModules() },
+    { id: "0", name: m.administration.automationPermissionsManagementSecondaryModule() },
+    { id: "1", name: m.administration.automationPermissionsManagementSecondaryCommand() }
+  ]);
 
-  const stateOptions = [
-    { id: "allow", name: "Allow" },
-    { id: "deny", name: "Deny" }
-  ];
+  const stateOptions = $derived([
+    { id: "allow", name: m.administration.automationPermissionsManagementStateAllow() },
+    { id: "deny", name: m.common.deny() }
+  ]);
 
   let permissions = $state<PermissionCacheResponse | null>(null);
   let modules = $state<Module[]>([]);
@@ -87,9 +88,9 @@
     }
   }
 
-  let moduleOptions = $derived(modules.map(m => ({ id: m.name, name: m.name })));
+  let moduleOptions = $derived(modules.map(mod => ({ id: mod.name, name: mod.name })));
   let commandOptions = $derived(
-    modules.flatMap(m => m.commands.map(c => ({ id: c.commandName, name: c.commandName, label: `${c.commandName} (${m.name})` })))
+    modules.flatMap(mod => mod.commands.map(c => ({ id: c.commandName, name: c.commandName, label: `${c.commandName} (${mod.name})` })))
   );
 
   let sortedRules = $derived((permissions?.permissions ?? []).slice().sort((a, b) => a.index - b.index));
@@ -183,15 +184,15 @@
     const secondary = parseInt(newRule.secondaryTarget);
 
     if (primary !== PRIMARY.Server && !newRule.primaryTargetId.trim()) {
-      formError = "Pick who the rule applies to.";
+      formError = m.administration.automationPermissionsManagementErrorPickTarget();
       return;
     }
     if (primary === PRIMARY.User && !/^\d{15,22}$/.test(newRule.primaryTargetId.trim())) {
-      formError = "Enter a valid Discord user ID.";
+      formError = m.common.invalidUserId();
       return;
     }
     if (secondary !== SECONDARY.AllModules && !newRule.secondaryTargetName.trim()) {
-      formError = secondary === SECONDARY.Module ? "Pick a module." : "Pick a command.";
+      formError = secondary === SECONDARY.Module ? m.administration.automationPermissionsManagementErrorPickModule() : m.administration.automationPermissionsManagementErrorPickCommand();
       return;
     }
 
@@ -211,7 +212,7 @@
       await loadPermissions();
     } catch (err) {
       logger.error("Failed to add permission:", err);
-      formError = "Failed to add the rule. Please try again.";
+      formError = m.administration.automationPermissionsManagementErrorAddFailed();
     } finally {
       saving = false;
     }
@@ -220,17 +221,17 @@
   /** Builds the human readable description for a rule */
   function describeRule(rule: PermissionRule): { scope: string; target: string } {
     const id = rule.primaryTargetId?.toString();
-    let scope = "Everyone";
+    let scope = m.common.everyone();
     switch (rule.primaryTarget) {
-      case PRIMARY.User: scope = `User ${id}`; break;
+      case PRIMARY.User: scope = m.common.userFallback({ id: id ?? "" }); break;
       case PRIMARY.Channel: scope = `#${(textChannels as any[]).find(c => c.id?.toString() === id)?.name ?? id}`; break;
       case PRIMARY.Role: scope = `@${(availableRoles as any[]).find(r => r.id?.toString() === id)?.name ?? id}`; break;
-      case PRIMARY.Category: scope = `Category ${(categoryChannels as any[]).find(c => c.id?.toString() === id)?.name ?? id}`; break;
-      case PRIMARY.Server: scope = "Everyone in the server"; break;
+      case PRIMARY.Category: scope = m.administration.automationPermissionsManagementScopeCategory({ name: (categoryChannels as any[]).find(c => c.id?.toString() === id)?.name ?? id }); break;
+      case PRIMARY.Server: scope = m.features.wizardStatType0Description(); break;
     }
-    let target = "all modules";
-    if (rule.secondaryTarget === SECONDARY.Module) target = `module ${rule.secondaryTargetName}`;
-    else if (rule.secondaryTarget === SECONDARY.Command) target = `command ${rule.secondaryTargetName}`;
+    let target = m.administration.automationPermissionsManagementTargetAll();
+    if (rule.secondaryTarget === SECONDARY.Module) target = m.administration.automationPermissionsManagementTargetModule({ name: rule.secondaryTargetName ?? "" });
+    else if (rule.secondaryTarget === SECONDARY.Command) target = m.administration.automationPermissionsManagementTargetCommand({ name: rule.secondaryTargetName ?? "" });
     return { scope, target };
   }
 
@@ -264,8 +265,8 @@
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
       <div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Command Permissions</h2>
-        <p class="text-sm" style="color: {$colorStore.muted}">Allow or deny commands and modules per role, channel, or user</p>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.automationPermissionsManagementTitle()}</h2>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.automationPermissionsManagementSubtitle()}</p>
       </div>
     </div>
 
@@ -276,17 +277,17 @@
         style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
       >
         <i class="fa-solid {expandedCard ? 'fa-chevron-up' : 'fa-chevron-down'}" style="font-size: 16px;"></i>
-        {expandedCard ? 'Collapse' : 'Manage'}
+        {expandedCard ? m.common.collapse() : m.common.manage()}
       </button>
 
       {#if sortedRules.length > 1}
         <button
           class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-          onclick={() => showConfirm("Reset All Permissions", "This removes every custom permission rule and restores the default allow-all rule.", resetAllPermissions, "danger")}
+          onclick={() => showConfirm(m.administration.automationPermissionsManagementResetTitle(), m.administration.automationPermissionsManagementResetConfirm(), resetAllPermissions, "danger")}
         >
           <i class="fa-solid fa-rotate-left" style="font-size: 16px;"></i>
-          Reset All
+          {m.common.resetAll()}
         </button>
       {/if}
     </div>
@@ -295,18 +296,18 @@
   {#if loading && !permissions}
     <div class="text-center py-8">
       <i class="fa-solid fa-spinner fa-spin" style="color: {$colorStore.primary}; font-size: 32px;"></i>
-      <p class="text-sm mt-2" style="color: {$colorStore.muted}">Loading permissions...</p>
+      <p class="text-sm mt-2" style="color: {$colorStore.muted}">{m.administration.automationPermissionsManagementLoading()}</p>
     </div>
   {:else if permissions}
     <div class="space-y-4">
       <div class="grid grid-cols-2 gap-4 p-4 rounded-xl" style="background: {$colorStore.primary}05;">
         <div class="text-center">
           <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{Math.max(sortedRules.length - 1, 0)}</div>
-          <div class="text-sm" style="color: {$colorStore.muted}">Custom Rules</div>
+          <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.automationPermissionsManagementCustomRules()}</div>
         </div>
         <div class="text-center">
-          <div class="text-lg font-semibold" style="color: {$colorStore.primary}">{verboseMode ? 'Enabled' : 'Disabled'}</div>
-          <div class="text-sm" style="color: {$colorStore.muted}">Verbose Mode</div>
+          <div class="text-lg font-semibold" style="color: {$colorStore.primary}">{verboseMode ? m.common.enabled() : m.common.disabled()}</div>
+          <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.automationPermissionsManagementVerboseMode()}</div>
         </div>
       </div>
 
@@ -314,8 +315,8 @@
            style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
         <div class="flex items-center justify-between gap-3">
           <div>
-            <div class="text-sm font-medium" style="color: {$colorStore.text}">Verbose permissions</div>
-            <div class="text-xs" style="color: {$colorStore.muted}">Tell users when a rule blocks a command</div>
+            <div class="text-sm font-medium" style="color: {$colorStore.text}">{m.administration.automationPermissionsManagementVerbosePermissions()}</div>
+            <div class="text-xs" style="color: {$colorStore.muted}">{m.administration.automationPermissionsManagementVerboseHint()}</div>
           </div>
           <button
             class="p-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] min-w-[44px]"
@@ -323,20 +324,20 @@
             onclick={toggleVerboseMode}
             role="switch"
             aria-checked={verboseMode}
-            aria-label="Verbose permissions"
+            aria-label={m.administration.automationPermissionsManagementVerbosePermissions()}
           >
             <i class="fa-solid {verboseMode ? 'fa-toggle-on' : 'fa-toggle-off'}" style="font-size: 24px;"></i>
           </button>
         </div>
 
         <div>
-          <span id="permission-role-label" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Permission role</span>
-          <p class="text-xs mb-2" style="color: {$colorStore.muted}">Members with this role can edit permission rules via commands</p>
+          <span id="permission-role-label" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.administration.automationPermissionsManagementPermissionRole()}</span>
+          <p class="text-xs mb-2" style="color: {$colorStore.muted}">{m.administration.automationPermissionsManagementPermissionRoleHint()}</p>
           <DiscordSelector
             type="role"
             options={availableRoles}
             selected={permissionRole}
-            placeholder="No permission role"
+            placeholder={m.administration.automationPermissionsManagementNoPermissionRole()}
             ariaLabelledby="permission-role-label"
             disabled={saving}
             onchange={(e) => savePermissionRole(typeof e.selected === "string" ? e.selected : null)}
@@ -347,14 +348,14 @@
       {#if expandedCard}
         <div transition:slide={{ duration: 300 }} class="space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <h4 class="font-medium" style="color: {$colorStore.text}">Rules (checked top to bottom, first match wins)</h4>
+            <h4 class="font-medium" style="color: {$colorStore.text}">{m.administration.automationPermissionsManagementRulesHeading()}</h4>
             <button
               class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={() => { showAddForm = !showAddForm; formError = ""; }}
             >
               <i class="fa-solid {showAddForm ? 'fa-xmark' : 'fa-plus'}"></i>
-              {showAddForm ? 'Cancel' : 'Add rule'}
+              {showAddForm ? m.common.cancel() : m.administration.automationPermissionsManagementAddRule()}
             </button>
           </div>
 
@@ -364,19 +365,19 @@
                   onsubmit={(e) => { e.preventDefault(); addRule(); }}>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <span id="perm-state-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</span>
+                  <span id="perm-state-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.action()}</span>
                   <DiscordSelector type="custom" options={stateOptions} selected={newRule.state} searchable={false}
                                    ariaLabelledby="perm-state-label"
                                    onchange={(e) => { if (typeof e.selected === "string") newRule.state = e.selected; }} />
                 </div>
                 <div>
-                  <span id="perm-secondary-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">What</span>
+                  <span id="perm-secondary-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.administration.automationPermissionsManagementLabelWhat()}</span>
                   <DiscordSelector type="custom" options={secondaryOptions} selected={newRule.secondaryTarget} searchable={false}
                                    ariaLabelledby="perm-secondary-label"
                                    onchange={(e) => { if (typeof e.selected === "string") { newRule.secondaryTarget = e.selected; newRule.secondaryTargetName = ""; } }} />
                 </div>
                 <div>
-                  <span id="perm-primary-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">For</span>
+                  <span id="perm-primary-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.for()}</span>
                   <DiscordSelector type="custom" options={primaryOptions} selected={newRule.primaryTarget} searchable={false}
                                    ariaLabelledby="perm-primary-label"
                                    onchange={(e) => { if (typeof e.selected === "string") { newRule.primaryTarget = e.selected; newRule.primaryTargetId = ""; } }} />
@@ -386,17 +387,17 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {#if newRule.secondaryTarget === "0"}
                   <div>
-                    <span id="perm-module-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Module</span>
+                    <span id="perm-module-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.module()}</span>
                     <DiscordSelector type="custom" options={moduleOptions} selected={newRule.secondaryTargetName || null}
-                                     placeholder={modules.length ? "Select module" : "Loading modules..."}
+                                     placeholder={modules.length ? m.administration.automationPermissionsManagementSelectModule() : m.administration.automationPermissionsManagementLoadingModules()}
                                      ariaLabelledby="perm-module-label"
                                      onchange={(e) => { if (typeof e.selected === "string") newRule.secondaryTargetName = e.selected; }} />
                   </div>
                 {:else if newRule.secondaryTarget === "1"}
                   <div>
-                    <span id="perm-command-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Command</span>
+                    <span id="perm-command-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.command()}</span>
                     <DiscordSelector type="custom" options={commandOptions} selected={newRule.secondaryTargetName || null}
-                                     placeholder={modules.length ? "Search commands" : "Loading commands..."}
+                                     placeholder={modules.length ? m.administration.automationPermissionsManagementSearchCommands() : m.administration.automationPermissionsManagementLoadingCommands()}
                                      ariaLabelledby="perm-command-label"
                                      onchange={(e) => { if (typeof e.selected === "string") newRule.secondaryTargetName = e.selected; }} />
                   </div>
@@ -404,30 +405,30 @@
 
                 {#if newRule.primaryTarget === "2"}
                   <div>
-                    <span id="perm-role-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Role</span>
+                    <span id="perm-role-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.role()}</span>
                     <DiscordSelector type="role" options={availableRoles} selected={newRule.primaryTargetId || null}
-                                     placeholder="Select role" ariaLabelledby="perm-role-label"
+                                     placeholder={m.common.selectRolePlaceholder()} ariaLabelledby="perm-role-label"
                                      onchange={(e) => { if (typeof e.selected === "string") newRule.primaryTargetId = e.selected; }} />
                   </div>
                 {:else if newRule.primaryTarget === "1"}
                   <div>
-                    <span id="perm-channel-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel</span>
+                    <span id="perm-channel-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.channel()}</span>
                     <DiscordSelector type="channel" options={textChannels} selected={newRule.primaryTargetId || null}
-                                     placeholder="Select channel" ariaLabelledby="perm-channel-label"
+                                     placeholder={m.common.selectChannelPlaceholder()} ariaLabelledby="perm-channel-label"
                                      onchange={(e) => { if (typeof e.selected === "string") newRule.primaryTargetId = e.selected; }} />
                   </div>
                 {:else if newRule.primaryTarget === "4"}
                   <div>
-                    <span id="perm-category-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Category</span>
+                    <span id="perm-category-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.category()}</span>
                     <DiscordSelector type="custom" options={categoryChannels} selected={newRule.primaryTargetId || null}
-                                     placeholder="Select category" ariaLabelledby="perm-category-label"
+                                     placeholder={m.administration.automationPermissionsManagementSelectCategory()} ariaLabelledby="perm-category-label"
                                      onchange={(e) => { if (typeof e.selected === "string") newRule.primaryTargetId = e.selected; }} />
                   </div>
                 {:else if newRule.primaryTarget === "0"}
                   <div>
-                    <label for="perm-user-id" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">User ID</label>
+                    <label for="perm-user-id" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.userId()}</label>
                     <input id="perm-user-id" type="text" inputmode="numeric" bind:value={newRule.primaryTargetId}
-                           placeholder="Paste a Discord user ID"
+                           placeholder={m.administration.automationPermissionsManagementUserIdPlaceholder()}
                            class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
                   </div>
@@ -446,7 +447,7 @@
                       class="px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50 flex items-center gap-2"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
                 {#if saving}<i class="fa-solid fa-spinner fa-spin"></i>{:else}<i class="fa-solid fa-plus"></i>{/if}
-                Add rule
+                {m.administration.automationPermissionsManagementAddRule()}
               </button>
             </form>
           {/if}
@@ -455,7 +456,7 @@
             <div class="text-center py-6 rounded-lg" style="background: {$colorStore.primary}05;">
               <i class="fa-utility-duo fa-regular fa-shield-halved"
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 32px; opacity: 0.5;"></i>
-              <p class="text-sm mt-2" style="color: {$colorStore.muted}">No custom rules yet. Every command is allowed for everyone.</p>
+              <p class="text-sm mt-2" style="color: {$colorStore.muted}">{m.administration.automationPermissionsManagementEmptyRules()}</p>
             </div>
           {:else}
             <div class="space-y-2 max-h-[28rem] overflow-y-auto pr-1">
@@ -468,17 +469,19 @@
                         style="background: {$colorStore.primary}15; color: {$colorStore.muted};">#{rule.index}</span>
                   <span class="px-2 py-1 rounded-sm text-xs font-semibold uppercase shrink-0"
                         style="background: {rule.state ? '#10b98120' : '#ef444420'}; color: {rule.state ? '#10b981' : '#ef4444'};">
-                    {rule.state ? 'Allow' : 'Deny'}
+                    {rule.state ? m.administration.automationPermissionsManagementStateAllow() : m.common.deny()}
                   </span>
                   <div class="flex-1 min-w-0 text-sm" style="color: {$colorStore.text}">
-                    <span class="font-medium">{info.target}</span>
-                    <span style="color: {$colorStore.muted}"> for </span>
-                    <span class="font-medium" style="color: {rule.primaryTarget === PRIMARY.Role ? roleColor((availableRoles as any[]).find(r => r.id?.toString() === rule.primaryTargetId?.toString())?.color) : $colorStore.text}">{info.scope}</span>
+                    {#if rule.primaryTarget === PRIMARY.Role}
+                      <span class="inline-block w-2 h-2 rounded-full mr-1 align-middle"
+                            style="background: {roleColor((availableRoles as any[]).find(r => r.id?.toString() === rule.primaryTargetId?.toString())?.color)}"></span>
+                    {/if}
+                    <span class="font-medium">{m.administration.automationPermissionsManagementRuleSummary({ target: info.target, scope: info.scope })}</span>
                   </div>
                   {#if isRoot}
                     <span class="px-3 py-1 rounded-lg text-xs shrink-0"
                           style="background: {$colorStore.muted}20; color: {$colorStore.muted};">
-                      <i class="fa-solid fa-lock"></i> Default
+                      <i class="fa-solid fa-lock"></i> {m.common.default()}
                     </span>
                   {:else}
                     <div class="flex items-center gap-1 shrink-0">
@@ -486,22 +489,22 @@
                               style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                               disabled={rule.index <= 1}
                               onclick={() => movePermission(rule.index, rule.index - 1)}
-                              aria-label="Move rule up">
+                              aria-label={m.administration.automationPermissionsManagementMoveUp()}>
                         <i class="fa-solid fa-arrow-up" style="font-size: 12px;"></i>
                       </button>
                       <button class="p-2 rounded-lg transition-all hover:scale-[1.05] min-h-[36px] min-w-[36px] disabled:opacity-30"
                               style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                               disabled={position >= sortedRules.length - 1}
                               onclick={() => movePermission(rule.index, rule.index + 1)}
-                              aria-label="Move rule down">
+                              aria-label={m.administration.automationPermissionsManagementMoveDown()}>
                         <i class="fa-solid fa-arrow-down" style="font-size: 12px;"></i>
                       </button>
                       <button
                         class="px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02] min-h-[36px]"
                         style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                        onclick={() => showConfirm("Remove Rule", `Remove rule #${rule.index}: ${rule.state ? 'allow' : 'deny'} ${info.target} for ${info.scope}?`, () => removePermission(rule.index))}
+                        onclick={() => showConfirm(m.administration.automationPermissionsManagementRemoveTitle(), rule.state ? m.administration.automationPermissionsManagementRemoveConfirmAllow({ index: rule.index, summary: m.administration.automationPermissionsManagementRuleSummary({ target: info.target, scope: info.scope }) }) : m.administration.automationPermissionsManagementRemoveConfirmDeny({ index: rule.index, summary: m.administration.automationPermissionsManagementRuleSummary({ target: info.target, scope: info.scope }) }), () => removePermission(rule.index))}
                       >
-                        Remove
+                        {m.common.remove()}
                       </button>
                     </div>
                   {/if}
@@ -514,7 +517,7 @@
     </div>
   {:else}
     <div class="text-center py-8">
-      <p class="text-sm" style="color: {$colorStore.muted}">Permissions could not be loaded.</p>
+      <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.automationPermissionsManagementLoadFailed()}</p>
     </div>
   {/if}
 </div>

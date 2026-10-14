@@ -1,5 +1,6 @@
 <!-- components/tabs/CasesTab.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
   import { ticketApi } from "$lib/api/index.ts";
@@ -138,11 +139,11 @@
             {ticketCase.title}
           </p>
           <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-            #{ticketCase.id} • {ticketCase.linkedTickets || 0} tickets
+            {(ticketCase.linkedTickets || 0) === 1 ? m.tickets.casesCardMetaOne({ id: ticketCase.id, count: 1 }) : m.tickets.casesCardMetaOther({ id: ticketCase.id, count: ticketCase.linkedTickets || 0 })}
           </p>
           <span class="inline-block mt-2 text-xs px-2 py-1 rounded"
                 style="background: {isClosed ? '#6b7280' : '#10b981'}20; color: {isClosed ? '#6b7280' : '#10b981'};">
-            {isClosed ? 'Closed' : 'Open'}
+            {isClosed ? m.common.closed() : m.common.open()}
           </span>
         </div>
       </button>
@@ -163,7 +164,7 @@
              color: {showCaseCreator ? $colorStore.secondary : $colorStore.primary};"
     >
       <i class="fa-solid {showCaseCreator ? 'fa-xmark' : 'fa-plus'}"></i>
-      <span class="ml-2">{showCaseCreator ? 'Cancel' : 'New Case'}</span>
+      <span class="ml-2">{showCaseCreator ? m.common.cancel() : m.tickets.casesNewCase()}</span>
     </button>
   </div>
 </div>
@@ -171,32 +172,32 @@
 {#if showCaseCreator}
   <!-- Inline Case Creator -->
   <div class="space-y-6">
-    <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Create New Case</h3>
+    <h3 class="text-xl font-bold" style="color: {$colorStore.text}">{m.tickets.casesCreateTitle()}</h3>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Case Details -->
       <div class="space-y-4">
         <div>
           <label for="f-CasesTab-label-179" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-            Title <span style="color: #ef4444;">*</span>
+            {m.common.title()} <span style="color: #ef4444;">*</span>
           </label>
           <input id="f-CasesTab-label-179"
             type="text"
             bind:value={newCase.title}
             class="w-full px-3 py-2 rounded-lg border"
-            placeholder="Spam Bot Investigation"
+            placeholder={m.tickets.casesTitlePlaceholder()}
             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
           />
         </div>
 
         <div>
           <label for="f-CasesTab-description-192" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-            Description
+            {m.common.description()}
           </label>
           <textarea id="f-CasesTab-description-192"
             bind:value={newCase.description}
             class="w-full px-3 py-2 rounded-lg border resize-none"
-            placeholder="Describe the case..."
+            placeholder={m.tickets.casesDescriptionPlaceholder()}
             rows="4"
             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
           ></textarea>
@@ -206,13 +207,13 @@
       <!-- Ticket Linking -->
       <div>
         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-          Link Tickets (Optional)
+          {m.tickets.casesLinkTicketsOptional()}
         </span>
-        <div class="p-4 rounded-lg border max-h-[300px] overflow-y-auto" role="group" aria-label="Link Tickets"
+        <div class="p-4 rounded-lg border max-h-[300px] overflow-y-auto" role="group" aria-label={m.tickets.casesLinkTickets()}
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
           {#if unlinkedTickets.length === 0}
             <p class="text-sm text-center py-8" style="color: {$colorStore.muted}">
-              No unlinked tickets available
+              {m.tickets.casesNoUnlinkedTickets()}
             </p>
           {:else}
             <div class="space-y-2">
@@ -244,7 +245,7 @@
         </div>
         {#if selectedTicketsForNewCase.length > 0}
           <p class="text-xs mt-2" style="color: {$colorStore.primary}">
-            {selectedTicketsForNewCase.length} ticket{selectedTicketsForNewCase.length !== 1 ? 's' : ''} selected
+            {selectedTicketsForNewCase.length === 1 ? m.tickets.casesSelectedOne({ count: 1 }) : m.tickets.casesSelectedOther({ count: selectedTicketsForNewCase.length })}
           </p>
         {/if}
       </div>
@@ -259,7 +260,7 @@
           selectedTicketsForNewCase = [];
         }}
       >
-        Cancel
+        {m.common.cancel()}
       </button>
       <button
         class="px-4 py-3 rounded-xl font-medium min-h-[44px] flex items-center gap-2"
@@ -272,7 +273,7 @@
         {:else}
           <i class="fa-solid fa-plus"></i>
         {/if}
-        Create Case
+        {m.tickets.casesCreateButton()}
       </button>
     </div>
   </div>
@@ -287,7 +288,7 @@
           {selectedCase.title}
         </h3>
         <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-          Case #{selectedCase.id} • Created by {selectedCase.createdByName} on {formatDateTime(selectedCase.createdAt)}
+          {m.tickets.casesDetailMeta({ id: selectedCase.id, creator: selectedCase.createdByName, date: formatDateTime(selectedCase.createdAt) })}
         </p>
       </div>
       <div class="flex items-center gap-2 w-full sm:w-auto">
@@ -298,21 +299,21 @@
             onclick={() => reopenCase(selectedCase.id)}
           >
             <i class="fa-solid fa-folder-open"></i>
-            <span class="ml-1">Reopen</span>
+            <span class="ml-1">{m.tickets.casesReopen()}</span>
           </button>
         {:else}
           <button
             class="flex-1 sm:flex-none px-3 py-2 rounded-lg transition-all hover:scale-[1.02] text-sm font-medium min-h-[44px]"
             style="background: #f59e0b20; color: #f59e0b; border: 1px solid #f59e0b30;"
             onclick={() => showConfirm(
-              "Close Case",
-              "Close this case? Linked tickets will remain open.",
+              m.tickets.casesCloseTitle(),
+              m.tickets.casesCloseConfirm(),
               () => closeCase(selectedCase.id, false),
               "warning"
             )}
           >
             <i class="fa-solid fa-folder-closed"></i>
-            <span class="ml-1">Close</span>
+            <span class="ml-1">{m.common.close()}</span>
           </button>
         {/if}
       </div>
@@ -322,7 +323,7 @@
     {#if selectedCase.description}
       <div class="p-4 rounded-xl"
            style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-        <h4 class="font-semibold mb-2 text-sm" style="color: {$colorStore.text}">Description</h4>
+        <h4 class="font-semibold mb-2 text-sm" style="color: {$colorStore.text}">{m.common.description()}</h4>
         <p class="text-sm whitespace-pre-wrap" style="color: {$colorStore.muted}">{selectedCase.description}</p>
       </div>
     {/if}
@@ -333,12 +334,10 @@
         <div>
           <h4 class="font-semibold flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-solid fa-link" style="color: {$colorStore.secondary};"></i>
-            Linked Tickets
-            ({Array.isArray(selectedCase.linkedTickets) ? selectedCase.linkedTickets.length : (selectedCase.linkedTickets || 0)}
-            )
+            {m.tickets.casesLinkedTicketsHeading({ count: Array.isArray(selectedCase.linkedTickets) ? selectedCase.linkedTickets.length : (selectedCase.linkedTickets || 0) })}
           </h4>
           <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-            Tickets associated with this case
+            {m.tickets.casesLinkedTicketsHint()}
           </p>
         </div>
         <button
@@ -355,7 +354,7 @@
           }}
         >
           <i class="fa-solid {showTicketLinking ? 'fa-xmark' : 'fa-plus'}"></i>
-          <span class="ml-1">{showTicketLinking ? 'Cancel' : 'Link Tickets'}</span>
+          <span class="ml-1">{showTicketLinking ? m.common.cancel() : m.tickets.casesLinkTickets()}</span>
         </button>
       </div>
 
@@ -363,12 +362,12 @@
       {#if showTicketLinking}
         <div class="p-4 rounded-xl border-2"
              style="background: {$colorStore.secondary}10; border-color: {$colorStore.secondary}30;">
-          <h5 class="font-semibold mb-4" style="color: {$colorStore.text}">Select Tickets to Link</h5>
+          <h5 class="font-semibold mb-4" style="color: {$colorStore.text}">{m.tickets.casesSelectTicketsToLink()}</h5>
           <div class="p-4 rounded-lg border max-h-[400px] overflow-y-auto"
                style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
             {#if availableTicketsForCase().length === 0}
               <p class="text-sm text-center py-8" style="color: {$colorStore.muted}">
-                No available tickets to link
+                {m.tickets.casesNoAvailableTickets()}
               </p>
             {:else}
               <div class="space-y-2">
@@ -401,12 +400,12 @@
                       <div class="flex flex-wrap gap-1 mt-1">
                         {#if ticketIsArchived}
                           <span class="text-xs px-2 py-0.5 rounded" style="background: #6b728020; color: #6b7280;">
-                            Archived
+                            {m.tickets.casesTicketArchived()}
                           </span>
                         {/if}
                         {#if ticketIsClosed}
                           <span class="text-xs px-2 py-0.5 rounded" style="background: #ef444420; color: #ef4444;">
-                            Closed
+                            {m.common.closed()}
                           </span>
                         {/if}
                       </div>
@@ -418,7 +417,7 @@
           </div>
           {#if selectedTicketsForLinking.length > 0}
             <p class="text-xs mt-2" style="color: {$colorStore.primary}">
-              {selectedTicketsForLinking.length} ticket{selectedTicketsForLinking.length !== 1 ? 's' : ''} selected
+              {selectedTicketsForLinking.length === 1 ? m.tickets.casesSelectedOne({ count: 1 }) : m.tickets.casesSelectedOther({ count: selectedTicketsForLinking.length })}
             </p>
           {/if}
 
@@ -431,7 +430,7 @@
                 selectedTicketsForLinking = [];
               }}
             >
-              Cancel
+              {m.common.cancel()}
             </button>
             <button
               class="px-4 py-3 rounded-xl font-medium min-h-[44px] flex items-center gap-2"
@@ -440,7 +439,7 @@
               onclick={handleLinkTickets}
             >
               <i class="fa-solid fa-link"></i>
-              Link {selectedTicketsForLinking.length || ''} Ticket{selectedTicketsForLinking.length !== 1 ? 's' : ''}
+              {selectedTicketsForLinking.length === 0 ? m.tickets.casesLinkTickets() : selectedTicketsForLinking.length === 1 ? m.tickets.casesLinkCountOne({ count: 1 }) : m.tickets.casesLinkCountOther({ count: selectedTicketsForLinking.length })}
             </button>
           </div>
         </div>
@@ -460,17 +459,17 @@
                     #{ticket.id} - {ticket.channelName}
                   </p>
                   <p class="text-xs mt-1 truncate" style="color: {$colorStore.muted}">
-                    Created by {ticket.creatorName} • {formatDate(ticket.createdAt)}
+                    {m.tickets.casesTicketCreatedBy({ creator: ticket.creatorName, date: formatDate(ticket.createdAt) })}
                   </p>
                   <div class="flex flex-wrap gap-2 mt-2">
                     {#if isArchived}
                       <span class="text-xs px-2 py-1 rounded" style="background: #6b728020; color: #6b7280;">
-                        <i class="fa-solid fa-box-archive"></i> Archived
+                        <i class="fa-solid fa-box-archive"></i> {m.tickets.casesTicketArchived()}
                       </span>
                     {/if}
                     {#if isClosed}
                       <span class="text-xs px-2 py-1 rounded" style="background: #ef444420; color: #ef4444;">
-                        <i class="fa-solid fa-lock"></i> Closed
+                        <i class="fa-solid fa-lock"></i> {m.common.closed()}
                       </span>
                     {/if}
                   </div>
@@ -479,14 +478,14 @@
                   class="px-3 py-2 rounded-lg text-sm transition-all hover:opacity-80 min-h-[44px]"
                   style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
                   onclick={() => showConfirm(
-                    "Unlink Ticket",
-                    `Unlink ticket #${ticket.id} from this case?`,
+                    m.tickets.casesUnlinkTitle(),
+                    m.tickets.casesUnlinkConfirm({ id: ticket.id }),
                     () => handleUnlinkTicket(ticket.id),
                     "warning"
                   )}
                 >
                   <i class="fa-solid fa-link-slash"></i>
-                  <span class="ml-1 hidden sm:inline">Unlink</span>
+                  <span class="ml-1 hidden sm:inline">{m.common.unlink()}</span>
                 </button>
               </div>
             </div>
@@ -496,7 +495,7 @@
         <div class="text-center py-12 rounded-xl"
              style="background: {$colorStore.primary}08; border: 1px dashed {$colorStore.primary}20;">
           <i class="fa-solid fa-link-slash" style="color: {$colorStore.muted}; font-size: 48px; opacity: 0.3;"></i>
-          <p class="mt-4" style="color: {$colorStore.muted}">No tickets linked to this case yet</p>
+          <p class="mt-4" style="color: {$colorStore.muted}">{m.tickets.casesNoLinkedTickets()}</p>
           {#if availableTicketsForCase().length > 0}
             <button
               class="mt-4 px-4 py-2 rounded-lg text-sm font-medium min-h-[44px]"
@@ -504,7 +503,7 @@
               onclick={() => showTicketLinking = true}
             >
               <i class="fa-solid fa-plus"></i>
-              Link Tickets
+              {m.tickets.casesLinkTickets()}
             </button>
           {/if}
         </div>
@@ -516,7 +515,7 @@
       <div class="space-y-4">
         <h4 class="font-semibold flex items-center gap-2" style="color: {$colorStore.text}">
           <i class="fa-solid fa-note-sticky" style="color: {$colorStore.accent};"></i>
-          Case Notes ({selectedCase.notes.length})
+          {m.tickets.casesNotesHeading({ count: selectedCase.notes.length })}
         </h4>
         <div class="space-y-2">
           {#each selectedCase.notes as note}
@@ -536,8 +535,8 @@
   <div class="text-center py-24 rounded-xl"
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px dashed {$colorStore.primary}20;">
     <i class="fa-solid fa-hand-pointer" style="color: {$colorStore.muted}; font-size: 64px; opacity: 0.2;"></i>
-    <p class="mt-6 text-lg font-medium" style="color: {$colorStore.text}">Select a case above</p>
-    <p class="text-sm mt-2" style="color: {$colorStore.muted}">or create a new one to get started</p>
+    <p class="mt-6 text-lg font-medium" style="color: {$colorStore.text}">{m.tickets.casesSelectPrompt()}</p>
+    <p class="text-sm mt-2" style="color: {$colorStore.muted}">{m.tickets.casesSelectPromptHint()}</p>
   </div>
 {/if}
 

@@ -1,9 +1,11 @@
 <!-- lib/components/forms/FormsList.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import type { Form } from "$lib/api/index.ts";
   import { FORM_TYPES, intToFormType } from "$lib/api/index.ts";
+  import { formTypeLabel } from "./formLabels";
 
   interface Props {
     forms: Form[];
@@ -49,7 +51,7 @@
           class="w-12 h-12 border-4 rounded-full animate-spin mb-4"
           style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"
         ></div>
-        <p class="text-sm" style="color: {$colorStore.muted};">Loading forms...</p>
+        <p class="text-sm" style="color: {$colorStore.muted};">{m.forms.listLoading()}</p>
       </div>
     </div>
   {:else if error}
@@ -74,9 +76,9 @@
         class="fa-solid fa-clipboard-list"
         style="color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"
       ></i>
-      <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text};">No forms yet</h3>
+      <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text};">{m.forms.listEmptyTitle()}</h3>
       <p class="mb-6" style="color: {$colorStore.muted};">
-        Create your first form to start collecting responses from your community
+        {m.forms.listEmptyBody()}
       </p>
       <button
         onclick={onCreateNew}
@@ -84,7 +86,7 @@
         style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary}); color: white;"
       >
         <i class="fa-solid fa-plus mr-2"></i>
-        Create Your First Form
+        {m.forms.listCreateFirst()}
       </button>
     </div>
   {:else}
@@ -119,14 +121,14 @@
                     class="px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
                     style="background: #f59e0b20; color: #f59e0b;"
                   >
-                    Draft
+                    {m.forms.listDraft()}
                   </span>
                 {:else}
                   <span
                     class="px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
                     style="background: {form.isActive ? '#10B98120' : '#6B728020'}; color: {form.isActive ? '#10B981' : '#6B7280'};"
                   >
-                    {form.isActive ? "Active" : "Inactive"}
+                    {form.isActive ? m.common.active() : m.common.inactive()}
                   </span>
                 {/if}
                 {#if form.formType !== 0}
@@ -138,7 +140,7 @@
                       style="background: {formTypeStr === 'BanAppeal' ? '#ef444420' : '#3b82f620'}; color: {formTypeStr === 'BanAppeal' ? '#ef4444' : '#3b82f6'};"
                     >
                       <i class="fa-solid {formTypeMeta.icon} mr-1"></i>
-                      {formTypeMeta.label}
+                      {formTypeLabel(formTypeMeta.type)}
                     </span>
                   {/if}
                 {/if}
@@ -148,7 +150,7 @@
                     style="background: #f59e0b20; color: #f59e0b;"
                   >
                     <i class="fa-solid fa-clock mr-1"></i>
-                    {form.pendingCount} pending
+                    {m.forms.listPendingCount({ count: form.pendingCount })}
                   </span>
                 {/if}
                 {#if form.allowAnonymous}
@@ -157,7 +159,7 @@
                     style="background: #8b5cf620; color: #8b5cf6;"
                   >
                     <i class="fa-solid fa-user-secret mr-1"></i>
-                    Anonymous
+                    {m.common.anonymous()}
                   </span>
                 {/if}
                 {#if form.requireCaptcha}
@@ -166,7 +168,7 @@
                     style="background: {$colorStore.primary}10; color: {$colorStore.text};"
                   >
                     <i class="fa-solid fa-shield-check mr-1"></i>
-                    Captcha
+                    {m.common.captcha()}
                   </span>
                 {/if}
                 {#if form.allowMultipleSubmissions}
@@ -175,7 +177,7 @@
                     style="background: {$colorStore.primary}10; color: {$colorStore.text};"
                   >
                     <i class="fa-solid fa-repeat mr-1"></i>
-                    Multiple
+                    {m.common.multiple()}
                   </span>
                 {/if}
                 {#if form.submitChannelId}
@@ -184,7 +186,7 @@
                     style="background: {$colorStore.primary}10; color: {$colorStore.text};"
                   >
                     <i class="fa-solid fa-bell mr-1"></i>
-                    Notify
+                    {m.forms.listNotify()}
                   </span>
                 {/if}
                 {#if form.expiresAt}
@@ -196,13 +198,13 @@
                   >
                     <i class="fa-solid fa-clock mr-1"></i>
                     {#if isExpired}
-                      Expired
+                      {m.common.expired()}
                     {:else if timeRemaining < 3600000}
-                      {Math.floor(timeRemaining / 60000)}m
+                      {m.common.minutesShort({ count: Math.floor(timeRemaining / 60000) })}
                     {:else if timeRemaining < 86400000}
-                      {Math.floor(timeRemaining / 3600000)}h
+                      {m.common.hoursShort({ count: Math.floor(timeRemaining / 3600000) })}
                     {:else}
-                      {Math.floor(timeRemaining / 86400000)}d
+                      {m.common.daysShort({ count: Math.floor(timeRemaining / 86400000) })}
                     {/if}
                   </span>
                 {/if}
@@ -220,7 +222,7 @@
               <div class="text-xl font-bold mb-0.5" style="color: {$colorStore.text};">
                 {form.questionCount ?? 0}
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted};">Questions</div>
+              <div class="text-xs" style="color: {$colorStore.muted};">{m.forms.listQuestions()}</div>
             </div>
             <div
               class="text-center rounded-lg py-2"
@@ -232,7 +234,7 @@
                     style="color: {$colorStore.muted};">/{form.maxResponses}</span
                   >{/if}
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted};">Responses</div>
+              <div class="text-xs" style="color: {$colorStore.muted};">{m.common.responses()}</div>
             </div>
             <div
               class="text-center rounded-lg py-2"
@@ -244,7 +246,7 @@
               >
                 {form.pendingCount || 0}
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted};">Pending</div>
+              <div class="text-xs" style="color: {$colorStore.muted};">{m.common.pending()}</div>
             </div>
           </div>
 
@@ -261,7 +263,7 @@
                 style="background: {$colorStore.primary}15; color: {$colorStore.text};"
               >
                 <i class="fa-solid fa-edit mr-2"></i>
-                Edit
+                {m.common.edit()}
               </button>
               <button
                 onclick={() => onViewResponses(form.id)}
@@ -269,7 +271,7 @@
                 style="background: {$colorStore.secondary}15; color: {$colorStore.text};"
               >
                 <i class="fa-solid fa-chart-bar mr-2"></i>
-                Responses
+                {m.common.responses()}
               </button>
             </div>
 
@@ -281,7 +283,7 @@
                 style="background: #f59e0b15; color: #f59e0b;"
               >
                 <i class="fa-solid fa-eye mr-1.5"></i>
-                Preview
+                {m.common.preview()}
               </button>
               <button
                 onclick={() => onCopyLink(form.id)}
@@ -289,7 +291,7 @@
                 style="background: {$colorStore.accent}15; color: {$colorStore.text};"
               >
                 <i class="fa-solid fa-link mr-1.5"></i>
-                Copy Link
+                {m.common.copyLink()}
               </button>
               <button
                 onclick={() => onDuplicate(form)}
@@ -297,7 +299,7 @@
                 style="background: {$colorStore.secondary}15; color: {$colorStore.text};"
               >
                 <i class="fa-solid fa-copy mr-1.5"></i>
-                Duplicate
+                {m.common.duplicate()}
               </button>
             </div>
 
@@ -311,7 +313,7 @@
                   style="background: #10B98115; color: #10B981;"
                 >
                   <i class="fa-solid fa-rocket mr-1.5"></i>
-                  Publish
+                  {m.forms.listPublish()}
                 </button>
               {/if}
               {#if form.formType !== 0 && form.pendingCount && form.pendingCount > 0 && onReview}
@@ -321,7 +323,7 @@
                   style="background: #f59e0b15; color: #f59e0b;"
                 >
                   <i class="fa-solid fa-clipboard-check mr-1.5"></i>
-                  Review ({form.pendingCount})
+                  {m.forms.listReviewCount({ count: form.pendingCount })}
                 </button>
               {/if}
               <button
@@ -330,7 +332,7 @@
                 style="background: {form.isActive ? '#ef444415' : '#10B98115'}; color: {form.isActive ? '#ef4444' : '#10B981'};"
               >
                 <i class="fa-solid {form.isActive ? 'fa-pause' : 'fa-play'} mr-1.5"></i>
-                {form.isActive ? "Pause" : "Activate"}
+                {form.isActive ? m.common.pause() : m.common.activate()}
               </button>
               <button
                 onclick={() => onDelete(form)}
@@ -338,7 +340,7 @@
                 style="background: #ef444415; color: #ef4444;"
               >
                 <i class="fa-solid fa-trash mr-1.5"></i>
-                Delete
+                {m.common.delete()}
               </button>
             </div>
           </div>

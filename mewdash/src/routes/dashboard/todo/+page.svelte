@@ -1,5 +1,6 @@
 <!-- routes/dashboard/todo/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
   import { onMount } from "svelte";
   import { logger } from "$lib/logger";
@@ -157,7 +158,7 @@
       
     } catch (err) {
       logger.error("Failed to load todo lists:", err);
-      error = "Failed to load todo lists. Please try again.";
+      error = m.todo.pageErrorLoadLists();
     } finally {
       loading = false;
     }
@@ -182,7 +183,7 @@
       
     } catch (err) {
       logger.error("Failed to load todo items:", err);
-      error = "Failed to load todo items. Please try again.";
+      error = m.todo.pageErrorLoadItems();
     }
   }
 
@@ -320,7 +321,7 @@
       
     } catch (err) {
       logger.error("Failed to create todo list:", err);
-      error = "Failed to create todo list. Please try again.";
+      error = m.todo.pageErrorCreateList();
     }
   }
 
@@ -342,7 +343,7 @@
       
     } catch (err) {
       logger.error("Failed to add todo item:", err);
-      error = "Failed to add todo item. Please try again.";
+      error = m.todo.pageErrorAddItem();
     }
   }
 
@@ -354,7 +355,7 @@
       await loadTodoItems();
     } catch (err) {
       logger.error("Failed to complete todo item:", err);
-      error = "Failed to complete todo item. Please try again.";
+      error = m.todo.pageErrorCompleteItem();
     }
   }
 
@@ -365,20 +366,20 @@
   let editError = $state("");
 
   /** Priority choices shared by the add form and the edit modal */
-  const priorityOptions = [
-    { id: "1", name: "Low Priority", label: "Low Priority", emoji: "🟢" },
-    { id: "2", name: "Medium Priority", label: "Medium Priority", emoji: "🟠" },
-    { id: "3", name: "High Priority", label: "High Priority", emoji: "🟡" },
-    { id: "4", name: "Critical Priority", label: "Critical Priority", emoji: "🔴" }
-  ];
+  const priorityOptions = $derived([
+    { id: "1", name: m.todo.pagePriorityLow(), label: m.todo.pagePriorityLow(), emoji: "🟢" },
+    { id: "2", name: m.todo.pagePriorityMedium(), label: m.todo.pagePriorityMedium(), emoji: "🟠" },
+    { id: "3", name: m.todo.pagePriorityHigh(), label: m.todo.pagePriorityHigh(), emoji: "🟡" },
+    { id: "4", name: m.todo.pagePriorityCritical(), label: m.todo.pagePriorityCritical(), emoji: "🔴" }
+  ]);
 
   /** Theme colors for the priority chips */
-  const priorityStyles: Record<number, { label: string; emoji: string; color: string }> = {
-    1: { label: "Low", emoji: "🟢", color: "#10b981" },
-    2: { label: "Medium", emoji: "🟠", color: "#f97316" },
-    3: { label: "High", emoji: "🟡", color: "#eab308" },
-    4: { label: "Critical", emoji: "🔴", color: "#ef4444" }
-  };
+  const priorityStyles: Record<number, { label: string; emoji: string; color: string }> = $derived({
+    1: { label: m.todo.pagePriorityChipLow(), emoji: "🟢", color: "#10b981" },
+    2: { label: m.common.medium(), emoji: "🟠", color: "#f97316" },
+    3: { label: m.common.high(), emoji: "🟡", color: "#eab308" },
+    4: { label: m.common.critical(), emoji: "🔴", color: "#ef4444" }
+  });
 
   function openEditItem(item: TodoItem) {
     editingItem = item;
@@ -399,7 +400,7 @@
   async function saveEditItem() {
     if (!editingItem || !$currentGuild?.id || !$userStore?.id) return;
     if (!editForm.title.trim()) {
-      editError = "Title is required.";
+      editError = m.todo.pageEditTitleRequired();
       return;
     }
     editSaving = true;
@@ -422,7 +423,7 @@
       await loadTodoItems();
     } catch (err) {
       logger.error("Failed to update todo item:", err);
-      editError = "Failed to save changes. Please try again.";
+      editError = m.todo.pageEditSaveFailed();
     } finally {
       editSaving = false;
     }
@@ -432,9 +433,9 @@
     if (!selectedListId || !$currentGuild?.id || !$userStore?.id) return;
     const list = todoLists.find(l => l.id === selectedListId);
     if (!(await requestConfirmation({
-      title: "Delete list?",
-      message: `"${list?.name ?? "This list"}" and every item in it will be deleted permanently.`,
-      confirmText: "Delete list"
+      title: m.todo.pageConfirmDeleteListTitle(),
+      message: m.todo.pageConfirmDeleteListMessage({ name: list?.name ?? m.todo.pageConfirmDeleteListFallbackName() }),
+      confirmText: m.todo.pageDeleteList()
     }))) return;
     try {
       await todoApi.deleteTodoList($currentGuild.id, selectedListId, BigInt($userStore.id));
@@ -442,7 +443,7 @@
       await loadTodoLists();
     } catch (err) {
       logger.error("Failed to delete todo list:", err);
-      error = "Failed to delete list. Please try again.";
+      error = m.todo.pageErrorDeleteList();
     }
   }
 
@@ -454,7 +455,7 @@
       await loadTodoItems();
     } catch (err) {
       logger.error("Failed to delete todo item:", err);
-      error = "Failed to delete todo item. Please try again.";
+      error = m.todo.pageErrorDeleteItem();
     }
   }
 
@@ -489,7 +490,7 @@
 </script>
 
 <svelte:head>
-  <title>Todo Lists - {$currentGuild?.name || 'Mewdeko'} Dashboard</title>
+  <title>{m.todo.pageTitle({ guild: $currentGuild?.name || "Mewdeko" })}</title>
 </svelte:head>
 
 {#snippet statusMessageContent()}
@@ -504,25 +505,25 @@
   {/if}
 {/snippet}
 
-<ErrorBoundary fallback="Todo dashboard failed to load. Please refresh the page.">
+<ErrorBoundary fallback={m.todo.pageFallback()}>
   <DashboardPageLayout
     actionButtons={[
       {
-        label: "Create List",
+        label: m.todo.pageActionCreateList(),
         icon: "fa-plus",
         action: () => showNewListModal = true,
         style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
       },
       {
-        label: "Filters",
+        label: m.common.filters(),
         icon: "fa-filter",
         action: () => showFilters = !showFilters
       }
     ]}
     icon="fa-list-ul"
-    subtitle="Organize and track your server's collaborative tasks"
-    guildName={$currentGuild?.name || "Dashboard"}
-    title="Todo Lists"
+    subtitle={m.todo.pageSubtitle()}
+    guildName={$currentGuild?.name || m.common.dashboard()}
+    title={m.features.todoName()}
     statusMessages={statusMessageContent}
   >
 
@@ -533,7 +534,7 @@
            style="color: {$colorStore.primary}; font-size: 18px;"></i>
         <input
           type="text"
-          placeholder="Search todo lists..."
+          placeholder={m.todo.pageSearchPlaceholder()}
           bind:value={searchQuery}
           class="w-full pl-12 pr-4 py-4 rounded-2xl border text-lg"
           style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}40; color: {$colorStore.text};"
@@ -550,19 +551,19 @@
                 class="flex items-center gap-3 px-4 py-2 rounded-xl cursor-pointer transition-all hover:scale-[1.02]"
                  style="background: {includeCompleted ? $colorStore.primary + '20' : 'transparent'};">
               <input type="checkbox" bind:checked={includeCompleted} class="rounded-sm w-5 h-5">
-            <span style="color: {$colorStore.text}" class="font-medium">Show completed items</span>
+            <span style="color: {$colorStore.text}" class="font-medium">{m.todo.pageShowCompleted()}</span>
           </span>
 
           <DiscordSelector
             type="custom"
             customIcon="fa-chart-column"
-            placeholder="Sort by"
+            placeholder={m.common.sortBy()}
             searchable={false}
             options={[
-              { id: "priority", name: "Priority", label: "Sort by Priority", emoji: "🎯" },
-              { id: "dueDate", name: "Due Date", label: "Sort by Due Date", emoji: "📅" },
-              { id: "dateAdded", name: "Created", label: "Sort by Created", emoji: "🗓️" },
-              { id: "title", name: "Title", label: "Sort by Title", emoji: "📝" }
+              { id: "priority", name: m.common.priority(), label: m.todo.pageSortPriority(), emoji: "🎯" },
+              { id: "dueDate", name: m.todo.pageEditDueDate(), label: m.todo.pageSortDueDate(), emoji: "📅" },
+              { id: "dateAdded", name: m.common.created(), label: m.todo.pageSortCreated(), emoji: "🗓️" },
+              { id: "title", name: m.common.title(), label: m.todo.pageSortTitle(), emoji: "📝" }
             ]}
             selected={filters.sortBy}
             onchange={(detail) => {
@@ -575,11 +576,11 @@
           <DiscordSelector
             type="custom"
             customIcon="fa-filter"
-            placeholder="Order"
+            placeholder={m.todo.pageOrder()}
             searchable={false}
             options={[
-              { id: "desc", name: "Descending", label: "Descending", emoji: "⬇️" },
-              { id: "asc", name: "Ascending", label: "Ascending", emoji: "⬆️" }
+              { id: "desc", name: m.common.descending(), label: m.common.descending(), emoji: "⬇️" },
+              { id: "asc", name: m.common.ascending(), label: m.common.ascending(), emoji: "⬆️" }
             ]}
             selected={filters.sortOrder}
             onchange={(detail) => {
@@ -618,10 +619,10 @@
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px;"></i>
         </div>
         <h3 class="text-2xl font-bold mb-4" style="color: {$colorStore.text}">
-          {searchQuery ? "No Lists Found" : "No Todo Lists Yet"}
+          {searchQuery ? m.todo.pageListsEmptySearchTitle() : m.todo.pageListsEmptyTitle()}
         </h3>
         <p class="text-lg mb-8" style="color: {$colorStore.muted}">
-          {searchQuery ? "Try adjusting your search terms." : "Create your first server todo list to get started organizing tasks."}
+          {searchQuery ? m.todo.pageListsEmptySearchHint() : m.todo.pageListsEmptyHint()}
         </p>
         {#if !searchQuery}
           <button
@@ -633,7 +634,7 @@
                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); color: white;">
               <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
             </span>
-            <span>Create Your First List</span>
+            <span>{m.todo.pageCreateFirstList()}</span>
           </button>
         {/if}
       </div>
@@ -654,7 +655,7 @@
                  onkeydown={(e) => e.key === 'Enter' && handleSelectList({ detail: { listId: list.id } })}
                  tabindex="0"
                  role="button"
-                 aria-label="Select todo list {list.name}">
+                 aria-label={m.todo.pageListSelectAria({ name: list.name })}>
 
               <!-- Header -->
               <div class="flex items-start justify-between mb-4">
@@ -678,22 +679,22 @@
                 <!-- Actions -->
                 <div class="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300">
                   {#if listPermissions.canView}
-                    <button aria-label="Permissions"
+                    <button aria-label={m.common.permissions()}
                       class="p-3 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px]"
                       style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
                             onclick={(e) => { e.stopPropagation(); handleShowPermissions({ detail: { listId: list.id } }); }}
-                      title="Manage permissions"
+                      title={m.todo.permissionsManageTitle()}
                     >
                       <i class="fa-solid fa-shield" style="font-size: 16px;"></i>
                     </button>
                   {/if}
 
                   {#if listPermissions.canManage}
-                    <button aria-label="Button action"
+                    <button aria-label={m.todo.pageListSettingsAria()}
                       class="p-3 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px]"
                       style="background: linear-gradient(135deg, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}20); color: {$colorStore.secondary};"
                             onclick={(e) => e.stopPropagation()}
-                      title="List settings"
+                      title={m.todo.pageListSettingsAria()}
                     >
                       <i class="fa-solid fa-gear" style="font-size: 16px;"></i>
                     </button>
@@ -706,7 +707,7 @@
                 {#if list.isServerList}
                   <div class="px-3 py-1.5 rounded-full text-xs font-medium"
                        style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
-                    Server List
+                    {m.todo.pageListBadgeServer()}
                   </div>
                 {/if}
               </div>
@@ -733,7 +734,7 @@
                   
                   <span class="text-xs font-medium px-2 py-1 rounded-full" 
                         style="background: {$colorStore.primary}15; color: {$colorStore.primary};">
-                    {listStats.totalItems} item{listStats.totalItems !== 1 ? 's' : ''}
+                    {listStats.totalItems === 1 ? m.common.itemsOne({ count: listStats.totalItems }) : m.common.itemsOther({ count: listStats.totalItems })}
                   </span>
                 </div>
                 
@@ -741,7 +742,7 @@
                 {#if listStats.totalItems > 0}
                   <div class="space-y-1">
                     <div class="flex items-center justify-between text-xs">
-                      <span style="color: {$colorStore.muted}">Progress</span>
+                      <span style="color: {$colorStore.muted}">{m.common.progress()}</span>
                       <span style="color: {$colorStore.text}" class="font-medium">{listStats.completionRate}%</span>
                     </div>
                     <div class="w-full rounded-full h-2" style="background: {$colorStore.primary}20;">
@@ -752,7 +753,7 @@
                   </div>
                 {:else}
                   <div class="text-center py-2">
-                    <span class="text-xs" style="color: {$colorStore.muted}">Empty list</span>
+                    <span class="text-xs" style="color: {$colorStore.muted}">{m.todo.pageListEmpty()}</span>
                   </div>
                 {/if}
               </div>
@@ -772,7 +773,7 @@
         <div class="mt-12 pt-8 border-t" style="border-color: {$colorStore.primary}20;">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-bold" style="color: {$colorStore.text}">
-              {selectedList?.name} Items
+              {m.todo.pageItemsHeading({ name: selectedList?.name ?? "" })}
             </h2>
 
             <div class="flex flex-wrap items-center gap-2">
@@ -783,7 +784,7 @@
                   onclick={() => showQuickAdd = !showQuickAdd}
                 >
                   <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                  <span>Add Item</span>
+                  <span>{m.common.addItem()}</span>
                 </button>
               {/if}
               {#if currentPermissions.canManage}
@@ -793,7 +794,7 @@
                   onclick={handleDeleteList}
                 >
                   <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
-                  <span>Delete List</span>
+                  <span>{m.todo.pageDeleteList()}</span>
                 </button>
               {/if}
             </div>
@@ -807,13 +808,13 @@
               <div class="space-y-4">
                 <input
                   type="text"
-                  placeholder="What needs to be done?"
+                  placeholder={m.todo.pageQuickTitlePlaceholder()}
                   bind:value={newItemTitle}
                   class="w-full px-4 py-3 rounded-xl border text-lg "
                   style="background: linear-gradient(135deg, {$colorStore.primary}12, {$colorStore.secondary}08); border-color: {$colorStore.primary}40; color: {$colorStore.text};"
                 >
                 <textarea
-                  placeholder="Add a description (optional)..."
+                  placeholder={m.todo.pageQuickDescriptionPlaceholder()}
                   bind:value={newItemDescription}
                   rows="2"
                   class="w-full px-4 py-3 rounded-xl border resize-none "
@@ -823,14 +824,9 @@
                   <DiscordSelector
                     type="custom"
                     customIcon="fa-bullseye"
-                    placeholder="Select Priority"
+                    placeholder={m.todo.pagePriorityPlaceholder()}
                     searchable={false}
-                    options={[
-                      { id: "1", name: "Low Priority", label: "Low Priority", emoji: "🟢" },
-                      { id: "2", name: "Medium Priority", label: "Medium Priority", emoji: "🟠" },
-                      { id: "3", name: "High Priority", label: "High Priority", emoji: "🟡" },
-                      { id: "4", name: "Critical Priority", label: "Critical Priority", emoji: "🔴" }
-                    ]}
+                    options={priorityOptions}
                     selected={newItemPriority.toString()}
                     onchange={(detail) => {
                       if (detail.selected && typeof detail.selected === 'string') {
@@ -841,7 +837,7 @@
                   
                   <div class="flex flex-col sm:flex-row gap-3">
                     <button
-                      aria-label="Add todo item"
+                      aria-label={m.todo.pageAddItemAria()}
                       class="w-full sm:flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                       onclick={async () => {
@@ -866,14 +862,14 @@
                       disabled={!newItemTitle.trim()}
                     >
                       <i class="fa-solid fa-plus" style="font-size: 18px;"></i>
-                      <span>Add Item</span>
+                      <span>{m.common.addItem()}</span>
                     </button>
                     <button
                       class="w-full sm:w-auto px-6 py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] font-medium flex items-center justify-center"
                       style="color: {$colorStore.muted}; border: 1px solid {$colorStore.primary}30;"
                       onclick={() => showQuickAdd = false}
                     >
-                      <span>Cancel</span>
+                      <span>{m.common.cancel()}</span>
                     </button>
                   </div>
                 </div>
@@ -888,14 +884,14 @@
                 <i class="fa-utility-duo fa-regular fa-circle-check"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                 <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">
-                  {todoItems.length === 0 ? "No Items Yet" : "No Items Match Filters"}
+                  {todoItems.length === 0 ? m.todo.pageItemsEmptyTitle() : m.todo.pageItemsFilteredTitle()}
                 </h3>
                 <p style="color: {$colorStore.muted}">
                   {todoItems.length === 0 
                     ? currentPermissions.canAdd 
-                      ? "Add your first todo item to get started."
-                      : "This list is empty."
-                    : "Try adjusting your filters."}
+                      ? m.todo.pageItemsEmptyCanAdd()
+                      : m.todo.pageItemsEmptyReadOnly()
+                    : m.todo.pageItemsFilteredHint()}
                 </p>
               </div>
             {:else}
@@ -956,7 +952,7 @@
                             {/if}
 
                             {#if item.dateAdded}
-                              <span>Created {new Date(item.dateAdded).toLocaleDateString()}</span>
+                              <span>{m.todo.pageItemCreated({ date: new Date(item.dateAdded).toLocaleDateString() })}</span>
                             {/if}
                           </div>
                         </div>
@@ -965,10 +961,10 @@
                         {#if currentPermissions.canEdit || currentPermissions.canDelete}
                           <div class="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
                             {#if currentPermissions.canEdit}
-                              <button aria-label="Edit item"
+                              <button aria-label={m.todo.pageItemEdit()}
                                 class="p-2 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[36px] min-h-[36px]"
                                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
-                                title="Edit item"
+                                title={m.todo.pageItemEdit()}
                                 onclick={() => openEditItem(item)}
                               >
                                 <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
@@ -976,11 +972,11 @@
                             {/if}
 
                             {#if currentPermissions.canDelete}
-                              <button aria-label="Delete"
+                              <button aria-label={m.todo.pageItemDelete()}
                                 class="p-2 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[36px] min-h-[36px]"
                                 style="background: linear-gradient(135deg, #ef444420, #dc262620); color: #ef4444;"
                                 onclick={() => handleDeleteItem({ detail: { itemId: item.id } })}
-                                title="Delete item"
+                                title={m.todo.pageItemDelete()}
                               >
                                 <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
                               </button>
@@ -1020,32 +1016,32 @@
             <div class="p-2 rounded-lg" style="background: {$colorStore.primary}20;">
               <i class="fa-solid fa-pen" style="color: {$colorStore.primary}; font-size: 18px;"></i>
             </div>
-            <h3 id="edit-item-title" class="text-xl font-bold" style="color: {$colorStore.text}">Edit Item</h3>
+            <h3 id="edit-item-title" class="text-xl font-bold" style="color: {$colorStore.text}">{m.todo.pageItemEdit()}</h3>
           </div>
 
           <form class="space-y-4" onsubmit={(e) => { e.preventDefault(); saveEditItem(); }}>
             <div>
-              <label for="edit-item-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Title *</label>
+              <label for="edit-item-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.todo.pageEditFieldTitle()}</label>
               <input id="edit-item-name" type="text" bind:value={editForm.title}
                      class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
                      style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};">
             </div>
             <div>
-              <label for="edit-item-description" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Description</label>
+              <label for="edit-item-description" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.description()}</label>
               <textarea id="edit-item-description" rows="3" bind:value={editForm.description}
                         class="w-full px-4 py-3 rounded-lg border resize-none"
                         style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};"></textarea>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <span id="edit-item-priority" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Priority</span>
+                <span id="edit-item-priority" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.priority()}</span>
                 <DiscordSelector type="custom" options={priorityOptions} searchable={false}
                                  selected={editForm.priority.toString()}
                                  ariaLabelledby="edit-item-priority"
                                  onchange={(d) => { if (typeof d.selected === "string") editForm.priority = parseInt(d.selected); }} />
               </div>
               <div>
-                <label for="edit-item-due" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Due date</label>
+                <label for="edit-item-due" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.todo.pageEditDueDate()}</label>
                 <input id="edit-item-due" type="date" bind:value={editForm.dueDate}
                        class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
                        style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};">
@@ -1064,13 +1060,13 @@
               <button type="button" onclick={closeEditItem}
                       class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted};">
-                Cancel
+                {m.common.cancel()}
               </button>
               <button type="submit" disabled={editSaving}
                       class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
                 {#if editSaving}<i class="fa-solid fa-spinner fa-spin mr-2"></i>{/if}
-                Save changes
+                {m.common.saveChanges()}
               </button>
             </div>
           </form>
@@ -1097,18 +1093,18 @@
               <i class="fa-solid fa-plus" style="color: {$colorStore.primary}; font-size: 20px;"></i>
             </div>
             <h3 class="text-xl font-bold" style="color: {$colorStore.text}">
-              Create New Todo List
+              {m.todo.pageNewListTitle()}
             </h3>
           </div>
 
           <div class="space-y-4">
             <div>
               <label for="input-6264" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                List Name *
+                {m.todo.pageNewListName()}
               </label>
               <input id="input-6264"
                 type="text"
-                placeholder="Enter list name..."
+                placeholder={m.todo.pageNewListNamePlaceholder()}
                 bind:value={newListName}
                      class="w-full px-4 py-3 rounded-lg border "
                 style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};"
@@ -1118,10 +1114,10 @@
 
             <div>
               <label for="list-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                Description
+                {m.common.description()}
               </label>
               <textarea id="list-name"
-                placeholder="Optional description..."
+                placeholder={m.todo.pageNewListDescriptionPlaceholder()}
                 bind:value={newListDescription}
                 rows="3"
                         class="w-full px-4 py-3 rounded-lg border resize-none "
@@ -1131,21 +1127,21 @@
 
             <div class="flex flex-col sm:flex-row gap-3 pt-4">
               <button
-                aria-label="Create todo list"
+                aria-label={m.todo.pageNewListCreateAria()}
                 class="w-full sm:flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                 onclick={handleCreateList}
                 disabled={!newListName.trim()}
               >
                 <i class="fa-solid fa-plus" style="font-size: 18px;"></i>
-                Create List
+                {m.todo.pageActionCreateList()}
               </button>
               <button
                 class="w-full sm:w-auto px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center min-h-[44px]"
                 style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
                 onclick={() => showNewListModal = false}
               >
-                Cancel
+                {m.common.cancel()}
               </button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 <!-- lib/components/stats/WindowPicker.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
 
   export interface WindowOption {
@@ -15,7 +16,7 @@
     onchange?: (value: number) => void;
   }
 
-  let { value = $bindable(), options, ariaLabel = "Time window", onchange }: Props = $props();
+  let { value = $bindable(), options, ariaLabel, onchange }: Props = $props();
 
   function pick(next: number) {
     value = next;
@@ -23,7 +24,7 @@
   }
 </script>
 
-<div class="inline-flex rounded-lg p-1 gap-1" style="background: {$colorStore.primary}10;" role="group" aria-label={ariaLabel}>
+<div class="inline-flex rounded-lg p-1 gap-1" style="background: {$colorStore.primary}10;" role="group" aria-label={ariaLabel ?? m.common.timeWindow()}>
   {#each options as option}
     <button
       type="button"

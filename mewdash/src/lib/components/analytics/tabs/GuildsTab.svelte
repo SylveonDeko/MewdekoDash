@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/tabs/GuildsTab.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
   import { analyticsApi } from "$lib/api/analytics/analytics";
@@ -27,23 +28,23 @@
     `background: ${$colorStore.primary}08; color: ${$colorStore.text}; border-color: ${$colorStore.primary}20;`,
   );
 
-  const topColumns: Column<TopGuildRow>[] = [
-    { key: "guildId", label: "Guild", mono: true },
-    { key: "name", label: "Name", format: (r) => r.name ?? "—" },
-    { key: "memberCount", label: "Members", num: true, format: (r) => n(r.memberCount) },
-    { key: "events", label: "Events", num: true, format: (r) => compact(r.events) },
-    { key: "topTypes", label: "Top types", muted: true, format: (r) => r.topTypes.map((t) => `${t.type} ${compact(t.count)}`).join(" · ") || "—", sortValue: () => null },
-  ];
+  const topColumns: Column<TopGuildRow>[] = $derived([
+    { key: "guildId", label: m.analytics.tableColGuild(), mono: true },
+    { key: "name", label: m.common.name(), format: (r) => r.name ?? "—" },
+    { key: "memberCount", label: m.common.members(), num: true, format: (r) => n(r.memberCount) },
+    { key: "events", label: m.common.events(), num: true, format: (r) => compact(r.events) },
+    { key: "topTypes", label: m.analytics.tabGuildsColTopTypes(), muted: true, format: (r) => r.topTypes.map((t) => `${t.type} ${compact(t.count)}`).join(" · ") || "—", sortValue: () => null },
+  ]);
 
-  const anomalyColumns: Column<GuildAnomalyRow>[] = [
-    { key: "guildId", label: "Guild", mono: true },
-    { key: "name", label: "Name", format: (r) => r.name ?? "—" },
-    { key: "eventType", label: "Type", mono: true },
-    { key: "hour", label: "Hour (UTC)", muted: true, format: (r) => stamp(r.hour), sortValue: (r) => utcParse(r.hour) },
-    { key: "count", label: "Count", num: true },
-    { key: "mean", label: "Usual", num: true, format: (r) => compact(r.mean) },
+  const anomalyColumns: Column<GuildAnomalyRow>[] = $derived([
+    { key: "guildId", label: m.analytics.tableColGuild(), mono: true },
+    { key: "name", label: m.common.name(), format: (r) => r.name ?? "—" },
+    { key: "eventType", label: m.common.type(), mono: true },
+    { key: "hour", label: m.analytics.tableColHourUtc(), muted: true, format: (r) => stamp(r.hour), sortValue: (r) => utcParse(r.hour) },
+    { key: "count", label: m.common.count(), num: true },
+    { key: "mean", label: m.analytics.tabGuildsColUsual(), num: true, format: (r) => compact(r.mean) },
     { key: "z", label: "z", num: true, format: (r) => r.z.toFixed(1), tone: (r) => (r.z >= 6 ? "crit" : r.z >= 3 ? "warn" : null) },
-  ];
+  ]);
 
   function select(guildId: string) {
     analyticsFilters.update((f) => ({ ...f, guild: guildId }));
@@ -96,28 +97,28 @@
 
 <div class="space-y-4">
   <div class="flex flex-wrap items-center gap-2">
-    <select class="min-h-[44px] rounded-lg border px-2 text-xs" style={selectStyle} bind:value={eventType} aria-label="Event type">
-      <option value="">any type</option>
+    <select class="min-h-[44px] rounded-lg border px-2 text-xs" style={selectStyle} bind:value={eventType} aria-label={m.common.eventType()}>
+      <option value="">{m.analytics.tabGuildDetailAnyType()}</option>
       {#each eventTypes as t}<option value={t}>{t}</option>{/each}
     </select>
     <label class="flex items-center gap-1.5 text-xs" style="color: {$colorStore.muted}">
-      min / h
-      <input type="number" min="1" step="1" class="min-h-[44px] w-20 rounded-lg border px-2 text-xs" style={selectStyle} bind:value={minCount} aria-label="Minimum events per hour" />
+      {m.analytics.tabGuildsMinPerHour()}
+      <input type="number" min="1" step="1" class="min-h-[44px] w-20 rounded-lg border px-2 text-xs" style={selectStyle} bind:value={minCount} aria-label={m.analytics.tabGuildsAriaMinEvents()} />
     </label>
     <div class="flex items-center gap-1 ml-auto">
       <input
         type="text"
         inputmode="numeric"
-        placeholder="guild id"
+        placeholder={m.analytics.filterGuildIdPlaceholder()}
         class="min-h-[44px] w-44 rounded-lg border px-2 text-xs font-mono"
         style={selectStyle}
         bind:value={guildInput}
         onkeydown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyInput(); } }}
-        aria-label="Guild id"
+        aria-label={m.common.ariaGuildId()}
       />
-      <button type="button" class="min-h-[44px] px-3 rounded-lg text-xs font-medium" style="background: {$colorStore.primary}30; color: {$colorStore.text}" onclick={applyInput}>Open</button>
+      <button type="button" class="min-h-[44px] px-3 rounded-lg text-xs font-medium" style="background: {$colorStore.primary}30; color: {$colorStore.text}" onclick={applyInput}>{m.common.open()}</button>
       {#if selected}
-        <button type="button" class="min-h-[44px] min-w-[44px] rounded-lg text-xs" style="background: {$colorStore.primary}10; color: {$colorStore.muted}" onclick={() => select("")} aria-label="Clear guild"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="min-h-[44px] min-w-[44px] rounded-lg text-xs" style="background: {$colorStore.primary}10; color: {$colorStore.muted}" onclick={() => select("")} aria-label={m.analytics.filterClearGuild()}><i class="fa-solid fa-xmark"></i></button>
       {/if}
     </div>
   </div>
@@ -126,11 +127,11 @@
     <GuildDetail guildId={selected} />
   {/if}
 
-  <Card title="Top guilds by events" note="row → select">
+  <Card title={m.analytics.tabGuildsCardTop()} note={m.analytics.tabGuildsTopNote()}>
     <AnalyticsTable columns={topColumns} rows={top} loading={topLoading} sortKey="events" pageSize={15} onRowClick={(r) => select(r.guildId)} selected={(r) => r.guildId === selected} />
   </Card>
 
-  <Card title="Unusual activity" note="vs same hour, previous 14 days · row → select">
-    <AnalyticsTable columns={anomalyColumns} rows={anomalies} loading={anomaliesLoading} empty="Nothing unusual" sortKey="z" pageSize={15} onRowClick={(r) => select(r.guildId)} selected={(r) => r.guildId === selected} />
+  <Card title={m.analytics.tabGuildsCardUnusual()} note={m.analytics.tabGuildsUnusualNote()}>
+    <AnalyticsTable columns={anomalyColumns} rows={anomalies} loading={anomaliesLoading} empty={m.analytics.tabGuildsNothingUnusual()} sortKey="z" pageSize={15} onRowClick={(r) => select(r.guildId)} selected={(r) => r.guildId === selected} />
   </Card>
 </div>

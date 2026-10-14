@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { administrationApi } from "$lib/api/index.ts";
@@ -53,8 +54,8 @@
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
     </div>
     <div>
-      <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Statistics & Privacy</h2>
-      <p class="text-sm" style="color: {$colorStore.muted}">Manage server statistics collection</p>
+      <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.automationStatsTitle()}</h2>
+      <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.automationStatsSubtitle()}</p>
     </div>
   </div>
 
@@ -64,8 +65,8 @@
          style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
       <div class="flex items-center justify-between">
         <div>
-          <p class="font-medium" style="color: {$colorStore.text}">Statistics Collection</p>
-          <p class="text-xs" style="color: {$colorStore.muted}">Opt out to stop collecting server statistics</p>
+          <p class="font-medium" style="color: {$colorStore.text}">{m.administration.automationStatsCollection()}</p>
+          <p class="text-xs" style="color: {$colorStore.muted}">{m.administration.automationStatsCollectionHint()}</p>
         </div>
         <button
           class="px-4 py-2 rounded-xl font-medium transition-all hover:scale-[1.02]"
@@ -73,7 +74,7 @@
           onclick={toggleStatsOptOut}
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
         >
-          {saving ? 'Processing...' : 'Toggle Opt-Out'}
+          {saving ? m.common.processing() : m.administration.automationStatsToggleOptOut()}
         </button>
       </div>
     </div>
@@ -85,18 +86,17 @@
         <div>
           <p class="font-medium flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-solid fa-triangle-exclamation" style="color: {$colorStore.accent};"></i>
-            Delete All Statistics Data
+            {m.administration.automationStatsDeleteTitle()}
           </p>
-          <p class="text-xs" style="color: {$colorStore.muted}">Permanently remove all collected statistics for this
-            server</p>
+          <p class="text-xs" style="color: {$colorStore.muted}">{m.administration.automationStatsDeleteHint()}</p>
         </div>
         <button
           class="px-4 py-2 rounded-xl font-medium transition-all hover:scale-[1.02] min-w-[120px]"
           disabled={saving}
-          onclick={() => showConfirm("Delete All Stats", "This will permanently delete all statistics data for this server. This action cannot be undone!", deleteAllStats, "danger")}
+          onclick={() => showConfirm(m.administration.automationStatsDeleteConfirmTitle(), m.administration.automationStatsDeleteConfirm(), deleteAllStats, "danger")}
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
         >
-          Delete Stats
+          {m.administration.automationStatsDeleteButton()}
         </button>
       </div>
     </div>

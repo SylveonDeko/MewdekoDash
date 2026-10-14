@@ -22,6 +22,7 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { fade, slide } from "svelte/transition";
   import type { PageData } from "./$types";
+  import { m } from "$lib/i18n";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import Notification from "$lib/components/ui/Notification.svelte";
     import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
@@ -33,8 +34,8 @@
     const autoSave = createAutoSave({
       onError: (_err, key) => showNotificationMessage(
         TYPED_SETTINGS.has(key.slice(key.indexOf(":") + 1) as SettingKey)
-          ? "Couldn't save counting settings."
-          : "Couldn't save counting settings. Your last change was undone.",
+          ? m.counting.notifySaveFailed()
+          : m.counting.notifySaveFailedUndone(),
         "error"
       )
     });
@@ -137,14 +138,14 @@
   function formatPattern(pattern: CountingPattern): string {
     switch (pattern) {
       case CountingPattern.Sequential:
-        return "Sequential (1, 2, 3...)";
+        return m.counting.patternSequential();
       case CountingPattern.SkipMultiples:
-        return "Skip Multiples";
-      case CountingPattern.Fibonacci: return "Fibonacci (1, 1, 2, 3, 5...)";
-      case CountingPattern.Primes: return "Primes (2, 3, 5, 7...)";
+        return m.counting.patternSkipMultiples();
+      case CountingPattern.Fibonacci: return m.counting.patternFibonacci();
+      case CountingPattern.Primes: return m.counting.patternPrimes();
       case CountingPattern.PowersOfTwo:
-        return "Powers of Two (2, 4, 8...)";
-      default: return "Unknown";
+        return m.counting.patternPowersOfTwo();
+      default: return m.common.unknown();
     }
   }
 
@@ -154,16 +155,16 @@
     const diffMs = now.getTime() - past.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
-    return `${Math.floor(diffMins / 1440)}d ago`;
+    if (diffMins < 1) return m.common.justNow();
+    if (diffMins < 60) return m.common.agoMinutes({ count: diffMins });
+    if (diffMins < 1440) return m.common.agoHours({ count: Math.floor(diffMins / 60) });
+    return m.common.agoDays({ count: Math.floor(diffMins / 1440) });
   }
 
   function getChannelStatus(channel: CountingChannelResponse): { color: string; text: string } {
-    if (!channel.isActive) return { color: "#ef4444", text: "Inactive" };
-    if (channel.currentNumber === channel.highestNumber) return { color: "#22c55e", text: "Active - Record High" };
-    return { color: "#3b82f6", text: "Active" };
+    if (!channel.isActive) return { color: "#ef4444", text: m.common.inactive() };
+    if (channel.currentNumber === channel.highestNumber) return { color: "#22c55e", text: m.counting.statusRecordHigh() };
+    return { color: "#3b82f6", text: m.common.active() };
   }
 
   // API Functions
@@ -193,8 +194,8 @@
 
     } catch (err) {
       logger.error("Failed to load counting data:", err);
-      error = err instanceof Error ? err.message : "Failed to load counting data";
-      showNotificationMessage("Failed to load counting data", "error");
+      error = err instanceof Error ? err.message : m.counting.notifyLoadFailed();
+      showNotificationMessage(m.counting.notifyLoadFailed(), "error");
     } finally {
       loading = false;
     }
@@ -240,7 +241,7 @@
       }
     } catch (err) {
       logger.error("Failed to load channel details:", err);
-      showNotificationMessage("Failed to load channel details", "error");
+      showNotificationMessage(m.counting.notifyDetailsFailed(), "error");
     }
   }
 
@@ -258,7 +259,7 @@
       leaderboard = leaderboardData.users || [];
     } catch (err) {
       logger.error("Failed to load leaderboard:", err);
-      showNotificationMessage("Failed to load leaderboard", "error");
+      showNotificationMessage(m.common.failedToLoadLeaderboard(), "error");
     }
   }
 
@@ -272,7 +273,7 @@
       };
 
       const newChannel = await countingApi.setupCountingChannel($currentGuild.id, BigInt(setupChannelId), request);
-      showNotificationMessage("Counting channel setup successfully!", "success");
+      showNotificationMessage(m.counting.notifyChannelSetup(), "success");
       
       // Refresh data
       await loadData();
@@ -287,7 +288,7 @@
       setupIncrement = 1;
     } catch (err) {
       logger.error("Failed to setup counting channel:", err);
-      showNotificationMessage("Failed to setup counting channel", "error");
+      showNotificationMessage(m.counting.notifyChannelSetupFailed(), "error");
     }
   }
 
@@ -384,7 +385,7 @@
       };
 
       await countingApi.resetCountingChannel($currentGuild.id, selectedChannel.channelId, request);
-      showNotificationMessage(`Channel reset to ${resetNumber} successfully!`, "success");
+      showNotificationMessage(m.counting.notifyChannelReset({ number: resetNumber }), "success");
       
       // Reload data
       await loadData();
@@ -395,7 +396,7 @@
       resetReason = "";
     } catch (err) {
       logger.error("Failed to reset channel:", err);
-      showNotificationMessage("Failed to reset channel", "error");
+      showNotificationMessage(m.counting.notifyResetFailed(), "error");
     }
   }
 
@@ -409,7 +410,7 @@
       };
 
       await countingApi.createSavePoint($currentGuild.id, selectedChannel.channelId, request);
-      showNotificationMessage("Save point created successfully!", "success");
+      showNotificationMessage(m.counting.notifySavePointCreated(), "success");
 
       // Reload save points
       const savePointsData = await countingApi.getSavePoints($currentGuild.id, selectedChannel.channelId);
@@ -419,7 +420,7 @@
       saveReason = "";
     } catch (err) {
       logger.error("Failed to create save point:", err);
-      showNotificationMessage("Failed to create save point", "error");
+      showNotificationMessage(m.counting.notifySavePointFailed(), "error");
     }
   }
 
@@ -453,11 +454,11 @@
     managementBusy = true;
     try {
       await countingApi.restoreSavePoint($currentGuild.id, selectedChannel.channelId, { saveId, userId: BigInt(data.user.id) });
-      showNotificationMessage("Save point restored", "success");
+      showNotificationMessage(m.counting.notifySavePointRestored(), "success");
       await loadChannelDetails(selectedChannel.channelId);
     } catch (err) {
       logger.error("Failed to restore save point:", err);
-      showNotificationMessage("Failed to restore save point", "error");
+      showNotificationMessage(m.counting.notifyRestoreFailed(), "error");
     } finally {
       managementBusy = false;
     }
@@ -471,7 +472,7 @@
       savePoints = savePoints.filter(sp => sp.id !== saveId);
     } catch (err) {
       logger.error("Failed to delete save point:", err);
-      showNotificationMessage("Failed to delete save point", "error");
+      showNotificationMessage(m.counting.notifyDeleteSavePointFailed(), "error");
     } finally {
       managementBusy = false;
     }
@@ -480,7 +481,7 @@
   async function banCountingUser() {
     if (!selectedChannel || !$currentGuild || !data.user) return;
     if (!/^\d{15,22}$/.test(banUserId.trim())) {
-      showNotificationMessage("Enter a valid Discord user ID", "error");
+      showNotificationMessage(m.common.invalidUserId(), "error");
       return;
     }
     managementBusy = true;
@@ -496,7 +497,7 @@
       await loadManagementData();
     } catch (err) {
       logger.error("Failed to ban user from counting:", err);
-      showNotificationMessage("Failed to ban user", "error");
+      showNotificationMessage(m.counting.notifyBanFailed(), "error");
     } finally {
       managementBusy = false;
     }
@@ -510,7 +511,7 @@
       await loadManagementData();
     } catch (err) {
       logger.error("Failed to unban user from counting:", err);
-      showNotificationMessage("Failed to unban user", "error");
+      showNotificationMessage(m.counting.notifyUnbanFailed(), "error");
     } finally {
       managementBusy = false;
     }
@@ -526,7 +527,7 @@
       newMilestone = null;
     } catch (err) {
       logger.error("Failed to save milestones:", err);
-      showNotificationMessage("Failed to save milestones", "error");
+      showNotificationMessage(m.counting.notifyMilestonesFailed(), "error");
     } finally {
       managementBusy = false;
     }
@@ -537,10 +538,10 @@
     managementBusy = true;
     try {
       await countingApi.setCustomMessage($currentGuild.id, selectedChannel.channelId, { message: customMessage });
-      showNotificationMessage("Milestone message saved", "success");
+      showNotificationMessage(m.counting.notifyMilestoneMessageSaved(), "success");
     } catch (err) {
       logger.error("Failed to save custom message:", err);
-      showNotificationMessage("Failed to save message", "error");
+      showNotificationMessage(m.common.failedToSaveMessage(), "error");
     } finally {
       managementBusy = false;
     }
@@ -549,9 +550,9 @@
   async function purgeChannel() {
     if (!selectedChannel || !$currentGuild || !data.user) return;
     if (!(await requestConfirmation({
-      title: "Purge counting data?",
-      message: "This wipes every count, streak, statistic, and save point for this channel. It cannot be undone.",
-      confirmText: "Purge everything"
+      title: m.counting.confirmPurgeTitle(),
+      message: m.counting.confirmPurgeMessage(),
+      confirmText: m.counting.purgeButton()
     }))) return;
     managementBusy = true;
     try {
@@ -560,12 +561,12 @@
         reason: purgeReason || null
       });
       purgeReason = "";
-      showNotificationMessage("Counting data purged", "success");
+      showNotificationMessage(m.counting.notifyPurged(), "success");
       await loadChannelDetails(selectedChannel.channelId);
       await loadManagementData();
     } catch (err) {
       logger.error("Failed to purge counting channel:", err);
-      showNotificationMessage("Failed to purge channel", "error");
+      showNotificationMessage(m.counting.notifyPurgeFailed(), "error");
     } finally {
       managementBusy = false;
     }
@@ -582,7 +583,7 @@
 
     try {
       await countingApi.removeCountingChannel($currentGuild.id, channel.channelId);
-      showNotificationMessage("Channel disabled successfully!", "success");
+      showNotificationMessage(m.counting.notifyChannelDisabled(), "success");
       
       // Reload data
       await loadData();
@@ -593,7 +594,7 @@
       }
     } catch (err) {
       logger.error("Failed to disable channel:", err);
-      showNotificationMessage("Failed to disable channel", "error");
+      showNotificationMessage(m.counting.notifyDisableFailed(), "error");
     }
   }
 
@@ -619,10 +620,18 @@
             loadLeaderboard();
         }
     });
+
+  const tabs = $derived([
+    { id: "channels", label: m.counting.tabChannels({ count: countingChannels.length || 0 }), icon: "fa-hashtag" },
+    { id: "config", label: m.common.configuration(), icon: "fa-gear" },
+    { id: "stats", label: m.common.statistics(), icon: "fa-chart-column" },
+    { id: "leaderboard", label: m.common.leaderboard(), icon: "fa-trophy" },
+    { id: "management", label: m.common.management(), icon: "fa-shield" }
+  ]);
 </script>
 
 <svelte:head>
-  <title>Counting Channels - Dashboard</title>
+  <title>{m.counting.headTitle()}</title>
 </svelte:head>
 
 {#snippet statusMessageContent()}
@@ -638,14 +647,14 @@
       <i class="fa-solid fa-circle-check"
          style="color: {getChannelStatus(selectedChannel).color}; font-size: 16px;"></i>
       <span class="text-sm" style="color: {getChannelStatus(selectedChannel).color}">
-        Selected: #{selectedChannel.channelName} - {getChannelStatus(selectedChannel).text}
+        {m.counting.selectedChannel({ name: selectedChannel.channelName ?? "", status: getChannelStatus(selectedChannel).text })}
       </span>
     </div>
   {:else if countingChannels.length === 0}
     <div class="mb-6 flex items-center gap-2 p-4 rounded-lg"
          style="background: #f59e0b15; border: 1px solid #f59e0b30;">
       <i class="fa-solid fa-circle-exclamation" style="color: #f59e0b; font-size: 16px;"></i>
-      <span class="text-sm" style="color: #f59e0b">No counting channels configured</span>
+      <span class="text-sm" style="color: #f59e0b">{m.counting.channelsNoneConfigured()}</span>
     </div>
   {/if}
 {/snippet}
@@ -653,18 +662,12 @@
 <DashboardPageLayout
   {autoSave}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-list-numeric"
   statusMessages={statusMessageContent}
-  subtitle="Manage counting games and competitions in your server"
-  tabs={[
-    { id: "channels", label: `Channels (${countingChannels.length || 0})`, icon: "fa-hashtag" },
-    { id: "config", label: "Configuration", icon: "fa-gear" },
-    { id: "stats", label: "Statistics", icon: "fa-chart-column" },
-    { id: "leaderboard", label: "Leaderboard", icon: "fa-trophy" },
-    { id: "management", label: "Management", icon: "fa-shield" }
-  ]}
-  title="Counting Channels"
+  subtitle={m.counting.pageSubtitle()}
+  {tabs}
+  title={m.counting.pageTitle()}
 >
 
   <!-- Content -->
@@ -682,23 +685,23 @@
       <!-- Setup New Channel -->
       <div class=" rounded-xl border p-6 transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Setup New Counting Channel</h3>
+        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.counting.setupTitle()}</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <span id="channel-span-stylecolor-ef4444span-label" class="block mb-2" style="color: {$colorStore.text}">
-              Channel <span style="color: #ef4444">*</span>
+              {m.common.channel()} <span style="color: #ef4444">*</span>
             </span>
             <DiscordSelector
               type="channel"
               options={textChannels}
               bind:selected={setupChannelId}
-              placeholder="Select channel..."
+              placeholder={m.common.selectChannelPlaceholder()}
             />
           </div>
           
           <div>
-            <label for="input-9001" class="block mb-2" style="color: {$colorStore.text}">Start Number</label>
+            <label for="input-9001" class="block mb-2" style="color: {$colorStore.text}">{m.counting.setupStartNumber()}</label>
             <input id="input-9001"
               type="number"
               bind:value={setupStartNumber}
@@ -709,7 +712,7 @@
           </div>
           
           <div>
-            <label for="input-7842" class="block mb-2" style="color: {$colorStore.text}">Increment</label>
+            <label for="input-7842" class="block mb-2" style="color: {$colorStore.text}">{m.counting.setupIncrement()}</label>
             <input id="input-7842"
               type="number"
               bind:value={setupIncrement}
@@ -727,7 +730,7 @@
           disabled={!setupChannelId}
         >
           <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-          Setup Channel
+          {m.counting.setupButton()}
         </button>
       </div>
 
@@ -735,8 +738,8 @@
       {#if countingChannels.length === 0}
         <div class="text-center py-12">
           <i class="fa-utility-duo fa-regular fa-list-numeric" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-          <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">No counting channels</h3>
-          <p style="color: {$colorStore.muted}">Setup your first counting channel to get started</p>
+          <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">{m.counting.channelsEmptyTitle()}</h3>
+          <p style="color: {$colorStore.muted}">{m.counting.channelsEmptyHint()}</p>
         </div>
       {:else}
         <div class="grid gap-4">
@@ -772,10 +775,10 @@
                     </span>
                   </div>
 
-                  <button aria-label="Delete channel"
+                  <button aria-label={m.counting.channelDisable()}
                           class="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/20 shrink-0"
                           onclick={(e) => { e.stopPropagation(); disableChannel(channel); }}
-                    title="Disable channel"
+                    title={m.counting.channelDisable()}
                   >
                     <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
                   </button>
@@ -784,20 +787,20 @@
                 <!-- Stats Grid - Responsive -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm" style="color: {$colorStore.muted}">
                   <div>
-                    <span class="font-medium" style="color: {$colorStore.text}">Current</span>
+                    <span class="font-medium" style="color: {$colorStore.text}">{m.common.current()}</span>
                     <div>{formatNumber(channel.currentNumber)}</div>
                   </div>
                   <div>
-                    <span class="font-medium" style="color: {$colorStore.text}">Highest</span>
+                    <span class="font-medium" style="color: {$colorStore.text}">{m.counting.channelHighest()}</span>
                     <div>{formatNumber(channel.highestNumber)}</div>
                   </div>
                   <div>
-                    <span class="font-medium" style="color: {$colorStore.text}">Total</span>
+                    <span class="font-medium" style="color: {$colorStore.text}">{m.common.total()}</span>
                     <div>{formatNumber(channel.totalCounts)}</div>
                   </div>
                   {#if channel.lastUsername}
                     <div class="col-span-2 sm:col-span-1">
-                      <span class="font-medium" style="color: {$colorStore.text}">Last by</span>
+                      <span class="font-medium" style="color: {$colorStore.text}">{m.counting.channelLastBy()}</span>
                       <div class="truncate">{channel.lastUsername}</div>
                     </div>
                   {/if}
@@ -814,24 +817,24 @@
       <!-- Basic Settings -->
       <div class=" rounded-xl border p-6 transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Basic Settings</h3>
+        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.common.basicSettings()}</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div>
             <span id="counting-pattern-label" class="block mb-2"
-                  style="color: {$colorStore.text}">Counting Pattern</span>
+                  style="color: {$colorStore.text}">{m.counting.configPattern()}</span>
             <DiscordSelector
               type="custom"
               customIcon="fa-hashtag"
               options={[
-                { id: "0", name: "Sequential (1, 2, 3...)", label: "Sequential" },
-                { id: "1", name: "Skip Multiples", label: "Skip Multiples" },
-                { id: "2", name: "Fibonacci (1, 1, 2, 3, 5...)", label: "Fibonacci" },
-                { id: "3", name: "Primes (2, 3, 5, 7...)", label: "Primes" },
-                { id: "4", name: "Powers of Two (2, 4, 8...)", label: "Powers of Two" }
+                { id: "0", name: m.counting.patternSequential(), label: m.counting.patternLabelSequential() },
+                { id: "1", name: m.counting.patternSkipMultiples(), label: m.counting.patternSkipMultiples() },
+                { id: "2", name: m.counting.patternFibonacci(), label: m.counting.patternLabelFibonacci() },
+                { id: "3", name: m.counting.patternPrimes(), label: m.counting.patternLabelPrimes() },
+                { id: "4", name: m.counting.patternPowersOfTwo(), label: m.counting.patternLabelPowersOfTwo() }
               ]}
               selected={settings.pattern?.toString() ?? "0"}
-              placeholder="Select pattern..."
+              placeholder={m.counting.configPatternPlaceholder()}
               searchable={false}
               onchange={(detail) => {
                 if (detail.selected && typeof detail.selected === 'string') {
@@ -843,7 +846,7 @@
           </div>
 
           <div>
-            <label for="input-5192" class="block mb-2" style="color: {$colorStore.text}">Number Base</label>
+            <label for="input-5192" class="block mb-2" style="color: {$colorStore.text}">{m.counting.configNumberBase()}</label>
             <input id="input-5192"
               type="number"
               bind:value={settings.numberBase}
@@ -854,11 +857,11 @@
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             >
-            <p class="text-sm mt-1" style="color: {$colorStore.muted}">2-36 (10 for decimal)</p>
+            <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.counting.configNumberBaseHint()}</p>
           </div>
 
           <div>
-            <label for="input-2101" class="block mb-2" style="color: {$colorStore.text}">Cooldown (seconds)</label>
+            <label for="input-2101" class="block mb-2" style="color: {$colorStore.text}">{m.common.cooldownSeconds()}</label>
             <input id="input-2101"
               type="number"
               bind:value={settings.cooldown}
@@ -872,7 +875,7 @@
           </div>
 
           <div>
-            <label for="input-6772" class="block mb-2" style="color: {$colorStore.text}">Max Number</label>
+            <label for="input-6772" class="block mb-2" style="color: {$colorStore.text}">{m.counting.configMaxNumber()}</label>
             <input id="input-6772"
               type="number"
               bind:value={settings.maxNumber}
@@ -882,11 +885,11 @@
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             >
-            <p class="text-sm mt-1" style="color: {$colorStore.muted}">0 = unlimited</p>
+            <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.common.zeroMeansUnlimited()}</p>
           </div>
 
           <div>
-            <label for="input-1917" class="block mb-2" style="color: {$colorStore.text}">Success Emote</label>
+            <label for="input-1917" class="block mb-2" style="color: {$colorStore.text}">{m.counting.configSuccessEmote()}</label>
             <input id="input-1917"
               type="text"
               bind:value={settings.successEmote}
@@ -899,7 +902,7 @@
           </div>
 
           <div>
-            <label for="input-9952" class="block mb-2" style="color: {$colorStore.text}">Error Emote</label>
+            <label for="input-9952" class="block mb-2" style="color: {$colorStore.text}">{m.counting.configErrorEmote()}</label>
             <input id="input-9952"
               type="text"
               bind:value={settings.errorEmote}
@@ -916,7 +919,7 @@
       <!-- Behavior Settings -->
       <div class=" rounded-xl border p-6 transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Behavior Settings</h3>
+        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.counting.configBehaviorTitle()}</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="space-y-4">
@@ -927,7 +930,7 @@
                 onchange={() => saveSetting("allowRepeatedUsers")}
                 class="w-4 h-4"
               >
-              <span style="color: {$colorStore.text}">Allow repeated users</span>
+              <span style="color: {$colorStore.text}">{m.counting.configAllowRepeated()}</span>
             </label>
 
             <label for="input-2005" class="flex items-center gap-3">
@@ -937,7 +940,7 @@
                 onchange={() => saveSetting("resetOnError")}
                 class="w-4 h-4"
               >
-              <span style="color: {$colorStore.text}">Reset count on error</span>
+              <span style="color: {$colorStore.text}">{m.counting.configResetOnError()}</span>
             </label>
 
             <label for="input-2005" class="flex items-center gap-3">
@@ -947,7 +950,7 @@
                 onchange={() => saveSetting("deleteWrongMessages")}
                 class="w-4 h-4"
               >
-              <span style="color: {$colorStore.text}">Delete wrong messages</span>
+              <span style="color: {$colorStore.text}">{m.counting.configDeleteWrong()}</span>
             </label>
           </div>
 
@@ -959,7 +962,7 @@
                 onchange={() => saveSetting("enableAchievements")}
                 class="w-4 h-4"
               >
-              <span style="color: {$colorStore.text}">Enable achievements</span>
+              <span style="color: {$colorStore.text}">{m.counting.configEnableAchievements()}</span>
             </label>
 
             <label for="input-2005" class="flex items-center gap-3">
@@ -969,7 +972,7 @@
                 onchange={() => saveSetting("enableCompetitions")}
                 class="w-4 h-4"
               >
-              <span style="color: {$colorStore.text}">Enable competitions</span>
+              <span style="color: {$colorStore.text}">{m.counting.configEnableCompetitions()}</span>
             </label>
           </div>
         </div>
@@ -978,33 +981,33 @@
       <!-- Role Restrictions -->
       <div class=" rounded-xl border p-6 transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Role Restrictions</h3>
+        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.counting.configRolesTitle()}</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <span id="required-roles-label" class="block mb-2" style="color: {$colorStore.text}">Required Roles</span>
+            <span id="required-roles-label" class="block mb-2" style="color: {$colorStore.text}">{m.common.requiredRoles()}</span>
             <DiscordSelector
               type="role"
               options={guildRoles}
               bind:selected={settings.requiredRoles}
-              placeholder="Select required roles..."
+              placeholder={m.counting.configRequiredRolesPlaceholder()}
               multiple={true}
               onchange={() => saveSetting("requiredRoles")}
             />
-            <p class="text-sm mt-1" style="color: {$colorStore.muted}">Users must have one of these roles</p>
+            <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.counting.configRequiredRolesHint()}</p>
           </div>
 
           <div>
-            <span id="banned-roles-label" class="block mb-2" style="color: {$colorStore.text}">Banned Roles</span>
+            <span id="banned-roles-label" class="block mb-2" style="color: {$colorStore.text}">{m.counting.configBannedRoles()}</span>
             <DiscordSelector
               type="role"
               options={guildRoles}
               bind:selected={settings.bannedRoles}
-              placeholder="Select banned roles..."
+              placeholder={m.counting.configBannedRolesPlaceholder()}
               multiple={true}
               onchange={() => saveSetting("bannedRoles")}
             />
-            <p class="text-sm mt-1" style="color: {$colorStore.muted}">Users with these roles cannot count</p>
+            <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.counting.configBannedRolesHint()}</p>
           </div>
         </div>
       </div>
@@ -1018,7 +1021,7 @@
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm" style="color: {$colorStore.muted}">Current Number</p>
+              <p class="text-sm" style="color: {$colorStore.muted}">{m.counting.statsCurrentNumber()}</p>
               <p class="text-2xl font-bold" style="color: {$colorStore.text}">{formatNumber(channelStats.channel.currentNumber)}</p>
             </div>
             <i class="fa-utility-duo fa-regular fa-list-numeric" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
@@ -1029,7 +1032,7 @@
                style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm" style="color: {$colorStore.muted}">Total Participants</p>
+              <p class="text-sm" style="color: {$colorStore.muted}">{m.counting.statsTotalParticipants()}</p>
               <p class="text-2xl font-bold" style="color: {$colorStore.text}">{formatNumber(channelStats.totalParticipants)}</p>
             </div>
             <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
@@ -1040,7 +1043,7 @@
                style="border-color: {$colorStore.accent}30; background: {$colorStore.accent}05;">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm" style="color: {$colorStore.muted}">Average Accuracy</p>
+              <p class="text-sm" style="color: {$colorStore.muted}">{m.counting.statsAverageAccuracy()}</p>
                 <p class="text-2xl font-bold"
                    style="color: {$colorStore.text}">{Number(channelStats.averageAccuracy || 0).toFixed(1)}%</p>
             </div>
@@ -1052,7 +1055,7 @@
                style="border-color: #ef444430; background: #ef444405;">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm" style="color: {$colorStore.muted}">Total Errors</p>
+              <p class="text-sm" style="color: {$colorStore.muted}">{m.common.totalErrors()}</p>
               <p class="text-2xl font-bold" style="color: {$colorStore.text}">{formatNumber(channelStats.totalErrors)}</p>
             </div>
             <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 24px;"></i>
@@ -1064,11 +1067,11 @@
       {#if channelStats.topContributor}
         <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-          <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Top Contributor</h3>
+          <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.counting.statsTopContributor()}</h3>
           
           <div class="flex items-center gap-4">
             {#if channelStats.topContributor.avatarUrl}
-              <img src={channelStats.topContributor.avatarUrl} alt="Avatar" class="w-12 h-12 rounded-full">
+              <img src={channelStats.topContributor.avatarUrl} alt={m.common.avatar()} class="w-12 h-12 rounded-full">
             {:else}
               <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background: {$colorStore.primary}20;">
                 <i class="fa-utility-duo fa-regular fa-user" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -1079,20 +1082,20 @@
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 16px;"></i>
                 <span class="font-bold" style="color: {$colorStore.text}">
-                  {channelStats.topContributor.username || "Unknown User"}
+                  {channelStats.topContributor.username || m.common.unknownUser()}
                 </span>
                 {#if channelStats.topContributor.rank}
                   <span class="px-2 py-1 rounded-full text-xs" style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-                    Rank #{channelStats.topContributor.rank}
+                    {m.common.rankNumber({ rank: channelStats.topContributor.rank })}
                   </span>
                 {/if}
               </div>
               
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 text-sm" style="color: {$colorStore.muted}">
-                <span>Contributions: {formatNumber(channelStats.topContributor.contributionsCount)}</span>
-                <span>Best Streak: {formatNumber(channelStats.topContributor.highestStreak)}</span>
-                  <span>Accuracy: {Number(channelStats.topContributor.accuracy || 0).toFixed(1)}%</span>
-                <span>Numbers Counted: {formatNumber(channelStats.topContributor.totalNumbersCounted)}</span>
+                <span>{m.counting.statContributions({ count: formatNumber(channelStats.topContributor.contributionsCount) })}</span>
+                <span>{m.counting.statBestStreak({ count: formatNumber(channelStats.topContributor.highestStreak) })}</span>
+                  <span>{m.counting.statAccuracy({ percent: Number(channelStats.topContributor.accuracy || 0).toFixed(1) })}</span>
+                <span>{m.counting.statNumbersCounted({ count: formatNumber(channelStats.topContributor.totalNumbersCounted) })}</span>
               </div>
             </div>
           </div>
@@ -1102,28 +1105,28 @@
       <!-- Milestones -->
       <div class=" rounded-xl border p-6 transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Milestones</h3>
+        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.counting.milestonesTitle()}</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="text-center">
             <i class="fa-utility-duo fa-regular fa-flag"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
-            <p class="text-sm" style="color: {$colorStore.muted}">Milestones Reached</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.counting.statsMilestonesReached()}</p>
             <p class="text-xl font-bold" style="color: {$colorStore.text}">{formatNumber(channelStats.milestonesReached)}</p>
           </div>
 
           <div class="text-center">
             <i class="fa-utility-duo fa-regular fa-star"
                style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
-            <p class="text-sm" style="color: {$colorStore.muted}">Highest Number</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.counting.statsHighestNumber()}</p>
             <p class="text-xl font-bold" style="color: {$colorStore.text}">{formatNumber(channelStats.channel.highestNumber)}</p>
           </div>
           
           <div class="text-center">
             <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
-            <p class="text-sm" style="color: {$colorStore.muted}">Last Activity</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.counting.statsLastActivity()}</p>
             <p class="text-xl font-bold" style="color: {$colorStore.text}">
-              {channelStats.lastActivity ? getTimeAgo(channelStats.lastActivity) : "Never"}
+              {channelStats.lastActivity ? getTimeAgo(channelStats.lastActivity) : m.common.never()}
             </p>
           </div>
         </div>
@@ -1136,23 +1139,23 @@
       <div class=" rounded-xl border p-6 transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <div class="flex items-center gap-4 mb-4">
-          <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Leaderboard Settings</h3>
+          <h3 class="text-xl font-bold" style="color: {$colorStore.text}">{m.counting.leaderboardSettings()}</h3>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <span id="sort-by-label" class="block mb-2" style="color: {$colorStore.text}">Sort By</span>
+            <span id="sort-by-label" class="block mb-2" style="color: {$colorStore.text}">{m.common.sortBy()}</span>
             <DiscordSelector
               type="custom"
               customIcon="fa-trophy"
               options={[
-                { id: "contributions", name: "Contributions", label: "Contributions" },
-                { id: "streak", name: "Highest Streak", label: "Streak" },
-                { id: "accuracy", name: "Accuracy", label: "Accuracy" },
-                { id: "totalnumbers", name: "Total Numbers", label: "Total Numbers" }
+                { id: "contributions", name: m.counting.leaderboardContributions(), label: m.counting.leaderboardContributions() },
+                { id: "streak", name: m.counting.leaderboardHighestStreak(), label: m.counting.leaderboardStreak() },
+                { id: "accuracy", name: m.counting.leaderboardAccuracy(), label: m.counting.leaderboardAccuracy() },
+                { id: "totalnumbers", name: m.counting.leaderboardTotalNumbers(), label: m.counting.leaderboardTotalNumbers() }
               ]}
               selected={leaderboardType}
-              placeholder="Select sort type..."
+              placeholder={m.counting.leaderboardSortPlaceholder()}
               searchable={false}
               onchange={(detail) => {
                 if (detail.selected && typeof detail.selected === 'string') {
@@ -1164,7 +1167,7 @@
           </div>
           
           <div>
-            <label for="input-2005" class="block mb-2" style="color: {$colorStore.text}">Limit</label>
+            <label for="input-2005" class="block mb-2" style="color: {$colorStore.text}">{m.counting.leaderboardLimit()}</label>
             <input id="input-2005"
               type="number"
               bind:value={leaderboardLimit}
@@ -1182,8 +1185,8 @@
       {#if leaderboard.length === 0}
         <div class="text-center py-12">
           <i class="fa-utility-duo fa-regular fa-trophy" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-          <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">No leaderboard data</h3>
-          <p style="color: {$colorStore.muted}">No users have participated in counting yet</p>
+          <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">{m.counting.leaderboardEmptyTitle()}</h3>
+          <p style="color: {$colorStore.muted}">{m.counting.leaderboardEmptyHint()}</p>
         </div>
       {:else}
         <div class="space-y-3">
@@ -1211,7 +1214,7 @@
               <!-- Avatar -->
                   <div class="min-w-12">
                 {#if entry.avatarUrl}
-                  <img src={entry.avatarUrl} alt="Avatar" class="w-12 h-12 rounded-full">
+                  <img src={entry.avatarUrl} alt={m.common.avatar()} class="w-12 h-12 rounded-full">
                 {:else}
                   <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background: {$colorStore.primary}20;">
                     <i class="fa-utility-duo fa-regular fa-user" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -1222,13 +1225,13 @@
               <!-- User Info -->
               <div class="flex-1">
                 <h4 class="font-bold" style="color: {$colorStore.text}">
-                  {entry.username || "Unknown User"}
+                  {entry.username || m.common.unknownUser()}
                 </h4>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm" style="color: {$colorStore.muted}">
-                  <span>Contributions: {formatNumber(entry.contributionsCount)}</span>
-                  <span>Best Streak: {formatNumber(entry.highestStreak)}</span>
-                    <span>Accuracy: {Number(entry.accuracy || 0).toFixed(1)}%</span>
-                  <span>Total: {formatNumber(entry.totalNumbersCounted)}</span>
+                  <span>{m.counting.statContributions({ count: formatNumber(entry.contributionsCount) })}</span>
+                  <span>{m.counting.statBestStreak({ count: formatNumber(entry.highestStreak) })}</span>
+                    <span>{m.counting.statAccuracy({ percent: Number(entry.accuracy || 0).toFixed(1) })}</span>
+                  <span>{m.counting.statTotal({ count: formatNumber(entry.totalNumbersCounted) })}</span>
                 </div>
               </div>
             </div>
@@ -1242,11 +1245,11 @@
       <!-- Reset Channel -->
       <div class=" rounded-xl border p-6 transition-all"
              style="border-color: #f59e0b30; background: #f59e0b05;">
-        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Reset Channel</h3>
+        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.counting.resetTitle()}</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label for="input-5476" class="block mb-2" style="color: {$colorStore.text}">Reset to Number</label>
+            <label for="input-5476" class="block mb-2" style="color: {$colorStore.text}">{m.counting.resetToNumber()}</label>
             <input id="input-5476"
               type="number"
               bind:value={resetNumber}
@@ -1257,11 +1260,11 @@
           </div>
           
           <div>
-            <label for="input-9512" class="block mb-2" style="color: {$colorStore.text}">Reason (optional)</label>
+            <label for="input-9512" class="block mb-2" style="color: {$colorStore.text}">{m.common.reasonOptional()}</label>
             <input id="input-9512"
               type="text"
               bind:value={resetReason}
-              placeholder="Reason for reset..."
+              placeholder={m.counting.resetReasonPlaceholder()}
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             >
@@ -1274,14 +1277,14 @@
           onclick={resetChannel}
         >
           <i class="fa-solid fa-arrow-rotate-left" style="font-size: 16px;"></i>
-          Reset Channel
+          {m.counting.resetTitle()}
         </button>
       </div>
 
       <!-- Save Points -->
       <div class=" rounded-xl border p-6 transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Save Points</h3>
+        <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.counting.savePointsTitle()}</h3>
         
         <!-- Create Save Point -->
         <div class="mb-6">
@@ -1289,7 +1292,7 @@
             <input
               type="text"
               bind:value={saveReason}
-              placeholder="Reason for save point..."
+              placeholder={m.counting.savePointReasonPlaceholder()}
               class="flex-1 p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             >
@@ -1299,7 +1302,7 @@
               onclick={createSavePoint}
             >
               <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-              Create Save Point
+              {m.counting.savePointCreate()}
             </button>
           </div>
         </div>
@@ -1308,7 +1311,7 @@
         {#if savePoints.length === 0}
           <div class="text-center py-8">
             <i class="fa-utility-duo fa-regular fa-box-archive" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
-            <p style="color: {$colorStore.muted}">No save points created</p>
+            <p style="color: {$colorStore.muted}">{m.counting.savePointsEmpty()}</p>
           </div>
         {:else}
           <div class="space-y-3">
@@ -1322,24 +1325,24 @@
                   <div class="flex items-center gap-2">
                     <i class="fa-solid fa-floppy-disk" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                     <span class="font-medium" style="color: {$colorStore.text}">
-                      Number: {formatNumber(savePoint.savedNumber)}
+                      {m.counting.savePointNumber({ number: formatNumber(savePoint.savedNumber) })}
                     </span>
                     <span class="text-sm" style="color: {$colorStore.muted}">
-                      by {savePoint.savedByUsername}
+                      {m.common.byName({ name: savePoint.savedByUsername ?? "" })}
                     </span>
                   </div>
                   <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-                    {savePoint.reason || "No reason provided"} • {savePoint.savedAt ? getTimeAgo(savePoint.savedAt) : "Unknown time"}
+                    {savePoint.reason || m.common.noReasonProvided()} • {savePoint.savedAt ? getTimeAgo(savePoint.savedAt) : m.counting.timeUnknown()}
                   </p>
                 </div>
                 
                 <div class="flex items-center gap-2">
-                  <button aria-label="Restore save point"
+                  <button aria-label={m.counting.savePointRestoreAria()}
                           class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px] disabled:opacity-50"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                     disabled={managementBusy}
                     onclick={async () => {
-                      if (await requestConfirmation({ message: `Restore the count to ${formatNumber(savePoint.savedNumber)}?`, confirmText: "Restore", variant: "warning" })) {
+                      if (await requestConfirmation({ message: m.counting.confirmRestore({ number: formatNumber(savePoint.savedNumber) }), confirmText: m.common.restore(), variant: "warning" })) {
                         await restoreSavePoint(savePoint.id);
                       }
                     }}
@@ -1347,12 +1350,12 @@
                     <i class="fa-solid fa-rotate-left" style="font-size: 14px;"></i>
                   </button>
 
-                  <button aria-label="Delete save point"
+                  <button aria-label={m.counting.savePointDeleteAria()}
                           class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px] disabled:opacity-50"
                     style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
                     disabled={managementBusy}
                     onclick={async () => {
-                      if (await requestConfirmation({ message: "Delete this save point?", confirmText: "Delete" })) {
+                      if (await requestConfirmation({ message: m.counting.confirmDeleteSavePoint(), confirmText: m.common.delete() })) {
                         await deleteSavePoint(savePoint.id);
                       }
                     }}
@@ -1371,21 +1374,21 @@
            style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <div class="flex items-center gap-3 mb-2">
           <i class="fa-utility-duo fa-regular fa-flag" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Milestones</h3>
+          <h3 class="text-xl font-bold" style="color: {$colorStore.text}">{m.counting.milestonesTitle()}</h3>
         </div>
-        <p class="text-sm mb-4" style="color: {$colorStore.muted}">Numbers that trigger a celebration message when reached.</p>
+        <p class="text-sm mb-4" style="color: {$colorStore.muted}">{m.counting.milestonesHint()}</p>
 
         <div class="flex flex-wrap gap-2 mb-4">
           {#if milestones.length === 0}
-            <span class="text-sm" style="color: {$colorStore.muted}">Using the default milestones.</span>
+            <span class="text-sm" style="color: {$colorStore.muted}">{m.counting.milestonesDefault()}</span>
           {/if}
           {#each milestones as milestone (milestone)}
             <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium"
                   style="background: {$colorStore.primary}15; color: {$colorStore.text};" transition:fade>
               {formatNumber(milestone)}
-              <button class="rounded-sm hover:opacity-80 min-h-[24px] min-w-[24px]" aria-label={`Remove milestone ${milestone}`}
+              <button class="rounded-sm hover:opacity-80 min-h-[24px] min-w-[24px]" aria-label={m.counting.milestoneRemoveAria({ milestone })}
                       disabled={managementBusy}
-                      onclick={() => saveMilestones(milestones.filter(m => m !== milestone))}>
+                      onclick={() => saveMilestones(milestones.filter(value => value !== milestone))}>
                 <i class="fa-solid fa-xmark" style="color: {$colorStore.muted}; font-size: 12px;"></i>
               </button>
             </span>
@@ -1393,23 +1396,23 @@
         </div>
 
         <form class="flex flex-col sm:flex-row gap-3" onsubmit={(e) => { e.preventDefault(); if (newMilestone) saveMilestones([...milestones, newMilestone]); }}>
-          <input type="number" min="1" bind:value={newMilestone} placeholder="Add a milestone, e.g. 1000"
-                 aria-label="New milestone"
+          <input type="number" min="1" bind:value={newMilestone} placeholder={m.counting.milestoneAddPlaceholder()}
+                 aria-label={m.counting.milestoneNewAria()}
                  class="flex-1 p-3 rounded-lg border min-h-[44px]"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           <button type="submit" disabled={managementBusy || !newMilestone}
                   class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
             <i class="fa-solid fa-plus"></i>
-            Add
+            {m.common.add()}
           </button>
         </form>
 
         <div class="mt-6">
-          <label for="milestone-message" class="block mb-2 font-medium" style="color: {$colorStore.text}">Milestone message</label>
-          <p class="text-xs mb-2" style="color: {$colorStore.muted}">Supports placeholders like %user%, %number% and %channel%.</p>
+          <label for="milestone-message" class="block mb-2 font-medium" style="color: {$colorStore.text}">{m.counting.milestoneMessageLabel()}</label>
+          <p class="text-xs mb-2" style="color: {$colorStore.muted}">{m.counting.milestoneMessageHint()}</p>
           <div class="flex flex-col sm:flex-row gap-3">
-            <input id="milestone-message" type="text" bind:value={customMessage} placeholder="🎉 %user% reached %number%!"
+            <input id="milestone-message" type="text" bind:value={customMessage} placeholder={m.counting.milestoneMessagePlaceholder()}
                    class="flex-1 p-3 rounded-lg border min-h-[44px]"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             <button disabled={managementBusy || !customMessage.trim()}
@@ -1417,7 +1420,7 @@
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                     onclick={saveCustomMessage}>
               <i class="fa-solid fa-floppy-disk"></i>
-              Save
+              {m.common.save()}
             </button>
           </div>
         </div>
@@ -1428,32 +1431,32 @@
            style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <div class="flex items-center gap-3 mb-2">
           <i class="fa-utility-duo fa-regular fa-user" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Counting Bans</h3>
+          <h3 class="text-xl font-bold" style="color: {$colorStore.text}">{m.counting.bansTitle()}</h3>
         </div>
-        <p class="text-sm mb-4" style="color: {$colorStore.muted}">Banned members can still chat but their numbers are ignored.</p>
+        <p class="text-sm mb-4" style="color: {$colorStore.muted}">{m.counting.bansHint()}</p>
 
         <form class="grid grid-cols-1 md:grid-cols-[1fr_1fr_140px_auto] gap-3 mb-6" onsubmit={(e) => { e.preventDefault(); banCountingUser(); }}>
-          <input type="text" inputmode="numeric" bind:value={banUserId} placeholder="User ID" aria-label="User ID to ban"
+          <input type="text" inputmode="numeric" bind:value={banUserId} placeholder={m.common.userId()} aria-label={m.counting.bansUserIdAria()}
                  class="p-3 rounded-lg border min-h-[44px]"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-          <input type="text" bind:value={banReason} placeholder="Reason (optional)" aria-label="Ban reason"
+          <input type="text" bind:value={banReason} placeholder={m.common.reasonOptional()} aria-label={m.common.banReason()}
                  class="p-3 rounded-lg border min-h-[44px]"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-          <input type="number" min="1" bind:value={banDurationMinutes} placeholder="Minutes" aria-label="Ban duration in minutes"
+          <input type="number" min="1" bind:value={banDurationMinutes} placeholder={m.common.minutes()} aria-label={m.counting.bansDurationAria()}
                  class="p-3 rounded-lg border min-h-[44px]"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           <button type="submit" disabled={managementBusy || !banUserId.trim()}
                   class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
                   style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;">
             <i class="fa-solid fa-ban"></i>
-            Ban
+            {m.common.actionBan()}
           </button>
         </form>
 
         {#if bannedUsers.length === 0}
           <div class="text-center py-6">
             <i class="fa-utility-duo fa-regular fa-user-check" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
-            <p style="color: {$colorStore.muted}">Nobody is banned from counting here</p>
+            <p style="color: {$colorStore.muted}">{m.counting.bansEmpty()}</p>
           </div>
         {:else}
           <div class="space-y-3">
@@ -1468,13 +1471,13 @@
                   </div>
                 {/if}
                 <div class="flex-1 min-w-0">
-                  <div class="font-medium truncate" style="color: {$colorStore.text}">{ban.username || `User ${ban.userId}`}</div>
+                  <div class="font-medium truncate" style="color: {$colorStore.text}">{ban.username || m.common.userFallback({ id: ban.userId })}</div>
                   <div class="text-sm" style="color: {$colorStore.muted}">
-                    {ban.reason || "No reason provided"} • by {ban.bannedByUsername || ban.bannedBy}
+                    {ban.reason || m.common.noReasonProvided()} • {m.common.byName({ name: ban.bannedByUsername || ban.bannedBy })}
                     {#if ban.expiresAt}
-                      • until {new Date(ban.expiresAt).toLocaleString()}
+                      • {m.counting.banUntil({ date: new Date(ban.expiresAt).toLocaleString() })}
                     {:else}
-                      • permanent
+                      • {m.common.permanentLower()}
                     {/if}
                   </div>
                 </div>
@@ -1482,7 +1485,7 @@
                         style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                         disabled={managementBusy}
                         onclick={() => unbanCountingUser(ban.userId)}>
-                  Unban
+                  {m.common.unban()}
                 </button>
               </div>
             {/each}
@@ -1495,11 +1498,11 @@
            style="border-color: #ef444430; background: #ef444405;">
         <div class="flex items-center gap-3 mb-2">
           <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
-          <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Purge Channel Data</h3>
+          <h3 class="text-xl font-bold" style="color: {$colorStore.text}">{m.counting.purgeTitle()}</h3>
         </div>
-        <p class="text-sm mb-4" style="color: {$colorStore.muted}">Deletes every count, statistic, streak, ban, and save point for this channel. The channel stays configured but starts from scratch.</p>
+        <p class="text-sm mb-4" style="color: {$colorStore.muted}">{m.counting.purgeHint()}</p>
         <div class="flex flex-col sm:flex-row gap-3">
-          <input type="text" bind:value={purgeReason} placeholder="Reason (optional)" aria-label="Purge reason"
+          <input type="text" bind:value={purgeReason} placeholder={m.common.reasonOptional()} aria-label={m.counting.purgeReasonAria()}
                  class="flex-1 p-3 rounded-lg border min-h-[44px]"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           <button disabled={managementBusy}
@@ -1507,7 +1510,7 @@
                   style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
                   onclick={purgeChannel}>
             <i class="fa-solid fa-trash"></i>
-            Purge everything
+            {m.counting.purgeButton()}
           </button>
         </div>
       </div>
@@ -1516,8 +1519,8 @@
   {:else}
     <div class="text-center py-12">
       <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-      <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">Select a Channel</h3>
-      <p style="color: {$colorStore.muted}">Choose a counting channel to configure settings</p>
+      <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">{m.common.selectAChannelPlaceholder()}</h3>
+      <p style="color: {$colorStore.muted}">{m.counting.selectHint()}</p>
     </div>
   {/if}
 </DashboardPageLayout>

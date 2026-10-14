@@ -1,4 +1,5 @@
 // lib/utils/sanitize.ts
+import { m } from "$lib/i18n";
 import DOMPurify from "dompurify";
 
 /**
@@ -122,11 +123,11 @@ export function sanitizeQuestionText(text: string): string {
 
   // Additional validation for question text
   if (sanitized.length === 0) {
-    throw new Error("Question text cannot be empty");
+    throw new Error(m.shared.sanitizeQuestionTextEmpty());
   }
 
   if (sanitized.length > 500) {
-    throw new Error("Question text cannot exceed 500 characters");
+    throw new Error(m.shared.validationQuestionTextTooLong());
   }
 
   return sanitized;
@@ -279,11 +280,11 @@ export function sanitizeFormName(name: string): string {
   const sanitized = sanitizeInput(name);
 
   if (sanitized.length === 0) {
-    throw new Error("Form name cannot be empty");
+    throw new Error(m.shared.sanitizeFormNameEmpty());
   }
 
   if (sanitized.length > 255) {
-    throw new Error("Form name cannot exceed 255 characters");
+    throw new Error(m.shared.validationFormNameTooLong());
   }
 
   return sanitized;

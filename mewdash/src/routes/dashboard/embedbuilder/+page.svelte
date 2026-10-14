@@ -1,5 +1,6 @@
 <!-- routes/dashboard/embedbuilder/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import type { PageData } from "./$types";
   import { onDestroy, onMount } from "svelte";
   import { get } from "svelte/store";
@@ -198,14 +199,14 @@
   let showSendConfirm = $state(false);
 
   // Main tab configuration for DashboardPageLayout
-  const mainTabs = [
-    { id: "templates", label: "Templates", icon: "fa-sparkles" },
-    { id: "editor", label: "Editor", icon: "fa-layer-group" },
-    { id: "components", label: "Components", icon: "fa-comment" },
-    { id: "json", label: "JSON", icon: "fa-code" },
-    { id: "saved", label: "Saved", icon: "fa-floppy-disk" },
-    { id: "send", label: "Send", icon: "fa-paper-plane" }
-  ];
+  const tabs = $derived([
+    { id: "templates", label: m.common.templates(), icon: "fa-sparkles" },
+    { id: "editor", label: m.common.editor(), icon: "fa-layer-group" },
+    { id: "components", label: m.embedbuilder.tabComponents(), icon: "fa-comment" },
+    { id: "json", label: m.embedbuilder.tabJson(), icon: "fa-code" },
+    { id: "saved", label: m.common.saved(), icon: "fa-floppy-disk" },
+    { id: "send", label: m.common.send(), icon: "fa-paper-plane" }
+  ]);
 
 
   // Notification helper
@@ -265,7 +266,7 @@
       savedGuildEmbeds = guildId ? await embedsApi.getGuildEmbeds(guildId) : [];
     } catch (error) {
       logger.error('Failed to load saved embeds:', error);
-      showNotificationMessage("Failed to load saved embeds", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyLoadSavedFailed(), "error");
     } finally {
       loadingSavedEmbeds = false;
     }
@@ -363,8 +364,8 @@
     try {
       parsed = JSON.parse(text);
     } catch (error) {
-      jsonParseError = "That isn't valid JSON.";
-      if (notify) showNotificationMessage("Invalid JSON", "error");
+      jsonParseError = m.embedbuilder.fullscreenJsonParseError();
+      if (notify) showNotificationMessage(m.embedbuilder.fullscreenNotifyJsonInvalid(), "error");
       return;
     }
 
@@ -442,7 +443,7 @@
     validateEmbeds();
     validateComponents();
     if (notify) {
-      showNotificationMessage("JSON applied to builder");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyJsonApplied());
       activeMainTab = "editor";
     }
   }
@@ -454,19 +455,19 @@
   // Saves the current builder state as a reusable embed template
   async function saveCurrentEmbed() {
     if (!data.user?.id) {
-      showNotificationMessage("You must be logged in to save embeds", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyLoginRequired(), "error");
       return;
     }
 
     const name = saveEmbedName.trim();
     if (!name) {
-      showNotificationMessage("Please enter a name for the embed", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyNameRequired(), "error");
       return;
     }
 
     const exportData = buildExportData();
     if (Object.keys(exportData).length === 0) {
-      showNotificationMessage("Nothing to save yet", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyNothingToSave(), "error");
       return;
     }
 
@@ -474,7 +475,7 @@
     const guildId = guild ? BigInt(guild.id) : undefined;
 
     if (saveAsGuildShared && !guildId) {
-      showNotificationMessage("Select a guild to save a guild-shared embed", "error");
+      showNotificationMessage(m.embedbuilder.pageNotifyServerForShared(), "error");
       return;
     }
 
@@ -488,12 +489,12 @@
         isGuildShared: saveAsGuildShared
       });
 
-      showNotificationMessage(`Saved "${name}"`);
+      showNotificationMessage(m.embedbuilder.fullscreenNotifySavedNamed({ name }));
       saveEmbedName = "";
       await loadSavedEmbeds(guildId);
     } catch (error) {
       logger.error('Failed to save embed:', error);
-      showNotificationMessage("Failed to save embed. The name may already be in use.", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifySaveFailed(), "error");
     } finally {
       savingEmbed = false;
     }
@@ -501,7 +502,7 @@
 
   function loadSavedEmbed(saved: SavedEmbed) {
     applyImportedJson(saved.jsonCode);
-    showNotificationMessage(`Loaded "${saved.embedName ?? "embed"}"`);
+    showNotificationMessage(m.embedbuilder.fullscreenNotifyLoadedNamed({ name: saved.embedName ?? m.embedbuilder.fullscreenSavedNameFallback() }));
   }
 
   function requestDeleteSavedEmbed(saved: SavedEmbed) {
@@ -516,12 +517,12 @@
 
     try {
       await embedsApi.deleteEmbed(saved.id, data.user.id);
-      showNotificationMessage(`Deleted "${saved.embedName ?? "embed"}"`);
+      showNotificationMessage(m.embedbuilder.personaDeleted({ name: saved.embedName ?? m.embedbuilder.fullscreenSavedNameFallback() }));
       const guild = get(currentGuild);
       await loadSavedEmbeds(guild ? BigInt(guild.id) : undefined);
     } catch (error) {
       logger.error('Failed to delete embed:', error);
-      showNotificationMessage("Failed to delete embed", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyDeleteFailed(), "error");
     }
   }
 
@@ -533,7 +534,7 @@
   async function loadSendableChannels(guildId: bigint) {
     if (!data.user?.id) {
       sendChannels = [];
-      sendChannelsError = "Log in to send messages";
+      sendChannelsError = m.embedbuilder.pageSendErrorLogin();
       return;
     }
 
@@ -547,7 +548,7 @@
     } catch (error) {
       logger.error("Failed to load sendable channels:", error);
       sendChannels = [];
-      sendChannelsError = "Could not load channels. You may not have access to this server.";
+      sendChannelsError = m.embedbuilder.pageSendErrorChannels();
     } finally {
       loadingSendChannels = false;
     }
@@ -585,23 +586,23 @@
 
     const guild = get(currentGuild);
     if (!guild) {
-      showNotificationMessage("Select a server first", "error");
+      showNotificationMessage(m.common.selectAServerFirstPlaceholder(), "error");
       return;
     }
 
     if (!data.user?.id) {
-      showNotificationMessage("You must be logged in to send messages", "error");
+      showNotificationMessage(m.embedbuilder.pageNotifySendLogin(), "error");
       return;
     }
 
     if (!selectedSendChannelId) {
-      showNotificationMessage("Pick a channel to send to", "error");
+      showNotificationMessage(m.embedbuilder.pageNotifyPickChannel(), "error");
       return;
     }
 
     const exportData = buildExportData();
     if (Object.keys(exportData).length === 0) {
-      showNotificationMessage("Nothing to send yet", "error");
+      showNotificationMessage(m.embedbuilder.pageNotifyNothingToSend(), "error");
       return;
     }
 
@@ -621,12 +622,12 @@
 
       showNotificationMessage(
         lastSendResult.mentionsSuppressed
-          ? `Sent to #${lastSendResult.channelName}. Everyone and role mentions were stripped because you lack Mention Everyone there.`
-          : `Sent to #${lastSendResult.channelName}`
+          ? m.embedbuilder.pageNotifySentStripped({ channel: lastSendResult.channelName })
+          : m.embedbuilder.pageNotifySent({ channel: lastSendResult.channelName })
       );
     } catch (error: any) {
       logger.error("Failed to send embed:", error);
-      showNotificationMessage(error?.message || "Failed to send message", "error");
+      showNotificationMessage(error?.message || m.embedbuilder.pageNotifySendFailed(), "error");
     } finally {
       sending = false;
     }
@@ -642,7 +643,7 @@
 
     // Switch to editor tab
     activeMainTab = "editor";
-    showNotificationMessage(`Applied template: ${template.name}`);
+    showNotificationMessage(m.embedbuilder.pageNotifyTemplateApplied({ name: template.name }));
   }
 
   // Embed management
@@ -660,13 +661,13 @@
     };
     
     embeds = [...embeds, newEmbed];
-    showNotificationMessage("New embed added");
+    showNotificationMessage(m.embedbuilder.fullscreenNotifyEmbedAdded());
   }
 
   function removeEmbed(index: number) {
     if (embeds.length > 1) {
       embeds = embeds.filter((_, i) => i !== index);
-      showNotificationMessage("Embed removed");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyEmbedRemoved());
     }
   }
 
@@ -674,7 +675,7 @@
     const duplicated = JSON.parse(JSON.stringify(embeds[index]));
     embeds.splice(index + 1, 0, duplicated);
     embeds = [...embeds];
-    showNotificationMessage("Embed duplicated");
+    showNotificationMessage(m.embedbuilder.fullscreenNotifyEmbedDuplicated());
   }
 
   function handleEmbedUpdate(detail: { embed: any; index: number }) {
@@ -696,7 +697,7 @@
     };
 
     componentRows = [...componentRows, newRow];
-    showNotificationMessage("New row added");
+    showNotificationMessage(m.embedbuilder.fullscreenNotifyRowAdded());
   }
 
   function addComponentToRow(rowKey: string, type: "button" | "select") {
@@ -707,23 +708,23 @@
 
     // Check total component limit
     if (getTotalComponentCount() >= 25) {
-      showNotificationMessage("Maximum 25 components allowed", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyMaxComponents(), "error");
       return;
     }
 
     // Check row limits
     if (type === "button" && row.components.length >= 5) {
-      showNotificationMessage("Maximum 5 buttons per row", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyMaxButtons(), "error");
       return;
     }
 
     if (type === "select" && row.components.length > 0) {
-      showNotificationMessage("Select menus must be alone in a row", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifySelectAlone(), "error");
       return;
     }
 
     if (row.components.some(c => c.isSelect)) {
-      showNotificationMessage("Cannot add components to a row with a select menu", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyRowHasSelect(), "error");
       return;
     }
 
@@ -732,7 +733,7 @@
       componentKey,
       id: null,
       rowIndex, // Track which row this belongs to
-      displayName: type === "button" ? "New Button" : "New Select",
+      displayName: type === "button" ? m.common.newButton() : m.embedbuilder.fullscreenNewSelectLabel(),
       style: type === "button" ? 1 : 0,
       url: "",
       emoji: "",
@@ -744,7 +745,7 @@
 
     row.components = [...row.components, newComponent];
     componentRows = [...componentRows];
-    showNotificationMessage(`${type === "button" ? "Button" : "Select menu"} added`);
+    showNotificationMessage(type === "button" ? m.embedbuilder.fullscreenNotifyButtonAdded() : m.embedbuilder.fullscreenNotifySelectAdded());
   }
 
   function removeRow(rowKey: string) {
@@ -759,7 +760,7 @@
       }))
     }));
 
-    showNotificationMessage("Row removed");
+    showNotificationMessage(m.embedbuilder.fullscreenNotifyRowRemoved());
   }
 
   function duplicateRow(rowKey: string) {
@@ -767,7 +768,7 @@
     if (!row) return;
 
     if (componentRows.length >= 5) {
-      showNotificationMessage("Maximum 5 rows allowed", "error");
+      showNotificationMessage(m.embedbuilder.pageNotifyMaxRows(), "error");
       return;
     }
 
@@ -800,7 +801,7 @@
       }))
     }));
 
-    showNotificationMessage("Row duplicated");
+    showNotificationMessage(m.embedbuilder.pageNotifyRowDuplicated());
   }
 
   function duplicateComponent(componentKey: string) {
@@ -810,12 +811,12 @@
       if (component) {
         // Check if we can add more to this row
         if (component.isSelect) {
-          showNotificationMessage("Cannot duplicate select menu in same row", "error");
+          showNotificationMessage(m.embedbuilder.pageNotifyDuplicateSelect(), "error");
           return;
         }
 
         if (row.components.length >= 5) {
-          showNotificationMessage("Row is full (max 5 buttons)", "error");
+          showNotificationMessage(m.embedbuilder.pageNotifyRowFull(), "error");
           return;
         }
 
@@ -828,7 +829,7 @@
         const index = row.components.indexOf(component);
         row.components.splice(index + 1, 0, duplicated);
         componentRows = [...componentRows];
-        showNotificationMessage("Component duplicated");
+        showNotificationMessage(m.embedbuilder.fullscreenNotifyComponentDuplicated());
         return;
       }
     }
@@ -907,19 +908,19 @@
     const targetButtonCount = targetRow.components.filter(c => !c.isSelect).length;
 
     if (isSelect && targetRow.components.length > 0) {
-      showNotificationMessage("Select menus must be alone in a row", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifySelectAlone(), "error");
       handleDragEnd();
       return;
     }
 
     if (targetHasSelect && !isSelect) {
-      showNotificationMessage("Cannot add buttons to a row with a select menu", "error");
+      showNotificationMessage(m.embedbuilder.pageNotifyRowHasSelectButton(), "error");
       handleDragEnd();
       return;
     }
 
     if (!isSelect && targetButtonCount >= 5 && draggedFromRow !== targetRowKey) {
-      showNotificationMessage("Maximum 5 buttons per row", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyMaxButtons(), "error");
       handleDragEnd();
       return;
     }
@@ -1246,7 +1247,7 @@
 
       if (row.components.length !== initialLength) {
         componentRows = [...componentRows];
-        showNotificationMessage("Component removed");
+        showNotificationMessage(m.embedbuilder.fullscreenNotifyComponentRemoved());
         return;
       }
     }
@@ -1326,7 +1327,7 @@
       if (embed.title && embed.title.length > 256) {
         validationErrors.push({
           id: `embed-${index}-title`,
-          message: `Embed ${index + 1} title exceeds 256 characters`,
+          message: m.embedbuilder.fullscreenValidationTitleTooLong({ number: index + 1 }),
           field: `embeds[${index}].title`
         });
       }
@@ -1334,7 +1335,7 @@
       if (embed.description && embed.description.length > 4096) {
         validationErrors.push({
           id: `embed-${index}-description`,
-          message: `Embed ${index + 1} description exceeds 4096 characters`,
+          message: m.embedbuilder.fullscreenValidationDescriptionTooLong({ number: index + 1 }),
           field: `embeds[${index}].description`
         });
       }
@@ -1343,7 +1344,7 @@
       if (!embed.title && !embed.description && embed.fields.length === 0) {
         validationWarnings.push({
           id: `embed-${index}-empty`,
-          message: `Embed ${index + 1} is empty`,
+          message: m.embedbuilder.pageValidationEmbedEmpty({ number: index + 1 }),
           field: `embeds[${index}]`
         });
       }
@@ -1358,7 +1359,7 @@
       if (!component.isSelect && component.style !== 5 && !component.id) {
         validationErrors.push({
           id: `component-${component.componentKey}-trigger`,
-          message: `${component.isSelect ? 'Select menu' : 'Button'} "${component.displayName}" needs a trigger`,
+          message: component.isSelect ? m.embedbuilder.fullscreenValidationSelectNeedsTrigger({ name: component.displayName }) : m.embedbuilder.fullscreenValidationButtonNeedsTrigger({ name: component.displayName }),
           field: `components[${index}]`
         });
       }
@@ -1368,7 +1369,7 @@
           if (!option.id) {
             validationErrors.push({
               id: `component-${component.componentKey}-option-${optIndex}-trigger`,
-              message: `Option "${option.name}" needs a trigger`,
+              message: m.embedbuilder.componentsErrorOptionNeedsTrigger({ name: option.name }),
               field: `components[${index}].options[${optIndex}]`
             });
           }
@@ -1471,64 +1472,64 @@
     try {
       await navigator.clipboard.writeText(JSON.stringify(buildExportData(), null, 2));
       jsonCopied = true;
-      showNotificationMessage("JSON copied to clipboard!");
+      showNotificationMessage(m.embedbuilder.pageNotifyJsonCopied());
       setTimeout(() => jsonCopied = false, 2000);
     } catch (error) {
       logger.error('Failed to copy JSON:', error);
-      showNotificationMessage("Failed to copy JSON", "error");
+      showNotificationMessage(m.embedbuilder.pageNotifyCopyFailed(), "error");
     }
   }
 
 
 
   // Complete placeholders data from placeholders page
-  const placeholders: Placeholder[] = [
+  const placeholders: Placeholder[] = $derived([
     // AFK placeholders
-    { category: "AFK", name: "%afk.message%", description: "The users afk message" },
-    { category: "AFK", name: "%afk.user%", description: "The users name and discriminator" },
-    { category: "AFK", name: "%afk.user.mention%", description: "The mention of the afk user" },
-    { category: "AFK", name: "%afk.user.avatar%", description: "The avatar url of the user" },
-    { category: "AFK", name: "%afk.user.id%", description: "The id of the afk user" },
-    { category: "AFK", name: "%afk.triggeruser%", description: "The trigger users username and discriminator" },
-    { category: "AFK", name: "%afk.triggeruser.avatar%", description: "The trigger users avatar" },
-    { category: "AFK", name: "%afk.triggeruser.mention%", description: "The mention of the trigger user" },
-    { category: "AFK", name: "%afk.triggeruser.id%", description: "The id of the trigger user" },
-    { category: "AFK", name: "%afk.time%", description: "How long the user has been afk" },
+    { category: "AFK", name: "%afk.message%", description: m.placeholders.afkMessage() },
+    { category: "AFK", name: "%afk.user%", description: m.placeholders.afkUser() },
+    { category: "AFK", name: "%afk.user.mention%", description: m.placeholders.afkUserMention() },
+    { category: "AFK", name: "%afk.user.avatar%", description: m.placeholders.afkUserAvatar() },
+    { category: "AFK", name: "%afk.user.id%", description: m.placeholders.afkUserId() },
+    { category: "AFK", name: "%afk.triggeruser%", description: m.placeholders.afkTriggeruser() },
+    { category: "AFK", name: "%afk.triggeruser.avatar%", description: m.placeholders.afkTriggeruserAvatar() },
+    { category: "AFK", name: "%afk.triggeruser.mention%", description: m.placeholders.afkTriggeruserMention() },
+    { category: "AFK", name: "%afk.triggeruser.id%", description: m.placeholders.afkTriggeruserId() },
+    { category: "AFK", name: "%afk.time%", description: m.placeholders.afkTime() },
     
     // Suggestions placeholders
-    { category: "Suggestions", name: "%suggest.user%", description: "The full username of the user who's suggestion got updated" },
-    { category: "Suggestions", name: "%suggest.user.id%", description: "The Id of the user who's suggestion got updated" },
-    { category: "Suggestions", name: "%suggest.message%", description: "The original suggestion" },
-    { category: "Suggestions", name: "%suggest.number%", description: "The suggestion number that was updated" },
-    { category: "Suggestions", name: "%suggest.user.name%", description: "The name of the user who's suggestion got updated" },
-    { category: "Suggestions", name: "%suggest.user.avatar%", description: "The avatar of the original suggester" },
-    { category: "Suggestions", name: "%suggest.mod.user%", description: "The full username of the one who updated the suggestion" },
-    { category: "Suggestions", name: "%suggest.mod.avatar%", description: "The pfp of the one who updated the suggestion" },
-    { category: "Suggestions", name: "%suggest.mod.name%", description: "The name of the person who updated the suggestion" },
-    { category: "Suggestions", name: "%suggest.mod.message%", description: "The reason the suggestion was updated" },
+    { category: "Suggestions", name: "%suggest.user%", description: m.placeholders.suggestUser() },
+    { category: "Suggestions", name: "%suggest.user.id%", description: m.placeholders.suggestUserId() },
+    { category: "Suggestions", name: "%suggest.message%", description: m.placeholders.suggestMessage() },
+    { category: "Suggestions", name: "%suggest.number%", description: m.placeholders.suggestNumber() },
+    { category: "Suggestions", name: "%suggest.user.name%", description: m.placeholders.suggestUserName() },
+    { category: "Suggestions", name: "%suggest.user.avatar%", description: m.placeholders.suggestUserAvatar() },
+    { category: "Suggestions", name: "%suggest.mod.user%", description: m.placeholders.suggestModUser() },
+    { category: "Suggestions", name: "%suggest.mod.avatar%", description: m.placeholders.suggestModAvatar() },
+    { category: "Suggestions", name: "%suggest.mod.name%", description: m.placeholders.suggestModName() },
+    { category: "Suggestions", name: "%suggest.mod.message%", description: m.placeholders.suggestModMessage() },
     
     // User placeholders
-    { category: "User", name: "%user%", description: "Username of the user" },
-    { category: "User", name: "%user.mention%", description: "Mention the user" },
-    { category: "User", name: "%user.id%", description: "User ID" },
-    { category: "User", name: "%user.avatar%", description: "User's avatar URL" },
-    { category: "User", name: "%user.name%", description: "User's display name" },
-    { category: "User", name: "%user.nick%", description: "User's nickname in the server" },
+    { category: "User", name: "%user%", description: m.placeholders.user() },
+    { category: "User", name: "%user.mention%", description: m.placeholders.userMention() },
+    { category: "User", name: "%user.id%", description: m.placeholders.userId() },
+    { category: "User", name: "%user.avatar%", description: m.placeholders.userAvatar() },
+    { category: "User", name: "%user.name%", description: m.placeholders.userName() },
+    { category: "User", name: "%user.nick%", description: m.placeholders.userNick() },
     
     // Server placeholders
-    { category: "Server", name: "%server%", description: "Server name" },
-    { category: "Server", name: "%server.id%", description: "Server ID" },
-    { category: "Server", name: "%server.members%", description: "Number of server members" },
-    { category: "Server", name: "%server.owner%", description: "Server owner username" },
-    { category: "Server", name: "%server.icon%", description: "Server icon URL" },
+    { category: "Server", name: "%server%", description: m.placeholders.server() },
+    { category: "Server", name: "%server.id%", description: m.placeholders.serverId() },
+    { category: "Server", name: "%server.members%", description: m.placeholders.serverMembers() },
+    { category: "Server", name: "%server.owner%", description: m.placeholders.serverOwner() },
+    { category: "Server", name: "%server.icon%", description: m.placeholders.mcFavicon() },
     
     // Random placeholders
-    { category: "Random", name: "%rng%", description: "Random number" },
-    { category: "Random", name: "%rng(1,10)%", description: "Random number between 1 and 10" },
-    { category: "Random", name: "%choose(a|b|c)%", description: "Choose randomly from options" },
-    { category: "Random", name: "%target%", description: "Returns anything the user has written after the trigger" },
-    { category: "Random", name: "%img:stuff%", description: "Returns an imgur.com search for 'stuff' (custom reactions only)" }
-  ];
+    { category: "Random", name: "%rng%", description: m.placeholders.rng() },
+    { category: "Random", name: "%rng(1,10)%", description: m.placeholders.rngRange() },
+    { category: "Random", name: "%choose(a|b|c)%", description: m.placeholders.choose() },
+    { category: "Random", name: "%target%", description: m.placeholders.target() },
+    { category: "Random", name: "%img:stuff%", description: m.placeholders.img() }
+  ]);
 
 
   // Tab change handler for DashboardPageLayout
@@ -1584,11 +1585,22 @@
     !hasEmbedContent || !selectedSendChannel
       ? null
       : !selectedSendChannel.canEmbed
-        ? "You do not have the Embed Links permission in this channel."
+        ? m.embedbuilder.pageSendEmbedBlockedUser()
         : !selectedSendChannel.botCanEmbed
-          ? "The bot does not have the Embed Links permission in this channel."
+          ? m.embedbuilder.pageSendEmbedBlockedBot()
           : null
   );
+
+  let sendConfirmMessage = $derived.by(() => {
+    const args = {
+      channel: selectedSendChannel ? `#${selectedSendChannel.name}` : m.embedbuilder.pageSendConfirmChannelFallback(),
+      server: $currentGuild?.name ?? m.common.thisServer()
+    };
+    if (!sendAsWebhook) return m.embedbuilder.pageSendConfirmMessageBot(args);
+    return selectedPersona
+      ? m.embedbuilder.pageSendConfirmMessagePersona({ ...args, persona: selectedPersona.name })
+      : m.embedbuilder.pageSendConfirmMessageWebhook(args);
+  });
 
   // Switching to a channel without webhook permissions must not leave webhook delivery armed
   $effect(() => {
@@ -1616,28 +1628,28 @@
   // Action buttons for DashboardPageLayout
     let actionButtons = $derived([
     {
-      label: "Undo",
+      label: m.common.undo(),
       icon: "fa-rotate-left",
       action: undo,
       disabled: historyIndex <= 0,
       loading: false
     },
     {
-      label: "Redo",
+      label: m.common.redo(),
       icon: "fa-rotate-right",
       action: redo,
       disabled: historyIndex >= editHistory.length - 1,
       loading: false
     },
     {
-      label: "Cancel edits",
+      label: m.embedbuilder.pageActionCancelEdits(),
       icon: "fa-xmark",
       action: cancelEdits,
       disabled: historyIndex <= 0,
       loading: false
     },
     {
-      label: jsonCopied ? 'Copied!' : 'Copy JSON',
+      label: jsonCopied ? m.embedbuilder.pageActionCopied() : m.embedbuilder.pageActionCopyJson(),
       icon: "fa-copy",
       action: copyJson,
       disabled: !canCopyJson,
@@ -1656,11 +1668,11 @@
 {/snippet}
 
 <DashboardPageLayout
-  title="Discord Embed Builder"
-  subtitle="Create and customize embeds for your Discord server"
+  title={m.embedbuilder.pageTitle()}
+  subtitle={m.embedbuilder.pageSubtitle()}
   icon="fa-layer-group"
-  guildName="Embed Builder"
-  tabs={mainTabs}
+  guildName={m.common.embedBuilder()}
+  {tabs}
   activeTab={activeMainTab}
   {actionButtons}
   ontabChange={handleMainTabChange}
@@ -1678,9 +1690,9 @@
           <!-- Templates Tab -->
           <div class="space-y-6">
             <div class="text-center mb-6">
-              <h2 class="text-xl font-semibold mb-2" style="color: {$colorStore.text};">Choose a Template</h2>
+              <h2 class="text-xl font-semibold mb-2" style="color: {$colorStore.text};">{m.embedbuilder.pageTemplatesHeading()}</h2>
               <p class="text-sm" style="color: {$colorStore.muted};">
-                Start with a pre-built template or create from scratch
+                {m.embedbuilder.pageTemplatesHint()}
               </p>
             </div>
 
@@ -1690,7 +1702,7 @@
             
             <div class="text-center pt-6 border-t" style="border-color: {$colorStore.primary}20;">
               <button
-                aria-label="Start from scratch"
+                aria-label={m.embedbuilder.pageStartFromScratch()}
                 class="px-6 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2 mx-auto"
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.primary};
@@ -1698,7 +1710,7 @@
                 onclick={() => activeMainTab = "editor"}
               >
                 <i class="fa-solid fa-layer-group" style="font-size: 16px;"></i>
-                Start from Scratch
+                {m.embedbuilder.pageStartFromScratch()}
               </button>
             </div>
           </div>
@@ -1709,27 +1721,27 @@
             <!-- Message Content -->
             <div>
               <label for="embed-title" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                Message Content (optional)
+                {m.embedbuilder.pageContentLabel()}
               </label>
               <div class="relative">
                 <textarea id="embed-title"
                           rows="3"
                           class="w-full px-3 py-2 pr-10 rounded-lg border resize-y"
                           style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          placeholder="Optional message content that appears above the embed..."
+                          placeholder={m.embedbuilder.pageContentPlaceholder()}
                           bind:value={content}
                 ></textarea>
                 <button
                   class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
                   style="color: {$colorStore.muted};"
                   onclick={(e) => showPlaceholderFromButton(e.currentTarget, 'content')}
-                  title="Insert placeholder"
+                  title={m.embedbuilder.editorInsertPlaceholder()}
                 >
                   %
                 </button>
               </div>
               <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                Click % for placeholders
+                {m.embedbuilder.pageContentHint()}
               </p>
             </div>
 
@@ -1737,17 +1749,17 @@
             <div class="space-y-4">
               <div class="flex justify-between items-center z-50">
                 <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">
-                  Embeds ({embeds.length}/10)
+                  {m.embedbuilder.fullscreenEmbedsHeading({ count: embeds.length, max: 10 })}
                 </h3>
                 <button
-                  aria-label="Add embed"
+                  aria-label={m.embedbuilder.fullscreenAddEmbed()}
                   class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2 disabled:opacity-50"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   disabled={embeds.length >= 10}
                   onclick={addEmbed}
                 >
                   <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                  Add Embed
+                  {m.embedbuilder.fullscreenAddEmbed()}
                 </button>
               </div>
 
@@ -1770,24 +1782,24 @@
             <div class="flex justify-between items-center">
               <div>
                 <h3 class="text-base sm:text-lg font-semibold" style="color: {$colorStore.text};">
-                  Components <span class="text-xs sm:text-sm font-normal">({getTotalComponentCount()}/25)</span>
+                  {m.embedbuilder.tabComponents()} <span class="text-xs sm:text-sm font-normal">({getTotalComponentCount()}/25)</span>
                 </h3>
                 <p class="text-xs sm:text-sm" style="color: {$colorStore.muted};">
-                  <span class="hidden sm:inline">Rows: {componentRows.length}/5 • Max 5 buttons per row</span>
-                  <span class="sm:hidden">R:{componentRows.length}/5 • B:5/row</span>
+                  <span class="hidden sm:inline">{m.embedbuilder.fullscreenComponentsLimits({ rows: componentRows.length })}</span>
+                  <span class="sm:hidden">{m.embedbuilder.pageComponentsLimitsShort({ rows: componentRows.length })}</span>
                 </p>
               </div>
 
               <button
-                aria-label="Add row"
+                aria-label={m.embedbuilder.fullscreenAddRow()}
                 class="px-2 sm:px-4 py-1 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-base font-medium transition-all hover:scale-[1.02] flex items-center gap-1 sm:gap-2 disabled:opacity-50"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 disabled={componentRows.length >= 5 || getTotalComponentCount() >= 25}
                 onclick={addRow}
               >
                 <i class="fa-solid fa-plus" style="font-size: 12px;"></i>
-                <span class="hidden sm:inline">Add Row</span>
-                <span class="sm:hidden">Row</span>
+                <span class="hidden sm:inline">{m.embedbuilder.fullscreenAddRow()}</span>
+                <span class="sm:hidden">{m.embedbuilder.pageAddRowShort()}</span>
               </button>
             </div>
 
@@ -1795,10 +1807,9 @@
               <div class="text-center py-6 sm:py-12">
                 <i class="fa-utility-duo fa-regular fa-comment"
                    style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 36px; opacity: 0.5; display: block; margin: 0 auto 12px;"></i>
-                <h4 class="text-base sm:text-lg font-semibold mb-1 sm:mb-2" style="color: {$colorStore.text};">No rows
-                  yet</h4>
+                <h4 class="text-base sm:text-lg font-semibold mb-1 sm:mb-2" style="color: {$colorStore.text};">{m.embedbuilder.pageRowsEmptyTitle()}</h4>
                 <p class="text-xs sm:text-sm mb-2 sm:mb-4" style="color: {$colorStore.muted};">
-                  Click "Add Row" to start adding buttons or select menus
+                  {m.embedbuilder.fullscreenComponentsEmptyHint()}
                 </p>
               </div>
             {:else}
@@ -1806,7 +1817,7 @@
               <div class="sm:hidden text-center mb-3">
                 <p class="text-[10px] flex items-center justify-center gap-1" style="color: {$colorStore.muted};">
                   <i class="fa-solid fa-grip-vertical" style="font-size: 10px;"></i>
-                  Drag the handle to reorder rows
+                  {m.embedbuilder.pageRowsDragHint()}
                 </p>
               </div>
               <div
@@ -1839,7 +1850,7 @@
                     class:opacity-50={isDraggingRow && draggedRow?.rowKey === row.rowKey}
                     style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
                     role="listitem"
-                    aria-label="Row {rowIndex + 1}"
+                    aria-label={m.common.rowNumber({ number: rowIndex + 1 })}
                     ondragover={(e) => handleRowDragOver(e, rowIndex)}
                     ondrop={(e) => handleRowDrop(e, rowIndex)}
                   >
@@ -1857,8 +1868,8 @@
                           ontouchstart={(e) => handleRowTouchStart(e, row)}
                           ontouchmove={(e) => handleRowTouchMove(e)}
                           ontouchend={(e) => handleRowTouchEnd(e)}
-                          title="Drag to reorder row"
-                          aria-label="Drag handle for row {componentRows.indexOf(row) + 1}"
+                          title={m.embedbuilder.pageRowDragTitle()}
+                          aria-label={m.embedbuilder.pageRowDragAria({ number: componentRows.indexOf(row) + 1 })}
                         >
                           <i
                             class="fa-solid fa-grip-vertical"
@@ -1866,15 +1877,13 @@
                           ></i>
                         </div>
                         <span class="text-xs sm:text-sm font-medium" style="color: {$colorStore.text};">
-                          Row {componentRows.indexOf(row) + 1}
-                          <span class="hidden sm:inline"> ({row.components.length}
-                            component{row.components.length !== 1 ? 's' : ''})</span>
-                          <span class="sm:hidden"> ({row.components.length})</span>
+                          <span class="hidden sm:inline">{row.components.length === 1 ? m.embedbuilder.fullscreenRowHeaderOne({ number: componentRows.indexOf(row) + 1, count: 1 }) : m.embedbuilder.fullscreenRowHeaderOther({ number: componentRows.indexOf(row) + 1, count: row.components.length })}</span>
+                          <span class="sm:hidden">{m.embedbuilder.pageRowHeaderShort({ number: componentRows.indexOf(row) + 1, count: row.components.length })}</span>
                         </span>
                       </div>
                       <div class="flex gap-1 sm:gap-2">
                         <button
-                          aria-label="Duplicate row"
+                          aria-label={m.embedbuilder.pageRowDuplicateAria()}
                           class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all hover:scale-[1.02] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                           disabled={row.components.length === 0}
@@ -1884,10 +1893,10 @@
                           }}
                         >
                           <i class="fa-solid fa-copy" style="font-size: 10px;"></i>
-                          <span class="hidden sm:inline">Duplicate</span>
+                          <span class="hidden sm:inline">{m.common.duplicate()}</span>
                         </button>
                         <button
-                          aria-label="Remove row"
+                          aria-label={m.embedbuilder.pageRowRemoveAria()}
                           class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all hover:scale-[1.02] font-medium"
                           style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                           onclick={(e) => {
@@ -1896,7 +1905,7 @@
                           }}
                         >
                           <i class="fa-solid fa-trash" style="font-size: 10px;"></i>
-                          <span class="hidden sm:inline">Remove Row</span>
+                          <span class="hidden sm:inline">{m.embedbuilder.pageRowRemoveAria()}</span>
                         </button>
                       </div>
                     </div>
@@ -1905,11 +1914,11 @@
                     {#if row.components.length === 0}
                       <div class="text-center py-3 sm:py-6">
                         <p class="text-xs sm:text-sm mb-2 sm:mb-3" style="color: {$colorStore.muted};">
-                          This row is empty
+                          {m.embedbuilder.fullscreenRowEmpty()}
                         </p>
                         <div class="flex gap-1 sm:gap-2 justify-center">
                           <button
-                            aria-label="Add button"
+                            aria-label={m.common.addButton()}
                             class="px-2 sm:px-3 py-1 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-1 sm:gap-2"
                             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                             onclick={(e) => {
@@ -1918,10 +1927,10 @@
                             }}
                           >
                             <i class="fa-solid fa-plus" style="font-size: 11px;"></i>
-                            Add Button
+                            {m.common.addButton()}
                           </button>
                           <button
-                            aria-label="Add select"
+                            aria-label={m.embedbuilder.fullscreenAddSelect()}
                             class="px-2 sm:px-3 py-1 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-1 sm:gap-2"
                             style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                             onclick={(e) => {
@@ -1930,7 +1939,7 @@
                             }}
                           >
                             <i class="fa-solid fa-plus" style="font-size: 11px;"></i>
-                            Add Select
+                            {m.embedbuilder.fullscreenAddSelect()}
                           </button>
                         </div>
                       </div>
@@ -1959,7 +1968,7 @@
                           <div class="flex justify-end gap-1 sm:gap-2 mt-2 sm:mt-4 pt-2 sm:pt-4 border-t"
                                style="border-color: {$colorStore.secondary}20;">
                             <button
-                              aria-label="Cancel"
+                              aria-label={m.common.cancel()}
                               class="px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-base rounded-md sm:rounded-lg font-medium transition-all hover:scale-[1.02]"
                               style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                               onclick={(e) => {
@@ -1967,10 +1976,10 @@
                                 editingComponent = null;
                               }}
                             >
-                              Cancel
+                              {m.common.cancel()}
                             </button>
                             <button
-                              aria-label="Done"
+                              aria-label={m.common.done()}
                               class="px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-base rounded-md sm:rounded-lg font-medium transition-all hover:scale-[1.02]"
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                               onclick={(e) => {
@@ -1981,7 +1990,7 @@
                                 editingComponent = null;
                               }}
                             >
-                              Done
+                              {m.common.done()}
                             </button>
                           </div>
                         </div>
@@ -1995,7 +2004,7 @@
                         ondragover={(e) => handleDragOver(e, row.rowKey, -1)}
                         ondrop={(e) => handleDrop(e, row.rowKey)}
                         role="list"
-                        aria-label="Components in row {rowIndex + 1}"
+                        aria-label={m.embedbuilder.pageRowComponentsAria({ number: rowIndex + 1 })}
                       >
                         {#each row.components as component, idx (component.componentKey)}
                           <!-- Draggable placeholder for visual feedback -->
@@ -2012,7 +2021,7 @@
                             class:w-full={component.isSelect}
                             class:opacity-50={isDragging && draggedComponent?.componentKey === component.componentKey}
                             style="touch-action: none;"
-                            aria-label="{component.isSelect ? 'Select menu' : 'Button'} {component.displayName}"
+                            aria-label={component.isSelect ? m.embedbuilder.pageComponentAriaSelect({ name: component.displayName }) : m.embedbuilder.pageComponentAriaButton({ name: component.displayName })}
                             draggable="true"
                             data-component
                             ondragstart={(e) => handleDragStart(e, component, row.rowKey)}
@@ -2053,7 +2062,7 @@
                         <div class="flex gap-1 sm:gap-2 justify-center pt-2 sm:pt-3 border-t mt-2 sm:mt-3"
                              style="border-color: {$colorStore.primary}20;">
                           <button
-                            aria-label="Add button to row"
+                            aria-label={m.embedbuilder.pageRowAddButtonAria()}
                             class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium transition-all hover:scale-[1.02] flex items-center gap-1"
                             style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}25;"
                             onclick={(e) => {
@@ -2062,7 +2071,7 @@
                             }}
                           >
                             <i class="fa-solid fa-plus" style="font-size: 10px;"></i>
-                            Button
+                            {m.common.button()}
                           </button>
                         </div>
                       {/if}
@@ -2086,29 +2095,29 @@
           <div class="space-y-4">
             <div class="flex justify-between items-center flex-wrap gap-2">
               <div>
-                <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Raw JSON</h3>
+                <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.embedbuilder.fullscreenJsonHeading()}</h3>
                 <p class="text-sm" style="color: {$colorStore.muted};">
-                  View, edit, or paste embed JSON directly
+                  {m.embedbuilder.fullscreenJsonHint()}
                 </p>
               </div>
               <div class="flex gap-2">
                 <button
-                  aria-label="Refresh JSON from builder"
+                  aria-label={m.embedbuilder.pageJsonRefreshAria()}
                   class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   onclick={refreshJsonPreview}
                 >
                   <i class="fa-solid fa-rotate" style="font-size: 14px;"></i>
-                  Refresh from Builder
+                  {m.embedbuilder.pageJsonRefresh()}
                 </button>
                 <button
-                  aria-label="Apply JSON to builder"
+                  aria-label={m.embedbuilder.pageJsonApplyAria()}
                   class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   onclick={applyJsonText}
                 >
                   <i class="fa-solid fa-check" style="font-size: 14px;"></i>
-                  Apply to Builder
+                  {m.embedbuilder.pageJsonApply()}
                 </button>
               </div>
             </div>
@@ -2118,7 +2127,7 @@
               spellcheck="false"
               class="w-full px-3 py-2 rounded-lg border font-mono text-xs resize-y"
               style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-              placeholder={'Paste embed JSON here, e.g. { "content": "...", "embeds": [...] }'}
+              placeholder={m.embedbuilder.fullscreenJsonPlaceholder()}
               bind:value={jsonText}
             ></textarea>
 
@@ -2127,8 +2136,7 @@
             {/if}
 
             <p class="text-xs" style="color: {$colorStore.muted};">
-              Paste a full <code>{'{ content, embeds, components }'}</code> payload or a single embed object, then click
-              "Apply to Builder" to load it into the editor.
+              {m.embedbuilder.pageJsonFooter({ payload: "{ content, embeds, components }" })}
             </p>
           </div>
 
@@ -2140,30 +2148,30 @@
               class="p-4 rounded-lg border space-y-3"
               style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
             >
-              <h3 class="text-base font-semibold" style="color: {$colorStore.text};">Save Current Embed</h3>
+              <h3 class="text-base font-semibold" style="color: {$colorStore.text};">{m.embedbuilder.fullscreenSaveHeading()}</h3>
               <div class="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   class="flex-1 px-3 py-2 rounded-lg border min-h-[44px]"
                   style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                  placeholder="Embed name"
+                  placeholder={m.embedbuilder.fullscreenSaveNamePlaceholder()}
                   bind:value={saveEmbedName}
                 />
                 <button
-                  aria-label="Save embed"
+                  aria-label={m.common.saveEmbed()}
                   class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   disabled={savingEmbed || !saveEmbedName.trim()}
                   onclick={saveCurrentEmbed}
                 >
                   <i class="fa-solid fa-floppy-disk" style="font-size: 14px;"></i>
-                  {savingEmbed ? "Saving..." : "Save"}
+                  {savingEmbed ? m.common.saving() : m.common.save()}
                 </button>
               </div>
               {#if $currentGuild}
                 <label class="flex items-center gap-2 text-sm min-h-[44px]" style="color: {$colorStore.muted};">
                   <input type="checkbox" bind:checked={saveAsGuildShared} />
-                  Share with everyone in {$currentGuild.name}
+                  {m.embedbuilder.personaShareWithEveryone({ server: $currentGuild.name })}
                 </label>
               {/if}
             </div>
@@ -2172,12 +2180,12 @@
             {#if $currentGuild}
               <div class="space-y-2">
                 <h3 class="text-base font-semibold" style="color: {$colorStore.text};">
-                  Shared in {$currentGuild.name} ({savedGuildEmbeds.length})
+                  {m.embedbuilder.pageSavedSharedHeading({ server: $currentGuild.name, count: savedGuildEmbeds.length })}
                 </h3>
                 {#if loadingSavedEmbeds}
-                  <p class="text-sm" style="color: {$colorStore.muted};">Loading...</p>
+                  <p class="text-sm" style="color: {$colorStore.muted};">{m.common.loading()}</p>
                 {:else if savedGuildEmbeds.length === 0}
-                  <p class="text-sm" style="color: {$colorStore.muted};">No guild-shared embeds yet</p>
+                  <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.pageSavedSharedEmpty()}</p>
                 {:else}
                   {#each savedGuildEmbeds as saved (saved.id)}
                     <div
@@ -2189,20 +2197,20 @@
                       </span>
                       <div class="flex gap-2 shrink-0">
                         <button
-                          aria-label="Load embed"
+                          aria-label={m.embedbuilder.pageSavedLoadAria()}
                           class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                           onclick={() => loadSavedEmbed(saved)}
                         >
-                          Load
+                          {m.common.load()}
                         </button>
                         <button
-                          aria-label="Delete embed"
+                          aria-label={m.embedbuilder.pageSavedDeleteAria()}
                           class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                           style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                           onclick={() => requestDeleteSavedEmbed(saved)}
                         >
-                          Delete
+                          {m.common.delete()}
                         </button>
                       </div>
                     </div>
@@ -2214,14 +2222,14 @@
             <!-- Personal embeds -->
             <div class="space-y-2">
               <h3 class="text-base font-semibold" style="color: {$colorStore.text};">
-                My Embeds ({savedUserEmbeds.length})
+                {m.embedbuilder.fullscreenMineHeading({ count: savedUserEmbeds.length })}
               </h3>
               {#if !data.user}
-                <p class="text-sm" style="color: {$colorStore.muted};">Log in to save personal embeds</p>
+                <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.pageSavedLogin()}</p>
               {:else if loadingSavedEmbeds}
-                <p class="text-sm" style="color: {$colorStore.muted};">Loading...</p>
+                <p class="text-sm" style="color: {$colorStore.muted};">{m.common.loading()}</p>
               {:else if savedUserEmbeds.length === 0}
-                <p class="text-sm" style="color: {$colorStore.muted};">No saved embeds yet</p>
+                <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.fullscreenMineEmpty()}</p>
               {:else}
                 {#each savedUserEmbeds as saved (saved.id)}
                   <div
@@ -2233,20 +2241,20 @@
                     </span>
                     <div class="flex gap-2 shrink-0">
                       <button
-                        aria-label="Load embed"
+                        aria-label={m.embedbuilder.pageSavedLoadAria()}
                         class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                         onclick={() => loadSavedEmbed(saved)}
                       >
-                        Load
+                        {m.common.load()}
                       </button>
                       <button
-                        aria-label="Delete embed"
+                        aria-label={m.embedbuilder.pageSavedDeleteAria()}
                         class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                         style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                         onclick={() => requestDeleteSavedEmbed(saved)}
                       >
-                        Delete
+                        {m.common.delete()}
                       </button>
                     </div>
                   </div>
@@ -2260,36 +2268,36 @@
           <div class="space-y-6">
             {#if !$currentGuild}
               <p class="text-sm" style="color: {$colorStore.muted};">
-                Select a server from the sidebar to send this message.
+                {m.embedbuilder.pageSendNoGuild()}
               </p>
             {:else}
               <div class="space-y-2">
                 <h3 class="text-base font-semibold" style="color: {$colorStore.text};">
-                  Send to {$currentGuild.name}
+                  {m.embedbuilder.pageSendHeading({ server: $currentGuild.name })}
                 </h3>
                 <p class="text-xs" style="color: {$colorStore.muted};">
-                  Sends are recorded in the audit log.
+                  {m.embedbuilder.pageSendAuditHint()}
                 </p>
               </div>
 
               <!-- Channel picker -->
               <div class="space-y-2">
-                <span class="block text-sm font-medium" style="color: {$colorStore.text};">Channel</span>
+                <span class="block text-sm font-medium" style="color: {$colorStore.text};">{m.common.channel()}</span>
                 {#if loadingSendChannels}
-                  <p class="text-sm" style="color: {$colorStore.muted};">Loading channels...</p>
+                  <p class="text-sm" style="color: {$colorStore.muted};">{m.common.loadingChannels()}</p>
                 {:else if sendChannelsError}
                   <p class="text-sm" style="color: #ED4245;">{sendChannelsError}</p>
                 {:else if sendableChannelOptions.length === 0}
                   <p class="text-sm" style="color: #ED4245;">
-                    There are no channels you and the bot can both post in.
+                    {m.embedbuilder.pageSendNoChannels()}
                   </p>
                 {:else}
                   <DiscordSelector
                     type="channel"
                     options={sendableChannelOptions}
                     bind:selected={selectedSendChannelId}
-                    placeholder="Select a channel"
-                    ariaLabel="Channel to send the message to"
+                    placeholder={m.common.selectAChannelPlaceholder()}
+                    ariaLabel={m.embedbuilder.pageSendChannelAria()}
                   />
                 {/if}
               </div>
@@ -2302,17 +2310,17 @@
                   transition:fly={{ y: -8, duration: 200 }}
                 >
                   <h4 class="text-sm font-semibold" style="color: {$colorStore.text};">
-                    Your permissions in #{selectedSendChannel.name}
+                    {m.embedbuilder.pageSendPermissionsHeading({ channel: selectedSendChannel.name })}
                   </h4>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs" style="color: {$colorStore.muted};">
-                    <span>{selectedSendChannel.canSend ? "✓" : "✕"} Send messages</span>
-                    <span>{selectedSendChannel.canEmbed ? "✓" : "✕"} Send embeds</span>
-                    <span>{selectedSendChannel.canMentionEveryone ? "✓" : "✕"} Mention everyone and roles</span>
-                    <span>{selectedSendChannel.canUseWebhooks ? "✓" : "✕"} Manage webhooks</span>
+                    <span>{selectedSendChannel.canSend ? "✓" : "✕"} {m.common.sendMessages()}</span>
+                    <span>{selectedSendChannel.canEmbed ? "✓" : "✕"} {m.embedbuilder.pageSendPermEmbeds()}</span>
+                    <span>{selectedSendChannel.canMentionEveryone ? "✓" : "✕"} {m.embedbuilder.pageSendPermMentions()}</span>
+                    <span>{selectedSendChannel.canUseWebhooks ? "✓" : "✕"} {m.common.manageWebhooks()}</span>
                   </div>
                   {#if !selectedSendChannel.canMentionEveryone}
                     <p class="text-xs" style="color: {$colorStore.muted};">
-                      Everyone, here, and role mentions will be stripped from this message.
+                      {m.embedbuilder.pageSendMentionsStripped()}
                     </p>
                   {/if}
                   {#if embedPermissionBlock}
@@ -2334,36 +2342,36 @@
                       bind:checked={sendAsWebhook}
                       disabled={!webhookAvailable}
                     />
-                    Send through a webhook with a custom name and avatar
+                    {m.embedbuilder.pageSendWebhookToggle()}
                   </label>
 
                   {#if !webhookAvailable}
                     <p class="text-xs" style="color: #ED4245;">
                       {selectedSendChannel.canUseWebhooks
-                        ? "The bot needs the Manage Webhooks permission in this channel."
-                        : "You need the Manage Webhooks permission in this channel."}
+                        ? m.embedbuilder.pageSendWebhookNeedBot()
+                        : m.embedbuilder.pageSendWebhookNeedUser()}
                     </p>
                   {/if}
 
                   {#if sendAsWebhook}
                     <div class="space-y-2" transition:fly={{ y: -8, duration: 200 }}>
                       <!-- Send as: a saved persona, or a one-off name and avatar -->
-                      <span class="block text-sm font-medium" style="color: {$colorStore.text};">Send as</span>
+                      <span class="block text-sm font-medium" style="color: {$colorStore.text};">{m.embedbuilder.pageSendAs()}</span>
 
                       <div class="flex flex-wrap items-center gap-2">
                         <button
-                          aria-label="Use a one-off name and avatar"
+                          aria-label={m.embedbuilder.pageSendCustomAria()}
                           class="px-3 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px]"
                           style="background: {$colorStore.primary}{selectedPersonaId === null ? '30' : '10'};
                                  color: {$colorStore.primary};
                                  border: 1px solid {$colorStore.primary}{selectedPersonaId === null ? '60' : '30'};"
                           onclick={() => (selectedPersonaId = null)}
                         >
-                          Custom
+                          {m.common.custom()}
                         </button>
                         {#each personas as persona (persona.id)}
                           <button
-                            aria-label="Send as {persona.name}"
+                            aria-label={m.embedbuilder.pageSendAsPersonaAria({ name: persona.name })}
                             class="px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 min-h-[44px]"
                             style="background: {$colorStore.primary}{selectedPersonaId === persona.id ? '30' : '10'};
                                    color: {$colorStore.primary};
@@ -2380,18 +2388,18 @@
                           </button>
                         {/each}
                         {#if loadingPersonas}
-                          <span class="text-xs" style="color: {$colorStore.muted};">Loading...</span>
+                          <span class="text-xs" style="color: {$colorStore.muted};">{m.common.loading()}</span>
                         {/if}
 
                         <!-- Trailing action, dashed so it does not read as another persona to pick -->
                         <button
-                          aria-label="Manage saved personas"
+                          aria-label={m.embedbuilder.pageSendManageAria()}
                           class="px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 min-h-[44px]"
                           style="color: {$colorStore.muted}; border: 1px dashed {$colorStore.primary}40;"
                           onclick={() => (showPersonaManager = true)}
                         >
                           <i class="fa-solid fa-gear" style="font-size: 12px;"></i>
-                          Manage
+                          {m.common.manage()}
                         </button>
                       </div>
 
@@ -2404,7 +2412,7 @@
                           type="text"
                           class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
                           style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          placeholder="Webhook display name (optional)"
+                          placeholder={m.embedbuilder.pageSendWebhookNamePlaceholder()}
                           maxlength="80"
                           bind:value={webhookUsername}
                         />
@@ -2413,20 +2421,19 @@
                           type="url"
                           class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
                           style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          placeholder="Webhook avatar URL (optional)"
+                          placeholder={m.embedbuilder.pageSendWebhookAvatarPlaceholder()}
                           bind:value={webhookAvatarUrl}
                         />
 
                         <p class="text-xs" style="color: {$colorStore.muted};">
-                          Links only.
+                          {m.embedbuilder.pageSendLinksOnly()}
                           <button
                             class="underline"
                             style="color: {$colorStore.primary};"
                             onclick={() => (showPersonaManager = true)}
                           >
-                            Save a persona
+                            {m.embedbuilder.pageSendSavePersona()}
                           </button>
-                          to upload an image.
                         </p>
                       </div>
                     {/if}
@@ -2436,14 +2443,14 @@
 
               <!-- Send button -->
               <button
-                aria-label="Send message"
+                aria-label={m.embedbuilder.pageSendButton()}
                 class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 disabled={sending || !selectedSendChannelId || !canCopyJson || !!embedPermissionBlock}
                 onclick={() => (showSendConfirm = true)}
               >
                 <i class="fa-solid fa-paper-plane" style="font-size: 14px;"></i>
-                {sending ? "Sending..." : "Send Message"}
+                {sending ? m.common.sending() : m.embedbuilder.pageSendButton()}
               </button>
 
               {#if lastSendResult}
@@ -2451,12 +2458,11 @@
                   class="p-3 rounded-lg border text-sm"
                   style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20; color: {$colorStore.text};"
                 >
-                  Sent to #{lastSendResult.channelName}
                   {lastSendResult.personaName
-                    ? `as "${lastSendResult.personaName}"`
+                    ? m.embedbuilder.pageSendResultPersona({ channel: lastSendResult.channelName, persona: lastSendResult.personaName })
                     : lastSendResult.sentViaWebhook
-                      ? "via webhook"
-                      : "as the bot"}.
+                      ? m.embedbuilder.pageSendResultWebhook({ channel: lastSendResult.channelName })
+                      : m.embedbuilder.pageSendResultBot({ channel: lastSendResult.channelName })}
                   <a
                     class="underline"
                     href={lastSendResult.messageLink}
@@ -2464,7 +2470,7 @@
                     style="color: {$colorStore.primary};"
                     target="_blank"
                   >
-                    Jump to message
+                    {m.embedbuilder.pageSendJump()}
                   </a>
                 </div>
               {/if}
@@ -2473,7 +2479,7 @@
               {#if blockedChannels.length > 0}
                 <div class="space-y-2">
                   <h4 class="text-sm font-semibold" style="color: {$colorStore.text};">
-                    Unavailable channels ({blockedChannels.length})
+                    {m.embedbuilder.pageSendUnavailable({ count: blockedChannels.length })}
                   </h4>
                   {#each blockedChannels as channel (channel.id)}
                     <div
@@ -2500,7 +2506,7 @@
              border-color: {$colorStore.primary}30;"
     >
       <div class="p-4">
-        <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Live Preview</h3>
+        <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.embedbuilder.fullscreenLivePreview()}</h3>
 
         <!-- Validation Card -->
         {#if validationErrors.length > 0 || validationWarnings.length > 0}
@@ -2508,7 +2514,7 @@
             <ValidationCard
               errors={validationErrors}
               warnings={validationWarnings}
-              title="Issues"
+              title={m.embedbuilder.fullscreenIssues()}
               collapsible={true}
               compact={true}
             />
@@ -2519,7 +2525,7 @@
           {content}
           {embeds}
           {componentRows}
-          emptyMessage="Your embed preview will appear here"
+          emptyMessage={m.embedbuilder.previewEmptyMessage()}
         />
       </div>
     </section>
@@ -2540,9 +2546,9 @@
 <!-- Delete Saved Embed Confirmation -->
 <ConfirmationModal
   bind:isOpen={showDeleteConfirm}
-  title="Delete Embed"
-  message={`Are you sure you want to delete "${embedPendingDelete?.embedName ?? "this embed"}"? This cannot be undone.`}
-  confirmText="Delete"
+  title={m.embedbuilder.pageSavedDeleteAria()}
+  message={m.embedbuilder.fullscreenDeleteMessage({ name: embedPendingDelete?.embedName ?? m.embedbuilder.fullscreenSavedNameFallbackThis() })}
+  confirmText={m.common.delete()}
   variant="danger"
   oncancel={() => embedPendingDelete = null}
   onconfirm={confirmDeleteSavedEmbed}
@@ -2550,9 +2556,9 @@
 
 <ConfirmationModal
   bind:isOpen={showSendConfirm}
-  title="Send Message"
-  message={`Send this message to #${selectedSendChannel?.name ?? "the selected channel"} in ${$currentGuild?.name ?? "this server"}${sendAsWebhook ? (selectedPersona ? ` as "${selectedPersona.name}"` : " through a webhook") : ""}? Everyone in the channel will see it, and the send is recorded in the audit log.`}
-  confirmText="Send"
+  title={m.embedbuilder.pageSendButton()}
+  message={sendConfirmMessage}
+  confirmText={m.common.send()}
   variant="warning"
   onconfirm={sendCurrentEmbed}
 />

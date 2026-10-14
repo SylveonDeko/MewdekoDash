@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -18,15 +19,20 @@
 
   let {
     isOpen = $bindable(false),
-    title = "Confirm Action",
-    message = "Are you sure you want to proceed?",
-    confirmText = "Confirm",
-    cancelText = "Cancel",
+    title = undefined,
+    message = undefined,
+    confirmText = undefined,
+    cancelText = undefined,
     variant = "danger",
     confirmDisabled = false,
     onconfirm,
     oncancel
   }: Props = $props();
+
+  const titleText = $derived(title ?? m.common.confirmAction());
+  const messageText = $derived(message ?? m.layout.confirmMessage());
+  const confirmLabel = $derived(confirmText ?? m.common.confirm());
+  const cancelLabel = $derived(cancelText ?? m.common.cancel());
 
   function handleConfirm() {
     close();
@@ -147,10 +153,10 @@
             <i class="fa-solid fa-triangle-exclamation" style="color: {variantColor}; font-size: 20px;"></i>
           </div>
           <h2 id="modal-title" class="text-lg font-semibold" style="color: {$colorStore.text}">
-            {title}
+            {titleText}
           </h2>
         </div>
-        <button type="button" aria-label="Button action"
+        <button type="button" aria-label={m.layout.confirmClose()}
           class="p-2 rounded-lg transition-colors hover:opacity-70"
           style="background: {$colorStore.primary}10; color: {$colorStore.muted}"
           onclick={handleCancel}
@@ -161,7 +167,7 @@
       <!-- Content -->
       <div class="p-6">
         <p id="modal-description" class="text-sm leading-relaxed" style="color: {$colorStore.muted}">
-          {message}
+          {messageText}
         </p>
       </div>
 
@@ -173,7 +179,7 @@
           style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
           onclick={handleCancel}
         >
-          {cancelText}
+          {cancelLabel}
         </button>
         <button
           type="button"
@@ -182,7 +188,7 @@
           onclick={handleConfirm}
           disabled={confirmDisabled}
         >
-          {confirmText}
+          {confirmLabel}
         </button>
       </div>
     </div>

@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/AnalyticsTile.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import type { Snippet } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
@@ -116,8 +117,8 @@
         type="button"
         class="min-h-[28px] min-w-[28px] -mt-1 -mr-1 rounded text-[11px] opacity-60 hover:opacity-100"
         style="color: {$colorStore.muted}"
-        title="Breakdown"
-        aria-label="Open breakdown of {label}"
+        title={m.analytics.tileBreakdown()}
+        aria-label={m.analytics.tileOpenBreakdown({ label })}
         onclick={() => (open = true)}
       ><i class="fa-solid fa-magnifying-glass-chart"></i></button>
     {/if}

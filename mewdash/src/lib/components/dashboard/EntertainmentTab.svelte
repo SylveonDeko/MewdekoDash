@@ -1,5 +1,6 @@
 <!-- lib/components/dashboard/EntertainmentTab.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import {fly} from "svelte/transition";
     import {onMount} from "svelte";
     import {colorStore} from "$lib/stores/colorStore";
@@ -79,7 +80,7 @@
             <i class="fa-utility-duo fa-regular fa-music text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
-          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Music Player</h2>
+          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.musicPlayer()}</h2>
         </div>
 
         {#if hasActiveMusic}
@@ -93,17 +94,17 @@
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
             <h3 class="text-xl font-semibold mb-3" style="color: {$colorStore.text}">
-              No music playing
+              {m.dashboard.entertainmentNoMusic()}
             </h3>
             <p class="mb-6" style="color: {$colorStore.muted}">
-              Join a voice channel and use music commands to start playing
+              {m.dashboard.entertainmentNoMusicHint()}
             </p>
             <a href="/dashboard/music"
                class="inline-flex items-center gap-2 py-3 px-6 rounded-xl transition-all hover:scale-[1.02]"
                style="background: {$colorStore.primary}; color: white; box-shadow: 0 4px 12px {$colorStore.primary}30;">
               <i class="fa-utility-duo fa-regular fa-play"
                  style="--fa-primary-color: white; --fa-secondary-color: white; --fa-secondary-opacity: 0.7;"></i>
-              Open Music Dashboard
+              {m.common.openMusicDashboard()}
             </a>
           </div>
         {/if}
@@ -114,7 +115,7 @@
         <div class=" rounded-lg p-4 transition-all hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
-          <h3 class="text-lg font-semibold mb-3" style="color: {$colorStore.text}">Coming Up</h3>
+          <h3 class="text-lg font-semibold mb-3" style="color: {$colorStore.text}">{m.dashboard.entertainmentComingUp()}</h3>
           <div class="space-y-2">
             {#each musicStatus.Queue.slice(0, 3) as track, index (index)}
               <div class="flex items-center gap-3 p-2 rounded-lg"
@@ -138,7 +139,7 @@
             <div class="mt-4 text-center">
               <a href="/dashboard/music"
                  class="text-sm" style="color: {$colorStore.primary}">
-                +{musicStatus.Queue.length - 3} more tracks
+                {m.common.moreTracksCount({ count: musicStatus.Queue.length - 3 })}
               </a>
             </div>
           {/if}
@@ -164,16 +165,16 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">
-                  {customVoiceConfig?.enabled ? 'Active' : 'Inactive'}
+                  {customVoiceConfig?.enabled ? m.common.active() : m.common.inactive()}
                 </span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Custom Voice</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.features.customvoiceName()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Temporary voice channels</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.entertainmentCustomVoiceDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/customvoice"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-              Configure
+              {m.common.configure()}
             </a>
           </div>
         </div>
@@ -191,16 +192,16 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">{giveaways.length}</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Active Giveaways</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.common.activeGiveaways()}</span>
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">
-                {giveaways.length > 0 ? `${giveaways[0]?.participants || 0} participants` : 'Host contests & prizes'}
+                {giveaways.length > 0 ? m.dashboard.entertainmentParticipants({ count: giveaways[0]?.participants || 0 }) : m.dashboard.entertainmentGiveawaysDesc()}
               </div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/giveaways"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
-              Manage
+              {m.common.manage()}
             </a>
           </div>
         </div>
@@ -211,7 +212,7 @@
         <div class=" rounded-lg p-4 transition-all hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
-          <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text}">Active Giveaways</h3>
+          <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text}">{m.common.activeGiveaways()}</h3>
 
           <div class="space-y-2">
             {#each giveaways as giveaway}
@@ -220,7 +221,7 @@
                   {giveaway.prize || giveaway.title}
                 </div>
                 <div class="text-xs mt-1" style="color: {$colorStore.muted}">
-                  {giveaway.participants || 0} participants
+                  {m.dashboard.entertainmentParticipants({ count: giveaway.participants || 0 })}
                 </div>
               </div>
             {/each}

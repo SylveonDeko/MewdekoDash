@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/tabs/FeaturesTab.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { logger } from "$lib/logger";
   import { analyticsApi } from "$lib/api/analytics/analytics";
   import type { FeatureAdoptionRow, FeatureDepth } from "$lib/api/analytics/models";
@@ -19,7 +20,7 @@
   let seq = 0;
 
   let histLabels = $derived((depth?.histogram ?? []).map((h) => String(h.features)));
-  let histSeries = $derived([{ name: "Guilds", data: (depth?.histogram ?? []).map((h) => h.guilds) }]);
+  let histSeries = $derived([{ name: m.analytics.pageTabGuilds(), data: (depth?.histogram ?? []).map((h) => h.guilds) }]);
   let scatter = $derived<ScatterPoint[]>(
     (depth?.points ?? [])
       .filter((p) => p.memberCount !== null)
@@ -31,17 +32,17 @@
     return a === null || b === null || !b ? null : (a / b) * 100;
   }
 
-  const columns: Column<FeatureAdoptionRow>[] = [
-    { key: "feature", label: "Feature", mono: true },
-    { key: "configured", label: "Configured", num: true, format: (r) => n(r.configured) },
-    { key: "enabled", label: "Enabled", num: true, format: (r) => n(r.enabled) },
-    { key: "enabledPct", label: "Enabled %", num: true, muted: true, format: (r) => pct(ratio(r.enabled, r.configured)), sortValue: (r) => ratio(r.enabled, r.configured) },
-    { key: "activeGuilds", label: "Active", num: true },
-    { key: "activePct", label: "Active %", num: true, muted: true, format: (r) => pct(ratio(r.activeGuilds, r.enabled ?? r.configured)), sortValue: (r) => ratio(r.activeGuilds, r.enabled ?? r.configured) },
-    { key: "activity", label: "Activity", num: true, format: (r) => compact(r.activity) },
-    { key: "errors", label: "Errors", num: true },
-    { key: "errorPct", label: "Err %", num: true, format: (r) => pct(r.activity ? (r.errors / r.activity) * 100 : 0), sortValue: (r) => (r.activity ? r.errors / r.activity : 0), tone: (r) => (r.activity && r.errors / r.activity >= 0.1 ? "crit" : r.activity && r.errors / r.activity >= 0.02 ? "warn" : null) },
-  ];
+  const columns: Column<FeatureAdoptionRow>[] = $derived([
+    { key: "feature", label: m.analytics.tabCensusAriaFeature(), mono: true },
+    { key: "configured", label: m.common.configured(), num: true, format: (r) => n(r.configured) },
+    { key: "enabled", label: m.common.enabled(), num: true, format: (r) => n(r.enabled) },
+    { key: "enabledPct", label: m.analytics.tabFeaturesColEnabledPct(), num: true, muted: true, format: (r) => pct(ratio(r.enabled, r.configured)), sortValue: (r) => ratio(r.enabled, r.configured) },
+    { key: "activeGuilds", label: m.common.active(), num: true },
+    { key: "activePct", label: m.analytics.tabFeaturesColActivePct(), num: true, muted: true, format: (r) => pct(ratio(r.activeGuilds, r.enabled ?? r.configured)), sortValue: (r) => ratio(r.activeGuilds, r.enabled ?? r.configured) },
+    { key: "activity", label: m.analytics.tabFeaturesColActivity(), num: true, format: (r) => compact(r.activity) },
+    { key: "errors", label: m.common.errors(), num: true },
+    { key: "errorPct", label: m.analytics.tabAiColErrPct(), num: true, format: (r) => pct(r.activity ? (r.errors / r.activity) * 100 : 0), sortValue: (r) => (r.activity ? r.errors / r.activity : 0), tone: (r) => (r.activity && r.errors / r.activity >= 0.1 ? "crit" : r.activity && r.errors / r.activity >= 0.02 ? "warn" : null) },
+  ]);
 
   async function load() {
     const my = ++seq;
@@ -64,16 +65,16 @@
 </script>
 
 <div class="space-y-4">
-  <Card title="Feature adoption" note="configured · enabled from nightly census · active in range · row → settings">
+  <Card title={m.analytics.tabFeaturesCardAdoption()} note={m.analytics.tabFeaturesAdoptionNote()}>
     <AnalyticsTable {columns} rows={adoption} loading={adoptionLoading} sortKey="activeGuilds" onRowClick={(r) => (feature = r.feature)} selected={(r) => r.feature === feature} />
   </Card>
 
   <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-    <Card title="Features per guild" note="distinct features used in range">
-      <SimpleLineChart labels={histLabels} series={histSeries} type="bar" loading={depthLoading} unit="guilds" beginAtZero height={220} />
+    <Card title={m.analytics.tabFeaturesCardPerGuild()} note={m.analytics.tabFeaturesPerGuildNote()}>
+      <SimpleLineChart labels={histLabels} series={histSeries} type="bar" loading={depthLoading} unit={m.analytics.unitGuilds()} beginAtZero height={220} />
     </Card>
-    <Card title="Size vs features" note="members (log) × features used">
-      <ScatterChart points={scatter} xLabel="members" yLabel="features" loading={depthLoading} height={220} />
+    <Card title={m.analytics.tabFeaturesCardSize()} note={m.analytics.tabFeaturesSizeNote()}>
+      <ScatterChart points={scatter} xLabel={m.common.members()} yLabel={m.analytics.tabFeaturesAxisFeatures()} loading={depthLoading} height={220} />
     </Card>
   </div>
 

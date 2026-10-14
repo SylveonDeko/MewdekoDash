@@ -1,5 +1,6 @@
 <!-- lib/components/dashboard/SecurityTab.svelte -->
 <script lang="ts">
+    import { m } from "$lib/i18n";
     import {fly} from "svelte/transition";
     import {onMount} from "svelte";
     import {colorStore} from "$lib/stores/colorStore";
@@ -158,9 +159,9 @@
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${diffDays}d ago`;
+    if (diffMins < 60) return m.common.agoMinutes({ count: diffMins });
+    if (diffHours < 24) return m.common.agoHours({ count: diffHours });
+    return m.common.agoDays({ count: diffDays });
   }
 
   // Count active protections
@@ -184,7 +185,7 @@
             <i class="fa-utility-duo fa-regular fa-chart-simple text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
-          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Recent Actions</h2>
+          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">{m.dashboard.securityRecentActions()}</h2>
         </div>
 
         <div class="space-y-2">
@@ -206,9 +207,9 @@
           <div class="text-center py-6">
             <i class="fa-utility-duo fa-regular fa-shield text-4xl mx-auto mb-3 block"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; --fa-primary-opacity: 0.5; --fa-secondary-opacity: 0.3;"></i>
-            <h3 class="text-base font-semibold mb-1" style="color: {$colorStore.text}">All Clear</h3>
+            <h3 class="text-base font-semibold mb-1" style="color: {$colorStore.text}">{m.dashboard.securityAllClear()}</h3>
             <p class="text-xs" style="color: {$colorStore.muted}">
-              No recent moderation actions. Your server is running smoothly!
+              {m.dashboard.securityAllClearHint()}
             </p>
           </div>
         {:else}
@@ -228,10 +229,10 @@
               <!-- Action Details -->
               <div class="flex-1 min-w-0">
                 <div class="font-medium text-sm truncate" style="color: {$colorStore.text}">
-                  Warning • {action.moderator || 'Unknown Moderator'}
+                  {m.dashboard.securityWarningItem({ moderator: action.moderator || m.dashboard.securityUnknownModerator() })}
                 </div>
                 <div class="text-xs truncate" style="color: {$colorStore.muted}">
-                  {action.reason || 'No reason provided'}
+                  {action.reason || m.common.noReasonProvided()}
                 </div>
               </div>
 
@@ -252,7 +253,7 @@
            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
           <i class="fa-utility-duo fa-regular fa-shield text-sm"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-          Full Moderation Dashboard
+          {m.dashboard.securityFullModeration()}
         </a>
       </div>
 
@@ -266,15 +267,15 @@
             <div class="w-3 h-3 rounded-full"
                  style="background: {protectionStatus.antiRaid?.enabled ? '#10b981' : $colorStore.muted};"></div>
             <div class="flex-1">
-              <div class="font-medium text-sm" style="color: {$colorStore.text}">Anti-Raid</div>
+              <div class="font-medium text-sm" style="color: {$colorStore.text}">{m.common.antiRaid()}</div>
               <div class="text-xs" style="color: {$colorStore.muted}">
-                {protectionStatus.antiRaid?.enabled ? 'Active' : 'Disabled'}
+                {protectionStatus.antiRaid?.enabled ? m.common.active() : m.common.disabled()}
               </div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/administration"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-              Configure
+              {m.common.configure()}
             </a>
           </div>
         </div>
@@ -287,15 +288,15 @@
             <div class="w-3 h-3 rounded-full"
                  style="background: {protectionStatus.antiSpam?.enabled ? '#10b981' : $colorStore.muted};"></div>
             <div class="flex-1">
-              <div class="font-medium text-sm" style="color: {$colorStore.text}">Anti-Spam</div>
+              <div class="font-medium text-sm" style="color: {$colorStore.text}">{m.common.antiSpam()}</div>
               <div class="text-xs" style="color: {$colorStore.muted}">
-                {protectionStatus.antiSpam?.enabled ? 'Active' : 'Disabled'}
+                {protectionStatus.antiSpam?.enabled ? m.common.active() : m.common.disabled()}
               </div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/administration"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
-              Configure
+              {m.common.configure()}
             </a>
           </div>
         </div>
@@ -308,15 +309,15 @@
             <div class="w-3 h-3 rounded-full"
                  style="background: {protectionStatus.antiAlt?.enabled ? '#10b981' : $colorStore.muted};"></div>
             <div class="flex-1">
-              <div class="font-medium text-sm" style="color: {$colorStore.text}">Anti-Alt</div>
+              <div class="font-medium text-sm" style="color: {$colorStore.text}">{m.common.antiAlt()}</div>
               <div class="text-xs" style="color: {$colorStore.muted}">
-                {protectionStatus.antiAlt?.enabled ? 'Active' : 'Disabled'}
+                {protectionStatus.antiAlt?.enabled ? m.common.active() : m.common.disabled()}
               </div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/administration"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
-              Configure
+              {m.common.configure()}
             </a>
           </div>
         </div>
@@ -329,15 +330,15 @@
             <div class="w-3 h-3 rounded-full"
                  style="background: {protectionStatus.antiMassMention?.enabled ? '#10b981' : $colorStore.muted};"></div>
             <div class="flex-1">
-              <div class="font-medium text-sm" style="color: {$colorStore.text}">Anti-Mass Mention</div>
+              <div class="font-medium text-sm" style="color: {$colorStore.text}">{m.common.antiMassMention()}</div>
               <div class="text-xs" style="color: {$colorStore.muted}">
-                {protectionStatus.antiMassMention?.enabled ? 'Active' : 'Disabled'}
+                {protectionStatus.antiMassMention?.enabled ? m.common.active() : m.common.disabled()}
               </div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/administration"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-              Configure
+              {m.common.configure()}
             </a>
           </div>
         </div>
@@ -361,14 +362,14 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">{moderationStats.totalWarnings}</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Total Warnings</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.common.totalWarnings()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">All time moderation actions</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.securityTotalWarningsDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/moderation"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
-              Manage
+              {m.common.manage()}
             </a>
           </div>
         </div>
@@ -386,9 +387,9 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">{moderationStats.recentActions}</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">This Week</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.dashboard.securityThisWeek()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Recent moderation actions</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.securityThisWeekDesc()}</div>
             </div>
           </div>
         </div>
@@ -406,14 +407,14 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">{loggingStats.configuredChannels}</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Log Channels</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.common.logChannels()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">{loggingStats.totalLogTypes} event types</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.securityEventTypes({ count: loggingStats.totalLogTypes })}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/logging"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
-              Configure
+              {m.common.configure()}
             </a>
           </div>
         </div>
@@ -431,14 +432,14 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">{activeProtections}</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Active Protections</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.dashboard.securityActiveProtections()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">{activeProtections}/4 protections enabled</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.securityProtectionsEnabled({ active: activeProtections, total: 4 })}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/administration"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-              Configure
+              {m.common.configure()}
             </a>
           </div>
         </div>

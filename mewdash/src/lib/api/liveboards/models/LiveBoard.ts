@@ -1,3 +1,5 @@
+import { m } from "$lib/i18n";
+
 // lib/api/liveboards/models/LiveBoard.ts
 
 /** What a live board shows. Mirrors LiveBoardKind (numeric on the wire). */
@@ -18,17 +20,17 @@ export type LiveBoardKindValue = (typeof LiveBoardKind)[keyof typeof LiveBoardKi
 
 /** Display labels for board kinds. */
 export const liveBoardKindLabels: Record<LiveBoardKindValue, string> = {
-  0: "Invite leaderboard",
-  1: "Message leaderboard",
-  2: "Voice leaderboard",
-  3: "Joins chart",
-  4: "Leaves chart",
-  5: "Growth chart",
-  6: "Members chart",
-  7: "Messages chart",
-  8: "Server overview",
-  9: "Invite analytics",
-  10: "Top games",
+  get 0() { return m.common.inviteLeaderboard(); },
+  get 1() { return m.liveboards.kindLabel1(); },
+  get 2() { return m.liveboards.kindLabel2(); },
+  get 3() { return m.liveboards.kindLabel3(); },
+  get 4() { return m.liveboards.kindLabel4(); },
+  get 5() { return m.liveboards.kindLabel5(); },
+  get 6() { return m.liveboards.kindLabel6(); },
+  get 7() { return m.liveboards.kindLabel7(); },
+  get 8() { return m.common.serverOverview(); },
+  get 9() { return m.liveboards.kindLabel9(); },
+  get 10() { return m.liveboards.kindLabel10(); },
 };
 
 /** How often reports post. Mirrors ReportFrequency (numeric on the wire). */

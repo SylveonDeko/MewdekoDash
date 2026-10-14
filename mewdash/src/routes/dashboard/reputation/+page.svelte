@@ -1,5 +1,6 @@
 <!-- routes/dashboard/reputation/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -161,7 +162,7 @@
             }
         } catch (err) {
             logger.error("Failed to load reputation data:", err);
-            showMessage("Failed to load reputation data", "error");
+            showMessage(m.reputation.errorLoad(), "error");
         } finally {
             loading = false;
         }
@@ -201,7 +202,7 @@
     };
 
     const autoSave = createAutoSave({
-        onError: () => showMessage("Couldn't save reputation settings. Your last change was undone.", "error")
+        onError: () => showMessage(m.reputation.errorSave(), "error")
     });
 
     function isValidCount(value: unknown, min: number): value is number {
@@ -317,7 +318,7 @@
                 announceDM: newRoleReward.announceDM,
             xpReward: newRoleReward.xpReward || 0
             });
-            showMessage("Role reward added successfully!", "success");
+            showMessage(m.reputation.notifyRewardAdded(), "success");
             newRoleReward = {
                 roleId: null,
                 repRequired: 100,
@@ -329,7 +330,7 @@
             await loadAllReputationData();
         } catch (err) {
             logger.error("Failed to add role reward:", err);
-            showMessage("Failed to add role reward", "error");
+            showMessage(m.common.failedToAddRoleReward(), "error");
         } finally {
             saving = false;
         }
@@ -338,16 +339,16 @@
     // Remove role reward
     async function removeRoleReward(roleId: bigint) {
         if (!$currentGuild?.id) return;
-        if (!(await requestConfirmation({ message: "Are you sure you want to remove this role reward?", confirmText: "Remove" }))) return;
+        if (!(await requestConfirmation({ message: m.reputation.confirmRemoveReward(), confirmText: m.common.remove() }))) return;
 
         saving = true;
         try {
           await reputationApi.removeRoleReward($currentGuild.id, roleId);
-            showMessage("Role reward removed!", "success");
+            showMessage(m.reputation.notifyRewardRemoved(), "success");
             await loadAllReputationData();
         } catch (err) {
             logger.error("Failed to remove role reward:", err);
-            showMessage("Failed to remove role reward", "error");
+            showMessage(m.common.failedToRemoveRoleReward(), "error");
         } finally {
             saving = false;
         }
@@ -369,7 +370,7 @@
             historyPage = page;
         } catch (err) {
             logger.error("Failed to load reputation history:", err);
-            showMessage("Failed to load reputation history", "error");
+            showMessage(m.reputation.errorLoadHistory(), "error");
         } finally {
             historyLoading = false;
         }
@@ -396,7 +397,7 @@
 
     function getRoleName(roleId: bigint): string {
         const role = guildRoles.find(r => r.id === roleId.toString());
-        return role ? role.name : `Unknown Role`;
+        return role ? role.name : m.common.unknownRole();
     }
 
     // DiscordSelector handlers
@@ -421,17 +422,17 @@
     });
 
     // Tabs configuration
-    const tabs = [
-      { id: "config", label: "Configuration", icon: "fa-gear" },
-      { id: "rewards", label: "Role Rewards", icon: "fa-star" },
-      { id: "leaderboard", label: "Leaderboard", icon: "fa-star" },
-      { id: "stats", label: "Statistics", icon: "fa-chart-bar" }
-    ];
+    const tabs = $derived([
+      { id: "config", label: m.common.configuration(), icon: "fa-gear" },
+      { id: "rewards", label: m.features.wizardXpStepRewardsTitle(), icon: "fa-star" },
+      { id: "leaderboard", label: m.common.leaderboard(), icon: "fa-star" },
+      { id: "stats", label: m.common.statistics(), icon: "fa-chart-bar" }
+    ]);
 
     // Action buttons configuration
     let actionButtons = $derived([
         {
-            label: "Refresh",
+            label: m.common.refresh(),
           icon: "fa-arrows-rotate",
             action: async () => {
                 await autoSave.flush();
@@ -472,9 +473,9 @@
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-star"
   statusMessages={statusMessages}
-  subtitle="Manage server reputation and rewards"
+  subtitle={m.reputation.pageSubtitle()}
   {tabs}
-  title="Reputation System"
+  title={m.reputation.pageTitle()}
 >
 
     {#if activeTab === 'config'}
@@ -487,7 +488,7 @@
                     <div class="flex items-center gap-3 mb-6">
                       <i class="fa-utility-duo fa-regular fa-gear"
                          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">System Configuration</h2>
+                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.reputation.configHeading()}</h2>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -496,13 +497,13 @@
                              style="background: {$colorStore.primary}08;">
                             <div>
                                 <div class="font-medium mb-1" style="color: {$colorStore.text}">
-                                    Enable Reputation System
+                                    {m.reputation.enableAria()}
                                 </div>
                                 <div class="text-sm" style="color: {$colorStore.muted}">
-                                    Allow users to give and receive reputation points
+                                    {m.reputation.enableHint()}
                                 </div>
                             </div>
-                          <button aria-label="Enable reputation system"
+                          <button aria-label={m.reputation.enableAria()}
                                     role="switch"
                                     aria-checked={configForm.enabled}
                                     onclick={() => toggleSetting("enabled")}
@@ -519,7 +520,7 @@
                           <label for="input-3278" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text}">
                             <i class="fa-solid fa-clock" style="font-size: 16px;"></i>
-                                Cooldown (minutes)
+                                {m.common.cooldownMinutes()}
                             </label>
                           <input id="input-3278"
                                     type="number"
@@ -536,7 +537,7 @@
                         <div>
                           <label for="input-1523" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text}">
-                                Daily Limit
+                                {m.common.dailyLimit()}
                             </label>
                           <input id="input-1523"
                                     type="number"
@@ -553,7 +554,7 @@
                         <div>
                           <label for="input-4559" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text}">
-                                Weekly Limit (optional)
+                                {m.reputation.weeklyLimitLabel()}
                             </label>
                           <input id="input-4559"
                                     type="number"
@@ -561,7 +562,7 @@
                                     bind:value={configForm.weeklyLimit}
                                     oninput={saveWeeklyLimit}
                                     onblur={blurWeeklyLimit}
-                                    placeholder="None"
+                                    placeholder={m.common.none()}
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           >
@@ -571,7 +572,7 @@
                         <div>
                           <label for="input-3155" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text}">
-                                Min Account Age (days)
+                                {m.common.minAccountAgeDays()}
                             </label>
                           <input id="input-3155"
                                     type="number"
@@ -588,7 +589,7 @@
                         <div>
                           <label for="input-4752" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text}">
-                                Min Server Time (hours)
+                                {m.reputation.minServerTimeLabel()}
                             </label>
                           <input id="input-4752"
                                     type="number"
@@ -605,7 +606,7 @@
                         <div>
                           <label for="input-3616" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text}">
-                                Min Message Count
+                                {m.reputation.minMessagesLabel()}
                             </label>
                           <input id="input-3616"
                                     type="number"
@@ -623,13 +624,13 @@
                             <span id="notification-channel-optional-label" class="block text-sm font-medium mb-2"
                                   style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-hashtag" style="font-size: 16px;"></i>
-                                Notification Channel (optional)
+                                {m.reputation.notificationChannelLabel()}
                             </span>
                             <DiscordSelector
                                     type="channel"
                                     options={guildChannels}
                                     selected={configForm.notificationChannel?.toString() || null}
-                                    placeholder="No notifications"
+                                    placeholder={m.reputation.notificationChannelPlaceholder()}
                                     onchange={handleNotificationChannelChange} />
                         </div>
                     </div>
@@ -640,9 +641,9 @@
                              style="background: {$colorStore.primary}08;">
                             <div class="flex items-center gap-2">
                               <i class="fa-solid fa-message" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                                <span style="color: {$colorStore.text}">Allow Negative Reputation</span>
+                                <span style="color: {$colorStore.text}">{m.common.allowNegativeReputation()}</span>
                             </div>
-                          <button aria-label="Allow negative reputation"
+                          <button aria-label={m.common.allowNegativeReputation()}
                                     role="switch"
                                     aria-checked={configForm.enableNegativeRep}
                                     onclick={() => toggleSetting("enableNegativeRep")}
@@ -658,9 +659,9 @@
                              style="background: {$colorStore.primary}08;">
                             <div class="flex items-center gap-2">
                               <i class="fa-solid fa-eye" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                                <span style="color: {$colorStore.text}">Enable Anonymous Reputation</span>
+                                <span style="color: {$colorStore.text}">{m.reputation.anonymousAria()}</span>
                             </div>
-                          <button aria-label="Enable anonymous reputation"
+                          <button aria-label={m.reputation.anonymousAria()}
                                     role="switch"
                                     aria-checked={configForm.enableAnonymous}
                                     onclick={() => toggleSetting("enableAnonymous")}
@@ -685,26 +686,26 @@
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-solid fa-plus" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Add Role Reward</h2>
+                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.addRoleReward()}</h2>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <span id="role-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-crown" style="font-size: 16px;"></i>
-                            Role
+                            {m.common.role()}
                         </span>
                         <DiscordSelector
                                 type="role"
                                 options={guildRoles}
                                 selected={newRoleReward.roleId}
-                                placeholder="Select role"
+                                placeholder={m.common.selectRolePlaceholder()}
                                 onchange={handleRoleChange} />
                     </div>
 
                     <div>
                       <label for="input-4273" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                            Reputation Required
+                            {m.reputation.repRequiredLabel()}
                         </label>
                       <input id="input-4273"
                                 type="number"
@@ -719,26 +720,26 @@
                         <span id="announce-channel-optional-label" class="block text-sm font-medium mb-2"
                               style="color: {$colorStore.text}">
                             <i class="fa-solid fa-bell" style="font-size: 16px;"></i>
-                            Announce Channel (optional)
+                            {m.reputation.announceChannelLabel()}
                         </span>
                         <DiscordSelector
                                 type="channel"
                                 options={guildChannels}
                                 selected={newRoleReward.announceChannelId}
-                                placeholder="No announcements"
+                                placeholder={m.common.noAnnouncements()}
                                 onchange={handleAnnounceChannelChange} />
                     </div>
 
                     <div>
                       <label for="input-2975" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                         <i class="fa-solid fa-gift" style="font-size: 16px;"></i>
-                            Bonus XP (optional)
+                            {m.reputation.bonusXpLabel()}
                         </label>
                       <input id="input-2975"
                                 type="number"
                                 min="0"
                                 bind:value={newRoleReward.xpReward}
-                                placeholder="None"
+                                placeholder={m.common.none()}
                                 class="w-full p-3 rounded-xl border"
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       >
@@ -753,7 +754,7 @@
                                 class="rounded"
                                 style="color: {$colorStore.primary}"
                         >
-                        <span class="text-sm" style="color: {$colorStore.text}">Remove role if rep drops below threshold</span>
+                        <span class="text-sm" style="color: {$colorStore.text}">{m.reputation.removeOnDropLabel()}</span>
                     </label>
 
                     <label class="flex items-center gap-2 cursor-pointer">
@@ -763,12 +764,12 @@
                                 class="rounded"
                                 style="color: {$colorStore.primary}"
                         >
-                        <span class="text-sm" style="color: {$colorStore.text}">Send DM notification</span>
+                        <span class="text-sm" style="color: {$colorStore.text}">{m.reputation.sendDmLabel()}</span>
                     </label>
                 </div>
 
                 <button
-                  aria-label="Add role reward"
+                  aria-label={m.common.addRoleReward()}
                   aria-busy={saving}
                   class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
@@ -776,7 +777,7 @@
                         disabled={saving || !newRoleReward.roleId}
                 >
                   <i class="fa-solid fa-plus {saving ? 'fa-spin' : ''}" style="font-size: 18px;"></i>
-                  {saving ? "Adding..." : "Add Role Reward"}
+                  {saving ? m.common.adding() : m.common.addRoleReward()}
                 </button>
             </div>
 
@@ -786,7 +787,7 @@
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-solid fa-crown" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Role Rewards ({roleRewards.length})</h2>
+                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.reputation.rewardsHeading({ count: roleRewards.length })}</h2>
                 </div>
 
                 <div class="space-y-3">
@@ -794,9 +795,9 @@
                         <div class="text-center py-8">
                           <i class="fa-utility-duo fa-regular fa-star"
                              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Role Rewards</h3>
+                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.reputation.rewardsEmptyTitle()}</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
-                                Add role rewards to incentivize reputation growth.
+                                {m.reputation.rewardsEmptyHint()}
                             </p>
                         </div>
                     {:else}
@@ -811,11 +812,11 @@
                                             {getRoleName(reward.roleId)}
                                         </div>
                                         <div class="text-sm" style="color: {$colorStore.muted}">
-                                            {reward.repRequired} reputation{reward.xpReward ? ` • +${reward.xpReward} XP bonus` : ''}
+                                            {reward.xpReward ? m.reputation.rewardRequirementXp({ rep: reward.repRequired, xp: reward.xpReward }) : m.reputation.rewardRequirement({ rep: reward.repRequired })}
                                         </div>
                                     </div>
                                 </div>
-                              <button aria-label="Delete"
+                              <button aria-label={m.common.delete()}
                                         class="p-2 rounded-lg transition-all hover:scale-110"
                                       style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                         onclick={() => removeRoleReward(reward.roleId)}
@@ -836,7 +837,7 @@
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-utility-duo fa-regular fa-star"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Reputation Leaderboard</h2>
+                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.reputation.leaderboardHeading()}</h2>
                 </div>
 
                 <div class="space-y-3">
@@ -844,9 +845,9 @@
                         <div class="text-center py-8">
                           <i class="fa-utility-duo fa-regular fa-star"
                              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Reputation Data</h3>
+                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.reputation.leaderboardEmptyTitle()}</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
-                                The leaderboard will appear once users start earning reputation.
+                                {m.reputation.leaderboardEmptyHint()}
                             </p>
                         </div>
                     {:else}
@@ -862,7 +863,7 @@
                                         {entry.username}
                                     </div>
                                     <div class="text-sm" style="color: {$colorStore.muted}">
-                                        User ID: {entry.userId.toString()}
+                                        {m.common.userIdLabel({ id: entry.userId.toString() })}
                                     </div>
                                 </div>
                                 <div class="text-right">
@@ -870,7 +871,7 @@
                                         {entry.reputation}
                                     </div>
                                     <div class="text-xs" style="color: {$colorStore.muted}">
-                                        reputation
+                                        {m.reputation.reputationUnit()}
                                     </div>
                                 </div>
                                 {#if entry.rank === 1}
@@ -884,8 +885,8 @@
                                 {/if}
                                 <button class="p-2 rounded-lg transition-all hover:scale-[1.05] shrink-0 min-h-[40px] min-w-[40px]"
                                         style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
-                                        aria-label={`View reputation history for ${entry.username}`}
-                                        title="View history"
+                                        aria-label={m.reputation.viewHistoryAria({ username: entry.username })}
+                                        title={m.reputation.viewHistory()}
                                         onclick={() => openHistory(entry)}>
                                     <i class="fa-solid fa-clock-rotate-left" style="font-size: 14px;"></i>
                                 </button>
@@ -913,11 +914,11 @@
                      in:fly={{ y: 20, duration: 250 }}>
                     <div class="p-6 pb-4 flex items-center justify-between gap-3 border-b" style="border-color: {$colorStore.primary}20;">
                         <div class="min-w-0">
-                            <h3 id="rep-history-title" class="text-lg font-bold truncate" style="color: {$colorStore.text}">Reputation history</h3>
-                            <p class="text-xs truncate" style="color: {$colorStore.muted}">{historyTarget.username} · {historyTarget.reputation} reputation</p>
+                            <h3 id="rep-history-title" class="text-lg font-bold truncate" style="color: {$colorStore.text}">{m.reputation.historyTitle()}</h3>
+                            <p class="text-xs truncate" style="color: {$colorStore.muted}">{m.reputation.historySubtitle({ username: historyTarget.username, reputation: historyTarget.reputation })}</p>
                         </div>
                         <button class="p-2 rounded-lg min-h-[40px] min-w-[40px]" style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                                aria-label="Close" onclick={closeHistory}>
+                                aria-label={m.common.close()} onclick={closeHistory}>
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
@@ -925,7 +926,7 @@
                         {#if historyLoading}
                             <div class="text-center py-8"><i class="fa-solid fa-spinner fa-spin" style="color: {$colorStore.primary}; font-size: 28px;"></i></div>
                         {:else if history.length === 0}
-                            <p class="text-center py-8 text-sm" style="color: {$colorStore.muted}">No reputation has been given to this member yet.</p>
+                            <p class="text-center py-8 text-sm" style="color: {$colorStore.muted}">{m.reputation.historyEmpty()}</p>
                         {:else}
                             {#each history as item (item.id)}
                                 <div class="flex items-start gap-3 p-3 rounded-lg" style="background: {$colorStore.primary}08;">
@@ -936,8 +937,7 @@
                                     <div class="flex-1 min-w-0 text-sm">
                                         <div style="color: {$colorStore.text}">
                                             <span class="font-medium">{item.repType}</span>
-                                            <span style="color: {$colorStore.muted}"> from </span>
-                                            <span class="font-medium">{item.isAnonymous ? "an anonymous member" : `user ${item.giverId.toString()}`}</span>
+                                            <span class="font-medium" style="color: {$colorStore.muted}">{item.isAnonymous ? m.reputation.historyFromAnonymous() : m.reputation.historyFromUser({ id: item.giverId.toString() })}</span>
                                         </div>
                                         {#if item.reason}
                                             <div class="text-xs mt-0.5 break-words" style="color: {$colorStore.muted}">{item.reason}</div>
@@ -950,12 +950,12 @@
                                 <button class="px-4 py-2 rounded-lg text-sm min-h-[40px] disabled:opacity-40"
                                         style="background: {$colorStore.primary}20; color: {$colorStore.text};"
                                         disabled={historyPage <= 1 || historyLoading}
-                                        onclick={() => loadHistory(historyPage - 1)}>Previous</button>
-                                <span class="px-3 py-2 text-sm" style="color: {$colorStore.muted}">Page {historyPage}</span>
+                                        onclick={() => loadHistory(historyPage - 1)}>{m.common.previous()}</button>
+                                <span class="px-3 py-2 text-sm" style="color: {$colorStore.muted}">{m.common.pageNumber({ page: historyPage })}</span>
                                 <button class="px-4 py-2 rounded-lg text-sm min-h-[40px] disabled:opacity-40"
                                         style="background: {$colorStore.primary}20; color: {$colorStore.text};"
                                         disabled={history.length < historyPageSize || historyLoading}
-                                        onclick={() => loadHistory(historyPage + 1)}>Next</button>
+                                        onclick={() => loadHistory(historyPage + 1)}>{m.common.next()}</button>
                             </div>
                         {/if}
                     </div>
@@ -969,36 +969,36 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                     <StatCard
                       icon="fa-users"
-                            label="Total Users"
+                            label={m.common.totalUsers()}
                             value={stats.totalUsers}
-                            subtitle="with reputation"
+                            subtitle={m.reputation.statUsersSubtitle()}
                             iconColor="primary"
                             animationDelay={0}
                     />
 
                     <StatCard
                       icon="fa-star"
-                            label="Total Rep Given"
+                            label={m.reputation.statGiven()}
                             value={stats.totalRepGiven}
-                            subtitle="all time"
+                            subtitle={m.common.allTimeLower()}
                             iconColor="secondary"
                             animationDelay={100}
                     />
 
                     <StatCard
                       icon="fa-chart-simple"
-                            label="Transactions"
+                            label={m.common.transactions()}
                             value={stats.totalTransactions}
-                            subtitle="reputation exchanges"
+                            subtitle={m.reputation.statTransactionsSubtitle()}
                             iconColor="accent"
                             animationDelay={200}
                     />
 
                     <StatCard
                       icon="fa-star"
-                            label="Average Rep"
+                            label={m.reputation.statAverage()}
                             value={Math.round(stats.averageRepPerUser)}
-                            subtitle="per user"
+                            subtitle={m.reputation.statAverageSubtitle()}
                             iconColor="primary"
                             animationDelay={300}
                     />
@@ -1007,9 +1007,9 @@
                 <div class="text-center py-12">
                   <i class="fa-utility-duo fa-regular fa-chart-simple"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                    <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">No Statistics Available</h3>
+                    <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">{m.common.noStatisticsAvailable()}</h3>
                     <p style="color: {$colorStore.muted}">
-                        Reputation statistics will appear here once the system is active.
+                        {m.reputation.statsEmptyHint()}
                     </p>
                 </div>
             {/if}

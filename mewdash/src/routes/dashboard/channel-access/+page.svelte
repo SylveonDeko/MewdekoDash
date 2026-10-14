@@ -1,5 +1,6 @@
 <!-- routes/dashboard/channel-access/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -66,26 +67,26 @@
     status: String(AccessApplicationStatus.Pending)
   });
 
-  const statusLabels: Record<number, string> = {
-    [AccessApplicationStatus.Pending]: "Pending",
-    [AccessApplicationStatus.Approved]: "Approved",
-    [AccessApplicationStatus.Denied]: "Denied",
-    [AccessApplicationStatus.Withdrawn]: "Withdrawn",
-    [AccessApplicationStatus.Expired]: "Expired"
-  };
+  const statusLabels: Record<number, string> = $derived({
+    [AccessApplicationStatus.Pending]: m.common.pending(),
+    [AccessApplicationStatus.Approved]: m.common.approved(),
+    [AccessApplicationStatus.Denied]: m.common.denied(),
+    [AccessApplicationStatus.Withdrawn]: m.channelAccess.statusWithdrawn(),
+    [AccessApplicationStatus.Expired]: m.common.expired()
+  });
 
-  const expiryLabels: Record<number, string> = {
-    [AccessExpiryBehavior.Deny]: "Deny the application",
-    [AccessExpiryBehavior.Majority]: "Whichever side has more votes",
-    [AccessExpiryBehavior.StayOpen]: "Leave it open for staff"
-  };
+  const expiryLabels: Record<number, string> = $derived({
+    [AccessExpiryBehavior.Deny]: m.channelAccess.expiryDeny(),
+    [AccessExpiryBehavior.Majority]: m.channelAccess.expiryMajority(),
+    [AccessExpiryBehavior.StayOpen]: m.channelAccess.expiryStayOpen()
+  });
 
   let pendingCount = $derived(gates.reduce((total, gate) => total + gate.pendingApplications, 0));
 
-  const grantModeOptions = [
-    { id: String(AccessGrantMode.Role), name: "Give them a role" },
-    { id: String(AccessGrantMode.ChannelPermission), name: "Add them to the channel directly" }
-  ];
+  const grantModeOptions = $derived([
+    { id: String(AccessGrantMode.Role), name: m.channelAccess.grantRole() },
+    { id: String(AccessGrantMode.ChannelPermission), name: m.channelAccess.grantChannel() }
+  ]);
 
   let expiryOptions = $derived(
     Object.entries(expiryLabels).map(([value, label]) => ({ id: value, name: label }))
@@ -95,12 +96,12 @@
     gates.map((gate) => ({ id: String(gate.id), name: `#${channelName(gate.channelId)}` }))
   );
 
-  let gateFilterOptions = $derived([{ id: "all", name: "All gates" }, ...gateOptions]);
+  let gateFilterOptions = $derived([{ id: "all", name: m.channelAccess.filterAllGates() }, ...gateOptions]);
 
-  let blacklistScopeOptions = $derived([{ id: "all", name: "Every gate" }, ...gateOptions]);
+  let blacklistScopeOptions = $derived([{ id: "all", name: m.channelAccess.filterEveryGate() }, ...gateOptions]);
 
   let statusFilterOptions = $derived([
-    { id: "all", name: "Any status" },
+    { id: "all", name: m.common.anyStatus() },
     ...Object.entries(statusLabels).map(([value, label]) => ({ id: value, name: label }))
   ]);
 
@@ -138,7 +139,7 @@
       await loadApplications();
     } catch (err) {
       logger.error("Failed to load channel access data:", err);
-      showMessage("Failed to load channel access data", "error");
+      showMessage(m.channelAccess.errorLoad(), "error");
     } finally {
       loading = false;
     }
@@ -154,18 +155,18 @@
       });
     } catch (err) {
       logger.error("Failed to load applications:", err);
-      showMessage("Failed to load applications", "error");
+      showMessage(m.channelAccess.errorLoadApplications(), "error");
     }
   }
 
   async function createGate() {
     if (!$currentGuild?.id || !newGate.channelId) {
-      showMessage("Pick a channel first", "error");
+      showMessage(m.common.pickChannelFirstPlaceholder(), "error");
       return;
     }
 
     if (newGate.grantMode === AccessGrantMode.Role && !newGate.accessRoleId) {
-      showMessage("Pick the role approved applicants should get", "error");
+      showMessage(m.channelAccess.errorPickRole(), "error");
       return;
     }
 
@@ -180,7 +181,7 @@
       await loadAll();
     } catch (err) {
       logger.error("Failed to create gate:", err);
-      showMessage(err instanceof Error ? err.message : "Failed to create the gate", "error");
+      showMessage(err instanceof Error ? err.message : m.channelAccess.errorCreateGate(), "error");
     } finally {
       saving = false;
     }
@@ -193,10 +194,10 @@
     try {
       const updated = await channelAccessApi.updateGate($currentGuild.id, gate.id, changes);
       gates = gates.map((existing) => (existing.id === updated.id ? updated : existing));
-      showMessage("Gate settings saved", "success");
+      showMessage(m.channelAccess.notifyGateSaved(), "success");
     } catch (err) {
       logger.error("Failed to update gate:", err);
-      showMessage("Failed to save the gate settings", "error");
+      showMessage(m.channelAccess.errorSaveGate(), "error");
     } finally {
       saving = false;
     }
@@ -213,7 +214,7 @@
       await loadAll();
     } catch (err) {
       logger.error("Failed to delete gate:", err);
-      showMessage("Failed to delete the gate", "error");
+      showMessage(m.channelAccess.errorDeleteGate(), "error");
     } finally {
       saving = false;
     }
@@ -234,7 +235,7 @@
       newQuestion = { question: "", placeholder: "", required: true, paragraph: true };
     } catch (err) {
       logger.error("Failed to add question:", err);
-      showMessage(err instanceof Error ? err.message : "Failed to add the question", "error");
+      showMessage(err instanceof Error ? err.message : m.channelAccess.errorAddQuestion(), "error");
     } finally {
       saving = false;
     }
@@ -249,7 +250,7 @@
       gates = gates.map((existing) => (existing.id === gate.id ? { ...existing, questions } : existing));
     } catch (err) {
       logger.error("Failed to remove question:", err);
-      showMessage("Failed to remove the question", "error");
+      showMessage(m.channelAccess.errorRemoveQuestion(), "error");
     } finally {
       saving = false;
     }
@@ -260,18 +261,18 @@
 
     const target = panelTarget[gate.id];
     if (!target) {
-      showMessage("Pick a channel to post the panel in", "error");
+      showMessage(m.channelAccess.errorPickPanelChannel(), "error");
       return;
     }
 
     saving = true;
     try {
       await channelAccessApi.postPanel($currentGuild.id, gate.id, BigInt(target));
-      showMessage("Apply panel posted", "success");
+      showMessage(m.channelAccess.notifyPanelPosted(), "success");
       await loadAll();
     } catch (err) {
       logger.error("Failed to post panel:", err);
-      showMessage("Failed to post the panel", "error");
+      showMessage(m.channelAccess.errorPostPanel(), "error");
     } finally {
       saving = false;
     }
@@ -288,11 +289,14 @@
         reason: resolveReason[application.id]?.trim() || null
       });
       delete resolveReason[application.id];
-      showMessage(`Application #${application.id} was ${approve ? "approved" : "denied"}`, "success");
+      showMessage(
+        (approve ? m.channelAccess.notifyApplicationApproved : m.channelAccess.notifyApplicationDenied)({ id: application.id }),
+        "success"
+      );
       await loadAll();
     } catch (err) {
       logger.error("Failed to resolve application:", err);
-      showMessage("Failed to close the application", "error");
+      showMessage(m.channelAccess.errorCloseApplication(), "error");
     } finally {
       saving = false;
     }
@@ -300,7 +304,7 @@
 
   async function addBlacklist() {
     if (!$currentGuild?.id || !newBlacklist.userId) {
-      showMessage("Pick a user first", "error");
+      showMessage(m.channelAccess.errorPickUser(), "error");
       return;
     }
 
@@ -316,7 +320,7 @@
       await loadAll();
     } catch (err) {
       logger.error("Failed to blacklist user:", err);
-      showMessage("Failed to block that user", "error");
+      showMessage(m.channelAccess.errorBlockUser(), "error");
     } finally {
       saving = false;
     }
@@ -331,7 +335,7 @@
       await loadAll();
     } catch (err) {
       logger.error("Failed to remove blacklist entry:", err);
-      showMessage("Failed to lift the block", "error");
+      showMessage(m.channelAccess.errorUnblockUser(), "error");
     } finally {
       saving = false;
     }
@@ -346,29 +350,29 @@
   }
 
   function channelName(id: bigint | null): string {
-    if (id === null) return "None";
+    if (id === null) return m.common.none();
     return guildChannels.find((channel) => channel.id === id.toString())?.name ?? id.toString();
   }
 
   function roleName(id: bigint | null): string {
-    if (id === null) return "None";
+    if (id === null) return m.common.none();
     return guildRoles.find((role) => role.id === id.toString())?.name ?? id.toString();
   }
 
   function grantSummary(gate: ChannelAccessGate): string {
     return gate.grantMode === AccessGrantMode.Role
-      ? `Grants ${roleName(gate.accessRoleId)}`
-      : "Adds people to the channel directly";
+      ? m.common.grantsRole({ role: roleName(gate.accessRoleId) })
+      : m.channelAccess.grantSummaryChannel();
   }
 
   function gateName(configId: number | null): string {
-    if (configId === null) return "Every gate";
+    if (configId === null) return m.channelAccess.filterEveryGate();
     const gate = gates.find((existing) => existing.id === configId);
-    return gate ? `#${channelName(gate.channelId)}` : "Deleted gate";
+    return gate ? `#${channelName(gate.channelId)}` : m.channelAccess.deletedGate();
   }
 
   function formatDate(value: string | null): string {
-    if (!value) return "Unknown";
+    if (!value) return m.common.unknown();
     return new Date(value).toLocaleString();
   }
 
@@ -383,15 +387,15 @@
     loadAll();
   });
 
-  const tabs = [
-    { id: "gates", label: "Gates", icon: "fa-lock" },
-    { id: "applications", label: "Applications", icon: "fa-inbox" },
-    { id: "blacklist", label: "Blocked", icon: "fa-ban" }
-  ];
+  const tabs = $derived([
+    { id: "gates", label: m.channelAccess.tabGates(), icon: "fa-lock" },
+    { id: "applications", label: m.common.applications(), icon: "fa-inbox" },
+    { id: "blacklist", label: m.channelAccess.tabBlocked(), icon: "fa-ban" }
+  ]);
 
   let actionButtons = $derived([
     {
-      label: "Refresh",
+      label: m.common.refresh(),
       icon: "fa-arrows-rotate",
       action: loadAll,
       loading: loading
@@ -428,35 +432,35 @@
 <DashboardPageLayout
   {actionButtons}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-lock"
   statusMessages={statusMessageContent}
-  subtitle="Let members apply for locked channels and have the people inside vote them in"
+  subtitle={m.channelAccess.pageSubtitle()}
   {tabs}
-  title="Channel Access"
+  title={m.features.channelAccessName()}
 >
   {#if activeTab === 'gates'}
     <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Gates" value={gates.length} icon="fa-lock" />
-        <StatCard label="Open applications" value={pendingCount} icon="fa-inbox" />
-        <StatCard label="Blocked users" value={blacklist.length} icon="fa-shield-slash" />
+        <StatCard label={m.channelAccess.tabGates()} value={gates.length} icon="fa-lock" />
+        <StatCard label={m.channelAccess.statOpenApplications()} value={pendingCount} icon="fa-inbox" />
+        <StatCard label={m.channelAccess.statBlockedUsers()} value={blacklist.length} icon="fa-shield-slash" />
       </div>
 
       <!-- Create a gate -->
       <div class="rounded-2xl border p-6 shadow-2xl"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                   border-color: {$colorStore.primary}30;">
-        <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Open applications for a channel</h2>
+        <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.channelAccess.createTitle()}</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <div>
-            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Locked channel</span>
+            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.createLockedChannel()}</span>
             <div class="min-h-[44px]">
               <DiscordSelector
                 type="channel"
                 options={guildChannels}
                 selected={newGate.channelId?.toString() || null}
-                placeholder="Select a channel"
+                placeholder={m.common.selectAChannelPlaceholder()}
                 onchange={(detail) => {
                   newGate.channelId = detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null;
                 }}
@@ -464,7 +468,7 @@
             </div>
           </div>
           <div>
-            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">How people get in</span>
+            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.createHowIn()}</span>
             <div class="min-h-[44px]">
               <DiscordSelector
                 type="custom"
@@ -472,7 +476,7 @@
                 customIcon="fa-key"
                 selected={String(newGate.grantMode)}
                 searchable={false}
-                placeholder="Pick how access is granted"
+                placeholder={m.channelAccess.createPickGrant()}
                 onchange={(detail) => {
                   if (typeof detail.selected !== 'string') return;
                   newGate.grantMode = Number(detail.selected) as AccessGrantMode;
@@ -483,13 +487,13 @@
           </div>
           {#if newGate.grantMode === AccessGrantMode.Role}
             <div>
-              <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Role granted on approval</span>
+              <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.createRoleOnApproval()}</span>
               <div class="min-h-[44px]">
                 <DiscordSelector
                   type="role"
                   options={guildRoles}
                   selected={newGate.accessRoleId?.toString() || null}
-                  placeholder="Select a role"
+                  placeholder={m.common.selectARolePlaceholder()}
                   onchange={(detail) => {
                     newGate.accessRoleId = detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null;
                   }}
@@ -503,7 +507,7 @@
             disabled={saving}
             onclick={createGate}
           >
-            Create gate
+            {m.channelAccess.createButton()}
           </button>
         </div>
       </div>
@@ -512,7 +516,7 @@
       {#if gates.length === 0}
         <div class="rounded-2xl border p-8 text-center"
              style="border-color: {$colorStore.primary}30; color: {$colorStore.muted};">
-          No gates yet. Pick a locked channel above to start taking applications.
+          {m.channelAccess.gatesEmpty()}
         </div>
       {:else}
         {#each gates as gate (gate.id)}
@@ -523,15 +527,19 @@
               <div>
                 <h3 class="text-lg font-bold" style="color: {$colorStore.text}">#{channelName(gate.channelId)}</h3>
                 <p class="text-sm" style="color: {$colorStore.muted}">
-                  {grantSummary(gate)} • ✅ {gate.requiredApprovals} / ❌ {gate.requiredDenials} •
-                  {gate.voteDurationHours > 0 ? `${gate.voteDurationHours}h window` : "no time limit"} •
-                  {gate.pendingApplications} open
+                  {m.channelAccess.gateSummary({
+                    grant: grantSummary(gate),
+                    approvals: gate.requiredApprovals,
+                    denials: gate.requiredDenials,
+                    window: gate.voteDurationHours > 0 ? m.channelAccess.gateWindowHours({ hours: gate.voteDurationHours }) : m.channelAccess.gateNoTimeLimit(),
+                    open: gate.pendingApplications
+                  })}
                 </p>
               </div>
               <div class="flex items-center gap-2">
                 <div class="flex items-center gap-3 min-h-[44px]">
                   <span class="text-sm" style="color: {$colorStore.text}">
-                    {gate.enabled ? "Accepting applications" : "Closed"}
+                    {gate.enabled ? m.channelAccess.gateAccepting() : m.common.closed()}
                   </span>
                   {@render toggle(gate.enabled, (value) => updateGate(gate, { enabled: value }))}
                 </div>
@@ -540,7 +548,7 @@
                   style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}40;"
                   onclick={() => (expandedGate = expandedGate === gate.id ? null : gate.id)}
                 >
-                  {expandedGate === gate.id ? "Hide settings" : "Settings"}
+                  {expandedGate === gate.id ? m.channelAccess.gateHideSettings() : m.common.settings()}
                 </button>
                 <button
                   class="min-h-[44px] px-4 rounded-xl font-medium transition-all"
@@ -548,7 +556,7 @@
                   disabled={saving}
                   onclick={() => (gatePendingDeletion = gate)}
                 >
-                  Delete
+                  {m.common.delete()}
                 </button>
               </div>
             </div>
@@ -558,7 +566,7 @@
                 <!-- Channels and roles -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">How people get in</span>
+                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.createHowIn()}</span>
                     <div class="min-h-[44px]">
                       <DiscordSelector
                         type="custom"
@@ -566,7 +574,7 @@
                         customIcon="fa-key"
                         selected={String(gate.grantMode)}
                         searchable={false}
-                        placeholder="Pick how access is granted"
+                        placeholder={m.channelAccess.createPickGrant()}
                         onchange={(detail) => {
                           if (detail.selected === String(AccessGrantMode.ChannelPermission)) updateGate(gate, { accessRoleId: BigInt(0) });
                         }}
@@ -574,54 +582,54 @@
                     </div>
                   </div>
                   <div>
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Access role</span>
+                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.gateAccessRole()}</span>
                     <div class="min-h-[44px]">
                       <DiscordSelector
                         type="role"
                         options={guildRoles}
                         selected={gate.accessRoleId?.toString() || null}
-                        placeholder="No role, applicants are added directly"
+                        placeholder={m.channelAccess.gateAccessRolePlaceholder()}
                         onchange={(detail) => updateGate(gate, { accessRoleId: detail.selected ? BigInt(detail.selected as string) : BigInt(0) })}
                       />
                     </div>
                   </div>
                   <div>
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Review channel</span>
+                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.gateReviewChannel()}</span>
                     <DiscordSelector
                       type="channel"
                       options={guildChannels}
                       selected={gate.reviewChannelId?.toString() || null}
-                      placeholder="The gated channel itself"
+                      placeholder={m.channelAccess.gateReviewChannelPlaceholder()}
                       onchange={(detail) => updateGate(gate, { reviewChannelId: detail.selected ? BigInt(detail.selected as string) : BigInt(0) })}
                     />
                   </div>
                   <div>
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Log channel</span>
+                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.logChannel()}</span>
                     <DiscordSelector
                       type="channel"
                       options={guildChannels}
                       selected={gate.logChannelId?.toString() || null}
-                      placeholder="No logging"
+                      placeholder={m.channelAccess.gateLogChannelPlaceholder()}
                       onchange={(detail) => updateGate(gate, { logChannelId: detail.selected ? BigInt(detail.selected as string) : BigInt(0) })}
                     />
                   </div>
                   <div>
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Voter role</span>
+                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.gateVoterRole()}</span>
                     <DiscordSelector
                       type="role"
                       options={guildRoles}
                       selected={gate.voterRoleId?.toString() || null}
-                      placeholder="Everyone with the access role"
+                      placeholder={m.channelAccess.gateVoterRolePlaceholder()}
                       onchange={(detail) => updateGate(gate, { voterRoleId: detail.selected ? BigInt(detail.selected as string) : BigInt(0) })}
                     />
                   </div>
                   <div>
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Ping role on new applications</span>
+                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.gatePingRole()}</span>
                     <DiscordSelector
                       type="role"
                       options={guildRoles}
                       selected={gate.pingRoleId?.toString() || null}
-                      placeholder="No ping"
+                      placeholder={m.channelAccess.gatePingPlaceholder()}
                       onchange={(detail) => updateGate(gate, { pingRoleId: detail.selected ? BigInt(detail.selected as string) : BigInt(0) })}
                     />
                   </div>
@@ -630,42 +638,42 @@
                 <!-- Numbers -->
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <label class="block">
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Approvals needed</span>
+                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.gateApprovalsNeeded()}</span>
                     <input class="w-full min-h-[44px] px-3 rounded-xl"
                            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                            type="number" min="0" value={gate.requiredApprovals}
                            onchange={(e) => updateGate(gate, { requiredApprovals: Number(e.currentTarget.value) })} />
                   </label>
                   <label class="block">
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Denials needed</span>
+                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.gateDenialsNeeded()}</span>
                     <input class="w-full min-h-[44px] px-3 rounded-xl"
                            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                            type="number" min="0" value={gate.requiredDenials}
                            onchange={(e) => updateGate(gate, { requiredDenials: Number(e.currentTarget.value) })} />
                   </label>
                   <label class="block">
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Voting window (hours)</span>
+                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.gateVotingWindow()}</span>
                     <input class="w-full min-h-[44px] px-3 rounded-xl"
                            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                            type="number" min="0" value={gate.voteDurationHours}
                            onchange={(e) => updateGate(gate, { voteDurationHours: Number(e.currentTarget.value) })} />
                   </label>
                   <label class="block">
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Min account age (days)</span>
+                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.minAccountAgeDays()}</span>
                     <input class="w-full min-h-[44px] px-3 rounded-xl"
                            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                            type="number" min="0" value={gate.minAccountAgeDays}
                            onchange={(e) => updateGate(gate, { minAccountAgeDays: Number(e.currentTarget.value) })} />
                   </label>
                   <label class="block">
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Min time in server (days)</span>
+                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.gateMinServerAge()}</span>
                     <input class="w-full min-h-[44px] px-3 rounded-xl"
                            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                            type="number" min="0" value={gate.minServerAgeDays}
                            onchange={(e) => updateGate(gate, { minServerAgeDays: Number(e.currentTarget.value) })} />
                   </label>
                   <label class="block">
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Reapply cooldown (hours)</span>
+                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.gateReapplyCooldown()}</span>
                     <input class="w-full min-h-[44px] px-3 rounded-xl"
                            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                            type="number" min="0" value={gate.reapplyCooldownHours}
@@ -676,7 +684,7 @@
                 <!-- Behaviour -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">When the window closes</span>
+                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.gateWhenCloses()}</span>
                     <div class="min-h-[44px]">
                       <DiscordSelector
                         type="custom"
@@ -684,7 +692,7 @@
                         customIcon="fa-hourglass"
                         selected={String(gate.onExpiry)}
                         searchable={false}
-                        placeholder="Pick an outcome"
+                        placeholder={m.channelAccess.gatePickOutcome()}
                         onchange={(detail) => { if (typeof detail.selected === 'string') updateGate(gate, { onExpiry: Number(detail.selected) }); }}
                       />
                     </div>
@@ -692,10 +700,10 @@
 
                   <div class="flex flex-col gap-2 justify-end">
                     {#each [
-                      { key: 'allowAbstain', label: 'Offer an abstain button', value: gate.allowAbstain },
-                      { key: 'anonymousApplicant', label: 'Hide the applicant until the vote closes', value: gate.anonymousApplicant },
-                      { key: 'anonymousVotes', label: 'Hide who voted which way', value: gate.anonymousVotes },
-                      { key: 'dmOnDecision', label: 'DM the applicant on a decision', value: gate.dmOnDecision }
+                      { key: 'allowAbstain', label: m.channelAccess.gateAbstain(), value: gate.allowAbstain },
+                      { key: 'anonymousApplicant', label: m.channelAccess.gateAnonymousApplicant(), value: gate.anonymousApplicant },
+                      { key: 'anonymousVotes', label: m.channelAccess.gateAnonymousVotes(), value: gate.anonymousVotes },
+                      { key: 'dmOnDecision', label: m.channelAccess.gateDmDecision(), value: gate.dmOnDecision }
                     ] as setting (setting.key)}
                       <div class="flex items-center justify-between gap-3 min-h-[44px] p-3 rounded-xl"
                            style="background: {$colorStore.primary}08;">
@@ -708,10 +716,10 @@
 
                 <!-- Questions -->
                 <div class="rounded-xl border p-4" style="border-color: {$colorStore.primary}30;">
-                  <h4 class="font-bold mb-3" style="color: {$colorStore.text}">Application questions</h4>
+                  <h4 class="font-bold mb-3" style="color: {$colorStore.text}">{m.channelAccess.questionsTitle()}</h4>
                   {#if gate.questions.length === 0}
                     <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-                      No questions, so applicants apply with a single click.
+                      {m.channelAccess.questionsEmpty()}
                     </p>
                   {:else}
                     <ul class="space-y-2 mb-3">
@@ -720,12 +728,12 @@
                             style="background: {$colorStore.primary}10;">
                           <span style="color: {$colorStore.text}">
                             {index + 1}. {question.question}
-                            {#if !question.required}<em style="color: {$colorStore.muted}"> (optional)</em>{/if}
+                            {#if !question.required}<em style="color: {$colorStore.muted}"> {m.common.optionalSuffix()}</em>{/if}
                           </span>
                           <button class="min-h-[44px] px-3 rounded-lg"
                                   style="color: #ef4444;"
                                   disabled={saving}
-                                  onclick={() => removeQuestion(gate, index + 1)}>Remove</button>
+                                  onclick={() => removeQuestion(gate, index + 1)}>{m.common.remove()}</button>
                         </li>
                       {/each}
                     </ul>
@@ -735,39 +743,39 @@
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                       <input class="min-h-[44px] px-3 rounded-xl md:col-span-2"
                              style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                             maxlength="45" placeholder="Question (45 characters max)"
+                             maxlength="45" placeholder={m.channelAccess.questionPlaceholder()}
                              bind:value={newQuestion.question} />
                       <input class="min-h-[44px] px-3 rounded-xl"
                              style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                             placeholder="Placeholder (optional)"
+                             placeholder={m.channelAccess.questionHintPlaceholder()}
                              bind:value={newQuestion.placeholder} />
                       <button class="min-h-[44px] px-4 rounded-xl font-medium"
                               style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}40;"
                               disabled={saving || !newQuestion.question.trim()}
-                              onclick={() => addQuestion(gate)}>Add question</button>
+                              onclick={() => addQuestion(gate)}>{m.common.addQuestion()}</button>
                     </div>
                     <div class="flex flex-wrap gap-6 mt-3">
                       <div class="flex items-center gap-3 min-h-[44px]">
-                        <span class="text-sm" style="color: {$colorStore.text}">Required</span>
+                        <span class="text-sm" style="color: {$colorStore.text}">{m.common.required()}</span>
                         {@render toggle(newQuestion.required, (value) => (newQuestion.required = value))}
                       </div>
                       <div class="flex items-center gap-3 min-h-[44px]">
-                        <span class="text-sm" style="color: {$colorStore.text}">Multi-line answer</span>
+                        <span class="text-sm" style="color: {$colorStore.text}">{m.channelAccess.questionMultiline()}</span>
                         {@render toggle(newQuestion.paragraph, (value) => (newQuestion.paragraph = value))}
                       </div>
                     </div>
                   {:else}
                     <p class="text-sm" style="color: {$colorStore.muted}">
-                      Discord caps application forms at five questions.
+                      {m.channelAccess.questionsMax()}
                     </p>
                   {/if}
                 </div>
 
                 <!-- Panel -->
                 <div class="rounded-xl border p-4" style="border-color: {$colorStore.primary}30;">
-                  <h4 class="font-bold mb-3" style="color: {$colorStore.text}">Apply panel</h4>
+                  <h4 class="font-bold mb-3" style="color: {$colorStore.text}">{m.channelAccess.panelTitle()}</h4>
                   <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-                    {gate.panelChannelId ? `Last posted in #${channelName(gate.panelChannelId)}.` : "Not posted yet."}
+                    {gate.panelChannelId ? m.channelAccess.panelPosted({ channel: channelName(gate.panelChannelId) }) : m.channelAccess.panelNotPosted()}
                   </p>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <div class="md:col-span-2">
@@ -775,14 +783,14 @@
                         type="channel"
                         options={guildChannels}
                         selected={panelTarget[gate.id] ?? null}
-                        placeholder="Where should the button go?"
+                        placeholder={m.channelAccess.panelWhere()}
                         onchange={(detail) => { panelTarget[gate.id] = typeof detail.selected === 'string' ? detail.selected : null; }}
                       />
                     </div>
                     <button class="min-h-[44px] px-4 rounded-xl font-medium"
                             style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}40;"
                             disabled={saving}
-                            onclick={() => postPanel(gate)}>Post panel</button>
+                            onclick={() => postPanel(gate)}>{m.channelAccess.panelPost()}</button>
                   </div>
                 </div>
               </div>
@@ -798,7 +806,7 @@
       <div class="rounded-2xl border p-4 flex flex-wrap gap-4 items-end"
            style="border-color: {$colorStore.primary}30;">
         <div class="min-w-[200px]">
-          <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Gate</span>
+          <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.channelAccess.appsGate()}</span>
           <div class="min-h-[44px]">
             <DiscordSelector
               type="custom"
@@ -806,7 +814,7 @@
               customIcon="fa-lock"
               selected={applicationFilter.configId}
               searchable={false}
-              placeholder="All gates"
+              placeholder={m.channelAccess.filterAllGates()}
               onchange={(detail) => {
                 applicationFilter.configId = typeof detail.selected === 'string' ? detail.selected : 'all';
                 loadApplications();
@@ -815,7 +823,7 @@
           </div>
         </div>
         <div class="min-w-[200px]">
-          <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Status</span>
+          <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.status()}</span>
           <div class="min-h-[44px]">
             <DiscordSelector
               type="custom"
@@ -823,7 +831,7 @@
               customIcon="fa-filter"
               selected={applicationFilter.status}
               searchable={false}
-              placeholder="Any status"
+              placeholder={m.common.anyStatus()}
               onchange={(detail) => {
                 applicationFilter.status = typeof detail.selected === 'string' ? detail.selected : 'all';
                 loadApplications();
@@ -836,7 +844,7 @@
       {#if applications.length === 0}
         <div class="rounded-2xl border p-8 text-center"
              style="border-color: {$colorStore.primary}30; color: {$colorStore.muted};">
-          Nothing to show for that filter.
+          {m.channelAccess.appsEmpty()}
         </div>
       {:else}
         {#each applications as application (application.id)}
@@ -850,12 +858,13 @@
                 {/if}
                 <div>
                   <h3 class="font-bold" style="color: {$colorStore.text}">
-                    #{application.id} • {application.username ?? (application.userId ? application.userId.toString() : "Hidden")}
+                    {m.channelAccess.appsTitle({ id: application.id, user: application.username ?? (application.userId ? application.userId.toString() : m.channelAccess.appsHidden()) })}
                   </h3>
                   <p class="text-sm" style="color: {$colorStore.muted}">
-                    #{channelName(application.channelId)} • opened {formatDate(application.createdAt)}
                     {#if application.status === AccessApplicationStatus.Pending && application.expiresAt}
-                      • closes {formatDate(application.expiresAt)}
+                      {m.channelAccess.appsMetaCloses({ channel: channelName(application.channelId), date: formatDate(application.createdAt), closes: formatDate(application.expiresAt) })}
+                    {:else}
+                      {m.channelAccess.appsMetaOpened({ channel: channelName(application.channelId), date: formatDate(application.createdAt) })}
                     {/if}
                   </p>
                 </div>
@@ -871,7 +880,7 @@
                 <button class="min-h-[44px] px-4 rounded-xl font-medium"
                         style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}40;"
                         onclick={() => (expandedApplication = expandedApplication === application.id ? null : application.id)}>
-                  {expandedApplication === application.id ? "Hide" : "Details"}
+                  {expandedApplication === application.id ? m.common.hide() : m.common.details()}
                 </button>
               </div>
             </div>
@@ -887,7 +896,7 @@
 
                 {#if application.votes.length > 0}
                   <div class="p-3 rounded-xl" style="background: {$colorStore.primary}10;">
-                    <p class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Votes</p>
+                    <p class="text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.features.votesName()}</p>
                     <ul class="space-y-1">
                       {#each application.votes as vote (vote.userId)}
                         <li class="text-sm" style="color: {$colorStore.muted}">
@@ -903,20 +912,20 @@
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <input class="min-h-[44px] px-3 rounded-xl md:col-span-1"
                            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                           placeholder="Reason (optional)"
+                           placeholder={m.common.reasonOptional()}
                            bind:value={resolveReason[application.id]} />
                     <button class="min-h-[44px] px-4 rounded-xl font-medium"
                             style="background: #10b98120; color: #10b981; border: 1px solid #10b98140;"
                             disabled={saving}
-                            onclick={() => resolveApplication(application, true)}>Approve</button>
+                            onclick={() => resolveApplication(application, true)}>{m.common.approve()}</button>
                     <button class="min-h-[44px] px-4 rounded-xl font-medium"
                             style="background: #ef444420; color: #ef4444; border: 1px solid #ef444440;"
                             disabled={saving}
-                            onclick={() => resolveApplication(application, false)}>Deny</button>
+                            onclick={() => resolveApplication(application, false)}>{m.common.deny()}</button>
                   </div>
                 {:else if application.resolutionReason}
                   <p class="text-sm" style="color: {$colorStore.muted}">
-                    Closed {formatDate(application.resolvedAt)}: {application.resolutionReason}
+                    {m.channelAccess.appsClosed({ date: formatDate(application.resolvedAt), reason: application.resolutionReason })}
                   </p>
                 {/if}
               </div>
@@ -932,19 +941,19 @@
       <div class="rounded-2xl border p-6"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                   border-color: {$colorStore.primary}30;">
-        <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Block someone from applying</h2>
+        <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.channelAccess.blockTitle()}</h2>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
-            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">User</span>
+            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.user()}</span>
             <DiscordSelector
               type="user"
               options={guildMembers}
               bind:selected={newBlacklist.userId}
-              placeholder="Select a user"
+              placeholder={m.common.selectUserPlaceholder()}
             />
           </div>
           <div>
-            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Scope</span>
+            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.scope()}</span>
             <div class="min-h-[44px]">
               <DiscordSelector
                 type="custom"
@@ -952,26 +961,26 @@
                 customIcon="fa-lock"
                 selected={newBlacklist.configId ?? 'all'}
                 searchable={false}
-                placeholder="Every gate"
+                placeholder={m.channelAccess.filterEveryGate()}
                 onchange={(detail) => { newBlacklist.configId = typeof detail.selected === 'string' ? detail.selected : 'all'; }}
               />
             </div>
           </div>
           <input class="min-h-[44px] px-3 rounded-xl"
                  style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                 placeholder="Reason (optional)"
+                 placeholder={m.common.reasonOptional()}
                  bind:value={newBlacklist.reason} />
           <button class="min-h-[44px] px-4 rounded-xl font-medium"
                   style="background: #ef444420; color: #ef4444; border: 1px solid #ef444440;"
                   disabled={saving}
-                  onclick={addBlacklist}>Block</button>
+                  onclick={addBlacklist}>{m.common.block()}</button>
         </div>
       </div>
 
       {#if blacklist.length === 0}
         <div class="rounded-2xl border p-8 text-center"
              style="border-color: {$colorStore.primary}30; color: {$colorStore.muted};">
-          Nobody is blocked from applying.
+          {m.channelAccess.blockEmpty()}
         </div>
       {:else}
         <div class="rounded-2xl border divide-y" style="border-color: {$colorStore.primary}30;">
@@ -982,13 +991,15 @@
                   {entry.username ?? entry.userId.toString()}
                 </p>
                 <p class="text-sm" style="color: {$colorStore.muted}">
-                  {gateName(entry.configId)}{entry.reason ? ` • ${entry.reason}` : ""} • added {formatDate(entry.addedAt)}
+                  {entry.reason
+                    ? m.channelAccess.blockMetaReason({ gate: gateName(entry.configId), reason: entry.reason, date: formatDate(entry.addedAt) })
+                    : m.channelAccess.blockMeta({ gate: gateName(entry.configId), date: formatDate(entry.addedAt) })}
                 </p>
               </div>
               <button class="min-h-[44px] px-4 rounded-xl font-medium"
                       style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}40;"
                       disabled={saving}
-                      onclick={() => removeBlacklist(entry)}>Unblock</button>
+                      onclick={() => removeBlacklist(entry)}>{m.common.unblock()}</button>
             </div>
           {/each}
         </div>
@@ -999,11 +1010,11 @@
 
 <ConfirmationModal
   isOpen={gatePendingDeletion !== null}
-  title="Delete this gate?"
+  title={m.channelAccess.deleteTitle()}
   message={gatePendingDeletion
-    ? `#${channelName(gatePendingDeletion.channelId)} stops taking applications, and its questions, applications and votes are deleted. Nobody loses access they already have.`
+    ? m.channelAccess.deleteMessage({ channel: channelName(gatePendingDeletion.channelId) })
     : ""}
-  confirmText="Delete gate"
+  confirmText={m.channelAccess.deleteConfirm()}
   variant="danger"
   onconfirm={deleteGate}
   oncancel={() => (gatePendingDeletion = null)}

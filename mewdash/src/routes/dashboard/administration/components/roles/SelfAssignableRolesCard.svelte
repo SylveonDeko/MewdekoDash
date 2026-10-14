@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { administrationApi } from "$lib/api/index.ts";
@@ -178,18 +179,18 @@
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
       <div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Self-Assignable Roles</h2>
-        <p class="text-sm" style="color: {$colorStore.muted}">Roles members can give themselves with the iam command</p>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.features.wizardRolesStepSelfassignTitle()}</h2>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.rolesSelfAssignableSubtitle()}</p>
       </div>
     </div>
 
     <div class="flex flex-wrap items-center gap-4">
       <div class="flex items-center gap-2">
         <div class="text-right">
-          <div class="text-sm" style="color: {$colorStore.text}">Exclusive</div>
-          <div class="text-xs" style="color: {$colorStore.muted}">One role per group</div>
+          <div class="text-sm" style="color: {$colorStore.text}">{m.administration.rolesReactionRolesExclusive()}</div>
+          <div class="text-xs" style="color: {$colorStore.muted}">{m.administration.rolesSelfAssignableExclusiveHint()}</div>
         </div>
-        <button aria-label="Toggle exclusive mode"
+        <button aria-label={m.administration.rolesSelfAssignableToggleExclusive()}
                 role="switch"
                 aria-checked={selfAssignableRoles.exclusive}
                 class="p-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] min-w-[44px]"
@@ -200,12 +201,12 @@
       </div>
       <div class="flex items-center gap-2">
         <div class="text-right">
-          <div class="text-sm" style="color: {$colorStore.text}">Auto delete</div>
+          <div class="text-sm" style="color: {$colorStore.text}">{m.administration.rolesSelfAssignableAutoDelete()}</div>
           <div class="text-xs" style="color: {$colorStore.muted}">
-            {#if autoDeleteState === null}Remove iam messages{:else}{autoDeleteState ? "On" : "Off"}{/if}
+            {#if autoDeleteState === null}{m.administration.rolesSelfAssignableAutoDeleteHint()}{:else}{autoDeleteState ? m.common.on() : m.common.off()}{/if}
           </div>
         </div>
-        <button aria-label="Toggle auto delete of self-assign messages"
+        <button aria-label={m.administration.rolesSelfAssignableToggleAutoDelete()}
                 class="p-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] min-w-[44px] disabled:opacity-50"
                 disabled={busy}
                 onclick={toggleAutoDelete}
@@ -220,8 +221,8 @@
     <div class="text-center py-8">
       <i class="fa-utility-duo fa-regular fa-user-check"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-      <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">No self-assignable roles configured</p>
-      <p class="text-sm" style="color: {$colorStore.muted}">Add a role above so members can assign it themselves</p>
+      <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">{m.administration.rolesSelfAssignableEmptyTitle()}</p>
+      <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.rolesSelfAssignableEmptyHint()}</p>
     </div>
   {:else}
     <div class="space-y-4">
@@ -230,24 +231,24 @@
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
             {#if editingGroup === group.id.toString()}
               <form class="flex items-center gap-2 flex-1 min-w-[220px]" onsubmit={(e) => { e.preventDefault(); finishGroupRename(group.id); }} transition:slide>
-                <input type="text" bind:value={groupNameDraft} placeholder="Group name" aria-label="Group name" maxlength="100"
+                <input type="text" bind:value={groupNameDraft} placeholder={m.administration.rolesSelfAssignableGroupName()} aria-label={m.administration.rolesSelfAssignableGroupName()} maxlength="100"
                        use:focusOnMount
                        oninput={() => scheduleGroupName(group.id)}
                        onblur={() => finishGroupRename(group.id)}
                        onkeydown={(e) => { if (e.key === "Escape") { e.preventDefault(); cancelGroupRename(group.id); } }}
-                       title="Saves as you type. Enter or click away to finish, Escape to undo."
+                       title={m.administration.rolesSelfAssignableEditTitle()}
                        class="flex-1 px-3 py-2 rounded-lg border text-sm min-h-[40px]"
                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
               </form>
             {:else}
               <h3 class="font-semibold flex items-center gap-2" style="color: {$colorStore.text}">
                 {#if group.id === 0}
-                  Ungrouped
+                  {m.common.ungrouped()}
                 {:else}
-                  Group {group.id}{group.name ? `: ${group.name}` : ""}
+                  {group.name ? m.administration.rolesSelfAssignableGroupWithName({ id: group.id, name: group.name }) : m.administration.rolesSelfAssignableGroup({ id: group.id })}
                 {/if}
                 {#if group.id !== 0}
-                  <button class="p-1 rounded-sm hover:opacity-80 min-h-[28px] min-w-[28px]" aria-label="Rename group"
+                  <button class="p-1 rounded-sm hover:opacity-80 min-h-[28px] min-w-[28px]" aria-label={m.administration.rolesSelfAssignableRenameGroup()}
                           onclick={() => startGroupRename(group.id, group.name)}>
                     <i class="fa-solid fa-pen" style="color: {$colorStore.muted}; font-size: 12px;"></i>
                   </button>
@@ -255,7 +256,7 @@
               </h3>
             {/if}
             <span class="text-xs px-2 py-1 rounded-full" style="background: {$colorStore.primary}15; color: {$colorStore.muted};">
-              {group.roles.length} role{group.roles.length === 1 ? "" : "s"}
+              {group.roles.length === 1 ? m.administration.rolesSelfAssignableRoleCountOne({ count: group.roles.length }) : m.common.rolesCount({ count: group.roles.length })}
             </span>
           </div>
 
@@ -265,23 +266,23 @@
                    style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                 <div class="min-w-0">
                   <div class="font-medium truncate" style="color: {$colorStore.text}">
-                    {role.role?.name || `Role ${role.model.roleId}`}
+                    {role.role?.name || m.common.roleFallback({ id: role.model.roleId.toString() })}
                   </div>
                   {#if editingLevelRole === role.model.roleId.toString()}
                     <form class="flex items-center gap-1 mt-1" onsubmit={(e) => { e.preventDefault(); finishLevelEdit(role.model.roleId); }}>
-                      <input type="number" min="0" max="1000" bind:value={levelDraft} aria-label="Required level"
+                      <input type="number" min="0" max="1000" bind:value={levelDraft} aria-label={m.administration.rolesSelfAssignableRequiredLevel()}
                              use:focusOnMount
                              oninput={() => scheduleLevel(role.model.roleId)}
                              onblur={() => finishLevelEdit(role.model.roleId)}
                              onkeydown={(e) => { if (e.key === "Escape") { e.preventDefault(); cancelLevelEdit(role.model.roleId); } }}
-                             title="Saves as you type. Enter or click away to finish, Escape to undo."
+                             title={m.administration.rolesSelfAssignableEditTitle()}
                              class="w-20 px-2 py-1 rounded-sm border text-xs min-h-[32px]"
                              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
                     </form>
                   {:else}
                     <button class="text-xs mt-0.5 hover:underline" style="color: {$colorStore.muted}"
                             onclick={() => startLevelEdit(role)}>
-                      {role.model.levelRequirement > 0 ? `Level ${role.model.levelRequirement}+` : "No level requirement"}
+                      {role.model.levelRequirement > 0 ? m.common.levelMin({ level: role.model.levelRequirement }) : m.administration.rolesSelfAssignableNoLevelRequirement()}
                       <i class="fa-solid fa-pen ml-1" style="font-size: 10px;"></i>
                     </button>
                   {/if}
@@ -291,9 +292,9 @@
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                   disabled={busy}
                   onclick={() => removeRole(role.model.roleId)}
-                  aria-label="Remove {role.role?.name} from self-assignable roles"
+                  aria-label={m.administration.rolesSelfAssignableRemoveAria({ role: role.role?.name ?? "" })}
                 >
-                  Remove
+                  {m.common.remove()}
                 </button>
               </div>
             {/each}

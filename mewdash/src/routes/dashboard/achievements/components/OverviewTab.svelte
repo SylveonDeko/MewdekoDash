@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fade } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -35,18 +36,20 @@
     Object.entries(DATA_SOURCES).map(([key, info]) => ({
       key,
       ...info,
+      label: sourceLabel(key, info.label),
+      off: sourceOff(key, info.off),
       on: overview.dataSources[key] ?? true,
       used: catalog.achievements.some((a) => a.enabled && a.trigger === 0 &&
-        catalog.metrics.find((m) => m.value === a.metric)?.source === key)
+        catalog.metrics.find((metric) => metric.value === a.metric)?.source === key)
     }))
   );
   let problems = $derived(sourceRows.filter((s) => !s.on && s.used));
 
   let stats = $derived([
-    { icon: "fa-users", label: "Members earning", value: overview.members.toLocaleString(), sub: "with at least one unlock" },
-    { icon: "fa-unlock", label: "Unlocks", value: overview.unlocks.toLocaleString(), sub: `${overview.unlocksThisWeek.toLocaleString()} this week` },
-    { icon: "fa-crown", label: "Achievements active", value: `${overview.earnable} / ${overview.total}`, sub: "achievements members can earn" },
-    { icon: "fa-wand-magic-sparkles", label: "Made here", value: overview.customCount.toLocaleString(), sub: "server achievements" }
+    { icon: "fa-users", label: m.achievements.overviewStatMembers(), value: overview.members.toLocaleString(), sub: m.achievements.overviewStatMembersSub() },
+    { icon: "fa-unlock", label: m.achievements.overviewStatUnlocks(), value: overview.unlocks.toLocaleString(), sub: m.achievements.overviewStatUnlocksSub({ count: overview.unlocksThisWeek.toLocaleString() }) },
+    { icon: "fa-crown", label: m.achievements.overviewStatActive(), value: `${overview.earnable} / ${overview.total}`, sub: m.achievements.overviewStatActiveSub() },
+    { icon: "fa-wand-magic-sparkles", label: m.achievements.libraryMadeHere(), value: overview.customCount.toLocaleString(), sub: m.achievements.overviewStatCustomSub() }
   ]);
 
   /**
@@ -59,11 +62,11 @@
     try {
       onsettings(await achievementsApi.updateSettings($currentGuild.id, { enabled }));
       if (enabled && !overview.settings.backfilledAt) {
-        onsuccess("Members can now earn achievements. Those who already qualify get theirs quietly over the next few minutes.");
+        onsuccess(m.achievements.overviewStartedMessage());
       }
     } catch (err: any) {
       logger.error("Failed to switch achievements:", err);
-      onerror(err?.message || "Couldn't save that.");
+      onerror(err?.message || m.common.saveFailedInline());
     } finally {
       toggling = false;
     }
@@ -77,9 +80,52 @@
       onsources(await achievementsApi.enableMessageCounting($currentGuild.id));
     } catch (err: any) {
       logger.error("Failed to turn on message counting:", err);
-      onerror(err?.message || "Couldn't turn on message counting.");
+      onerror(err?.message || m.achievements.overviewErrorMessages());
     } finally {
       fixingMessages = false;
+    }
+  }
+
+  const USER_TOKEN = "\u0000user";
+  const ACHIEVEMENT_TOKEN = "\u0000achievement";
+  /** The unlock sentence split around the user and the achievement, so each can be styled where the locale puts it. */
+  const unlockParts = $derived(
+    m.achievements.overviewUnlockLine({ user: USER_TOKEN, achievement: ACHIEVEMENT_TOKEN })
+      .split(/(\u0000user|\u0000achievement)/)
+      .filter((part) => part !== "")
+  );
+
+  /**
+   * The localized name of a data source.
+   * @param key The source key
+   * @param fallback The helper's name
+   */
+  function sourceLabel(key: string, fallback: string): string {
+    switch (key) {
+      case "messages": return m.achievements.overviewSourceMessages();
+      case "voice": return m.achievements.overviewSourceVoice();
+      case "invites": return m.features.wizardInvitetrackingName();
+      case "commands": return m.achievements.overviewSourceCommands();
+      case "xp": return m.common.xp();
+      case "reputation": return m.features.reputationName();
+      default: return fallback;
+    }
+  }
+
+  /**
+   * The localized note shown when a data source is off.
+   * @param key The source key
+   * @param fallback The helper's note
+   */
+  function sourceOff(key: string, fallback: string): string {
+    switch (key) {
+      case "messages": return m.achievements.overviewSourceMessagesOff();
+      case "voice": return m.achievements.overviewSourceVoiceOff();
+      case "invites": return m.achievements.overviewSourceInvitesOff();
+      case "commands": return m.achievements.overviewSourceCommandsOff();
+      case "xp": return m.achievements.overviewSourceXpOff();
+      case "reputation": return m.achievements.overviewSourceReputationOff();
+      default: return fallback;
     }
   }
 
@@ -135,25 +181,25 @@
       </div>
       <div class="flex-1 min-w-0">
         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">
-          {overview.settings.enabled ? "Members are earning achievements" : "Earning is paused"}
+          {overview.settings.enabled ? m.achievements.overviewEarningTitle() : m.achievements.overviewPausedTitle()}
         </h2>
         <p class="text-sm mt-1" style="color: {$colorStore.muted}">
           {overview.settings.enabled
-            ? "Members unlock achievements, earn badges, and climb ranks as they take part."
-            : "Turn them on and members who already qualify get their achievements quietly, without a flood of messages."}
+            ? m.achievements.overviewEarningText()
+            : m.achievements.overviewPausedText()}
         </p>
       </div>
       {#if overview.settings.enabled}
         <button type="button" class="px-5 h-[44px] rounded-xl text-sm font-medium shrink-0 disabled:opacity-50"
                 style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                 disabled={toggling} onclick={() => setEnabled(false)}>
-          <i class="fa-solid {toggling ? 'fa-spinner fa-spin' : 'fa-pause'} mr-2" aria-hidden="true"></i>Pause earning
+          <i class="fa-solid {toggling ? 'fa-spinner fa-spin' : 'fa-pause'} mr-2" aria-hidden="true"></i>{m.achievements.overviewPause()}
         </button>
       {:else}
         <button type="button" class="px-5 h-[44px] rounded-xl text-sm font-semibold shrink-0 disabled:opacity-50"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 disabled={toggling} onclick={() => setEnabled(true)}>
-          <i class="fa-solid {toggling ? 'fa-spinner fa-spin' : 'fa-play'} mr-2" aria-hidden="true"></i>Start earning
+          <i class="fa-solid {toggling ? 'fa-spinner fa-spin' : 'fa-play'} mr-2" aria-hidden="true"></i>{m.achievements.overviewStart()}
         </button>
       {/if}
     </div>
@@ -179,10 +225,10 @@
               border-color: {problems.length > 0 ? $colorStore.accent : $colorStore.primary}30;">
     <h3 class="flex items-center gap-2 font-semibold mb-1" style="color: {$colorStore.text}">
       <DuoIcon icon="fa-link" />
-      Data sources
+      {m.achievements.overviewSourcesTitle()}
     </h3>
     <p class="text-sm mb-4" style="color: {$colorStore.muted}">
-      Achievements read numbers other features already track. Anything not tracking means some achievements can't move.
+      {m.achievements.overviewSourcesHint()}
     </p>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
       {#each sourceRows as source (source.key)}
@@ -191,27 +237,27 @@
           <div class="flex-1 min-w-0">
             <div class="text-sm font-medium" style="color: {$colorStore.text}">{source.label}</div>
             {#if !source.on}
-              <div class="text-xs" style="color: {$colorStore.muted}">{source.used ? source.off : "Not tracking, and no active achievement needs it."}</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{source.used ? source.off : m.achievements.overviewSourceUnneeded()}</div>
             {/if}
           </div>
           {#if source.on}
-            <span class="text-xs px-2 py-1 rounded-lg font-medium" style="background: #10b98120; color: #10b981;">Tracking</span>
+            <span class="text-xs px-2 py-1 rounded-lg font-medium" style="background: #10b98120; color: #10b981;">{m.achievements.overviewTracking()}</span>
           {:else if source.key === "messages"}
             <button type="button"
                     class="text-xs px-3 py-2 rounded-lg font-medium min-h-[36px] disabled:opacity-50"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                     disabled={fixingMessages}
                     onclick={enableMessages}>
-              {fixingMessages ? "Starting" : "Start tracking"}
+              {fixingMessages ? m.achievements.overviewStarting() : m.achievements.overviewStartTracking()}
             </button>
           {:else if source.href}
             <a href={source.href}
                class="text-xs px-3 py-2 rounded-lg font-medium min-h-[36px] flex items-center"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;">
-              Open
+              {m.common.open()}
             </a>
           {:else}
-            <span class="text-xs px-2 py-1 rounded-lg font-medium" style="background: {$colorStore.accent}20; color: {$colorStore.accent};">Not tracking</span>
+            <span class="text-xs px-2 py-1 rounded-lg font-medium" style="background: {$colorStore.accent}20; color: {$colorStore.accent};">{m.achievements.overviewNotTracking()}</span>
           {/if}
         </div>
       {/each}
@@ -225,16 +271,16 @@
       <div class="flex items-center justify-between gap-3 mb-4">
         <h3 class="flex items-center gap-2 font-semibold" style="color: {$colorStore.text}">
           <DuoIcon icon="fa-clock" />
-          Recent unlocks
+          {m.achievements.overviewRecentTitle()}
         </h3>
         <button type="button" class="text-sm px-3 py-2 rounded-lg min-h-[40px]"
                 style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
                 onclick={() => ongoto("members")}>
-          All members
+          {m.achievements.overviewAllMembers()}
         </button>
       </div>
       {#if overview.recent.length === 0}
-        <p class="text-sm" style="color: {$colorStore.muted}">Nothing yet. Unlocks show up here as they happen.</p>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.achievements.overviewRecentEmpty()}</p>
       {:else}
         <ul class="space-y-2">
           {#each overview.recent as unlock (`${unlock.userId}-${unlock.key}-${unlock.unlockedAt}`)}
@@ -246,11 +292,16 @@
               {/if}
               <div class="flex-1 min-w-0">
                 <div class="text-sm truncate" style="color: {$colorStore.text}">
-                  <span class="font-semibold">{unlock.username}</span> unlocked
-                  <span class="inline-flex items-center gap-1 align-bottom" style="color: {gradeColor(unlock.grade)}">
-                    <AchievementIcon icon={unlock.icon} iconUrl={unlock.iconUrl} color={gradeColor(unlock.grade)} size={14} bare />
-                    {unlock.name}
-                  </span>
+                  {#each unlockParts as part, i (i)}
+                    {#if part === USER_TOKEN}
+                      <span class="font-semibold">{unlock.username}</span>
+                    {:else if part === ACHIEVEMENT_TOKEN}
+                      <span class="inline-flex items-center gap-1 align-bottom" style="color: {gradeColor(unlock.grade)}">
+                        <AchievementIcon icon={unlock.icon} iconUrl={unlock.iconUrl} color={gradeColor(unlock.grade)} size={14} bare />
+                        {unlock.name}
+                      </span>
+                    {:else}{part}{/if}
+                  {/each}
                 </div>
                 <div class="text-xs" style="color: {$colorStore.muted}">{timeAgo(unlock.unlockedAt)}</div>
               </div>
@@ -261,8 +312,8 @@
     </div>
 
     <div class="space-y-6">
-      {@render rarityList("Most unlocked", "fa-fire", overview.mostCommon, "Nothing unlocked yet.")}
-      {@render rarityList("Rarest", "fa-sparkles", overview.rarest, "Nothing unlocked yet.")}
+      {@render rarityList(m.achievements.librarySortPopular(), "fa-fire", overview.mostCommon, m.achievements.overviewRarityEmpty())}
+      {@render rarityList(m.achievements.overviewRarest(), "fa-sparkles", overview.rarest, m.achievements.overviewRarityEmpty())}
     </div>
   </div>
 </div>

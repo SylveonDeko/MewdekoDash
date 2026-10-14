@@ -1,5 +1,6 @@
 <!-- ValidationCard.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import { colorStore } from "$lib/stores/colorStore";
@@ -181,22 +182,22 @@
         <div class="flex items-center gap-2">
           <i class="fa-solid {getIcon(severityLevel)}" style="color: {getColors(severityLevel).icon}; font-size: 16px;"></i>
           <h3 class="text-sm font-medium" style="color: {getColors(severityLevel).text};">
-            {title || 'Validation Issues'}
+            {title || m.embedbuilder.validationTitleDefault()}
           </h3>
           <div class="flex items-center gap-1 text-xs" style="color: {getColors(severityLevel).text}70;">
             {#if errorCount > 0}
               <span class="px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
-                {errorCount} error{errorCount !== 1 ? 's' : ''}
+                {errorCount === 1 ? m.embedbuilder.validationErrorCountOne({ count: errorCount }) : m.embedbuilder.validationErrorCountOther({ count: errorCount })}
               </span>
             {/if}
             {#if warningCount > 0}
               <span class="px-1.5 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">
-                {warningCount} warning{warningCount !== 1 ? 's' : ''}
+                {warningCount === 1 ? m.embedbuilder.validationWarningCountOne({ count: warningCount }) : m.embedbuilder.validationWarningCountOther({ count: warningCount })}
               </span>
             {/if}
             {#if suggestionCount > 0}
               <span class="px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                {suggestionCount} tip{suggestionCount !== 1 ? 's' : ''}
+                {suggestionCount === 1 ? m.embedbuilder.validationTipCountOne({ count: suggestionCount }) : m.embedbuilder.validationTipCountOther({ count: suggestionCount })}
               </span>
             {/if}
           </div>
@@ -221,7 +222,7 @@
               <h4 class="text-xs font-semibold uppercase tracking-wide flex items-center gap-1"
                   style="color: {getColors('error').text};">
                 <i class="fa-solid fa-circle-exclamation" style="font-size: 12px;"></i>
-                Errors ({localErrors.length})
+                {m.embedbuilder.validationHeadingErrors({ count: localErrors.length })}
               </h4>
             {/if}
             
@@ -239,7 +240,7 @@
                   </p>
                   {#if error.field}
                     <p class="text-xs mt-1 opacity-75" style="color: {getColors('error').text};">
-                      Field: {error.field}
+                      {m.embedbuilder.validationField({ field: error.field })}
                     </p>
                   {/if}
                   
@@ -259,8 +260,8 @@
                   <button
                           class="shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors"
                     onclick={() => dismissIssue('error', error.id)}
-                    title="Dismiss error"
-                    aria-label="Dismiss error"
+                    title={m.embedbuilder.validationDismissError()}
+                    aria-label={m.embedbuilder.validationDismissError()}
                   >
                     <i class="fa-solid fa-xmark" style="color: {getColors('error').text}; font-size: 14px;"></i>
                   </button>
@@ -277,7 +278,7 @@
               <h4 class="text-xs font-semibold uppercase tracking-wide flex items-center gap-1"
                   style="color: {getColors('warning').text};">
                 <i class="fa-solid fa-triangle-exclamation" style="font-size: 12px;"></i>
-                Warnings ({localWarnings.length})
+                {m.embedbuilder.validationHeadingWarnings({ count: localWarnings.length })}
               </h4>
             {/if}
             
@@ -295,7 +296,7 @@
                   </p>
                   {#if warning.field}
                     <p class="text-xs mt-1 opacity-75" style="color: {getColors('warning').text};">
-                      Field: {warning.field}
+                      {m.embedbuilder.validationField({ field: warning.field })}
                     </p>
                   {/if}
                   
@@ -315,8 +316,8 @@
                   <button
                           class="shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors"
                     onclick={() => dismissIssue('warning', warning.id)}
-                    title="Dismiss warning"
-                    aria-label="Dismiss warning"
+                    title={m.embedbuilder.validationDismissWarning()}
+                    aria-label={m.embedbuilder.validationDismissWarning()}
                   >
                     <i class="fa-solid fa-xmark" style="color: {getColors('warning').text}; font-size: 14px;"></i>
                   </button>
@@ -333,7 +334,7 @@
               <h4 class="text-xs font-semibold uppercase tracking-wide flex items-center gap-1"
                   style="color: {getColors('suggestion').text};">
                 <i class="fa-solid fa-lightbulb" style="font-size: 12px;"></i>
-                Suggestions ({localSuggestions.length})
+                {m.common.suggestionsCount({ count: localSuggestions.length })}
               </h4>
             {/if}
             
@@ -366,8 +367,8 @@
                   <button
                           class="shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors"
                     onclick={() => dismissIssue('suggestion', suggestion.id)}
-                    title="Dismiss suggestion"
-                    aria-label="Dismiss suggestion"
+                    title={m.embedbuilder.validationDismissSuggestion()}
+                    aria-label={m.embedbuilder.validationDismissSuggestion()}
                   >
                     <i class="fa-solid fa-xmark" style="color: {getColors('suggestion').text}; font-size: 14px;"></i>
                   </button>

@@ -1,5 +1,6 @@
 <!-- lib/components/dashboard/ActionsTab.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import {fly} from "svelte/transition";
     import {onMount} from "svelte";
     import {colorStore} from "$lib/stores/colorStore";
@@ -58,8 +59,8 @@
       recentGreetings = activeGreets.slice(0, 3).map((greet, index) => ({
         id: greet.id || index,
         roleId: greet.roleId,
-        roleName: greet.roleName || `Role ${greet.roleId}`,
-        greeting: greet.greeting || greet.greetingText || "Welcome message",
+        roleName: greet.roleName || m.common.roleFallback({ id: greet.roleId }),
+        greeting: greet.greeting || greet.greetingText || m.dashboard.actionsGreetingFallback(),
         timestamp: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
         isEnabled: !greet.disabled
       }));
@@ -96,9 +97,9 @@
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${diffDays}d ago`;
+    if (diffMins < 60) return m.common.agoMinutes({ count: diffMins });
+    if (diffHours < 24) return m.common.agoHours({ count: diffHours });
+    return m.common.agoDays({ count: diffDays });
   }
 
   function truncateText(text: string, maxLength: number = 50): string {
@@ -124,7 +125,7 @@
             <i class="fa-utility-duo fa-regular fa-chart-simple text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
-          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Recent Activity</h2>
+          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.recentActivity()}</h2>
         </div>
 
         <div class="space-y-2">
@@ -146,9 +147,9 @@
           <div class="text-center py-6">
             <i class="fa-utility-duo fa-regular fa-bell text-4xl mx-auto mb-3 block"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; --fa-primary-opacity: 0.5; --fa-secondary-opacity: 0.3;"></i>
-            <h3 class="text-base font-semibold mb-1" style="color: {$colorStore.text}">No Recent Activity</h3>
+            <h3 class="text-base font-semibold mb-1" style="color: {$colorStore.text}">{m.dashboard.actionsNoRecentActivity()}</h3>
             <p class="text-xs" style="color: {$colorStore.muted}">
-              Set up greetings and role actions to see activity here.
+              {m.dashboard.actionsNoRecentActivityHint()}
             </p>
           </div>
         {:else}
@@ -166,7 +167,7 @@
               <!-- Greeting Details -->
               <div class="flex-1 min-w-0">
                 <div class="font-medium text-sm truncate" style="color: {$colorStore.text}">
-                  Role Greeting • {greeting.roleName}
+                  {m.dashboard.actionsRoleGreetingItem({ role: greeting.roleName })}
                 </div>
                 <div class="text-xs truncate" style="color: {$colorStore.muted}">
                   {truncateText(greeting.greeting)}
@@ -188,7 +189,7 @@
              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
             <i class="fa-utility-duo fa-regular fa-user-check text-sm"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-            Manage Role Greets
+            {m.dashboard.actionsManageRoleGreets()}
           </a>
         {/if}
         </div>
@@ -209,16 +210,16 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">{actionsStats.activeGreets}</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Multi Greets</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.dashboard.actionsMultiGreets()}</span>
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">
-                {actionsStats.activeGreets > 0 ? `${actionsStats.activeGreets} active greetings` : 'No greetings configured'}
+                {actionsStats.activeGreets > 0 ? m.dashboard.actionsActiveGreetings({ count: actionsStats.activeGreets }) : m.dashboard.actionsNoGreetings()}
               </div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/multigreets"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-              Configure
+              {m.common.configure()}
             </a>
           </div>
         </div>
@@ -236,16 +237,16 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">{actionsStats.totalRoleStates}</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Role States</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.features.rolestatesName()}</span>
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">
-                {actionsStats.totalRoleStates > 0 ? `${actionsStats.totalRoleStates} configured states` : 'No states configured'}
+                {actionsStats.totalRoleStates > 0 ? m.dashboard.actionsConfiguredStates({ count: actionsStats.totalRoleStates }) : m.dashboard.actionsNoStates()}
               </div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/rolestates"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
-              Configure
+              {m.common.configure()}
             </a>
           </div>
         </div>
@@ -262,17 +263,17 @@
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
-                <span class="text-lg font-bold" style="color: {$colorStore.text}">{actionsStats.afkEnabled ? "ON" : "OFF"}</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">AFK System</span>
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{actionsStats.afkEnabled ? m.common.on() : m.common.off()}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.features.afkName()}</span>
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">
-                {actionsStats.afkEnabled ? 'Channel configured' : 'Not configured'}
+                {actionsStats.afkEnabled ? m.dashboard.actionsChannelConfigured() : m.common.notConfigured()}
               </div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/afk"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
-              Configure
+              {m.common.configure()}
             </a>
           </div>
         </div>
@@ -295,15 +296,15 @@
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
-                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Chat Triggers</span>
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.active()}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.placeholders.categoryChatTrigger()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Automated responses and reactions</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsChatTriggersDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/chat-triggers"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-              Manage
+              {m.common.manage()}
             </a>
           </div>
         </div>
@@ -320,15 +321,15 @@
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
-                <span class="text-lg font-bold" style="color: {$colorStore.text}">Ready</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Embed Builder</span>
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.ready()}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.common.embedBuilder()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Create custom embeds</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsEmbedBuilderDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/embedbuilder"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
-              Open
+              {m.common.open()}
             </a>
           </div>
         </div>
@@ -345,15 +346,15 @@
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
-                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Repeaters</span>
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.active()}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.features.repeatersName()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Automated recurring messages</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsRepeatersDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/repeaters"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
-              Manage
+              {m.common.manage()}
             </a>
           </div>
         </div>
@@ -370,15 +371,15 @@
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
-                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">RSS Feeds</span>
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.active()}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.features.wizardFeedsName()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Subscribe to RSS feeds</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsRssFeedsDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/feeds"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-              Manage
+              {m.common.manage()}
             </a>
           </div>
         </div>
@@ -395,15 +396,15 @@
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
-                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Status Roles</span>
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.active()}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.features.statusrolesName()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Custom status-based roles</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsStatusRolesDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/statusroles"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
-              Manage
+              {m.common.manage()}
             </a>
           </div>
         </div>
@@ -420,15 +421,15 @@
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
-                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Vote Rewards</span>
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.active()}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.features.wizardVotesName()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Reward users for voting</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsVoteRewardsDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/votes"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
-              Manage
+              {m.common.manage()}
             </a>
           </div>
         </div>

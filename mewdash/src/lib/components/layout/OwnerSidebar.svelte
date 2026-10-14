@@ -1,5 +1,6 @@
 <!-- lib/components/layout/OwnerSidebar.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { page } from "$app/state";
@@ -36,7 +37,7 @@
 
   let currentPath = $derived(page.url.pathname);
   let isOwnerHome = $derived(currentPath === "/owner" || currentPath === "/owner/");
-  let features = $derived([...ownerFeatures].sort((a, b) => a.label.localeCompare(b.label)));
+  let features = $derived([...ownerFeatures].sort((a, b) => a.label().localeCompare(b.label())));
 
   let userAvatarUrl = $derived.by(() => {
     const user = $userStore;
@@ -161,7 +162,7 @@
   style="width: {isMobile ? 'min(85vw, 320px)' : collapsed ? '68px' : '280px'};
          background: linear-gradient(180deg, {$colorStore.primary}15, {$colorStore.secondary}10, {$colorStore.accent}08);
          border-color: {$colorStore.primary}15;"
-  aria-label="Owner panel navigation"
+  aria-label={m.layout.ownerSidebarAria()}
 >
 <div class="flex flex-col h-full shrink-0" style="width: {isMobile ? 'min(85vw, 320px)' : collapsed ? '68px' : '280px'};">
   <div class="border-b shrink-0 flex items-center px-3 py-3 gap-2"
@@ -174,10 +175,10 @@
       {#if !collapsed}
         <span class="min-w-0">
           <span class="block text-lg font-semibold leading-tight whitespace-nowrap" style="color: {$colorStore.text};">
-            Owner Panel
+            {m.layout.ownerSidebarTitle()}
           </span>
           <span class="block text-[11px] uppercase tracking-wider" style="color: {$colorStore.muted};">
-            Bot owner tools
+            {m.common.botOwnerTools()}
           </span>
         </span>
       {/if}
@@ -187,8 +188,8 @@
         href="/dashboard"
         class="flex items-center justify-center w-8 h-8 rounded-lg transition-transform duration-200 hover:scale-[1.05] shrink-0"
         style="color: {$colorStore.muted}; background: {$colorStore.primary}08;"
-        title="Back to the dashboard"
-        aria-label="Back to the dashboard"
+        title={m.layout.ownerSidebarBackToDashboard()}
+        aria-label={m.layout.ownerSidebarBackToDashboard()}
       >
         <i class="fa-solid fa-arrow-left text-xs" aria-hidden="true"></i>
       </a>
@@ -202,7 +203,7 @@
         class:justify-center={collapsed}
         style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;"
         onclick={() => showInstancePicker = !showInstancePicker}
-        onmouseenter={(e) => showTooltip(e, $currentInstance?.botName ?? 'Select instance')}
+        onmouseenter={(e) => showTooltip(e, $currentInstance?.botName ?? m.layout.sidebarSelectInstance())}
         onmouseleave={hideTooltip}
         aria-expanded={showInstancePicker}
       >
@@ -219,11 +220,11 @@
         {#if !collapsed}
           <div class="min-w-0 flex-1">
             <div class="text-base font-semibold truncate" style="color: {$colorStore.text};">
-              {$currentInstance?.botName ?? "Select instance"}
+              {$currentInstance?.botName ?? m.layout.sidebarSelectInstance()}
             </div>
             <div class="flex items-center gap-1.5 text-xs" style="color: {$colorStore.muted};">
               <span class="w-1.5 h-1.5 rounded-full" style="background: {$currentInstance?.isActive ? '#10B981' : $colorStore.accent};"></span>
-              <span>Port {$currentInstance?.port}</span>
+              <span>{m.layout.ownerSidebarPort({ port: $currentInstance?.port ?? "" })}</span>
             </div>
           </div>
           <i class="fa-solid fa-chevron-down text-xs shrink-0 transition-transform duration-200"
@@ -246,7 +247,7 @@
             <div class="flex items-center gap-2 px-3 py-2 text-xs" style="color: {$colorStore.muted};">
               <div class="animate-spin h-3 w-3 border-2 rounded-full"
                    style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
-              Loading instances...
+              {m.layout.navLoadingInstances()}
             </div>
           {:else}
             {#each instances as instance (instance.botId)}
@@ -258,12 +259,12 @@
                 <img src={instance.botAvatar} alt="" class="w-6 h-6 rounded-full shrink-0">
                 <span class="flex-1 min-w-0">
                   <span class="block text-sm truncate">{instance.botName}</span>
-                  <span class="block text-[11px]" style="color: {$colorStore.muted};">Port {instance.port}</span>
+                  <span class="block text-[11px]" style="color: {$colorStore.muted};">{m.layout.ownerSidebarPort({ port: instance.port })}</span>
                 </span>
                 <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background: {instance.isActive ? '#10B981' : $colorStore.accent};"></span>
               </button>
             {:else}
-              <div class="px-3 py-2 text-xs" style="color: {$colorStore.muted};">No instances registered</div>
+              <div class="px-3 py-2 text-xs" style="color: {$colorStore.muted};">{m.common.noInstancesRegistered()}</div>
             {/each}
           {/if}
         </div>
@@ -271,7 +272,7 @@
     {/if}
   </div>
 
-  <nav class="flex-1 overflow-y-auto overflow-x-hidden py-2 sidebar-scrollbar" aria-label="Owner tools">
+  <nav class="flex-1 overflow-y-auto overflow-x-hidden py-2 sidebar-scrollbar" aria-label={m.layout.ownerSidebarToolsAria()}>
     <div class="px-2 mb-1">
       <a
         href="/owner"
@@ -291,7 +292,7 @@
                   width: 20px; text-align: center;"
            aria-hidden="true"></i>
         {#if !collapsed}
-          <span class="text-[15px] font-medium">Overview</span>
+          <span class="text-[15px] font-medium">{m.common.overview()}</span>
         {/if}
       </a>
 
@@ -301,7 +302,7 @@
         class:justify-center={collapsed}
         style="background: transparent; color: {$colorStore.muted}; border: 1px solid transparent;"
         onclick={() => openSearch()}
-        onmouseenter={(e) => showTooltip(e, 'Search (Ctrl+K)')}
+        onmouseenter={(e) => showTooltip(e, m.layout.ownerSidebarSearchTooltip())}
         onmouseleave={hideTooltip}
       >
         <i class="fa-utility-duo fa-regular fa-magnifying-glass text-base shrink-0"
@@ -309,7 +310,7 @@
                   --fa-secondary-opacity: 0.4; width: 20px; text-align: center;"
            aria-hidden="true"></i>
         {#if !collapsed}
-          <span class="text-[15px] font-medium flex-1 text-left">Search</span>
+          <span class="text-[15px] font-medium flex-1 text-left">{m.common.search()}</span>
           <span class="px-1.5 py-0.5 rounded-sm text-xs" style="background: {$colorStore.primary}20; color: {$colorStore.primary};">⌘K</span>
         {/if}
       </button>
@@ -328,7 +329,7 @@
                  color: {active ? $colorStore.text : $colorStore.muted};
                  border: 1px solid {active ? $colorStore.primary + '20' : 'transparent'};"
           aria-current={active ? 'page' : undefined}
-          onmouseenter={(e) => showTooltip(e, feature.label)}
+          onmouseenter={(e) => showTooltip(e, feature.label())}
           onmouseleave={hideTooltip}
         >
           {#if active}
@@ -344,7 +345,7 @@
              aria-hidden="true"></i>
           {#if !collapsed}
             <span class="text-[15px] max-lg:text-base truncate flex-1" style="color: {active ? $colorStore.text : $colorStore.muted};">
-              {feature.label}
+              {feature.label()}
             </span>
           {/if}
         </a>
@@ -361,9 +362,9 @@
           class:justify-center={collapsed}
           style="color: {$colorStore.text};"
           onclick={() => { if (collapsed) toggleSidebar(); }}
-          onmouseenter={(e) => collapsed && showTooltip(e, "Expand sidebar (Ctrl+B)")}
+          onmouseenter={(e) => collapsed && showTooltip(e, m.layout.sidebarExpandTooltip())}
           onmouseleave={hideTooltip}
-          aria-label={collapsed ? "Expand sidebar" : $userStore.username}
+          aria-label={collapsed ? m.layout.sidebarExpand() : $userStore.username}
         >
           <div class="relative shrink-0">
             <img src={userAvatarUrl} alt={$userStore.username} class="w-9 h-9 rounded-full shrink-0">
@@ -377,7 +378,7 @@
           {#if !collapsed}
             <div class="flex-1 min-w-0 text-left">
               <div class="text-sm font-medium truncate">{$userStore.username}</div>
-              <div class="text-[11px] truncate" style="color: {$colorStore.accent};">Bot owner</div>
+              <div class="text-[11px] truncate" style="color: {$colorStore.accent};">{m.layout.ownerSidebarBotOwner()}</div>
             </div>
           {/if}
         </button>
@@ -388,8 +389,8 @@
           class="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.05] shrink-0"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}08;"
           onclick={toggleSidebar}
-          title="Collapse (Ctrl+B)"
-          aria-label="Collapse sidebar"
+          title={m.layout.sidebarCollapseTitle()}
+          aria-label={m.layout.sidebarCollapse()}
         >
           <i class="fa-solid fa-angles-left text-xs" aria-hidden="true"></i>
         </button>
@@ -397,7 +398,7 @@
           class="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.05] shrink-0"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}08;"
           onclick={closeMobile}
-          aria-label="Close sidebar"
+          aria-label={m.layout.sidebarClose()}
         >
           <i class="fa-solid fa-xmark text-xs" aria-hidden="true"></i>
         </button>

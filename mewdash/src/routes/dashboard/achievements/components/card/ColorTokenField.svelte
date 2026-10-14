@@ -1,7 +1,8 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
-  import { CARD_TOKENS, parseToken, resolveToken, tokenLabel } from "./cardHelpers";
+  import { CARD_TOKENS, parseToken, resolveToken, tokenLabel, tokenName } from "./cardHelpers";
 
   /**
    * Picks a card color token: a palette color or the grade color with an optional alpha, or a custom hex.
@@ -51,7 +52,7 @@
   {#if open}
     <div class="p-3 rounded-xl border space-y-3" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;"
          transition:slide={{ duration: 120 }}>
-      <div class="flex flex-wrap gap-1.5" role="group" aria-label="{label} palette">
+      <div class="flex flex-wrap gap-1.5" role="group" aria-label={m.achievements.cardColorPaletteAria({ label })}>
         {#each CARD_TOKENS as token (token)}
           {@const active = parsed.base === token}
           <button type="button" aria-pressed={active}
@@ -59,7 +60,7 @@
                   style="background: {active ? $colorStore.primary + '30' : $colorStore.primary + '10'}; color: {$colorStore.text};"
                   onclick={() => onchange(build(token, parsed.alpha))}>
             <span class="w-3.5 h-3.5 rounded" style="background: {token === 'grade' ? grade : palette[token]};"></span>
-            {token}
+            {tokenName(token)}
           </button>
         {/each}
         {#if allowNone}
@@ -67,20 +68,20 @@
                   class="px-2 py-1 rounded-lg text-xs min-h-[32px]"
                   style="background: {value === '' ? $colorStore.primary + '30' : $colorStore.primary + '10'}; color: {$colorStore.text};"
                   onclick={() => { onchange(""); open = false; }}>
-            None
+            {m.common.none()}
           </button>
         {/if}
       </div>
 
       {#if value !== ""}
         <label class="flex items-center gap-3 text-xs" style="color: {$colorStore.muted}">
-          Custom
+          {m.common.custom()}
           <input type="color" class="h-8 w-14 rounded-lg border" style="border-color: {$colorStore.primary}30;"
                  value={parsed.base.startsWith("#") ? parsed.base : (resolved ?? "#ffffff").slice(0, 7)}
                  onchange={(e) => onchange(build(e.currentTarget.value, parsed.alpha))} />
         </label>
         <label class="block text-xs" style="color: {$colorStore.muted}">
-          Opacity {Math.round(parsed.alpha / 2.55)}%
+          {m.xp.editorOpacityPercent({ percent: Math.round(parsed.alpha / 2.55) })}
           <input type="range" min="0" max="255" value={parsed.alpha} class="w-full"
                  style="accent-color: {$colorStore.primary}"
                  oninput={(e) => onchange(build(parsed.base, Number(e.currentTarget.value)))} />

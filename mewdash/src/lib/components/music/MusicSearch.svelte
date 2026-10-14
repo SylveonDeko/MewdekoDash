@@ -21,6 +21,7 @@ A modal music search component for finding and adding tracks to the music queue.
 <script lang="ts">
 
   import { onMount } from "svelte";
+  import { m } from "$lib/i18n";
   import { musicApi } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {fade, fly} from "svelte/transition";
@@ -135,7 +136,7 @@ A modal music search component for finding and adding tracks to the music queue.
       }
 
       if (searchResults.length === 0) {
-        errorMessage = "No results found. Try a different search term or platform.";
+        errorMessage = m.music.searchNoResultsRetry();
       }
 
       // Reset retry count on success
@@ -150,7 +151,7 @@ A modal music search component for finding and adding tracks to the music queue.
 
       if ((isNetworkError || isServerError) && searchRetryCount < MAX_RETRIES) {
         searchRetryCount++;
-        errorMessage = `Search failed. Retrying... (${searchRetryCount}/${MAX_RETRIES})`;
+        errorMessage = m.music.searchRetryingInline({ attempt: searchRetryCount, max: MAX_RETRIES });
 
         // Exponential backoff
         const delay = Math.pow(2, searchRetryCount - 1) * 1000;
@@ -162,9 +163,9 @@ A modal music search component for finding and adding tracks to the music queue.
       } else {
         // Max retries reached or non-retryable error
         if (searchRetryCount >= MAX_RETRIES) {
-          errorMessage = "Search failed after multiple attempts. Please check your connection and try again.";
+          errorMessage = m.music.searchFailedFinal();
         } else {
-          errorMessage = "Search failed. Please try a different search term.";
+          errorMessage = m.music.searchFailed();
         }
         searchResults = [];
       }
@@ -206,7 +207,7 @@ A modal music search component for finding and adding tracks to the music queue.
       await musicApi.playTrack($currentGuild!.id, playRequest);
 
       // Update UI to show the track was added
-      addedTrackMessage = `Added "${track.title}" to queue`;
+      addedTrackMessage = m.music.searchAdded({ title: track.title });
       setTimeout(() => {
         addedTrackMessage = "";
       }, 3000);
@@ -232,7 +233,7 @@ A modal music search component for finding and adding tracks to the music queue.
 
       if ((isNetworkError || isServerError) && addRetryCount < MAX_RETRIES) {
         addRetryCount++;
-        errorMessage = `Failed to add track. Retrying... (${addRetryCount}/${MAX_RETRIES})`;
+        errorMessage = m.music.searchAddRetrying({ attempt: addRetryCount, max: MAX_RETRIES });
 
         // Exponential backoff
         const delay = Math.pow(2, addRetryCount - 1) * 1000;
@@ -242,9 +243,9 @@ A modal music search component for finding and adding tracks to the music queue.
       } else {
         // Max retries reached or non-retryable error
         if (addRetryCount >= MAX_RETRIES) {
-          errorMessage = `Failed to add "${track.title}" after multiple attempts. Please try again later.`;
+          errorMessage = m.music.searchAddFailedFinal({ title: track.title });
         } else {
-          errorMessage = `Failed to add "${track.title}". Please try again.`;
+          errorMessage = m.music.searchAddFailed({ title: track.title });
         }
       }
     } finally {
@@ -295,7 +296,7 @@ A modal music search component for finding and adding tracks to the music queue.
     onkeydown={(e) => e.key === 'Escape' && close()}
     role="button"
     tabindex="0"
-    aria-label="Close music search dialog"
+    aria-label={m.music.searchCloseDialog()}
   >
     <div
       class="w-full h-full sm:h-auto sm:max-w-2xl bg-gray-800 sm:rounded-xl shadow-2xl overflow-hidden"
@@ -310,9 +311,9 @@ A modal music search component for finding and adding tracks to the music queue.
       <div class="p-4 border-b" style="border-color: {colors.foreground}20;">
         <div class="flex items-center justify-between mb-2">
           <h2 id="music-search-title" class="text-xl font-bold" style="color: {colors.text};">
-            Add Music
+            {m.music.searchTitle()}
           </h2>
-          <button aria-label="Button action"
+          <button aria-label={m.common.close()}
                   class="p-2 rounded-full hover:bg-black hover:opacity-20 transition-colors focus:outline-hidden focus:ring-2"
             onclick={close}
 
@@ -331,7 +332,7 @@ A modal music search component for finding and adding tracks to the music queue.
             oninput={handleSearch}
             onkeydown={handleKeydown}
             type="text"
-            placeholder="Search for songs, artists, or paste a link..."
+            placeholder={m.music.searchPlaceholder()}
             class="w-full py-2 pl-10 pr-4 rounded-lg focus:outline-hidden focus:ring-2"
             style="background: {colors.foreground}20; color: {colors.text}; --ring-color: {colors.accent};"
           >
@@ -387,9 +388,9 @@ A modal music search component for finding and adding tracks to the music queue.
                         class="ml-3 px-3 py-1 text-sm rounded-sm transition-colors"
                   style="background: {colors.accent}30; color: {colors.text};"
                   onclick={retrySearch}
-                  aria-label="Retry search"
+                  aria-label={m.music.searchRetryAria()}
                 >
-                  Retry
+                  {m.common.retry()}
                 </button>
               {/if}
             </div>
@@ -402,9 +403,9 @@ A modal music search component for finding and adding tracks to the music queue.
                aria-hidden="true"></i>
             <span class="ml-2">
               {#if searchRetryCount > 0}
-                Retrying search... ({searchRetryCount}/{MAX_RETRIES})
+                {m.music.searchRetrying({ attempt: searchRetryCount, max: MAX_RETRIES })}
               {:else}
-                Searching...
+                {m.music.searchSearching()}
               {/if}
             </span>
           </div>
@@ -418,13 +419,13 @@ A modal music search component for finding and adding tracks to the music queue.
                 role="button"
                 tabindex="0"
                 onkeydown={(e) => e.key === 'Enter' && addToQueue(track)}
-                aria-label="Add {track.title} to queue"
+                aria-label={m.music.searchAddToQueueAria({ title: track.title })}
               >
                 <!-- Thumbnail with hover overlay -->
                   <div class="relative shrink-0">
                   <img
                     src={track.artworkUri || "/default-album.png"}
-                    alt="{track.title} thumbnail"
+                    alt={m.music.searchThumbnailAlt({ title: track.title })}
                     class="w-16 h-16 sm:w-12 sm:h-12 object-cover rounded-lg sm:rounded-md shadow-md"
                     loading="lazy"
                   >
@@ -473,7 +474,7 @@ A modal music search component for finding and adding tracks to the music queue.
                         class="p-1.5 rounded-full transition-colors"
                         style="background: {colors.accent}20; color: {colors.accent};"
                         onclick={(e) => e.stopPropagation()}
-                        aria-label="Open in {track.provider || 'original source'}"
+                        aria-label={m.music.searchOpenIn({ source: track.provider || m.music.searchOriginalSource() })}
                       >
                         <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 16px;"></i>
                       </a>
@@ -491,7 +492,7 @@ A modal music search component for finding and adding tracks to the music queue.
                       rel="noopener noreferrer"
                       class="p-1 rounded-full hover:bg-black hover:opacity-20"
                       onclick={(e) => e.stopPropagation()}
-                      aria-label="Open in {track.provider || 'original source'}"
+                      aria-label={m.music.searchOpenIn({ source: track.provider || m.music.searchOriginalSource() })}
                     >
                       <i class="fa-solid fa-arrow-up-right-from-square opacity-70" style="font-size: 12px;"></i>
                     </a>
@@ -503,18 +504,16 @@ A modal music search component for finding and adding tracks to the music queue.
         {:else if searchQuery.trim()}
           <div class="py-12 sm:py-8 text-center px-4">
             <i class="fa-utility-duo fa-regular fa-music mx-auto mb-4 sm:mb-2 opacity-50" style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.accent}; font-size: 64px; display: block;"></i>
-            <p class="text-lg sm:text-base mb-2" style="color: {colors.text};">No results found</p>
-            <p class="text-sm opacity-70" style="color: {colors.text};">Try different keywords or check your
-              spelling</p>
+            <p class="text-lg sm:text-base mb-2" style="color: {colors.text};">{m.common.noResultsFound()}</p>
+            <p class="text-sm opacity-70" style="color: {colors.text};">{m.music.searchNoResultsHint()}</p>
           </div>
         {:else}
           <div class="py-12 sm:py-8 text-center px-4">
             <i class="fa-utility-duo fa-regular fa-music mx-auto mb-4 sm:mb-2 opacity-50" style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.accent}; font-size: 64px; display: block;"></i>
-            <p class="text-lg sm:text-base mb-2" style="color: {colors.text};">Search for music</p>
-            <p class="text-sm opacity-70 mb-4" style="color: {colors.text};">Type artist name, song title or paste a
-              link</p>
+            <p class="text-lg sm:text-base mb-2" style="color: {colors.text};">{m.music.searchEmptyTitle()}</p>
+            <p class="text-sm opacity-70 mb-4" style="color: {colors.text};">{m.music.searchEmptyHint()}</p>
             <div class="text-xs opacity-60 space-y-1" style="color: {colors.text};">
-              <p>💡 Tip: You can paste direct links from:</p>
+              <p>{m.music.searchPasteTip()}</p>
               <p>🎬 YouTube • 🟢 Spotify • 🔊 SoundCloud</p>
             </div>
           </div>
@@ -527,13 +526,13 @@ A modal music search component for finding and adding tracks to the music queue.
         style="border-color: {colors.foreground}20; color: {colors.text}80;"
       >
         <div class="flex-1">
-          <p class="hidden sm:block">Tip: Press Enter to add the top result to queue</p>
-          <p class="sm:hidden">Tap any result to add to queue</p>
+          <p class="hidden sm:block">{m.music.searchTipDesktop()}</p>
+          <p class="sm:hidden">{m.music.searchTipMobile()}</p>
         </div>
         {#if searchResults.length > 0}
           <div class="text-xs font-medium px-2 py-1 rounded-full"
                style="background: {colors.accent}20; color: {colors.accent};">
-            {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+            {searchResults.length === 1 ? m.music.searchResultCountOne({ count: 1 }) : m.music.searchResultCountOther({ count: searchResults.length })}
           </div>
         {/if}
       </div>

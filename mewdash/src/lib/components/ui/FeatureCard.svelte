@@ -1,5 +1,6 @@
 <!-- lib/components/FeatureCard.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import {fade} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
 
@@ -44,7 +45,7 @@
       style="background: {isActive ? $colorStore.primary + '15' : $colorStore.primary + '08'};
              ring-color: {isActive ? $colorStore.primary + '30' : 'transparent'};
              focus:ring-color: {$colorStore.primary};"
-      aria-label="{title} - {description || 'Configure feature'}"
+      aria-label={m.layout.featureCardAriaActive({ title, description: description || m.layout.featureCardConfigureFeature() })}
       aria-current={isActive ? 'true' : undefined}
     >
       <div class="flex items-center justify-between">
@@ -67,12 +68,12 @@
           <div class="flex items-center gap-2 shrink-0">
           {#if isActive}
             <div class="w-2 h-2 bg-green-500 rounded-full" aria-hidden="true"></div>
-            <span class="text-xs" style="color: #10b981" aria-label="Feature is active">Active</span>
+            <span class="text-xs" style="color: #10b981" aria-label={m.layout.featureCardActiveLabel()}>{m.common.active()}</span>
             {#if hasRecentActivity && activityText}
               <span class="text-xs" style="color: {$colorStore.muted}">• {activityText}</span>
             {/if}
           {:else}
-            <span class="text-xs" style="color: {$colorStore.muted}" aria-label="Feature needs setup">Setup needed</span>
+            <span class="text-xs" style="color: {$colorStore.muted}" aria-label={m.layout.featureCardNeedsSetupLabel()}>{m.layout.featureCardSetupNeeded()}</span>
           {/if}
         </div>
       </div>
@@ -86,7 +87,7 @@
              ring-color: {isActive ? $colorStore.primary + '30' : 'transparent'};
              focus:ring-color: {$colorStore.primary};"
       role="status"
-      aria-label="{title} - {isActive ? 'Active feature' : 'Feature not configured'}"
+      aria-label={isActive ? m.layout.featureCardAriaStatusActive({ title }) : m.layout.featureCardAriaStatusInactive({ title })}
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -108,12 +109,12 @@
           <div class="flex items-center gap-2 shrink-0">
           {#if isActive}
             <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span class="text-xs" style="color: #10b981">Active</span>
+            <span class="text-xs" style="color: #10b981">{m.common.active()}</span>
             {#if hasRecentActivity && activityText}
               <span class="text-xs" style="color: {$colorStore.muted}">• {activityText}</span>
             {/if}
           {:else}
-            <span class="text-xs" style="color: {$colorStore.muted}">No config</span>
+            <span class="text-xs" style="color: {$colorStore.muted}">{m.layout.featureCardNoConfig()}</span>
           {/if}
         </div>
       </div>

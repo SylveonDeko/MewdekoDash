@@ -1,5 +1,6 @@
 <!-- routes/giveaways/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { page } from "$app/state";
   import { type Giveaway, giveawaysApi } from "$lib/api/index.ts";
@@ -44,23 +45,23 @@
     return "unknown";
   }
 
-  function getErrorMessage(err: unknown, context: string): string {
+  function getErrorMessage(err: unknown, context: "load" | "enter"): string {
     const errorType = getErrorType(err);
     const baseMessage = typeof err === "object" && err !== null && "message" in err
       ? (err as { message: string }).message
-      : "An unexpected error occurred";
+      : m.common.errorUnexpected();
 
     switch (errorType) {
       case "network":
-        return `Network error: Unable to ${context}. Please check your connection and try again.`;
+        return context === "load" ? m.public.giveawaysErrorNetworkLoad() : m.public.giveawaysErrorNetworkEnter();
       case "auth":
-        return `Authentication error: Please log in again to ${context}.`;
+        return context === "load" ? m.public.giveawaysErrorAuthLoad() : m.public.giveawaysErrorAuthEnter();
       case "validation":
-        return `Invalid data: ${baseMessage}`;
+        return m.public.giveawaysErrorValidation({ message: baseMessage });
       case "server":
-        return `Server error: ${context} failed. Please try again later.`;
+        return context === "load" ? m.public.giveawaysErrorServerLoad() : m.public.giveawaysErrorServerEnter();
       default:
-        return `Failed to ${context}: ${baseMessage}`;
+        return context === "load" ? m.public.giveawaysErrorDefaultLoad({ message: baseMessage }) : m.public.giveawaysErrorDefaultEnter({ message: baseMessage });
     }
   }
 
@@ -79,13 +80,13 @@
 
     // Validation
     if (!guildId || guildId === 0n) {
-      error = "Invalid guild ID provided";
+      error = m.public.giveawaysInvalidGuild();
       loading = false;
       return;
     }
 
     if (!giveawayId || giveawayId === 0) {
-      error = "Invalid giveaway ID provided";
+      error = m.public.giveawaysInvalidGiveaway();
       loading = false;
       return;
     }
@@ -95,7 +96,7 @@
         giveaway = await giveawaysApi.getGiveaway(giveawayId.toString());
         loading = false;
       } catch (err) {
-        error = getErrorMessage(err, "load giveaway details");
+        error = getErrorMessage(err, "load");
         loading = false;
       }
     }
@@ -103,7 +104,7 @@
 
   async function enterGiveaway() {
     if (!turnstileToken) {
-      message = "Please complete the captcha verification";
+      message = m.public.giveawaysCaptchaRequired();
       return;
     }
 
@@ -119,9 +120,9 @@
         userId,
         turnstileToken
       });
-      message = "🎉 Successfully entered the giveaway! Good luck!";
+      message = m.public.giveawaysEntered();
     } catch (err) {
-      message = getErrorMessage(err, "enter giveaway");
+      message = getErrorMessage(err, "enter");
     } finally {
       isSubmitting = false;
     }
@@ -148,7 +149,7 @@
     const end = new Date(endDate).getTime();
     const diff = end - now;
 
-    if (diff <= 0) return "Ended";
+    if (diff <= 0) return m.common.ended();
 
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -174,9 +175,9 @@
     if (!preview) return null;
     const unix = Math.floor(new Date(preview.endsAt).getTime() / 1000);
     const details = [
-      preview.guildName ? `Hosted in **${plain(preview.guildName)}**` : null,
-      `${preview.winners} winner${preview.winners === 1 ? "" : "s"}`,
-      Number.isFinite(unix) ? `${preview.ended ? "Ended" : "Ends"} <t:${unix}:R>` : null
+      preview.guildName ? m.public.giveawaysEmbedHosted({ guild: plain(preview.guildName) }) : null,
+      preview.winners === 1 ? m.public.giveawaysEmbedWinnerOne({ count: preview.winners }) : m.public.giveawaysEmbedWinnerOther({ count: preview.winners }),
+      Number.isFinite(unix) ? preview.ended ? m.public.giveawaysEmbedEnded({ time: `<t:${unix}:R>` }) : m.public.giveawaysEmbedEnds({ time: `<t:${unix}:R>` }) : null
     ].filter(Boolean);
     return container(
       header("## " + plain(preview.prize), preview.guildIcon),
@@ -184,7 +185,7 @@
       separator(),
       preview.ended
         ? null
-        : buttons(linkButton("Enter giveaway", `${SITE_ORIGIN}/giveaways${page.url.search}`))
+        : buttons(linkButton(m.public.giveawaysEmbedEnter(), `${SITE_ORIGIN}/giveaways${page.url.search}`))
     );
   });
 </script>
@@ -192,10 +193,10 @@
 <ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
-  <title>Enter Giveaway - Mewdeko</title>
-  <meta content="Enter Mewdeko Discord bot giveaway" name="description" />
-  <meta content="Enter Mewdeko Discord bot giveaway" property="og:description" />
-  <meta content="Enter Mewdeko Discord bot giveaway" name="twitter:description" />
+  <title>{m.public.giveawaysTitle()}</title>
+  <meta content={m.public.giveawaysDescription()} name="description" />
+  <meta content={m.public.giveawaysDescription()} property="og:description" />
+  <meta content={m.public.giveawaysDescription()} name="twitter:description" />
 </svelte:head>
 
 {#if mounted}
@@ -213,10 +214,10 @@
       <!-- Header -->
       <div class="text-center mb-8" in:fade={{ duration: 300 }}>
         <h1 class="text-3xl lg:text-4xl font-bold mb-4" style="color: {$colorStore.text};">
-          🎉 Giveaway Entry
+          {m.public.giveawaysGiveawayEntry()}
         </h1>
         <p class="text-lg" style="color: {$colorStore.muted};">
-          Join the excitement and win amazing prizes!
+          {m.public.giveawaysJoinTheExcitementAndWin()}
         </p>
       </div>
 
@@ -246,7 +247,7 @@
               ></path>
             </svg>
           </div>
-          <p class="text-xl" style="color: {$colorStore.text};">Loading giveaway details...</p>
+          <p class="text-xl" style="color: {$colorStore.text};">{m.public.giveawaysLoadingGiveawayDetails()}</p>
         </div>
       {:else if error}
         <div class="rounded-2xl p-8 text-center  border"
@@ -258,14 +259,14 @@
                     d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 15c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h2 class="text-2xl font-bold mb-4 text-red-400">Oops! Something went wrong</h2>
+          <h2 class="text-2xl font-bold mb-4 text-red-400">{m.public.giveawaysOopsSomethingWentWrong()}</h2>
           <p class="text-lg" style="color: {$colorStore.text};">{error}</p>
           <button
             class="mt-6 px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02]"
             style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
             onclick={() => window.location.reload()}
           >
-            Try Again
+            {m.common.tryAgain()}
           </button>
         </div>
       {:else if giveaway}
@@ -303,7 +304,7 @@
                      style="background: {$colorStore.primary}20;">
                   <span class="text-2xl">👥</span>
                 </div>
-                <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">Winners</h3>
+                <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">{m.public.giveawaysWinners()}</h3>
                 <p class="text-2xl font-bold" style="color: {$colorStore.primary};">{giveaway.winners}</p>
               </div>
 
@@ -312,7 +313,7 @@
                      style="background: {$colorStore.primary}20;">
                   <span class="text-2xl">⏰</span>
                 </div>
-                <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">Time Remaining</h3>
+                <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">{m.public.giveawaysTimeRemaining()}</h3>
                 <p class="text-xl font-bold" style="color: {isGiveawayActive ? $colorStore.primary : '#EF4444'};">
                   {timeRemaining}
                 </p>
@@ -323,7 +324,7 @@
                      style="background: {$colorStore.primary}20;">
                   <span class="text-2xl">📅</span>
                 </div>
-                <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">Ends On</h3>
+                <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">{m.public.giveawaysEndsOn()}</h3>
                 <p class="text-sm font-medium" style="color: {$colorStore.muted};">
                   {formatDate(giveaway.when)}
                 </p>
@@ -339,10 +340,10 @@
 
               <div class="text-center mb-8">
                 <h3 class="text-2xl font-bold mb-4" style="color: {$colorStore.text};">
-                  Ready to Enter?
+                  {m.public.giveawaysReadyToEnter()}
                 </h3>
                 <p class="text-lg" style="color: {$colorStore.muted};">
-                  Complete the verification below to secure your entry
+                  {m.public.giveawaysCompleteTheVerificationBelowTo()}
                 </p>
               </div>
 
@@ -374,10 +375,10 @@
                         <path class="opacity-75" fill="currentColor"
                               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Entering...
+                      {m.public.giveawaysEntering()}
                     </div>
                   {:else}
-                    🎯 Enter Giveaway
+                    {m.public.giveawaysEnterButton()}
                   {/if}
                 </button>
               </div>
@@ -385,7 +386,7 @@
               <!-- Helper Text -->
               {#if !turnstileToken}
                 <p class="text-center mt-4 text-sm" style="color: {$colorStore.muted};">
-                  Please complete the captcha verification above
+                  {m.public.giveawaysPleaseCompleteTheCaptchaVerification()}
                 </p>
               {/if}
             </div>
@@ -399,10 +400,10 @@
                 <span class="text-3xl">⏰</span>
               </div>
               <h3 class="text-2xl font-bold mb-4" style="color: {$colorStore.text};">
-                Giveaway Has Ended
+                {m.public.giveawaysGiveawayHasEnded()}
               </h3>
               <p class="text-lg" style="color: {$colorStore.muted};">
-                This giveaway ended on {formatDate(giveaway.when)}
+                {m.public.giveawaysEndedOn({ date: formatDate(giveaway.when) })}
               </p>
             </div>
           {/if}
@@ -436,10 +437,10 @@
             <span class="text-3xl">🎁</span>
           </div>
           <h2 class="text-2xl font-bold mb-4" style="color: {$colorStore.text};">
-            No Giveaway Found
+            {m.public.giveawaysNoGiveawayFound()}
           </h2>
           <p class="text-lg" style="color: {$colorStore.muted};">
-            The giveaway you're looking for doesn't exist or has been removed.
+            {m.public.giveawaysTheGiveawayYoureLookingFor()}
           </p>
         </div>
       {/if}

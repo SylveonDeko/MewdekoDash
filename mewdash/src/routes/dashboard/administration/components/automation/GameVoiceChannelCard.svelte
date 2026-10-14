@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -12,9 +13,9 @@
   } = $props();
 
   function getChannelName(channelId: bigint | null): string {
-    if (!channelId) return "None";
+    if (!channelId) return m.common.none();
     const channel = guildChannels.find((c: any) => BigInt(c.id) === channelId);
-    return channel ? channel.name : `Channel ${channelId.toString()}`;
+    return channel ? channel.name : m.common.channelFallback({ id: channelId.toString() });
   }
 </script>
 
@@ -29,18 +30,18 @@
       <i class="fa-utility-duo fa-regular fa-headphones"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
     </div>
-    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Game Voice Channel</h2>
+    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.automationGameVoiceChannelTitle()}</h2>
   </div>
 
   <div class="space-y-4">
     <p class="text-sm" style="color: {$colorStore.muted}">
-      Automatically move users to matching voice channels based on their game activity
+      {m.administration.automationGameVoiceChannelDescription()}
     </p>
 
     <div class="flex items-center justify-between">
       <div>
         <p class="font-medium" style="color: {$colorStore.text}">
-          Current Channel: {gameVoiceChannel ? getChannelName(gameVoiceChannel) : "None"}
+          {m.administration.automationGameVoiceChannelCurrent({ channel: gameVoiceChannel ? getChannelName(gameVoiceChannel) : m.common.none() })}
         </p>
       </div>
 
@@ -50,7 +51,7 @@
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
           onclick={() => toggleGameVoiceChannel(gameVoiceChannel)}
         >
-          Disable
+          {m.common.disable()}
         </button>
       {/if}
     </div>
@@ -58,17 +59,17 @@
     <div class="space-y-2">
       <span class="block text-sm font-medium" id="set-game-voice-channel-label"
             style="color: {$colorStore.text}">
-        Set Game Voice Channel
+        {m.administration.automationGameVoiceChannelSetLabel()}
       </span>
       <DiscordSelector
         bind:selected={newVoiceChannelRole.channelId}
         multiple={false}
         options={voiceChannels}
-        placeholder="Select voice channel..."
+        placeholder={m.common.selectVoiceChannelPlaceholder()}
         type="channel"
       />
       <p class="text-xs" style="color: {$colorStore.muted}">
-        Select voice channel for automatic game-based voice routing
+        {m.administration.automationGameVoiceChannelHint()}
       </p>
 
       {#if newVoiceChannelRole.channelId}
@@ -77,7 +78,7 @@
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
           onclick={() => toggleGameVoiceChannel(BigInt(newVoiceChannelRole.channelId))}
         >
-          Set as Game Voice Channel
+          {m.administration.automationGameVoiceChannelSetButton()}
         </button>
       {/if}
     </div>

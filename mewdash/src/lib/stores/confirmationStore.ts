@@ -1,4 +1,5 @@
 import { writable } from "svelte/store";
+import { m } from "$lib/i18n";
 
 export interface ConfirmationOptions {
   title?: string;
@@ -25,9 +26,9 @@ function showNext() {
 export function requestConfirmation(options: ConfirmationOptions): Promise<boolean> {
   return new Promise((resolve) => {
     queue.push({
-      title: "Confirm Action",
-      confirmText: "Confirm",
-      cancelText: "Cancel",
+      title: m.common.confirmAction(),
+      confirmText: m.common.confirm(),
+      cancelText: m.common.cancel(),
       variant: "danger",
       ...options,
       resolve

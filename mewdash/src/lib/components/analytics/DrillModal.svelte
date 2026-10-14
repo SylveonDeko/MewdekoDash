@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/DrillModal.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import type { Snippet } from "svelte";
   import Portal from "$lib/components/ui/Portal.svelte";
@@ -122,14 +123,14 @@
             class="min-h-[44px] min-w-[44px] rounded-lg hover:opacity-70"
             style="background: {$colorStore.primary}10; color: {$colorStore.muted}"
             onclick={close}
-            aria-label="Close"
+            aria-label={m.common.close()}
           ><i class="fa-solid fa-xmark"></i></button>
         </div>
 
         <div class="p-4 space-y-4">
           <div class="flex flex-wrap items-center gap-2 text-xs" style="color: {$colorStore.muted}">
             {#if Object.keys(crumbs).length === 0}
-              <span>Bar → narrow</span>
+              <span>{m.analytics.drillNarrowHint()}</span>
             {:else}
               {#each Object.entries(crumbs) as [label, value]}
                 <button
@@ -148,7 +149,7 @@
             {#if loading && blocks.length === 0}
               <div class="h-3 rounded animate-pulse" style="background: {$colorStore.primary}20"></div>
             {:else if blocks.length === 0}
-              <p class="text-xs" style="color: {$colorStore.muted}">No further labels</p>
+              <p class="text-xs" style="color: {$colorStore.muted}">{m.analytics.drillNoFurtherLabels()}</p>
             {:else}
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {#each blocks as block (block.label)}

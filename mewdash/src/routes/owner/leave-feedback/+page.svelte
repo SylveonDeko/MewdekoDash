@@ -1,5 +1,6 @@
-<!-- routes/dashboard/leave-feedback/+page.svelte -->
+<!-- routes/owner/leave-feedback/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { goto } from "$app/navigation";
@@ -44,10 +45,10 @@
 
   let activeTab = $state("responses");
 
-  const tabs = [
-    { id: "responses", label: "Responses", icon: "fa-comments" },
-    { id: "settings", label: "Settings", icon: "fa-cog" },
-  ];
+  const tabs = $derived([
+    { id: "responses", label: m.common.responses(), icon: "fa-comments" },
+    { id: "settings", label: m.common.settings(), icon: "fa-cog" },
+  ]);
 
   let channelDirty = $derived(
     settings !== null && channelInput.trim() !== (settings.channelId === 0n ? "" : settings.channelId.toString()),
@@ -59,12 +60,12 @@
     (stats?.reasons ?? []).map((r) => ({ id: r.key, name: `${r.label} (${r.count})` })),
   );
 
-  const statusOptions = [
-    { id: "answered", name: "Answered" },
-    { id: "commented", name: "Left a comment" },
-    { id: "dismissed", name: "Dismissed" },
-    { id: "pending", name: "No response" },
-  ];
+  const statusOptions = $derived([
+    { id: "answered", name: m.owner.leaveFeedbackStatusAnswered() },
+    { id: "commented", name: m.owner.leaveFeedbackStatusCommented() },
+    { id: "dismissed", name: m.owner.leaveFeedbackStatusDismissed() },
+    { id: "pending", name: m.common.noResponse() },
+  ]);
 
   /**
    * The share of prompts that got any kind of answer, which is the number worth
@@ -77,12 +78,12 @@
   );
 
   let statTiles = $derived([
-    { label: "Prompts sent", value: stats?.total ?? 0, icon: "fa-paper-plane", tone: "secondary" },
-    { label: "Answered", value: stats?.answered ?? 0, icon: "fa-comment-check", tone: "primary" },
-    { label: "With a comment", value: stats?.withComment ?? 0, icon: "fa-message-pen", tone: "primary" },
-    { label: "Dismissed", value: stats?.dismissed ?? 0, icon: "fa-xmark", tone: "accent" },
-    { label: "No response", value: stats?.pending ?? 0, icon: "fa-hourglass", tone: "secondary" },
-    { label: "Response rate", value: `${responseRate}%`, icon: "fa-chart-simple", tone: "primary" },
+    { label: m.owner.leaveFeedbackStatPromptsSent(), value: stats?.total ?? 0, icon: "fa-paper-plane", tone: "secondary" },
+    { label: m.owner.leaveFeedbackStatusAnswered(), value: stats?.answered ?? 0, icon: "fa-comment-check", tone: "primary" },
+    { label: m.owner.leaveFeedbackStatWithComment(), value: stats?.withComment ?? 0, icon: "fa-message-pen", tone: "primary" },
+    { label: m.owner.leaveFeedbackStatusDismissed(), value: stats?.dismissed ?? 0, icon: "fa-xmark", tone: "accent" },
+    { label: m.common.noResponse(), value: stats?.pending ?? 0, icon: "fa-hourglass", tone: "secondary" },
+    { label: m.owner.leaveFeedbackStatResponseRate(), value: `${responseRate}%`, icon: "fa-chart-simple", tone: "primary" },
   ]);
 
   function toneColor(tone: string): string {
@@ -96,7 +97,7 @@
    * bot serialized the value without a timezone designator.
    */
   function formatDate(value: string | null): string {
-    if (!value) return "Unknown";
+    if (!value) return m.common.unknown();
     const utc = /[zZ]|[+-]\d\d:?\d\d$/.test(value) ? value : `${value}Z`;
     return new Date(utc).toLocaleString();
   }
@@ -113,18 +114,18 @@
     const days = Math.floor((left.getTime() - joined.getTime()) / 86400000);
 
     if (!Number.isFinite(days) || days < 0) return null;
-    if (days === 0) return "Under a day";
-    if (days === 1) return "1 day";
-    if (days < 30) return `${days} days`;
+    if (days === 0) return m.owner.leaveFeedbackTenureUnderDay();
+    if (days === 1) return m.common.oneDay();
+    if (days < 30) return m.common.daysCount({ count: days });
 
     const months = Math.floor(days / 30);
-    return months === 1 ? "1 month" : `${months} months`;
+    return months === 1 ? m.owner.leaveFeedbackTenureMonthOne() : m.owner.leaveFeedbackTenureMonthsOther({ count: months });
   }
 
   function statusLabel(entry: LeaveFeedbackEntry): { label: string; tone: string } {
-    if (entry.dismissed) return { label: "Dismissed", tone: "accent" };
-    if (entry.answeredAt) return { label: "Answered", tone: "primary" };
-    return { label: "No response", tone: "secondary" };
+    if (entry.dismissed) return { label: m.owner.leaveFeedbackStatusDismissed(), tone: "accent" };
+    if (entry.answeredAt) return { label: m.owner.leaveFeedbackStatusAnswered(), tone: "primary" };
+    return { label: m.common.noResponse(), tone: "secondary" };
   }
 
   function onReasonChange(detail: { selected: string | string[] | null }) {
@@ -161,13 +162,13 @@
           stats = statsResult;
         } catch (err) {
           logger.error("Failed to fetch leave feedback:", err);
-          error = "Failed to load leave feedback";
+          error = m.owner.leaveFeedbackErrorLoad();
         } finally {
           loading = false;
         }
       },
       "api",
-      "Loading leave feedback...",
+      m.owner.leaveFeedbackLoading(),
     );
   }
 
@@ -198,7 +199,7 @@
       settingsError = null;
     } catch (err) {
       logger.error("Failed to load leave feedback settings:", err);
-      settingsError = "Failed to load the settings";
+      settingsError = m.common.notifyLoadSettingsFailed();
     }
   }
 
@@ -210,7 +211,7 @@
     const trimmed = channel.trim();
 
     if (trimmed && !/^\d{17,20}$/.test(trimmed)) {
-      settingsError = "That does not look like a channel ID";
+      settingsError = m.common.invalidChannelId();
       return;
     }
 
@@ -224,7 +225,7 @@
       channelInput = settings.channelId === 0n ? "" : settings.channelId.toString();
     } catch (err) {
       logger.error("Failed to save leave feedback settings:", err);
-      settingsError = err instanceof Error ? err.message : "Failed to save the settings";
+      settingsError = err instanceof Error ? err.message : m.common.failedToSaveTheSettings();
       await fetchSettings();
     } finally {
       savingSettings = false;
@@ -251,7 +252,7 @@
       await fetchFeedback();
     } catch (err) {
       logger.error("Failed to delete leave feedback:", err);
-      error = "Failed to delete that record";
+      error = m.owner.leaveFeedbackErrorDelete();
     }
   }
 
@@ -267,7 +268,7 @@
         }
       },
       "critical",
-      "Checking permissions...",
+      m.common.checkingPermissions(),
     );
 
     if (!allowed) {
@@ -281,10 +282,10 @@
 
 <DashboardPageLayout
   category="Analytics"
-  guildName="Bot Owner Tools"
+  guildName={m.common.botOwnerTools()}
   icon="fa-comments"
-  subtitle="Why servers removed the bot, straight from their owners"
-  title="Leave Feedback"
+  subtitle={m.features.leaveFeedbackDescription()}
+  title={m.features.leaveFeedbackName()}
   basePath="/owner/leave-feedback"
   {tabs}
   bind:activeTab
@@ -299,8 +300,8 @@
       in:fly={{ y: 20, duration: 300 }}
     >
       <div class="flex items-baseline justify-between gap-3 mb-3">
-        <h2 class="text-sm font-semibold" style="color: {$colorStore.text}">Settings</h2>
-        <span class="text-xs" style="color: {$colorStore.muted}">Applies to the whole bot, not one server</span>
+        <h2 class="text-sm font-semibold" style="color: {$colorStore.text}">{m.common.settings()}</h2>
+        <span class="text-xs" style="color: {$colorStore.muted}">{m.common.appliesToWholeBotHint()}</span>
       </div>
 
       <ToggleRow
@@ -308,14 +309,14 @@
         colors={$colorStore}
         disabled={savingSettings}
         id="leave-feedback-enabled"
-        subtitle="Sent right after the bot is removed, once per server every 30 days"
-        title="Ask owners why the bot was removed"
+        subtitle={m.owner.leaveFeedbackSentRightAfterTheBotIs()}
+        title={m.owner.leaveFeedbackAskOwnersWhyTheBotWas()}
         onchange={(checked) => saveSettings(checked, channelInput)}
       />
 
       <div class="mt-4">
         <label class="block text-sm font-medium mb-1" for="feedback-channel" style="color: {$colorStore.muted}">
-          Report channel ID
+          {m.owner.settingsReportChannelId()}
         </label>
         <div class="flex flex-col sm:flex-row gap-2">
           <input
@@ -324,7 +325,7 @@
             inputmode="numeric"
             bind:value={channelInput}
             disabled={savingSettings}
-            placeholder="Leave empty to use the join/leave channel"
+            placeholder={m.common.leaveEmptyJoinLeaveHint()}
             class="flex-1 rounded-xl px-3 min-h-[44px] outline-none font-mono"
             style="background: {$colorStore.primary}10; color: {$colorStore.text};
                    border: 1px solid {$colorStore.primary}30;"
@@ -336,7 +337,7 @@
             style="background: {$colorStore.primary}20; color: {$colorStore.primary};
                    border: 1px solid {$colorStore.primary}30;"
           >
-            {savingSettings ? "Saving..." : "Save channel"}
+            {savingSettings ? m.common.saving() : m.common.saveChannel()}
           </button>
         </div>
 
@@ -344,17 +345,20 @@
           <p class="mt-2 text-xs" style="color: {$colorStore.accent}">{settingsError}</p>
         {:else if settings.effectiveChannelId === 0n}
           <p class="mt-2 text-xs" style="color: {$colorStore.accent}">
-            No channel is set and there is no join/leave channel to fall back to, so answers are not posted anywhere.
+            {m.owner.leaveFeedbackNoChannelIsSetAndThere()}
           </p>
         {:else if !settings.reachable}
           <p class="mt-2 text-xs" style="color: {$colorStore.accent}">
-            The bot cannot see channel {settings.effectiveChannelId.toString()}, so answers will not be posted.
+            {m.owner.leaveFeedbackChannelUnreachable({ channel: settings.effectiveChannelId.toString() })}
           </p>
         {:else}
           <p class="mt-2 text-xs" style="color: {$colorStore.muted}">
-            Answers go to #{settings.channelName}
-            {#if settings.guildName}in {settings.guildName}{/if}
-            {#if settings.usingFallback}(from the join/leave channel, since no channel is set){/if}
+            {#if settings.guildName}
+              {m.owner.leaveFeedbackAnswersGoToGuild({ channel: settings.channelName ?? "", guild: settings.guildName })}
+            {:else}
+              {m.owner.leaveFeedbackAnswersGoTo({ channel: settings.channelName ?? "" })}
+            {/if}
+            {#if settings.usingFallback}{m.common.joinLeaveChannelFallbackHint()}{/if}
           </p>
         {/if}
       </div>
@@ -387,7 +391,7 @@
              border-color: {$colorStore.primary}30;"
       in:fly={{ y: 20, duration: 300 }}
     >
-      <h2 class="text-sm font-semibold mb-3" style="color: {$colorStore.text}">Reasons given</h2>
+      <h2 class="text-sm font-semibold mb-3" style="color: {$colorStore.text}">{m.owner.leaveFeedbackReasonsGiven()}</h2>
       <div class="space-y-2">
         {#each stats.reasons.filter((r) => r.count > 0).sort((a, b) => b.count - a.count) as reason (reason.key)}
           <button
@@ -425,14 +429,14 @@
   >
     <div class="flex-1 min-w-0">
       <span class="block text-sm font-medium mb-1" id="reason-filter-label" style="color: {$colorStore.muted}">
-        Reason
+        {m.common.reason()}
       </span>
       <DiscordSelector
         type="custom"
         customIcon="fa-filter"
         options={reasonOptions}
         selected={reasonFilter}
-        placeholder="All reasons"
+        placeholder={m.owner.leaveFeedbackAllReasons()}
         searchable={false}
         ariaLabelledby="reason-filter-label"
         onchange={onReasonChange}
@@ -441,14 +445,14 @@
 
     <div class="flex-1 min-w-0">
       <span class="block text-sm font-medium mb-1" id="status-filter-label" style="color: {$colorStore.muted}">
-        Status
+        {m.common.status()}
       </span>
       <DiscordSelector
         type="custom"
         customIcon="fa-list-check"
         options={statusOptions}
         selected={statusFilter}
-        placeholder="All statuses"
+        placeholder={m.owner.leaveFeedbackAllStatuses()}
         searchable={false}
         ariaLabelledby="status-filter-label"
         onchange={onStatusChange}
@@ -457,14 +461,14 @@
 
     <div class="flex-1 min-w-0">
       <label class="block text-sm font-medium mb-1" for="feedback-search" style="color: {$colorStore.muted}">
-        Search
+        {m.common.search()}
       </label>
       <input
         id="feedback-search"
         type="search"
         bind:value={search}
         onchange={applyFilters}
-        placeholder="Server name or comment"
+        placeholder={m.owner.leaveFeedbackServerNameOrComment()}
         class="w-full rounded-xl px-3 min-h-[44px] outline-none"
         style="background: {$colorStore.primary}10; color: {$colorStore.text};
                border: 1px solid {$colorStore.primary}30;"
@@ -478,12 +482,12 @@
     >
       <i class="fa-utility-duo fa-regular fa-arrows-rotate mr-2"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-      Refresh
+      {m.common.refresh()}
     </button>
   </div>
 
   {#if loading}
-    <div class="space-y-2" aria-busy="true" aria-label="Loading leave feedback">
+    <div class="space-y-2" aria-busy="true" aria-label={m.owner.leaveFeedbackLoadingLeaveFeedback()}>
       {#each Array(6) as _, i (i)}
         <SkeletonLoader type="feature" delay={i * 60} />
       {/each}
@@ -492,7 +496,7 @@
     <div class="text-center py-12" style="color: {$colorStore.accent}">{error}</div>
   {:else if entries.length === 0}
     <div class="text-center py-12" style="color: {$colorStore.muted}">
-      No feedback matches the current filters.
+      {m.owner.leaveFeedbackNoFeedbackMatchesTheCurrentFilters()}
     </div>
   {:else}
     <!-- Desktop table -->
@@ -504,10 +508,10 @@
       <table class="w-full min-w-[640px] text-sm">
         <thead>
           <tr style="background: {$colorStore.primary}15;">
-            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">Left</th>
-            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">Server</th>
-            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">Reason</th>
-            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">Status</th>
+            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">{m.common.left()}</th>
+            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">{m.features.categoryServer()}</th>
+            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">{m.common.reason()}</th>
+            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">{m.common.status()}</th>
             <th class="px-4 py-3"></th>
           </tr>
         </thead>
@@ -517,19 +521,19 @@
               <td class="px-4 py-3 whitespace-nowrap" style="color: {$colorStore.muted}">
                 {formatDate(entry.dateAdded)}
                 {#if describeTenure(entry)}
-                  <div class="text-xs mt-0.5">Stayed {describeTenure(entry)}</div>
+                  <div class="text-xs mt-0.5">{m.owner.leaveFeedbackStayed({ tenure: describeTenure(entry) ?? "" })}</div>
                 {/if}
               </td>
               <td class="px-4 py-3" style="color: {$colorStore.text}">
-                <div class="font-medium">{entry.guildName || "Unknown server"}</div>
+                <div class="font-medium">{entry.guildName || m.common.unknownServer()}</div>
                 <div class="text-xs mt-0.5 font-mono" style="color: {$colorStore.muted}">
-                  {entry.guildId.toString()} &middot; {entry.memberCount} members
+                  {m.owner.leaveFeedbackIdMembers({ id: entry.guildId.toString(), count: entry.memberCount })}
                 </div>
               </td>
               <td class="px-4 py-3" style="color: {$colorStore.text}">
-                {entry.reasonLabel ?? "Not selected"}
+                {entry.reasonLabel ?? m.owner.leaveFeedbackReasonNotSelected()}
                 {#if entry.comment}
-                  <div class="text-xs mt-0.5" style="color: {$colorStore.muted}">Has a comment</div>
+                  <div class="text-xs mt-0.5" style="color: {$colorStore.muted}">{m.owner.leaveFeedbackHasAComment()}</div>
                 {/if}
               </td>
               <td class="px-4 py-3">
@@ -548,12 +552,12 @@
                     class="rounded-lg px-2 py-1 min-h-[36px] text-xs mr-2"
                     style="background: {$colorStore.primary}15; color: {$colorStore.text};"
                   >
-                    {expandedId === entry.id ? "Hide" : "Comment"}
+                    {expandedId === entry.id ? m.common.hide() : m.owner.leaveFeedbackComment()}
                   </button>
                 {/if}
                 <button
                   onclick={() => requestDelete(entry)}
-                  aria-label="Delete this record"
+                  aria-label={m.owner.leaveFeedbackDeleteThisRecord()}
                   class="rounded-lg px-2 py-1 min-h-[36px] text-xs"
                   style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
                 >
@@ -566,7 +570,7 @@
                 <td colspan="5" class="px-4 py-3" style="background: {$colorStore.primary}08;">
                   <p class="text-sm whitespace-pre-wrap" style="color: {$colorStore.text}">{entry.comment}</p>
                   <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-                    Owner {entry.ownerId.toString()} &middot; answered {formatDate(entry.answeredAt)}
+                    {m.owner.leaveFeedbackOwnerAnswered({ owner: entry.ownerId.toString(), date: formatDate(entry.answeredAt) })}
                   </p>
                 </td>
               </tr>
@@ -596,16 +600,15 @@
           </div>
 
           <div class="mt-3 text-sm font-medium" style="color: {$colorStore.text}">
-            {entry.guildName || "Unknown server"}
+            {entry.guildName || m.common.unknownServer()}
           </div>
           <div class="mt-0.5 text-xs font-mono" style="color: {$colorStore.muted}">
-            {entry.guildId.toString()} &middot; {entry.memberCount} members
-            {#if describeTenure(entry)}
-              &middot; stayed {describeTenure(entry)}
-            {/if}
+            {describeTenure(entry)
+              ? m.owner.leaveFeedbackIdMembersStayed({ id: entry.guildId.toString(), count: entry.memberCount, tenure: describeTenure(entry) ?? "" })
+              : m.owner.leaveFeedbackIdMembers({ id: entry.guildId.toString(), count: entry.memberCount })}
           </div>
           <div class="mt-2 text-sm" style="color: {$colorStore.text}">
-            {entry.reasonLabel ?? "No reason selected"}
+            {entry.reasonLabel ?? m.owner.leaveFeedbackReasonNoneSelected()}
           </div>
 
           {#if entry.comment}
@@ -614,7 +617,7 @@
               class="mt-3 w-full rounded-xl px-3 min-h-[44px] text-sm font-medium"
               style="background: {$colorStore.primary}15; color: {$colorStore.text};"
             >
-              {expandedId === entry.id ? "Hide comment" : "Show comment"}
+              {expandedId === entry.id ? m.owner.leaveFeedbackHideComment() : m.owner.leaveFeedbackShowComment()}
             </button>
             {#if expandedId === entry.id}
               <p class="mt-2 rounded-xl p-3 text-sm whitespace-pre-wrap"
@@ -629,7 +632,7 @@
             class="mt-2 w-full rounded-xl px-3 min-h-[44px] text-sm font-medium"
             style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
           >
-            Delete record
+            {m.owner.leaveFeedbackDeleteRecord()}
           </button>
         </div>
       {/each}
@@ -638,7 +641,7 @@
     <!-- Pagination -->
     <div class="flex items-center justify-between gap-4 mt-6">
       <span class="text-sm" style="color: {$colorStore.muted}">
-        {total} records &middot; page {page} of {totalPages}
+        {m.owner.leaveFeedbackPagination({ total, page, pages: totalPages })}
       </span>
       <div class="flex gap-2">
         <button
@@ -647,7 +650,7 @@
           class="rounded-xl px-4 min-h-[44px] font-medium disabled:opacity-40"
           style="background: {$colorStore.primary}20; color: {$colorStore.text};"
         >
-          Previous
+          {m.common.previous()}
         </button>
         <button
           onclick={() => changePage(page + 1)}
@@ -655,7 +658,7 @@
           class="rounded-xl px-4 min-h-[44px] font-medium disabled:opacity-40"
           style="background: {$colorStore.primary}20; color: {$colorStore.text};"
         >
-          Next
+          {m.common.next()}
         </button>
       </div>
     </div>
@@ -665,9 +668,9 @@
 
 <ConfirmationModal
   bind:isOpen={confirmDeleteOpen}
-  title="Delete feedback"
-  message={`Permanently delete the feedback from ${deleteTarget?.guildName || "this server"}?`}
-  confirmText="Delete"
+  title={m.owner.leaveFeedbackDeleteFeedback()}
+  message={m.owner.leaveFeedbackDeleteMessage({ server: deleteTarget?.guildName || m.common.thisServer() })}
+  confirmText={m.common.delete()}
   variant="danger"
   onconfirm={confirmDelete}
   oncancel={() => (deleteTarget = null)}

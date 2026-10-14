@@ -3,6 +3,12 @@
 
 
   import { onMount } from "svelte";
+  import { getLocale, m } from "$lib/i18n";
+
+  /** The furthest back messages can be fetched: three days, in whichever unit is selected. */
+  function maxTimeAmount(unit: string): number {
+    return unit === "days" ? 3 : unit === "hours" ? 72 : 4320;
+  }
   import { chatApi, clientApi, type ChatLogMessage, type ChatLogSummary } from "$lib/api/index.ts";
   import { safeUrl } from "$lib/utils/sanitize";
     import {currentGuild} from "$lib/stores/currentGuild";
@@ -39,11 +45,11 @@
   // Layout state
     let activeTab = $state("fetch");
   
-  const tabs = [
-    { id: "fetch", label: "Fetch Messages", icon: "fa-search" },
-    { id: "saved", label: "Saved Logs", icon: "fa-folder" },
-    { id: "view", label: "View Messages", icon: "fa-envelope" }
-  ];
+  const tabs = $derived([
+    { id: "fetch", label: m.chatsaver.saverTabFetch(), icon: "fa-search" },
+    { id: "saved", label: m.chatsaver.saverTabSaved(), icon: "fa-folder" },
+    { id: "view", label: m.chatsaver.saverTabView(), icon: "fa-envelope" }
+  ]);
     let timeAmount: number = $state(1);
     let timeUnit: "minutes" | "hours" | "days" = $state("hours");
   let messages: ChatLogMessage[] = $state([]);
@@ -59,11 +65,15 @@
   let guildChannels: Channel[] = [];
 
   // Time unit options
-  const timeUnits = [
-    { value: "minutes", label: "Minutes" },
-    { value: "hours", label: "Hours" },
-    { value: "days", label: "Days" }
-  ];
+  const timeUnits = $derived([
+    { value: "minutes", label: m.common.minutes() },
+    { value: "hours", label: m.common.hours() },
+    { value: "days", label: m.common.days() }
+  ]);
+
+  function timeUnitLabel(unit: string): string {
+    return (timeUnits.find((u) => u.value === unit)?.label ?? unit).toLowerCase();
+  }
 
   onMount(async () => {
     if (!$currentGuild) await goto("/dashboard");
@@ -92,9 +102,9 @@
         guildChannels = channels;
       } catch (err) {
         logger.error("Failed to load channels:", err);
-        showNotificationMessage("Failed to load channels", "error");
+        showNotificationMessage(m.chatsaver.saverNotifyChannelsFailed(), "error");
       }
-    }, "api", "Loading channels...");
+    }, "api", m.common.loadingChannels());
   }
 
   async function loadGuildMembers(): Promise<void> {
@@ -129,7 +139,7 @@
       savedLogs = await chatApi.getChatLogs($currentGuild.id);
     } catch (err) {
       logger.error("Failed to load saved logs:", err);
-      showNotificationMessage("Failed to load saved logs", "error");
+      showNotificationMessage(m.chatsaver.saverNotifyLogsFailed(), "error");
     }
   }
 
@@ -154,17 +164,18 @@
 
   async function fetchMessages(): Promise<void> {
     if (!selectedChannelId) {
-      showNotificationMessage("Please select a channel", "error");
+      showNotificationMessage(m.common.notifySelectChannel(), "error");
       return;
     }
 
     if (timeAmount <= 0) {
-      showNotificationMessage("Time amount must be greater than 0", "error");
+      showNotificationMessage(m.chatsaver.saverNotifyTimePositive(), "error");
       return;
     }
 
-    if (timeUnit === "days" && timeAmount > 14) {
-      showNotificationMessage("Maximum time for days is 3", "error");
+    const maxAmount = maxTimeAmount(timeUnit);
+    if (timeAmount > maxAmount) {
+      showNotificationMessage(m.chatsaver.saverNotifyTimeMax({ max: maxAmount, unit: timeUnitLabel(timeUnit) }), "error");
       return;
     }
 
@@ -186,18 +197,18 @@
         );
 
         if (messages.length === 0) {
-          showNotificationMessage("No messages found in the selected time range", "error");
+          showNotificationMessage(m.chatsaver.saverNotifyNoMessages(), "error");
         } else {
           activeTab = "view"; // Switch to view tab after fetching
         }
 
       } catch (err) {
         logger.error("Failed to fetch messages:", err);
-        showNotificationMessage("Failed to fetch messages", "error");
+        showNotificationMessage(m.chatsaver.saverNotifyFetchFailed(), "error");
       } finally {
         loading = false;
       }
-    }, "api", "Fetching messages...");
+    }, "api", m.chatsaver.saverFetchingMessages());
   }
 
   function formatTimestamp(timestamp: string): string {
@@ -257,11 +268,11 @@
 
     // User mentions <@123456789>
     text = text.replace(/<@!?(\d+)>/g, (match, userId) => {
-      const member = guildMembers.find(m => m.id === userId);
+      const member = guildMembers.find(gm => gm.id === userId);
       if (member) {
         return `<span class="mention user">@${sanitizeText(member.username)}</span>`;
       }
-      return `<span class="mention user">@Unknown User</span>`;
+      return `<span class="mention user">${sanitizeText(m.chatsaver.saverMentionUserUnknown())}</span>`;
     });
 
     // Channel mentions <#123456789>
@@ -270,11 +281,11 @@
       if (channel) {
         return `<span class="mention channel">#${sanitizeText(channel.name)}</span>`;
       }
-      return `<span class="mention channel">#unknown-channel</span>`;
+      return `<span class="mention channel">${sanitizeText(m.chatsaver.saverMentionChannelUnknown())}</span>`;
     });
 
     // Role mentions <@&123456789>
-    text = text.replace(/<@&(\d+)>/g, "<span class=\"mention role\">@Role</span>");
+    text = text.replace(/<@&(\d+)>/g, `<span class="mention role">${sanitizeText(m.common.roleMention())}</span>`);
 
     // Plain URLs (not already in a link tag)
     text = text.replace(/(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g,
@@ -361,7 +372,7 @@
 
     try {
       if (!$currentGuild?.id || !data.user?.id) {
-        showNotificationMessage("Missing guild or user information", "error");
+        showNotificationMessage(m.chatsaver.saverNotifyMissingInfo(), "error");
         return;
       }
 
@@ -399,14 +410,14 @@
         }))
       });
 
-      showNotificationMessage("Log saved successfully");
+      showNotificationMessage(m.chatsaver.saverNotifySaved());
       // Reload logs after saving
       await loadSavedLogs();
       currentLogId = result.id;
 
     } catch (err) {
       logger.error("Failed to save log:", err);
-      showNotificationMessage("Failed to save log", "error");
+      showNotificationMessage(m.chatsaver.saverNotifySaveFailed(), "error");
     }
   }
 
@@ -423,7 +434,7 @@
       }
     } catch (err) {
       logger.error("Failed to load log:", err);
-      showNotificationMessage("Failed to load log", "error");
+      showNotificationMessage(m.chatsaver.saverNotifyLoadFailed(), "error");
     }
   }
 
@@ -432,7 +443,7 @@
       if (!$currentGuild?.id) return;
 
       await chatApi.deleteChatLog($currentGuild.id, logId);
-      showNotificationMessage("Log deleted successfully");
+      showNotificationMessage(m.chatsaver.saverNotifyDeleted());
 
       // Reload logs
       await loadSavedLogs();
@@ -443,7 +454,7 @@
       }
     } catch (err) {
       logger.error("Failed to delete log:", err);
-      showNotificationMessage("Failed to delete log", "error");
+      showNotificationMessage(m.chatsaver.saverNotifyDeleteFailed(), "error");
     }
   }
 
@@ -465,13 +476,13 @@
       if (!$currentGuild?.id) return;
 
       await chatApi.updateChatLogName($currentGuild.id, editingLogName, newLogName.trim());
-      showNotificationMessage("Log renamed successfully");
+      showNotificationMessage(m.chatsaver.saverNotifyRenamed());
 
       // Reload logs
       await loadSavedLogs();
     } catch (err) {
       logger.error("Failed to rename log:", err);
-      showNotificationMessage("Failed to rename log", "error");
+      showNotificationMessage(m.chatsaver.saverNotifyRenameFailed(), "error");
     }
 
     editingLogName = false;
@@ -484,11 +495,11 @@
     const startDate = calculateAfterDate();
 
     let html = `<!DOCTYPE html>
-<html lang="en">
+<html lang="${getLocale()}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Log - #${channelName} - ${$currentGuild?.name || ""}</title>
+  <title>${sanitizeText(m.chatsaver.saverExportTitle({ channel: channelName, guild: $currentGuild?.name || "" }))}</title>
   <style>
   @reference '../../../app.css';
 
@@ -677,7 +688,7 @@
   <header>
     <h1>#${channelName}</h1>
     <div class="guild-name">${$currentGuild?.name || ""}</div>
-    <div class="timestamp">Messages from ${new Date(startDate).toLocaleString()} to ${new Date().toLocaleString()}</div>
+    <div class="timestamp">${sanitizeText(m.chatsaver.saverExportRange({ start: new Date(startDate).toLocaleString(), end: new Date().toLocaleString() }))}</div>
   </header>
   <main class="messages">`;
 
@@ -761,7 +772,7 @@
               // Handle embed thumbnail (positioned at the right)
               if (embed.thumbnail) {
                 html += `
-            <div class="embed-thumbnail" style="float: right; margin-left: 10px; margin-top: -5px;"><img src="${embed.thumbnail}" alt="Thumbnail"></div>`;
+            <div class="embed-thumbnail" style="float: right; margin-left: 10px; margin-top: -5px;"><img src="${embed.thumbnail}" alt="${sanitizeText(m.common.thumbnail())}"></div>`;
               }
 
               // Process author
@@ -770,7 +781,7 @@
             <div class="embed-author">`;
                 if (embed.author.iconUrl) {
                   html += `
-              <img src="${embed.author.iconUrl}" alt="Author icon">`;
+              <img src="${embed.author.iconUrl}" alt="${sanitizeText(m.common.authorIcon())}">`;
                 }
                 html += `
               <span>${sanitizeText(embed.author.name)}</span>
@@ -819,7 +830,7 @@
     html += `
   </main>
   <footer>
-    <p>Generated on ${new Date().toLocaleString()}</p>
+    <p>${sanitizeText(m.common.generatedOnDate({ date: new Date().toLocaleString() }))}</p>
   </footer>
 </body>
 </html>`;
@@ -874,11 +885,11 @@
 <DashboardPageLayout
   statusMessages={statusMessageContent}
   icon="fa-envelope"
-  subtitle="Save and view chat logs from your Discord channels"
-  guildName={$currentGuild?.name || "Dashboard"}
+  subtitle={m.chatsaver.saverSubtitle()}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   tabs={tabs}
   bind:activeTab
-  title="Chat Saver"
+  title={m.features.chatsaverName()}
 >
 
   {#if activeTab === 'fetch'}
@@ -896,7 +907,7 @@
         >
           <i class="fa-solid fa-envelope" style="font-size: 24px;"></i>
         </div>
-        <h2 class="text-lg sm:text-xl font-bold" style="color: {$colorStore.text}">Chat Options</h2>
+        <h2 class="text-lg sm:text-xl font-bold" style="color: {$colorStore.text}">{m.chatsaver.saverChatOptions()}</h2>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -907,12 +918,12 @@
         >
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-solid fa-hashtag" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-            <h3 class="font-semibold" style="color: {$colorStore.text}">Channel</h3>
+            <h3 class="font-semibold" style="color: {$colorStore.text}">{m.common.channel()}</h3>
           </div>
           <DiscordSelector
             type="channel"
             options={channels}
-            placeholder="Select a channel"
+            placeholder={m.common.selectAChannelPlaceholder()}
             bind:selected={selectedChannelId}
           />
         </div>
@@ -924,12 +935,12 @@
         >
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-solid fa-clock" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h3 class="font-semibold" style="color: {$colorStore.text}">Time Amount</h3>
+            <h3 class="font-semibold" style="color: {$colorStore.text}">{m.chatsaver.saverTimeAmount()}</h3>
           </div>
           <input
             bind:value={timeAmount}
             class="w-full p-3 rounded-lg border transition-all duration-200 min-h-[44px]"
-            max={timeUnit === "days" ? 3 : (timeUnit === "hours" ? 72 : 4320)}
+            max={maxTimeAmount(timeUnit)}
             min="1"
             style="background: {$colorStore.primary}08; border-color: {$colorStore.secondary}30;
                    color: {$colorStore.text};"
@@ -944,7 +955,7 @@
         >
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-solid fa-calendar" style="color: {$colorStore.accent}; font-size: 20px;"></i>
-            <h3 class="font-semibold" style="color: {$colorStore.text}">Time Unit</h3>
+            <h3 class="font-semibold" style="color: {$colorStore.text}">{m.chatsaver.saverTimeUnit()}</h3>
           </div>
           <DiscordSelector
             type="custom"
@@ -953,7 +964,7 @@
               name: unit.label
             }))}
             customIcon="fa-calendar"
-            placeholder="Select time unit"
+            placeholder={m.chatsaver.saverSelectTimeUnit()}
             bind:selected={timeUnit}
           />
         </div>
@@ -969,7 +980,7 @@
                  box-shadow: 0 0 20px {$colorStore.primary}20;"
         >
           <i class="fa-solid fa-search" style="font-size: 20px;"></i>
-          {loading ? 'Loading...' : 'Load Messages'}
+          {loading ? m.common.loading() : m.chatsaver.saverLoadMessages()}
         </button>
       </div>
     </section>
@@ -991,7 +1002,7 @@
           >
             <i class="fa-solid fa-folder" style="font-size: 24px;"></i>
           </div>
-          <h2 class="text-lg sm:text-xl font-bold" style="color: {$colorStore.text}">Saved Logs</h2>
+          <h2 class="text-lg sm:text-xl font-bold" style="color: {$colorStore.text}">{m.chatsaver.saverTabSaved()}</h2>
         </div>
 
         <div class="grid grid-cols-1 gap-4">
@@ -1014,7 +1025,7 @@
                         onkeydown={(e) => e.key === 'Enter' && saveLogName()}
                       >
                       <div class="flex gap-2">
-                        <button aria-label="Save"
+                        <button aria-label={m.common.save()}
                           class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                           style="background: {$colorStore.primary}20;
                                 color: {$colorStore.text};"
@@ -1022,7 +1033,7 @@
                         >
                           <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                         </button>
-                        <button aria-label="Cancel"
+                        <button aria-label={m.common.cancel()}
                           class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                           style="background: {$colorStore.accent}20;
                                 color: {$colorStore.accent};"
@@ -1038,35 +1049,35 @@
                     </h3>
                   {/if}
                   <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-                    #{log.channelName} • {formatTimestamp(log.timestamp)} • {log.messageCount} messages
+                    {log.messageCount === 1 ? m.chatsaver.saverLogMetaOne({ channel: log.channelName, date: formatTimestamp(log.timestamp), count: log.messageCount }) : m.chatsaver.saverLogMetaOther({ channel: log.channelName, date: formatTimestamp(log.timestamp), count: log.messageCount })}
                   </p>
                 </div>
 
                   <div class="flex gap-2 shrink-0">
-                    <button aria-label="View log"
+                    <button aria-label={m.chatsaver.saverViewLog()}
                     class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                     style="background: {$colorStore.primary}20;
                            color: {$colorStore.primary};"
                     onclick={() => loadLog(log.id)}
-                    title="View Log"
+                    title={m.chatsaver.saverViewLog()}
                   >
                       <i class="fa-solid fa-search" style="font-size: 16px;"></i>
                   </button>
-                    <button aria-label="Rename log"
+                    <button aria-label={m.chatsaver.saverRenameLog()}
                     class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                     style="background: {$colorStore.secondary}20;
                            color: {$colorStore.secondary};"
                     onclick={() => startEditingLogName(log.id)}
-                    title="Rename Log"
+                    title={m.chatsaver.saverRenameLog()}
                   >
                       <i class="fa-solid fa-pen" style="font-size: 16px;"></i>
                   </button>
-                    <button aria-label="Delete log"
+                    <button aria-label={m.chatsaver.saverDeleteLog()}
                     class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                     style="background: rgba(244, 67, 54, 0.2);
                            color: #f44336;"
                     onclick={() => deleteLog(log.id)}
-                    title="Delete Log"
+                    title={m.chatsaver.saverDeleteLog()}
                   >
                       <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
                   </button>
@@ -1080,7 +1091,7 @@
       <div class="text-center py-12 px-4">
         <i class="fa-solid fa-folder"
            style="color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"></i>
-        <p class="text-base sm:text-lg" style="color: {$colorStore.muted}">No saved logs yet</p>
+        <p class="text-base sm:text-lg" style="color: {$colorStore.muted}">{m.chatsaver.saverNoSavedLogs()}</p>
       </div>
     {/if}
   {/if}
@@ -1103,7 +1114,7 @@
               <i class="fa-solid fa-envelope" style="font-size: 24px;"></i>
             </div>
             <h2 class="text-lg sm:text-xl font-bold" style="color: {$colorStore.text}">
-              #{getSelectedChannelName()} - {messages.length} messages
+              {messages.length === 1 ? m.chatsaver.saverViewHeadingOne({ channel: getSelectedChannelName(), count: 1 }) : m.chatsaver.saverViewHeadingOther({ channel: getSelectedChannelName(), count: messages.length })}
             </h2>
           </div>
 
@@ -1116,7 +1127,7 @@
                 onclick={saveLog}
               >
                 <i class="fa-solid fa-floppy-disk" style="font-size: 20px;"></i>
-                Save Log
+                {m.chatsaver.saverSaveLog()}
               </button>
             {/if}
 
@@ -1127,7 +1138,7 @@
               onclick={exportAsHTML}
             >
               <i class="fa-solid fa-download" style="font-size: 20px;"></i>
-              Export HTML
+              {m.common.exportHtml()}
             </button>
           </div>
         </div>
@@ -1245,7 +1256,7 @@
                                       {#if embed.author.iconUrl}
                                         <img
                                           src={embed.author.iconUrl}
-                                          alt="Author"
+                                          alt={m.common.author()}
                                           class="w-5 h-5 rounded-full shrink-0"
                                         >
                                       {/if}
@@ -1290,7 +1301,7 @@
                                     <div class="shrink-0">
                                     <img
                                       src={embed.thumbnail}
-                                      alt="Thumbnail"
+                                      alt={m.common.thumbnail()}
                                       class="w-16 h-16 sm:w-20 sm:h-20 rounded-md object-cover"
                                     >
                                   </div>
@@ -1317,7 +1328,7 @@
             class="mt-4 p-3 rounded-lg"
             style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
           >
-            <p class="text-center text-sm sm:text-base">Showing {messages.length} messages. There may be more messages that are not displayed.</p>
+            <p class="text-center text-sm sm:text-base">{m.chatsaver.saverLimitNotice({ count: messages.length })}</p>
           </div>
         {/if}
       </section>
@@ -1325,8 +1336,8 @@
       <div class="text-center py-12 px-4">
         <i class="fa-solid fa-envelope"
            style="color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"></i>
-        <p class="text-base sm:text-lg" style="color: {$colorStore.muted}">No messages to display</p>
-        <p class="text-sm mt-2" style="color: {$colorStore.muted}">Use the "Fetch Messages" tab to load messages</p>
+        <p class="text-base sm:text-lg" style="color: {$colorStore.muted}">{m.chatsaver.saverNoMessages()}</p>
+        <p class="text-sm mt-2" style="color: {$colorStore.muted}">{m.chatsaver.saverNoMessagesHint()}</p>
       </div>
     {/if}
   {/if}

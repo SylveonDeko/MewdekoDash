@@ -1,3 +1,4 @@
+import { m } from "$lib/i18n";
 import {
   type FormPage,
   type FormQuestion,
@@ -50,7 +51,7 @@ export function endOfPage<T extends PageableQuestion>(
 /** Names a page for its tab, falling back to its number when it has no heading. */
 export function pageLabel<T extends PageableQuestion>(pages: FormPage<T>[], index: number): string {
   const heading = pages[index]?.heading?.questionText?.trim();
-  return heading ? heading : `Page ${index + 1}`;
+  return heading ? heading : m.forms.pageBarPageNumber({ number: index + 1 });
 }
 
 /**

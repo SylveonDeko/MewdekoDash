@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/tabs/CommandsTab.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
   import { analyticsApi } from "$lib/api/analytics/analytics";
@@ -85,48 +86,48 @@
 
 <div class="space-y-4">
   <div class="flex flex-wrap items-center gap-2">
-    <select class="min-h-[36px] rounded-lg border px-2 text-xs" style={selectStyle} bind:value={kind} aria-label="Kind">
-      <option value="">any kind</option>
+    <select class="min-h-[36px] rounded-lg border px-2 text-xs" style={selectStyle} bind:value={kind} aria-label={m.analytics.tableColKind()}>
+      <option value="">{m.analytics.tabCommandsAnyKind()}</option>
       {#each kinds as k}<option value={k}>{k}</option>{/each}
     </select>
-    <select class="min-h-[36px] rounded-lg border px-2 text-xs" style={selectStyle} bind:value={module} aria-label="Module">
-      <option value="">any module</option>
-      {#each modules as m}<option value={m}>{m}</option>{/each}
+    <select class="min-h-[36px] rounded-lg border px-2 text-xs" style={selectStyle} bind:value={module} aria-label={m.common.module()}>
+      <option value="">{m.analytics.tabCommandsAnyModule()}</option>
+      {#each modules as mod}<option value={mod}>{mod}</option>{/each}
     </select>
-    <select class="min-h-[36px] rounded-lg border px-2 text-xs" style={selectStyle} bind:value={outcome} aria-label="Outcome">
-      <option value="">any outcome</option>
-      <option value="ok">ok</option>
-      <option value="error">error</option>
+    <select class="min-h-[36px] rounded-lg border px-2 text-xs" style={selectStyle} bind:value={outcome} aria-label={m.analytics.tabCommandsSelectOutcome()}>
+      <option value="">{m.analytics.tabCommandsAnyOutcome()}</option>
+      <option value="ok">{m.analytics.tabAlertsStateOk()}</option>
+      <option value="error">{m.analytics.tabPipelineStatusError()}</option>
     </select>
   </div>
 
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-    <AnalyticsTile label="Invocations" metric="cmd.count" agg="sum" format="int" filters={["bot", "shard"]} {fixed} />
-    <AnalyticsTile label="Errors" metric="cmd.count" agg="sum" format="int" filters={["bot", "shard"]} fixed={fixedFailed} />
-    <AnalyticsTile label="Duration p95" metric="cmd.duration" agg="p95" format="ms" filters={["bot"]} {fixed} unit="ms" />
-    <AnalyticsTile label="Duration p50" metric="cmd.duration" agg="p50" format="ms" filters={["bot"]} {fixed} unit="ms" />
+    <AnalyticsTile label={m.analytics.tabCommandsTileInvocations()} metric="cmd.count" agg="sum" format="int" filters={["bot", "shard"]} {fixed} />
+    <AnalyticsTile label={m.common.errors()} metric="cmd.count" agg="sum" format="int" filters={["bot", "shard"]} fixed={fixedFailed} />
+    <AnalyticsTile label={m.analytics.tabCommandsTileP95()} metric="cmd.duration" agg="p95" format="ms" filters={["bot"]} {fixed} unit="ms" />
+    <AnalyticsTile label={m.analytics.tabCommandsTileP50()} metric="cmd.duration" agg="p50" format="ms" filters={["bot"]} {fixed} unit="ms" />
   </div>
 
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
-    <Card title="Invocations by module" class="xl:col-span-2">
-      <AnalyticsChart metric="cmd.count" agg="sum" groupBy="module" max={12} filters={["bot", "shard"]} {fixed} type="area" unit="per bucket" zoom height={300} />
+    <Card title={m.analytics.tabCommandsCardByModule()} class="xl:col-span-2">
+      <AnalyticsChart metric="cmd.count" agg="sum" groupBy="module" max={12} filters={["bot", "shard"]} {fixed} type="area" unit={m.analytics.unitPerBucket()} zoom height={300} />
     </Card>
-    <Card title="Errors by class">
-      <AnalyticsChart metric="cmd.errors" agg="sum" groupBy="error" max={8} filters={["bot"]} {fixed} type="area" unit="errors" height={300} />
+    <Card title={m.analytics.tabCommandsCardByClass()}>
+      <AnalyticsChart metric="cmd.errors" agg="sum" groupBy="error" max={8} filters={["bot"]} {fixed} type="area" unit={m.analytics.unitErrors()} height={300} />
     </Card>
   </div>
 
   <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-    <Card title="Execution duration" note="p50 · p95 · p99">
+    <Card title={m.analytics.tabCommandsCardDuration()} note="p50 · p95 · p99">
       <AnalyticsChart metric="cmd.duration" aggs={["p50", "p95", "p99"]} filters={["bot"]} {fixed} unit="ms" noCompare />
     </Card>
-    <Card title="Invocations by kind">
+    <Card title={m.analytics.tabCommandsCardByKind()}>
       <BreakdownPanel metric="cmd.count" label="kind" filters={["bot", "shard"]} {fixed} />
     </Card>
   </div>
 
-  <Card title="Usage heatmap" note="UTC hour × server size">
-    <Heatmap buckets={heatmap.sizes} cells={heatmap.cells} loading={heatmapLoading} unit="invocations" />
+  <Card title={m.analytics.tabCommandsCardHeatmap()} note={m.analytics.tabCommandsHeatmapNote()}>
+    <Heatmap buckets={heatmap.sizes} cells={heatmap.cells} loading={heatmapLoading} unit={m.analytics.unitInvocations()} />
   </Card>
 
   <CommandTables query={commandQuery} />

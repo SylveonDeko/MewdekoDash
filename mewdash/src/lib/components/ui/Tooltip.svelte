@@ -1,5 +1,6 @@
 <!-- lib/components/Tooltip.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fade } from 'svelte/transition';
   import { colorStore } from '$lib/stores/colorStore';
 
@@ -144,7 +145,7 @@
         class="w-4 h-4 rounded-full flex items-center justify-center text-[10px] border-0 outline-hidden transition-opacity opacity-50 hover:opacity-100"
         type="button"
         style="background: {$colorStore.primary}15; color: {$colorStore.muted};"
-        aria-label="Show help"
+        aria-label={m.layout.tooltipShowHelp()}
       >
         ?
       </button>

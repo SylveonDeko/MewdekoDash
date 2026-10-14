@@ -4,6 +4,7 @@ Smart feature dependency suggestions
 Shows when enabling one feature would benefit from enabling another
 -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
 
   interface Suggestion {
@@ -48,7 +49,7 @@ Shows when enabling one feature would benefit from enabling another
       <div class="flex items-center gap-2">
         <i class="fa-solid fa-lightbulb" style="color: {$colorStore.accent}; font-size: 18px;"></i>
         <h4 class="font-semibold text-sm" style="color: {$colorStore.text};">
-          Smart Suggestions
+          {m.wizard.suggestionTitle()}
         </h4>
       </div>
       {#if ondismiss}
@@ -56,7 +57,7 @@ Shows when enabling one feature would benefit from enabling another
           class="p-1 rounded-sm transition-all hover:opacity-70"
           style="color: {$colorStore.muted};"
           onclick={ondismiss}
-          aria-label="Dismiss suggestions"
+          aria-label={m.wizard.suggestionDismiss()}
         >
           <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
         </button>
@@ -79,7 +80,7 @@ Shows when enabling one feature would benefit from enabling another
             <!-- Content -->
             <div class="flex-1 min-w-0">
               <h5 class="font-semibold text-sm mb-1" style="color: {$colorStore.text};">
-                Consider enabling {suggestion.feature}
+                {m.wizard.suggestionConsider({ feature: suggestion.feature })}
               </h5>
               <p class="text-xs mb-3" style="color: {$colorStore.muted};">
                 {suggestion.reason}
@@ -94,7 +95,7 @@ Shows when enabling one feature would benefit from enabling another
                 >
                   <i class="fa-solid {expandedIndex === index ? 'fa-chevron-up' : 'fa-chevron-down'}"
                      style="font-size: 10px;"></i>
-                  {expandedIndex === index ? 'Hide' : 'Show'} Benefits
+                  {expandedIndex === index ? m.wizard.suggestionHideBenefits() : m.wizard.setupCardShowBenefits()}
                 </button>
 
                 {#if expandedIndex === index}
@@ -118,7 +119,7 @@ Shows when enabling one feature would benefit from enabling another
                   onclick={() => acceptSuggestion(suggestion.feature)}
                 >
                   <i class="fa-solid fa-plus" style="font-size: 14px;"></i>
-                  <span>Enable {suggestion.feature}</span>
+                  <span>{m.wizard.suggestionEnable({ feature: suggestion.feature })}</span>
                 </button>
               </div>
             </div>

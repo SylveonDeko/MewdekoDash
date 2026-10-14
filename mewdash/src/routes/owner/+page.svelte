@@ -1,5 +1,6 @@
 <!-- routes/owner/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { ownerFeatures } from "$lib/config/navigationItems";
   import { colorStore } from "$lib/stores/colorStore";
@@ -9,11 +10,11 @@
    * Landing page for the owner tools. Each card is one entry of the owner feature list, so a new
    * tool added there shows up here and in the sidebar without further wiring.
    */
-  const features = [...ownerFeatures].sort((a, b) => a.label.localeCompare(b.label));
+  const features = [...ownerFeatures].sort((a, b) => a.label().localeCompare(b.label()));
 </script>
 
 <svelte:head>
-  <title>Owner Panel - Mewdeko</title>
+  <title>{m.owner.landingTitle()}</title>
 </svelte:head>
 
 <div class="min-h-screen p-4 md:p-6 lg:p-8"
@@ -33,9 +34,9 @@
              aria-hidden="true"></i>
         </div>
         <div class="min-w-0">
-          <h1 class="text-xl md:text-2xl font-bold" style="color: {$colorStore.text};">Owner Panel</h1>
+          <h1 class="text-xl md:text-2xl font-bold" style="color: {$colorStore.text};">{m.layout.ownerSidebarTitle()}</h1>
           <p class="text-sm" style="color: {$colorStore.muted};">
-            Fleet and host tools for {$currentInstance?.botName ?? "the selected bot"}. Nothing here is scoped to a server.
+            {m.owner.landingSubtitle({ bot: $currentInstance?.botName ?? m.owner.landingSelectedBot() })}
           </p>
         </div>
       </div>
@@ -57,8 +58,8 @@
                aria-hidden="true"></i>
           </div>
           <div class="min-w-0 flex-1">
-            <div class="text-base font-semibold" style="color: {$colorStore.text};">{feature.label}</div>
-            <p class="text-sm mt-0.5" style="color: {$colorStore.muted};">{feature.description}</p>
+            <div class="text-base font-semibold" style="color: {$colorStore.text};">{feature.label()}</div>
+            <p class="text-sm mt-0.5" style="color: {$colorStore.muted};">{feature.description?.()}</p>
           </div>
           <i class="fa-solid fa-chevron-right text-xs mt-1 shrink-0" style="color: {$colorStore.muted};" aria-hidden="true"></i>
         </a>

@@ -6,6 +6,7 @@
 </script>
 
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -90,11 +91,11 @@
     return list.slice(0, 160);
   });
 
-  const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: "icons", label: "Icons", icon: "fa-star" },
-    { id: "emojis", label: "Server emojis", icon: "fa-face-smile" },
-    { id: "image", label: "Image", icon: "fa-image" }
-  ];
+  const tabs: { id: Tab; label: string; icon: string }[] = $derived([
+    { id: "icons", label: m.achievements.iconTabIcons(), icon: "fa-star" },
+    { id: "emojis", label: m.achievements.iconTabEmojis(), icon: "fa-face-smile" },
+    { id: "image", label: m.common.image(), icon: "fa-image" }
+  ]);
 
   /** Opens or closes the panel, loading glyphs the first time. */
   async function toggle() {
@@ -107,7 +108,7 @@
     } catch (err: any) {
       glyphCache = null;
       logger.error("Failed to load icons:", err);
-      onerror(err?.message || "Couldn't load the icons.");
+      onerror(err?.message || m.achievements.iconErrorLoad());
     } finally {
       loadingGlyphs = false;
     }
@@ -126,7 +127,7 @@
   function useLink() {
     const url = link.trim();
     if (!url.startsWith("https://")) {
-      onerror("Image links have to start with https://.");
+      onerror(m.achievements.iconErrorHttps());
       return;
     }
     link = "";
@@ -143,7 +144,7 @@
     input.value = "";
     if (!file || !$currentGuild?.id) return;
     if (file.size > 4 * 1024 * 1024) {
-      onerror("Images have to be under 4 MB.");
+      onerror(m.achievements.iconErrorSize());
       return;
     }
 
@@ -161,7 +162,7 @@
       pick(uploaded.icon);
     } catch (err: any) {
       logger.error("Failed to upload an icon:", err);
-      onerror(err?.message || "Couldn't upload that image.");
+      onerror(err?.message || m.achievements.iconErrorUpload());
     } finally {
       uploading = false;
     }
@@ -174,9 +175,9 @@
   async function removeUpload(upload: AchievementIconUpload) {
     if (!$currentGuild?.id) return;
     const ok = await requestConfirmation({
-      title: "Delete this image?",
-      message: "Achievements and categories using it go back to their default icon.",
-      confirmText: "Delete image",
+      title: m.achievements.iconDeleteTitle(),
+      message: m.achievements.iconDeleteMessage(),
+      confirmText: m.achievements.iconDeleteConfirm(),
       variant: "danger"
     });
     if (!ok) return;
@@ -187,7 +188,7 @@
       onuploadschanged?.();
     } catch (err: any) {
       logger.error("Failed to delete an icon:", err);
-      onerror(err?.message || "Couldn't delete that image.");
+      onerror(err?.message || m.achievements.iconErrorDelete());
     }
   }
 </script>
@@ -204,25 +205,25 @@
     </span>
     <div class="flex-1 min-w-0">
       <div class="text-sm truncate" style="color: {$colorStore.text}">
-        {value ? (glyphClass(value)?.slice(3) ?? (value.startsWith("upload:") ? "Uploaded image" : value.startsWith("<") ? "Server emoji" : "Linked image")) : defaultLabel}
+        {value ? (glyphClass(value)?.slice(3) ?? (value.startsWith("upload:") ? m.achievements.iconKindUploaded() : value.startsWith("<") ? m.achievements.iconKindEmoji() : m.achievements.iconKindLinked())) : defaultLabel}
       </div>
       {#if value}
         <button type="button" class="text-xs underline" style="color: {$colorStore.muted}" onclick={() => pick(null)}>
-          Use {defaultLabel}
+          {m.achievements.iconUseDefault({ label: defaultLabel })}
         </button>
       {/if}
     </div>
     <button type="button" class="px-4 py-2 rounded-xl min-h-[44px] text-sm font-medium"
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
             aria-expanded={open} aria-label={label} onclick={toggle}>
-      {open ? "Done" : "Change"}
+      {open ? m.common.done() : m.achievements.iconChange()}
     </button>
   </div>
 
   {#if open}
     <div class="rounded-xl border p-3 space-y-3" transition:slide={{ duration: 150 }}
          style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}25;">
-      <div class="flex gap-2 overflow-x-auto" role="group" aria-label="Icon source">
+      <div class="flex gap-2 overflow-x-auto" role="group" aria-label={m.achievements.iconSourceLabel()}>
         {#each tabs as t (t.id)}
           {@const active = tab === t.id}
           <button type="button" aria-pressed={active}
@@ -237,12 +238,12 @@
       </div>
 
       {#if tab === "icons"}
-        <input type="search" bind:value={search} placeholder="Search icons, like trophy or star"
-               aria-label="Search icons"
+        <input type="search" bind:value={search} placeholder={m.achievements.iconSearchPlaceholder()}
+               aria-label={m.achievements.cardGlyphSearch()}
                class="w-full px-3 h-[44px] rounded-xl border text-sm"
                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
         {#if loadingGlyphs}
-          <p class="text-sm py-4 text-center" style="color: {$colorStore.muted}">Loading icons</p>
+          <p class="text-sm py-4 text-center" style="color: {$colorStore.muted}">{m.achievements.iconLoading()}</p>
         {:else}
           <div class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1.5 max-h-64 overflow-y-auto pr-1">
             {#each filtered as glyph (glyph.name)}
@@ -258,21 +259,21 @@
             {/each}
           </div>
           {#if filtered.length === 0}
-            <p class="text-sm" style="color: {$colorStore.muted}">No icons match.</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.achievements.iconNoMatch()}</p>
           {/if}
         {/if}
       {:else if tab === "emojis"}
         {#if emojis.length === 0}
-          <p class="text-sm" style="color: {$colorStore.muted}">This server has no emojis of its own.</p>
+          <p class="text-sm" style="color: {$colorStore.muted}">{m.achievements.iconNoEmojis()}</p>
         {:else}
           <div class="flex flex-col sm:flex-row sm:items-center gap-2">
-            <input type="search" bind:value={emojiSearch} placeholder="Search emojis by name"
-                   aria-label="Search emojis"
+            <input type="search" bind:value={emojiSearch} placeholder={m.achievements.iconEmojiSearchPlaceholder()}
+                   aria-label={m.achievements.iconEmojiSearchLabel()}
                    class="flex-1 min-w-0 px-3 h-[44px] rounded-xl border text-sm"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
             <div class="flex h-[44px] rounded-xl p-1 gap-1 shrink-0" style="background: {$colorStore.primary}10;"
-                 role="group" aria-label="Emoji type">
-              {#each [{ id: "all", label: "All" }, { id: "static", label: "Still" }, { id: "animated", label: "Animated" }] as option (option.id)}
+                 role="group" aria-label={m.achievements.iconEmojiTypeLabel()}>
+              {#each [{ id: "all", label: m.common.all() }, { id: "static", label: m.achievements.iconEmojiStill() }, { id: "animated", label: m.achievements.iconEmojiAnimated() }] as option (option.id)}
                 <button type="button" aria-pressed={emojiKind === option.id}
                         class="px-3 h-full rounded-lg text-xs font-medium"
                         style="background: {emojiKind === option.id ? $colorStore.primary + '30' : 'transparent'};
@@ -294,17 +295,17 @@
             {/each}
           </div>
           {#if filteredEmojis.length === 0}
-            <p class="text-sm" style="color: {$colorStore.muted}">No emojis match.</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.achievements.iconNoEmojiMatch()}</p>
           {/if}
         {/if}
       {:else}
         <div class="flex flex-col sm:flex-row gap-2">
-          <input type="url" bind:value={link} placeholder="https://example.com/icon.png" aria-label="Image link"
+          <input type="url" bind:value={link} placeholder="https://example.com/icon.png" aria-label={m.achievements.iconLinkLabel()}
                  class="flex-1 px-3 h-[44px] rounded-xl border text-sm"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
           <button type="button" class="px-4 h-[44px] rounded-xl text-sm font-medium disabled:opacity-50"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                  disabled={!link.trim()} onclick={useLink}>Use link</button>
+                  disabled={!link.trim()} onclick={useLink}>{m.achievements.iconUseLink()}</button>
         </div>
         <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="hidden"
                bind:this={fileInput} onchange={upload} />
@@ -312,21 +313,21 @@
                 style="border-color: {$colorStore.primary}40; color: {$colorStore.text};"
                 disabled={uploading} onclick={() => fileInput?.click()}>
           <i class="fa-solid {uploading ? 'fa-spinner fa-spin' : 'fa-upload'} mr-2" aria-hidden="true"></i>
-          {uploading ? "Uploading" : "Upload an image (PNG, JPEG, GIF, or WebP, under 4 MB)"}
+          {uploading ? m.achievements.iconUploading() : m.achievements.iconUploadPrompt()}
         </button>
         {#if allUploads.length > 0}
           <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
             {#each allUploads as upload (upload.id)}
               {@const picked = value === upload.icon}
               <div class="relative group">
-                <button type="button" aria-label="Use uploaded image {upload.id}" aria-pressed={picked}
+                <button type="button" aria-label={m.achievements.iconUseUploadedLabel({ id: upload.id })} aria-pressed={picked}
                         class="w-full aspect-square rounded-lg flex items-center justify-center"
                         style="background: {picked ? color + '30' : $colorStore.primary + '08'};
                                border: 1px solid {picked ? color : 'transparent'};"
                         onclick={() => pick(upload.icon)}>
                   <img src={iconImageSrc(upload.url)} alt="" class="w-3/4 h-3/4 object-contain" />
                 </button>
-                <button type="button" aria-label="Delete uploaded image {upload.id}"
+                <button type="button" aria-label={m.achievements.iconDeleteUploadedLabel({ id: upload.id })}
                         class="absolute -top-1.5 -right-1.5 w-7 h-7 rounded-full text-xs"
                         style="background: #ef4444; color: #fff;"
                         onclick={() => removeUpload(upload)}>

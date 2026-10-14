@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -50,31 +51,31 @@
   <div transition:slide={{ duration: 300 }} class="mb-4 p-4 rounded-xl border-2 border-dashed"
        style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
     <div class="flex items-center justify-between mb-3">
-      <h5 class="font-medium" style="color: {$colorStore.text}">Add Self-Assignable Role</h5>
+      <h5 class="font-medium" style="color: {$colorStore.text}">{m.administration.rolesAddSelfAssignableTitle()}</h5>
       <button
         class="px-2 py-1 rounded-lg text-sm"
         style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
         onclick={() => { expanded = false; newRole = null; newRoleGroup = 0; newRoleLevel = 0; }}
       >
-        Cancel
+        {m.common.cancel()}
       </button>
     </div>
 
     <div class="space-y-3">
       <div>
-        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Role</span>
+        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.role()}</span>
         <DiscordSelector
           type="role"
           options={availableRoles}
           bind:selected={newRole}
-          placeholder="Select role to make self-assignable..."
+          placeholder={m.administration.rolesAddSelfAssignableRolePlaceholder()}
           multiple={false}
         />
       </div>
 
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label for="role-group" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Group</label>
+          <label for="role-group" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.common.group()}</label>
           <input
             id="role-group"
             type="number"
@@ -88,8 +89,7 @@
         </div>
 
         <div>
-          <label for="role-level" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Level
-            Req</label>
+          <label for="role-level" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.administration.rolesAddSelfAssignableLevelReq()}</label>
           <input
             id="role-level"
             type="number"
@@ -114,7 +114,7 @@
         {:else}
           <i class="fa-solid fa-plus"></i>
         {/if}
-        Add Role
+        {m.common.addRole()}
       </button>
     </div>
   </div>
@@ -125,6 +125,6 @@
     onclick={() => expanded = true}
   >
     <i class="fa-solid fa-plus"></i>
-    Add Self-Assignable Role
+    {m.administration.rolesAddSelfAssignableTitle()}
   </button>
 {/if}

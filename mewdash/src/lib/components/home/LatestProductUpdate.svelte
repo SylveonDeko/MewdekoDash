@@ -1,5 +1,6 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import type { ProductUpdate } from "$lib/content/productUpdates";
 
@@ -69,7 +70,7 @@
 
       <div class="min-w-0 p-6 sm:p-8 md:p-10">
         <p class="mb-3 text-xs font-semibold uppercase tracking-[0.14em]" style="color: {$colorStore.muted}">
-          What Mewdeko has been working on
+          {m.home.updateEyebrow()}
         </p>
         {#key update.id}
           <div in:fade={{ duration: 220 }}>
@@ -106,20 +107,20 @@
               class="flex h-11 w-11 items-center justify-center rounded-xl focus:outline-hidden focus:ring-2"
               style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;
                      --tw-ring-color: {$colorStore.primary};"
-              aria-label="Previous update"
+              aria-label={m.home.updatePrevious()}
               onclick={() => step(-1)}
             >
               <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
             </button>
             <span class="min-w-[4.5rem] text-center text-sm tabular-nums" style="color: {$colorStore.muted}" aria-live="polite">
-              {index + 1} of {updates.length}
+              {m.common.currentOfTotal({ current: index + 1, total: updates.length })}
             </span>
             <button
               type="button"
               class="flex h-11 w-11 items-center justify-center rounded-xl focus:outline-hidden focus:ring-2"
               style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;
                      --tw-ring-color: {$colorStore.primary};"
-              aria-label="Next update"
+              aria-label={m.home.updateNext()}
               onclick={() => step(1)}
             >
               <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>

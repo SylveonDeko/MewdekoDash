@@ -1,0 +1,16 @@
+{
+  "shortcuts_close_dialog": "Close keyboard shortcuts dialog",
+  "shortcuts_close_popups": "Close popups/dialogs",
+  "shortcuts_context_global": "Global",
+  "shortcuts_focus_search": "Focus search",
+  "shortcuts_footer": "Press {key} at any time to show this dialog",
+  "shortcuts_go_home": "Go to dashboard home",
+  "shortcuts_go_music": "Go to music player",
+  "shortcuts_go_settings": "Go to settings",
+  "shortcuts_play_pause": "Play/pause music",
+  "shortcuts_quick_switch": "Quick server switch",
+  "shortcuts_refresh": "Refresh current data",
+  "shortcuts_skip": "Skip backward/forward",
+  "shortcuts_toggle": "Show/hide keyboard shortcuts",
+  "tabnav_aria_label": "Tab navigation"
+}

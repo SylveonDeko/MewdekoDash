@@ -1,5 +1,6 @@
 <!-- routes/dashboard/feature-requests/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { featureRequestsApi, ownershipApi } from "$lib/api/index.ts";
@@ -66,30 +67,30 @@
   let tabs = $derived(
     isOwner
       ? [
-          { id: "browse", label: "Browse", icon: "fa-lightbulb" },
-          { id: "submit", label: "Suggest", icon: "fa-paper-plane" },
-          { id: "mine", label: "Mine", icon: "fa-user" },
-          { id: "settings", label: "Settings", icon: "fa-cog" },
+          { id: "browse", label: m.featureRequests.tabBrowse(), icon: "fa-lightbulb" },
+          { id: "submit", label: m.featureRequests.tabSuggest(), icon: "fa-paper-plane" },
+          { id: "mine", label: m.featureRequests.tabMine(), icon: "fa-user" },
+          { id: "settings", label: m.common.settings(), icon: "fa-cog" },
         ]
       : [
-          { id: "browse", label: "Browse", icon: "fa-lightbulb" },
-          { id: "submit", label: "Suggest", icon: "fa-paper-plane" },
-          { id: "mine", label: "Mine", icon: "fa-user" },
+          { id: "browse", label: m.featureRequests.tabBrowse(), icon: "fa-lightbulb" },
+          { id: "submit", label: m.featureRequests.tabSuggest(), icon: "fa-paper-plane" },
+          { id: "mine", label: m.featureRequests.tabMine(), icon: "fa-user" },
         ],
   );
 
-  const categoryOptions = [
-    { id: "feature", name: "Feature idea" },
-    { id: "bug", name: "Bug report" },
-    { id: "other", name: "Something else" },
-  ];
+  const categoryOptions = $derived([
+    { id: "feature", name: m.featureRequests.categoryFeature() },
+    { id: "bug", name: m.featureRequests.categoryBug() },
+    { id: "other", name: m.featureRequests.categoryOther() },
+  ]);
 
-  const statusOptions = [
-    { id: "open", name: "Open" },
-    { id: "planned", name: "Planned" },
-    { id: "done", name: "Done" },
-    { id: "declined", name: "Declined" },
-  ];
+  const statusOptions = $derived([
+    { id: "open", name: m.common.open() },
+    { id: "planned", name: m.featureRequests.statusPlanned() },
+    { id: "done", name: m.common.done() },
+    { id: "declined", name: m.featureRequests.statusDeclined() },
+  ]);
 
   let totalPages = $derived(Math.max(1, Math.ceil(total / pageSize)));
 
@@ -100,12 +101,12 @@
   );
 
   let statTiles = $derived([
-    { label: "Total", value: stats?.total ?? 0, icon: "fa-lightbulb", tone: "primary" },
-    { label: "Open", value: stats?.byStatus?.open ?? 0, icon: "fa-hourglass", tone: "secondary" },
-    { label: "Planned", value: stats?.byStatus?.planned ?? 0, icon: "fa-wand-magic-sparkles", tone: "primary" },
-    { label: "Done", value: stats?.byStatus?.done ?? 0, icon: "fa-circle-check", tone: "primary" },
-    { label: "Declined", value: stats?.byStatus?.declined ?? 0, icon: "fa-xmark", tone: "accent" },
-    { label: "Bugs", value: stats?.byCategory?.bug ?? 0, icon: "fa-bug", tone: "accent" },
+    { label: m.common.total(), value: stats?.total ?? 0, icon: "fa-lightbulb", tone: "primary" },
+    { label: m.common.open(), value: stats?.byStatus?.open ?? 0, icon: "fa-hourglass", tone: "secondary" },
+    { label: m.featureRequests.statusPlanned(), value: stats?.byStatus?.planned ?? 0, icon: "fa-wand-magic-sparkles", tone: "primary" },
+    { label: m.common.done(), value: stats?.byStatus?.done ?? 0, icon: "fa-circle-check", tone: "primary" },
+    { label: m.featureRequests.statusDeclined(), value: stats?.byStatus?.declined ?? 0, icon: "fa-xmark", tone: "accent" },
+    { label: m.featureRequests.statBugs(), value: stats?.byCategory?.bug ?? 0, icon: "fa-bug", tone: "accent" },
   ]);
 
   function toneColor(tone: string): string {
@@ -139,7 +140,7 @@
    * bot serialized the value without a timezone designator.
    */
   function formatDate(value: string | null): string {
-    if (!value) return "Unknown";
+    if (!value) return m.common.unknown();
     const utc = /[zZ]|[+-]\d\d:?\d\d$/.test(value) ? value : `${value}Z`;
     return new Date(utc).toLocaleString();
   }
@@ -163,13 +164,13 @@
           total = result.total ?? 0;
         } catch (err) {
           logger.error("Failed to fetch feature requests:", err);
-          error = "Failed to load feature requests";
+          error = m.featureRequests.errorLoad();
         } finally {
           loading = false;
         }
       },
       "api",
-      "Loading feature requests...",
+      m.featureRequests.loadingRequests(),
     );
   }
 
@@ -198,7 +199,7 @@
       settingsError = null;
     } catch (err) {
       logger.error("Failed to load feature request settings:", err);
-      settingsError = "Failed to load the settings";
+      settingsError = m.common.notifyLoadSettingsFailed();
     }
   }
 
@@ -258,7 +259,7 @@
       logger.error("Failed to toggle vote:", err);
       entry.votes = before.votes;
       entry.voted = before.voted;
-      error = "Failed to save your vote";
+      error = m.featureRequests.errorVote();
     }
   }
 
@@ -280,7 +281,7 @@
       await Promise.all([fetchMine(), fetchStats()]);
     } catch (err) {
       logger.error("Failed to submit feature request:", err);
-      submitError = err instanceof Error ? err.message : "Failed to submit your request";
+      submitError = err instanceof Error ? err.message : m.featureRequests.errorSubmit();
     } finally {
       submitting = false;
     }
@@ -309,7 +310,7 @@
       await fetchStats();
     } catch (err) {
       logger.error("Failed to update feature request status:", err);
-      error = err instanceof Error ? err.message : "Failed to update the status";
+      error = err instanceof Error ? err.message : m.featureRequests.errorUpdateStatus();
     } finally {
       savingStatus = false;
     }
@@ -330,7 +331,7 @@
       await Promise.all([fetchPage(), fetchStats()]);
     } catch (err) {
       logger.error("Failed to delete feature request:", err);
-      error = "Failed to delete that request";
+      error = m.featureRequests.errorDelete();
     }
   }
 
@@ -346,7 +347,7 @@
 
     if (trimmed && !/^\d{17,20}$/.test(trimmed)) {
       autoSave.cancel("channel");
-      settingsError = showInvalid ? "That does not look like a channel ID" : null;
+      settingsError = showInvalid ? m.common.invalidChannelId() : null;
       return;
     }
 
@@ -363,7 +364,7 @@
         settingsError = null;
       } catch (err) {
         logger.error("Failed to save feature request settings:", err);
-        settingsError = err instanceof Error ? err.message : "Failed to save the settings";
+        settingsError = err instanceof Error ? err.message : m.common.failedToSaveTheSettings();
         throw err;
       }
     });
@@ -395,7 +396,7 @@
                color: {entry.voted ? '#fff' : $colorStore.primary};
                border: 1px solid {$colorStore.primary}30;"
         aria-pressed={entry.voted}
-        aria-label={entry.voted ? "Remove your vote" : "Upvote this request"}
+        aria-label={entry.voted ? m.featureRequests.voteRemoveAria() : m.featureRequests.voteAddAria()}
         onclick={() => toggleVote(entry)}
       >
         <i class="fa-solid fa-thumbs-up"></i>
@@ -416,14 +417,14 @@
           </span>
           {#if entry.mine}
             <span class="text-xs px-2 py-0.5 rounded-full" style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
-              Yours
+              {m.featureRequests.badgeYours()}
             </span>
           {/if}
         </div>
         <h3 class="mt-1 font-semibold truncate" style="color: {$colorStore.text}">{entry.title}</h3>
         <p class="text-xs mt-1" style="color: {$colorStore.muted}">
           {entry.userName} · {formatDate(entry.dateAdded)}
-          {#if entry.guildName}· from {entry.guildName}{/if}
+          {#if entry.guildName}· {m.featureRequests.fromGuild({ guild: entry.guildName })}{/if}
         </p>
         {#if expandedId !== entry.id}
           <p class="text-sm mt-2 line-clamp-2 whitespace-pre-line" style="color: {$colorStore.text}">{entry.body}</p>
@@ -437,7 +438,7 @@
 
         {#if entry.ownerNote}
           <div class="mt-3 rounded-xl p-3 text-sm" style="background: {$colorStore.primary}10; color: {$colorStore.text};">
-            <span class="font-medium" style="color: {$colorStore.primary}">Note from the developers:</span>
+            <span class="font-medium" style="color: {$colorStore.primary}">{m.featureRequests.developerNote()}</span>
             {entry.ownerNote}
           </div>
         {/if}
@@ -450,7 +451,7 @@
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={() => openStatus(entry)}
             >
-              Change status
+              {m.featureRequests.changeStatus()}
             </button>
             <button
               type="button"
@@ -458,7 +459,7 @@
               style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
               onclick={() => requestDelete(entry)}
             >
-              Delete
+              {m.common.delete()}
             </button>
           </div>
         {/if}
@@ -471,8 +472,8 @@
   category="Community"
   guildName={$currentGuild?.name ?? "Mewdeko"}
   icon="fa-lightbulb"
-  subtitle="Suggest features, report bugs, and upvote what others asked for"
-  title="Feature Requests"
+  subtitle={m.features.featureRequestsDescription()}
+  title={m.features.featureRequestsName()}
   {tabs}
   bind:activeTab
   {autoSave}
@@ -496,31 +497,31 @@
     >
       {#if submitted}
         <div class="rounded-xl p-4 mb-4 text-sm" style="background: {$colorStore.primary}15; color: {$colorStore.text};" in:fade>
-          <span class="font-medium" style="color: {$colorStore.primary}">Thanks!</span>
-          Your request "{submitted.title}" was sent to the developers. You can follow it under the Mine tab.
+          <span class="font-medium" style="color: {$colorStore.primary}">{m.featureRequests.submittedThanks()}</span>
+          {m.featureRequests.submittedMessage({ title: submitted.title })}
           <button type="button" class="underline ml-1" style="color: {$colorStore.primary}" onclick={() => (submitted = null)}>
-            Submit another
+            {m.featureRequests.submitAnother()}
           </button>
         </div>
       {/if}
 
       <div class="mb-4">
         <label class="block text-sm font-medium mb-1" for="fr-category" style="color: {$colorStore.muted}">
-          What kind of request is this?
+          {m.featureRequests.formCategoryLabel()}
         </label>
         <DiscordSelector
           id="fr-category"
           type="custom"
           options={categoryOptions}
           selected={formCategory}
-          placeholder="Pick a category"
+          placeholder={m.common.pickCategoryPlaceholder()}
           onchange={onFormCategoryChange}
         />
       </div>
 
       <div class="mb-4">
         <label class="block text-sm font-medium mb-1" for="fr-title" style="color: {$colorStore.muted}">
-          Title
+          {m.common.title()}
         </label>
         <input
           id="fr-title"
@@ -528,18 +529,18 @@
           bind:value={formTitle}
           maxlength="120"
           disabled={submitting}
-          placeholder="One line that sums it up"
+          placeholder={m.featureRequests.formTitlePlaceholder()}
           class="w-full rounded-xl px-3 min-h-[44px] outline-none"
           style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
         />
         <p class="text-xs mt-1 text-right" style="color: {titleRemaining < 0 ? $colorStore.accent : $colorStore.muted}">
-          {titleRemaining} left
+          {m.featureRequests.charsLeft({ count: titleRemaining })}
         </p>
       </div>
 
       <div class="mb-4">
         <label class="block text-sm font-medium mb-1" for="fr-body" style="color: {$colorStore.muted}">
-          Details
+          {m.common.details()}
         </label>
         <textarea
           id="fr-body"
@@ -547,19 +548,19 @@
           bind:value={formBody}
           maxlength="2000"
           disabled={submitting}
-          placeholder="What should it do? If it is a bug, what happened and what did you expect instead?"
+          placeholder={m.featureRequests.formDetailsPlaceholder()}
           class="w-full rounded-xl px-3 py-2 outline-none resize-y"
           style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
         ></textarea>
         <p class="text-xs mt-1 text-right" style="color: {bodyRemaining < 0 ? $colorStore.accent : $colorStore.muted}">
-          {bodyRemaining} left
+          {m.featureRequests.charsLeft({ count: bodyRemaining })}
         </p>
       </div>
 
       {#if $currentGuild}
         <label class="flex items-center gap-3 mb-4 min-h-[44px] cursor-pointer" style="color: {$colorStore.text}">
           <input type="checkbox" bind:checked={formAttachGuild} class="w-5 h-5" />
-          <span class="text-sm">Mention that I was managing {$currentGuild.name}</span>
+          <span class="text-sm">{m.featureRequests.formAttachGuild({ guild: $currentGuild.name })}</span>
         </label>
       {/if}
 
@@ -575,10 +576,10 @@
           disabled={!canSubmit}
           onclick={submit}
         >
-          {submitting ? "Sending..." : "Send to the developers"}
+          {submitting ? m.common.sending() : m.featureRequests.sendButton()}
         </button>
         <span class="text-xs" style="color: {$colorStore.muted}">
-          Up to three requests an hour. Your Discord name is attached so we can follow up.
+          {m.featureRequests.rateLimitHint()}
         </span>
       </div>
     </div>
@@ -586,9 +587,9 @@
     {#if mine.length === 0}
       <div class="rounded-2xl border p-8 text-center" style="border-color: {$colorStore.primary}30; color: {$colorStore.muted};" in:fade>
         <i class="fa-regular fa-lightbulb text-3xl mb-3" style="color: {$colorStore.primary}"></i>
-        <p>You have not submitted anything yet.</p>
+        <p>{m.featureRequests.mineEmpty()}</p>
         <button type="button" class="mt-3 underline" style="color: {$colorStore.primary}" onclick={() => (activeTab = "submit")}>
-          Suggest something
+          {m.featureRequests.mineEmptyAction()}
         </button>
       </div>
     {:else}
@@ -607,12 +608,12 @@
         in:fly={{ y: 20, duration: 300 }}
       >
         <div class="flex items-baseline justify-between gap-3 mb-3">
-          <h2 class="text-sm font-semibold" style="color: {$colorStore.text}">Report channel</h2>
-          <span class="text-xs" style="color: {$colorStore.muted}">Applies to the whole bot, not one server</span>
+          <h2 class="text-sm font-semibold" style="color: {$colorStore.text}">{m.featureRequests.reportChannelHeading()}</h2>
+          <span class="text-xs" style="color: {$colorStore.muted}">{m.common.appliesToWholeBotHint()}</span>
         </div>
 
         <label class="block text-sm font-medium mb-1" for="fr-channel" style="color: {$colorStore.muted}">
-          Channel ID new requests get posted to
+          {m.featureRequests.reportChannelLabel()}
         </label>
         <input
           id="fr-channel"
@@ -621,7 +622,7 @@
           bind:value={channelInput}
           oninput={() => scheduleChannel()}
           onblur={() => { scheduleChannel(true); void autoSave.flush("channel"); }}
-          placeholder="Leave empty to use the join/leave channel"
+          placeholder={m.common.leaveEmptyJoinLeaveHint()}
           class="w-full rounded-xl px-3 min-h-[44px] outline-none font-mono"
           style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
         />
@@ -630,17 +631,18 @@
           <p class="mt-2 text-xs" style="color: {$colorStore.accent}">{settingsError}</p>
         {:else if settings.effectiveChannelId === 0n}
           <p class="mt-2 text-xs" style="color: {$colorStore.accent}">
-            No channel is set and there is no join/leave channel to fall back to, so requests are only stored, not posted.
+            {m.featureRequests.reportChannelUnset()}
           </p>
         {:else if !settings.reachable}
           <p class="mt-2 text-xs" style="color: {$colorStore.accent}">
-            The bot cannot see channel {settings.effectiveChannelId.toString()}, so requests will not be posted.
+            {m.featureRequests.reportChannelUnreachable({ channel: settings.effectiveChannelId.toString() })}
           </p>
         {:else}
           <p class="mt-2 text-xs" style="color: {$colorStore.muted}">
-            Requests go to #{settings.channelName}
-            {#if settings.guildName}in {settings.guildName}{/if}
-            {#if settings.usingFallback}(from the join/leave channel, since no channel is set){/if}
+            {settings.guildName
+              ? m.featureRequests.reportDestinationInGuild({ channel: settings.channelName ?? "", guild: settings.guildName })
+              : m.featureRequests.reportDestination({ channel: settings.channelName ?? "" })}
+            {#if settings.usingFallback}{m.common.joinLeaveChannelFallbackHint()}{/if}
           </p>
         {/if}
       </div>
@@ -671,36 +673,36 @@
       in:fly={{ y: 20, duration: 300 }}
     >
       <div class="flex-1 min-w-0">
-        <label class="block text-sm font-medium mb-1" for="fr-search" style="color: {$colorStore.muted}">Search</label>
+        <label class="block text-sm font-medium mb-1" for="fr-search" style="color: {$colorStore.muted}">{m.common.search()}</label>
         <input
           id="fr-search"
           type="search"
           bind:value={search}
-          placeholder="Title, details, or submitter"
+          placeholder={m.featureRequests.searchPlaceholder()}
           class="w-full rounded-xl px-3 min-h-[44px] outline-none"
           style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
           onkeydown={(e) => e.key === "Enter" && applyFilters()}
         />
       </div>
       <div class="w-full lg:w-44">
-        <label class="block text-sm font-medium mb-1" for="fr-status" style="color: {$colorStore.muted}">Status</label>
+        <label class="block text-sm font-medium mb-1" for="fr-status" style="color: {$colorStore.muted}">{m.common.status()}</label>
         <DiscordSelector
           id="fr-status"
           type="custom"
           options={statusOptions}
           selected={statusFilter}
-          placeholder="Any status"
+          placeholder={m.common.anyStatus()}
           onchange={onStatusFilterChange}
         />
       </div>
       <div class="w-full lg:w-44">
-        <label class="block text-sm font-medium mb-1" for="fr-cat" style="color: {$colorStore.muted}">Category</label>
+        <label class="block text-sm font-medium mb-1" for="fr-cat" style="color: {$colorStore.muted}">{m.common.category()}</label>
         <DiscordSelector
           id="fr-cat"
           type="custom"
           options={categoryOptions}
           selected={categoryFilter}
-          placeholder="Any category"
+          placeholder={m.featureRequests.categoryAny()}
           onchange={onCategoryFilterChange}
         />
       </div>
@@ -712,7 +714,7 @@
                  color: {sort === 'votes' ? '#fff' : $colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
           onclick={() => { sort = "votes"; applyFilters(); }}
         >
-          Top
+          {m.featureRequests.sortTop()}
         </button>
         <button
           type="button"
@@ -721,7 +723,7 @@
                  color: {sort === 'newest' ? '#fff' : $colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
           onclick={() => { sort = "newest"; applyFilters(); }}
         >
-          New
+          {m.common.new()}
         </button>
       </div>
     </div>
@@ -731,9 +733,9 @@
     {:else if entries.length === 0}
       <div class="rounded-2xl border p-8 text-center" style="border-color: {$colorStore.primary}30; color: {$colorStore.muted};" in:fade>
         <i class="fa-regular fa-lightbulb text-3xl mb-3" style="color: {$colorStore.primary}"></i>
-        <p>Nothing here yet. Be the first to suggest something.</p>
+        <p>{m.featureRequests.browseEmpty()}</p>
         <button type="button" class="mt-3 underline" style="color: {$colorStore.primary}" onclick={() => (activeTab = "submit")}>
-          Suggest a feature
+          {m.common.suggestAFeature()}
         </button>
       </div>
     {:else}
@@ -752,9 +754,9 @@
             disabled={page <= 1}
             onclick={() => changePage(page - 1)}
           >
-            Previous
+            {m.common.previous()}
           </button>
-          <span class="text-sm" style="color: {$colorStore.muted}">Page {page} of {totalPages}</span>
+          <span class="text-sm" style="color: {$colorStore.muted}">{m.common.pageOfTotal({ page, total: totalPages })}</span>
           <button
             type="button"
             class="rounded-xl px-4 min-h-[44px] font-medium disabled:opacity-40"
@@ -762,7 +764,7 @@
             disabled={page >= totalPages}
             onclick={() => changePage(page + 1)}
           >
-            Next
+            {m.common.next()}
           </button>
         </div>
       {/if}
@@ -785,24 +787,24 @@
       in:fly={{ y: 20, duration: 200 }}
       out:fly={{ y: -20, duration: 150 }}
     >
-      <h2 id="fr-status-title" class="text-lg font-semibold mb-1" style="color: {$colorStore.text}">Update status</h2>
+      <h2 id="fr-status-title" class="text-lg font-semibold mb-1" style="color: {$colorStore.text}">{m.featureRequests.statusDialogTitle()}</h2>
       <p class="text-sm mb-4 truncate" style="color: {$colorStore.muted}">{statusTarget.title}</p>
 
       <div class="mb-4">
-        <label class="block text-sm font-medium mb-1" for="fr-status-choice" style="color: {$colorStore.muted}">Status</label>
+        <label class="block text-sm font-medium mb-1" for="fr-status-choice" style="color: {$colorStore.muted}">{m.common.status()}</label>
         <DiscordSelector
           id="fr-status-choice"
           type="custom"
           options={statusOptions}
           selected={statusChoice}
-          placeholder="Pick a status"
+          placeholder={m.featureRequests.statusPick()}
           onchange={onStatusChoiceChange}
         />
       </div>
 
       <div class="mb-4">
         <label class="block text-sm font-medium mb-1" for="fr-status-note" style="color: {$colorStore.muted}">
-          Note for the submitter (optional)
+          {m.featureRequests.statusNoteLabel()}
         </label>
         <textarea
           id="fr-status-note"
@@ -821,7 +823,7 @@
           style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
           onclick={() => (statusTarget = null)}
         >
-          Cancel
+          {m.common.cancel()}
         </button>
         <button
           type="button"
@@ -830,7 +832,7 @@
           disabled={savingStatus}
           onclick={saveStatus}
         >
-          {savingStatus ? "Saving..." : "Save"}
+          {savingStatus ? m.common.saving() : m.common.save()}
         </button>
       </div>
     </div>
@@ -839,10 +841,10 @@
 
 <ConfirmationModal
   bind:isOpen={confirmDeleteOpen}
-  title="Delete this request?"
-  message={deleteTarget ? `"${deleteTarget.title}" and its votes will be removed. This cannot be undone.` : ""}
-  confirmText="Delete"
-  cancelText="Keep"
+  title={m.featureRequests.deleteTitle()}
+  message={deleteTarget ? m.featureRequests.deleteMessage({ title: deleteTarget.title }) : ""}
+  confirmText={m.common.delete()}
+  cancelText={m.featureRequests.deleteKeep()}
   variant="danger"
   onconfirm={confirmDelete}
   oncancel={() => (deleteTarget = null)}

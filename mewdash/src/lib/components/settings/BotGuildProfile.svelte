@@ -1,5 +1,6 @@
 <!-- lib/components/settings/BotGuildProfile.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
@@ -11,24 +12,24 @@
   type ResetPart = "avatar" | "banner" | "bio" | "all";
 
   /** Copy for the confirmation shown before each kind of reset. */
-  const RESET_COPY: Record<ResetPart, { title: string; message: string }> = {
+  const resetCopy = $derived<Record<ResetPart, { title: string; message: string }>>({
     avatar: {
-      title: "Reset the avatar?",
-      message: "The bot goes back to its normal avatar in this server."
+      title: m.settings.profileResetAvatarTitle(),
+      message: m.settings.profileResetAvatarMessage()
     },
     banner: {
-      title: "Reset the banner?",
-      message: "The bot goes back to its normal banner in this server."
+      title: m.settings.profileResetBannerTitle(),
+      message: m.settings.profileResetBannerMessage()
     },
     bio: {
-      title: "Reset the bio?",
-      message: "The bot goes back to its normal bio in this server."
+      title: m.settings.profileResetBioTitle(),
+      message: m.settings.profileResetBioMessage()
     },
     all: {
-      title: "Reset the whole profile?",
-      message: "The avatar, banner and bio in this server all go back to the bot's normal profile."
+      title: m.settings.profileResetAllTitle(),
+      message: m.settings.profileResetAllMessage()
     }
-  };
+  });
 
   // State
   let profile = $state({
@@ -96,7 +97,7 @@
       }
     } catch (err: any) {
       logger.error("Failed to reset bot guild profile:", err);
-      error = "Failed to reset the profile";
+      error = m.settings.profileResetFailed();
     } finally {
       saving = false;
     }
@@ -109,13 +110,13 @@
 
     // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      error = "File too large. Maximum size is 10MB.";
+      error = m.settings.profileFileTooLarge({ size: "10MB" });
       return;
     }
 
     // Check file type
     if (!file.type.startsWith('image/')) {
-      error = "Please select an image file.";
+      error = m.settings.profileSelectImage();
       return;
     }
 
@@ -136,13 +137,13 @@
 
     // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      error = "File too large. Maximum size is 10MB.";
+      error = m.settings.profileFileTooLarge({ size: "10MB" });
       return;
     }
 
     // Check file type
     if (!file.type.startsWith('image/')) {
-      error = "Please select an image file.";
+      error = m.settings.profileSelectImage();
       return;
     }
 
@@ -167,7 +168,7 @@
       error = null;
     } catch (err: any) {
       logger.error("Failed to fetch bot guild profile:", err);
-      error = "Failed to load profile";
+      error = m.settings.profileLoadFailed();
     } finally {
       loading = false;
     }
@@ -182,14 +183,14 @@
       await guildApi.setBotGuildProfile($currentGuild.id, {
         avatarUrl: avatarInput.trim()
       });
-      success = "Avatar updated successfully!";
+      success = m.settings.profileAvatarUpdated();
       setTimeout(() => success = null, 3000);
       editingAvatar = false;
       avatarInput = "";
       await fetchProfile();
     } catch (err: any) {
       logger.error("Failed to save avatar:", err);
-      error = "Failed to update avatar";
+      error = m.settings.profileAvatarUpdateFailed();
     } finally {
       saving = false;
     }
@@ -204,14 +205,14 @@
       await guildApi.setBotGuildProfile($currentGuild.id, {
         bannerUrl: bannerInput.trim()
       });
-      success = "Banner updated successfully!";
+      success = m.settings.profileBannerUpdated();
       setTimeout(() => success = null, 3000);
       editingBanner = false;
       bannerInput = "";
       await fetchProfile();
     } catch (err: any) {
       logger.error("Failed to save banner:", err);
-      error = "Failed to update banner";
+      error = m.settings.profileBannerUpdateFailed();
     } finally {
       saving = false;
     }
@@ -226,13 +227,13 @@
       await guildApi.setBotGuildProfile($currentGuild.id, {
         bio: bioInput.trim()
       });
-      success = "Bio updated successfully!";
+      success = m.settings.profileBioUpdated();
       setTimeout(() => success = null, 3000);
       editingBio = false;
       await fetchProfile();
     } catch (err: any) {
       logger.error("Failed to save bio:", err);
-      error = "Failed to update bio";
+      error = m.settings.profileBioUpdateFailed();
     } finally {
       saving = false;
     }
@@ -281,8 +282,8 @@
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
     </div>
     <div class="flex-1">
-      <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Bot Guild Profile</h2>
-      <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">Customize bot appearance in this server</p>
+      <h2 class="text-lg font-bold" style="color: {$colorStore.text}">{m.settings.profileTitle()}</h2>
+      <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">{m.settings.profileSubtitle()}</p>
     </div>
     {#if !loading && hasCustomProfile}
       <button
@@ -293,7 +294,7 @@
         <span class="flex items-center gap-1.5">
           <i class="fa-utility-duo fa-regular fa-arrow-rotate-left"
              style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
-          <span class="hidden md:inline">Reset all</span>
+          <span class="hidden md:inline">{m.common.resetAll()}</span>
         </span>
       </button>
     {/if}
@@ -336,7 +337,7 @@
         <div class="flex flex-col md:flex-row items-start md:items-center gap-3 mb-3">
           <div class="flex items-center gap-3 flex-1">
             {#if profile.avatarUrl}
-              <img src={profile.avatarUrl} alt="Bot Avatar" class="w-12 h-12 md:w-16 md:h-16 rounded-full">
+              <img src={profile.avatarUrl} alt={m.settings.profileAvatarAlt()} class="w-12 h-12 md:w-16 md:h-16 rounded-full">
             {:else}
               <div class="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center"
                    style="background: {$colorStore.primary}20;">
@@ -345,8 +346,8 @@
               </div>
             {/if}
             <div class="flex-1">
-              <h3 class="font-semibold text-sm md:text-base" style="color: {$colorStore.text}">Guild Avatar</h3>
-              <p class="text-xs" style="color: {$colorStore.muted}">Custom avatar for this server</p>
+              <h3 class="font-semibold text-sm md:text-base" style="color: {$colorStore.text}">{m.settings.profileAvatarTitle()}</h3>
+              <p class="text-xs" style="color: {$colorStore.muted}">{m.settings.profileAvatarHint()}</p>
             </div>
           </div>
           {#if !editingAvatar}
@@ -358,7 +359,7 @@
                 <span class="flex items-center gap-1.5">
                   <i class="fa-utility-duo fa-regular fa-file"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-                  <span class="hidden md:inline">Upload</span>
+                  <span class="hidden md:inline">{m.common.upload()}</span>
                 </span>
               </button>
               <button
@@ -368,7 +369,7 @@
                 <span class="flex items-center gap-1.5">
                   <i class="fa-utility-duo fa-regular fa-image"
                      style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
-                  <span class="hidden md:inline">URL</span>
+                  <span class="hidden md:inline">{m.common.url()}</span>
                 </span>
               </button>
               {#if profile.avatarUrl}
@@ -380,7 +381,7 @@
                   <span class="flex items-center gap-1.5">
                     <i class="fa-utility-duo fa-regular fa-arrow-rotate-left"
                        style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
-                    <span class="hidden md:inline">Reset</span>
+                    <span class="hidden md:inline">{m.common.reset()}</span>
                   </span>
                 </button>
               {/if}
@@ -401,7 +402,7 @@
             <input
               type="text"
               bind:value={avatarInput}
-              placeholder="Enter image URL"
+              placeholder={m.settings.profileImageUrlPlaceholder()}
               class="w-full px-3 py-2 rounded-lg text-sm"
               style="background: {$colorStore.background}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;" />
             <div class="flex gap-2">
@@ -410,13 +411,13 @@
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                 onclick={saveAvatar}
                 disabled={saving || !avatarInput.trim()}>
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? m.common.saving() : m.common.save()}
               </button>
               <button
                 class="px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
                 style="background: {$colorStore.primary}10; color: {$colorStore.muted};"
                 onclick={() => cancelEdit('avatar')}>
-                Cancel
+                {m.common.cancel()}
               </button>
             </div>
           </div>
@@ -429,8 +430,8 @@
         <div class="flex flex-col gap-3 mb-3">
           <div class="flex items-center justify-between">
             <div class="flex-1">
-              <h3 class="font-semibold text-sm md:text-base" style="color: {$colorStore.text}">Guild Banner</h3>
-              <p class="text-xs" style="color: {$colorStore.muted}">Custom banner for this server</p>
+              <h3 class="font-semibold text-sm md:text-base" style="color: {$colorStore.text}">{m.settings.profileBannerTitle()}</h3>
+              <p class="text-xs" style="color: {$colorStore.muted}">{m.settings.profileBannerHint()}</p>
             </div>
             {#if !editingBanner}
               <div class="flex gap-2">
@@ -441,7 +442,7 @@
                   <span class="flex items-center gap-1.5">
                     <i class="fa-utility-duo fa-regular fa-file"
                        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-                    <span class="hidden md:inline">Upload</span>
+                    <span class="hidden md:inline">{m.common.upload()}</span>
                   </span>
                 </button>
                 <button
@@ -451,7 +452,7 @@
                   <span class="flex items-center gap-1.5">
                     <i class="fa-utility-duo fa-regular fa-image"
                        style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
-                    <span class="hidden md:inline">URL</span>
+                    <span class="hidden md:inline">{m.common.url()}</span>
                   </span>
                 </button>
                 {#if profile.bannerUrl}
@@ -463,7 +464,7 @@
                     <span class="flex items-center gap-1.5">
                       <i class="fa-utility-duo fa-regular fa-arrow-rotate-left"
                          style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
-                      <span class="hidden md:inline">Reset</span>
+                      <span class="hidden md:inline">{m.common.reset()}</span>
                     </span>
                   </button>
                 {/if}
@@ -471,11 +472,11 @@
             {/if}
           </div>
           {#if profile.bannerUrl}
-            <img src={profile.bannerUrl} alt="Bot Banner" class="w-full h-24 md:h-32 object-cover rounded-lg">
+            <img src={profile.bannerUrl} alt={m.settings.profileBannerAlt()} class="w-full h-24 md:h-32 object-cover rounded-lg">
           {:else}
             <div class="w-full h-24 md:h-32 rounded-lg flex items-center justify-center"
                  style="background: {$colorStore.primary}10;">
-              <p class="text-xs" style="color: {$colorStore.muted}">No banner set</p>
+              <p class="text-xs" style="color: {$colorStore.muted}">{m.settings.profileNoBanner()}</p>
             </div>
           {/if}
         </div>
@@ -493,7 +494,7 @@
             <input
               type="text"
               bind:value={bannerInput}
-              placeholder="Enter image URL"
+              placeholder={m.settings.profileImageUrlPlaceholder()}
               class="w-full px-3 py-2 rounded-lg text-sm"
               style="background: {$colorStore.background}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;" />
             <div class="flex gap-2">
@@ -502,13 +503,13 @@
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                 onclick={saveBanner}
                 disabled={saving || !bannerInput.trim()}>
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? m.common.saving() : m.common.save()}
               </button>
               <button
                 class="px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
                 style="background: {$colorStore.primary}10; color: {$colorStore.muted};"
                 onclick={() => cancelEdit('banner')}>
-                Cancel
+                {m.common.cancel()}
               </button>
             </div>
           </div>
@@ -520,8 +521,8 @@
            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
         <div class="flex items-center justify-between mb-3">
           <div class="flex-1">
-            <h3 class="font-semibold text-sm md:text-base" style="color: {$colorStore.text}">Guild Bio</h3>
-            <p class="text-xs" style="color: {$colorStore.muted}">Custom bio for this server</p>
+            <h3 class="font-semibold text-sm md:text-base" style="color: {$colorStore.text}">{m.settings.profileBioTitle()}</h3>
+            <p class="text-xs" style="color: {$colorStore.muted}">{m.settings.profileBioHint()}</p>
           </div>
           {#if !editingBio}
             <div class="flex gap-2">
@@ -529,7 +530,7 @@
                 class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02]"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                 onclick={() => editingBio = true}>
-                Edit
+                {m.common.edit()}
               </button>
               {#if profile.bio}
                 <button
@@ -540,7 +541,7 @@
                   <span class="flex items-center gap-1.5">
                     <i class="fa-utility-duo fa-regular fa-arrow-rotate-left"
                        style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
-                    <span class="hidden md:inline">Reset</span>
+                    <span class="hidden md:inline">{m.common.reset()}</span>
                   </span>
                 </button>
               {/if}
@@ -552,7 +553,7 @@
           <div class="space-y-2" transition:fly={{ y: -10, duration: 200 }}>
             <textarea
               bind:value={bioInput}
-              placeholder="Enter bot bio for this server..."
+              placeholder={m.settings.profileBioPlaceholder()}
               rows="3"
               class="w-full px-3 py-2 rounded-lg text-sm resize-none"
               style="background: {$colorStore.background}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
@@ -563,27 +564,26 @@
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                 onclick={saveBio}
                 disabled={saving}>
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? m.common.saving() : m.common.save()}
               </button>
               <button
                 class="px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
                 style="background: {$colorStore.primary}10; color: {$colorStore.muted};"
                 onclick={() => cancelEdit('bio')}>
-                Cancel
+                {m.common.cancel()}
               </button>
             </div>
           </div>
         {:else}
           <p class="text-sm whitespace-pre-wrap" style="color: {bioInput ? $colorStore.text : $colorStore.muted}">
-            {bioInput || "No bio set"}
+            {bioInput || m.settings.profileNoBio()}
           </p>
         {/if}
       </div>
 
       <!-- Info Note -->
       <div class="p-3 rounded-lg text-xs" style="background: {$colorStore.primary}08; color: {$colorStore.muted}">
-        <strong style="color: {$colorStore.text}">Note:</strong> These settings only affect how the bot appears in this specific server.
-        The bot's global profile remains unchanged.
+        <strong style="color: {$colorStore.text}">{m.settings.profileNoteLabel()}</strong> {m.settings.profileNote()}
       </div>
     </div>
   {/if}
@@ -591,9 +591,9 @@
 
 <ConfirmationModal
   isOpen={pendingReset !== null}
-  title={pendingReset ? RESET_COPY[pendingReset].title : ""}
-  message={pendingReset ? RESET_COPY[pendingReset].message : ""}
-  confirmText="Reset"
+  title={pendingReset ? resetCopy[pendingReset].title : ""}
+  message={pendingReset ? resetCopy[pendingReset].message : ""}
+  confirmText={m.common.reset()}
   variant="warning"
   onconfirm={() => {
     const part = pendingReset;

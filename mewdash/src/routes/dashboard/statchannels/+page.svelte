@@ -1,5 +1,6 @@
 <!-- routes/dashboard/statchannels/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import { fade, fly } from "svelte/transition";
     import { colorStore } from "$lib/stores/colorStore";
     import { currentGuild } from "$lib/stores/currentGuild";
@@ -21,7 +22,7 @@
     import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
     const autoSave = createAutoSave({
-        onError: () => showMessage("Couldn't save stat channel settings. Use Retry to try again.", "error")
+        onError: () => showMessage(m.statchannels.notifySaveFailed(), "error")
     });
 
     /**
@@ -47,22 +48,22 @@
     /** Mirrors StatChannelValueKind on the bot. */
     const VALUE_KIND = { Number: 0, Text: 1, Boolean: 2 } as const;
 
-    const mechanismCopy: Record<number, { label: string; blurb: string; caution?: string }> = {
+    const mechanismCopy: Record<number, { label: string; blurb: string; caution?: string }> = $derived({
         0: {
-            label: "Rename only",
-            blurb: "Edits the existing channel name. The channel keeps its ID, position and permissions.",
-            caution: "Discord allows two name edits per 10 minutes per channel, so this cannot refresh faster than every 5 minutes."
+            label: m.statchannels.mechanismRenameLabel(),
+            blurb: m.statchannels.mechanismRenameBlurb(),
+            caution: m.statchannels.mechanismRenameCaution()
         },
         1: {
-            label: "Delete and recreate",
-            blurb: "Recreates the channel each update using the far more permissive guild channel bucket, so it can refresh every minute.",
-            caution: "The channel ID changes on every update and each refresh writes two audit log entries."
+            label: m.statchannels.mechanismRecreateLabel(),
+            blurb: m.statchannels.mechanismRecreateBlurb(),
+            caution: m.statchannels.mechanismRecreateCaution()
         },
         2: {
-            label: "Auto (recommended)",
-            blurb: "Renames while the per-channel budget allows it and only falls back to recreating when you have asked for a faster refresh than a rename can deliver."
+            label: m.statchannels.mechanismAutoLabel(),
+            blurb: m.statchannels.mechanismAutoBlurb()
         }
-    };
+    });
 
     let loading = $state(false);
     let saving = $state(false);
@@ -138,9 +139,9 @@
     );
 
     let mechanismOptions = $derived(
-        (metadata?.mechanisms ?? []).map((m) => ({
-            id: m.mechanism.toString(),
-            name: mechanismCopy[m.mechanism]?.label ?? m.name
+        (metadata?.mechanisms ?? []).map((mech) => ({
+            id: mech.mechanism.toString(),
+            name: mechanismCopy[mech.mechanism]?.label ?? mech.name
         }))
     );
 
@@ -148,7 +149,7 @@
      * The shortest refresh the currently chosen mechanism can actually sustain.
      */
     let minimumInterval = $derived(
-        metadata?.mechanisms.find((m) => m.mechanism === addForm.updateMechanism)?.minimumIntervalMinutes ?? 1
+        metadata?.mechanisms.find((mech) => mech.mechanism === addForm.updateMechanism)?.minimumIntervalMinutes ?? 1
     );
 
     /**
@@ -159,14 +160,14 @@
         ...(selectedDefinition?.placeholders ?? [])
     ]);
 
-    const tabs = [
-        { id: "channels", label: "Stat Channels", icon: "fa-chart-simple" },
-        { id: "add", label: "Add", icon: "fa-plus" },
-        { id: "settings", label: "Defaults", icon: "fa-sliders" }
-    ];
+    const tabs = $derived([
+        { id: "channels", label: m.features.statchannelsName(), icon: "fa-chart-simple" },
+        { id: "add", label: m.common.add(), icon: "fa-plus" },
+        { id: "settings", label: m.statchannels.tabDefaults(), icon: "fa-sliders" }
+    ]);
 
     let actionButtons = $derived([
-        { label: "Refresh", icon: "fa-arrows-rotate", action: loadData, loading }
+        { label: m.common.refresh(), icon: "fa-arrows-rotate", action: loadData, loading }
     ]);
 
     async function loadData() {
@@ -207,7 +208,7 @@
             await refreshPreview();
         } catch (err) {
             logger.error("Failed to load stat channel data:", err);
-            showMessage("Failed to load data", "error");
+            showMessage(m.common.failedToLoadData(), "error");
         } finally {
             loading = false;
         }
@@ -237,7 +238,7 @@
 
     function onMechanismChange(mechanism: number) {
         addForm.updateMechanism = mechanism;
-        const min = metadata?.mechanisms.find((m) => m.mechanism === mechanism)?.minimumIntervalMinutes ?? 1;
+        const min = metadata?.mechanisms.find((mech) => mech.mechanism === mechanism)?.minimumIntervalMinutes ?? 1;
         if (addForm.updateIntervalMinutes < min) addForm.updateIntervalMinutes = min;
     }
 
@@ -277,7 +278,7 @@
     async function addStatChannel() {
         if (!$currentGuild?.id) return;
         if (!createNew && !addForm.channelId) {
-            showMessage("Select a voice channel", "error");
+            showMessage(m.statchannels.notifySelectVoice(), "error");
             return;
         }
 
@@ -305,7 +306,7 @@
             await loadData();
         } catch (err) {
             logger.error("Failed to add stat channel:", err);
-            showMessage("Failed to add. That channel may already be a stat channel.", "error");
+            showMessage(m.statchannels.notifyAddFailed(), "error");
         } finally {
             saving = false;
         }
@@ -326,7 +327,7 @@
             await statChannelsApi.removeStatChannel($currentGuild.id, removeTarget.channelId);
             await loadData();
         } catch (err) {
-            showMessage("Failed to remove", "error");
+            showMessage(m.statchannels.notifyRemoveFailed(), "error");
         } finally {
             removeTarget = null;
         }
@@ -340,7 +341,7 @@
     }
 
     function intervalMinimum(mechanism: number) {
-        return metadata?.mechanisms.find((m) => m.mechanism === mechanism)?.minimumIntervalMinutes ?? 1;
+        return metadata?.mechanisms.find((mech) => mech.mechanism === mechanism)?.minimumIntervalMinutes ?? 1;
     }
 
     function isValidInterval(value: unknown, min: number): value is number {
@@ -402,7 +403,7 @@
                                   metadata?.displayStyles.find((s) => s.style === updated.displayStyle)?.name ??
                                   c.styleName,
                               mechanismName:
-                                  metadata?.mechanisms.find((m) => m.mechanism === updated.updateMechanism)?.name ??
+                                  metadata?.mechanisms.find((mech) => mech.mechanism === updated.updateMechanism)?.name ??
                                   c.mechanismName
                           }
                         : c
@@ -504,12 +505,12 @@
   {actionButtons}
   {autoSave}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-chart-simple"
   statusMessages={statusMessageContent}
-  subtitle="Voice channels displaying live server statistics"
+  subtitle={m.statchannels.pageSubtitle()}
   {tabs}
-  title="Stat Channels"
+  title={m.features.statchannelsName()}
 >
     {#if activeTab === 'channels'}
         <div class="w-full space-y-4" in:fade={{ duration: 200 }}>
@@ -519,13 +520,13 @@
                             border-color: {$colorStore.primary}30;">
                     <i class="fa-utility-duo fa-regular fa-chart-simple"
                        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-                    <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">No stat channels configured</p>
-                    <p class="text-sm mt-1" style="color: {$colorStore.muted}">Add a voice channel to display live server stats</p>
+                    <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">{m.statchannels.listEmptyTitle()}</p>
+                    <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.statchannels.listEmptyText()}</p>
                     <button class="mt-4 flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] mx-auto"
                             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                             onclick={() => { activeTab = 'add'; }}>
                         <i class="fa-solid fa-plus" style="font-size: 14px;"></i>
-                        Add Stat Channel
+                        {m.statchannels.listAdd()}
                     </button>
                 </div>
             {:else}
@@ -552,13 +553,12 @@
                                             </span>
                                         {/if}
                                     </div>
-                                    <p class="text-sm" style="color: {$colorStore.muted}">Template:
+                                    <p class="text-sm" style="color: {$colorStore.muted}">{m.statchannels.listTemplate()}
                                         <code>{sc.template}</code></p>
                                     <div class="flex items-center gap-3 flex-wrap mt-1 text-xs"
                                          style="color: {$colorStore.muted}">
                                         <span><i class="fa-solid fa-rotate"></i>
-                                            {mechanismCopy[sc.updateMechanism]?.label ?? sc.mechanismName}
-                                            every {sc.updateIntervalMinutes}m</span>
+                                            {m.statchannels.listRefreshEvery({ mechanism: mechanismCopy[sc.updateMechanism]?.label ?? sc.mechanismName, minutes: sc.updateIntervalMinutes })}</span>
                                         <span><i class="fa-solid fa-hashtag"></i> {sc.styleName}</span>
                                         {#if sc.roleName}
                                             <span><i class="fa-solid fa-at"></i> {sc.roleName}</span>
@@ -576,13 +576,13 @@
                                             style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                                             onclick={() => startEditing(sc)}>
                                         <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
-                                        <span class="md:hidden">Edit</span>
+                                        <span class="md:hidden">{m.common.edit()}</span>
                                     </button>
                                     <button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all hover:scale-[1.02] text-sm"
                                             style="background: #ef444410; color: #ef4444;"
                                             onclick={() => confirmRemove(sc)}>
                                         <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
-                                        <span class="md:hidden">Remove</span>
+                                        <span class="md:hidden">{m.common.remove()}</span>
                                     </button>
                                 {/if}
                             </div>
@@ -594,7 +594,7 @@
                                  transition:fade={{ duration: 150 }}>
                                 <div class="md:col-span-2">
                                     <label for="edit-template-{sc.id}" class="block text-sm font-medium mb-2"
-                                           style="color: {$colorStore.text}">Template</label>
+                                           style="color: {$colorStore.text}">{m.common.template()}</label>
                                     <input id="edit-template-{sc.id}" type="text" bind:value={editForm.template}
                                            oninput={() => saveChannel(sc)}
                                            onblur={() => autoSave.flush(channelKey(sc.id))}
@@ -604,20 +604,20 @@
 
                                 <div>
                                     <label for="edit-style-{sc.id}" class="block text-sm font-medium mb-2"
-                                           style="color: {$colorStore.text}">Counter Style</label>
+                                           style="color: {$colorStore.text}">{m.statchannels.editStyle()}</label>
                                     <DiscordSelector id="edit-style-{sc.id}" type="custom" options={styleOptions}
                                                      selected={editForm.displayStyle.toString()}
-                                                     placeholder="Select style"
+                                                     placeholder={m.statchannels.editStylePlaceholder()}
                                                      onchange={(detail) => { editForm.displayStyle = detail.selected ? parseInt(detail.selected as string) : 1; saveChannel(sc); }} />
                                 </div>
 
                                 <div>
                                     <label for="edit-mechanism-{sc.id}" class="block text-sm font-medium mb-2"
-                                           style="color: {$colorStore.text}">Update Mechanism</label>
+                                           style="color: {$colorStore.text}">{m.statchannels.editMechanism()}</label>
                                     <DiscordSelector id="edit-mechanism-{sc.id}" type="custom"
                                                      options={mechanismOptions}
                                                      selected={editForm.updateMechanism.toString()}
-                                                     placeholder="Select mechanism"
+                                                     placeholder={m.statchannels.editMechanismPlaceholder()}
                                                      onchange={(detail) => {
                                                          editForm.updateMechanism = detail.selected ? parseInt(detail.selected as string) : 2;
                                                          const min = intervalMinimum(editForm.updateMechanism);
@@ -628,7 +628,7 @@
 
                                 <div>
                                     <label for="edit-interval-{sc.id}" class="block text-sm font-medium mb-2"
-                                           style="color: {$colorStore.text}">Refresh Interval (minutes)</label>
+                                           style="color: {$colorStore.text}">{m.statchannels.editInterval()}</label>
                                     <input id="edit-interval-{sc.id}" type="number"
                                            min={intervalMinimum(editForm.updateMechanism)}
                                            max="1440" bind:value={editForm.updateIntervalMinutes}
@@ -643,11 +643,10 @@
                                             style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                                             onclick={stopEditing}>
                                         <i class="fa-solid fa-check" style="font-size: 13px;"></i>
-                                        Done
+                                        {m.common.done()}
                                     </button>
                                     <p class="text-xs" style="color: {$colorStore.muted}">
-                                        Changes save automatically. Each save renames the channel, which Discord limits to
-                                        two per 10 minutes.
+                                        {m.statchannels.editHint()}
                                     </p>
                                 </div>
                             </div>
@@ -665,7 +664,7 @@
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fa-utility-duo fa-regular fa-circle-plus"
                        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Add Stat Channel</h2>
+                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.statchannels.listAdd()}</h2>
                 </div>
 
                 <!-- Create/Existing toggle -->
@@ -675,14 +674,14 @@
                                    color: {createNew ? $colorStore.primary : $colorStore.muted};
                                    border: 1px solid {createNew ? $colorStore.primary : $colorStore.primary + '20'};"
                             onclick={() => { createNew = true; }}>
-                        Create New Channel
+                        {m.statchannels.addCreateNew()}
                     </button>
                     <button class="px-4 py-2 rounded-xl text-sm font-medium transition-all"
                             style="background: {!createNew ? $colorStore.primary + '30' : $colorStore.primary + '10'};
                                    color: {!createNew ? $colorStore.primary : $colorStore.muted};
                                    border: 1px solid {!createNew ? $colorStore.primary : $colorStore.primary + '20'};"
                             onclick={() => { createNew = false; }}>
-                        Use Existing Channel
+                        {m.statchannels.addUseExisting()}
                     </button>
                 </div>
 
@@ -690,33 +689,33 @@
                     {#if createNew}
                         <div>
                             <label for="f-category" class="block text-sm font-medium mb-2"
-                                   style="color: {$colorStore.text}">Category (optional)</label>
+                                   style="color: {$colorStore.text}">{m.common.categoryOptional()}</label>
                             <DiscordSelector id="f-category" type="channel" options={categoryChannels}
-                                             selected={addForm.categoryId} placeholder="No category"
+                                             selected={addForm.categoryId} placeholder={m.statchannels.addNoCategory()}
                                              onchange={(detail) => { addForm.categoryId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
                         </div>
                     {:else}
                         <div>
                             <label for="f-voice" class="block text-sm font-medium mb-2"
-                                   style="color: {$colorStore.text}">Voice Channel</label>
+                                   style="color: {$colorStore.text}">{m.common.voiceChannel()}</label>
                             <DiscordSelector id="f-voice" type="channel" options={voiceChannels}
-                                             selected={addForm.channelId} placeholder="Select voice channel"
+                                             selected={addForm.channelId} placeholder={m.statchannels.addSelectVoice()}
                                              onchange={(detail) => { addForm.channelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
                         </div>
                     {/if}
 
                     <div>
                         <label for="f-stat-type" class="block text-sm font-medium mb-2"
-                               style="color: {$colorStore.text}">Counter</label>
+                               style="color: {$colorStore.text}">{m.statchannels.addCounter()}</label>
                         <DiscordSelector id="f-stat-type" type="custom" options={statTypeOptions}
-                                         selected={addForm.statType.toString()} placeholder="Select a counter"
+                                         selected={addForm.statType.toString()} placeholder={m.statchannels.addSelectCounter()}
                                          onchange={(detail) => onStatTypeChange(detail.selected ? parseInt(detail.selected as string) : 0)} />
                         {#if selectedDefinition}
                             <p class="text-xs mt-2" style="color: {$colorStore.muted}">
                                 {selectedDefinition.description}
                             </p>
                             <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                                Example: <code
+                                {m.statchannels.addExample()} <code
                               style="color: {$colorStore.primary}">{selectedDefinition.example}</code>
                             </p>
                         {/if}
@@ -726,9 +725,9 @@
                     {#if needs(REQUIREMENT.Role)}
                         <div>
                             <label for="f-role" class="block text-sm font-medium mb-2"
-                                   style="color: {$colorStore.text}">Role</label>
+                                   style="color: {$colorStore.text}">{m.common.role()}</label>
                             <DiscordSelector id="f-role" type="role" options={guildRoles}
-                                             selected={addForm.roleId} placeholder="Select role"
+                                             selected={addForm.roleId} placeholder={m.common.selectRolePlaceholder()}
                                              onchange={(detail) => { addForm.roleId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; refreshPreview(); }} />
                         </div>
                     {/if}
@@ -736,7 +735,7 @@
                     {#if needs(REQUIREMENT.Date)}
                         <div>
                             <label for="f-date" class="block text-sm font-medium mb-2"
-                                   style="color: {$colorStore.text}">Target Date</label>
+                                   style="color: {$colorStore.text}">{m.statchannels.addTargetDate()}</label>
                             <input id="f-date" type="datetime-local" bind:value={addForm.countdownDate}
                                    oninput={refreshPreview}
                                    class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
@@ -747,7 +746,7 @@
                     {#if needs(REQUIREMENT.Goal)}
                         <div>
                             <label for="f-goal" class="block text-sm font-medium mb-2"
-                                   style="color: {$colorStore.text}">Goal Target</label>
+                                   style="color: {$colorStore.text}">{m.statchannels.addGoal()}</label>
                             <input id="f-goal" type="number" min="1" bind:value={addForm.goalTarget}
                                    oninput={refreshPreview}
                                    class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
@@ -758,13 +757,13 @@
                     {#if needs(REQUIREMENT.CounterName)}
                         <div>
                             <label for="f-counter-name" class="block text-sm font-medium mb-2"
-                                   style="color: {$colorStore.text}">Twitch Counter Name</label>
+                                   style="color: {$colorStore.text}">{m.statchannels.addTwitchCounter()}</label>
                             <input id="f-counter-name" type="text" bind:value={addForm.targetName}
-                                   oninput={refreshPreview} placeholder="deaths"
+                                   oninput={refreshPreview} placeholder={m.statchannels.addTwitchCounterPlaceholder()}
                                    class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                             <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                                The name of a counter your Twitch chat commands already update.
+                                {m.statchannels.addTwitchCounterHint()}
                             </p>
                         </div>
                     {/if}
@@ -772,9 +771,9 @@
                     {#if needs(REQUIREMENT.CountingChannel)}
                         <div>
                             <label for="f-counting" class="block text-sm font-medium mb-2"
-                                   style="color: {$colorStore.text}">Counting Channel</label>
+                                   style="color: {$colorStore.text}">{m.features.wizardCountingStepChannelTitle()}</label>
                             <DiscordSelector id="f-counting" type="channel" options={countingChannels}
-                                             selected={addForm.targetId} placeholder="Select counting channel"
+                                             selected={addForm.targetId} placeholder={m.statchannels.addSelectCounting()}
                                              onchange={(detail) => { addForm.targetId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; refreshPreview(); }} />
                         </div>
                     {/if}
@@ -782,16 +781,16 @@
                     {#if needs(REQUIREMENT.MinecraftServer)}
                         <div>
                             <label for="f-mcserver" class="block text-sm font-medium mb-2"
-                                   style="color: {$colorStore.text}">Minecraft Server</label>
+                                   style="color: {$colorStore.text}">{m.statchannels.addMinecraftServer()}</label>
                             <DiscordSelector id="f-mcserver" type="custom" options={minecraftServers}
-                                             selected={addForm.targetId} placeholder="Select server"
+                                             selected={addForm.targetId} placeholder={m.statchannels.addSelectServer()}
                                              onchange={(detail) => { addForm.targetId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; refreshPreview(); }} />
                         </div>
                     {/if}
 
                     <div class="md:col-span-2">
                         <label for="f-template" class="block text-sm font-medium mb-2"
-                               style="color: {$colorStore.text}">Template</label>
+                               style="color: {$colorStore.text}">{m.common.template()}</label>
                         <input id="f-template" type="text" bind:value={addForm.template} oninput={refreshPreview}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
@@ -815,7 +814,7 @@
                             <i class="fa-solid fa-volume-high"
                                style="color: {$colorStore.muted}; font-size: 15px;"></i>
                             <span class="font-medium truncate" style="color: {$colorStore.text}">
-                                {previewText || (previewPending ? "Rendering..." : "Preview unavailable")}
+                                {previewText || (previewPending ? m.statchannels.addPreviewRendering() : m.statchannels.addPreviewUnavailable())}
                             </span>
                             {#if previewPending}
                                 <i class="fa-solid fa-circle-notch fa-spin"
@@ -823,30 +822,29 @@
                             {/if}
                         </div>
                         <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                            Live preview rendered against this server's current data.
+                            {m.statchannels.addPreviewHint()}
                         </p>
                     </div>
 
                     <div>
                         <label for="f-style" class="block text-sm font-medium mb-2"
-                               style="color: {$colorStore.text}">Counter Style</label>
+                               style="color: {$colorStore.text}">{m.statchannels.editStyle()}</label>
                         <DiscordSelector id="f-style" type="custom" options={styleOptions}
-                                         selected={addForm.displayStyle.toString()} placeholder="Select style"
+                                         selected={addForm.displayStyle.toString()} placeholder={m.statchannels.editStylePlaceholder()}
                                          onchange={(detail) => { addForm.displayStyle = detail.selected ? parseInt(detail.selected as string) : 1; refreshPreview(); }} />
                         {#if selectedDefinition?.valueKind !== VALUE_KIND.Number}
                             <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                                This counter produces {selectedDefinition?.valueKindName?.toLowerCase()} rather than a
-                                number, so the style only affects %count.raw%.
+                                {m.statchannels.addStyleTextHint({ kind: selectedDefinition?.valueKindName?.toLowerCase() ?? "" })}
                             </p>
                         {/if}
                     </div>
 
                     <div>
                         <label for="f-mechanism" class="block text-sm font-medium mb-2"
-                               style="color: {$colorStore.text}">Update Mechanism</label>
+                               style="color: {$colorStore.text}">{m.statchannels.editMechanism()}</label>
                         <DiscordSelector id="f-mechanism" type="custom" options={mechanismOptions}
                                          selected={addForm.updateMechanism.toString()}
-                                         placeholder="Select mechanism"
+                                         placeholder={m.statchannels.editMechanismPlaceholder()}
                                          onchange={(detail) => onMechanismChange(detail.selected ? parseInt(detail.selected as string) : 2)} />
                     </div>
 
@@ -867,15 +865,15 @@
 
                     <div>
                         <label for="f-interval" class="block text-sm font-medium mb-2"
-                               style="color: {$colorStore.text}">Refresh Interval (minutes)</label>
+                               style="color: {$colorStore.text}">{m.statchannels.editInterval()}</label>
                         <input id="f-interval" type="number" min={minimumInterval} max="1440"
                                bind:value={addForm.updateIntervalMinutes}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                            Minimum {minimumInterval} minute{minimumInterval === 1 ? "" : "s"} for this mechanism.
+                            {(minimumInterval === 1 ? m.statchannels.addMinIntervalOne : m.statchannels.addMinIntervalOther)({ count: minimumInterval })}
                             {#if selectedDefinition?.realtime}
-                                This counter changes constantly, so a short interval is worth it.
+                                {m.statchannels.addRealtimeHint()}
                             {/if}
                         </p>
                     </div>
@@ -886,7 +884,7 @@
                         onclick={addStatChannel}
                         disabled={saving}>
                     <i class="fa-solid fa-plus {saving ? 'fa-spin' : ''}" style="font-size: 16px;"></i>
-                    {saving ? "Adding..." : "Add Stat Channel"}
+                    {saving ? m.common.adding() : m.statchannels.listAdd()}
                 </button>
             </div>
         </div>
@@ -899,34 +897,34 @@
                 <div class="flex items-center gap-3 mb-2">
                     <i class="fa-utility-duo fa-regular fa-sliders"
                        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Defaults For New Stat Channels</h2>
+                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.statchannels.defaultsTitle()}</h2>
                 </div>
                 <p class="text-sm mb-6" style="color: {$colorStore.muted}">
-                    These apply to stat channels created from now on. Existing channels keep their own settings.
+                    {m.statchannels.defaultsText()}
                 </p>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div>
                         <label for="s-mechanism" class="block text-sm font-medium mb-2"
-                               style="color: {$colorStore.text}">Default Mechanism</label>
+                               style="color: {$colorStore.text}">{m.statchannels.defaultsMechanism()}</label>
                         <DiscordSelector id="s-mechanism" type="custom" options={mechanismOptions}
                                          selected={settings.defaultMechanism.toString()}
-                                         placeholder="Select mechanism"
+                                         placeholder={m.statchannels.editMechanismPlaceholder()}
                                          onchange={(detail) => setDefaultSelect("defaultMechanism", detail.selected ? parseInt(detail.selected as string) : 2)} />
                     </div>
 
                     <div>
                         <label for="s-style" class="block text-sm font-medium mb-2"
-                               style="color: {$colorStore.text}">Default Counter Style</label>
+                               style="color: {$colorStore.text}">{m.statchannels.defaultsStyle()}</label>
                         <DiscordSelector id="s-style" type="custom" options={styleOptions}
                                          selected={settings.defaultDisplayStyle.toString()}
-                                         placeholder="Select style"
+                                         placeholder={m.statchannels.editStylePlaceholder()}
                                          onchange={(detail) => setDefaultSelect("defaultDisplayStyle", detail.selected ? parseInt(detail.selected as string) : 1)} />
                     </div>
 
                     <div>
                         <label for="s-interval" class="block text-sm font-medium mb-2"
-                               style="color: {$colorStore.text}">Default Interval (minutes)</label>
+                               style="color: {$colorStore.text}">{m.statchannels.defaultsInterval()}</label>
                         <input id="s-interval" type="number" min="1" max="1440"
                                bind:value={settings.defaultIntervalMinutes}
                                oninput={saveDefaultInterval}
@@ -941,9 +939,9 @@
                 <div class="rounded-2xl border p-6 md:p-8 shadow-2xl mt-6"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                             border-color: {$colorStore.primary}30;">
-                    <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">Counter Styles</h2>
+                    <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">{m.statchannels.stylesTitle()}</h2>
                     <p class="text-sm mb-5" style="color: {$colorStore.muted}">
-                        How each style renders the number 1,234 against a target of 2,000.
+                        {m.statchannels.stylesText()}
                     </p>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {#each metadata.displayStyles as style}
@@ -961,9 +959,9 @@
                 <div class="rounded-2xl border p-6 md:p-8 shadow-2xl mt-6"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                             border-color: {$colorStore.primary}30;">
-                    <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">Available Counters</h2>
+                    <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">{m.statchannels.countersTitle()}</h2>
                     <p class="text-sm mb-5" style="color: {$colorStore.muted}">
-                        Every counter Mewdeko can display, with an example of how it renders.
+                        {m.statchannels.countersText()}
                     </p>
 
                     {#each [...new Set(metadata.statTypes.map((t) => t.category))] as category}
@@ -979,7 +977,7 @@
                                                   style="color: {$colorStore.text}">{definition.name}</span>
                                             {#if definition.realtime}
                                                 <span class="px-1.5 py-0.5 rounded text-xs"
-                                                      style="background: #10b98120; color: #10b981;">live</span>
+                                                      style="background: #10b98120; color: #10b981;">{m.common.live()}</span>
                                             {/if}
                                         </div>
                                         <p class="text-xs mt-0.5"
@@ -999,11 +997,11 @@
 
 <ConfirmationModal
   bind:isOpen={removeModalOpen}
-  confirmText="Remove"
+  confirmText={m.common.remove()}
   message={removeTarget
-    ? `Remove the stat channel "${removeTarget.channelName}"? The voice channel itself is left in place.`
+    ? m.statchannels.removeMessage({ name: removeTarget.channelName })
     : ""}
-  title="Remove Stat Channel"
+  title={m.statchannels.removeTitle()}
   variant="danger"
   onconfirm={removeStatChannel}
   oncancel={() => { removeTarget = null; }}

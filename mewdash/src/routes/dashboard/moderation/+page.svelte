@@ -1,5 +1,6 @@
 <!-- routes/dashboard/moderation/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import { onMount } from "svelte";
@@ -25,13 +26,13 @@
   // Layout state
     let activeTab = $state("overview");
   
-  const tabs = [
-    { id: "overview", label: "Overview", icon: "fa-chart-column" },
-    { id: "warnings", label: "Warnings", icon: "fa-triangle-exclamation" },
-    { id: "punishments", label: "Punishments", icon: "fa-gavel" },
-    { id: "activity", label: "Recent Activity", icon: "fa-clock" },
-    { id: "banpurge", label: "Ban Purge", icon: "fa-broom" }
-  ];
+  const tabs = $derived([
+    { id: "overview", label: m.common.overview(), icon: "fa-chart-column" },
+    { id: "warnings", label: m.common.warnings(), icon: "fa-triangle-exclamation" },
+    { id: "punishments", label: m.moderation.tabPunishments(), icon: "fa-gavel" },
+    { id: "activity", label: m.common.recentActivity(), icon: "fa-clock" },
+    { id: "banpurge", label: m.moderation.tabBanpurge(), icon: "fa-broom" }
+  ]);
 
   /** Warning management state */
   let warningSearch = $state("");
@@ -54,17 +55,17 @@
   let pendingRemovePunishment: number | null = $state(null);
 
   /** Punishments that can be chosen for the warning ladder */
-  const punishmentOptions = [
-    { id: PunishmentAction.Mute.toString(), name: "Mute" },
-    { id: PunishmentAction.ChatMute.toString(), name: "Chat mute" },
-    { id: PunishmentAction.VoiceMute.toString(), name: "Voice mute" },
-    { id: PunishmentAction.Timeout.toString(), name: "Timeout" },
-    { id: PunishmentAction.Kick.toString(), name: "Kick" },
-    { id: PunishmentAction.Softban.toString(), name: "Softban" },
-    { id: PunishmentAction.Ban.toString(), name: "Ban" },
-    { id: PunishmentAction.AddRole.toString(), name: "Add role" },
-    { id: PunishmentAction.RemoveRoles.toString(), name: "Remove all roles" }
-  ];
+  const punishmentOptions = $derived([
+    { id: PunishmentAction.Mute.toString(), name: m.common.actionMute() },
+    { id: PunishmentAction.ChatMute.toString(), name: m.features.wizardPun5() },
+    { id: PunishmentAction.VoiceMute.toString(), name: m.features.wizardPun6() },
+    { id: PunishmentAction.Timeout.toString(), name: m.common.timeout() },
+    { id: PunishmentAction.Kick.toString(), name: m.common.actionKick() },
+    { id: PunishmentAction.Softban.toString(), name: m.features.wizardPun3() },
+    { id: PunishmentAction.Ban.toString(), name: m.common.actionBan() },
+    { id: PunishmentAction.AddRole.toString(), name: m.common.addRole() },
+    { id: PunishmentAction.RemoveRoles.toString(), name: m.common.removeAllRoles() }
+  ]);
 
   /** Punishments that accept a duration */
   const timedPunishments = new Set([
@@ -114,7 +115,7 @@
       await fetchModerationData();
     } catch (err) {
       logger.error("Failed to forgive warning:", err);
-      error = "Failed to forgive warning";
+      error = m.moderation.errorForgiveWarning();
     } finally {
       warningBusy = false;
     }
@@ -129,7 +130,7 @@
       await fetchModerationData();
     } catch (err) {
       logger.error("Failed to forgive warnings:", err);
-      error = "Failed to forgive warnings";
+      error = m.moderation.errorForgiveWarnings();
     } finally {
       warningBusy = false;
     }
@@ -143,7 +144,7 @@
       await fetchModerationData();
     } catch (err) {
       logger.error("Failed to delete warning:", err);
-      error = "Failed to delete warning";
+      error = m.moderation.errorDeleteWarning();
     } finally {
       warningBusy = false;
     }
@@ -154,11 +155,11 @@
     warnError = "";
     if (!$currentGuild?.id || !mod) return;
     if (!/^\d{15,22}$/.test(warnUserId.trim())) {
-      warnError = "Enter a valid Discord user ID.";
+      warnError = m.common.invalidUserId();
       return;
     }
     if (!warnReason.trim()) {
-      warnError = "A reason is required.";
+      warnError = m.moderation.warnReasonRequired();
       return;
     }
     warningBusy = true;
@@ -173,7 +174,7 @@
       await fetchModerationData();
     } catch (err) {
       logger.error("Failed to warn user:", err);
-      warnError = "Failed to warn user. Make sure the ID belongs to a member of this server.";
+      warnError = m.moderation.warnFailed();
     } finally {
       warningBusy = false;
     }
@@ -199,11 +200,11 @@
     punishmentError = "";
     if (!$currentGuild?.id) return;
     if (!newPunishment.count || newPunishment.count < 1) {
-      punishmentError = "Warning count must be at least 1.";
+      punishmentError = m.moderation.punishMinCount();
       return;
     }
     if (selectedPunishmentNeedsRole && !newPunishment.roleId) {
-      punishmentError = "Choose the role to add.";
+      punishmentError = m.moderation.punishChooseRole();
       return;
     }
     punishmentBusy = true;
@@ -217,7 +218,7 @@
       newPunishment = { ...newPunishment, count: newPunishment.count + 1, timeMinutes: null };
     } catch (err: any) {
       logger.error("Failed to save punishment:", err);
-      punishmentError = err?.message || "Failed to save punishment.";
+      punishmentError = err?.message || m.moderation.punishSaveFailed();
     } finally {
       punishmentBusy = false;
     }
@@ -230,7 +231,7 @@
       punishments = (await moderationApi.removeWarningPunishment($currentGuild.id, count)).slice().sort((a, b) => a.count - b.count);
     } catch (err) {
       logger.error("Failed to remove punishment:", err);
-      error = "Failed to remove punishment";
+      error = m.moderation.errorRemovePunishment();
     } finally {
       punishmentBusy = false;
     }
@@ -244,7 +245,7 @@
       warnlogChannelId = channelId;
     } catch (err) {
       logger.error("Failed to set warn log channel:", err);
-      error = "Failed to set warning log channel";
+      error = m.moderation.errorSetWarnlog();
     } finally {
       punishmentBusy = false;
     }
@@ -257,7 +258,13 @@
       parts.push(`@${guildRoles.find(r => r.id === p.roleId?.toString())?.name ?? p.roleId}`);
     }
     if (p.time > 0) {
-      parts.push(p.time >= 1440 ? `for ${Math.round(p.time / 1440)}d` : p.time >= 60 ? `for ${Math.round(p.time / 60)}h` : `for ${p.time}m`);
+      parts.push(
+        p.time >= 1440
+          ? m.moderation.durationDays({ count: Math.round(p.time / 1440) })
+          : p.time >= 60
+            ? m.moderation.durationHours({ count: Math.round(p.time / 60) })
+            : m.moderation.durationMinutes({ count: p.time })
+      );
     }
     return parts.join(" ");
   }
@@ -283,7 +290,7 @@
   let confirmResetOpen = $state(false);
 
   const actionSelectorOptions = $derived([
-    { id: ALL_ACTIONS, name: "All actions" },
+    { id: ALL_ACTIONS, name: m.common.allActions() },
     ...pruneActions.map(a => ({ id: a.key, name: a.displayName }))
   ]);
 
@@ -311,13 +318,13 @@
   }
 
   function actionName(key: string): string {
-    if (!key) return "All actions";
+    if (!key) return m.common.allActions();
     return pruneActions.find(a => a.key === key)?.displayName ?? key;
   }
 
   function describeDays(days: number): string {
-    if (days <= 0) return "No messages";
-    return days === 1 ? "1 day" : `${days} days`;
+    if (days <= 0) return m.moderation.pruneNoMessages();
+    return days === 1 ? m.common.oneDay() : m.common.daysCount({ count: days });
   }
 
   /**
@@ -351,7 +358,7 @@
       textChannels = channelData || [];
     } catch (err) {
       logger.error("Failed to fetch ban purge settings:", err);
-      error = "Failed to load ban purge settings";
+      error = m.moderation.errorLoadPrune();
     }
   }
 
@@ -369,7 +376,7 @@
       pruneSettings = await banPruneApi.getSettings($currentGuild.id);
     } catch (err) {
       logger.error("Failed to save ban purge setting:", err);
-      error = "Failed to save ban purge setting";
+      error = m.moderation.errorSavePrune();
     } finally {
       pruneSaving = false;
     }
@@ -389,7 +396,7 @@
       pruneSettings = await banPruneApi.getSettings($currentGuild.id);
     } catch (err) {
       logger.error("Failed to remove ban purge setting:", err);
-      error = "Failed to remove ban purge setting";
+      error = m.moderation.errorRemovePrune();
     } finally {
       pruneSaving = false;
     }
@@ -419,7 +426,7 @@
       pruneSettings = await banPruneApi.getSettings($currentGuild.id);
     } catch (err) {
       logger.error("Failed to reset ban purge settings:", err);
-      error = "Failed to reset ban purge settings";
+      error = m.moderation.errorResetPrune();
     } finally {
       pruneSaving = false;
     }
@@ -454,15 +461,15 @@
 
       } catch (err) {
         logger.error("Failed to fetch moderation data:", err);
-        error = "Failed to load moderation data";
+        error = m.moderation.errorLoadData();
       } finally {
         loading = false;
       }
-    }, "api", "Loading moderation data...");
+    }, "api", m.moderation.loadingData());
   }
 
   function formatDate(dateString: string | null): string {
-    if (!dateString) return "Unknown";
+    if (!dateString) return m.common.unknown();
     return new Date(dateString).toLocaleString();
   }
 
@@ -485,7 +492,7 @@
         <i class="fa-utility-duo fa-regular fa-circle-exclamation"
            style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
         <div style="color: {$colorStore.accent}">
-          <div class="font-semibold text-lg">Error Occurred</div>
+          <div class="font-semibold text-lg">{m.common.errorOccurred()}</div>
           <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
         </div>
       </div>
@@ -495,26 +502,26 @@
 
 <DashboardPageLayout
   statusMessages={statusMessages}
-  subtitle="Manage warnings, punishments, and moderation activity"
+  subtitle={m.moderation.pageSubtitle()}
   icon="fa-shield"
   {tabs}
   bind:activeTab
   actionButtons={[
     {
-      label: "Refresh",
+      label: m.common.refresh(),
       icon: "fa-arrows-rotate",
       action: fetchModerationData,
       loading: loading
     }
   ]}
-  guildName={$currentGuild?.name || "Dashboard"}
-  title="Moderation Dashboard"
+  guildName={$currentGuild?.name || m.common.dashboard()}
+  title={m.moderation.pageTitle()}
 >
 
   {#if loading}
     <div class="flex items-center justify-center py-12">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2" style="border-color: {$colorStore.primary}"></div>
-      <span class="ml-3" style="color: {$colorStore.text}">Loading moderation data...</span>
+      <span class="ml-3" style="color: {$colorStore.text}">{m.moderation.loadingData()}</span>
     </div>
   {:else if !error}
     {#if activeTab === 'overview'}
@@ -525,7 +532,7 @@
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium" style="color: {$colorStore.muted}">Total Warnings</p>
+              <p class="text-sm font-medium" style="color: {$colorStore.muted}">{m.common.totalWarnings()}</p>
               <p class="text-3xl font-bold mt-1" style="color: {$colorStore.text}">{totalWarnings}</p>
             </div>
             <div class="p-3 rounded-xl" style="background: {$colorStore.primary}20;">
@@ -540,7 +547,7 @@
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium" style="color: {$colorStore.muted}">Active Warnings</p>
+              <p class="text-sm font-medium" style="color: {$colorStore.muted}">{m.moderation.statActive()}</p>
               <p class="text-3xl font-bold mt-1" style="color: {$colorStore.text}">{activeWarnings}</p>
             </div>
             <div class="p-3 rounded-xl" style="background: {$colorStore.accent}20;">
@@ -555,7 +562,7 @@
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium" style="color: {$colorStore.muted}">Forgiven Warnings</p>
+              <p class="text-sm font-medium" style="color: {$colorStore.muted}">{m.moderation.statForgiven()}</p>
               <p class="text-3xl font-bold mt-1" style="color: {$colorStore.text}">{forgivenWarnings}</p>
             </div>
             <div class="p-3 rounded-xl" style="background: {$colorStore.secondary}20;">
@@ -578,12 +585,12 @@
             <i class="fa-utility-duo fa-regular fa-bell"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
-          <h2 class="text-xl font-bold flex-1" style="color: {$colorStore.text}">All Warnings</h2>
+          <h2 class="text-xl font-bold flex-1" style="color: {$colorStore.text}">{m.moderation.warningsTitle()}</h2>
           <button class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                   onclick={() => { showWarnForm = !showWarnForm; warnError = ""; }}>
             <i class="fa-solid {showWarnForm ? 'fa-xmark' : 'fa-plus'}"></i>
-            {showWarnForm ? "Cancel" : "Warn a user"}
+            {showWarnForm ? m.common.cancel() : m.moderation.warningsWarnUser()}
           </button>
         </div>
 
@@ -592,20 +599,20 @@
                 style="background: {$colorStore.accent}05; border-color: {$colorStore.accent}30;"
                 onsubmit={(e) => { e.preventDefault(); submitWarn(); }}>
             <div class="grid grid-cols-1 md:grid-cols-[220px_1fr_auto] gap-3">
-              <input type="text" inputmode="numeric" bind:value={warnUserId} placeholder="User ID" aria-label="User ID to warn"
+              <input type="text" inputmode="numeric" bind:value={warnUserId} placeholder={m.common.userId()} aria-label={m.moderation.warningsUserIdLabel()}
                      class="p-3 rounded-lg border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-              <input type="text" bind:value={warnReason} placeholder="Reason (shown to the user)" aria-label="Warning reason" maxlength="500"
+              <input type="text" bind:value={warnReason} placeholder={m.moderation.warningsReasonPlaceholder()} aria-label={m.moderation.warningsReasonLabel()} maxlength="500"
                      class="p-3 rounded-lg border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
               <button type="submit" disabled={warningBusy}
                       class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
                       style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;">
                 <i class="fa-solid fa-triangle-exclamation"></i>
-                Warn
+                {m.common.warn()}
               </button>
             </div>
-            <p class="text-xs" style="color: {$colorStore.muted}">Configured punishments for the resulting warning count are applied automatically.</p>
+            <p class="text-xs" style="color: {$colorStore.muted}">{m.moderation.warningsAutoHint()}</p>
             {#if warnError}
               <div class="p-3 rounded-lg flex items-center gap-2 text-sm" role="alert"
                    style="background: #ef444420; border: 1px solid #ef444430; color: #ef4444;">
@@ -620,15 +627,15 @@
           <div class="flex flex-col sm:flex-row gap-3 mb-4">
             <div class="relative flex-1">
               <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2" style="color: {$colorStore.muted}; font-size: 14px;"></i>
-              <input type="text" bind:value={warningSearch} placeholder="Search by user ID, reason, or moderator"
-                     aria-label="Search warnings"
+              <input type="text" bind:value={warningSearch} placeholder={m.moderation.warningsSearchPlaceholder()}
+                     aria-label={m.moderation.warningsSearchLabel()}
                      class="w-full pl-9 pr-3 py-3 rounded-lg border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             </div>
             <label class="flex items-center gap-2 px-3 rounded-lg cursor-pointer min-h-[44px] text-sm"
                    style="background: {$colorStore.primary}08; color: {$colorStore.text};">
               <input type="checkbox" bind:checked={showForgiven} class="w-4 h-4 rounded" style="accent-color: {$colorStore.primary};">
-              Show forgiven
+              {m.moderation.warningsShowForgiven()}
             </label>
           </div>
         {/if}
@@ -636,12 +643,12 @@
         {#if warnings.length === 0}
           <div class="text-center py-8">
             <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-            <p class="text-lg font-medium" style="color: {$colorStore.text}">No warnings found</p>
-            <p class="text-sm" style="color: {$colorStore.muted}">This server has been peaceful!</p>
+            <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.moderation.warningsEmpty()}</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.moderation.warningsEmptyHint()}</p>
           </div>
         {:else if filteredWarnings.length === 0}
           <div class="text-center py-8">
-            <p class="text-sm" style="color: {$colorStore.muted}">No warnings match your search.</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.moderation.warningsNoMatch()}</p>
           </div>
         {:else}
           <div class="space-y-4 max-h-[40rem] overflow-y-auto pr-1">
@@ -650,9 +657,9 @@
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                   <div class="flex items-center gap-2">
                     <i class="fa-solid fa-user" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                    <span class="font-medium" style="color: {$colorStore.text}">User {group.userId}</span>
+                    <span class="font-medium" style="color: {$colorStore.text}">{m.common.userFallback({ id: group.userId })}</span>
                     <span class="px-2 py-0.5 text-xs rounded-full" style="background: {group.active > 0 ? $colorStore.accent + '20' : $colorStore.secondary + '20'}; color: {group.active > 0 ? $colorStore.accent : $colorStore.secondary};">
-                      {group.active} active
+                      {m.common.activeCount({ count: group.active })}
                     </span>
                   </div>
                   {#if group.active > 0}
@@ -660,7 +667,7 @@
                             style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                             disabled={warningBusy}
                             onclick={() => pendingForgiveAllUser = group.userId}>
-                      Forgive all
+                      {m.moderation.warningsForgiveAll()}
                     </button>
                   {/if}
                 </div>
@@ -679,15 +686,15 @@
                       </div>
                       <div class="flex-1 min-w-0">
                         <p class="text-sm break-words" style="color: {$colorStore.text}">
-                          {warning.reason || "No reason provided"}
+                          {warning.reason || m.common.noReasonProvided()}
                           {#if warning.forgiven}
                             <span class="ml-2 px-2 py-0.5 text-xs rounded-full" style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
-                              Forgiven{warning.forgivenBy ? ` by ${warning.forgivenBy}` : ""}
+                              {warning.forgivenBy ? m.moderation.warningsForgivenBy({ name: warning.forgivenBy }) : m.moderation.warningsForgiven()}
                             </span>
                           {/if}
                         </p>
                         <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs mt-1" style="color: {$colorStore.muted}">
-                          <span>By {warning.moderator || "Unknown"}</span>
+                          <span>{m.moderation.warningsBy({ name: warning.moderator || m.common.unknown() })}</span>
                           <span>{formatDate(warning.dateAdded)}</span>
                         </div>
                       </div>
@@ -696,7 +703,7 @@
                           <button class="p-2 rounded-lg transition-all hover:scale-[1.05] min-h-[36px] min-w-[36px] disabled:opacity-50"
                                   style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                                   disabled={warningBusy}
-                                  aria-label="Forgive warning" title="Forgive"
+                                  aria-label={m.moderation.warningsForgiveLabel()} title={m.moderation.warningsForgive()}
                                   onclick={() => forgiveWarning(warning)}>
                             <i class="fa-solid fa-check" style="font-size: 12px;"></i>
                           </button>
@@ -704,7 +711,7 @@
                         <button class="p-2 rounded-lg transition-all hover:scale-[1.05] min-h-[36px] min-w-[36px] disabled:opacity-50"
                                 style="background: #ef444415; color: #ef4444;"
                                 disabled={warningBusy}
-                                aria-label="Delete warning" title="Delete permanently"
+                                aria-label={m.moderation.warningsDeleteLabel()} title={m.moderation.warningsDeleteTitle()}
                                 onclick={() => pendingDeleteWarning = warning}>
                           <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
                         </button>
@@ -731,8 +738,8 @@
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
             <div>
-              <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Warning Punishments</h2>
-              <p class="text-sm" style="color: {$colorStore.muted}">What happens automatically when a member reaches a number of active warnings</p>
+              <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.moderation.punishTitle()}</h2>
+              <p class="text-sm" style="color: {$colorStore.muted}">{m.moderation.punishSubtitle()}</p>
             </div>
           </div>
 
@@ -741,29 +748,29 @@
                 onsubmit={(e) => { e.preventDefault(); addPunishment(); }}>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label for="punish-count" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">At warning #</label>
+                <label for="punish-count" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.moderation.punishAtWarning()}</label>
                 <input id="punish-count" type="number" min="1" max="100" bind:value={newPunishment.count}
                        class="w-full p-3 rounded-lg border min-h-[44px]"
                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
               </div>
               <div>
-                <span id="punish-action-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Punishment</span>
+                <span id="punish-action-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.punishment()}</span>
                 <DiscordSelector type="custom" options={punishmentOptions} selected={newPunishment.punishment} searchable={false}
                                  ariaLabelledby="punish-action-label"
                                  onchange={(e) => { if (typeof e.selected === "string") newPunishment.punishment = e.selected; }} />
               </div>
               {#if selectedPunishmentIsTimed}
                 <div>
-                  <label for="punish-minutes" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Duration (minutes)</label>
-                  <input id="punish-minutes" type="number" min="1" max="70560" bind:value={newPunishment.timeMinutes} placeholder="Permanent"
+                  <label for="punish-minutes" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.durationMinutes()}</label>
+                  <input id="punish-minutes" type="number" min="1" max="70560" bind:value={newPunishment.timeMinutes} placeholder={m.common.permanent()}
                          class="w-full p-3 rounded-lg border min-h-[44px]"
                          style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
                 </div>
               {/if}
               {#if selectedPunishmentNeedsRole}
                 <div>
-                  <span id="punish-role-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Role to add</span>
-                  <DiscordSelector type="role" options={guildRoles} selected={newPunishment.roleId} placeholder="Select role"
+                  <span id="punish-role-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.roleToAdd()}</span>
+                  <DiscordSelector type="role" options={guildRoles} selected={newPunishment.roleId} placeholder={m.common.selectRolePlaceholder()}
                                    ariaLabelledby="punish-role-label"
                                    onchange={(e) => { newPunishment.roleId = typeof e.selected === "string" ? e.selected : null; }} />
                 </div>
@@ -780,7 +787,7 @@
                     class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px] disabled:opacity-50"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
               <i class="fa-solid fa-plus"></i>
-              Add to ladder
+              {m.moderation.punishAddToLadder()}
             </button>
           </form>
 
@@ -788,7 +795,7 @@
             {#if punishments.length === 0}
               <div class="text-center py-8">
                 <i class="fa-utility-duo fa-regular fa-shield-halved" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 40px; opacity: 0.5; display: block; margin: 0 auto 12px;"></i>
-                <p style="color: {$colorStore.muted}">No automatic punishments yet. Warnings are only recorded.</p>
+                <p style="color: {$colorStore.muted}">{m.moderation.punishEmpty()}</p>
               </div>
             {:else}
               <ol class="space-y-2">
@@ -797,17 +804,17 @@
                     <div class="w-12 h-12 rounded-full flex flex-col items-center justify-center shrink-0"
                          style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
                       <span class="text-lg font-bold leading-none">{p.count}</span>
-                      <span class="text-[10px] uppercase">warn{p.count === 1 ? "" : "s"}</span>
+                      <span class="text-[10px] uppercase">{p.count === 1 ? m.moderation.punishUnitOne() : m.moderation.punishUnitOther()}</span>
                     </div>
                     <div class="flex-1 min-w-0">
                       <div class="font-medium" style="color: {$colorStore.text}">{describePunishment(p)}</div>
-                      <div class="text-xs" style="color: {$colorStore.muted}">Applied when a member reaches {p.count} active warning{p.count === 1 ? "" : "s"}</div>
+                      <div class="text-xs" style="color: {$colorStore.muted}">{(p.count === 1 ? m.moderation.punishAppliedOne : m.moderation.punishAppliedOther)({ count: p.count })}</div>
                     </div>
                     <button class="px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02] min-h-[40px] disabled:opacity-50"
                             style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
                             disabled={punishmentBusy}
                             onclick={() => pendingRemovePunishment = p.count}>
-                      Remove
+                      {m.common.remove()}
                     </button>
                   </li>
                 {/each}
@@ -826,11 +833,11 @@
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
             <div>
-              <h2 id="warnlog-label" class="text-xl font-bold" style="color: {$colorStore.text}">Warning Log Channel</h2>
-              <p class="text-sm" style="color: {$colorStore.muted}">Every warning and punishment is posted here. Saves immediately.</p>
+              <h2 id="warnlog-label" class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.warningLogChannel()}</h2>
+              <p class="text-sm" style="color: {$colorStore.muted}">{m.moderation.warnlogSubtitle()}</p>
             </div>
           </div>
-          <DiscordSelector type="channel" options={textChannels} selected={warnlogChannelId} placeholder="No warning log"
+          <DiscordSelector type="channel" options={textChannels} selected={warnlogChannelId} placeholder={m.moderation.warnlogPlaceholder()}
                            ariaLabelledby="warnlog-label" disabled={punishmentBusy}
                            onchange={(e) => saveWarnlogChannel(typeof e.selected === "string" ? e.selected : null)} />
         </div>
@@ -849,14 +856,14 @@
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
             <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Recent Moderation Activity</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.moderation.activityTitle()}</h2>
         </div>
 
         {#if recentActivity.length === 0}
           <div class="text-center py-8">
             <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-            <p class="text-lg font-medium" style="color: {$colorStore.text}">No recent moderation activity</p>
-            <p class="text-sm" style="color: {$colorStore.muted}">This server has been peaceful!</p>
+            <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.moderation.activityEmpty()}</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.moderation.warningsEmptyHint()}</p>
           </div>
         {:else}
           <div class="space-y-4 max-h-96 overflow-y-auto">
@@ -880,23 +887,23 @@
                   <div class="flex items-center gap-2 mb-1">
                     <i class="fa-solid fa-user" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                     <span class="font-medium" style="color: {$colorStore.text}">
-                      User ID: {warning.userId}
+                      {m.common.userIdLabel({ id: warning.userId })}
                     </span>
                     {#if warning.forgiven}
                       <span class="px-2 py-1 text-xs rounded-full"
                             style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
-                        Forgiven
+                        {m.moderation.warningsForgiven()}
                       </span>
                     {/if}
                   </div>
 
                   <p class="text-sm mb-2" style="color: {$colorStore.text}">
-                    <strong>Reason:</strong> {warning.reason || "No reason provided"}
+                    <strong>{m.moderation.activityReason()}</strong> {warning.reason || m.common.noReasonProvided()}
                   </p>
 
                   <div class="flex items-center gap-4 text-xs" style="color: {$colorStore.muted}">
-                    <span>Moderator: {warning.moderator || "Unknown"}</span>
-                    <span>Date: {formatDate(warning.dateAdded)}</span>
+                    <span>{m.moderation.activityModerator({ name: warning.moderator || m.common.unknown() })}</span>
+                    <span>{m.moderation.activityDate({ date: formatDate(warning.dateAdded) })}</span>
                   </div>
                 </div>
               </div>
@@ -919,9 +926,9 @@
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
           <div>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Server Defaults</h2>
+            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.serverDefaults()}</h2>
             <p class="text-sm" style="color: {$colorStore.muted}">
-              How many days of a member's messages each action deletes when it bans them.
+              {m.moderation.pruneDefaultsSubtitle()}
             </p>
           </div>
         </div>
@@ -935,16 +942,16 @@
                 <div class="font-medium" style="color: {$colorStore.text}">{action.displayName}</div>
                 <div class="text-xs" style="color: {$colorStore.muted}">
                   {#if current.source === 'set'}
-                    Set to {describeDays(current.days)}
+                    {m.moderation.pruneSetTo({ days: describeDays(current.days) })}
                   {:else if current.source === 'all'}
-                    From the all-actions default
+                    {m.moderation.pruneFromAll()}
                   {:else}
-                    Built in default of {describeDays(action.defaultDays)}
+                    {m.moderation.pruneBuiltin({ days: describeDays(action.defaultDays) })}
                   {/if}
                 </div>
               </div>
 
-              <label class="sr-only" for="prune-days-{action.key}">{action.displayName} purge in days</label>
+              <label class="sr-only" for="prune-days-{action.key}">{m.moderation.pruneDaysLabel({ action: action.displayName })}</label>
               <input
                 id="prune-days-{action.key}"
                 type="number"
@@ -965,7 +972,7 @@
                   disabled={pruneSaving}
                   onclick={() => removeSetting(guildDefaults.get(action.key)!)}
                 >
-                  Unset
+                  {m.moderation.pruneUnset()}
                 </button>
               {/if}
             </div>
@@ -975,13 +982,13 @@
         <div class="flex flex-wrap items-center gap-4 mt-6 pt-6 border-t"
              style="border-color: {$colorStore.primary}20;">
           <div class="flex-1 min-w-[180px]">
-            <div class="font-medium" style="color: {$colorStore.text}">All actions</div>
+            <div class="font-medium" style="color: {$colorStore.text}">{m.common.allActions()}</div>
             <div class="text-xs" style="color: {$colorStore.muted}">
-              Applies to any action above that has no value of its own.
+              {m.moderation.pruneAllHint()}
             </div>
           </div>
 
-          <label class="sr-only" for="prune-days-all">Purge in days for every action</label>
+          <label class="sr-only" for="prune-days-all">{m.moderation.pruneAllLabel()}</label>
           <input
             id="prune-days-all"
             type="number"
@@ -1002,7 +1009,7 @@
               disabled={pruneSaving}
               onclick={() => removeSetting(guildDefaults.get("")!)}
             >
-              Unset
+              {m.moderation.pruneUnset()}
             </button>
           {/if}
         </div>
@@ -1020,26 +1027,26 @@
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
           <div>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Overrides</h2>
+            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.moderation.overridesTitle()}</h2>
             <p class="text-sm" style="color: {$colorStore.muted}">
-              A channel beats its category, which beats the server default.
+              {m.moderation.overridesSubtitle()}
             </p>
           </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
           <div>
-            <span id="override-scope-label" class="block mb-2 text-sm" style="color: {$colorStore.text}">Scope</span>
+            <span id="override-scope-label" class="block mb-2 text-sm" style="color: {$colorStore.text}">{m.common.scope()}</span>
             <DiscordSelector
               type="custom"
               ariaLabelledby="override-scope-label"
               options={[
-                { id: String(BanPruneScope.Channel), name: "Channel" },
-                { id: String(BanPruneScope.Category), name: "Category" }
+                { id: String(BanPruneScope.Channel), name: m.common.channel() },
+                { id: String(BanPruneScope.Category), name: m.common.category() }
               ]}
               selected={String(overrideScope)}
               searchable={false}
-              placeholder="Scope..."
+              placeholder={m.moderation.overridesScopePlaceholder()}
               onchange={(detail) => {
                 overrideScope = Number(detail.selected) as BanPruneScope;
                 overrideTarget = null;
@@ -1049,30 +1056,30 @@
 
           <div>
             <span id="override-target-label" class="block mb-2 text-sm" style="color: {$colorStore.text}">
-              {overrideScope === BanPruneScope.Category ? "Category" : "Channel"}
+              {overrideScope === BanPruneScope.Category ? m.common.category() : m.common.channel()}
             </span>
             <DiscordSelector
               type={overrideScope === BanPruneScope.Category ? "custom" : "channel"}
               ariaLabelledby="override-target-label"
               options={overrideTargetOptions}
               bind:selected={overrideTarget}
-              placeholder="Select..."
+              placeholder={m.common.selectPlaceholder()}
             />
           </div>
 
           <div>
-            <span id="override-action-label" class="block mb-2 text-sm" style="color: {$colorStore.text}">Action</span>
+            <span id="override-action-label" class="block mb-2 text-sm" style="color: {$colorStore.text}">{m.common.action()}</span>
             <DiscordSelector
               type="custom"
               ariaLabelledby="override-action-label"
               options={actionSelectorOptions}
               bind:selected={overrideAction}
-              placeholder="Action..."
+              placeholder={m.moderation.overridesActionPlaceholder()}
             />
           </div>
 
           <div>
-            <label for="override-days" class="block mb-2 text-sm" style="color: {$colorStore.text}">Purge (days)</label>
+            <label for="override-days" class="block mb-2 text-sm" style="color: {$colorStore.text}">{m.moderation.overridesPurgeDays()}</label>
             <div class="flex gap-2">
               <input
                 id="override-days"
@@ -1090,7 +1097,7 @@
                 disabled={!overrideTarget || pruneSaving}
                 onclick={addOverride}
               >
-                Add
+                {m.common.add()}
               </button>
             </div>
           </div>
@@ -1100,8 +1107,8 @@
           <div class="text-center py-8 mt-4">
             <i class="fa-utility-duo fa-regular fa-layer-group"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-            <p class="text-lg font-medium" style="color: {$colorStore.text}">No overrides</p>
-            <p class="text-sm" style="color: {$colorStore.muted}">Every channel uses the server defaults.</p>
+            <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.moderation.overridesEmpty()}</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.moderation.overridesEmptyHint()}</p>
           </div>
         {:else}
           <div class="space-y-3 mt-6">
@@ -1118,7 +1125,7 @@
                   </div>
                 </div>
 
-                <label class="sr-only" for="override-days-{setting.id}">Purge in days</label>
+                <label class="sr-only" for="override-days-{setting.id}">{m.moderation.overridesDaysLabel()}</label>
                 <input
                   id="override-days-{setting.id}"
                   type="number"
@@ -1143,7 +1150,7 @@
                   disabled={pruneSaving}
                   onclick={() => (pendingRemoval = setting)}
                 >
-                  Remove
+                  {m.common.remove()}
                 </button>
               </div>
             {/each}
@@ -1160,7 +1167,7 @@
               disabled={pruneSaving}
               onclick={() => (confirmResetOpen = true)}
             >
-              Reset everything to defaults
+              {m.moderation.overridesReset()}
             </button>
           </div>
         {/if}
@@ -1171,11 +1178,11 @@
 
 <ConfirmationModal
   isOpen={pendingRemoval !== null}
-  title="Remove override?"
+  title={m.moderation.removeOverrideTitle()}
   message={pendingRemoval
-    ? `Bans in ${scopeTargetName(pendingRemoval)} fall back to the next broadest setting.`
+    ? m.moderation.removeOverrideMessage({ target: scopeTargetName(pendingRemoval) })
     : ""}
-  confirmText="Remove"
+  confirmText={m.common.remove()}
   onconfirm={async () => {
     const target = pendingRemoval;
     pendingRemoval = null;
@@ -1186,9 +1193,9 @@
 
 <ConfirmationModal
   isOpen={pendingDeleteWarning !== null}
-  title="Delete warning?"
-  message="The warning is removed permanently and no longer counts toward punishments. Forgiving keeps a record instead."
-  confirmText="Delete"
+  title={m.moderation.deleteWarningTitle()}
+  message={m.moderation.deleteWarningMessage()}
+  confirmText={m.common.delete()}
   onconfirm={async () => {
     const target = pendingDeleteWarning;
     pendingDeleteWarning = null;
@@ -1199,9 +1206,9 @@
 
 <ConfirmationModal
   isOpen={pendingForgiveAllUser !== null}
-  title="Forgive all warnings?"
-  message={pendingForgiveAllUser ? `Every active warning for user ${pendingForgiveAllUser} is marked forgiven.` : ""}
-  confirmText="Forgive all"
+  title={m.moderation.forgiveAllTitle()}
+  message={pendingForgiveAllUser ? m.moderation.forgiveAllMessage({ id: pendingForgiveAllUser }) : ""}
+  confirmText={m.moderation.warningsForgiveAll()}
   variant="warning"
   onconfirm={async () => {
     const target = pendingForgiveAllUser;
@@ -1213,9 +1220,9 @@
 
 <ConfirmationModal
   isOpen={pendingRemovePunishment !== null}
-  title="Remove punishment?"
-  message={pendingRemovePunishment !== null ? `Nothing will happen automatically at ${pendingRemovePunishment} warnings anymore.` : ""}
-  confirmText="Remove"
+  title={m.moderation.removePunishmentTitle()}
+  message={pendingRemovePunishment !== null ? m.moderation.removePunishmentMessage({ count: pendingRemovePunishment }) : ""}
+  confirmText={m.common.remove()}
   onconfirm={async () => {
     const target = pendingRemovePunishment;
     pendingRemovePunishment = null;
@@ -1226,9 +1233,9 @@
 
 <ConfirmationModal
   bind:isOpen={confirmResetOpen}
-  title="Reset ban purge settings?"
-  message="Every server default and override is removed, and each action goes back to its built in purge."
-  confirmText="Reset"
+  title={m.moderation.resetTitle()}
+  message={m.moderation.resetMessage()}
+  confirmText={m.common.reset()}
   onconfirm={async () => {
     confirmResetOpen = false;
     await resetAllSettings();

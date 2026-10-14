@@ -1,4 +1,5 @@
 import { marked } from "marked";
+import { m } from "$lib/i18n";
 import type { WikiHeading } from "./types";
 
 /**
@@ -8,13 +9,17 @@ import type { WikiHeading } from "./types";
  * the output is bound directly without a sanitizer pass.
  */
 
-const CALLOUT_LABELS: Record<string, string> = {
-  TIP: "Tip",
-  NOTE: "Note",
-  WARNING: "Warning",
-  PERMISSION: "Permission required",
-  EXAMPLE: "Example",
-};
+/** Labels for the callout blocks. Resolved when an article is rendered, so they follow the active locale. */
+function calloutLabel(kind: string): string {
+  switch (kind) {
+    case "TIP": return m.wiki.calloutTip();
+    case "NOTE": return m.wiki.calloutNote();
+    case "WARNING": return m.common.warning();
+    case "PERMISSION": return m.wiki.calloutPermission();
+    case "EXAMPLE": return m.wiki.calloutExample();
+    default: return kind;
+  }
+}
 
 /**
  * Produces a stable anchor id from heading text.
@@ -76,7 +81,7 @@ function convertCallouts(html: string): string {
     const body = html.slice(start + match[0].length, closeIndex);
     const cls = kind.toLowerCase();
     result += html.slice(cursor, start);
-    result += `<div class="wiki-callout wiki-callout-${cls}"><div class="wiki-callout-label">${CALLOUT_LABELS[kind]}</div><p>${body}</div>`;
+    result += `<div class="wiki-callout wiki-callout-${cls}"><div class="wiki-callout-label">${calloutLabel(kind)}</div><p>${body}</div>`;
     cursor = closeIndex + "</blockquote>".length;
     opener.lastIndex = cursor;
   }

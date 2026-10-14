@@ -1,5 +1,6 @@
 <!-- lib/components/wiki/WikiDrawer.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fade, fly } from "svelte/transition";
   import { browser } from "$app/environment";
   import { colorStore } from "$lib/stores/colorStore";
@@ -95,7 +96,7 @@
     <div class="fixed inset-0 z-[200] flex {isMobile ? 'items-end' : 'justify-end'}">
       <button
         class="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        aria-label="Close wiki panel"
+        aria-label={m.wiki.closeWikiPanel()}
         onclick={close}
         transition:fade={{ duration: 200 }}
       ></button>
@@ -131,7 +132,7 @@
           </div>
           <div class="min-w-0 flex-1 {isMobile ? 'mt-3' : ''}">
             <p class="text-xs uppercase tracking-widest font-semibold" style="color: {$colorStore.muted}">
-              Guide
+              {m.wiki.guide()}
             </p>
             <h2 id="wiki-drawer-title" class="text-xl font-bold truncate" style="color: {$colorStore.text}">
               {article.title}
@@ -141,7 +142,7 @@
           <button
             class="p-2 rounded-lg transition-all hover:scale-105 shrink-0 min-h-[44px] min-w-[44px] {isMobile ? 'mt-3' : ''}"
             style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
-            aria-label="Close"
+            aria-label={m.common.close()}
             onclick={close}
           >
             <i class="fa-solid fa-xmark"></i>
@@ -160,20 +161,20 @@
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={close}
             >
-              Close
+              {m.common.close()}
             </button>
           {:else}
             <span class="text-xs" style="color: {$colorStore.muted}">
-              About {article.readingMinutes} min read
+              {m.wiki.readingMinutesAbout({ minutes: article.readingMinutes })}
             </span>
           {/if}
           <a
             href="/wiki/{article.slug}"
             class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] {isMobile ? 'w-full text-center' : ''}"
             style="color: {$colorStore.primary}; {isMobile ? '' : `background: ${$colorStore.primary}20; border: 1px solid ${$colorStore.primary}30;`}"
-            title="Read this guide on its own page in the Mewdeko wiki"
+            title={m.wiki.readThisGuideOnIts()}
           >
-            <i class="fa-solid fa-book-open mr-2"></i>Read the full guide in the wiki
+            <i class="fa-solid fa-book-open mr-2"></i>{m.wiki.readTheFullGuideIn()}
           </a>
         </footer>
       </div>

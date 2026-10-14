@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { page } from "$app/state";
   import { logger } from "$lib/logger";
   import { browser } from "$app/environment";
@@ -48,7 +49,7 @@
 </script>
 
 <svelte:head>
-  <title>Error {page.status} - Mewdeko</title>
+  <title>{m.home.errorTitle({ status: page.status })}</title>
 </svelte:head>
 
 <main class="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden"
@@ -79,10 +80,10 @@
       </div>
 
       <h1 class="text-5xl sm:text-6xl font-extrabold mb-4" style="color: {$colorStore.text}">
-        Error {page.status}
+        {m.home.errorHeading({ status: page.status })}
       </h1>
       <p class="text-xl sm:text-2xl mb-2" style="color: {$colorStore.muted}">
-        {page.error?.message || 'Something went wrong'}
+        {page.error?.message || m.common.somethingWentWrong()}
       </p>
     </div>
 
@@ -110,7 +111,7 @@
           <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}15);"></div>
           <i class="fa-brands fa-discord text-xl relative z-10" style="color: {$colorStore.text}"></i>
-          <span class="relative z-10" style="color: {$colorStore.text}">Login with Discord</span>
+          <span class="relative z-10" style="color: {$colorStore.text}">{m.common.loginWithDiscord()}</span>
         </a>
       {:else}
         <a
@@ -135,7 +136,7 @@
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}15);"></div>
           <i class="fa-utility-duo fa-regular fa-house text-xl relative z-10"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-          <span class="relative z-10" style="color: {$colorStore.text}">Return Home</span>
+          <span class="relative z-10" style="color: {$colorStore.text}">{m.home.errorReturnHome()}</span>
         </a>
 
         <button
@@ -159,7 +160,7 @@
           <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                style="background: {$colorStore.secondary}12;"></div>
           <i class="fa-solid fa-rotate-right relative z-10" style="color: {$colorStore.text}"></i>
-          <span class="relative z-10" style="color: {$colorStore.text}">Retry</span>
+          <span class="relative z-10" style="color: {$colorStore.text}">{m.common.retry()}</span>
         </button>
       {/if}
     </div>
@@ -175,7 +176,7 @@
                  border: 1px solid {$colorStore.primary}20;"
         >
           <i class="fa-solid fa-{showDetails ? 'chevron-up' : 'chevron-down'} mr-2"></i>
-          {showDetails ? 'Hide' : 'Show'} Error Details
+          {showDetails ? m.common.hideErrorDetails() : m.common.showErrorDetails()}
         </button>
 
         {#if showDetails}
@@ -192,8 +193,7 @@
 
     <!-- Footer message -->
     <p class="mt-12 text-sm" style="color: {$colorStore.muted}">
-      Need help? Join our <a class="hover:underline font-semibold" href="https://discord.gg/twQw45rBjN"
-                             style="color: {$colorStore.primary}">Discord community</a>
+      {@html m.home.errorNeedHelp({ color: $colorStore.primary })}
     </p>
   </div>
 </main>

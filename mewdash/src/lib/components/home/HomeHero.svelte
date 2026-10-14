@@ -1,5 +1,6 @@
 <script lang="ts">
   import { fade, fly } from "svelte/transition";
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import Mascot from "$lib/components/brand/Mascot.svelte";
 
@@ -19,15 +20,14 @@
      in:fade={{ duration: 300 }}>
   <div class="order-2 lg:order-1 text-center lg:text-left">
     <p class="text-sm sm:text-base font-semibold" style="color: {$colorStore.primary}">
-      Mewdeko, the free and open source Discord bot
+      {m.home.heroEyebrow()}
     </p>
     <h1 class="font-extrabold tracking-tight leading-[1.04] text-4xl sm:text-5xl lg:text-6xl xl:text-7xl mt-3"
         style="color: {$colorStore.text}">
-      One bot.<br />Way too many <span style="color: {$colorStore.primary}">tails.</span>
+      {@html m.home.heroTitle({ color: $colorStore.primary })}
     </h1>
     <p class="text-base sm:text-lg lg:text-xl leading-relaxed mt-5 max-w-xl mx-auto lg:mx-0" style="color: {$colorStore.muted}">
-      Moderation, tickets, XP, achievements, music, forms, giveaways and about a thousand other things. We might have gone a
-      little overboard.
+      {m.home.heroSubtitle()}
     </p>
 
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 mt-7">
@@ -36,13 +36,13 @@
          style="background: {$colorStore.primary}30; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}80;
                 box-shadow: 0 8px 28px {$colorStore.primary}25;">
         <i class="fa-brands fa-discord" aria-hidden="true"></i>
-        Add to Discord
+        {m.home.heroAddToDiscord()}
       </a>
       <a href="/dashboard"
          class="inline-flex items-center justify-center gap-3 px-5 min-h-[52px] rounded-2xl text-base sm:text-lg font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
          style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}25;">
         <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-        Open dashboard
+        {m.home.heroOpenDashboard()}
       </a>
     </div>
 
@@ -56,12 +56,12 @@
       {/each}
       <a href="/commands" class="font-mono text-xs sm:text-sm px-3 py-2 rounded-lg"
          style="color: {$colorStore.primary}">
-        +{(totalCommands - commands.length).toLocaleString()} more
+        {m.common.moreCount({ count: (totalCommands - commands.length).toLocaleString() })}
       </a>
     </div>
 
     <p class="text-sm mt-5" style="color: {$colorStore.muted}">
-      In 11,400+ servers, with every feature free.
+      {m.home.heroServers()}
     </p>
   </div>
 

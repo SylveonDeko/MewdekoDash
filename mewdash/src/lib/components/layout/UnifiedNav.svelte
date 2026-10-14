@@ -19,6 +19,7 @@ A unified navigation component that provides responsive navigation with server a
 ```
 -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { page } from "$app/state";
   import { fade, slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -292,7 +293,7 @@ A unified navigation component that provides responsive navigation with server a
         instanceStates[instanceId] = {
           loading: false,
           hasMutualGuild: false,
-          error: "Failed to check mutual guilds",
+          error: m.layout.instanceErrorMutualGuilds(),
           checked: true
         };
       }
@@ -460,7 +461,7 @@ A unified navigation component that provides responsive navigation with server a
       adminGuilds = newGuilds || [];
 
       if (adminGuilds.length === 0) {
-        guildFetchError = "No available servers";
+        guildFetchError = m.layout.navErrorNoServers();
       }
 
       userAdminGuilds.set(adminGuilds as any);
@@ -475,7 +476,7 @@ A unified navigation component that provides responsive navigation with server a
 
     } catch (e) {
       logger.error("Error fetching guilds:", e);
-      guildFetchError = "Failed to load servers";
+      guildFetchError = m.common.failedToLoadServers();
       adminGuilds = [];
     } finally {
       isFetchingGuilds = false;
@@ -575,7 +576,7 @@ A unified navigation component that provides responsive navigation with server a
         }
       }
     } catch (err) {
-      instancesError = "Failed to load instances";
+      instancesError = m.layout.navErrorLoadInstances();
       logger.error("Error loading instances:", err);
       checkingInstances = false;
     } finally {
@@ -672,7 +673,7 @@ A unified navigation component that provides responsive navigation with server a
 </script>
 
 <nav
-  aria-label="Main navigation"
+  aria-label={m.layout.navAria()}
   bind:this={navElement}
   class="py-2 lg:py-3 relative z-10 border-b transition-all duration-300"
   style="background: {$colorStore?.primary}05;
@@ -912,7 +913,7 @@ A unified navigation component that provides responsive navigation with server a
       <a href="https://ko-fi.com/mewdeko" target="_blank" rel="noreferrer"
          class="md:hidden rounded-lg px-3 py-1.5 text-sm font-medium border inline-block shrink-0"
          style="background: {$colorStore.primary}15; border-color: {$colorStore.primary}40; color: {$colorStore.text};">
-        Donate
+        {m.layout.navDonate()}
       </a>
       <!-- Dyslexia-friendly font toggle - always visible, no login required -->
       <button
@@ -923,8 +924,8 @@ A unified navigation component that provides responsive navigation with server a
                color: {$colorStore.text};"
         onclick={() => dyslexicFontStore.toggle()}
         aria-pressed={$dyslexicFontStore}
-        aria-label="Toggle dyslexia-friendly font"
-        title="Toggle dyslexia-friendly font"
+        aria-label={m.layout.navToggleDyslexicFont()}
+        title={m.layout.navToggleDyslexicFont()}
       >
         <i class="fa-solid fa-universal-access text-sm"></i>
       </button>
@@ -937,8 +938,8 @@ A unified navigation component that provides responsive navigation with server a
                color: {$colorStore.text};"
         onclick={() => themeStore.toggleAero()}
         aria-pressed={$themeStore === "aero"}
-        aria-label="Toggle Frutiger Aero theme"
-        title="Toggle Frutiger Aero theme"
+        aria-label={m.layout.navToggleAeroTheme()}
+        title={m.layout.navToggleAeroTheme()}
       >
         <i class="fa-solid fa-palette text-sm"></i>
       </button>
@@ -950,7 +951,7 @@ A unified navigation component that provides responsive navigation with server a
                   color: {$colorStore.text};
                   border-color: {$colorStore.primary}50;
                   box-shadow: 0 2px 8px {$colorStore.primary}30;">
-          Login
+          {m.common.login()}
         </a>
       {:else}
         <!-- Desktop User & Instance Display -->
@@ -963,7 +964,7 @@ A unified navigation component that provides responsive navigation with server a
                   onclick={toggleDropdown}
             aria-expanded={dropdownOpen}
             aria-haspopup="true"
-            aria-label="User menu"
+            aria-label={m.layout.navUserMenu()}
           >
             <!-- User Avatar -->
             <img
@@ -992,7 +993,7 @@ A unified navigation component that provides responsive navigation with server a
                 </span>
               {:else}
                 <span class="text-xs" style:color={$colorStore.muted}>
-                  Select Instance
+                  {m.layout.sidebarSelectInstance()}
                 </span>
               {/if}
             </span>
@@ -1075,18 +1076,18 @@ A unified navigation component that provides responsive navigation with server a
               <!-- Instance Selection - Only show if more than one instance -->
               {#if visibleInstances.length > 1 || instancesLoading || stillCheckingInstances}
                 <div class="py-2 border-t border-opacity-30" style="border-color: {$colorStore.primary};">
-                  <div class="text-sm font-medium mb-2" style="color: {$colorStore.muted};">Bot Instances</div>
+                  <div class="text-sm font-medium mb-2" style="color: {$colorStore.muted};">{m.layout.navBotInstances()}</div>
                   <div class="max-h-48 overflow-y-auto">
                     {#if instancesLoading || stillCheckingInstances}
                       <div class="text-sm px-2 py-1 flex items-center" style="color: {$colorStore.muted};">
                         <div class="animate-spin mr-2 h-4 w-4 border-2 rounded-full"
                              style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
-                        {instancesLoading ? 'Loading instances...' : 'Checking server access...'}
+                        {instancesLoading ? m.layout.navLoadingInstances() : m.layout.navCheckingServerAccess()}
                       </div>
                     {:else if instancesError}
                       <div class="text-sm px-2 py-1" style="color: {$colorStore.accent};">{instancesError}</div>
                     {:else if visibleInstances.length === 0}
-                      <div class="text-sm px-2 py-1" style="color: {$colorStore.muted};">No accessible instances</div>
+                      <div class="text-sm px-2 py-1" style="color: {$colorStore.muted};">{m.layout.navNoAccessibleInstances()}</div>
                     {:else}
                       {#each visibleInstances as instance (instance.botId)}
                         <button
@@ -1112,7 +1113,7 @@ A unified navigation component that provides responsive navigation with server a
                           {#if !instance.isActive}
                             <span class="px-1.5 py-0.5 rounded-sm text-xs bg-opacity-10"
                                   style="color: {$colorStore.accent}; background-color: {$colorStore.accent}10;">
-                              Offline
+                              {m.common.offline()}
                             </span>
                           {/if}
                         </button>
@@ -1139,8 +1140,8 @@ A unified navigation component that provides responsive navigation with server a
                         <i class="fa-solid fa-gear" style="color: {$colorStore.primary}; font-size: 14px;"></i>
                   </div>
                   <div class="flex-1">
-                    <div class="font-semibold">My Settings</div>
-                    <div class="text-xs" style="color: {$colorStore.muted};">Profile, privacy & preferences</div>
+                    <div class="font-semibold">{m.common.mySettings()}</div>
+                    <div class="text-xs" style="color: {$colorStore.muted};">{m.layout.navMySettingsHint()}</div>
                   </div>
                     <div class="text-base opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
                         →
@@ -1163,7 +1164,7 @@ A unified navigation component that provides responsive navigation with server a
                            border-color: {$colorStore.accent}30;
                            box-shadow: 0 2px 8px {$colorStore.accent}10;"
                   >
-                    Logout
+                    {m.layout.sidebarLogout()}
                   </button>
                 </form>
               </div>
@@ -1188,7 +1189,7 @@ A unified navigation component that provides responsive navigation with server a
         <!-- Mobile menu button for dashboard - opens sidebar drawer -->
         {#if isDashboard}
           <button
-            aria-label="Open sidebar menu"
+            aria-label={m.layout.navOpenSidebarMenu()}
             class="inline-flex items-center p-2 rounded-lg transition-all duration-200 ease-in-out lg:hidden min-h-[36px] min-w-[36px]"
             style="color: {$colorStore.text};"
             onclick={() => { if (browser) window.dispatchEvent(new CustomEvent('toggle-mobile-sidebar')); }}
@@ -1202,13 +1203,13 @@ A unified navigation component that provides responsive navigation with server a
           <button
             aria-controls="mobile-menu"
             aria-expanded={menuOpen || sidebarOpen}
-            aria-label="Toggle navigation menu"
+            aria-label={m.layout.navToggleMenu()}
             class="inline-flex items-center p-2 rounded-lg border-transparent transition-all duration-200 ease-in-out md:hidden min-h-[36px] min-w-[36px] hover:bg-(--hover-bg-color)"
             style:--hover-bg-color="{$colorStore.primary}20"
             style:border-color="{$colorStore.primary}30"
             onclick={toggleMenu}
           >
-            <span class="sr-only">Toggle navigation menu</span>
+            <span class="sr-only">{m.layout.navToggleMenu()}</span>
             <span class="relative w-5 h-5 flex flex-col justify-center">
               <span
                       class="block w-5 h-0.5 rounded-sm transition-all duration-200 ease-in-out"
@@ -1258,7 +1259,7 @@ A unified navigation component that provides responsive navigation with server a
       <!-- Mobile Header -->
       <div class="p-4 border-b border-opacity-30" style="border-color: {$colorStore.primary};">
         <div class="flex justify-between items-center">
-          <div id="mobile-menu-title" class="sr-only">Mobile Navigation Menu</div>
+          <div id="mobile-menu-title" class="sr-only">{m.layout.navMobileMenuTitle()}</div>
           {#if currentUser}
             <div class="flex items-center space-x-3">
               <div class="relative">
@@ -1290,7 +1291,7 @@ A unified navigation component that provides responsive navigation with server a
                   class="p-2 rounded-lg transition-all hover:bg-white/10"
                   style="color: {$colorStore.text};"
                   onclick={closeMobileMenu}
-            aria-label="Close menu"
+            aria-label={m.layout.navCloseMenu()}
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -1303,18 +1304,18 @@ A unified navigation component that provides responsive navigation with server a
       <div class="flex-1 overflow-y-auto">
         <!-- Instance Selection -->
         <div class="p-4 border-b border-opacity-30" style="border-color: {$colorStore.primary};">
-          <div class="text-sm font-medium mb-2" style="color: {$colorStore.muted};">Bot Instances</div>
+          <div class="text-sm font-medium mb-2" style="color: {$colorStore.muted};">{m.layout.navBotInstances()}</div>
           <div class="space-y-2">
             {#if instancesLoading || stillCheckingInstances}
               <div class="text-sm flex items-center" style="color: {$colorStore.muted};">
                 <div class="animate-spin mr-2 h-4 w-4 border-2 rounded-full"
                      style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
-                {instancesLoading ? 'Loading instances...' : 'Checking server access...'}
+                {instancesLoading ? m.layout.navLoadingInstances() : m.layout.navCheckingServerAccess()}
               </div>
             {:else if instancesError}
               <div class="text-sm" style="color: {$colorStore.accent};">{instancesError}</div>
             {:else if visibleInstances.length === 0}
-              <div class="text-sm" style="color: {$colorStore.muted};">No accessible instances</div>
+              <div class="text-sm" style="color: {$colorStore.muted};">{m.layout.navNoAccessibleInstances()}</div>
             {:else}
               {#each visibleInstances as instance}
                 <button
@@ -1342,7 +1343,7 @@ A unified navigation component that provides responsive navigation with server a
                   {#if !instance.isActive}
                     <span class="px-1.5 py-0.5 rounded-sm text-xs bg-opacity-10"
                           style="color: {$colorStore.accent}; background-color: {$colorStore.accent}10;">
-                      Offline
+                      {m.common.offline()}
                     </span>
                   {/if}
                 </button>
@@ -1367,8 +1368,8 @@ A unified navigation component that provides responsive navigation with server a
               <i class="fa-solid fa-gear" style="color: {$colorStore.primary}; font-size: 16px;"></i>
             </div>
             <div class="flex-1">
-              <div class="font-semibold">My Settings</div>
-              <div class="text-xs" style="color: {$colorStore.muted};">Profile, privacy & preferences</div>
+              <div class="font-semibold">{m.common.mySettings()}</div>
+              <div class="text-xs" style="color: {$colorStore.muted};">{m.layout.navMySettingsHint()}</div>
             </div>
             <div class="text-base opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
               →
@@ -1381,7 +1382,7 @@ A unified navigation component that provides responsive navigation with server a
              style="border-color: {$colorStore.primary};">
           <div class="flex items-center gap-3">
             <i class="fa-solid fa-universal-access" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-            <span class="font-medium" style="color: {$colorStore.text};">Dyslexia-friendly font</span>
+            <span class="font-medium" style="color: {$colorStore.text};">{m.common.dyslexiaFriendlyFont()}</span>
           </div>
           <label class="relative inline-flex items-center cursor-pointer">
             <input
@@ -1405,7 +1406,7 @@ A unified navigation component that provides responsive navigation with server a
              style="border-color: {$colorStore.primary};">
           <div class="flex items-center gap-3">
             <i class="fa-solid fa-palette" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-            <span class="font-medium" style="color: {$colorStore.text};">Frutiger Aero theme</span>
+            <span class="font-medium" style="color: {$colorStore.text};">{m.layout.navAeroTheme()}</span>
           </div>
           <label class="relative inline-flex items-center cursor-pointer">
             <input
@@ -1488,7 +1489,7 @@ A unified navigation component that provides responsive navigation with server a
                    border-color: {$colorStore.accent}30;
                    box-shadow: 0 2px 8px {$colorStore.accent}10;"
           >
-            Logout
+            {m.layout.sidebarLogout()}
           </button>
         </form>
       </div>

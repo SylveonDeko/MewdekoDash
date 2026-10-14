@@ -1,5 +1,6 @@
 <!-- routes/dashboard/administration/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { page } from "$app/state";
   import { administrationApi, clientApi, protectionApi, type TimezoneInfo } from "$lib/api/index.ts";
@@ -31,13 +32,13 @@
   // Layout state
   let activeTab = $state("overview");
 
-  const tabs = [
-    { id: "overview", label: "Overview", icon: "fa-chart-bar" },
-    { id: "protection", label: "Protection Systems", icon: "fa-shield" },
-    { id: "roles", label: "Roles & Permissions", icon: "fa-users" },
-    { id: "automation", label: "Automation & Settings", icon: "fa-gear" },
-    { id: "advanced", label: "Advanced Operations", icon: "fa-bolt" }
-  ];
+  const tabs = $derived([
+    { id: "overview", label: m.common.overview(), icon: "fa-chart-bar" },
+    { id: "protection", label: m.administration.tabProtection(), icon: "fa-shield" },
+    { id: "roles", label: m.administration.tabRoles(), icon: "fa-users" },
+    { id: "automation", label: m.administration.tabAutomation(), icon: "fa-gear" },
+    { id: "advanced", label: m.administration.tabAdvanced(), icon: "fa-bolt" }
+  ]);
 
   // Server Management
   let staffRole: bigint | null = $state(null);
@@ -217,12 +218,12 @@
   let voiceChannels: Array<{ id: string; name: string }> = $state([]);
   let availableCommands: Array<{ id: string; name: string; label?: string }> = $state([]);
   let availablePermissions: Array<{ id: string; name: string }> = $state([]);
-  let actionOptions = [
-    { id: "9", name: "Warn", label: "Warn" },
-    { id: "0", name: "Mute", label: "Mute" },
-    { id: "1", name: "Kick", label: "Kick" },
-    { id: "2", name: "Ban", label: "Ban" }
-  ];
+  const actionOptions = $derived([
+    { id: "9", name: m.common.warn(), label: m.common.warn() },
+    { id: "0", name: m.common.actionMute(), label: m.common.actionMute() },
+    { id: "1", name: m.common.actionKick(), label: m.common.actionKick() },
+    { id: "2", name: m.common.actionBan(), label: m.common.actionBan() }
+  ]);
 
   // UI State
   let showConfirmModal = $state(false);
@@ -397,7 +398,7 @@
                   commandMap.set(commandId, {
                     id: commandId,
                     name: commandId,
-                    label: `${commandId} - ${command.description || 'No description'}`
+                    label: m.administration.pageCommandLabel({ command: commandId, description: command.description || m.administration.pageNoDescription() })
                   });
                 }
               });
@@ -409,26 +410,26 @@
 
         // Set up available Discord permissions
         availablePermissions = [
-          { id: "Administrator", name: "Administrator" },
-          { id: "ManageGuild", name: "Manage Server" },
-          { id: "ManageRoles", name: "Manage Roles" },
-          { id: "ManageChannels", name: "Manage Channels" },
-          { id: "ManageMessages", name: "Manage Messages" },
-          { id: "KickMembers", name: "Kick Members" },
-          { id: "BanMembers", name: "Ban Members" },
-          { id: "ModerateMembers", name: "Moderate Members" },
-          { id: "ViewChannel", name: "View Channels" },
-          { id: "SendMessages", name: "Send Messages" },
-          { id: "EmbedLinks", name: "Embed Links" },
-          { id: "AttachFiles", name: "Attach Files" },
-          { id: "ReadMessageHistory", name: "Read Message History" },
-          { id: "MentionEveryone", name: "Mention Everyone" },
-          { id: "UseExternalEmojis", name: "Use External Emojis" },
-          { id: "Connect", name: "Connect to Voice" },
-          { id: "Speak", name: "Speak in Voice" },
-          { id: "MuteMembers", name: "Mute Members" },
-          { id: "DeafenMembers", name: "Deafen Members" },
-          { id: "MoveMembers", name: "Move Members" }
+          { id: "Administrator", name: m.common.permAdministrator() },
+          { id: "ManageGuild", name: m.common.manageServer() },
+          { id: "ManageRoles", name: m.common.permManageRoles() },
+          { id: "ManageChannels", name: m.common.permManageChannels() },
+          { id: "ManageMessages", name: m.common.permManageMessages() },
+          { id: "KickMembers", name: m.common.permKickMembers() },
+          { id: "BanMembers", name: m.common.permBanMembers() },
+          { id: "ModerateMembers", name: m.common.permModerateMembers() },
+          { id: "ViewChannel", name: m.administration.pagePermViewChannel() },
+          { id: "SendMessages", name: m.common.sendMessages() },
+          { id: "EmbedLinks", name: m.administration.pagePermEmbedLinks() },
+          { id: "AttachFiles", name: m.administration.pagePermAttachFiles() },
+          { id: "ReadMessageHistory", name: m.administration.pagePermReadMessageHistory() },
+          { id: "MentionEveryone", name: m.common.mentionEveryone() },
+          { id: "UseExternalEmojis", name: m.administration.pagePermUseExternalEmojis() },
+          { id: "Connect", name: m.administration.pagePermConnect() },
+          { id: "Speak", name: m.administration.pagePermSpeak() },
+          { id: "MuteMembers", name: m.administration.pagePermMuteMembers() },
+          { id: "DeafenMembers", name: m.administration.pagePermDeafenMembers() },
+          { id: "MoveMembers", name: m.administration.pagePermMoveMembers() }
         ];
 
         // Available data
@@ -455,11 +456,11 @@
 
       } catch (err) {
         logger.error("Failed to fetch administration data:", err);
-        error = "Failed to load administration data";
+        error = m.administration.pageErrorLoad();
       } finally {
         loading = false;
       }
-    }, "api", "Loading administration data...");
+    }, "api", m.administration.pageLoading());
   }
 
   function showConfirm(title: string, message: string, action: () => void, variant: "danger" | "warning" | "info" = "danger") {
@@ -1040,10 +1041,15 @@
   // Utility Functions
   function formatAction(action: string | number) {
     if (typeof action === 'number') {
-      const actions = ["Mute", "Kick", "Ban", "Softban", "RemoveRoles", "ChatMute", "VoiceMute", "AddRole", "Delete", "Warn", "Timeout"];
-      return actions[action] || "Unknown";
+      const actions = [
+        m.common.actionMute(), m.common.actionKick(), m.common.actionBan(),
+        m.features.wizardPun3(), m.common.removeRoles(), m.features.wizardPun5(),
+        m.features.wizardPun6(), m.common.addRole(), m.common.delete(),
+        m.common.warn(), m.common.timeout()
+      ];
+      return actions[action] || m.common.unknown();
     }
-    return action || "Unknown";
+    return action || m.common.unknown();
   }
 
   onMount(() => {
@@ -1065,10 +1071,10 @@
 </script>
 
 <DashboardPageLayout
-  title="Administration"
-  subtitle="Manage all server administration settings and features"
+  title={m.features.administrationName()}
+  subtitle={m.administration.pageSubtitle()}
   icon="fa-gear"
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   tabs={tabs}
   bind:activeTab
   {autoSave}
@@ -1077,7 +1083,7 @@
   {#if loading}
     <div class="flex items-center justify-center py-12">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2" style="border-color: {$colorStore.primary}"></div>
-      <span class="ml-3" style="color: {$colorStore.text}">Loading administration data...</span>
+      <span class="ml-3" style="color: {$colorStore.text}">{m.administration.pageLoading()}</span>
     </div>
   {:else if error}
     <div class=" p-6 rounded-xl mb-6 transition-all" role="alert"
@@ -1085,7 +1091,7 @@
       <div class="flex items-center gap-3">
         <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         <div style="color: {$colorStore.accent}">
-          <div class="font-semibold text-lg">Error Occurred</div>
+          <div class="font-semibold text-lg">{m.common.errorOccurred()}</div>
           <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
         </div>
       </div>

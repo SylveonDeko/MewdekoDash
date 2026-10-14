@@ -1,5 +1,6 @@
 <!-- routes/dashboard/repeaters/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import { onMount } from "svelte";
@@ -74,12 +75,12 @@
   let quickEditError = $state("");
 
   /** Human readable metadata for each quick-edit field */
-  const quickEditMeta: Record<QuickEditField, { title: string; icon: string; hint: string }> = {
-    interval: { title: "Edit Interval", icon: "fa-clock", hint: "How often the message repeats, in hours, minutes and seconds." },
-    startTime: { title: "Edit Start Time", icon: "fa-clock", hint: "Time of day (24h) the first message should send. Leave empty to disable." },
-    threshold: { title: "Conversation Threshold", icon: "fa-users", hint: "Messages per minute that count as an active conversation." },
-    expiry: { title: "Edit Expiry", icon: "fa-calendar", hint: "Stop the repeater after a time limit or a number of triggers. Leave empty for no limit." }
-  };
+  const quickEditMeta: Record<QuickEditField, { title: string; icon: string; hint: string }> = $derived({
+    interval: { title: m.repeaters.pageActionEditIntervalAria(), icon: "fa-clock", hint: m.repeaters.pageQuickEditIntervalHint() },
+    startTime: { title: m.repeaters.pageActionEditStartAria(), icon: "fa-clock", hint: m.repeaters.pageQuickEditStartHint() },
+    threshold: { title: m.repeaters.pageQuickEditThresholdTitle(), icon: "fa-users", hint: m.repeaters.pageQuickEditThresholdHint() },
+    expiry: { title: m.repeaters.pageActionEditExpiryAria(), icon: "fa-calendar", hint: m.repeaters.pageQuickEditExpiryHint() }
+  });
 
   /** Open the quick edit modal for a single repeater property */
   function openQuickEdit(repeater: RepeaterResponse, field: QuickEditField) {
@@ -106,23 +107,23 @@
     quickEditError = "";
 
     if (field === "interval" && !/^\d{1,2}:\d{2}:\d{2}$/.test(quickEditForm.interval.trim())) {
-      quickEditError = "Interval must be in HH:MM:SS format.";
+      quickEditError = m.repeaters.pageQuickErrorInterval();
       return;
     }
     if (field === "startTime" && quickEditForm.startTime.trim() && !/^\d{1,2}:\d{2}$/.test(quickEditForm.startTime.trim())) {
-      quickEditError = "Start time must be in HH:MM format.";
+      quickEditError = m.repeaters.pageQuickErrorStart();
       return;
     }
     if (field === "threshold" && (!Number.isFinite(quickEditForm.threshold) || quickEditForm.threshold < 1)) {
-      quickEditError = "Threshold must be at least 1 message per minute.";
+      quickEditError = m.repeaters.pageQuickErrorThreshold();
       return;
     }
     if (field === "expiry" && quickEditForm.maxAge.trim() && !/^(\d+\.)?\d{1,2}:\d{2}:\d{2}$/.test(quickEditForm.maxAge.trim())) {
-      quickEditError = "Max age must look like 7.00:00:00 (days.hours:minutes:seconds).";
+      quickEditError = m.repeaters.pageQuickErrorMaxAge();
       return;
     }
     if (field === "expiry" && quickEditForm.maxTriggers.trim() && !/^\d+$/.test(quickEditForm.maxTriggers.trim())) {
-      quickEditError = "Max triggers must be a whole number.";
+      quickEditError = m.repeaters.pageQuickErrorMaxTriggers();
       return;
     }
 
@@ -179,12 +180,12 @@
       ...guildChannels.map(ch => ({
         id: ch.id,
         name: ch.name,
-      label: `#${ch.name} (Text Channel)`
+      label: m.repeaters.pageChannelOptionText({ name: ch.name })
     })),
       ...forumChannels.map(ch => ({
         id: ch.id,
         name: ch.name,
-        label: `#${ch.name} (Forum - ${ch.tags.length} tags)`
+        label: m.repeaters.pageChannelOptionForum({ name: ch.name, count: ch.tags.length })
     }))
     ]);
 
@@ -296,7 +297,7 @@
       
     } catch (err) {
       logger.error("Failed to load repeater data:", err);
-      showMessage("Failed to load repeater data", "error");
+      showMessage(m.repeaters.pageNotifyLoadFailed(), "error");
     } finally {
       loading = false;
     }
@@ -354,7 +355,7 @@
       });
 
       await repeatersApi.createRepeater($currentGuild.id, request);
-      showMessage("Repeater created successfully!", "success");
+      showMessage(m.repeaters.pageNotifyCreated(), "success");
 
       // Reset form
       resetForm();
@@ -366,7 +367,7 @@
       await loadAllData();
     } catch (err) {
       logger.error("Failed to create repeater:", err);
-      showMessage("Failed to create repeater", "error");
+      showMessage(m.repeaters.pageNotifyCreateFailed(), "error");
     } finally {
       saving = false;
     }
@@ -507,7 +508,7 @@
 
       // Only make the request if something actually changed
       if (Object.keys(request).length === 0) {
-        showMessage("No changes detected", "info");
+        showMessage(m.repeaters.pageNotifyNoChanges(), "info");
         resetForm();
         activeTab = "manage";
         return;
@@ -516,7 +517,7 @@
       logger.info(`Updating repeater ${editingRepeaterId} for guild ${$currentGuild.id} with changes:`, request);
       await repeatersApi.updateRepeater($currentGuild.id, editingRepeaterId!, request);
       logger.info(`Successfully updated repeater ${editingRepeaterId}`);
-      showMessage("Repeater updated successfully!", "success");
+      showMessage(m.repeaters.pageNotifyUpdated(), "success");
 
       // Reset form and switch back to manage tab
       resetForm();
@@ -524,7 +525,7 @@
       await loadAllData();
     } catch (err) {
       logger.error("Failed to update repeater:", err);
-      showMessage("Failed to update repeater", "error");
+      showMessage(m.repeaters.pageNotifyUpdateFailed(), "error");
     } finally {
       saving = false;
     }
@@ -533,15 +534,15 @@
   // Delete a repeater
   async function deleteRepeater(repeaterId: number) {
     if (!$currentGuild?.id) return;
-    if (!(await requestConfirmation({ message: "Are you sure you want to delete this repeater? This action cannot be undone.", confirmText: "Delete" }))) return;
+    if (!(await requestConfirmation({ message: m.repeaters.pageConfirmDelete(), confirmText: m.common.delete() }))) return;
 
     try {
       await repeatersApi.deleteRepeater($currentGuild.id, repeaterId);
-      showMessage("Repeater deleted successfully", "success");
+      showMessage(m.repeaters.pageNotifyDeleted(), "success");
       await loadAllData();
     } catch (err) {
       logger.error("Failed to delete repeater:", err);
-      showMessage("Failed to delete repeater", "error");
+      showMessage(m.repeaters.pageNotifyDeleteFailed(), "error");
     }
   }
 
@@ -557,11 +558,11 @@
         isEnabled: !repeater.isEnabled
       });
       
-      showMessage(`Repeater ${repeater.isEnabled ? 'disabled' : 'enabled'}`, "success");
+      showMessage(repeater.isEnabled ? m.repeaters.pageNotifyDisabled() : m.repeaters.pageNotifyEnabled(), "success");
       await loadAllData();
     } catch (err) {
       logger.error("Failed to toggle repeater:", err);
-      showMessage("Failed to toggle repeater", "error");
+      showMessage(m.repeaters.pageNotifyToggleFailed(), "error");
     }
   }
 
@@ -571,10 +572,10 @@
 
     try {
       await repeatersApi.triggerRepeater($currentGuild.id, repeaterId);
-      showMessage("Repeater triggered successfully!", "success");
+      showMessage(m.repeaters.pageNotifyTriggered(), "success");
     } catch (err) {
       logger.error("Failed to trigger repeater:", err);
-      showMessage("Failed to trigger repeater", "error");
+      showMessage(m.repeaters.pageNotifyTriggerFailed(), "error");
     }
   }
 
@@ -720,7 +721,7 @@
 
   function getChannelName(channelId: bigint): string {
     const channel = allChannels.find(c => c.id === channelId.toString());
-    return channel ? `#${channel.name}` : "Unknown channel";
+    return channel ? `#${channel.name}` : m.common.unknownChannel();
   }
 
 
@@ -746,13 +747,13 @@
 
     try {
       await repeatersApi.bulkToggleRepeaters($currentGuild.id, selectedRepeaterIds, enable);
-      showMessage(`${enable ? "Enabled" : "Disabled"} repeaters successfully`, "success");
+      showMessage(enable ? m.repeaters.pageNotifyBulkEnabled() : m.repeaters.pageNotifyBulkDisabled(), "success");
 
       clearSelection();
       await loadAllData();
     } catch (err) {
       logger.error("Failed to bulk toggle repeaters:", err);
-      showMessage("Failed to bulk toggle repeaters", "error");
+      showMessage(m.repeaters.pageNotifyBulkFailed(), "error");
     }
   }
 
@@ -762,11 +763,11 @@
 
     try {
       await repeatersApi.updateRepeater($currentGuild.id, repeaterId, { queuePosition: newPosition });
-      showMessage("Queue position updated successfully", "success");
+      showMessage(m.repeaters.pageNotifyQueueUpdated(), "success");
       await loadAllData();
     } catch (err) {
       logger.error("Failed to update queue position:", err);
-      showMessage("Failed to update queue position", "error");
+      showMessage(m.repeaters.pageNotifyQueueFailed(), "error");
     }
   }
 
@@ -788,11 +789,11 @@
 
     try {
       await repeatersApi.updateRepeater($currentGuild.id, repeaterId, { interval });
-      showMessage("Interval updated successfully", "success");
+      showMessage(m.repeaters.pageNotifyIntervalUpdated(), "success");
       await loadAllData();
     } catch (err) {
       logger.error("Failed to update interval:", err);
-      showMessage("Failed to update interval", "error");
+      showMessage(m.repeaters.pageNotifyIntervalFailed(), "error");
     }
   }
 
@@ -809,7 +810,7 @@
       await loadAllData();
     } catch (err) {
       logger.error("Failed to update start time:", err);
-      showMessage("Failed to update start time", "error");
+      showMessage(m.repeaters.pageNotifyStartFailed(), "error");
     }
   }
 
@@ -818,11 +819,11 @@
 
     try {
       await repeatersApi.updateRepeater($currentGuild.id, repeaterId, { conversationThreshold: threshold });
-      showMessage("Conversation threshold updated successfully", "success");
+      showMessage(m.repeaters.pageNotifyThresholdUpdated(), "success");
       await loadAllData();
     } catch (err) {
       logger.error("Failed to update conversation threshold:", err);
-      showMessage("Failed to update conversation threshold", "error");
+      showMessage(m.repeaters.pageNotifyThresholdFailed(), "error");
     }
   }
 
@@ -852,7 +853,7 @@
       await loadAllData();
     } catch (err) {
       logger.error("Failed to update expiry settings:", err);
-      showMessage("Failed to update expiry settings", "error");
+      showMessage(m.repeaters.pageNotifyExpiryFailed(), "error");
     }
   }
 
@@ -871,12 +872,12 @@
       await repeatersApi.updateRepeater($currentGuild.id, repeaterId, {
         forumTagConditions: conditionsJson
       });
-      showMessage("Forum tag conditions updated successfully", "success");
+      showMessage(m.repeaters.pageNotifyTagsUpdated(), "success");
       showForumTagEditor = false;
       await loadAllData();
     } catch (err) {
       logger.error("Failed to update forum tag conditions:", err);
-      showMessage("Failed to update forum tag conditions", "error");
+      showMessage(m.repeaters.pageNotifyTagsFailed(), "error");
     }
   }
 
@@ -958,16 +959,16 @@
   });
 
   // Tabs configuration
-  const tabs = [
-    { id: "overview", label: "Overview", icon: "fa-chart-bar" },
-    { id: "manage", label: "Manage Repeaters", icon: "fa-clock" },
-    { id: "create", label: "Create New", icon: "fa-plus" }
-  ];
+  const tabs = $derived([
+    { id: "overview", label: m.common.overview(), icon: "fa-chart-bar" },
+    { id: "manage", label: m.repeaters.tabManage(), icon: "fa-clock" },
+    { id: "create", label: m.repeaters.tabCreate(), icon: "fa-plus" }
+  ]);
 
   // Action buttons configuration
     let actionButtons = $derived([
     {
-      label: "Refresh",
+      label: m.common.refresh(),
       icon: "fa-arrows-rotate",
       action: loadAllData,
       loading: loading
@@ -1001,12 +1002,12 @@
 <DashboardPageLayout
   {actionButtons}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-clock"
   {statusMessages}
-  subtitle="Manage automated recurring messages and sticky posts"
+  subtitle={m.repeaters.pageSubtitle()}
   {tabs}
-  title="Message Repeaters"
+  title={m.repeaters.pageTitle()}
 >
 
   <!-- Tab Content -->
@@ -1017,36 +1018,36 @@
         {#if repeaterStats}
           <StatCard
             icon="fa-clock"
-            label="Total Repeaters"
+            label={m.repeaters.pageStatTotal()}
             value={repeaterStats.totalRepeaters}
-            subtitle="configured"
+            subtitle={m.common.configuredLower()}
             iconColor="primary"
             animationDelay={0}
           />
 
           <StatCard
             icon="fa-bell"
-            label="Active Repeaters"
+            label={m.repeaters.pageStatActive()}
             value={repeaterStats.activeRepeaters}
-            subtitle="currently running"
+            subtitle={m.repeaters.pageStatActiveHint()}
             iconColor="secondary"
             animationDelay={100}
           />
 
           <StatCard
             icon="fa-star"
-            label="Total Displays"
+            label={m.repeaters.pageStatDisplays()}
             value={repeaterStats.totalDisplays}
-            subtitle="messages sent"
+            subtitle={m.repeaters.pageStatDisplaysHint()}
             iconColor="accent"
             animationDelay={200}
           />
 
           <StatCard
             icon="fa-calendar"
-            label="Scheduled"
+            label={m.common.scheduled()}
             value={repeaterStats.timeScheduledRepeaters}
-            subtitle="with time conditions"
+            subtitle={m.repeaters.pageStatScheduledHint()}
             iconColor="primary"
             animationDelay={300}
           />
@@ -1074,7 +1075,7 @@
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
             <div class="flex items-center gap-2 mb-4">
               <i class="fa-solid fa-gear" style="color: {$colorStore.primary}; font-size: 18px;"></i>
-              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Trigger Modes</h3>
+              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.repeaters.pageOverviewModes()}</h3>
             </div>
 
             <div class="space-y-2">
@@ -1095,7 +1096,7 @@
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
             <div class="flex items-center gap-2 mb-4">
               <i class="fa-solid fa-star" style="color: {$colorStore.secondary}; font-size: 18px;"></i>
-              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Most Active</h3>
+              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.common.mostActive()}</h3>
             </div>
 
             <div class="space-y-3">
@@ -1104,7 +1105,7 @@
                   {getChannelName(repeaterStats.mostActiveRepeater.channelId)}
                 </span>
                 <span class="font-bold" style="color: {$colorStore.secondary}">
-                  {repeaterStats.mostActiveRepeater.displayCount} displays
+                  {repeaterStats.mostActiveRepeater.displayCount === 1 ? m.repeaters.pageDisplaysOne({ count: 1 }) : m.repeaters.pageDisplaysOther({ count: repeaterStats.mostActiveRepeater.displayCount })}
                 </span>
               </div>
               <p class="text-xs line-clamp-2" style="color: {$colorStore.muted}">
@@ -1125,10 +1126,8 @@
              style="background: {$colorStore.primary}08;">
           <i class="fa-utility-duo fa-regular fa-clock"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5;"></i>
-          <h3 class="text-xl font-semibold mb-2 mt-4" style="color: {$colorStore.text}">No Repeaters</h3>
-          <p class="mb-6" style="color: {$colorStore.muted}">
-            Create your first repeater to start sending automated messages.
-          </p>
+          <h3 class="text-xl font-semibold mb-2 mt-4" style="color: {$colorStore.text}">{m.repeaters.pageEmptyTitle()}</h3>
+          <p class="mb-6" style="color: {$colorStore.muted}">{m.repeaters.pageEmptyHint()}</p>
           <div class="flex justify-center">
             <button
               class="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-[1.02]"
@@ -1137,7 +1136,7 @@
             >
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                <span>Create Repeater</span>
+                <span>{m.repeaters.pageCreateRepeater()}</span>
               </div>
             </button>
           </div>
@@ -1153,7 +1152,7 @@
               disabled={repeaters.length === 0}
             >
               <i class="fa-solid fa-square-check mr-1" style="font-size: 14px;"></i>
-              Select All ({repeaters.length})
+              {m.common.selectAllCount({ count: repeaters.length })}
             </button>
 
             {#if selectedRepeaterIds.length > 0}
@@ -1163,7 +1162,7 @@
                 onclick={clearSelection}
               >
                 <i class="fa-solid fa-square mr-1" style="font-size: 14px;"></i>
-                Clear ({selectedRepeaterIds.length})
+                {m.repeaters.pageClearSelection({ count: selectedRepeaterIds.length })}
               </button>
             {/if}
           </div>
@@ -1172,7 +1171,7 @@
           {#if selectedRepeaterIds.length > 0}
             <div class="flex flex-wrap items-center gap-2" in:fly={{ x: 20, duration: 300 }}>
               <span class="text-xs sm:text-sm font-medium" style="color: {$colorStore.text}">
-                {selectedRepeaterIds.length} selected:
+                {m.repeaters.pageSelectedCount({ count: selectedRepeaterIds.length })}
               </span>
 
               <button
@@ -1181,7 +1180,7 @@
                 onclick={() => bulkToggleRepeaters(true)}
               >
                 <i class="fa-solid fa-check mr-1" style="font-size: 14px;"></i>
-                Enable
+                {m.common.enable()}
               </button>
 
               <button
@@ -1190,7 +1189,7 @@
                 onclick={() => bulkToggleRepeaters(false)}
               >
                 <i class="fa-solid fa-xmark mr-1" style="font-size: 14px;"></i>
-                Disable
+                {m.common.disable()}
               </button>
             </div>
           {/if}
@@ -1237,9 +1236,9 @@
                     <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm"
                          style="color: {$colorStore.muted}">
                       <span class="whitespace-nowrap">{getTriggerModeLabel(repeater.triggerMode)}</span>
-                      <span class="hidden sm:inline">Priority: {repeater.priority}</span>
-                      <span class="whitespace-nowrap">Queue: #{repeater.queuePosition}</span>
-                      <span class="whitespace-nowrap">{repeater.displayCount} displays</span>
+                      <span class="hidden sm:inline">{m.repeaters.pageCardPriority({ value: repeater.priority })}</span>
+                      <span class="whitespace-nowrap">{m.repeaters.pageCardQueue({ position: repeater.queuePosition })}</span>
+                      <span class="whitespace-nowrap">{repeater.displayCount === 1 ? m.repeaters.pageDisplaysOne({ count: 1 }) : m.repeaters.pageDisplaysOther({ count: repeater.displayCount })}</span>
                     </div>
                   </div>
                 </div>
@@ -1250,7 +1249,7 @@
                        style="background: {repeater.isEnabled ? $colorStore.primary : $colorStore.muted};"></div>
                   <span class="text-xs sm:text-sm font-medium whitespace-nowrap"
                         style="color: {repeater.isEnabled ? $colorStore.primary : $colorStore.muted}">
-                    {repeater.isEnabled ? 'Active' : 'Disabled'}
+                    {repeater.isEnabled ? m.common.active() : m.common.disabled()}
                   </span>
                 </div>
               </div>
@@ -1261,9 +1260,9 @@
                   <div class="[&_button]:pointer-events-none">
                     <FullscreenEmbedBuilder
                       value={toBuilderValue(repeater.message)}
-                      previewTitle="Message Preview"
-                      previewDescription="Click Edit to modify"
-                      placeholder="No message content"
+                      previewTitle={m.repeaters.pageMessagePreviewTitle()}
+                      previewDescription={m.repeaters.pageMessagePreviewDescription()}
+                      placeholder={m.repeaters.pageMessagePreviewPlaceholder()}
                       icon="fa-comment"
                       allowContent={false}
                       allowMultipleEmbeds={false}
@@ -1277,9 +1276,7 @@
                 {:else}
                   <!-- Empty message -->
                   <div class="p-3 rounded-lg text-center" style="background: {$colorStore.primary}08;">
-                    <p class="text-sm" style="color: {$colorStore.muted}">
-                      No message configured
-                    </p>
+                    <p class="text-sm" style="color: {$colorStore.muted}">{m.repeaters.pageMessageNone()}</p>
                   </div>
                 {/if}
               </div>
@@ -1288,37 +1285,37 @@
                 {#if repeater.triggerMode === StickyTriggerMode.Immediate}
                   <!-- Immediate Mode Info -->
                   <div>
-                    <div class="text-xs font-medium mb-1" style="color: {$colorStore.muted}">Trigger Mode</div>
+                    <div class="text-xs font-medium mb-1" style="color: {$colorStore.muted}">{m.repeaters.pageCardTriggerMode()}</div>
                     <div class="text-sm flex items-center gap-2" style="color: {$colorStore.text}">
                       <i class="fa-solid fa-bolt" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                      Immediate Response
+                      {m.repeaters.pageCardImmediate()}
                     </div>
                     <div class="text-xs mt-1" style="color: {$colorStore.muted}">
-                      Reposts instantly when messages are sent
+                      {m.repeaters.pageCardImmediateHint()}
                     </div>
                   </div>
                 {:else}
                   <!-- Time-based modes show interval and next execution -->
                   <div>
-                    <div class="text-xs font-medium mb-1" style="color: {$colorStore.muted}">Interval</div>
+                    <div class="text-xs font-medium mb-1" style="color: {$colorStore.muted}">{m.repeaters.pageInterval()}</div>
                     <div class="text-sm" style="color: {$colorStore.text}">
                       {formatInterval(repeater.interval)}
                     </div>
                     {#if repeater.startTimeOfDay}
                       <div class="text-xs mt-1" style="color: {$colorStore.muted}">
-                        Start: {repeater.startTimeOfDay}
+                        {m.repeaters.pageCardStart({ time: repeater.startTimeOfDay })}
                       </div>
                     {/if}
                   </div>
 
                   <div>
-                    <div class="text-xs font-medium mb-1" style="color: {$colorStore.muted}">Next Execution</div>
+                    <div class="text-xs font-medium mb-1" style="color: {$colorStore.muted}">{m.repeaters.pageCardNext()}</div>
                     <div class="text-sm" style="color: {$colorStore.text}">
                       {formatTimeUntilNext(repeater.nextExecution)}
                     </div>
                     {#if repeater.requiresTimezone}
                       <div class="text-xs mt-1" style="color: {$colorStore.accent}">
-                        Timezone needed
+                        {m.repeaters.pageCardTimezone()}
                       </div>
                     {/if}
                   </div>
@@ -1327,33 +1324,33 @@
                 {#if repeater.triggerMode === StickyTriggerMode.OnActivity || repeater.triggerMode === StickyTriggerMode.OnNoActivity || repeater.triggerMode === StickyTriggerMode.AfterMessages}
                   <!-- Activity modes show activity settings -->
                   <div>
-                    <div class="text-xs font-medium mb-1" style="color: {$colorStore.muted}">Activity Settings</div>
+                    <div class="text-xs font-medium mb-1" style="color: {$colorStore.muted}">{m.repeaters.pageActivitySettings()}</div>
                     <div class="text-sm" style="color: {$colorStore.text}">
-                      Threshold: {repeater.activityThreshold}
+                      {m.repeaters.pageCardThreshold({ value: repeater.activityThreshold })}
                     </div>
                     <div class="text-xs mt-1" style="color: {$colorStore.muted}">
-                      Window: {formatInterval(repeater.activityTimeWindow)}
+                      {m.repeaters.pageCardWindow({ window: formatInterval(repeater.activityTimeWindow) })}
                     </div>
                     {#if repeater.conversationDetection}
                       <div class="text-xs" style="color: {$colorStore.muted}">
-                        Conversation: {repeater.conversationThreshold}/min
+                        {m.repeaters.pageCardConversation({ threshold: repeater.conversationThreshold })}
                       </div>
                     {/if}
                   </div>
                 {/if}
 
                 <div>
-                  <div class="text-xs font-medium mb-1" style="color: {$colorStore.muted}">Auto-Expiry</div>
+                  <div class="text-xs font-medium mb-1" style="color: {$colorStore.muted}">{m.repeaters.pageCardExpiry()}</div>
                   <div class="text-sm" style="color: {$colorStore.text}">
                     {#if repeater.maxAge || repeater.maxTriggers}
                       {#if repeater.maxAge}
-                        Age: {repeater.maxAge}
+                        {m.repeaters.pageCardAge({ age: repeater.maxAge })}
                       {/if}
                       {#if repeater.maxTriggers}
-                        Max: {repeater.maxTriggers} triggers
+                        {m.repeaters.pageCardMaxTriggers({ count: repeater.maxTriggers })}
                       {/if}
                     {:else}
-                      Never expires
+                      {m.repeaters.pageCardNeverExpires()}
                     {/if}
                   </div>
                 </div>
@@ -1361,46 +1358,46 @@
 
               <!-- Feature Badges -->
               <div class="mb-4">
-                <div class="text-xs font-medium mb-2" style="color: {$colorStore.muted}">Features & Settings</div>
+                <div class="text-xs font-medium mb-2" style="color: {$colorStore.muted}">{m.repeaters.pageCardFeatures()}</div>
                 <div class="flex flex-wrap gap-2">
                   {#if repeater.conversationDetection}
                     <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
                       <i class="fa-solid fa-users" style="font-size: 12px;"></i>
-                      Conversation Detection
+                      {m.repeaters.pageFeatureConversation()}
                     </span>
                   {/if}
                   {#if repeater.threadAutoSticky}
                     <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.accent}20; color: {$colorStore.accent}">
                       <i class="fa-solid fa-comment" style="font-size: 12px;"></i>
-                      Thread Auto Sticky
+                      {m.repeaters.pageFeatureThreadAuto()}
                     </span>
                   {/if}
                   {#if repeater.threadOnlyMode}
                     <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.accent}20; color: {$colorStore.accent}">
-                      Thread Only
+                      {m.repeaters.pageFeatureThreadOnly()}
                     </span>
                   {/if}
                   {#if repeater.timeConditions}
                     <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
                       <i class="fa-solid fa-clock" style="font-size: 12px;"></i>
-                      Time Scheduled
+                      {m.repeaters.pageFeatureScheduled()}
                     </span>
                   {/if}
                   {#if repeater.forumTagConditions}
                     <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
                       <i class="fa-solid fa-tags" style="font-size: 12px;"></i>
-                      Forum Tags
+                      {m.repeaters.pageFeatureForumTags()}
                     </span>
                   {/if}
                   {#if repeater.noRedundant}
                     <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
-                      No Redundant
+                      {m.repeaters.pageFeatureNoRedundant()}
                     </span>
                   {/if}
                 </div>
@@ -1413,10 +1410,10 @@
                     class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     onclick={() => editRepeater(repeater)}
+                    aria-label={m.common.edit()}
                   >
                     <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
-                    <span class="hidden sm:inline">Edit</span>
-                    <span class="sm:hidden">Edit</span>
+                    <span class="hidden sm:inline">{m.common.edit()}</span>
                   </button>
 
                   <button
@@ -1426,7 +1423,7 @@
                     onclick={() => toggleRepeater(repeater.id)}
                   >
                     <i class="fa-solid fa-toggle-off" style="font-size: 12px;"></i>
-                    {repeater.isEnabled ? 'Disable' : 'Enable'}
+                    {repeater.isEnabled ? m.common.disable() : m.common.enable()}
                   </button>
 
                   <button
@@ -1436,13 +1433,13 @@
                     disabled={!repeater.isEnabled}
                   >
                     <i class="fa-solid fa-play" style="font-size: 12px;"></i>
-                    <span class="hidden sm:inline">Trigger Now</span>
-                    <span class="sm:hidden">Trigger</span>
+                    <span class="hidden sm:inline">{m.repeaters.pageActionTriggerLong()}</span>
+                    <span class="sm:hidden">{m.common.trigger()}</span>
                   </button>
 
                   <!-- Queue Position Controls -->
                   <div class="flex items-center">
-                    <button aria-label="Move repeater up"
+                    <button aria-label={m.repeaters.pageActionMoveUpAria()}
                             class="flex items-center gap-1 px-1.5 sm:px-2 py-1.5 sm:py-2 rounded-l-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                       onclick={() => moveRepeaterUp(repeater.id)}
@@ -1450,7 +1447,7 @@
                     >
                       <i class="fa-solid fa-arrow-up" style="font-size: 12px;"></i>
                     </button>
-                    <button aria-label="Move repeater down"
+                    <button aria-label={m.repeaters.pageActionMoveDownAria()}
                             class="flex items-center gap-1 px-1.5 sm:px-2 py-1.5 sm:py-2 rounded-r-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                       onclick={() => moveRepeaterDown(repeater.id)}
@@ -1465,8 +1462,8 @@
                     onclick={() => deleteRepeater(repeater.id)}
                   >
                     <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
-                    <span class="hidden sm:inline">Delete</span>
-                    <span class="sm:hidden">Del</span>
+                    <span class="hidden sm:inline">{m.common.delete()}</span>
+                    <span class="sm:hidden">{m.repeaters.pageActionDeleteShort()}</span>
                   </button>
                 </div>
 
@@ -1477,22 +1474,22 @@
                     class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
                     style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                     onclick={() => openQuickEdit(repeater, "interval")}
-                    aria-label="Edit interval"
+                    aria-label={m.repeaters.pageActionEditIntervalAria()}
                   >
                     <i class="fa-solid fa-clock" style="font-size: 10px;"></i>
-                    <span class="hidden sm:inline">Interval</span>
-                    <span class="sm:hidden">Int</span>
+                    <span class="hidden sm:inline">{m.repeaters.pageInterval()}</span>
+                    <span class="sm:hidden">{m.repeaters.pageIntervalShort()}</span>
                   </button>
 
                   <button
                     class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
                     style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                     onclick={() => openQuickEdit(repeater, "startTime")}
-                    aria-label="Edit start time"
+                    aria-label={m.repeaters.pageActionEditStartAria()}
                   >
                     <i class="fa-solid fa-clock" style="font-size: 10px;"></i>
-                    <span class="hidden sm:inline">Start Time</span>
-                    <span class="sm:hidden">Start</span>
+                    <span class="hidden sm:inline">{m.repeaters.pageStartTime()}</span>
+                    <span class="sm:hidden">{m.common.start()}</span>
                   </button>
 
                   {#if repeater.conversationDetection}
@@ -1500,10 +1497,10 @@
                       class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
                       style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                       onclick={() => openQuickEdit(repeater, "threshold")}
-                      aria-label="Edit conversation threshold"
+                      aria-label={m.repeaters.pageActionEditThresholdAria()}
                     >
                       <i class="fa-solid fa-users" style="font-size: 10px;"></i>
-                      <span class="whitespace-nowrap">Conv: {repeater.conversationThreshold}/min</span>
+                      <span class="whitespace-nowrap">{m.repeaters.pageActionConversation({ threshold: repeater.conversationThreshold })}</span>
                     </button>
                   {/if}
 
@@ -1511,10 +1508,10 @@
                     class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
                     style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
                     onclick={() => openQuickEdit(repeater, "expiry")}
-                    aria-label="Edit expiry"
+                    aria-label={m.repeaters.pageActionEditExpiryAria()}
                   >
                     <i class="fa-solid fa-calendar" style="font-size: 12px;"></i>
-                    Expiry
+                    {m.repeaters.pageActionExpiry()}
                   </button>
 
                   <!-- Advanced Features open the full editor -->
@@ -1525,7 +1522,7 @@
                       onclick={() => editRepeater(repeater)}
                     >
                       <i class="fa-solid fa-tags" style="font-size: 12px;"></i>
-                      Forum Tags
+                      {m.repeaters.pageFeatureForumTags()}
                     </button>
                   {/if}
 
@@ -1536,7 +1533,7 @@
                       onclick={() => editRepeater(repeater)}
                     >
                       <i class="fa-solid fa-code" style="font-size: 12px;"></i>
-                      Time Conditions
+                      {m.repeaters.pageActionTimeConditions()}
                     </button>
                   {/if}
 
@@ -1550,7 +1547,7 @@
                       }}
                     >
                       <i class="fa-solid fa-comment" style="font-size: 12px;"></i>
-                      Thread Messages
+                      {m.repeaters.pageActionThreadMessages()}
                     </button>
                   {/if}
                 </div>
@@ -1574,18 +1571,14 @@
             {#if isEditMode}
               <i class="fa-solid fa-pen flex-shrink-0" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
               <div class="min-w-0 flex-1">
-                <h2 class="text-lg sm:text-xl md:text-2xl font-bold truncate" style="color: {$colorStore.text}">Edit
-                  Repeater</h2>
-                <p class="text-xs sm:text-sm mt-1 break-words" style="color: {$colorStore.muted}">Modify settings for
-                  repeater #{editingRepeaterId}</p>
+                <h2 class="text-lg sm:text-xl md:text-2xl font-bold truncate" style="color: {$colorStore.text}">{m.repeaters.pageFormEditTitle()}</h2>
+                <p class="text-xs sm:text-sm mt-1 break-words" style="color: {$colorStore.muted}">{m.repeaters.pageFormEditSubtitle({ id: editingRepeaterId ?? 0 })}</p>
               </div>
             {:else}
               <i class="fa-solid fa-plus flex-shrink-0" style="color: {$colorStore.primary}; font-size: 20px;"></i>
               <div class="min-w-0 flex-1">
-                <h2 class="text-lg sm:text-xl md:text-2xl font-bold" style="color: {$colorStore.text}">Create New
-                  Repeater</h2>
-                <p class="text-xs sm:text-sm mt-1" style="color: {$colorStore.muted}">Set up automated messages for your
-                  server</p>
+                <h2 class="text-lg sm:text-xl md:text-2xl font-bold" style="color: {$colorStore.text}">{m.repeaters.pageFormCreateTitle()}</h2>
+                <p class="text-xs sm:text-sm mt-1" style="color: {$colorStore.muted}">{m.repeaters.pageFormCreateSubtitle()}</p>
               </div>
             {/if}
           </div>
@@ -1597,7 +1590,7 @@
           <div class="space-y-4">
             <div class="flex items-center gap-2 mb-4">
               <i class="fa-solid fa-hashtag" style="color: {$colorStore.primary}; font-size: 18px;"></i>
-              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Target Channel</h3>
+              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.repeaters.pageFormChannel()}</h3>
             </div>
 
             <div class="pl-0 md:pl-7">
@@ -1605,7 +1598,7 @@
                 type="channel"
                 options={allChannels.map(ch => ({ id: ch.id, name: ch.name }))}
                 bind:selected={formData.channelId}
-                placeholder="Select channel..." />
+                placeholder={m.common.selectChannelPlaceholder()} />
               {#if selectedChannelType === 'forum' && availableForumTags.length > 0}
                 <div class="mt-6 p-5 md:p-6 rounded-xl border"
                      style="background: {$colorStore.secondary}05; border-color: {$colorStore.secondary}20;"
@@ -1613,10 +1606,10 @@
                   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                     <div class="flex items-center gap-2">
                       <i class="fa-solid fa-tags" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
-                      <h4 class="text-base font-semibold" style="color: {$colorStore.text}">Forum Tag Filters</h4>
+                      <h4 class="text-base font-semibold" style="color: {$colorStore.text}">{m.repeaters.pageFormTagsTitle()}</h4>
                       <span class="text-xs px-2 py-1 rounded-sm"
                             style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
-                          Optional
+                          {m.common.optional()}
                         </span>
                     </div>
 
@@ -1627,14 +1620,12 @@
                         style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                         onclick={() => selectedForumTags = {required: [], excluded: []}}
                       >
-                        Clear All
+                        {m.common.clearAll()}
                       </button>
                     {/if}
                   </div>
 
-                  <p class="text-sm mb-6" style="color: {$colorStore.muted}">
-                    Configure which forum tags are required or excluded for this repeater.
-                  </p>
+                  <p class="text-sm mb-6" style="color: {$colorStore.muted}">{m.repeaters.pageFormTagsHint()}</p>
 
                   <!-- Required/Excluded Sections -->
                   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
@@ -1642,9 +1633,7 @@
                     <!-- Required Tags Section -->
                     <div>
                       <h5 class="text-sm font-medium mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-                        <i class="fa-solid fa-check" style="color: {$colorStore.primary}; font-size: 14px;"></i>
-                        Must Have These Tags
-                      </h5>
+                        <i class="fa-solid fa-check" style="color: {$colorStore.primary}; font-size: 14px;"></i>{m.repeaters.pageFormTagsRequired()}</h5>
                       <div class="space-y-2.5">
                         {#each availableForumTags as tag}
                           <label for="required-tag-{tag.id}"
@@ -1678,7 +1667,7 @@
                         {#if selectedForumTags.required.length === 0}
                           <div class="text-sm text-center py-4 rounded-lg"
                                style="background: {$colorStore.primary}05; color: {$colorStore.muted}">
-                            No tags required - will work on all threads
+                            {m.repeaters.pageFormTagsRequiredEmpty()}
                           </div>
                         {/if}
                       </div>
@@ -1687,9 +1676,7 @@
                     <!-- Excluded Tags Section -->
                     <div>
                       <h5 class="text-sm font-medium mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-                        <i class="fa-solid fa-xmark" style="color: {$colorStore.accent}; font-size: 14px;"></i>
-                        Never Use These Tags
-                      </h5>
+                        <i class="fa-solid fa-xmark" style="color: {$colorStore.accent}; font-size: 14px;"></i>{m.repeaters.pageFormTagsExcluded()}</h5>
                       <div class="space-y-2.5">
                         {#each availableForumTags as tag}
                           <label for="excluded-tag-{tag.id}"
@@ -1721,7 +1708,7 @@
                               <span class="text-sm" style="color: {$colorStore.text}">{tag.name}</span>
                               {#if selectedForumTags.required.includes(tag.id)}
                                   <span class="text-xs px-2 py-0.5 rounded-md"
-                                        style="background: {$colorStore.primary}; color: white;">Required</span>
+                                        style="background: {$colorStore.primary}; color: white;">{m.common.required()}</span>
                                 {/if}
                               </span>
                           </label>
@@ -1730,7 +1717,7 @@
                         {#if selectedForumTags.excluded.length === 0}
                           <div class="text-sm text-center py-4 rounded-lg"
                                style="background: {$colorStore.accent}05; color: {$colorStore.muted}">
-                            No tags excluded - will work on all thread types
+                            {m.repeaters.pageFormTagsExcludedEmpty()}
                           </div>
                         {/if}
                       </div>
@@ -1768,63 +1755,61 @@
           <div>
             <div class="flex items-center gap-2 mb-4">
               <i class="fa-solid fa-message" style="color: {$colorStore.primary}; font-size: 18px;"></i>
-              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Message Content</h3>
+              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.common.messageContent()}</h3>
             </div>
 
             <div class="pl-0 md:pl-7 space-y-3">
               <FullscreenEmbedBuilder
                 bind:value={repeaterMessage}
-                previewTitle="Repeater Message"
-                previewDescription="Message that will be repeated in the channel"
+                previewTitle={m.repeaters.pageFormMessagePreviewTitle()}
+                previewDescription={m.repeaters.pageFormMessagePreviewDescription()}
                 icon="fa-clock"
                 allowContent={true}
                 allowMultipleEmbeds={true}
                 maxEmbeds={10}
                 allowComponents={true}
                 additionalPlaceholders={[
-                    { category: "Server", name: "%server%", description: "Server name" },
-                    { category: "Server", name: "%server.members%", description: "Member count" },
-                    { category: "Server", name: "%server.id%", description: "Server ID" }
+                    { category: "Server", name: "%server%", description: m.placeholders.server() },
+                    { category: "Server", name: "%server.members%", description: m.placeholders.serverMembers() },
+                    { category: "Server", name: "%server.id%", description: m.placeholders.serverId() }
                   ]}
                 guildId={$currentGuild?.id}
                 user={data.user}
-                placeholder="Click to configure repeater message with rich embeds and components"
+                placeholder={m.repeaters.pageFormMessagePlaceholder()}
               />
 
-              <p class="text-sm" style="color: {$colorStore.muted}">
-                Create rich messages with embeds, buttons, and select menus. Supports Discord markdown and placeholders.
-              </p>
+              <p class="text-sm" style="color: {$colorStore.muted}">{m.repeaters.pageFormMessageHint()}</p>
             </div>
           </div>
 
           <div>
             <div class="flex items-center gap-2 mb-4">
               <i class="fa-solid fa-gear" style="color: {$colorStore.primary}; font-size: 18px;"></i>
-              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Trigger Settings</h3>
+              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.repeaters.pageFormTriggerTitle()}</h3>
             </div>
 
             <div class="pl-0 md:pl-7 space-y-6">
               <div>
-                <span class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">How should this repeater trigger?</span>
+                <span class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">{m.repeaters.pageFormTriggerQuestion()}</span>
                 <DiscordSelector
                   type="custom"
                   options={triggerModeOptions}
                   selected={formData.triggerMode.toString()}
-                  placeholder="Select trigger mode..."
+                  placeholder={m.repeaters.pageFormTriggerPlaceholder()}
                   onchange={handleTriggerModeChange} />
               </div>
 
               {#if formData.triggerMode === StickyTriggerMode.TimeInterval}
                 <div in:fly={{ y: 20, duration: 300 }}>
-                  <span class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">Repeat Every</span>
+                  <span class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">{m.repeaters.pageFormRepeatEvery()}</span>
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
                 {#each [
-                  { value: "00:01:00", label: "1 minute" },
-                  { value: "00:05:00", label: "5 minutes" },
-                  { value: "00:15:00", label: "15 minutes" },
-                  { value: "01:00:00", label: "1 hour" },
-                  { value: "06:00:00", label: "6 hours" },
-                  { value: "1.00:00:00", label: "Daily" }
+                  { value: "00:01:00", label: m.repeaters.pageIntervalPreset1m() },
+                  { value: "00:05:00", label: m.repeaters.pageIntervalPreset5m() },
+                  { value: "00:15:00", label: m.repeaters.pageIntervalPreset15m() },
+                  { value: "01:00:00", label: m.common.oneHour() },
+                  { value: "06:00:00", label: m.repeaters.pageIntervalPreset6h() },
+                  { value: "1.00:00:00", label: m.common.daily() }
                 ] as preset}
                   <label for="interval-preset-{preset.value}"
                          class="flex items-center justify-center rounded-lg p-2 sm:p-2.5 border cursor-pointer transition-all duration-200 hover:scale-[1.02] text-center"
@@ -1847,7 +1832,7 @@
                 id="interval-custom-input"
                 type="text"
                 bind:value={formData.interval}
-                placeholder="Custom: HH:MM:SS"
+                placeholder={m.repeaters.pageFormCustomInterval()}
                 class="w-full rounded-lg p-3 border text-sm transition-all duration-200"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               >
@@ -1865,10 +1850,10 @@
               <div class="flex items-center gap-3">
                 <i class="fa-utility-duo fa-regular fa-gear"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                <span class="font-medium" style="color: {$colorStore.text}">Advanced Options</span>
+                <span class="font-medium" style="color: {$colorStore.text}">{m.repeaters.pageFormAdvanced()}</span>
                   <span class="text-xs px-2 py-1 rounded-sm"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
-                  Optional
+                  {m.common.optional()}
                 </span>
               </div>
               <div class="transition-transform duration-200" class:rotate-180={showAdvancedOptions}>
@@ -1888,7 +1873,7 @@
                       bind:checked={formData.noRedundant}
                       class="w-4 h-4 flex-shrink-0 mt-0.5 sm:mt-0"
                     >
-                    <span class="text-sm" style="color: {$colorStore.text}">Don't repeat if message is already last in channel</span>
+                    <span class="text-sm" style="color: {$colorStore.text}">{m.repeaters.pageFormNoRedundant()}</span>
                   </label>
 
                   <label for="allow-mentions-check" class="flex items-start sm:items-center gap-3">
@@ -1898,7 +1883,7 @@
                       bind:checked={formData.allowMentions}
                       class="w-4 h-4 flex-shrink-0 mt-0.5 sm:mt-0"
                     >
-                    <span class="text-sm" style="color: {$colorStore.text}">Allow @everyone and @here mentions</span>
+                    <span class="text-sm" style="color: {$colorStore.text}">{m.repeaters.pageFormAllowMentions()}</span>
                   </label>
                 </div>
 
@@ -1906,7 +1891,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                   <div>
                     <label for="repeater-priority-input" class="block text-sm font-medium mb-2"
-                           style="color: {$colorStore.text}">Priority (0-100)</label>
+                           style="color: {$colorStore.text}">{m.repeaters.pageFormPriority()}</label>
                     <input
                       id="repeater-priority-input"
                       type="number"
@@ -1920,7 +1905,7 @@
 
                   <div>
                     <label for="queue-position-input" class="block text-sm font-medium mb-2"
-                           style="color: {$colorStore.text}">Queue Position</label>
+                           style="color: {$colorStore.text}">{m.repeaters.pageFormQueuePosition()}</label>
                     <input
                       id="queue-position-input"
                       type="number"
@@ -1933,7 +1918,7 @@
 
                   <div>
                     <label for="start-time-input" class="block text-sm font-medium mb-2"
-                           style="color: {$colorStore.text}">Start Time (HH:MM)</label>
+                           style="color: {$colorStore.text}">{m.repeaters.pageFormStartTime()}</label>
                     <input
                       id="start-time-input"
                       type="time"
@@ -1953,7 +1938,7 @@
                       bind:checked={formData.conversationDetection}
                       class="w-4 h-4"
                     >
-                    <span style="color: {$colorStore.text}">Conversation Detection</span>
+                    <span style="color: {$colorStore.text}">{m.repeaters.pageFeatureConversation()}</span>
                   </label>
 
                   <label for="suppress-notifications-check" class="flex items-center gap-3">
@@ -1963,7 +1948,7 @@
                       bind:checked={formData.suppressNotifications}
                       class="w-4 h-4"
                     >
-                    <span style="color: {$colorStore.text}">Suppress Notifications</span>
+                    <span style="color: {$colorStore.text}">{m.repeaters.pageFormSuppress()}</span>
                   </label>
 
                   {#if selectedChannelType === 'forum'}
@@ -1974,7 +1959,7 @@
                         bind:checked={formData.threadAutoSticky}
                         class="w-4 h-4"
                       >
-                      <span style="color: {$colorStore.text}">Auto-create in new threads</span>
+                      <span style="color: {$colorStore.text}">{m.repeaters.pageFormThreadAuto()}</span>
                     </label>
 
                     <label for="thread-only-mode-check" class="flex items-center gap-3">
@@ -1984,7 +1969,7 @@
                         bind:checked={formData.threadOnlyMode}
                         class="w-4 h-4"
                       >
-                      <span style="color: {$colorStore.text}">Thread-only mode</span>
+                      <span style="color: {$colorStore.text}">{m.repeaters.pageFormThreadOnly()}</span>
                     </label>
                   {/if}
                 </div>
@@ -1992,13 +1977,12 @@
                 <!-- Auto-Expiry (simplified) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label for="max-age-input" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto-delete
-                      after (days)</label>
+                    <label for="max-age-input" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.repeaters.pageFormMaxAge()}</label>
                     <input
                       id="max-age-input"
                       type="text"
                       bind:value={formData.maxAge}
-                      placeholder="7.00:00:00 (7 days)"
+                      placeholder={m.repeaters.pageFormMaxAgePlaceholder()}
                       class="w-full rounded-lg p-3 border text-sm transition-all duration-200"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                     >
@@ -2006,12 +1990,12 @@
 
                   <div>
                     <label for="max-triggers-input" class="block text-sm font-medium mb-2"
-                           style="color: {$colorStore.text}">Max displays</label>
+                           style="color: {$colorStore.text}">{m.repeaters.pageFormMaxTriggers()}</label>
                     <input
                       id="max-triggers-input"
                       type="number"
                       bind:value={formData.maxTriggers}
-                      placeholder="Leave empty for unlimited"
+                      placeholder={m.repeaters.pageFormMaxTriggersPlaceholder()}
                       min="1"
                       class="w-full rounded-lg p-3 border text-sm transition-all duration-200"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -2021,7 +2005,7 @@
 
                 <!-- Time Scheduling (simplified) -->
                 <div>
-                  <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Time Schedule (Optional)</span>
+                  <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.repeaters.pageFormTimeSchedule()}</span>
                   <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {#each TIME_SCHEDULE_PRESETS as preset}
                       <label for="time-schedule-{preset.value}"
@@ -2035,7 +2019,7 @@
                           value={preset.value}
                           class="sr-only"
                         >
-                        <span style="color: {$colorStore.text}">{preset.label}</span>
+                        <span style="color: {$colorStore.text}">{preset.label()}</span>
                       </label>
                     {/each}
                   </div>
@@ -2054,13 +2038,13 @@
                  in:fly={{ y: 20, duration: 300 }}>
               <div class="flex items-center gap-2 mb-3">
                 <i class="fa-solid fa-chart-line" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
-                <h4 class="text-sm font-semibold" style="color: {$colorStore.text}">Activity Settings</h4>
+                <h4 class="text-sm font-semibold" style="color: {$colorStore.text}">{m.repeaters.pageActivitySettings()}</h4>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div>
                   <label for="activity-threshold-input" class="block text-sm mb-2" style="color: {$colorStore.muted}">
-                    {formData.triggerMode === StickyTriggerMode.AfterMessages ? 'Messages needed' : 'Activity threshold'}
+                    {formData.triggerMode === StickyTriggerMode.AfterMessages ? m.repeaters.pageFormMessagesNeeded() : m.repeaters.pageFormActivityThreshold()}
                   </label>
                   <input
                     id="activity-threshold-input"
@@ -2073,8 +2057,7 @@
                 </div>
 
                 <div>
-                  <label for="activity-time-window-input" class="block text-sm mb-2" style="color: {$colorStore.muted}">Time
-                    window</label>
+                  <label for="activity-time-window-input" class="block text-sm mb-2" style="color: {$colorStore.muted}">{m.common.timeWindow()}</label>
                   <input
                     id="activity-time-window-input"
                     type="text"
@@ -2095,9 +2078,7 @@
                  in:fly={{ y: 20, duration: 300 }}>
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-bolt" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">
-                  This repeater will immediately repost the message when any message is sent in the channel.
-                </span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.repeaters.pageFormImmediateHint()}</span>
               </div>
             </div>
           {/if}
@@ -2121,7 +2102,7 @@
               >
                 <div class="flex items-center gap-2">
                   <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
-                  <span>Cancel</span>
+                  <span>{m.common.cancel()}</span>
                 </div>
               </button>
             {/if}
@@ -2135,13 +2116,13 @@
                   <div class="flex items-center gap-2">
                     {#if saving}
                       <i class="fa-solid fa-arrows-rotate fa-spin" style="font-size: 16px;"></i>
-                      <span>{isEditMode ? 'Saving...' : 'Creating...'}</span>
+                      <span>{isEditMode ? m.common.saving() : m.common.creating()}</span>
                     {:else if isEditMode}
                       <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-                      <span>Save Changes</span>
+                      <span>{m.common.saveChanges()}</span>
                     {:else}
                       <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                      <span>Create Repeater</span>
+                      <span>{m.repeaters.pageCreateRepeater()}</span>
                     {/if}
                   </div>
                 </button>
@@ -2176,7 +2157,7 @@
           </div>
           <div>
             <h3 id="quick-edit-title" class="text-lg font-bold" style="color: {$colorStore.text}">{meta.title}</h3>
-            <p class="text-xs" style="color: {$colorStore.muted}">{quickEdit.repeater.message?.slice(0, 60) || `Repeater #${quickEdit.repeater.id}`}</p>
+            <p class="text-xs" style="color: {$colorStore.muted}">{quickEdit.repeater.message?.slice(0, 60) || m.repeaters.pageQuickRepeaterFallback({ id: quickEdit.repeater.id })}</p>
           </div>
         </div>
         <p class="text-sm mb-5" style="color: {$colorStore.muted}">{meta.hint}</p>
@@ -2184,35 +2165,35 @@
         <form class="space-y-4" onsubmit={(e) => { e.preventDefault(); saveQuickEdit(); }}>
           {#if quickEdit.field === "interval"}
             <div>
-              <label for="quick-interval" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Interval (HH:MM:SS)</label>
+              <label for="quick-interval" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.repeaters.pageQuickIntervalLabel()}</label>
               <input id="quick-interval" type="text" bind:value={quickEditForm.interval} placeholder="01:00:00"
                      class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             </div>
           {:else if quickEdit.field === "startTime"}
             <div>
-              <label for="quick-start" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Start time (HH:MM)</label>
+              <label for="quick-start" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.repeaters.pageFormStartTime()}</label>
               <input id="quick-start" type="time" bind:value={quickEditForm.startTime}
                      class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             </div>
           {:else if quickEdit.field === "threshold"}
             <div>
-              <label for="quick-threshold" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Messages per minute</label>
+              <label for="quick-threshold" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.repeaters.pageQuickThresholdLabel()}</label>
               <input id="quick-threshold" type="number" min="1" max="1000" bind:value={quickEditForm.threshold}
                      class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             </div>
           {:else}
             <div>
-              <label for="quick-maxage" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max age</label>
-              <input id="quick-maxage" type="text" bind:value={quickEditForm.maxAge} placeholder="7.00:00:00 for 7 days"
+              <label for="quick-maxage" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.repeaters.pageQuickMaxAgeLabel()}</label>
+              <input id="quick-maxage" type="text" bind:value={quickEditForm.maxAge} placeholder={m.repeaters.pageQuickMaxAgePlaceholder()}
                      class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             </div>
             <div>
-              <label for="quick-maxtriggers" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max triggers</label>
-              <input id="quick-maxtriggers" type="number" min="1" bind:value={quickEditForm.maxTriggers} placeholder="No limit"
+              <label for="quick-maxtriggers" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.repeaters.pageQuickMaxTriggersLabel()}</label>
+              <input id="quick-maxtriggers" type="number" min="1" bind:value={quickEditForm.maxTriggers} placeholder={m.common.noLimit()}
                      class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             </div>
@@ -2230,15 +2211,15 @@
             <button type="button" onclick={closeQuickEdit}
                     class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};">
-              Cancel
+              {m.common.cancel()}
             </button>
             <button type="submit" disabled={quickEditSaving}
                     class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
               {#if quickEditSaving}
-                <i class="fa-solid fa-arrows-rotate fa-spin mr-2"></i>Saving
+                <i class="fa-solid fa-arrows-rotate fa-spin mr-2"></i>{m.common.savingPlain()}
               {:else}
-                <i class="fa-solid fa-floppy-disk mr-2"></i>Save
+                <i class="fa-solid fa-floppy-disk mr-2"></i>{m.common.save()}
               {/if}
             </button>
           </div>

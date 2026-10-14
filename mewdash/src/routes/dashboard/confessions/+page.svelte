@@ -1,5 +1,6 @@
 <!-- routes/dashboard/confessions/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import { onMount } from "svelte";
     import { fade, fly } from "svelte/transition";
     import { colorStore } from "$lib/stores/colorStore";
@@ -92,14 +93,14 @@
             };
         } catch (err) {
             logger.error("Failed to load confession data:", err);
-            showMessage("Failed to load confession data", "error");
+            showMessage(m.confessions.pageErrorLoad(), "error");
         } finally {
             loading = false;
         }
     }
 
     const autoSave = createAutoSave({
-        onError: () => showMessage("Couldn't save confession settings. Your last change was undone.", "error")
+        onError: () => showMessage(m.confessions.pageErrorAutosave(), "error")
     });
 
     // Each channel saves as soon as it is picked. confessionChannel / confessionLogChannel hold
@@ -146,7 +147,7 @@
             await loadAllConfessionData();
         } catch (err) {
             logger.error("Failed to toggle role blacklist:", err);
-            showMessage("Failed to update blacklist", "error");
+            showMessage(m.common.failedToUpdateBlacklist(), "error");
         } finally {
             saving = false;
         }
@@ -155,16 +156,16 @@
     // Delete confession
     async function deleteConfession(confessionNumber: bigint) {
         if (!$currentGuild?.id) return;
-        if (!(await requestConfirmation({ message: `Are you sure you want to delete confession #${confessionNumber}? This will also delete the message.`, confirmText: "Delete" }))) return;
+        if (!(await requestConfirmation({ message: m.confessions.pageConfirmDelete({ number: confessionNumber.toString() }), confirmText: m.common.delete() }))) return;
 
         saving = true;
         try {
             await confessionsApi.deleteConfession($currentGuild.id, confessionNumber);
-            showMessage("Confession deleted successfully!", "success");
+            showMessage(m.confessions.pageNotifyDeleted(), "success");
             await loadAllConfessionData();
         } catch (err) {
             logger.error("Failed to delete confession:", err);
-            showMessage("Failed to delete confession", "error");
+            showMessage(m.confessions.pageErrorDelete(), "error");
         } finally {
             saving = false;
         }
@@ -191,7 +192,7 @@
     }
 
     function formatDate(dateString: string | null): string {
-        if (!dateString) return "Unknown";
+        if (!dateString) return m.common.unknown();
         return new Date(dateString).toLocaleString();
     }
 
@@ -209,16 +210,16 @@
     });
 
     // Tabs configuration
-    const tabs = [
-        { id: "config", label: "Configuration", icon: "fa-gear" },
-        { id: "confessions", label: "Confessions", icon: "fa-comment" },
-        { id: "stats", label: "Statistics", icon: "fa-chart-column" }
-    ];
+    const tabs = $derived([
+        { id: "config", label: m.common.configuration(), icon: "fa-gear" },
+        { id: "confessions", label: m.features.confessionsName(), icon: "fa-comment" },
+        { id: "stats", label: m.common.statistics(), icon: "fa-chart-column" }
+    ]);
 
     // Action buttons configuration
     let actionButtons = $derived([
         {
-            label: "Refresh",
+            label: m.common.refresh(),
             icon: "fa-arrows-rotate",
             action: async () => {
                 await autoSave.flush();
@@ -256,12 +257,12 @@
   {actionButtons}
   {autoSave}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-comment"
   statusMessages={statusMessageContent}
-  subtitle="Anonymous confession system management"
+  subtitle={m.confessions.pageSubtitle()}
   {tabs}
-  title="Confessions"
+  title={m.features.confessionsName()}
 >
 
     <!-- Tab Content -->
@@ -274,7 +275,7 @@
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Basic Settings</h2>
+                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.basicSettings()}</h2>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -283,14 +284,14 @@
                             <span id="confession-channel-label" class="block text-sm font-medium mb-2"
                                   style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-hashtag" style="font-size: 14px;"></i>
-                                Confession Channel
+                                {m.common.confessionChannel()}
                             </span>
                             <div class="min-h-[44px]">
                                 <DiscordSelector
                                         type="channel"
                                         options={guildChannels}
                                         selected={configForm.channelId?.toString() || null}
-                                        placeholder="No channel selected"
+                                        placeholder={m.common.noChannelSelected()}
                                         onchange={(detail) => saveConfessionChannel(detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null)}
                                 />
                             </div>
@@ -301,14 +302,14 @@
                             <span id="log-channel-shows-user-ids-label" class="block text-sm font-medium mb-2"
                                   style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-file-lines" style="font-size: 14px;"></i>
-                                Log Channel (shows user IDs)
+                                {m.confessions.pageConfigLogChannel()}
                             </span>
                             <div class="min-h-[44px]">
                                 <DiscordSelector
                                         type="channel"
                                         options={guildChannels}
                                         selected={configForm.logChannelId?.toString() || null}
-                                        placeholder="No log channel"
+                                        placeholder={m.common.noLogChannel()}
                                         onchange={(detail) => saveConfessionLogChannel(detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null)}
                                 />
                             </div>
@@ -323,11 +324,11 @@
                     border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fa-utility-duo fa-regular fa-lock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Role Blacklist</h2>
+                        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.confessions.pageBlacklistTitle()}</h2>
                     </div>
 
                     <p class="text-sm mb-4" style="color: {$colorStore.muted}">
-                        Users with blacklisted roles cannot submit confessions. Click roles to toggle.
+                        {m.confessions.pageBlacklistHint()}
                     </p>
 
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -361,16 +362,16 @@
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">All Confessions ({confessions.length})</h2>
+                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.confessions.pageListTitle({ count: confessions.length })}</h2>
                 </div>
 
                 <div class="space-y-3 max-h-[600px] overflow-y-auto">
                     {#if confessions.length === 0}
                         <div class="text-center py-8">
                             <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Confessions</h3>
+                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.confessions.pageListEmptyTitle()}</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
-                                Confessions will appear here once users submit them.
+                                {m.confessions.pageListEmptyHint()}
                             </p>
                         </div>
                     {:else}
@@ -386,7 +387,7 @@
                                             </div>
                                             <div>
                                                 <div class="font-semibold" style="color: {$colorStore.text}">
-                                                    Confession #{confession.confessNumber}
+                                                    {m.confessions.pageItemTitle({ number: confession.confessNumber.toString() })}
                                                 </div>
                                                 <div class="text-sm" style="color: {$colorStore.muted}">
                                                     {formatDate(confession.dateAdded)}
@@ -398,6 +399,7 @@
                                                     class="p-2 rounded-lg transition-all hover:scale-110"
                                                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                                     onclick={() => toggleConfessionVisibility(confession.id)}
+                                                    aria-label={showConfessionContent.has(confession.id) ? m.confessions.pageHideContentAria() : m.confessions.pageShowContentAria()}
                                             >
                                                 {#if showConfessionContent.has(confession.id)}
                                                     <i class="fa-solid fa-eye-slash" style="font-size: 16px;"></i>
@@ -405,7 +407,7 @@
                                                     <i class="fa-solid fa-eye" style="font-size: 16px;"></i>
                                                 {/if}
                                             </button>
-                                            <button aria-label="Delete confession"
+                                            <button aria-label={m.confessions.pageDeleteAria()}
                                                     class="p-2 rounded-lg transition-all hover:scale-110"
                                                     style="background: #ef444420; color: #ef4444;"
                                                     onclick={() => deleteConfession(confession.confessNumber)}
@@ -418,16 +420,16 @@
                                     <div class="p-3 rounded-lg" style="background: {$colorStore.primary}05;">
                                         <p class="text-sm" style="color: {$colorStore.text}">
                                             {#if showConfessionContent.has(confession.id)}
-                                                {confession.confession1 || 'No content'}
+                                                {confession.confession1 || m.confessions.pageNoContent()}
                                             {:else}
-                                                {truncateText(confession.confession1 || 'No content')}
+                                                {truncateText(confession.confession1 || m.confessions.pageNoContent())}
                                                 {#if (confession.confession1 || '').length > 100}
                                                     <button
                                                             class="text-xs ml-2"
                                                             style="color: {$colorStore.primary}"
                                                             onclick={() => toggleConfessionVisibility(confession.id)}
                                                     >
-                                                        Show more
+                                                        {m.confessions.pageShowMore()}
                                                     </button>
                                                 {/if}
                                             {/if}
@@ -447,36 +449,36 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                     <StatCard
                             icon="fa-comment"
-                            label="Total Confessions"
+                            label={m.confessions.pageStatTotal()}
                             value={stats.totalConfessions}
-                            subtitle="all time"
+                            subtitle={m.common.allTimeLower()}
                             iconColor="primary"
                             animationDelay={0}
                     />
 
                     <StatCard
                             icon="fa-calendar"
-                            label="This Month"
+                            label={m.confessions.pageStatMonth()}
                             value={stats.confessionsThisMonth}
-                            subtitle="confessions"
+                            subtitle={m.confessions.pageStatConfessionsSub()}
                             iconColor="secondary"
                             animationDelay={100}
                     />
 
                     <StatCard
                             icon="fa-clock"
-                            label="Today"
+                            label={m.common.today()}
                             value={stats.confessionsToday}
-                            subtitle="confessions"
+                            subtitle={m.confessions.pageStatConfessionsSub()}
                             iconColor="accent"
                             animationDelay={200}
                     />
 
                     <StatCard
                             icon="fa-list-numeric"
-                            label="Latest Number"
+                            label={m.confessions.pageStatLatest()}
                             value={Number(stats.lastConfessionNumber)}
-                            subtitle="confession ID"
+                            subtitle={m.confessions.pageStatLatestSub()}
                             iconColor="primary"
                             animationDelay={300}
                     />
@@ -484,9 +486,9 @@
             {:else}
                 <div class="text-center py-12">
                     <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                    <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">No Statistics Available</h3>
+                    <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">{m.common.noStatisticsAvailable()}</h3>
                     <p style="color: {$colorStore.muted}">
-                        Confession statistics will appear here once the system is configured.
+                        {m.confessions.pageStatsEmptyHint()}
                     </p>
                 </div>
             {/if}

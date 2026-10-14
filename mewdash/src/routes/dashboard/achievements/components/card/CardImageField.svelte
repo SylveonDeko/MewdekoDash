@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -35,7 +36,7 @@
   function useLink() {
     const url = link.trim();
     if (!url.startsWith("https://")) {
-      onerror("Image links have to start with https://.");
+      onerror(m.achievements.iconErrorHttps());
       return;
     }
     link = "";
@@ -53,7 +54,7 @@
     input.value = "";
     if (!file || !$currentGuild?.id) return;
     if (file.size > 4 * 1024 * 1024) {
-      onerror("Images have to be under 4 MB.");
+      onerror(m.achievements.iconErrorSize());
       return;
     }
 
@@ -71,7 +72,7 @@
       open = false;
     } catch (err: any) {
       logger.error("Failed to upload a card image:", err);
-      onerror(err?.message || "Couldn't upload that image.");
+      onerror(err?.message || m.achievements.iconErrorUpload());
     } finally {
       uploading = false;
     }
@@ -84,9 +85,9 @@
   async function remove(image: AchievementIconUpload) {
     if (!$currentGuild?.id) return;
     const ok = await requestConfirmation({
-      title: "Delete this image?",
-      message: "Every design using it loses the image.",
-      confirmText: "Delete image",
+      title: m.achievements.iconDeleteTitle(),
+      message: m.achievements.cardImageDeleteMessage(),
+      confirmText: m.achievements.iconDeleteConfirm(),
       variant: "danger"
     });
     if (!ok) return;
@@ -96,7 +97,7 @@
       if (value === image.icon) onchange("");
     } catch (err: any) {
       logger.error("Failed to delete a card image:", err);
-      onerror(err?.message || "Couldn't delete that image.");
+      onerror(err?.message || m.achievements.iconErrorDelete());
     }
   }
 </script>
@@ -111,7 +112,7 @@
     {:else}
       <i class="fa-utility-duo fa-regular fa-image" aria-hidden="true"></i>
     {/if}
-    <span class="text-sm flex-1 truncate">{current ? "Uploaded image" : value ? "Linked image" : "No image"}</span>
+    <span class="text-sm flex-1 truncate">{current ? m.achievements.iconKindUploaded() : value ? m.achievements.iconKindLinked() : m.achievements.cardImageNone()}</span>
     <i class="fa-solid fa-chevron-down text-xs" style="color: {$colorStore.muted}" aria-hidden="true"></i>
   </button>
 
@@ -123,10 +124,10 @@
           <div class="relative group">
             <button type="button" class="w-full aspect-video rounded-lg overflow-hidden border"
                     style="border-color: {value === image.icon ? $colorStore.primary : $colorStore.primary + '20'};"
-                    aria-label="Use this image" onclick={() => { onchange(image.icon); open = false; }}>
+                    aria-label={m.achievements.cardImageUseThisAria()} onclick={() => { onchange(image.icon); open = false; }}>
               <img src={iconImageSrc(image.url)} alt="" class="w-full h-full object-cover" />
             </button>
-            <button type="button" aria-label="Delete this image"
+            <button type="button" aria-label={m.achievements.cardImageDeleteAria()}
                     class="absolute top-1 right-1 w-7 h-7 rounded-full flex items-center justify-center text-xs"
                     style="background: #000000a0; color: #fff;" onclick={() => remove(image)}>
               <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -139,23 +140,23 @@
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                 disabled={uploading} onclick={() => fileInput?.click()}>
           <i class="fa-solid {uploading ? 'fa-spinner fa-spin' : 'fa-upload'} mr-1" aria-hidden="true"></i>
-          Upload
+          {m.common.upload()}
         </button>
         {#if value}
           <button type="button" class="px-3 py-2 rounded-lg text-sm min-h-[40px]"
                   style="background: {$colorStore.primary}10; color: {$colorStore.text};"
-                  onclick={() => { onchange(""); open = false; }}>Remove</button>
+                  onclick={() => { onchange(""); open = false; }}>{m.common.remove()}</button>
         {/if}
       </div>
       <input bind:this={fileInput} type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="hidden"
              onchange={upload} />
       <div class="flex gap-2">
-        <input type="url" bind:value={link} placeholder="https://" aria-label="Image link"
+        <input type="url" bind:value={link} placeholder="https://" aria-label={m.achievements.iconLinkLabel()}
                class="flex-1 min-w-0 px-3 py-2 rounded-lg border text-sm min-h-[40px]"
                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                onkeydown={(e) => { if (e.key === "Enter") useLink(); }} />
         <button type="button" class="px-3 py-2 rounded-lg text-sm min-h-[40px]"
-                style="background: {$colorStore.primary}20; color: {$colorStore.primary};" onclick={useLink}>Use</button>
+                style="background: {$colorStore.primary}20; color: {$colorStore.primary};" onclick={useLink}>{m.common.use()}</button>
       </div>
     </div>
   {/if}

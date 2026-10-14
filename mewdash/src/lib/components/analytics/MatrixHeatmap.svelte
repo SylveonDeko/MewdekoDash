@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/MatrixHeatmap.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import { n } from "./format";
 
@@ -19,7 +20,7 @@
     empty?: string;
   }
 
-  let { rows, cols, cells, colLabel = (c) => c, loading = false, unit = "", empty = "No data" }: Props = $props();
+  let { rows, cols, cells, colLabel = (c) => c, loading = false, unit = "", empty = m.common.noData() }: Props = $props();
 
   let grid = $derived.by(() => {
     const map = new Map<string, number>();
@@ -39,7 +40,7 @@
   }
 
   function cellTitle(row: string, col: string): string {
-    return `${row} · ${colLabel(col)} · ${n(grid.map.get(`${row}|${col}`) ?? 0)} ${unit}`.trim();
+    return m.analytics.matrixCellTitle({ row, col: colLabel(col), value: n(grid.map.get(`${row}|${col}`) ?? 0), unit }).trim();
   }
 </script>
 

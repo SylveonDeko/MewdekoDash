@@ -3,6 +3,7 @@
 Feature card for selecting features during wizard setup
 -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
 
   interface Props {
@@ -35,6 +36,12 @@ Feature card for selecting features during wizard setup
     if (disabled) return;
     ontoggle?.({ id, selected: !selected });
   }
+
+  let difficultyLabel = $derived({
+    'easy': m.wizard.difficultyEasy(),
+    'medium': m.common.medium(),
+    'advanced': m.common.advanced()
+  }[difficulty]);
 
   let difficultyColor = $derived({
     'easy': $colorStore.accent + '60',
@@ -75,7 +82,7 @@ Feature card for selecting features during wizard setup
     <span class="absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"
          style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
       <i class="fa-solid fa-star" style="font-size: 12px;"></i>
-      Recommended
+      {m.wizard.recommended()}
     </span>
   {/if}
 
@@ -122,7 +129,7 @@ Feature card for selecting features during wizard setup
       <span class="flex items-center gap-1 text-xs">
         <span class="w-2 h-2 rounded-full block" style="background: {difficultyColor};"></span>
         <span style="color: {difficultyColor};">
-          {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+          {difficultyLabel}
         </span>
       </span>
     </span>
@@ -130,7 +137,7 @@ Feature card for selecting features during wizard setup
     <!-- Selection indicator -->
     <span class="text-xs font-medium sm:text-right"
          style="color: {selected ? $colorStore.primary : $colorStore.muted};">
-      {selected ? 'Selected' : 'Click to select'}
+      {selected ? m.common.selected() : m.wizard.featureCardClickToSelect()}
     </span>
   </span>
 

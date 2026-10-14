@@ -1,5 +1,6 @@
 <!-- routes/wiki/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -12,14 +13,14 @@
   const previewEmbed = $derived(
     container(
       header(
-        "## Mewdeko Wiki\nPlain language write-ups of every Mewdeko feature: what it does, how to set it up, and how servers use it.",
+        `## ${m.wiki.mewdekoWiki()}\n${m.wiki.embedSummary()}`,
         `${SITE_ORIGIN}/img/Mewdeko.png`
       ),
       text(
-        `${data.articles.length} articles · Start here: ${data.featured.map((a) => `[${a.title}](${SITE_ORIGIN}/wiki/${a.slug})`).join(", ")}`
+        m.wiki.embedArticles({ count: data.articles.length, featured: data.featured.map((a) => `[${a.title}](${SITE_ORIGIN}/wiki/${a.slug})`).join(", ") })
       ),
       separator(),
-      buttons(linkButton("Open the wiki", `${SITE_ORIGIN}/wiki`))
+      buttons(linkButton(m.wiki.embedOpenWiki(), `${SITE_ORIGIN}/wiki`))
     )
   );
 
@@ -43,10 +44,10 @@
 <ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
-  <title>Mewdeko Wiki - Every feature explained</title>
-  <meta name="description" content="Plain language write-ups of every Mewdeko feature: what it does, how to set it up, and how servers use it." />
-  <meta property="og:title" content="Mewdeko Wiki" />
-  <meta property="og:description" content="Plain language write-ups of every Mewdeko feature." />
+  <title>{m.wiki.mewdekoWikiEveryFeatureExplained()}</title>
+  <meta name="description" content={m.wiki.embedSummary()} />
+  <meta property="og:title" content={m.wiki.mewdekoWiki()} />
+  <meta property="og:description" content={m.wiki.ogDescription()} />
 </svelte:head>
 
 <div in:fade>
@@ -62,9 +63,9 @@
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
       </div>
       <div class="min-w-0">
-        <h1 class="text-3xl md:text-4xl font-bold" style="color: {$colorStore.text}">Mewdeko Wiki</h1>
+        <h1 class="text-3xl md:text-4xl font-bold" style="color: {$colorStore.text}">{m.wiki.mewdekoWiki()}</h1>
         <p class="text-lg mt-1" style="color: {$colorStore.muted}">
-          What each feature does, why you would want it, and how to set it up.
+          {m.wiki.whatEachFeatureDoesWhy()}
         </p>
       </div>
     </div>
@@ -75,7 +76,7 @@
       <input
         id="wiki-search"
         type="search"
-        placeholder="Search {data.articles.length} guides, e.g. anti-raid, afk, welcome message"
+        placeholder={m.wiki.searchPlaceholder({ count: data.articles.length })}
         bind:value={query}
         class="w-full pl-11 pr-4 py-3 rounded-xl outline-none transition-all focus:ring-2"
         style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
@@ -88,7 +89,7 @@
   {#if searching}
     <section class="mt-8" in:fly={{ y: 12, duration: 250 }}>
       <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-        {results.length} {results.length === 1 ? "match" : "matches"} for "{query}"
+        {results.length === 1 ? m.wiki.searchResultsOne({ query }) : m.wiki.searchResultsOther({ count: results.length, query })}
       </p>
       {#if results.length === 0}
         <div class="text-center py-16">
@@ -120,7 +121,7 @@
   {:else}
     {#if data.featured.length > 0}
       <section class="mt-8" in:fly={{ y: 12, duration: 250 }}>
-        <h2 class="text-lg font-bold mb-4" style="color: {$colorStore.text}">Start here</h2>
+        <h2 class="text-lg font-bold mb-4" style="color: {$colorStore.text}">{m.wiki.startHere()}</h2>
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {#each data.featured as article (article.slug)}
             <a
@@ -138,9 +139,9 @@
               </div>
               <p class="text-sm flex-1" style="color: {$colorStore.muted}">{article.summary}</p>
               <div class="mt-4 flex items-center justify-between text-xs" style="color: {$colorStore.muted}">
-                <span><i class="fa-regular fa-clock mr-1"></i>{article.readingMinutes} min</span>
+                <span><i class="fa-regular fa-clock mr-1"></i>{m.features.setupTimeSingle({ minutes: article.readingMinutes })}</span>
                 <span class="font-medium transition-transform group-hover:translate-x-1" style="color: {$colorStore.primary}">
-                  Read <i class="fa-solid fa-arrow-right ml-1"></i>
+                  {m.wiki.read()} <i class="fa-solid fa-arrow-right ml-1"></i>
                 </span>
               </div>
             </a>
@@ -150,12 +151,12 @@
     {/if}
 
     <p class="hidden lg:block mt-8 text-sm" style="color: {$colorStore.muted}">
-      <i class="fa-solid fa-arrow-left mr-1"></i>Every guide is listed A to Z in the sidebar.
+      <i class="fa-solid fa-arrow-left mr-1"></i>{m.wiki.everyGuideIsListedA()}
     </p>
 
     <!-- The sidebar is desktop only, so phones get the same A to Z list inline. -->
     <section class="lg:hidden mt-8">
-      <h2 class="text-lg font-bold mb-4" style="color: {$colorStore.text}">All guides</h2>
+      <h2 class="text-lg font-bold mb-4" style="color: {$colorStore.text}">{m.wiki.allGuides()}</h2>
       <ul class="rounded-2xl overflow-hidden" style="border: 1px solid {$colorStore.primary}25;">
         {#each data.articles as article, i (article.slug)}
           <li style="border-top: {i === 0 ? 'none' : `1px solid ${$colorStore.primary}15`};">

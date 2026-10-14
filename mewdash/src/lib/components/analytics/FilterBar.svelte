@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/FilterBar.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
@@ -63,9 +64,9 @@
   function applyCustom() {
     const fromMs = Date.parse(`${customFrom}:00Z`);
     const toMs = Date.parse(`${customTo}:00Z`);
-    if (Number.isNaN(fromMs) || Number.isNaN(toMs)) customError = "Both dates required";
-    else if (toMs <= fromMs) customError = "End before start";
-    else if (toMs - fromMs > 31 * 86400000) customError = "Max 31 days";
+    if (Number.isNaN(fromMs) || Number.isNaN(toMs)) customError = m.analytics.filterErrDatesRequired();
+    else if (toMs <= fromMs) customError = m.analytics.filterErrEndBeforeStart();
+    else if (toMs - fromMs > 31 * 86400000) customError = m.analytics.filterErrMaxDays();
     else {
       customError = "";
       customOpen = false;
@@ -128,7 +129,7 @@
   class="rounded-xl border p-3 mb-4 flex flex-wrap items-center gap-2"
   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;"
 >
-  <div class="flex flex-wrap items-center gap-1" role="group" aria-label="Range">
+  <div class="flex flex-wrap items-center gap-1" role="group" aria-label={m.analytics.filterRange()}>
     {#each ranges as r}
       <button
         type="button"
@@ -142,13 +143,13 @@
       class="min-h-[36px] px-2.5 rounded-lg border text-xs font-medium"
       style={chipStyle(isCustom)}
       onclick={openCustom}
-      title={isCustom ? `${f.from} → ${f.to}` : "Custom range"}
+      title={isCustom ? `${f.from} → ${f.to}` : m.analytics.filterCustomRange()}
     ><i class="fa-solid fa-calendar-days"></i></button>
   </div>
 
   <label class="flex items-center gap-1.5 text-xs min-h-[36px] px-1" style="color: {$colorStore.muted}">
     <input type="checkbox" checked={f.compare} onchange={(e) => apply({ compare: e.currentTarget.checked })} style="accent-color: {$colorStore.primary}" />
-    compare
+    {m.analytics.filterCompare()}
   </label>
 
   <select
@@ -156,9 +157,9 @@
     style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.primary}20;"
     value={f.bot}
     onchange={(e) => apply({ bot: e.currentTarget.value })}
-    aria-label="Bot"
+    aria-label={m.placeholders.categoryBot()}
   >
-    <option value="">all bots</option>
+    <option value="">{m.analytics.filterAllBots()}</option>
     {#each bots as b}
       <option value={b.id}>{b.name}</option>
     {/each}
@@ -172,14 +173,14 @@
     style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.primary}20;"
     value={f.shard}
     onchange={(e) => apply({ shard: e.currentTarget.value })}
-    aria-label="Shard"
+    aria-label={m.analytics.filterShard()}
   >
-    <option value="">all shards</option>
+    <option value="">{m.analytics.filterAllShards()}</option>
     {#each shards as s}
-      <option value={s}>shard {s}</option>
+      <option value={s}>{m.analytics.filterShardOption({ shard: s })}</option>
     {/each}
     {#if f.shard && !shards.includes(f.shard)}
-      <option value={f.shard}>shard {f.shard}</option>
+      <option value={f.shard}>{m.analytics.filterShardOption({ shard: f.shard })}</option>
     {/if}
   </select>
 
@@ -187,12 +188,12 @@
     <input
       type="text"
       inputmode="numeric"
-      placeholder="guild id"
+      placeholder={m.analytics.filterGuildIdPlaceholder()}
       class="min-h-[36px] w-40 rounded-lg border px-2 text-xs font-mono"
       style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {guildInvalid ? '#f87171' : $colorStore.primary + '20'};"
       bind:value={guildInput}
       onkeydown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyGuild(); } }}
-      aria-label="Guild id"
+      aria-label={m.common.ariaGuildId()}
     />
     {#if f.guild}
       <button
@@ -200,43 +201,43 @@
         class="min-h-[36px] min-w-[36px] rounded-lg text-xs"
         style="background: {$colorStore.primary}10; color: {$colorStore.muted}"
         onclick={() => { guildInput = ""; apply({ guild: "" }); }}
-        aria-label="Clear guild"
+        aria-label={m.analytics.filterClearGuild()}
       ><i class="fa-solid fa-xmark"></i></button>
     {/if}
   </div>
 
   <div class="ml-auto flex items-center gap-2 text-xs" style="color: {$colorStore.muted}">
-    <span class="hidden sm:inline">{updatedAt} UTC</span>
+    <span class="hidden sm:inline">{m.analytics.filterUpdatedUtc({ time: updatedAt })}</span>
     <button
       type="button"
       class="min-h-[36px] min-w-[36px] rounded-lg"
       style="background: {$colorStore.primary}10; color: {$colorStore.text}"
       onclick={tick}
-      title="Refresh"
-      aria-label="Refresh"
+      title={m.common.refresh()}
+      aria-label={m.common.refresh()}
     ><i class="fa-solid fa-rotate"></i></button>
     <button
       type="button"
       class="min-h-[36px] min-w-[36px] rounded-lg"
       style="background: {$colorStore.primary}10; color: {$colorStore.text}"
       onclick={copyLink}
-      title="Copy link"
-      aria-label="Copy link"
+      title={m.common.copyLink()}
+      aria-label={m.common.copyLink()}
     ><i class="fa-solid {copied ? 'fa-check' : 'fa-link'}"></i></button>
   </div>
 
   {#if customOpen}
     <div class="w-full flex flex-wrap items-end gap-2 pt-2 border-t" style="border-color: {$colorStore.primary}20;">
       <label class="text-xs flex flex-col gap-1" style="color: {$colorStore.muted}">
-        from (UTC)
+        {m.analytics.filterFromUtc()}
         <input type="datetime-local" bind:value={customFrom} class="min-h-[36px] rounded-lg border px-2 text-xs" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.primary}20;" />
       </label>
       <label class="text-xs flex flex-col gap-1" style="color: {$colorStore.muted}">
-        to (UTC)
+        {m.analytics.filterToUtc()}
         <input type="datetime-local" bind:value={customTo} class="min-h-[36px] rounded-lg border px-2 text-xs" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.primary}20;" />
       </label>
-      <button type="button" class="min-h-[36px] px-3 rounded-lg text-xs font-medium" style="background: {$colorStore.primary}30; color: {$colorStore.text}" onclick={applyCustom}>Apply</button>
-      <button type="button" class="min-h-[36px] px-3 rounded-lg text-xs" style="background: {$colorStore.primary}10; color: {$colorStore.muted}" onclick={() => (customOpen = false)}>Cancel</button>
+      <button type="button" class="min-h-[36px] px-3 rounded-lg text-xs font-medium" style="background: {$colorStore.primary}30; color: {$colorStore.text}" onclick={applyCustom}>{m.common.apply()}</button>
+      <button type="button" class="min-h-[36px] px-3 rounded-lg text-xs" style="background: {$colorStore.primary}10; color: {$colorStore.muted}" onclick={() => (customOpen = false)}>{m.common.cancel()}</button>
       {#if customError}<span class="text-xs" style="color: #f87171">{customError}</span>{/if}
     </div>
   {/if}

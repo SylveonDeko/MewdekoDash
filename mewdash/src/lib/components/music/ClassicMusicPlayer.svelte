@@ -1,6 +1,7 @@
 <!-- lib/components/music/ClassicMusicPlayer.svelte -->
 <script lang="ts">
   import type { MusicStatus } from "$lib/types/music";
+  import { m } from "$lib/i18n";
   import type { QueueTrack } from "$lib/api/music/models/Music";
 
   /**
@@ -63,9 +64,9 @@
   /** Formats seconds as m:ss, the way the LCD shows it. */
   function clock(seconds: number): string {
     const total = Math.max(0, Math.floor(seconds));
-    const m = Math.floor(total / 60);
+    const mins = Math.floor(total / 60);
     const s = total % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
+    return `${mins}:${s.toString().padStart(2, "0")}`;
   }
 
   let track = $derived(musicStatus?.CurrentTrack?.Track ?? null);
@@ -79,7 +80,7 @@
 
   /** Title line in the classic "N. Artist - Title (m:ss)" form. */
   let marquee = $derived.by(() => {
-    if (!track) return "Mewdeko - Winamp mode *** nothing playing ***";
+    if (!track) return m.music.classicNothingPlaying();
     const index = (musicStatus?.CurrentTrack?.Index ?? 0) + 1;
     return `${index}. ${track.Author} - ${track.Title} (${clock(duration)})`;
   });
@@ -120,12 +121,12 @@
 
 <div class="wa" class:wa-playing={playing}>
   <!-- Main window -->
-  <section class="wa-window wa-main" aria-label="Classic music player">
+  <section class="wa-window wa-main" aria-label={m.music.classicLabel()}>
     <header class="wa-titlebar">
       <span class="wa-titlebar-lines"></span>
       <span class="wa-titlebar-text">MEWDEKO AMP</span>
       <span class="wa-titlebar-lines"></span>
-      <button type="button" class="wa-titlebar-btn" title="Switch to the modern player" aria-label="Switch to the modern player" onclick={onSwitchSkin}>
+      <button type="button" class="wa-titlebar-btn" title={m.music.classicSwitchSkin()} aria-label={m.music.classicSwitchSkin()} onclick={onSwitchSkin}>
         <span aria-hidden="true">▣</span>
       </button>
     </header>
@@ -150,7 +151,7 @@
           <span class="wa-marquee-text" class:wa-scroll={marquee.length > 34}>{marquee}{marquee.length > 34 ? "   ***   " + marquee : ""}</span>
         </div>
         <div class="wa-meta">
-          <span class="wa-meta-field"><span class="wa-meta-num">{volumePercent}</span> vol</span>
+          <span class="wa-meta-field"><span class="wa-meta-num">{volumePercent}</span> {m.music.classicVolumeShort()}</span>
           <span class="wa-meta-field"><span class="wa-meta-num">{sourceLabel}</span></span>
           <span class="wa-lamp-pair" aria-hidden="true">
             <span class="wa-lamp" class:on={!!track}>mono</span>
@@ -159,13 +160,13 @@
         </div>
         <div class="wa-sliders">
           <label class="wa-slider">
-            <span class="sr-only">Volume</span>
-            <input type="range" min="0" max="100" value={volumePercent} oninput={handleVolumeInput} aria-label="Volume" />
+            <span class="sr-only">{m.music.classicVolume()}</span>
+            <input type="range" min="0" max="100" value={volumePercent} oninput={handleVolumeInput} aria-label={m.music.classicVolume()} />
           </label>
           <div class="wa-toggles">
-            <button type="button" class="wa-toggle" onclick={onShuffle} title="Shuffle the queue">SHUFFLE</button>
-            <button type="button" class="wa-toggle" class:on={repeatMode > 0} onclick={onRepeat} title="Cycle repeat mode">
-              REPEAT{repeatMode === 1 ? " 1" : ""}
+            <button type="button" class="wa-toggle" onclick={onShuffle} title={m.music.classicShuffleTitle()}>{m.music.classicShuffle()}</button>
+            <button type="button" class="wa-toggle" class:on={repeatMode > 0} onclick={onRepeat} title={m.music.classicRepeatTitle()}>
+              {repeatMode === 1 ? m.music.classicRepeatOne() : m.common.repeat()}
             </button>
           </div>
         </div>
@@ -177,7 +178,7 @@
       class="wa-seek"
       role="slider"
       tabindex="0"
-      aria-label="Seek"
+      aria-label={m.music.classicSeek()}
       aria-valuemin="0"
       aria-valuemax={Math.round(duration)}
       aria-valuenow={Math.round(currentProgress)}
@@ -189,11 +190,11 @@
 
     <div class="wa-transport">
       <div class="wa-buttons">
-        <button type="button" class="wa-btn" onclick={onPrevious} title="Previous" aria-label="Previous">⏮</button>
-        <button type="button" class="wa-btn" onclick={onPlayPause} title={playing ? "Pause" : "Play"} aria-label={playing ? "Pause" : "Play"}>{playing ? "❚❚" : "▶"}</button>
-        <button type="button" class="wa-btn" onclick={onStop} title="Stop" aria-label="Stop">■</button>
-        <button type="button" class="wa-btn" onclick={onNext} title="Next" aria-label="Next">⏭</button>
-        <button type="button" class="wa-btn wa-btn-eject" onclick={onOpenSearch} title="Add a track" aria-label="Add a track">⏏</button>
+        <button type="button" class="wa-btn" onclick={onPrevious} title={m.common.previous()} aria-label={m.common.previous()}>⏮</button>
+        <button type="button" class="wa-btn" onclick={onPlayPause} title={playing ? m.common.pause() : m.music.playerPlay()} aria-label={playing ? m.common.pause() : m.music.playerPlay()}>{playing ? "❚❚" : "▶"}</button>
+        <button type="button" class="wa-btn" onclick={onStop} title={m.common.stop()} aria-label={m.common.stop()}>■</button>
+        <button type="button" class="wa-btn" onclick={onNext} title={m.common.next()} aria-label={m.common.next()}>⏭</button>
+        <button type="button" class="wa-btn wa-btn-eject" onclick={onOpenSearch} title={m.music.classicAddTrack()} aria-label={m.music.classicAddTrack()}>⏏</button>
       </div>
       <div class="wa-transport-lamps" aria-hidden="true">
         <span class="wa-lamp on">EQ</span>
@@ -203,16 +204,16 @@
   </section>
 
   <!-- Playlist editor -->
-  <section class="wa-window wa-playlist" aria-label="Playlist">
+  <section class="wa-window wa-playlist" aria-label={m.music.classicPlaylistLabel()}>
     <header class="wa-titlebar">
       <span class="wa-titlebar-lines"></span>
-      <span class="wa-titlebar-text">PLAYLIST EDITOR</span>
+      <span class="wa-titlebar-text">{m.music.classicPlaylistTitle()}</span>
       <span class="wa-titlebar-lines"></span>
     </header>
 
-    <div class="wa-list" role="listbox" aria-label="Queue" tabindex="0">
+    <div class="wa-list" role="listbox" aria-label={m.music.repeatLiveQueue()} tabindex="0">
       {#if queue.length === 0}
-        <div class="wa-list-empty">no tracks queued. press eject to add one.</div>
+        <div class="wa-list-empty">{m.music.classicQueueEmpty()}</div>
       {:else}
         {#each queue as item, i (item.Index ?? i)}
           <div
@@ -235,11 +236,11 @@
 
     <footer class="wa-list-footer">
       <div class="wa-list-actions">
-        <button type="button" class="wa-toggle" onclick={onOpenSearch}>ADD</button>
-        <button type="button" class="wa-toggle" onclick={removeSelected} disabled={selected < 0}>REM</button>
-        <button type="button" class="wa-toggle" onclick={() => selected >= 0 && onPlayIndex(selected)} disabled={selected < 0}>PLAY</button>
+        <button type="button" class="wa-toggle" onclick={onOpenSearch}>{m.common.add()}</button>
+        <button type="button" class="wa-toggle" onclick={removeSelected} disabled={selected < 0}>{m.music.classicRemove()}</button>
+        <button type="button" class="wa-toggle" onclick={() => selected >= 0 && onPlayIndex(selected)} disabled={selected < 0}>{m.music.playerPlay()}</button>
       </div>
-      <div class="wa-list-total">{queue.length} tracks / {queueTotal}</div>
+      <div class="wa-list-total">{queue.length === 1 ? m.music.classicTotalOne({ count: 1, total: queueTotal }) : m.music.classicTotalOther({ count: queue.length, total: queueTotal })}</div>
     </footer>
   </section>
 </div>

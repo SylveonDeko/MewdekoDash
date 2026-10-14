@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { PageData } from "./$types";
+  import { m } from "$lib/i18n";
   import { browser } from "$app/environment";
   import { goto, invalidateAll } from "$app/navigation";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
@@ -40,40 +41,40 @@
   const autoSave = createAutoSave({
     onError: (_err, key) => showMessage(
       TEXT_FIELDS.has(key)
-        ? "Couldn't save Twitch settings."
-        : "Couldn't save Twitch settings. Your last change was undone.",
+        ? m.twitch.notifySaveFailed()
+        : m.twitch.notifySaveFailedUndone(),
       "error"
     ),
   });
 
-  const slashCommands = [
-    { name: "/twitch set", usage: "<channel> [prefix]", description: "Set the Twitch channel this server's bot should join and enable chat commands.", permission: "Manage Server" },
-    { name: "/twitch remove", usage: "", description: "Remove the Twitch channel configuration and leave the channel.", permission: "Manage Server" },
-    { name: "/twitch config", usage: "", description: "Show the current Twitch configuration for this server.", permission: "Everyone" },
-    { name: "/twitch golive-channel", usage: "<channel> [message]", description: "Set the Discord channel and optional message template for go-live notifications.", permission: "Manage Server" },
-    { name: "/twitch golive-clear", usage: "", description: "Clear the go-live notification channel.", permission: "Manage Server" },
-    { name: "/twitch link", usage: "<user> <twitchUsername>", description: "Link a Discord user to their Twitch account.", permission: "Manage Server" },
-    { name: "/twitch unlink", usage: "<user>", description: "Remove a Discord user's Twitch account link.", permission: "Manage Server" },
-    { name: "/twitch links", usage: "", description: "List all Twitch account links for this server.", permission: "Everyone" },
-    { name: "/twitch language", usage: "<languageTag>", description: "Override the language used for Twitch chat responses.", permission: "Manage Server" },
-    { name: "/twitch prefix", usage: "<prefix>", description: "Change the Twitch chat command prefix.", permission: "Manage Server" },
-  ];
+  const slashCommands = $derived([
+    { name: "/twitch set", usage: "<channel> [prefix]", description: m.twitch.slashSetDescription(), permission: m.common.manageServer() },
+    { name: "/twitch remove", usage: "", description: m.twitch.slashRemoveDescription(), permission: m.common.manageServer() },
+    { name: "/twitch config", usage: "", description: m.twitch.slashConfigDescription(), permission: m.common.everyone() },
+    { name: "/twitch golive-channel", usage: "<channel> [message]", description: m.twitch.slashGoliveChannelDescription(), permission: m.common.manageServer() },
+    { name: "/twitch golive-clear", usage: "", description: m.twitch.slashGoliveClearDescription(), permission: m.common.manageServer() },
+    { name: "/twitch link", usage: "<user> <twitchUsername>", description: m.twitch.slashLinkDescription(), permission: m.common.manageServer() },
+    { name: "/twitch unlink", usage: "<user>", description: m.twitch.slashUnlinkDescription(), permission: m.common.manageServer() },
+    { name: "/twitch links", usage: "", description: m.twitch.slashLinksDescription(), permission: m.common.everyone() },
+    { name: "/twitch language", usage: "<languageTag>", description: m.twitch.slashLanguageDescription(), permission: m.common.manageServer() },
+    { name: "/twitch prefix", usage: "<prefix>", description: m.twitch.slashPrefixDescription(), permission: m.common.manageServer() },
+  ]);
 
-  const goLivePlaceholders = [
-    { category: "Stream", name: "%streamer%", description: "Broadcaster's display name" },
-    { category: "Stream", name: "%title%", description: "Current stream title" },
-    { category: "Stream", name: "%game%", description: "Game/category being streamed" },
-    { category: "Stream", name: "%url%", description: "Direct URL to the stream" },
-    { category: "Stream", name: "%viewers%", description: "Current viewer count" },
-  ];
+  const goLivePlaceholders = $derived([
+    { category: m.placeholders.categoryStream(), name: "%streamer%", description: m.twitch.golivePlaceholderStreamer() },
+    { category: m.placeholders.categoryStream(), name: "%title%", description: m.common.currentStreamTitle() },
+    { category: m.placeholders.categoryStream(), name: "%game%", description: m.common.streamGameHint() },
+    { category: m.placeholders.categoryStream(), name: "%url%", description: m.common.streamUrlHint() },
+    { category: m.placeholders.categoryStream(), name: "%viewers%", description: m.twitch.golivePlaceholderViewers() },
+  ]);
 
-  const permissionOptions = [
-    { id: "Everyone", name: "Everyone" },
-    { id: "Subscriber", name: "Subscriber" },
-    { id: "Vip", name: "Vip" },
-    { id: "Mod", name: "Mod" },
-    { id: "Broadcaster", name: "Broadcaster" },
-  ];
+  const permissionOptions = $derived([
+    { id: "Everyone", name: m.common.everyone() },
+    { id: "Subscriber", name: m.twitch.permSubscriber() },
+    { id: "Vip", name: m.twitch.permVip() },
+    { id: "Mod", name: m.twitch.permMod() },
+    { id: "Broadcaster", name: m.twitch.permBroadcaster() },
+  ]);
 
   const commandVariables = [
     "%user%",
@@ -189,7 +190,7 @@
     chatMessage: "",
     markerDescription: "",
     pollTitle: "",
-    pollChoices: "Yes\nNo",
+    pollChoices: `${m.common.yes()}\n${m.common.no()}`,
     pollDurationSeconds: 60,
     moderationUsername: "",
     moderationDurationSeconds: 600,
@@ -197,27 +198,27 @@
     deleteMessageId: "",
   });
 
-  const tabs = [
-    { id: "setup", label: "Setup", icon: "fa-plug" },
-    { id: "commands", label: "Commands", icon: "fa-terminal" },
-    { id: "events", label: "Events", icon: "fa-bolt" },
-    { id: "links", label: "Account Links", icon: "fa-link" },
-  ];
+  const tabs = $derived([
+    { id: "setup", label: m.common.setup(), icon: "fa-plug" },
+    { id: "commands", label: m.common.commands(), icon: "fa-terminal" },
+    { id: "events", label: m.common.events(), icon: "fa-bolt" },
+    { id: "links", label: m.twitch.tabLinks(), icon: "fa-link" },
+]);
 
-  const subTabs = [
-    { id: "connect", label: "Connect", icon: "fa-key", parentTab: "setup" },
-    { id: "botsettings", label: "Bot Settings", icon: "fa-comments", parentTab: "setup" },
+  const subTabs = $derived([
+    { id: "connect", label: m.twitch.subtabConnect(), icon: "fa-key", parentTab: "setup" },
+    { id: "botsettings", label: m.common.botSettings(), icon: "fa-comments", parentTab: "setup" },
 
-    { id: "custom", label: "Custom Commands", icon: "fa-code", parentTab: "commands" },
-    { id: "timers", label: "Timers", icon: "fa-rotate", parentTab: "commands" },
-    { id: "quotes", label: "Quotes", icon: "fa-comment", parentTab: "commands" },
+    { id: "custom", label: m.common.customCommands(), icon: "fa-code", parentTab: "commands" },
+    { id: "timers", label: m.twitch.subtabTimers(), icon: "fa-rotate", parentTab: "commands" },
+    { id: "quotes", label: m.common.quotes(), icon: "fa-comment", parentTab: "commands" },
 
-    { id: "alerts", label: "Alerts", icon: "fa-bell", parentTab: "events" },
-    { id: "live", label: "Live Tools", icon: "fa-sliders", parentTab: "events" },
-  ];
+    { id: "alerts", label: m.common.alerts(), icon: "fa-bell", parentTab: "events" },
+    { id: "live", label: m.twitch.subtabLive(), icon: "fa-sliders", parentTab: "events" },
+]);
 
   let actionButtons = $derived([
-    { label: "Refresh", icon: "fa-arrows-rotate", action: loadData, loading },
+    { label: m.common.refresh(), icon: "fa-arrows-rotate", action: loadData, loading },
   ]);
 
   onMount(async () => {
@@ -268,6 +269,7 @@
         variablesData,
         quotesData,
         timersData,
+        configData,
       ] = await Promise.all([
         twitchApi.getOAuthStatus($currentGuild.id),
         clientApi.getTextChannels($currentGuild.id).catch(() => []),
@@ -280,6 +282,7 @@
         twitchApi.getVariables().catch(() => null),
         twitchApi.getQuotes($currentGuild.id).catch(() => []),
         twitchApi.getTimers($currentGuild.id).catch(() => []),
+        twitchApi.getConfig($currentGuild.id).catch(() => null),
       ]);
 
       status = statusData;
@@ -304,7 +307,7 @@
         commandPrefix: statusData.commandPrefix || "!",
         language: statusData.language || "",
         useEventSub: statusData.useEventSub ?? true,
-        enabled: statusData.hasChannelAuthorization,
+        enabled: configData?.enabled ?? true,
         goLiveChannelId: statusData.goLiveChannelId?.toString() ?? null,
         subNotificationChannelId: statusData.subNotificationChannelId?.toString() ?? null,
         subNotificationMessage: statusData.subNotificationMessage || "",
@@ -316,7 +319,7 @@
       savedGoLiveMessage = serializeGoLiveMessage(goLiveMessageValue);
     } catch (err) {
       logger.error("Failed to load Twitch data:", err);
-      showMessage("Failed to load Twitch settings", "error");
+      showMessage(m.twitch.notifyLoadFailed(), "error");
     } finally {
       loading = false;
     }
@@ -332,7 +335,7 @@
       window.location.href = response.authorizationUrl;
     } catch (err) {
       logger.error(`Failed to start Twitch ${mode} OAuth:`, err);
-      showMessage(`Failed to start Twitch ${mode} authorization`, "error");
+      showMessage(mode === "bot" ? m.twitch.notifyConnectBotFailed() : m.twitch.notifyConnectChannelFailed(), "error");
     } finally {
       connectingBot = false;
       connectingChannel = false;
@@ -349,10 +352,10 @@
 
     try {
       const result = await twitchApi.handleOAuthCallback(code, state);
-      showMessage(result.message || "Twitch authorization complete", "success");
+      showMessage(result.message || m.twitch.notifyOauthComplete(), "success");
     } catch (err) {
       logger.error("Failed to complete Twitch OAuth:", err);
-      showMessage("Failed to complete Twitch authorization", "error");
+      showMessage(m.twitch.notifyOauthFailed(), "error");
     }
   }
 
@@ -498,28 +501,28 @@
         cooldownSeconds: Number(commandForm.cooldownSeconds) || 0,
         enabled: commandForm.enabled,
       });
-      showMessage("Twitch command saved", "success");
+      showMessage(m.twitch.notifyCommandSaved(), "success");
       resetCommandForm();
       await loadData();
     } catch (err) {
       logger.error("Failed to save Twitch command:", err);
-      showMessage("Failed to save Twitch command", "error");
+      showMessage(m.twitch.notifyCommandSaveFailed(), "error");
     } finally {
       commandSaving = false;
     }
   }
 
   async function removeCommand(name: string) {
-    if (!$currentGuild?.id || !(await requestConfirmation({ message: `Remove ${configForm.commandPrefix}${name}?`, confirmText: "Remove" }))) return;
+    if (!$currentGuild?.id || !(await requestConfirmation({ message: m.twitch.confirmRemoveCommand({ command: `${configForm.commandPrefix}${name}` }), confirmText: m.common.remove() }))) return;
     commandSaving = true;
     try {
       await twitchApi.removeCustomCommand($currentGuild.id, name);
-      showMessage("Twitch command removed", "success");
+      showMessage(m.twitch.notifyCommandRemoved(), "success");
       if (commandForm.name === name) resetCommandForm();
       await loadData();
     } catch (err) {
       logger.error("Failed to remove Twitch command:", err);
-      showMessage("Failed to remove Twitch command", "error");
+      showMessage(m.twitch.notifyCommandRemoveFailed(), "error");
     } finally {
       commandSaving = false;
     }
@@ -534,11 +537,11 @@
         args: commandForm.testArgs || null,
       });
       commandPreview = result.response;
-      showMessage("Command response rendered", "success");
+      showMessage(m.twitch.notifyCommandRendered(), "success");
       await refreshHealth();
     } catch (err) {
       logger.error("Failed to preview Twitch command:", err);
-      showMessage("Failed to preview Twitch command", "error");
+      showMessage(m.twitch.notifyCommandPreviewFailed(), "error");
     } finally {
       commandTesting = false;
     }
@@ -581,28 +584,28 @@
         randomizeMessages: timerForm.randomizeMessages,
         enabled: timerForm.enabled,
       });
-      showMessage("Twitch timer saved", "success");
+      showMessage(m.twitch.notifyTimerSaved(), "success");
       resetTimerForm();
       await loadData();
     } catch (err) {
       logger.error("Failed to save Twitch timer:", err);
-      showMessage("Failed to save Twitch timer", "error");
+      showMessage(m.twitch.notifyTimerSaveFailed(), "error");
     } finally {
       timerSaving = false;
     }
   }
 
   async function removeTimer(name: string) {
-    if (!$currentGuild?.id || !(await requestConfirmation({ message: `Remove timer ${name}?`, confirmText: "Remove" }))) return;
+    if (!$currentGuild?.id || !(await requestConfirmation({ message: m.twitch.confirmRemoveTimer({ name }), confirmText: m.common.remove() }))) return;
     timerSaving = true;
     try {
       await twitchApi.removeTimer($currentGuild.id, name);
-      showMessage("Twitch timer removed", "success");
+      showMessage(m.twitch.notifyTimerRemoved(), "success");
       if (timerForm.name === name) resetTimerForm();
       await loadData();
     } catch (err) {
       logger.error("Failed to remove Twitch timer:", err);
-      showMessage("Failed to remove Twitch timer", "error");
+      showMessage(m.twitch.notifyTimerRemoveFailed(), "error");
     } finally {
       timerSaving = false;
     }
@@ -612,11 +615,11 @@
     if (!$currentGuild?.id) return;
     try {
       await twitchApi.setTimerState($currentGuild.id, name, { enabled });
-      showMessage(`${enabled ? "Enabled" : "Disabled"} Twitch timer`, "success");
+      showMessage(enabled ? m.twitch.notifyTimerEnabled() : m.twitch.notifyTimerDisabled(), "success");
       await loadData();
     } catch (err) {
       logger.error("Failed to update Twitch timer:", err);
-      showMessage("Failed to update Twitch timer", "error");
+      showMessage(m.twitch.notifyTimerUpdateFailed(), "error");
     }
   }
 
@@ -625,11 +628,11 @@
     timerTesting = name;
     try {
       const result = await twitchApi.testTimer($currentGuild.id, name);
-      showMessage(`Sent timer: ${result.message}`, "success");
+      showMessage(m.twitch.notifyTimerSent({ message: result.message }), "success");
       await refreshHealth();
     } catch (err) {
       logger.error("Failed to test Twitch timer:", err);
-      showMessage("Failed to test Twitch timer", "error");
+      showMessage(m.twitch.notifyTimerTestFailed(), "error");
     } finally {
       timerTesting = null;
     }
@@ -663,28 +666,28 @@
         discordChannelId: redemptionForm.discordChannelId ? BigInt(redemptionForm.discordChannelId) : BigInt(0),
         discordMessage: redemptionForm.discordMessage || null,
       });
-      showMessage("Redemption action saved", "success");
+      showMessage(m.twitch.notifyRedemptionSaved(), "success");
       resetRedemptionForm();
       await loadData();
     } catch (err) {
       logger.error("Failed to save Twitch redemption action:", err);
-      showMessage("Failed to save redemption action", "error");
+      showMessage(m.twitch.notifyRedemptionSaveFailed(), "error");
     } finally {
       redemptionSaving = false;
     }
   }
 
   async function removeRedemption(rewardTitle: string) {
-    if (!$currentGuild?.id || !(await requestConfirmation({ message: `Remove action for ${rewardTitle}?`, confirmText: "Remove" }))) return;
+    if (!$currentGuild?.id || !(await requestConfirmation({ message: m.twitch.confirmRemoveRedemption({ title: rewardTitle }), confirmText: m.common.remove() }))) return;
     redemptionSaving = true;
     try {
       await twitchApi.removeRedemptionAction($currentGuild.id, rewardTitle);
-      showMessage("Redemption action removed", "success");
+      showMessage(m.twitch.notifyRedemptionRemoved(), "success");
       if (redemptionForm.rewardTitle === rewardTitle) resetRedemptionForm();
       await loadData();
     } catch (err) {
       logger.error("Failed to remove Twitch redemption action:", err);
-      showMessage("Failed to remove redemption action", "error");
+      showMessage(m.twitch.notifyRedemptionRemoveFailed(), "error");
     } finally {
       redemptionSaving = false;
     }
@@ -699,7 +702,7 @@
       await refreshHealth();
     } catch (err) {
       logger.error(`Failed to send test ${eventType} event:`, err);
-      showMessage(`Failed to send test ${eventType} event`, "error");
+      showMessage(m.twitch.notifyTestEventFailed({ event: eventType }), "error");
       await refreshHealth();
     } finally {
       testRunning = null;
@@ -727,28 +730,28 @@
       });
       quoteForm.text = "";
       quoteForm.author = "";
-      showMessage("Twitch quote saved", "success");
+      showMessage(m.twitch.notifyQuoteSaved(), "success");
       await refreshQuotes();
       await refreshHealth();
     } catch (err) {
       logger.error("Failed to save Twitch quote:", err);
-      showMessage("Failed to save Twitch quote", "error");
+      showMessage(m.twitch.notifyQuoteSaveFailed(), "error");
     } finally {
       quoteSaving = false;
     }
   }
 
   async function removeQuote(quoteId: number) {
-    if (!$currentGuild?.id || !(await requestConfirmation({ message: `Remove quote #${quoteId}?`, confirmText: "Remove" }))) return;
+    if (!$currentGuild?.id || !(await requestConfirmation({ message: m.twitch.confirmRemoveQuote({ id: quoteId }), confirmText: m.common.remove() }))) return;
     quoteSaving = true;
     try {
       await twitchApi.removeQuote($currentGuild.id, quoteId);
-      showMessage("Twitch quote removed", "success");
+      showMessage(m.twitch.notifyQuoteRemoved(), "success");
       await refreshQuotes();
       await refreshHealth();
     } catch (err) {
       logger.error("Failed to remove Twitch quote:", err);
-      showMessage("Failed to remove Twitch quote", "error");
+      showMessage(m.twitch.notifyQuoteRemoveFailed(), "error");
     } finally {
       quoteSaving = false;
     }
@@ -787,7 +790,7 @@
       await refreshHealth();
     } catch (err) {
       logger.error(`Failed to run Twitch operator action ${action}:`, err);
-      showMessage("Failed to run Twitch action", "error");
+      showMessage(m.twitch.notifyActionFailed(), "error");
       await refreshHealth();
     } finally {
       operatorRunning = null;
@@ -796,8 +799,7 @@
 
   async function disconnect(mode: "bot" | "channel") {
     if (!$currentGuild?.id) return;
-    const label = mode === "bot" ? "bot account" : "channel authorization";
-    if (!(await requestConfirmation({ message: `Disconnect the Twitch ${label}?`, confirmText: "Disconnect" }))) return;
+    if (!(await requestConfirmation({ message: mode === "bot" ? m.twitch.confirmDisconnectBot() : m.twitch.confirmDisconnectChannel(), confirmText: m.twitch.confirmDisconnectButton() }))) return;
 
     saving = true;
     try {
@@ -806,7 +808,7 @@
       await loadData();
     } catch (err) {
       logger.error(`Failed to disconnect Twitch ${mode}:`, err);
-      showMessage(`Failed to disconnect Twitch ${label}`, "error");
+      showMessage(mode === "bot" ? m.twitch.notifyDisconnectBotFailed() : m.twitch.notifyDisconnectChannelFailed(), "error");
     } finally {
       saving = false;
     }
@@ -822,11 +824,11 @@
       });
       selectedLinkUserId = null;
       linkTwitchUsername = "";
-      showMessage("Twitch account link saved", "success");
+      showMessage(m.twitch.notifyLinkSaved(), "success");
       await loadData();
     } catch (err) {
       logger.error("Failed to save Twitch account link:", err);
-      showMessage("Failed to save Twitch account link", "error");
+      showMessage(m.twitch.notifyLinkSaveFailed(), "error");
     } finally {
       linking = false;
     }
@@ -837,18 +839,18 @@
     linking = true;
     try {
       await twitchApi.removeLink($currentGuild.id, discordUserId);
-      showMessage("Twitch account link removed", "success");
+      showMessage(m.twitch.notifyLinkRemoved(), "success");
       await loadData();
     } catch (err) {
       logger.error("Failed to remove Twitch account link:", err);
-      showMessage("Failed to remove Twitch account link", "error");
+      showMessage(m.twitch.notifyLinkRemoveFailed(), "error");
     } finally {
       linking = false;
     }
   }
 
   function memberName(discordUserId: bigint) {
-    const member = guildMembers.find((m) => m.id === discordUserId.toString());
+    const member = guildMembers.find((candidate) => candidate.id === discordUserId.toString());
     return member?.username ?? `<@${discordUserId}>`;
   }
 
@@ -860,16 +862,20 @@
     }, 5000);
   }
 
+  function escapeHtml(value: string): string {
+    return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
   function formatDate(value: string | null | undefined) {
-    if (!value) return "Not seen yet";
+    if (!value) return m.twitch.dateNever();
     return new Date(value).toLocaleString();
   }
 
   function connectionLabel() {
-    if (!status) return "Checking";
-    if (status.isConfigured) return "Ready";
-    if (status.hasBotAccount || status.hasChannelAuthorization) return "Needs setup";
-    return "Not connected";
+    if (!status) return m.twitch.statusChecking();
+    if (status.isConfigured) return m.common.ready();
+    if (status.hasBotAccount || status.hasChannelAuthorization) return m.twitch.statusNeedsSetup();
+    return m.common.notConnected();
   }
 </script>
 
@@ -890,7 +896,7 @@
 
 <DashboardPageLayout
   title="Twitch"
-  subtitle="Connect Mewdeko to Twitch chat, events, and future channel tools."
+  subtitle={m.twitch.pageSubtitle()}
   icon="fa-brands fa-twitch"
   {tabs}
   bind:activeTab
@@ -906,7 +912,7 @@
     <div class="min-h-[220px] grid place-items-center gap-3 font-bold rounded-2xl border p-6"
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30; color: {$colorStore.text}">
       <i class="fa-solid fa-spinner fa-spin text-2xl" style="color: {$colorStore.primary}"></i>
-      <span>Loading Twitch settings</span>
+      <span>{m.twitch.loading()}</span>
     </div>
   {:else}
     <div class="flex flex-col gap-4" in:fade={{ duration: 160 }}>
@@ -914,7 +920,7 @@
         <article class="rounded-2xl p-4 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px] min-w-0" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
           <div class="flex items-center justify-between gap-3">
             <div class="min-w-0">
-              <p class="text-sm font-medium" style="color: {$colorStore.muted}">Connection</p>
+              <p class="text-sm font-medium" style="color: {$colorStore.muted}">{m.twitch.overviewConnection()}</p>
               <p class="text-xl font-bold mt-1 break-words" style="color: {$colorStore.text}">{connectionLabel()}</p>
             </div>
             <div class="p-3 rounded-xl shrink-0" style="background: {$colorStore.primary}20;">
@@ -923,9 +929,9 @@
           </div>
           <p class="mt-3 leading-relaxed text-sm" style="color: {$colorStore.muted}">
             {#if status?.isConfigured}
-              EventSub chat is ready for @{status.channelDisplayName || status.channelUsername}.
+              {m.twitch.overviewReady({ name: status.channelDisplayName || status.channelUsername || "" })}
             {:else}
-              Connect both the bot account and the broadcaster channel to enable modern Twitch chat.
+              {m.twitch.overviewConnectBoth()}
             {/if}
           </p>
         </article>
@@ -933,27 +939,27 @@
         <article class="rounded-2xl p-4 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px] min-w-0" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
           <div class="flex items-center justify-between gap-3">
             <div class="min-w-0">
-              <p class="text-sm font-medium" style="color: {$colorStore.muted}">Bot account</p>
-              <p class="text-xl font-bold mt-1 break-words" style="color: {$colorStore.text}">{status?.botDisplayName || status?.botUsername || "Missing"}</p>
+              <p class="text-sm font-medium" style="color: {$colorStore.muted}">{m.twitch.overviewBotAccount()}</p>
+              <p class="text-xl font-bold mt-1 break-words" style="color: {$colorStore.text}">{status?.botDisplayName || status?.botUsername || m.twitch.statusMissing()}</p>
             </div>
             <div class="p-3 rounded-xl shrink-0" style="background: {$colorStore.secondary}20;">
               <i class="fa-utility-duo fa-regular fa-microchip" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
             </div>
           </div>
-          <p class="mt-3 leading-relaxed text-sm" style="color: {$colorStore.muted}">{status?.hasBotAccount ? "Sends chat and owns chat subscriptions." : "Authorize the Twitch account Mewdeko should speak as."}</p>
+          <p class="mt-3 leading-relaxed text-sm" style="color: {$colorStore.muted}">{status?.hasBotAccount ? m.twitch.overviewBotOk() : m.twitch.overviewBotMissing()}</p>
         </article>
 
         <article class="rounded-2xl p-4 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px] min-w-0" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
           <div class="flex items-center justify-between gap-3">
             <div class="min-w-0">
-              <p class="text-sm font-medium" style="color: {$colorStore.muted}">Channel</p>
-              <p class="text-xl font-bold mt-1 break-words" style="color: {$colorStore.text}">{status?.channelDisplayName || status?.channelUsername || "Missing"}</p>
+              <p class="text-sm font-medium" style="color: {$colorStore.muted}">{m.common.channel()}</p>
+              <p class="text-xl font-bold mt-1 break-words" style="color: {$colorStore.text}">{status?.channelDisplayName || status?.channelUsername || m.twitch.statusMissing()}</p>
             </div>
             <div class="p-3 rounded-xl shrink-0" style="background: {$colorStore.accent}20;">
               <i class="fa-utility-duo fa-regular fa-video" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
             </div>
           </div>
-          <p class="mt-3 leading-relaxed text-sm" style="color: {$colorStore.muted}">{status?.hasChannelAuthorization ? "Broadcaster permission is stored." : "Authorize the Twitch channel owner."}</p>
+          <p class="mt-3 leading-relaxed text-sm" style="color: {$colorStore.muted}">{status?.hasChannelAuthorization ? m.twitch.overviewChannelOk() : m.twitch.overviewChannelMissing()}</p>
         </article>
       </section>
 
@@ -964,9 +970,9 @@
               <div>
                 <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                   <i class="fa-utility-duo fa-regular fa-key" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-                  OAuth setup
+                  {m.twitch.setupOauthTitle()}
                 </h2>
-                <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">Use Twitch authorization instead of hand-pasted chat tokens.</p>
+                <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.setupOauthHint()}</p>
               </div>
             </div>
 
@@ -974,8 +980,8 @@
               {#if isBotOwner}
                 <div class="grid gap-3.5 p-3.5 border rounded-xl sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08">
                   <div>
-                    <strong class="block" style="color: {$colorStore.text}">Bot account</strong>
-                    <span style="color: {$colorStore.muted}">Grants user:read:chat, user:write:chat, and user:bot. This is a single shared identity used across every server, so only bot owners can (re)authorize it.</span>
+                    <strong class="block" style="color: {$colorStore.text}">{m.twitch.overviewBotAccount()}</strong>
+                    <span style="color: {$colorStore.muted}">{m.twitch.setupBotScopesHint()}</span>
                   </div>
                   <button
                     class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
@@ -983,15 +989,15 @@
                     onclick={() => connect("bot")}
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   >
-                    {connectingBot ? "Opening..." : status?.hasBotAccount ? "Reconnect bot" : "Connect bot"}
+                    {connectingBot ? m.twitch.setupOpening() : status?.hasBotAccount ? m.twitch.setupReconnectBot() : m.twitch.setupConnectBot()}
                   </button>
                 </div>
               {/if}
 
               <div class="grid gap-3.5 p-3.5 border rounded-xl sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08">
                 <div>
-                  <strong class="block" style="color: {$colorStore.text}">Broadcaster channel</strong>
-                  <span style="color: {$colorStore.muted}">Grants channel:bot and event scopes for this server. Authorize this with your own Twitch account.</span>
+                  <strong class="block" style="color: {$colorStore.text}">{m.twitch.setupBroadcasterChannel()}</strong>
+                  <span style="color: {$colorStore.muted}">{m.twitch.setupChannelScopesHint()}</span>
                 </div>
                 <button
                   class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
@@ -999,7 +1005,7 @@
                   onclick={() => connect("channel")}
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 >
-                  {connectingChannel ? "Opening..." : status?.hasChannelAuthorization ? "Reconnect channel" : "Connect channel"}
+                  {connectingChannel ? m.twitch.setupOpening() : status?.hasChannelAuthorization ? m.twitch.setupReconnectChannel() : m.twitch.setupConnectChannel()}
                 </button>
               </div>
             </div>
@@ -1008,36 +1014,36 @@
           <section class="rounded-xl border p-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30">
             <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
               <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-              Health
+              {m.twitch.healthTitle()}
             </h2>
             <dl class="grid gap-2.5 mt-3">
-              <div class="flex justify-between gap-4"><dt class="font-bold" style="color: {$colorStore.text}">Transport</dt><dd class="m-0 text-right break-words" style="color: {$colorStore.muted}">{status?.useEventSub ? "EventSub WebSocket" : "Legacy IRC"}</dd></div>
-              <div class="flex justify-between gap-4"><dt class="font-bold" style="color: {$colorStore.text}">Last event</dt><dd class="m-0 text-right break-words" style="color: {$colorStore.muted}">{formatDate(status?.lastEventAt)}</dd></div>
-              <div class="flex justify-between gap-4"><dt class="font-bold" style="color: {$colorStore.text}">Bot token</dt><dd class="m-0 text-right break-words" style="color: {$colorStore.muted}">{formatDate(status?.botTokenExpiry)}</dd></div>
-              <div class="flex justify-between gap-4"><dt class="font-bold" style="color: {$colorStore.text}">Channel token</dt><dd class="m-0 text-right break-words" style="color: {$colorStore.muted}">{formatDate(status?.channelTokenExpiry)}</dd></div>
+              <div class="flex justify-between gap-4"><dt class="font-bold" style="color: {$colorStore.text}">{m.twitch.healthTransport()}</dt><dd class="m-0 text-right break-words" style="color: {$colorStore.muted}">{status?.useEventSub ? m.twitch.healthTransportEventsub() : m.twitch.healthTransportIrc()}</dd></div>
+              <div class="flex justify-between gap-4"><dt class="font-bold" style="color: {$colorStore.text}">{m.twitch.healthLastEvent()}</dt><dd class="m-0 text-right break-words" style="color: {$colorStore.muted}">{formatDate(status?.lastEventAt)}</dd></div>
+              <div class="flex justify-between gap-4"><dt class="font-bold" style="color: {$colorStore.text}">{m.common.botToken()}</dt><dd class="m-0 text-right break-words" style="color: {$colorStore.muted}">{formatDate(status?.botTokenExpiry)}</dd></div>
+              <div class="flex justify-between gap-4"><dt class="font-bold" style="color: {$colorStore.text}">{m.twitch.healthChannelToken()}</dt><dd class="m-0 text-right break-words" style="color: {$colorStore.muted}">{formatDate(status?.channelTokenExpiry)}</dd></div>
             </dl>
             {#if health}
               <details class="mt-4">
-                <summary class="cursor-pointer font-bold text-sm" style="color: {$colorStore.muted}">Advanced diagnostics</summary>
+                <summary class="cursor-pointer font-bold text-sm" style="color: {$colorStore.muted}">{m.twitch.healthAdvanced()}</summary>
                 <div class="mt-3 grid gap-1.5">
                   <h3 class="text-base font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                     <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 16px;"></i>
-                    Missing scopes
+                    {m.twitch.healthMissingScopes()}
                   </h3>
                   <p class="leading-relaxed" style="color: {$colorStore.muted}">
-                    Bot: {health.botMissingScopes.length ? health.botMissingScopes.join(", ") : "none"}
+                    {m.twitch.healthBotScopes({ scopes: health.botMissingScopes.length ? health.botMissingScopes.join(", ") : m.common.noneLower() })}
                   </p>
                   <p class="leading-relaxed" style="color: {$colorStore.muted}">
-                    Channel: {health.channelMissingScopes.length ? health.channelMissingScopes.join(", ") : "none"}
+                    {m.twitch.healthChannelScopes({ scopes: health.channelMissingScopes.length ? health.channelMissingScopes.join(", ") : m.common.noneLower() })}
                   </p>
                 </div>
                 <div class="mt-4 grid gap-1.5">
                   <h3 class="text-base font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                     <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 16px;"></i>
-                    EventSub
+                    {m.twitch.healthEventsub()}
                   </h3>
                   {#if health.subscriptions.length === 0}
-                    <p class="leading-relaxed" style="color: {$colorStore.muted}">No stored subscriptions yet.</p>
+                    <p class="leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.healthNoSubscriptions()}</p>
                   {:else}
                     <ul class="grid gap-1.5 m-0 pl-4">
                       {#each health.subscriptions as subscription (subscription.twitchSubscriptionId)}
@@ -1059,30 +1065,30 @@
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-comments" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-                Chat bot
+                {m.twitch.botTitle()}
               </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">Configure how Twitch chat commands behave in this channel.</p>
+              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.botHint()}</p>
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Command prefix</span>
+              <span style="color: {$colorStore.text}">{m.common.commandPrefix()}</span>
               <input bind:value={configForm.commandPrefix} oninput={savePrefix} onblur={flushPrefix} maxlength="8" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
 
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Language override</span>
-              <input bind:value={configForm.language} oninput={() => saveConfigField("language")} onblur={() => autoSave.flush("language")} placeholder="Use server default" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+              <span style="color: {$colorStore.text}">{m.twitch.botLanguage()}</span>
+              <input bind:value={configForm.language} oninput={() => saveConfigField("language")} onblur={() => autoSave.flush("language")} placeholder={m.common.useServerDefault()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
 
             <div class="flex items-center justify-between gap-2.5 py-2.5">
-              <span style="color: {$colorStore.text}">Enable Twitch chat bot for this server</span>
+              <span style="color: {$colorStore.text}">{m.twitch.botEnable()}</span>
               {@render toggle(configForm.enabled, (v) => setConfigField("enabled", v))}
             </div>
 
             <div class="flex items-center justify-between gap-2.5 py-2.5">
-              <span style="color: {$colorStore.text}">Use EventSub for chat events</span>
+              <span style="color: {$colorStore.text}">{m.twitch.botUseEventsub()}</span>
               {@render toggle(configForm.useEventSub, (v) => setConfigField("useEventSub", v))}
             </div>
           </div>
@@ -1093,14 +1099,14 @@
               disabled={!status?.hasChannelAuthorization || saving}
               onclick={() => disconnect("channel")}
               style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
-            >Disconnect channel</button>
+            >{m.twitch.botDisconnectChannel()}</button>
             {#if isBotOwner}
               <button
                 class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed border-0"
                 disabled={!status?.hasBotAccount || saving}
                 onclick={() => disconnect("bot")}
                 style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
-              >Disconnect bot account</button>
+              >{m.twitch.botDisconnectBot()}</button>
             {/if}
           </div>
         </section>
@@ -1110,28 +1116,28 @@
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-code" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-                Custom command editor
+                {m.twitch.commandEditorTitle()}
               </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">Create Twitch chat commands with permissions, cooldowns, and template variables.</p>
+              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.commandEditorHint()}</p>
             </div>
             <div class="flex flex-wrap gap-2 items-center">
-              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={resetCommandForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">Clear</button>
+              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={resetCommandForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">{m.common.clear()}</button>
               <button
                 class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
                 disabled={commandSaving || !commandForm.name.trim() || !commandForm.response.trim()}
                 onclick={saveCommand}
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-              >{commandSaving ? "Saving..." : "Save command"}</button>
+              >{commandSaving ? m.common.saving() : m.twitch.commandSave()}</button>
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Command</span>
-              <input bind:value={commandForm.name} placeholder="hello" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+              <span style="color: {$colorStore.text}">{m.common.command()}</span>
+              <input bind:value={commandForm.name} placeholder={m.common.helloPlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
             <div class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Permission</span>
+              <span style="color: {$colorStore.text}">{m.common.permission()}</span>
               <DiscordSelector
                 type="custom"
                 customIcon="fa-lock"
@@ -1142,16 +1148,16 @@
               />
             </div>
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Cooldown seconds</span>
+              <span style="color: {$colorStore.text}">{m.twitch.commandCooldown()}</span>
               <input type="number" min="0" max="86400" bind:value={commandForm.cooldownSeconds} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
             <div class="flex items-center justify-between gap-2.5 py-2.5">
-              <span style="color: {$colorStore.text}">Enabled</span>
+              <span style="color: {$colorStore.text}">{m.common.enabled()}</span>
               {@render toggle(commandForm.enabled, (v) => commandForm.enabled = v)}
             </div>
             <label class="grid gap-2 font-bold sm:col-span-2">
-              <span style="color: {$colorStore.text}">Response</span>
-              <textarea bind:value={commandForm.response} rows="4" placeholder="Hey %display%, welcome in." class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <span style="color: {$colorStore.text}">{m.twitch.commandResponse()}</span>
+              <textarea bind:value={commandForm.response} rows="4" placeholder={m.twitch.commandResponsePlaceholder()} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
           </div>
 
@@ -1163,15 +1169,15 @@
 
           <div class="grid gap-3 mt-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Test args</span>
-              <input bind:value={commandForm.testArgs} placeholder="@target extra text" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+              <span style="color: {$colorStore.text}">{m.twitch.commandTestArgs()}</span>
+              <input bind:value={commandForm.testArgs} placeholder={m.twitch.commandTestArgsPlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
             <button
               class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
               disabled={commandTesting || !commandForm.name.trim()}
               onclick={previewCommand}
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-            >{commandTesting ? "Testing..." : "Test response"}</button>
+            >{commandTesting ? m.twitch.commandTesting() : m.twitch.commandTest()}</button>
           </div>
           {#if commandPreview}
             <div class="mt-3 p-3.5 border rounded-lg break-words" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08; color: {$colorStore.text}">
@@ -1185,29 +1191,29 @@
                 <li class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 justify-between p-3.5 border rounded-xl" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08">
                   <div>
                     <div class="font-extrabold font-mono" style="color: {$colorStore.primary}">{configForm.commandPrefix}{command.name}</div>
-                    <p class="leading-relaxed" style="color: {$colorStore.muted}">{command.permission} · {command.cooldownSeconds}s · used {command.useCount} times</p>
+                    <p class="leading-relaxed" style="color: {$colorStore.muted}">{command.useCount === 1 ? m.twitch.commandStatsOne({ permission: command.permission, cooldown: command.cooldownSeconds, count: command.useCount }) : m.twitch.commandStatsOther({ permission: command.permission, cooldown: command.cooldownSeconds, count: command.useCount })}</p>
                   </div>
                   <div class="flex flex-wrap gap-2 items-center">
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => editCommand(command)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">Edit</button>
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => removeCommand(command.name)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">Remove</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => editCommand(command)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.edit()}</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => removeCommand(command.name)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.remove()}</button>
                   </div>
                 </li>
               {/each}
             </ul>
           {:else}
-            <p class="leading-relaxed" style="color: {$colorStore.muted}">No custom commands yet.</p>
+            <p class="leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.commandEmpty()}</p>
           {/if}
         </section>
 
         <details class="rounded-xl border p-4 mt-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30">
           <summary class="cursor-pointer text-lg font-bold flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-utility-duo fa-regular fa-book" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-            Command reference
+            {m.common.commandReference()}
           </summary>
 
           <div class="mt-4">
-            <h3 class="text-base font-bold m-0" style="color: {$colorStore.text}">Discord slash commands</h3>
-            <p class="mt-1 mb-2.5 leading-relaxed" style="color: {$colorStore.muted}">Manage the Twitch integration from Discord with the <code class="font-mono text-[0.85em]">/twitch</code> command group.</p>
+            <h3 class="text-base font-bold m-0" style="color: {$colorStore.text}">{m.twitch.commandSlashTitle()}</h3>
+            <p class="mt-1 mb-2.5 leading-relaxed" style="color: {$colorStore.muted}">{@html m.twitch.commandSlashHint()}</p>
             <ul class="grid gap-2.5 list-none m-0 p-0">
               {#each slashCommands as command (command.name)}
                 <li class="p-3.5 border rounded-xl" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08">
@@ -1222,10 +1228,10 @@
           </div>
 
           <div class="mt-5">
-            <h3 class="text-base font-bold m-0" style="color: {$colorStore.text}">Twitch chat commands</h3>
-            <p class="mt-1 mb-2.5 leading-relaxed" style="color: {$colorStore.muted}">Type these in the connected Twitch channel's chat, prefixed with <code class="font-mono text-[0.85em]">{configForm.commandPrefix}</code>.</p>
+            <h3 class="text-base font-bold m-0" style="color: {$colorStore.text}">{m.twitch.commandChatTitle()}</h3>
+            <p class="mt-1 mb-2.5 leading-relaxed" style="color: {$colorStore.muted}">{@html m.twitch.commandChatHint({ prefix: escapeHtml(configForm.commandPrefix) })}</p>
             {#if chatCommands.length === 0}
-              <p class="leading-relaxed" style="color: {$colorStore.muted}">No chat commands are registered.</p>
+              <p class="leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.commandChatEmpty()}</p>
             {:else}
               <ul class="grid gap-2.5 list-none m-0 p-0">
                 {#each chatCommands as command (command.name)}
@@ -1244,49 +1250,49 @@
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-arrows-rotate" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-                Repeating messages
+                {m.features.wizardRepeatersName()}
               </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">Rotate chat reminders with online-only and chat-activity guards.</p>
+              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.timerHint()}</p>
             </div>
             <div class="flex flex-wrap gap-2 items-center">
-              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={resetTimerForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">Clear</button>
+              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={resetTimerForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">{m.common.clear()}</button>
               <button
                 class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
                 disabled={timerSaving || !timerForm.name.trim() || !timerForm.messages.trim()}
                 onclick={saveTimer}
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-              >{timerSaving ? "Saving..." : "Save timer"}</button>
+              >{timerSaving ? m.common.saving() : m.twitch.timerSave()}</button>
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Timer name</span>
-              <input bind:value={timerForm.name} placeholder="socials" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+              <span style="color: {$colorStore.text}">{m.twitch.timerName()}</span>
+              <input bind:value={timerForm.name} placeholder={m.twitch.timerNamePlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Interval minutes</span>
+              <span style="color: {$colorStore.text}">{m.twitch.timerInterval()}</span>
               <input type="number" min="1" max="1440" bind:value={timerForm.intervalMinutes} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Minimum chat messages</span>
+              <span style="color: {$colorStore.text}">{m.twitch.timerMinChat()}</span>
               <input type="number" min="0" max="10000" bind:value={timerForm.minChatMessages} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
             <div class="flex items-center justify-between gap-2.5 py-2.5">
-              <span style="color: {$colorStore.text}">Online only</span>
+              <span style="color: {$colorStore.text}">{m.twitch.timerOnlineOnlyLabel()}</span>
               {@render toggle(timerForm.onlineOnly, (v) => timerForm.onlineOnly = v)}
             </div>
             <div class="flex items-center justify-between gap-2.5 py-2.5">
-              <span style="color: {$colorStore.text}">Random rotation</span>
+              <span style="color: {$colorStore.text}">{m.twitch.timerRandomRotation()}</span>
               {@render toggle(timerForm.randomizeMessages, (v) => timerForm.randomizeMessages = v)}
             </div>
             <div class="flex items-center justify-between gap-2.5 py-2.5">
-              <span style="color: {$colorStore.text}">Enabled</span>
+              <span style="color: {$colorStore.text}">{m.common.enabled()}</span>
               {@render toggle(timerForm.enabled, (v) => timerForm.enabled = v)}
             </div>
             <label class="grid gap-2 font-bold sm:col-span-2">
-              <span style="color: {$colorStore.text}">Messages</span>
-              <textarea bind:value={timerForm.messages} rows="5" placeholder="One message per line. Try: Follow the socials: %url%" class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <span style="color: {$colorStore.text}">{m.common.messages()}</span>
+              <textarea bind:value={timerForm.messages} rows="5" placeholder={m.twitch.timerMessagesPlaceholder()} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
           </div>
 
@@ -1303,20 +1309,20 @@
                   <div>
                     <div class="font-extrabold font-mono" style="color: {$colorStore.primary}">{timer.name}</div>
                     <p class="leading-relaxed" style="color: {$colorStore.muted}">
-                      every {timer.intervalMinutes}m · min chat {timer.minChatMessages} · {timer.onlineOnly ? "online only" : "always"} · {timer.randomizeMessages ? "random" : "rotating"} · last sent {formatDate(timer.lastSentAt)}
+                      {m.twitch.timerSummary({ interval: timer.intervalMinutes, chat: timer.minChatMessages, online: timer.onlineOnly ? m.twitch.timerOnlineOnly() : m.twitch.timerAlways(), order: timer.randomizeMessages ? m.twitch.timerRandom() : m.twitch.timerRotating(), last: formatDate(timer.lastSentAt) })}
                     </p>
                   </div>
                   <div class="flex flex-wrap gap-2 items-center">
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => editTimer(timer)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">Edit</button>
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => setTimerState(timer.name, !timer.enabled)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{timer.enabled ? "Disable" : "Enable"}</button>
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={timerTesting === timer.name} onclick={() => testTimer(timer.name)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{timerTesting === timer.name ? "Sending..." : "Test"}</button>
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => removeTimer(timer.name)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">Remove</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => editTimer(timer)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.edit()}</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => setTimerState(timer.name, !timer.enabled)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{timer.enabled ? m.common.disable() : m.common.enable()}</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={timerTesting === timer.name} onclick={() => testTimer(timer.name)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{timerTesting === timer.name ? m.common.sending() : m.common.test()}</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => removeTimer(timer.name)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.remove()}</button>
                   </div>
                 </li>
               {/each}
             </ul>
           {:else}
-            <p class="leading-relaxed" style="color: {$colorStore.muted}">No repeating messages yet.</p>
+            <p class="leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.timerEmpty()}</p>
           {/if}
         </section>
       {:else if activeTab === "commands" && activeSubTab === "quotes"}
@@ -1325,33 +1331,33 @@
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-                Quotes
+                {m.common.quotes()}
               </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">Manage the quote pool used by {configForm.commandPrefix}quote.</p>
+              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.quotePoolHint({ command: `${configForm.commandPrefix}quote` })}</p>
             </div>
             <button
               class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
               disabled={quoteSaving || !quoteForm.text.trim()}
               onclick={addQuote}
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-            >{quoteSaving ? "Saving..." : "Add quote"}</button>
+            >{quoteSaving ? m.common.saving() : m.twitch.quoteAdd()}</button>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label class="grid gap-2 font-bold sm:col-span-2">
-              <span style="color: {$colorStore.text}">Quote text</span>
-              <textarea bind:value={quoteForm.text} rows="3" placeholder="The stream moment worth saving." class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <span style="color: {$colorStore.text}">{m.common.quoteText()}</span>
+              <textarea bind:value={quoteForm.text} rows="3" placeholder={m.twitch.quoteTextPlaceholder()} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Author</span>
-              <input bind:value={quoteForm.author} placeholder="optional username" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+              <span style="color: {$colorStore.text}">{m.common.author()}</span>
+              <input bind:value={quoteForm.author} placeholder={m.twitch.quoteAuthorPlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
             <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
               <label class="grid gap-2 font-bold">
-                <span style="color: {$colorStore.text}">Search</span>
-                <input bind:value={quoteForm.search} placeholder="filter quotes" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+                <span style="color: {$colorStore.text}">{m.common.search()}</span>
+                <input bind:value={quoteForm.search} placeholder={m.twitch.quoteSearchPlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
               </label>
-              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={refreshQuotes} style="background: {$colorStore.primary}12; color: {$colorStore.text};">Search</button>
+              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={refreshQuotes} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.search()}</button>
             </div>
           </div>
 
@@ -1361,17 +1367,17 @@
                 <li class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 justify-between p-3.5 border rounded-xl" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08">
                   <div>
                     <div class="font-extrabold font-mono" style="color: {$colorStore.primary}">#{quote.id}</div>
-                    <p class="leading-relaxed" style="color: {$colorStore.text}">"{quote.text}"{quote.author ? ` - ${quote.author}` : ""}</p>
-                    <p class="leading-relaxed" style="color: {$colorStore.muted}">Added {formatDate(quote.dateAdded)}{quote.addedBy ? ` by ${quote.addedBy}` : ""}</p>
+                    <p class="leading-relaxed" style="color: {$colorStore.text}">{quote.author ? m.twitch.quoteBodyAuthor({ text: quote.text, author: quote.author }) : m.twitch.quoteBody({ text: quote.text })}</p>
+                    <p class="leading-relaxed" style="color: {$colorStore.muted}">{quote.addedBy ? m.twitch.quoteAddedBy({ date: formatDate(quote.dateAdded), user: quote.addedBy }) : m.twitch.quoteAdded({ date: formatDate(quote.dateAdded) })}</p>
                   </div>
                   <div class="flex flex-wrap gap-2 items-center">
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={quoteSaving} onclick={() => removeQuote(quote.id)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">Remove</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={quoteSaving} onclick={() => removeQuote(quote.id)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.remove()}</button>
                   </div>
                 </li>
               {/each}
             </ul>
           {:else}
-            <p class="leading-relaxed" style="color: {$colorStore.muted}">No quotes saved yet.</p>
+            <p class="leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.quoteEmpty()}</p>
           {/if}
         </section>
       {:else if activeTab === "events" && activeSubTab === "alerts"}
@@ -1380,38 +1386,38 @@
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-video" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-                Event routing
+                {m.twitch.eventsRoutingTitle()}
               </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">Post a message when the connected channel goes live (and goes offline again).</p>
+              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.eventsRoutingHint()}</p>
             </div>
           </div>
 
           {#if status?.hasChannelAuthorization}
             <p class="text-sm leading-normal" style="color: {$colorStore.muted}">
-              This channel is connected via OAuth, so go-live notifications set up here replace anything configured for @{status.channelUsername} under Stream Alerts.
+              {m.twitch.eventsOauthNotice({ name: status.channelUsername ?? "" })}
             </p>
           {/if}
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Go-live Discord channel</span>
+              <span style="color: {$colorStore.text}">{m.twitch.eventsGoliveChannel()}</span>
               <DiscordSelector
                 type="channel"
                 options={textChannels}
                 selected={configForm.goLiveChannelId}
-                placeholder="No channel selected"
+                placeholder={m.common.noChannelSelected()}
                 onchange={(detail) => setConfigField("goLiveChannelId", detail.selected as string | null)}
               />
             </div>
 
             <div class="sm:col-span-2">
-              <span style="color: {$colorStore.text}">Go-live message</span>
+              <span style="color: {$colorStore.text}">{m.twitch.eventsGoliveMessage()}</span>
               <FullscreenEmbedBuilder
                 id="twitch-golive-message"
                 bind:value={goLiveMessageValue}
                 onclose={saveGoLiveMessage}
-                previewTitle="Go-Live Message"
-                previewDescription="Sent to the go-live channel when the connected streamer goes live"
+                previewTitle={m.twitch.eventsGoliveMessage()}
+                previewDescription={m.twitch.eventsGolivePreviewDescription()}
                 icon="fa-signal"
                 allowContent={true}
                 allowMultipleEmbeds={true}
@@ -1422,7 +1428,7 @@
                 user={data.user}
               />
               <span class="block text-sm font-medium leading-normal" style="color: {$colorStore.muted}">
-                Leave empty for a default embed. Placeholders: %streamer%, %title%, %game%, %url%, %viewers%.
+                {m.twitch.eventsGoliveFooter()} %streamer%, %title%, %game%, %url%, %viewers%.
               </span>
             </div>
           </div>
@@ -1433,7 +1439,7 @@
               disabled={testRunning === "golive"}
               onclick={() => sendTestEvent("golive")}
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-            >{testRunning === "golive" ? "Sending..." : "Send test go-live"}</button>
+            >{testRunning === "golive" ? m.common.sending() : m.twitch.eventsTestGolive()}</button>
           </div>
         </section>
 
@@ -1442,46 +1448,46 @@
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-bell" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-                Sub and raid templates
+                {m.twitch.eventsTemplatesTitle()}
               </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">Configure subscription and raid messages without touching slash commands.</p>
+              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.eventsTemplatesHint()}</p>
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Sub Discord channel</span>
+              <span style="color: {$colorStore.text}">{m.twitch.eventsSubChannel()}</span>
               <DiscordSelector
                 type="channel"
                 options={textChannels}
                 selected={configForm.subNotificationChannelId}
-                placeholder="No channel selected"
+                placeholder={m.common.noChannelSelected()}
                 onchange={(detail) => setConfigField("subNotificationChannelId", detail.selected as string | null)}
               />
             </div>
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Sub message</span>
-              <textarea bind:value={configForm.subNotificationMessage} oninput={() => saveConfigField("subNotificationMessage")} onblur={() => autoSave.flush("subNotificationMessage")} rows="3" placeholder="%display% subscribed to %channel%!" class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <span style="color: {$colorStore.text}">{m.twitch.eventsSubMessage()}</span>
+              <textarea bind:value={configForm.subNotificationMessage} oninput={() => saveConfigField("subNotificationMessage")} onblur={() => autoSave.flush("subNotificationMessage")} rows="3" placeholder={m.twitch.eventsSubPlaceholder()} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
             <div class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Raid Discord channel</span>
+              <span style="color: {$colorStore.text}">{m.twitch.eventsRaidChannel()}</span>
               <DiscordSelector
                 type="channel"
                 options={textChannels}
                 selected={configForm.raidNotificationChannelId}
-                placeholder="No channel selected"
+                placeholder={m.common.noChannelSelected()}
                 onchange={(detail) => setConfigField("raidNotificationChannelId", detail.selected as string | null)}
               />
             </div>
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Raid message</span>
-              <textarea bind:value={configForm.raidNotificationMessage} oninput={() => saveConfigField("raidNotificationMessage")} onblur={() => autoSave.flush("raidNotificationMessage")} rows="3" placeholder="%raider% raided %channel% with %viewers% viewers!" class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <span style="color: {$colorStore.text}">{m.twitch.eventsRaidMessage()}</span>
+              <textarea bind:value={configForm.raidNotificationMessage} oninput={() => saveConfigField("raidNotificationMessage")} onblur={() => autoSave.flush("raidNotificationMessage")} rows="3" placeholder={m.twitch.eventsRaidPlaceholder()} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
           </div>
 
           <div class="grid gap-1.5 my-3 text-sm">
-            <span style="color: {$colorStore.muted}">Sub: {eventVariables.sub.join(", ")}</span>
-            <span style="color: {$colorStore.muted}">Raid: {eventVariables.raid.join(", ")}</span>
+            <span style="color: {$colorStore.muted}">{m.twitch.eventsVarsSub({ variables: eventVariables.sub.join(", ") })}</span>
+            <span style="color: {$colorStore.muted}">{m.twitch.eventsVarsRaid({ variables: eventVariables.raid.join(", ") })}</span>
           </div>
 
           <div class="flex flex-wrap gap-2 items-center mt-4">
@@ -1490,13 +1496,13 @@
               disabled={testRunning === "sub"}
               onclick={() => sendTestEvent("sub")}
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-            >{testRunning === "sub" ? "Sending..." : "Send test sub"}</button>
+            >{testRunning === "sub" ? m.common.sending() : m.twitch.eventsTestSub()}</button>
             <button
               class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
               disabled={testRunning === "raid"}
               onclick={() => sendTestEvent("raid")}
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-            >{testRunning === "raid" ? "Sending..." : "Send test raid"}</button>
+            >{testRunning === "raid" ? m.common.sending() : m.twitch.eventsTestRaid()}</button>
           </div>
         </section>
 
@@ -1505,48 +1511,48 @@
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-gift" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-                Channel point actions
+                {m.twitch.redemptionTitle()}
               </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">Map reward titles to Twitch replies or Discord posts.</p>
+              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.redemptionHint()}</p>
             </div>
             <div class="flex flex-wrap gap-2 items-center">
-              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={resetRedemptionForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">Clear</button>
+              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={resetRedemptionForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">{m.common.clear()}</button>
               <button
                 class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
                 disabled={redemptionSaving || !redemptionForm.rewardTitle.trim()}
                 onclick={saveRedemption}
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-              >{redemptionSaving ? "Saving..." : "Save action"}</button>
+              >{redemptionSaving ? m.common.saving() : m.twitch.redemptionSave()}</button>
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Reward title</span>
-              <input bind:value={redemptionForm.rewardTitle} placeholder="Hydrate" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+              <span style="color: {$colorStore.text}">{m.twitch.redemptionRewardTitle()}</span>
+              <input bind:value={redemptionForm.rewardTitle} placeholder={m.twitch.redemptionRewardPlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
             <div class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Discord channel</span>
+              <span style="color: {$colorStore.text}">{m.twitch.redemptionDiscordChannel()}</span>
               <DiscordSelector
                 type="channel"
                 options={textChannels}
                 selected={redemptionForm.discordChannelId}
-                placeholder="No Discord post"
+                placeholder={m.twitch.redemptionNoDiscordPost()}
                 onchange={(detail) => redemptionForm.discordChannelId = detail.selected as string | null}
               />
             </div>
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Twitch reply</span>
-              <textarea bind:value={redemptionForm.twitchResponse} rows="3" placeholder="Thanks %display%, hydrate time." class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <span style="color: {$colorStore.text}">{m.twitch.redemptionTwitchReply()}</span>
+              <textarea bind:value={redemptionForm.twitchResponse} rows="3" placeholder={m.twitch.redemptionTwitchReplyPlaceholder()} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Discord message</span>
-              <textarea bind:value={redemptionForm.discordMessage} rows="3" placeholder="%display% redeemed %reward%: %input%" class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <span style="color: {$colorStore.text}">{m.twitch.redemptionDiscordMessage()}</span>
+              <textarea bind:value={redemptionForm.discordMessage} rows="3" placeholder={m.twitch.redemptionDiscordPlaceholder()} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
           </div>
 
           <div class="grid gap-1.5 my-3 text-sm">
-            <span style="color: {$colorStore.muted}">Redemptions: {eventVariables.redemption.join(", ")}</span>
+            <span style="color: {$colorStore.muted}">{m.twitch.eventsVarsRedemption({ variables: eventVariables.redemption.join(", ") })}</span>
           </div>
 
           {#if redemptions.length > 0}
@@ -1555,17 +1561,17 @@
                 <li class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 justify-between p-3.5 border rounded-xl" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08">
                   <div>
                     <div class="font-extrabold font-mono" style="color: {$colorStore.primary}">{action.rewardTitle}</div>
-                    <p class="leading-relaxed" style="color: {$colorStore.muted}">Discord: {action.discordChannelId ? `#${textChannels.find((c) => c.id === action.discordChannelId?.toString())?.name || action.discordChannelId}` : "none"} · Twitch reply: {action.twitchResponse ? "yes" : "no"}</p>
+                    <p class="leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.redemptionSummary({ channel: action.discordChannelId ? `#${textChannels.find((c) => c.id === action.discordChannelId?.toString())?.name || action.discordChannelId}` : m.common.noneLower(), reply: action.twitchResponse ? m.twitch.redemptionYes() : m.twitch.redemptionNo() })}</p>
                   </div>
                   <div class="flex flex-wrap gap-2 items-center">
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => editRedemption(action)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">Edit</button>
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => removeRedemption(action.rewardTitle)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">Remove</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => editRedemption(action)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.edit()}</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => removeRedemption(action.rewardTitle)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.remove()}</button>
                   </div>
                 </li>
               {/each}
             </ul>
           {:else}
-            <p class="leading-relaxed" style="color: {$colorStore.muted}">No channel point actions yet.</p>
+            <p class="leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.redemptionEmpty()}</p>
           {/if}
         </section>
       {:else if activeTab === "events" && activeSubTab === "live"}
@@ -1574,9 +1580,9 @@
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-sliders" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-                Stream operator tools
+                {m.twitch.liveTitle()}
               </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">Run live chat, marker, clip, poll, and moderation actions from the dashboard.</p>
+              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.liveHint()}</p>
             </div>
           </div>
 
@@ -1586,48 +1592,48 @@
                 <i class="fa-utility-duo fa-regular fa-comments" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 16px;"></i>
                 Chat
               </h3>
-              <textarea bind:value={operatorForm.chatMessage} rows="3" placeholder="Message to send in Twitch chat" class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
-              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "chat" || !operatorForm.chatMessage.trim()} onclick={() => runOperatorAction("chat")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "chat" ? "Sending..." : "Send chat"}</button>
+              <textarea bind:value={operatorForm.chatMessage} rows="3" placeholder={m.twitch.liveChatPlaceholder()} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "chat" || !operatorForm.chatMessage.trim()} onclick={() => runOperatorAction("chat")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "chat" ? m.common.sending() : m.twitch.liveSendChat()}</button>
             </div>
 
             <div class="grid gap-2.5 p-3.5 border rounded-xl" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08">
               <h3 class="text-base font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-video" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 16px;"></i>
-                Marker and clip
+                {m.twitch.liveMarkerClip()}
               </h3>
-              <input bind:value={operatorForm.markerDescription} placeholder="Marker description" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+              <input bind:value={operatorForm.markerDescription} placeholder={m.twitch.liveMarkerPlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
               <div class="flex flex-wrap gap-2 items-center">
-                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "marker"} onclick={() => runOperatorAction("marker")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "marker" ? "Marking..." : "Create marker"}</button>
-                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "clip"} onclick={() => runOperatorAction("clip")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "clip" ? "Clipping..." : "Create clip"}</button>
+                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "marker"} onclick={() => runOperatorAction("marker")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "marker" ? m.twitch.liveMarking() : m.twitch.liveCreateMarker()}</button>
+                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "clip"} onclick={() => runOperatorAction("clip")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "clip" ? m.twitch.liveClipping() : m.twitch.liveCreateClip()}</button>
               </div>
             </div>
 
             <div class="grid gap-2.5 p-3.5 border rounded-xl" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08">
               <h3 class="text-base font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 16px;"></i>
-                Poll
+                {m.common.poll()}
               </h3>
-              <input bind:value={operatorForm.pollTitle} placeholder="Poll title" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
-              <textarea bind:value={operatorForm.pollChoices} rows="4" placeholder="One choice per line" class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <input bind:value={operatorForm.pollTitle} placeholder={m.twitch.livePollTitlePlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+              <textarea bind:value={operatorForm.pollChoices} rows="4" placeholder={m.twitch.livePollChoicesPlaceholder()} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
               <input type="number" min="15" max="1800" bind:value={operatorForm.pollDurationSeconds} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
-              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "poll" || !operatorForm.pollTitle.trim()} onclick={() => runOperatorAction("poll")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "poll" ? "Creating..." : "Create poll"}</button>
+              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "poll" || !operatorForm.pollTitle.trim()} onclick={() => runOperatorAction("poll")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "poll" ? m.common.creating() : m.twitch.liveCreatePoll()}</button>
             </div>
 
             <div class="grid gap-2.5 p-3.5 border rounded-xl" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08">
               <h3 class="text-base font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 16px;"></i>
-                Moderation
+                {m.features.categoryModeration()}
               </h3>
-              <input bind:value={operatorForm.moderationUsername} placeholder="Twitch username" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+              <input bind:value={operatorForm.moderationUsername} placeholder={m.twitch.linksTwitchUsername()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
               <input type="number" min="1" max="1209600" bind:value={operatorForm.moderationDurationSeconds} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
-              <input bind:value={operatorForm.moderationReason} placeholder="Reason" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+              <input bind:value={operatorForm.moderationReason} placeholder={m.common.reason()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
               <div class="flex flex-wrap gap-2 items-center">
-                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "timeout" || !operatorForm.moderationUsername.trim()} onclick={() => runOperatorAction("timeout")} style="background: {$colorStore.primary}12; color: {$colorStore.text};">Timeout</button>
-                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "ban" || !operatorForm.moderationUsername.trim()} onclick={() => runOperatorAction("ban")} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">Ban</button>
-                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "unban" || !operatorForm.moderationUsername.trim()} onclick={() => runOperatorAction("unban")} style="background: {$colorStore.primary}12; color: {$colorStore.text};">Unban</button>
+                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "timeout" || !operatorForm.moderationUsername.trim()} onclick={() => runOperatorAction("timeout")} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.timeout()}</button>
+                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "ban" || !operatorForm.moderationUsername.trim()} onclick={() => runOperatorAction("ban")} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.actionBan()}</button>
+                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "unban" || !operatorForm.moderationUsername.trim()} onclick={() => runOperatorAction("unban")} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.unban()}</button>
               </div>
-              <input bind:value={operatorForm.deleteMessageId} placeholder="Message ID to delete" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
-              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "delete" || !operatorForm.deleteMessageId.trim()} onclick={() => runOperatorAction("delete")} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">Delete message</button>
+              <input bind:value={operatorForm.deleteMessageId} placeholder={m.twitch.liveMessageIdPlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "delete" || !operatorForm.deleteMessageId.trim()} onclick={() => runOperatorAction("delete")} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.twitch.liveDeleteMessage()}</button>
             </div>
           </div>
         </section>
@@ -1637,37 +1643,37 @@
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-link" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-                Account links
+                {m.twitch.tabLinks()}
               </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">Link Discord members to their Twitch username so chat commands can recognise them.</p>
+              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.linksHint()}</p>
             </div>
           </div>
 
           <div class="grid gap-3 mb-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
             <div class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Discord user</span>
+              <span style="color: {$colorStore.text}">{m.twitch.linksDiscordUser()}</span>
               <DiscordSelector
                 type="user"
-                options={guildMembers.map((m) => ({ id: m.id, name: m.username }))}
+                options={guildMembers.map((member) => ({ id: member.id, name: member.username }))}
                 selected={selectedLinkUserId}
-                placeholder="Select a user"
+                placeholder={m.twitch.linksSelectUser()}
                 onchange={(detail) => selectedLinkUserId = detail.selected as string | null}
               />
             </div>
             <label class="grid gap-2 font-bold">
-              <span style="color: {$colorStore.text}">Twitch username</span>
-              <input bind:value={linkTwitchUsername} placeholder="twitchlogin" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
+              <span style="color: {$colorStore.text}">{m.twitch.linksTwitchUsername()}</span>
+              <input bind:value={linkTwitchUsername} placeholder={m.twitch.linksTwitchPlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
             <button
               class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
               disabled={linking || !selectedLinkUserId || !linkTwitchUsername.trim()}
               onclick={addLink}
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-            >{linking ? "Saving..." : "Add link"}</button>
+            >{linking ? m.common.saving() : m.twitch.linksAdd()}</button>
           </div>
 
           {#if links.length === 0}
-            <p class="leading-relaxed" style="color: {$colorStore.muted}">No linked accounts yet.</p>
+            <p class="leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.linksEmpty()}</p>
           {:else}
             <ul class="grid gap-2.5 list-none m-0 p-0">
               {#each links as link (link.discordUserId)}
@@ -1679,7 +1685,7 @@
                     disabled={linking}
                     onclick={() => removeLink(link.discordUserId)}
                     style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
-                  >Remove</button>
+                  >{m.common.remove()}</button>
                 </li>
               {/each}
             </ul>

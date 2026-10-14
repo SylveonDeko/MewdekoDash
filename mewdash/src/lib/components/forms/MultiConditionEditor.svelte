@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import {
     CONDITIONAL_TYPES,
     CONDITIONAL_OPERATORS,
@@ -13,6 +14,7 @@
   import { slide, fade } from "svelte/transition";
   import DiscordSelector from "./DiscordSelector.svelte";
   import Portal from "$lib/components/ui/Portal.svelte";
+  import { conditionalOperatorLabel, conditionalTypeLabel, permissionLabel } from "./formLabels";
 
   interface Props {
     questionId: number;
@@ -110,7 +112,7 @@
         })
         .catch((err) => {
           logger.error("Failed to delete condition:", err);
-          showEditorError("Failed to delete condition. Please try again.");
+          showEditorError(m.forms.multiConditionDeleteFailed());
         })
         .finally(() => {
           isLoading = false;
@@ -187,7 +189,7 @@
   export { saveConditions };
 
   function getConditionTypeLabel(type: number): string {
-    return CONDITIONAL_TYPES.find(t => t.value === type)?.label || "Unknown";
+    return CONDITIONAL_TYPES.some(t => t.value === type) ? conditionalTypeLabel(type) : m.common.unknown();
   }
 </script>
 
@@ -212,7 +214,7 @@
     <div class="flex items-center gap-2">
       <i class="fa-solid fa-code-branch" style="color: {$colorStore.primary};"></i>
       <span>
-        {conditionGroups.length === 0 ? "Add Conditions" : `Conditions (${conditionGroups.flat().length})`}
+        {conditionGroups.length === 0 ? m.forms.multiConditionAddConditions() : m.forms.multiConditionCount({ count: conditionGroups.flat().length })}
       </span>
     </div>
     <i class="fa-solid fa-arrow-up-right-from-square" style="color: {$colorStore.muted}; font-size: 14px;"></i>
@@ -244,14 +246,14 @@
           >
             <div class="flex items-center gap-2">
               <i class="fa-solid fa-code-branch" style="color: {$colorStore.primary}; font-size: 18px;"></i>
-              <h3 id="modal-title" class="font-bold text-lg" style="color: {$colorStore.text};">Multiple Conditions</h3>
+              <h3 id="modal-title" class="font-bold text-lg" style="color: {$colorStore.text};">{m.forms.multiConditionTitle()}</h3>
             </div>
             <button
               type="button"
               onclick={() => showMobileModal = false}
               class="p-2 rounded-lg transition-all hover:scale-110"
               style="background: {$colorStore.primary}20; color: {$colorStore.text};"
-              aria-label="Close modal"
+              aria-label={m.forms.multiConditionCloseModal()}
             >
               <i class="fa-solid fa-xmark text-lg"></i>
             </button>
@@ -268,7 +270,7 @@
                   style="background: {$colorStore.primary}05; color: {$colorStore.text}; border-color: {$colorStore.primary}40;"
                 >
                   <i class="fa-solid fa-plus mr-2"></i>
-                  Add Condition
+                  {m.forms.multiConditionAddCondition()}
                 </button>
               {:else}
                 {#snippet conditionsContent()}
@@ -280,7 +282,7 @@
                         <div class="flex items-center gap-2 my-1">
                           <div class="flex-shrink-0 px-3 py-1.5 rounded-full font-bold text-xs"
                                style="background: {$colorStore.accent}; color: white;">
-                            OR
+                            {m.forms.multiConditionOr()}
                           </div>
                           <div class="flex-1 h-0.5" style="background: {$colorStore.accent};"></div>
                         </div>
@@ -293,12 +295,12 @@
                           {#if conditionIndex === 0 && groupIndex === 0}
                             <div class="px-2 py-1 rounded font-bold text-xs shrink-0"
                                  style="background: {$colorStore.primary}; color: white;">
-                              IF
+                              {m.forms.multiConditionIf()}
                             </div>
                           {:else if conditionIndex > 0}
                             <div class="px-2 py-1 rounded font-bold text-xs shrink-0"
                                  style="background: {$colorStore.primary}40; color: {$colorStore.primary};">
-                              AND
+                              {m.forms.multiConditionAnd()}
                             </div>
                           {:else}
                             <div class="w-10 shrink-0"></div>
@@ -311,7 +313,7 @@
                             class="ml-auto p-2 rounded-lg transition-all hover:scale-110 shrink-0"
                             style="background: #ef444420; color: #ef4444;"
                             disabled={isLoading}
-                            aria-label="Delete condition"
+                            aria-label={m.forms.multiConditionDeleteCondition()}
                           >
                             <i class="fa-solid fa-xmark text-lg"></i>
                           </button>
@@ -323,12 +325,12 @@
                           <div class="space-y-3">
                             <!-- Type Selector -->
                             <div>
-                              <label for="f-MultiConditionEditor-type-304" class="block text-xs mb-1" style="color: {$colorStore.muted};">Type</label>
+                              <label for="f-MultiConditionEditor-type-304" class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.common.type()}</label>
                               <DiscordSelector id="f-MultiConditionEditor-type-304"
                                 type="custom"
-                                options={CONDITIONAL_TYPES.filter(t => t.value !== 5).map(t => ({ id: String(t.value), name: t.label }))}
+                                options={CONDITIONAL_TYPES.filter(t => t.value !== 5).map(t => ({ id: String(t.value), name: conditionalTypeLabel(t.value) }))}
                                 selected={String(condition.conditionType)}
-                                placeholder="Type..."
+                                placeholder={m.forms.multiConditionTypePlaceholder()}
                                 onchange={(e) => updateCondition(groupIndex, conditionIndex, {
                                   conditionType: parseInt(e.selected as string),
                                   targetQuestionId: undefined,
@@ -348,12 +350,12 @@
                             <!-- Question: Answer-based -->
                             {#if condition.conditionType === 0}
                               <div>
-                                <label for="f-MultiConditionEditor-question-329" class="block text-xs mb-1" style="color: {$colorStore.muted};">Question</label>
+                                <label for="f-MultiConditionEditor-question-329" class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.common.question()}</label>
                                 <DiscordSelector id="f-MultiConditionEditor-question-329"
                                   type="custom"
-                                  options={allQuestions.slice(0, questionIndex).filter(q => q.questionText).map((q, i) => ({ id: String(q.id), name: `Q${i + 1}` }))}
+                                  options={allQuestions.slice(0, questionIndex).filter(q => q.questionText).map((q, i) => ({ id: String(q.id), name: m.forms.multiConditionQuestionOption({ number: i + 1 }) }))}
                                   selected={condition.targetQuestionId ? String(condition.targetQuestionId) : ""}
-                                  placeholder="Question..."
+                                  placeholder={m.forms.multiConditionQuestionPlaceholder()}
                                   onchange={(e) => updateCondition(groupIndex, conditionIndex, { targetQuestionId: e.selected ? parseInt(e.selected as string) : undefined })}
                                   searchable={false}
                                 />
@@ -361,24 +363,24 @@
 
                               {#if condition.targetQuestionId}
                                 <div>
-                                  <label for="f-MultiConditionEditor-operator-342" class="block text-xs mb-1" style="color: {$colorStore.muted};">Operator</label>
+                                  <label for="f-MultiConditionEditor-operator-342" class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.forms.multiConditionOperator()}</label>
                                   <DiscordSelector id="f-MultiConditionEditor-operator-342"
                                     type="custom"
-                                    options={CONDITIONAL_OPERATORS.map(op => ({ id: op.value, name: op.label }))}
+                                    options={CONDITIONAL_OPERATORS.map(op => ({ id: op.value, name: conditionalOperatorLabel(op.value) }))}
                                     selected={condition.operator || "equals"}
-                                    placeholder="="
+                                    placeholder={m.forms.multiConditionOperatorPlaceholder()}
                                     onchange={(e) => updateCondition(groupIndex, conditionIndex, { operator: e.selected as any })}
                                     searchable={false}
                                   />
                                 </div>
 
                                 <div>
-                                  <label for="f-MultiConditionEditor-value-354" class="block text-xs mb-1" style="color: {$colorStore.muted};">Value</label>
+                                  <label for="f-MultiConditionEditor-value-354" class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.common.value()}</label>
                                   <input id="f-MultiConditionEditor-value-354"
                                     type="text"
                                     value={condition.expectedValue || ""}
                                     oninput={(e) => updateCondition(groupIndex, conditionIndex, { expectedValue: e.currentTarget.value })}
-                                    placeholder="value..."
+                                    placeholder={m.forms.multiConditionValuePlaceholder()}
                                     class="w-full p-2.5 rounded-lg text-sm"
                                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
                                   />
@@ -389,13 +391,12 @@
                             <!-- Role: User roles -->
                             {#if condition.conditionType === 1}
                               <div>
-                                <label for="f-MultiConditionEditor-roles-any-370" class="block text-xs mb-1" style="color: {$colorStore.muted};">Roles
-                                  (any)</label>
+                                <label for="f-MultiConditionEditor-roles-any-370" class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.forms.multiConditionRolesAny()}</label>
                                 <DiscordSelector id="f-MultiConditionEditor-roles-any-370"
                                   type="role"
                                   options={roles}
                                   selected={condition.targetRoleIds?.split(",").filter(x => x) || []}
-                                  placeholder="Roles..."
+                                  placeholder={m.forms.multiConditionRolesPlaceholder()}
                                   multiple
                                   onchange={(e) => updateCondition(groupIndex, conditionIndex, { targetRoleIds: (e.selected as string[]).join(",") })}
                                 />
@@ -405,13 +406,13 @@
                             <!-- Tenure: Days threshold -->
                             {#if condition.conditionType === 2}
                               <div>
-                                <label for="f-MultiConditionEditor-min-days-386" class="block text-xs mb-1" style="color: {$colorStore.muted};">Min days</label>
+                                <label for="f-MultiConditionEditor-min-days-386" class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.forms.multiConditionMinDays()}</label>
                                 <input id="f-MultiConditionEditor-min-days-386"
                                   type="number"
                                   value={condition.daysThreshold || ""}
                                   oninput={(e) => updateCondition(groupIndex, conditionIndex, { daysThreshold: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
                                   min="0"
-                                  placeholder="30"
+                                  placeholder={m.forms.multiConditionMinDaysPlaceholder()}
                                   class="w-full p-2.5 rounded-lg text-sm"
                                   style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
                                 />
@@ -429,7 +430,7 @@
                                     class="w-5 h-5"
                                     style="accent-color: #f47fff;"
                                   />
-                                  <span style="color: {$colorStore.text};">Requires Boost</span>
+                                  <span style="color: {$colorStore.text};">{m.forms.multiConditionRequiresBoost()}</span>
                                 </label>
                                 <label class="flex items-center gap-2 text-sm cursor-pointer">
                                   <input
@@ -439,7 +440,7 @@
                                     class="w-5 h-5"
                                     style="accent-color: #5865f2;"
                                   />
-                                  <span style="color: {$colorStore.text};">Requires Nitro</span>
+                                  <span style="color: {$colorStore.text};">{m.forms.multiConditionRequiresNitro()}</span>
                                 </label>
                               </div>
                             {/if}
@@ -447,12 +448,12 @@
                             <!-- Permission: Dropdown -->
                             {#if condition.conditionType === 4}
                               <div>
-                                <label for="f-MultiConditionEditor-permission-428" class="block text-xs mb-1" style="color: {$colorStore.muted};">Permission</label>
+                                <label for="f-MultiConditionEditor-permission-428" class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.common.permission()}</label>
                                 <DiscordSelector id="f-MultiConditionEditor-permission-428"
                                   type="custom"
-                                  options={COMMON_PERMISSIONS.map(p => ({ id: String(p.value), name: p.label }))}
+                                  options={COMMON_PERMISSIONS.map(p => ({ id: String(p.value), name: permissionLabel(p.flag) }))}
                                   selected={condition.permissionFlags ? String(condition.permissionFlags) : ""}
-                                  placeholder="Permission..."
+                                  placeholder={m.forms.multiConditionPermissionPlaceholder()}
                                   onchange={(e) => updateCondition(groupIndex, conditionIndex, { permissionFlags: e.selected ? parseInt(e.selected as string) : undefined })}
                                   searchable={false}
                                 />
@@ -476,7 +477,7 @@
                     style="background: {$colorStore.primary}10; color: {$colorStore.text}; border-color: {$colorStore.primary}40;"
                   >
                     <i class="fa-solid fa-plus mr-2"></i>
-                    <strong>AND</strong> condition
+                    {@html m.forms.multiConditionAddAnd()}
                   </button>
                   <button
                     type="button"
@@ -485,7 +486,7 @@
                     style="background: {$colorStore.accent}15; color: {$colorStore.text}; border-color: {$colorStore.accent}50;"
                   >
                     <i class="fa-solid fa-code-merge mr-2"></i>
-                    <strong>OR</strong> group
+                    {@html m.forms.multiConditionAddOr()}
                   </button>
                 </div>
               {/if}
@@ -494,7 +495,7 @@
               {#if conditionGroups.length > 0}
                 <div class="p-3 rounded text-xs" style="background: #3b82f610; color: {$colorStore.muted};">
                   <i class="fa-solid fa-lightbulb mr-1" style="color: #3b82f6;"></i>
-                  <strong>AND</strong> = all in group, <strong>OR</strong> = any group
+                  {@html m.forms.multiConditionHelp()}
                 </div>
               {/if}
             </div>
@@ -512,7 +513,7 @@
               style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 20px {$colorStore.primary}10;"
             >
               <i class="fa-solid fa-check mr-2"></i>
-              Done
+              {m.common.done()}
             </button>
           </div>
         </div>
@@ -530,7 +531,7 @@
         style="background: {$colorStore.primary}05; color: {$colorStore.text}; border-color: {$colorStore.primary}40;"
       >
         <i class="fa-solid fa-plus mr-2"></i>
-        Add Condition
+        {m.forms.multiConditionAddCondition()}
       </button>
     {:else}
       <!-- Flattened Conditions List -->
@@ -541,7 +542,7 @@
             <div class="flex items-center gap-2 my-1">
               <div class="flex-shrink-0 px-3 py-1.5 rounded-full font-bold text-xs"
                    style="background: {$colorStore.accent}; color: white;">
-                OR
+                {m.forms.multiConditionOr()}
               </div>
               <div class="flex-1 h-0.5" style="background: {$colorStore.accent};"></div>
             </div>
@@ -554,12 +555,12 @@
               {#if conditionIndex === 0 && groupIndex === 0}
                 <div class="px-2 py-1 rounded font-bold text-xs"
                      style="background: {$colorStore.primary}; color: white;">
-                  IF
+                  {m.forms.multiConditionIf()}
                 </div>
               {:else if conditionIndex > 0}
                 <div class="px-2 py-1 rounded font-bold text-xs"
                      style="background: {$colorStore.primary}40; color: {$colorStore.primary};">
-                  AND
+                  {m.forms.multiConditionAnd()}
                 </div>
               {:else}
                 <div class="w-10"></div>
@@ -574,12 +575,12 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <!-- Type Selector -->
                   <div class="md:col-span-1">
-                    <label for="f-MultiConditionEditor-type-555" class="block text-xs mb-1" style="color: {$colorStore.muted};">Type</label>
+                    <label for="f-MultiConditionEditor-type-555" class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.common.type()}</label>
                     <DiscordSelector id="f-MultiConditionEditor-type-555"
                       type="custom"
-                      options={CONDITIONAL_TYPES.filter(t => t.value !== 5).map(t => ({ id: String(t.value), name: t.label }))}
+                      options={CONDITIONAL_TYPES.filter(t => t.value !== 5).map(t => ({ id: String(t.value), name: conditionalTypeLabel(t.value) }))}
                       selected={String(condition.conditionType)}
-                      placeholder="Type..."
+                      placeholder={m.forms.multiConditionTypePlaceholder()}
                       onchange={(e) => updateCondition(groupIndex, conditionIndex, {
                       conditionType: parseInt(e.selected as string),
                       targetQuestionId: undefined,
@@ -600,12 +601,12 @@
 
                     <!-- Question: Answer-based -->
                     {#if condition.conditionType === 0}
-                      <label for="f-MultiConditionEditor-question-581" class="block text-xs mb-1" style="color: {$colorStore.muted};">Question</label>
+                      <label for="f-MultiConditionEditor-question-581" class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.common.question()}</label>
                       <DiscordSelector id="f-MultiConditionEditor-question-581"
                         type="custom"
-                        options={allQuestions.slice(0, questionIndex).filter(q => q.questionText).map((q, i) => ({ id: String(q.id), name: `Q${i + 1}` }))}
+                        options={allQuestions.slice(0, questionIndex).filter(q => q.questionText).map((q, i) => ({ id: String(q.id), name: m.forms.multiConditionQuestionOption({ number: i + 1 }) }))}
                         selected={condition.targetQuestionId ? String(condition.targetQuestionId) : ""}
-                        placeholder="Question..."
+                        placeholder={m.forms.multiConditionQuestionPlaceholder()}
                         onchange={(e) => updateCondition(groupIndex, conditionIndex, { targetQuestionId: e.selected ? parseInt(e.selected as string) : undefined })}
                         searchable={false}
                       />
@@ -613,12 +614,12 @@
 
                     <!-- Role: User roles -->
                     {#if condition.conditionType === 1}
-                      <label for="f-MultiConditionEditor-roles-any-594" class="block text-xs mb-1" style="color: {$colorStore.muted};">Roles (any)</label>
+                      <label for="f-MultiConditionEditor-roles-any-594" class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.forms.multiConditionRolesAny()}</label>
                       <DiscordSelector id="f-MultiConditionEditor-roles-any-594"
                         type="role"
                         options={roles}
                         selected={condition.targetRoleIds?.split(",").filter(x => x) || []}
-                        placeholder="Roles..."
+                        placeholder={m.forms.multiConditionRolesPlaceholder()}
                         multiple
                         onchange={(e) => updateCondition(groupIndex, conditionIndex, { targetRoleIds: (e.selected as string[]).join(",") })}
                       />
@@ -626,13 +627,13 @@
 
                     <!-- Tenure: Days threshold -->
                     {#if condition.conditionType === 2}
-                      <label for="f-MultiConditionEditor-min-days-607" class="block text-xs mb-1" style="color: {$colorStore.muted};">Min days</label>
+                      <label for="f-MultiConditionEditor-min-days-607" class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.forms.multiConditionMinDays()}</label>
                       <input id="f-MultiConditionEditor-min-days-607"
                         type="number"
                         value={condition.daysThreshold || ""}
                         oninput={(e) => updateCondition(groupIndex, conditionIndex, { daysThreshold: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
                         min="0"
-                        placeholder="30"
+                        placeholder={m.forms.multiConditionMinDaysPlaceholder()}
                         class="w-full p-2.5 rounded-lg text-sm"
                         style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
                       />
@@ -649,7 +650,7 @@
                             class="w-4 h-4"
                             style="accent-color: #f47fff;"
                           />
-                          <span style="color: {$colorStore.text};">Boost</span>
+                          <span style="color: {$colorStore.text};">{m.forms.multiConditionBoostShort()}</span>
                         </label>
                         <label class="flex items-center gap-1.5 text-xs cursor-pointer">
                           <input
@@ -659,19 +660,19 @@
                             class="w-4 h-4"
                             style="accent-color: #5865f2;"
                           />
-                          <span style="color: {$colorStore.text};">Nitro</span>
+                          <span style="color: {$colorStore.text};">{m.forms.multiConditionNitroShort()}</span>
                         </label>
                       </div>
                     {/if}
 
                     <!-- Permission: Dropdown -->
                     {#if condition.conditionType === 4}
-                      <label for="f-MultiConditionEditor-permission-647" class="block text-xs mb-1" style="color: {$colorStore.muted};">Permission</label>
+                      <label for="f-MultiConditionEditor-permission-647" class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.common.permission()}</label>
                       <DiscordSelector id="f-MultiConditionEditor-permission-647"
                         type="custom"
-                        options={COMMON_PERMISSIONS.map(p => ({ id: String(p.value), name: p.label }))}
+                        options={COMMON_PERMISSIONS.map(p => ({ id: String(p.value), name: permissionLabel(p.flag) }))}
                         selected={condition.permissionFlags ? String(condition.permissionFlags) : ""}
-                        placeholder="Permission..."
+                        placeholder={m.forms.multiConditionPermissionPlaceholder()}
                         onchange={(e) => updateCondition(groupIndex, conditionIndex, { permissionFlags: e.selected ? parseInt(e.selected as string) : undefined })}
                         searchable={false}
                       />
@@ -683,23 +684,23 @@
                 {#if condition.conditionType === 0 && condition.targetQuestionId}
                   <div class="grid grid-cols-2 gap-2 pt-1">
                     <div>
-                      <label for="f-MultiConditionEditor-operator-664" class="block text-xs mb-1" style="color: {$colorStore.muted};">Operator</label>
+                      <label for="f-MultiConditionEditor-operator-664" class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.forms.multiConditionOperator()}</label>
                       <DiscordSelector id="f-MultiConditionEditor-operator-664"
                         type="custom"
-                        options={CONDITIONAL_OPERATORS.map(op => ({ id: op.value, name: op.label }))}
+                        options={CONDITIONAL_OPERATORS.map(op => ({ id: op.value, name: conditionalOperatorLabel(op.value) }))}
                         selected={condition.operator || "equals"}
-                        placeholder="="
+                        placeholder={m.forms.multiConditionOperatorPlaceholder()}
                         onchange={(e) => updateCondition(groupIndex, conditionIndex, { operator: e.selected as any })}
                         searchable={false}
                       />
                     </div>
                     <div>
-                      <label for="f-MultiConditionEditor-value-675" class="block text-xs mb-1" style="color: {$colorStore.muted};">Value</label>
+                      <label for="f-MultiConditionEditor-value-675" class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.common.value()}</label>
                       <input id="f-MultiConditionEditor-value-675"
                         type="text"
                         value={condition.expectedValue || ""}
                         oninput={(e) => updateCondition(groupIndex, conditionIndex, { expectedValue: e.currentTarget.value })}
-                        placeholder="value..."
+                        placeholder={m.forms.multiConditionValuePlaceholder()}
                         class="w-full p-2.5 rounded-lg text-sm"
                         style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
                       />
@@ -716,7 +717,7 @@
               class="flex-shrink-0 p-2.5 rounded-lg transition-all hover:scale-110"
               style="background: #ef444420; color: #ef4444;"
               disabled={isLoading}
-              aria-label="Delete condition"
+              aria-label={m.forms.multiConditionDeleteCondition()}
             >
               <i class="fa-solid fa-xmark text-lg"></i>
             </button>
@@ -733,7 +734,7 @@
           style="background: {$colorStore.primary}10; color: {$colorStore.text}; border-color: {$colorStore.primary}40;"
         >
           <i class="fa-solid fa-plus mr-2"></i>
-          <strong>AND</strong> condition
+          {@html m.forms.multiConditionAddAnd()}
         </button>
         <button
           type="button"
@@ -742,7 +743,7 @@
           style="background: {$colorStore.accent}15; color: {$colorStore.text}; border-color: {$colorStore.accent}50;"
         >
           <i class="fa-solid fa-code-merge mr-2"></i>
-          <strong>OR</strong> group
+          {@html m.forms.multiConditionAddOr()}
         </button>
       </div>
     {/if}
@@ -751,7 +752,7 @@
     {#if conditionGroups.length > 0}
       <div class="p-2 rounded text-xs" style="background: #3b82f610; color: {$colorStore.muted};">
         <i class="fa-solid fa-lightbulb mr-1" style="color: #3b82f6;"></i>
-        <strong>AND</strong> = all in group, <strong>OR</strong> = any group
+        {@html m.forms.multiConditionHelp()}
       </div>
     {/if}
   </div>

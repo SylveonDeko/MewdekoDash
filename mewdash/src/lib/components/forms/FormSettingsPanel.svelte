@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   /**
    * Every setting on a form, grouped by the question it answers.
    *
@@ -17,6 +18,7 @@
   import SettingField from "./SettingField.svelte";
   import SettingToggle from "./SettingToggle.svelte";
   import { formTypeToInt } from "$lib/api/forms/models";
+  import { formTypeDescription, formTypeLabel } from "./formLabels";
 
   interface Props {
     /** The settings being edited, bound so both screens share one object. */
@@ -64,21 +66,21 @@
     >
       <h2 class="text-lg sm:text-xl font-bold mb-1" style="color: {$colorStore.text};">
         <i class="fa-solid fa-gear mr-2" style="color: {$colorStore.primary};"></i>
-        Basics
+        {m.common.basics()}
       </h2>
       <p class="text-sm mb-4" style="color: {$colorStore.muted};">
-        What this form is called and where its answers go.
+        {m.forms.settingsBasicsSummary()}
       </p>
 
       <div class="space-y-4">
         <div>
-          <span class="block text-sm font-medium mb-1" style="color: {$colorStore.text};">Form type</span>
+          <span class="block text-sm font-medium mb-1" style="color: {$colorStore.text};">{m.forms.settingsFormType()}</span>
           <p class="text-xs mb-2" style="color: {$colorStore.muted};">
-            Decides who may submit. {mode === "create" ? "This cannot be changed afterwards." : "Fixed once the form is created."}
+            {mode === "create" ? m.forms.settingsFormTypeHintCreate() : m.forms.settingsFormTypeHintEdit()}
           </p>
 
           {#if mode === "create"}
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup" aria-label="Form type">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup" aria-label={m.forms.settingsFormType()}>
               {#each FORM_TYPES as choice}
                 {@const chosen = settings.formType === choice.type}
                 <label
@@ -99,10 +101,10 @@
                      aria-hidden="true"></i>
                   <span class="min-w-0">
                     <span class="block text-sm font-medium" style="color: {$colorStore.text};">
-                      {choice.label}
+                      {formTypeLabel(choice.type)}
                     </span>
                     <span class="block text-xs mt-0.5" style="color: {$colorStore.muted};">
-                      {choice.description}
+                      {formTypeDescription(choice.type)}
                     </span>
                   </span>
                 </label>
@@ -116,13 +118,13 @@
               <i class="fa-solid {settings.formType === 'BanAppeal' ? 'fa-gavel' : settings.formType === 'JoinApplication' ? 'fa-user-plus' : 'fa-clipboard-list'}"
                  style="color: {$colorStore.primary};" aria-hidden="true"></i>
               <span class="text-sm" style="color: {$colorStore.text};">
-                {settings.formType === "BanAppeal" ? "Ban appeal" : settings.formType === "JoinApplication" ? "Join application" : "Regular form"}
+                {formTypeLabel(settings.formType)}
               </span>
             </div>
           {/if}
         </div>
 
-        <SettingField id="form-name" label="Name" hint="Shown as the title of the form and in your list of forms." required>
+        <SettingField id="form-name" label={m.common.name()} hint={m.forms.settingsFormNameHint()} required>
           <input
             id="form-name"
             type="text"
@@ -130,11 +132,11 @@
             maxlength="255"
             class="w-full p-2 rounded-lg"
             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-            placeholder="Staff application"
+            placeholder={m.forms.settingsStaffApplicationPlaceholder()}
           />
         </SettingField>
 
-        <SettingField id="form-description" label="Description" hint="Shown under the title, and used as the preview when the link is pasted into Discord.">
+        <SettingField id="form-description" label={m.common.description()} hint={m.forms.settingsFormDescriptionHint()}>
           <textarea
             id="form-description"
             bind:value={settings.description}
@@ -142,22 +144,22 @@
             maxlength="2000"
             class="w-full p-2 rounded-lg resize-none"
             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-            placeholder="Tell people what this form is for."
+            placeholder={m.forms.settingsTellPeopleWhatThisFormPlaceholder()}
           ></textarea>
         </SettingField>
 
-        <SettingField id="submit-channel" label="Where answers are posted" hint="Each submission is posted here as an embed. Leave empty to keep answers on the dashboard only.">
+        <SettingField id="submit-channel" label={m.forms.settingsSubmitChannel()} hint={m.forms.settingsSubmitChannelHint()}>
           <DiscordSelector
             id="submit-channel"
             type="channel"
             options={channels}
             selected={settings.submitChannelId}
-            placeholder="Select a channel"
+            placeholder={m.common.selectAChannelPlaceholder()}
             onchange={(e) => (settings.submitChannelId = e.selected as string)}
           />
         </SettingField>
 
-        <SettingField id="success-message" label="Message after submitting" hint="Shown on the confirmation page once someone has sent their answers.">
+        <SettingField id="success-message" label={m.forms.settingsSuccessMessage()} hint={m.forms.settingsSuccessMessageHint()}>
           <textarea
             id="success-message"
             bind:value={settings.successMessage}
@@ -165,23 +167,23 @@
             maxlength="1000"
             class="w-full p-2 rounded-lg resize-none"
             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-            placeholder="Thanks, we have your answers."
+            placeholder={m.forms.settingsThanksWeHaveYourAnswersPlaceholder()}
           ></textarea>
         </SettingField>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <SettingToggle
             id="is-draft"
-            label="Draft"
-            hint="A draft is not reachable by its link, however it is shared."
+            label={m.forms.listDraft()}
+            hint={m.forms.settingsIsDraftHint()}
             checked={settings.isDraft}
             accent="#f59e0b"
             onchange={(v) => (settings.isDraft = v)}
           />
           <SettingToggle
             id="is-active"
-            label="Accepting responses"
-            hint="Turn off to close the form without deleting it."
+            label={m.forms.settingsIsActive()}
+            hint={m.forms.settingsIsActiveHint()}
             checked={settings.isActive}
             accent="#10B981"
             onchange={(v) => (settings.isActive = v)}
@@ -191,25 +193,25 @@
     </div>
 
     <SettingsSection
-      title="Who can submit"
-      summary="Limits on who may open and send this form."
+      title={m.forms.settingsWhoCanSubmitTitle()}
+      summary={m.forms.settingsLimitsOnWhoMayOpenSummary()}
       icon="fa-shield"
       changed={countSet([settings.requiredRoleId, settings.minAccountAgeDays, settings.allowExternalUsers || null, settings.allowAnonymous || null])}
     >
       <FormTypeScope formType={formTypeInt} types={[0]} animate={false}>
-        <SettingField id="required-role" label="Role required to submit" hint="Only people holding this role can open the form. Everyone else is turned away.">
+        <SettingField id="required-role" label={m.forms.settingsRequiredRole()} hint={m.forms.settingsRequiredRoleHint()}>
           <DiscordSelector
             id="required-role"
             type="role"
             options={roles}
             selected={settings.requiredRoleId}
-            placeholder="Anyone in the server"
+            placeholder={m.forms.settingsAnyoneInTheServerPlaceholder()}
             onchange={(e) => (settings.requiredRoleId = e.selected as string)}
           />
         </SettingField>
       </FormTypeScope>
 
-      <SettingField id="min-account-age" label="Minimum Discord account age" hint="Turns away accounts newer than this many days. Useful against throwaway accounts.">
+      <SettingField id="min-account-age" label={m.forms.settingsMinAccountAge()} hint={m.forms.settingsMinAccountAgeHint()}>
         <input
           id="min-account-age"
           type="number"
@@ -217,23 +219,23 @@
           min="0"
           class="w-full p-2 rounded-lg"
           style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-          placeholder="No limit"
+          placeholder={m.common.noLimit()}
         />
       </SettingField>
 
       <FormTypeScope formType={formTypeInt} types={[0]} animate={false}>
         <SettingToggle
           id="allow-external"
-          label="Allow people outside the server"
-          hint="Lets anyone with the link submit, even if they have not joined."
+          label={m.forms.settingsAllowExternal()}
+          hint={m.forms.settingsAllowExternalHint()}
           checked={settings.allowExternalUsers}
           onchange={(v) => (settings.allowExternalUsers = v)}
         />
 
         <SettingToggle
           id="allow-anonymous"
-          label="Submit anonymously"
-          hint="Answers are stored with no submitter. Nobody can be messaged, given roles, or replied to."
+          label={m.forms.settingsAllowAnonymous()}
+          hint={m.forms.settingsAllowAnonymousHint()}
           checked={settings.allowAnonymous}
           accent="#8b5cf6"
           onchange={(v) => (settings.allowAnonymous = v)}
@@ -242,13 +244,13 @@
     </SettingsSection>
 
     <SettingsSection
-      title="When it is open"
-      summary="Scheduling, limits, and how often one person may answer."
+      title={m.forms.settingsWhenItIsOpenTitle()}
+      summary={m.forms.settingsSchedulingLimitsAndHowOftenSummary()}
       icon="fa-calendar"
       changed={countSet([settings.opensAt, settings.expiresAt, settings.maxResponses, settings.allowMultipleSubmissions || null, settings.announceChannelId])}
     >
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <SettingField id="opens-at" label="Opens at" hint="The form turns people away until this moment. Leave empty to open as soon as it is published.">
+        <SettingField id="opens-at" label={m.forms.settingsOpensAt()} hint={m.forms.settingsOpensAtHint()}>
           <input
             id="opens-at"
             type="datetime-local"
@@ -258,7 +260,7 @@
           />
         </SettingField>
 
-        <SettingField id="expires-at" label="Closes at" hint="The form stops accepting answers at this moment.">
+        <SettingField id="expires-at" label={m.forms.settingsExpiresAt()} hint={m.forms.settingsExpiresAtHint()}>
           <input
             id="expires-at"
             type="datetime-local"
@@ -269,7 +271,7 @@
         </SettingField>
       </div>
 
-      <SettingField id="max-responses" label="Total responses accepted" hint="The form closes itself once this many people have answered, across everyone.">
+      <SettingField id="max-responses" label={m.forms.settingsMaxResponses()} hint={m.forms.settingsMaxResponsesHint()}>
         <input
           id="max-responses"
           type="number"
@@ -277,14 +279,14 @@
           min="1"
           class="w-full p-2 rounded-lg"
           style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-          placeholder="No limit"
+          placeholder={m.common.noLimit()}
         />
       </SettingField>
 
       <SettingToggle
         id="allow-multiple"
-        label="Allow more than one answer per person"
-        hint="Off means one submission each. Turn on for things like weekly check-ins."
+        label={m.forms.settingsAllowMultiple()}
+        hint={m.forms.settingsAllowMultipleHint()}
         checked={settings.allowMultipleSubmissions}
         onchange={(v) => (settings.allowMultipleSubmissions = v)}
       />
@@ -292,8 +294,8 @@
       {#if !settings.allowMultipleSubmissions}
         <SettingToggle
           id="allow-resubmit"
-          label="Let rejected people try again"
-          hint="A rejected answer no longer counts as their one submission, so they can correct it and resend."
+          label={m.forms.settingsAllowResubmit()}
+          hint={m.forms.settingsAllowResubmitHint()}
           checked={settings.allowResubmitAfterRejection}
           onchange={(v) => (settings.allowResubmitAfterRejection = v)}
         />
@@ -301,38 +303,38 @@
 
       <SettingToggle
         id="require-captcha"
-        label="Require a captcha"
-        hint="Adds a verification step before answers can be sent."
+        label={m.forms.settingsRequireCaptcha()}
+        hint={m.forms.settingsRequireCaptchaHint()}
         checked={settings.requireCaptcha}
         onchange={(v) => (settings.requireCaptcha = v)}
       />
 
       <div class="pt-2 border-t" style="border-color: {$colorStore.primary}20;">
-        <SettingField id="announce-channel" label="Announce the opening in" hint="Posts a message when the opening time passes, or immediately if you publish with no opening time.">
+        <SettingField id="announce-channel" label={m.forms.settingsAnnounceChannel()} hint={m.forms.settingsAnnounceChannelHint()}>
           <DiscordSelector
             id="announce-channel"
             type="channel"
             options={channels}
             selected={settings.announceChannelId}
-            placeholder="Do not announce"
+            placeholder={m.forms.settingsDoNotAnnouncePlaceholder()}
             onchange={(e) => (settings.announceChannelId = e.selected as string)}
           />
         </SettingField>
 
         {#if settings.announceChannelId}
           <div class="mt-4 space-y-4" transition:slide={{ duration: 150 }}>
-            <SettingField id="announce-role" label="Ping with the announcement" hint="Mentioned in the launch message. Nothing else pings this role.">
+            <SettingField id="announce-role" label={m.forms.settingsAnnounceRole()} hint={m.forms.settingsAnnounceRoleHint()}>
               <DiscordSelector
                 id="announce-role"
                 type="role"
                 options={roles}
                 selected={settings.announceRoleId}
-                placeholder="Ping nobody"
+                placeholder={m.forms.settingsPingNobodyPlaceholder()}
                 onchange={(e) => (settings.announceRoleId = e.selected as string)}
               />
             </SettingField>
 
-            <SettingField id="announce-message" label="Announcement text" hint="The body of the launch message. The closing time is added as a countdown.">
+            <SettingField id="announce-message" label={m.forms.settingsAnnounceMessage()} hint={m.forms.settingsAnnounceMessageHint()}>
               <textarea
                 id="announce-message"
                 bind:value={settings.announceMessage}
@@ -340,15 +342,14 @@
                 maxlength="2000"
                 class="w-full p-2 rounded-lg resize-none"
                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-                placeholder="This form is now open."
+                placeholder={m.forms.settingsThisFormIsNowOpenPlaceholder()}
               ></textarea>
             </SettingField>
 
             {#if announcedAt}
               <p class="text-xs" style="color: {$colorStore.muted};">
                 <i class="fa-solid fa-check mr-1"></i>
-                Announced {new Date(announcedAt).toLocaleString()}. Changing the opening
-                time will not send it again.
+                {m.forms.settingsAnnounced({ date: new Date(announcedAt).toLocaleString() })}
               </p>
             {/if}
           </div>
@@ -357,18 +358,18 @@
     </SettingsSection>
 
     <SettingsSection
-      title="When someone submits"
-      summary="Who gets told, and what the person who answered receives."
+      title={m.forms.settingsWhenSomeoneSubmitsTitle()}
+      summary={m.forms.settingsWhoGetsToldAndWhatSummary()}
       icon="fa-paper-plane"
       changed={countSet([settings.notifyRoleId, settings.submitRoleIds.length ? "y" : null, settings.pendingRoleId, settings.notificationWebhookUrl])}
     >
-      <SettingField id="notify-role" label="Ping when a response arrives" hint="Mentioned in the channel above each time somebody answers, so reviewers notice.">
+      <SettingField id="notify-role" label={m.forms.settingsNotifyRole()} hint={m.forms.settingsNotifyRoleHint()}>
         <DiscordSelector
           id="notify-role"
           type="role"
           options={roles}
           selected={settings.notifyRoleId}
-          placeholder="Ping nobody"
+          placeholder={m.forms.settingsPingNobodyPlaceholder()}
           onchange={(e) => (settings.notifyRoleId = e.selected as string)}
         />
       </SettingField>
@@ -376,35 +377,34 @@
       {#if settings.allowAnonymous}
         <p class="text-xs p-3 rounded-lg" style="background: #f59e0b15; color: #f59e0b;">
           <i class="fa-solid fa-circle-info mr-1"></i>
-          This form is anonymous, so it records nobody to give roles to. The role settings below are
-          hidden until you turn that off.
+          {m.forms.settingsAnonymousRolesNote()}
         </p>
       {:else}
-        <SettingField id="submit-roles" label="Roles given on submitting" hint="Granted the moment somebody answers, before anyone reviews it. Useful for a waiting-room role.">
+        <SettingField id="submit-roles" label={m.forms.settingsSubmitRoles()} hint={m.forms.settingsSubmitRolesHint()}>
           <DiscordSelector
             id="submit-roles"
             type="role"
             options={roles}
             selected={settings.submitRoleIds}
             multiple={true}
-            placeholder="No roles"
+            placeholder={m.common.noRoles()}
             onchange={(e) => (settings.submitRoleIds = e.selected as string[])}
           />
         </SettingField>
 
-        <SettingField id="pending-role" label="Role while awaiting review" hint="Held only until the answer is approved or rejected, then removed automatically.">
+        <SettingField id="pending-role" label={m.forms.settingsPendingRole()} hint={m.forms.settingsPendingRoleHint()}>
           <DiscordSelector
             id="pending-role"
             type="role"
             options={roles}
             selected={settings.pendingRoleId}
-            placeholder="No role"
+            placeholder={m.common.noRole()}
             onchange={(e) => (settings.pendingRoleId = e.selected as string)}
           />
         </SettingField>
       {/if}
 
-      <SettingField id="webhook-url" label="Send to a webhook" hint="Also posts each response to this address, for feeding another system.">
+      <SettingField id="webhook-url" label={m.forms.settingsWebhookUrl()} hint={m.forms.settingsWebhookUrlHint()}>
         <input
           id="webhook-url"
           type="url"
@@ -417,8 +417,8 @@
     </SettingsSection>
 
     <SettingsSection
-      title="Reviewing answers"
-      summary="Whether answers are approved, by whom, and what a decision does."
+      title={m.forms.settingsReviewingAnswersTitle()}
+      summary={m.forms.settingsWhetherAnswersAreApprovedBySummary()}
       icon="fa-shield-halved"
       initiallyOpen={settings.requireApproval || settings.formType !== "Regular"}
       changed={countSet([settings.reviewerRoleId, settings.approvalAddRoleIds.length ? "y" : null, settings.rejectionAddRoleIds.length ? "y" : null])}
@@ -426,8 +426,8 @@
       <FormTypeScope formType={formTypeInt} types={[0]} animate={false}>
         <SettingToggle
           id="require-approval"
-          label="Answers need approving"
-          hint="Each answer waits for a decision. Without this, answers are simply recorded."
+          label={m.forms.settingsRequireApproval()}
+          hint={m.forms.settingsRequireApprovalHint()}
           checked={settings.requireApproval}
           onchange={(v) => (settings.requireApproval = v)}
         />
@@ -436,43 +436,43 @@
       {#if settings.formType !== "Regular"}
         <p class="text-xs p-3 rounded-lg" style="background: {$colorStore.primary}10; color: {$colorStore.muted};">
           <i class="fa-solid fa-circle-info mr-1"></i>
-          {settings.formType === "BanAppeal" ? "Ban appeals" : "Join applications"} always go through review.
+          {settings.formType === "BanAppeal" ? m.forms.settingsBanAppealsReview() : m.forms.settingsJoinApplicationsReview()}
         </p>
       {/if}
 
       {#if settings.requireApproval || settings.formType !== "Regular"}
         <div class="space-y-4" transition:slide={{ duration: 150 }}>
-          <SettingField id="reviewer-role" label="Who may approve or reject" hint="Can press the buttons on the submission in Discord. Anyone with Manage Server can regardless.">
+          <SettingField id="reviewer-role" label={m.forms.settingsReviewerRole()} hint={m.forms.settingsReviewerRoleHint()}>
             <DiscordSelector
               id="reviewer-role"
               type="role"
               options={roles}
               selected={settings.reviewerRoleId}
-              placeholder="Manage Server only"
+              placeholder={m.forms.settingsManageServerOnlyPlaceholder()}
               onchange={(e) => (settings.reviewerRoleId = e.selected as string)}
             />
           </SettingField>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <SettingField id="approve-emote" label="Approve button emote" hint="Shown on the approve button. Empty uses the server default.">
+            <SettingField id="approve-emote" label={m.forms.settingsApproveEmote()} hint={m.forms.settingsApproveEmoteHint()}>
               <EmojiPicker
                 id="approve-emote"
                 {guildEmojis}
                 bind:selected={settings.approveEmote}
                 multiple={false}
-                placeholder={guildApproveEmote || "✅ server default"}
+                placeholder={guildApproveEmote || m.forms.settingsEmoteServerDefault()}
                 searchable={true}
                 groupByGuild={true}
               />
             </SettingField>
 
-            <SettingField id="reject-emote" label="Reject button emote" hint="Shown on the reject button. Empty uses the server default.">
+            <SettingField id="reject-emote" label={m.forms.settingsRejectEmote()} hint={m.forms.settingsRejectEmoteHint()}>
               <EmojiPicker
                 id="reject-emote"
                 {guildEmojis}
                 bind:selected={settings.rejectEmote}
                 multiple={false}
-                placeholder={guildRejectEmote || "❌ server default"}
+                placeholder={guildRejectEmote || m.forms.settingsRejectEmoteServerDefault()}
                 searchable={true}
                 groupByGuild={true}
               />
@@ -486,29 +486,29 @@
             >
               <h3 class="font-semibold text-sm" style="color: {$colorStore.text};">
                 <i class="fa-solid fa-check-circle mr-2" style="color: #10B981;"></i>
-                On approval
+                {m.forms.settingsOnApproval()}
               </h3>
 
-              <SettingField id="approval-add-roles" label="Add on approval" hint="Given to the person when their answer is approved.">
+              <SettingField id="approval-add-roles" label={m.forms.settingsApprovalAddRoles()} hint={m.forms.settingsApprovalAddRolesHint()}>
                 <DiscordSelector
                   id="approval-add-roles"
                   type="role"
                   options={roles}
                   selected={settings.approvalAddRoleIds}
                   multiple={true}
-                  placeholder="No roles"
+                  placeholder={m.common.noRoles()}
                   onchange={(e) => (settings.approvalAddRoleIds = e.selected as string[])}
                 />
               </SettingField>
 
-              <SettingField id="approval-remove-roles" label="Remove on approval" hint="Taken away when their answer is approved. The waiting role above is removed anyway.">
+              <SettingField id="approval-remove-roles" label={m.forms.settingsApprovalRemoveRoles()} hint={m.forms.settingsApprovalRemoveRolesHint()}>
                 <DiscordSelector
                   id="approval-remove-roles"
                   type="role"
                   options={roles}
                   selected={settings.approvalRemoveRoleIds}
                   multiple={true}
-                  placeholder="No roles"
+                  placeholder={m.common.noRoles()}
                   onchange={(e) => (settings.approvalRemoveRoleIds = e.selected as string[])}
                 />
               </SettingField>
@@ -520,29 +520,29 @@
             >
               <h3 class="font-semibold text-sm" style="color: {$colorStore.text};">
                 <i class="fa-solid fa-times-circle mr-2" style="color: #ef4444;"></i>
-                On rejection
+                {m.forms.settingsOnRejection()}
               </h3>
 
-              <SettingField id="rejection-add-roles" label="Add on rejection" hint="Given to the person when their answer is turned down.">
+              <SettingField id="rejection-add-roles" label={m.forms.settingsRejectionAddRoles()} hint={m.forms.settingsRejectionAddRolesHint()}>
                 <DiscordSelector
                   id="rejection-add-roles"
                   type="role"
                   options={roles}
                   selected={settings.rejectionAddRoleIds}
                   multiple={true}
-                  placeholder="No roles"
+                  placeholder={m.common.noRoles()}
                   onchange={(e) => (settings.rejectionAddRoleIds = e.selected as string[])}
                 />
               </SettingField>
 
-              <SettingField id="rejection-remove-roles" label="Remove on rejection" hint="Taken away when their answer is turned down.">
+              <SettingField id="rejection-remove-roles" label={m.forms.settingsRejectionRemoveRoles()} hint={m.forms.settingsRejectionRemoveRolesHint()}>
                 <DiscordSelector
                   id="rejection-remove-roles"
                   type="role"
                   options={roles}
                   selected={settings.rejectionRemoveRoleIds}
                   multiple={true}
-                  placeholder="No roles"
+                  placeholder={m.common.noRoles()}
                   onchange={(e) => (settings.rejectionRemoveRoleIds = e.selected as string[])}
                 />
               </SettingField>
@@ -554,20 +554,20 @@
 
     <FormTypeScope formType={formTypeInt} types={[1]}>
       <SettingsSection
-        title="Appeal limits"
-        summary="How often somebody may appeal, and how long they must wait."
+        title={m.forms.settingsAppealLimitsTitle()}
+        summary={m.forms.settingsHowOftenSomebodyMayAppealSummary()}
         icon="fa-clock"
         changed={countSet([settings.appealDelayDays, settings.maxAppealAttempts, settings.reappealCooldownDays, settings.blockReappealAfterRejection || null])}
       >
         <SettingToggle
           id="block-reappeal"
-          label="One rejection is final"
-          hint="A rejected appeal is the end of it. Overrides the two limits below."
+          label={m.forms.settingsBlockReappeal()}
+          hint={m.forms.settingsBlockReappealHint()}
           checked={settings.blockReappealAfterRejection}
           onchange={(v) => (settings.blockReappealAfterRejection = v)}
         />
 
-        <SettingField id="appeal-delay" label="Wait after the ban" hint="Days somebody must wait after being banned before they may appeal at all.">
+        <SettingField id="appeal-delay" label={m.forms.settingsAppealDelay()} hint={m.forms.settingsAppealDelayHint()}>
           <input
             id="appeal-delay"
             type="number"
@@ -575,12 +575,12 @@
             min="0"
             class="w-full p-2 rounded-lg"
             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-            placeholder="No wait"
+            placeholder={m.forms.settingsNoWaitPlaceholder()}
           />
         </SettingField>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <SettingField id="max-appeals" label="Appeals allowed" hint="How many rejected appeals before they are locked out for good.">
+          <SettingField id="max-appeals" label={m.forms.settingsMaxAppeals()} hint={m.forms.settingsMaxAppealsHint()}>
             <input
               id="max-appeals"
               type="number"
@@ -589,11 +589,11 @@
               disabled={settings.blockReappealAfterRejection}
               class="w-full p-2 rounded-lg disabled:opacity-40"
               style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-              placeholder="Unlimited"
+              placeholder={m.forms.settingsUnlimitedPlaceholder()}
             />
           </SettingField>
 
-          <SettingField id="reappeal-cooldown" label="Wait between appeals" hint="Days after a rejection before they may appeal again.">
+          <SettingField id="reappeal-cooldown" label={m.forms.settingsReappealCooldown()} hint={m.forms.settingsReappealCooldownHint()}>
             <input
               id="reappeal-cooldown"
               type="number"
@@ -602,7 +602,7 @@
               disabled={settings.blockReappealAfterRejection}
               class="w-full p-2 rounded-lg disabled:opacity-40"
               style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-              placeholder="No wait"
+              placeholder={m.forms.settingsNoWaitPlaceholder()}
             />
           </SettingField>
         </div>
@@ -611,13 +611,13 @@
 
     <FormTypeScope formType={formTypeInt} types={[2]}>
       <SettingsSection
-        title="The invite sent on approval"
-        summary="How the invite works for people accepted into the server."
+        title={m.forms.settingsTheInviteSentOnApprovalTitle()}
+        summary={m.forms.settingsHowTheInviteWorksForSummary()}
         icon="fa-user-plus"
         changed={countSet([settings.autoApproveRoleIds.length ? "y" : null])}
       >
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <SettingField id="invite-max-uses" label="Times the invite can be used" hint="Usually one, so the invite cannot be passed around.">
+          <SettingField id="invite-max-uses" label={m.forms.settingsInviteMaxUses()} hint={m.forms.settingsInviteMaxUsesHint()}>
             <input
               id="invite-max-uses"
               type="number"
@@ -628,7 +628,7 @@
             />
           </SettingField>
 
-          <SettingField id="invite-max-age" label="Invite expires after (seconds)" hint="How long the accepted person has to use it. 86400 is a day.">
+          <SettingField id="invite-max-age" label={m.forms.settingsInviteMaxAge()} hint={m.forms.settingsInviteMaxAgeHint()}>
             <input
               id="invite-max-age"
               type="number"
@@ -640,14 +640,14 @@
           </SettingField>
         </div>
 
-        <SettingField id="auto-approve-roles" label="Roles waiting for them on join" hint="Applied when the accepted person actually joins, not when they are approved.">
+        <SettingField id="auto-approve-roles" label={m.forms.settingsAutoApproveRoles()} hint={m.forms.settingsAutoApproveRolesHint()}>
           <DiscordSelector
             id="auto-approve-roles"
             type="role"
             options={roles}
             selected={settings.autoApproveRoleIds}
             multiple={true}
-            placeholder="No roles"
+            placeholder={m.common.noRoles()}
             onchange={(e) => (settings.autoApproveRoleIds = e.selected as string[])}
           />
         </SettingField>

@@ -38,6 +38,7 @@
   import RankList, { type RankRow } from "$lib/components/stats/RankList.svelte";
   import { formatAgo, formatDate, formatNumber, formatPercent, formatSigned, rangeOptions, saveBlob } from "$lib/components/stats/format";
   import type { PageData } from "./$types";
+  import { m } from "$lib/i18n";
 
   interface Props {
     data: PageData;
@@ -45,13 +46,13 @@
 
   let { data }: Props = $props();
 
-  const tabs = [
-    { id: "overview", label: "Overview", icon: "fa-chart-line" },
-    { id: "leaderboard", label: "Leaderboard", icon: "fa-trophy" },
-    { id: "members", label: "Members", icon: "fa-user-plus" },
-    { id: "codes", label: "Codes & Labels", icon: "fa-link" },
-    { id: "settings", label: "Settings", icon: "fa-gear" },
-  ];
+  const tabs = $derived([
+    { id: "overview", label: m.common.overview(), icon: "fa-chart-line" },
+    { id: "leaderboard", label: m.common.leaderboard(), icon: "fa-trophy" },
+    { id: "members", label: m.common.members(), icon: "fa-user-plus" },
+    { id: "codes", label: m.invites.tabCodes(), icon: "fa-link" },
+    { id: "settings", label: m.common.settings(), icon: "fa-gear" },
+  ]);
 
   let activeTab = $state("overview");
   let notificationMessage = $state("");
@@ -64,7 +65,7 @@
   }
 
   const autoSave = createAutoSave({
-    onError: () => notify("Couldn't save invite settings. Use Retry to try again.", "error"),
+    onError: () => notify(m.invites.notifySaveFailed(), "error"),
   });
 
   function fail(err: unknown, fallback: string) {
@@ -85,14 +86,14 @@
       clientApi.getRoles(guildId).catch(() => []),
       clientApi.getTextChannels(guildId).catch(() => []),
     ]);
-    members = memberList.map((m: any) => ({ id: m.id.toString(), name: m.username, avatarUrl: m.avatarUrl }));
+    members = memberList.map((mb: any) => ({ id: mb.id.toString(), name: mb.username, avatarUrl: mb.avatarUrl }));
     roles = roleList.map((r: any) => ({ id: r.id.toString(), name: r.name, color: r.color }));
     channels = channelList.map((c) => ({ id: c.id.toString(), name: c.name }));
   }
 
   function memberName(id: bigint | string): string {
     const key = id.toString();
-    return members.find((m) => m.id === key)?.name ?? key;
+    return members.find((mb) => mb.id === key)?.name ?? key;
   }
 
   /** Overview */
@@ -108,7 +109,7 @@
     try {
       analytics = await inviteTrackingApi.getAnalytics($currentGuild.id, overviewRange as StatsRangeValue);
     } catch (err) {
-      overviewError = err instanceof Error ? err.message : "Failed to load analytics";
+      overviewError = err instanceof Error ? err.message : m.common.failedToLoadAnalytics();
       logger.error("Failed to load invite analytics", err);
     } finally {
       overviewLoading = false;
@@ -119,8 +120,8 @@
   let growthSeries = $derived(
     analytics
       ? [
-          { name: "Joins", data: analytics.series.map((p) => p.joins), color: "#4ade80" },
-          { name: "Leaves", data: analytics.series.map((p) => p.leaves), color: "#f87171" },
+          { name: m.common.joins(), data: analytics.series.map((p) => p.joins), color: "#4ade80" },
+          { name: m.common.leaves(), data: analytics.series.map((p) => p.leaves), color: "#f87171" },
         ]
       : [],
   );
@@ -147,7 +148,7 @@
         boardRole ? BigInt(boardRole) : undefined,
       );
     } catch (err) {
-      boardError = err instanceof Error ? err.message : "Failed to load leaderboard";
+      boardError = err instanceof Error ? err.message : m.common.failedToLoadLeaderboard();
       logger.error("Failed to load invite leaderboard", err);
     } finally {
       boardLoading = false;
@@ -161,8 +162,9 @@
       name: e.username,
       avatarUrl: e.avatarUrl ?? null,
       value: formatNumber(e.total),
-      detail: `${e.regular} regular · ${e.left} left · ${e.fake} fake · ${e.bonus} bonus` +
-        (e.retention !== null && e.retention !== undefined ? ` · ${formatPercent(e.retention)} retained` : ""),
+      detail: e.retention !== null && e.retention !== undefined
+        ? m.invites.leaderboardDetailRetained({ regular: e.regular, left: e.left, fake: e.fake, bonus: e.bonus, retention: formatPercent(e.retention) })
+        : m.invites.leaderboardDetail({ regular: e.regular, left: e.left, fake: e.fake, bonus: e.bonus }),
     })),
   );
 
@@ -172,7 +174,7 @@
       const blob = await inviteTrackingApi.exportLeaderboard($currentGuild.id, boardRange as StatsRangeValue);
       saveBlob(blob, `invites-${statsRangeLabels[boardRange as StatsRangeValue].replace(/\s+/g, "-").toLowerCase()}.csv`);
     } catch (err) {
-      fail(err, "Failed to export the leaderboard");
+      fail(err, m.invites.errorExportLeaderboard());
     }
   }
 
@@ -203,7 +205,7 @@
       detail = breakdown;
       detailInviter = inviter;
     } catch (err) {
-      fail(err, "Failed to load the member's invites");
+      fail(err, m.invites.errorLoadMember());
     } finally {
       detailLoading = false;
     }
@@ -223,23 +225,23 @@
       adjustFake = 0;
       await loadLeaderboard();
     } catch (err) {
-      fail(err, "Failed to adjust invites");
+      fail(err, m.invites.errorAdjust());
     }
   }
 
   async function resetMember() {
     if (!$currentGuild?.id || !detailUserId) return;
     const ok = await requestConfirmation({
-      title: "Reset invites",
-      message: `Reset all invites for ${memberName(detailUserId)}? This cannot be undone.`,
-      confirmText: "Reset",
+      title: m.invites.confirmResetMemberTitle(),
+      message: m.invites.confirmResetMemberMessage({ user: memberName(detailUserId) }),
+      confirmText: m.common.reset(),
     });
     if (!ok) return;
     try {
       await inviteTrackingApi.resetUser($currentGuild.id, BigInt(detailUserId));
       await Promise.all([openDetail(detailUserId), loadLeaderboard()]);
     } catch (err) {
-      fail(err, "Failed to reset invites");
+      fail(err, m.invites.errorReset());
     }
   }
 
@@ -271,7 +273,7 @@
         memberPageSize,
       );
     } catch (err) {
-      membersError = err instanceof Error ? err.message : "Failed to load members";
+      membersError = err instanceof Error ? err.message : m.invites.errorLoadMembers();
       logger.error("Failed to load invited members", err);
     } finally {
       membersLoading = false;
@@ -290,7 +292,7 @@
       });
       saveBlob(blob, "invited-members.csv");
     } catch (err) {
-      fail(err, "Failed to export members");
+      fail(err, m.invites.errorExportMembers());
     }
   }
 
@@ -321,11 +323,26 @@
       labelDrafts = drafts;
       savedLabels = Object.fromEntries(Object.entries(drafts).map(([code, d]) => [code, { ...d }]));
     } catch (err) {
-      codesError = err instanceof Error ? err.message : "Failed to load invite codes";
-      logger.error("Failed to load invite codes", err);
+      codesError = err instanceof Error ? err.message : m.invites.errorLoadCodes();
+      logger.error(m.invites.errorLoadCodes(), err);
     } finally {
       codesLoading = false;
     }
+  }
+
+  /** The use count of a code, with its cap and flags, as one dot-separated line. */
+  function codeUsage(code: GuildInviteCode): string {
+    const uses = code.maxUses
+      ? (code.uses === 1
+          ? m.invites.codesUsesOfOne({ count: formatNumber(code.uses), max: code.maxUses })
+          : m.invites.codesUsesOfOther({ count: formatNumber(code.uses), max: code.maxUses }))
+      : (code.uses === 1
+          ? m.invites.codesUsesOne({ count: formatNumber(code.uses) })
+          : m.invites.codesUsesOther({ count: formatNumber(code.uses) }));
+    const parts = [uses];
+    if (code.maxAge) parts.push(m.invites.codesFlagExpires());
+    if (code.isTemporary) parts.push(m.invites.codesFlagTemporary());
+    return parts.join(" · ");
   }
 
   const labelKey = (code: string) => `label:${code}`;
@@ -394,16 +411,16 @@
   async function deleteCode(code: string) {
     if (!$currentGuild?.id) return;
     const ok = await requestConfirmation({
-      title: "Delete invite",
-      message: `Delete invite code ${code}? Anyone holding the link will no longer be able to use it.`,
-      confirmText: "Delete",
+      title: m.invites.confirmDeleteCodeTitle(),
+      message: m.invites.confirmDeleteCodeMessage({ code }),
+      confirmText: m.common.delete(),
     });
     if (!ok) return;
     try {
       await inviteTrackingApi.deleteCode($currentGuild.id, code);
       await loadCodes();
     } catch (err) {
-      fail(err, "Failed to delete the invite");
+      fail(err, m.invites.errorDeleteCode());
     }
   }
 
@@ -446,7 +463,7 @@
       blacklistedRoles = roleIds.map((x) => x.toString());
       hiddenUsers = hidden.map((x) => x.toString());
     } catch (err) {
-      settingsError = err instanceof Error ? err.message : "Failed to load settings";
+      settingsError = err instanceof Error ? err.message : m.common.notifyLoadSettingsFailed();
       logger.error("Failed to load invite settings", err);
     } finally {
       settingsLoading = false;
@@ -511,7 +528,7 @@
 
   async function addExclusion(kind: 0 | 1 | 2, target: string | null) {
     if (!$currentGuild?.id || !target) return;
-    await saveSetting(() => inviteTrackingApi.addExclusion($currentGuild!.id, kind, BigInt(target)), "Failed to add the exclusion");
+    await saveSetting(() => inviteTrackingApi.addExclusion($currentGuild!.id, kind, BigInt(target)), m.common.failedToAddTheExclusion());
     exclusionUser = null;
     exclusionRole = null;
     hiddenUser = null;
@@ -519,37 +536,37 @@
 
   async function removeExclusion(kind: 0 | 1 | 2, target: string) {
     if (!$currentGuild?.id) return;
-    await saveSetting(() => inviteTrackingApi.removeExclusion($currentGuild!.id, kind, BigInt(target)), "Failed to remove the exclusion");
+    await saveSetting(() => inviteTrackingApi.removeExclusion($currentGuild!.id, kind, BigInt(target)), m.common.failedToRemoveTheExclusion());
   }
 
   async function syncInvites() {
     if (!$currentGuild?.id) return;
     try {
       const raised = await inviteTrackingApi.sync($currentGuild.id);
-      notify(`Imported invite uses from Discord and raised totals for ${raised} inviters.`, "success");
+      notify(m.invites.notifySynced({ count: raised }), "success");
       await loadLeaderboard();
     } catch (err) {
-      fail(err, "Failed to sync invites");
+      fail(err, m.invites.errorSync());
     }
   }
 
   async function resetAll(scope: 0 | 1) {
     if (!$currentGuild?.id) return;
     const ok = await requestConfirmation({
-      title: scope === InviteResetScope.Server ? "Reset every invite" : "Reset invites of members who left",
+      title: scope === InviteResetScope.Server ? m.invites.confirmResetServerTitle() : m.invites.confirmResetLeftTitle(),
       message:
         scope === InviteResetScope.Server
-          ? "This clears every inviter's tally and the join history for this server. It cannot be undone."
-          : "This clears the tally of every inviter who is no longer in the server.",
-      confirmText: "Reset",
+          ? m.invites.confirmResetServerMessage()
+          : m.invites.confirmResetLeftMessage(),
+      confirmText: m.common.reset(),
     });
     if (!ok) return;
     try {
       const count = await inviteTrackingApi.reset($currentGuild.id, scope);
-      notify(`Reset invites for ${count} inviters.`, "success");
+      notify(m.invites.notifyResetDone({ count }), "success");
       await loadLeaderboard();
     } catch (err) {
-      fail(err, "Failed to reset invites");
+      fail(err, m.invites.errorReset());
     }
   }
 
@@ -583,10 +600,10 @@
 
 <DashboardPageLayout
   {autoSave}
-  title="Invite Tracking"
-  subtitle="Who brings people in, how they arrive, and whether they stay"
+  title={m.features.wizardInvitetrackingName()}
+  subtitle={m.invites.pageSubtitle()}
   icon="fa-user-plus"
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   {tabs}
   bind:activeTab
   bind:notificationMessage
@@ -594,31 +611,31 @@
 >
   {#if activeTab === "overview"}
     <section>
-      <SectionHeader icon="fa-chart-pie" title="Growth" subtitle="Joins, leaves and where members come from">
+      <SectionHeader icon="fa-chart-pie" title={m.invites.overviewTitle()} subtitle={m.invites.overviewSubtitle()}>
         {#snippet actions()}
           <WindowPicker bind:value={overviewRange} options={rangeOptions} onchange={() => loadOverview()} />
         {/snippet}
       </SectionHeader>
 
-      <AsyncState loading={overviewLoading} error={overviewError} empty={!analytics} emptyMessage="No joins recorded yet">
+      <AsyncState loading={overviewLoading} error={overviewError} empty={!analytics} emptyMessage={m.invites.overviewEmpty()}>
         {#if analytics}
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-            <StatTile label="Joins" value={formatNumber(analytics.joins)} />
-            <StatTile label="Leaves" value={formatNumber(analytics.leaves)} />
-            <StatTile label="Net growth" value={formatSigned(analytics.netGrowth)} tone={analytics.netGrowth >= 0 ? "ok" : "crit"} />
-            <StatTile label="Retention" value={formatPercent(analytics.retention ?? null)} sub={`${formatNumber(analytics.stayed)} stayed`} />
-            <StatTile label="Fake joins" value={formatNumber(analytics.fakeJoins)} tone={analytics.fakeJoins > 0 ? "warn" : null} />
-            <StatTile label="Via invites" value={formatNumber(analytics.sources.invite)} sub={`${analytics.sources.vanity} vanity · ${analytics.sources.bot} bots · ${analytics.sources.unknown} unknown`} />
+            <StatTile label={m.common.joins()} value={formatNumber(analytics.joins)} />
+            <StatTile label={m.common.leaves()} value={formatNumber(analytics.leaves)} />
+            <StatTile label={m.common.netGrowth()} value={formatSigned(analytics.netGrowth)} tone={analytics.netGrowth >= 0 ? "ok" : "crit"} />
+            <StatTile label={m.common.retention()} value={formatPercent(analytics.retention ?? null)} sub={m.invites.statStayed({ count: formatNumber(analytics.stayed) })} />
+            <StatTile label={m.invites.statFakeJoins()} value={formatNumber(analytics.fakeJoins)} tone={analytics.fakeJoins > 0 ? "warn" : null} />
+            <StatTile label={m.invites.statViaInvites()} value={formatNumber(analytics.sources.invite)} sub={m.invites.statSources({ vanity: analytics.sources.vanity, bots: analytics.sources.bot, unknown: analytics.sources.unknown })} />
           </div>
 
-          <Card title="Joins and leaves" class="mb-6">
-            <SimpleLineChart labels={growthLabels} series={growthSeries} height={220} beginAtZero empty="No joins in this window" />
+          <Card title={m.common.joinsAndLeaves()} class="mb-6">
+            <SimpleLineChart labels={growthLabels} series={growthSeries} height={220} beginAtZero empty={m.invites.overviewChartEmpty()} />
           </Card>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card title="Top inviters">
+            <Card title={m.common.topInviters()}>
               {#if analytics.topInviters.length === 0}
-                <p class="text-sm" style="color: {$colorStore.muted}">Nobody has invited anyone in this window.</p>
+                <p class="text-sm" style="color: {$colorStore.muted}">{m.invites.overviewTopInvitersEmpty()}</p>
               {:else}
                 <RankList
                   rows={analytics.topInviters.map((x, i) => ({
@@ -626,15 +643,15 @@
                     id: x.userId.toString(),
                     name: x.username,
                     value: formatNumber(x.total),
-                    detail: `${x.regular} regular · ${x.left} left · ${x.fake} fake`,
+                    detail: m.invites.topInviterDetail({ regular: x.regular, left: x.left, fake: x.fake }),
                   }))}
                   onselect={(row) => { openDetail(row.id); activeTab = "leaderboard"; }}
                 />
               {/if}
             </Card>
-            <Card title="Top invite codes">
+            <Card title={m.invites.overviewTopCodes()}>
               {#if analytics.topCodes.length === 0}
-                <p class="text-sm" style="color: {$colorStore.muted}">No invite codes were used in this window.</p>
+                <p class="text-sm" style="color: {$colorStore.muted}">{m.invites.overviewTopCodesEmpty()}</p>
               {:else}
                 <ul class="space-y-2">
                   {#each analytics.topCodes as code (code.code)}
@@ -659,11 +676,11 @@
 
   {#if activeTab === "leaderboard"}
     <section>
-      <SectionHeader icon="fa-trophy" title="Invite Leaderboard" subtitle="Net total is regular minus left minus fake, plus bonus">
+      <SectionHeader icon="fa-trophy" title={m.common.inviteLeaderboard()} subtitle={m.invites.boardSubtitle()}>
         {#snippet actions()}
           <WindowPicker bind:value={boardRange} options={rangeOptions} onchange={() => { boardPage = 1; loadLeaderboard(); }} />
           <div class="w-48">
-            <DiscordSelector type="role" options={roles} bind:selected={boardRole} placeholder="Any role" onchange={() => { boardPage = 1; loadLeaderboard(); }} />
+            <DiscordSelector type="role" options={roles} bind:selected={boardRole} placeholder={m.invites.boardRolePlaceholder()} onchange={() => { boardPage = 1; loadLeaderboard(); }} />
           </div>
           <button
             type="button"
@@ -678,7 +695,7 @@
 
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div class="xl:col-span-2">
-          <AsyncState loading={boardLoading} error={boardError} empty={leaderboard.length === 0} emptyMessage="No invites recorded for this window" emptyIcon="fa-users">
+          <AsyncState loading={boardLoading} error={boardError} empty={leaderboard.length === 0} emptyMessage={m.invites.boardEmpty()} emptyIcon="fa-users">
             <RankList rows={boardRows} onselect={(row) => openDetail(row.id)} />
             <div class="flex justify-center items-center gap-2 mt-6">
               <button
@@ -687,65 +704,65 @@
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; opacity: {boardPage <= 1 ? 0.5 : 1};"
                 disabled={boardPage <= 1}
                 onclick={() => { boardPage -= 1; loadLeaderboard(); }}
-              >Previous</button>
-              <span class="px-4 min-h-[40px] flex items-center rounded-lg" style="background: {$colorStore.primary}30; color: {$colorStore.text};">Page {boardPage}</span>
+              >{m.common.previous()}</button>
+              <span class="px-4 min-h-[40px] flex items-center rounded-lg" style="background: {$colorStore.primary}30; color: {$colorStore.text};">{m.common.pageNumber({ page: boardPage })}</span>
               <button
                 type="button"
                 class="px-4 min-h-[40px] rounded-lg"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; opacity: {leaderboard.length < boardPageSize ? 0.5 : 1};"
                 disabled={leaderboard.length < boardPageSize}
                 onclick={() => { boardPage += 1; loadLeaderboard(); }}
-              >Next</button>
+              >{m.common.next()}</button>
             </div>
           </AsyncState>
         </div>
 
         <div>
-          <Card title="Member">
+          <Card title={m.common.member()}>
             <div class="mb-3">
               <DiscordSelector
                 type="custom"
                 options={members}
                 customIcon="fa-user"
-                placeholder="Pick a member"
+                placeholder={m.common.pickMemberPlaceholder()}
                 selected={detailUserId}
                 onchange={(e) => { if (typeof e.selected === "string") openDetail(e.selected); }}
               />
             </div>
             {#if detailLoading}
-              <p class="text-sm" style="color: {$colorStore.muted}">Loading…</p>
+              <p class="text-sm" style="color: {$colorStore.muted}">{m.common.loading()}</p>
             {:else if detail && detailUserId}
               <div class="grid grid-cols-2 gap-2 mb-4">
-                <StatTile label="Total" value={formatNumber(detail.total)} sub={detail.rank ? `Rank #${detail.rank}` : "Unranked"} />
-                <StatTile label="Regular" value={formatNumber(detail.regular)} />
-                <StatTile label="Left" value={formatNumber(detail.left)} />
-                <StatTile label="Fake" value={formatNumber(detail.fake)} tone={detail.fake > 0 ? "warn" : null} />
-                <StatTile label="Bonus" value={formatNumber(detail.bonus)} />
+                <StatTile label={m.common.total()} value={formatNumber(detail.total)} sub={detail.rank ? m.common.rankNumber({ rank: detail.rank }) : m.invites.detailUnranked()} />
+                <StatTile label={m.invites.detailRegular()} value={formatNumber(detail.regular)} />
+                <StatTile label={m.common.left()} value={formatNumber(detail.left)} />
+                <StatTile label={m.invites.detailFake()} value={formatNumber(detail.fake)} tone={detail.fake > 0 ? "warn" : null} />
+                <StatTile label={m.invites.detailBonus()} value={formatNumber(detail.bonus)} />
                 <StatTile
-                  label="Invited by"
-                  value={detailInviter?.inviter?.username ?? (detailInviter ? detailInviter.joinType : "Unknown")}
-                  sub={detailInviter?.inviteCode ? `code ${detailInviter.inviteCode}` : undefined}
+                  label={m.invites.detailInvitedBy()}
+                  value={detailInviter?.inviter?.username ?? (detailInviter ? detailInviter.joinType : m.common.unknown())}
+                  sub={detailInviter?.inviteCode ? m.invites.detailCode({ code: detailInviter.inviteCode }) : undefined}
                 />
               </div>
 
-              <h4 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Adjust</h4>
+              <h4 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.invites.detailAdjust()}</h4>
               <div class="grid grid-cols-3 gap-2 mb-2">
-                <SettingField label="Regular" hint="Positive adds, negative removes" id="adjust-regular">
+                <SettingField label={m.invites.detailRegular()} hint={m.invites.detailHintAdds()} id="adjust-regular">
                   <input id="adjust-regular" type="number" bind:value={adjustRegular} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
                 </SettingField>
-                <SettingField label="Bonus" hint="Positive adds, negative removes" id="adjust-bonus">
+                <SettingField label={m.invites.detailBonus()} hint={m.invites.detailHintAdds()} id="adjust-bonus">
                   <input id="adjust-bonus" type="number" bind:value={adjustBonus} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
                 </SettingField>
-                <SettingField label="Fake" hint="Positive flags, negative clears" id="adjust-fake">
+                <SettingField label={m.invites.detailFake()} hint={m.invites.detailHintFlags()} id="adjust-fake">
                   <input id="adjust-fake" type="number" bind:value={adjustFake} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
                 </SettingField>
               </div>
               <div class="flex gap-2">
-                <button type="button" class="flex-1 min-h-[44px] rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={applyAdjust}>Apply</button>
-                <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={resetMember}>Reset</button>
+                <button type="button" class="flex-1 min-h-[44px] rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={applyAdjust}>{m.common.apply()}</button>
+                <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={resetMember}>{m.common.reset()}</button>
               </div>
             {:else}
-              <p class="text-sm" style="color: {$colorStore.muted}">Pick a member, or click a leaderboard row, to see their breakdown and adjust it.</p>
+              <p class="text-sm" style="color: {$colorStore.muted}">{m.invites.detailEmpty()}</p>
             {/if}
           </Card>
         </div>
@@ -755,7 +772,7 @@
 
   {#if activeTab === "members"}
     <section>
-      <SectionHeader icon="fa-user-plus" title="Invited Members" subtitle="Every witnessed join, filtered by inviter, code or label">
+      <SectionHeader icon="fa-user-plus" title={m.invites.membersTitle()} subtitle={m.invites.membersSubtitle()}>
         {#snippet actions()}
           <button
             type="button"
@@ -770,41 +787,41 @@
 
       <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
         <div>
-          <DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder="Inviter" bind:selected={memberFilterInviter} onchange={() => { memberPage = 1; loadInvited(); }} />
+          <DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder={m.placeholders.categoryInviter()} bind:selected={memberFilterInviter} onchange={() => { memberPage = 1; loadInvited(); }} />
         </div>
         <input
           type="text"
-          placeholder="Invite code"
+          placeholder={m.invites.membersFilterCode()}
           bind:value={memberFilterCode}
           onchange={() => { memberPage = 1; loadInvited(); }}
           class="rounded-lg p-2 min-h-[44px]"
           style="background: {$colorStore.primary}10; color: {$colorStore.text};"
-          aria-label="Filter by invite code"
+          aria-label={m.invites.membersFilterCodeAria()}
         />
         <input
           type="text"
-          placeholder="Label"
+          placeholder={m.common.label()}
           bind:value={memberFilterLabel}
           onchange={() => { memberPage = 1; loadInvited(); }}
           class="rounded-lg p-2 min-h-[44px]"
           style="background: {$colorStore.primary}10; color: {$colorStore.text};"
-          aria-label="Filter by label"
+          aria-label={m.invites.membersFilterLabelAria()}
         />
-        <SettingToggle id="include-left" label="Include members who left" hint="Show joins whose member has since left" checked={memberIncludeLeft} onchange={(v) => { memberIncludeLeft = v; memberPage = 1; loadInvited(); }} />
+        <SettingToggle id="include-left" label={m.invites.membersIncludeLeft()} hint={m.invites.membersIncludeLeftHint()} checked={memberIncludeLeft} onchange={(v) => { memberIncludeLeft = v; memberPage = 1; loadInvited(); }} />
       </div>
 
-      <AsyncState loading={membersLoading} error={membersError} empty={!invitedPage || invitedPage.items.length === 0} emptyMessage="No joins match these filters" emptyIcon="fa-users">
+      <AsyncState loading={membersLoading} error={membersError} empty={!invitedPage || invitedPage.items.length === 0} emptyMessage={m.invites.membersEmpty()} emptyIcon="fa-users">
         {#if invitedPage}
           <div class="overflow-x-auto rounded-xl border" style="border-color: {$colorStore.primary}20;">
             <table class="w-full text-sm">
               <thead>
                 <tr style="background: {$colorStore.primary}10; color: {$colorStore.muted};">
-                  <th class="text-left p-3">Member</th>
-                  <th class="text-left p-3">Inviter</th>
-                  <th class="text-left p-3">Code</th>
-                  <th class="text-left p-3">How</th>
-                  <th class="text-left p-3">Joined</th>
-                  <th class="text-left p-3">Status</th>
+                  <th class="text-left p-3">{m.common.member()}</th>
+                  <th class="text-left p-3">{m.placeholders.categoryInviter()}</th>
+                  <th class="text-left p-3">{m.invites.membersColCode()}</th>
+                  <th class="text-left p-3">{m.invites.membersColHow()}</th>
+                  <th class="text-left p-3">{m.common.joined()}</th>
+                  <th class="text-left p-3">{m.common.status()}</th>
                 </tr>
               </thead>
               <tbody>
@@ -822,11 +839,11 @@
                     <td class="p-3" title={item.joinedAt ?? ""}>{formatAgo(item.joinedAt)}</td>
                     <td class="p-3">
                       {#if item.isFake}
-                        <Pill tone="warn" text={`fake: ${item.fakeReason}`} />
+                        <Pill tone="warn" text={m.invites.membersPillFake({ reason: item.fakeReason })} />
                       {:else if item.leftAt}
-                        <Pill tone="muted" text="left" />
+                        <Pill tone="muted" text={m.invites.membersPillLeft()} />
                       {:else}
-                        <Pill tone="ok" text="present" />
+                        <Pill tone="ok" text={m.common.present()} />
                       {/if}
                     </td>
                   </tr>
@@ -835,9 +852,9 @@
             </table>
           </div>
           <div class="flex justify-center items-center gap-2 mt-6">
-            <button type="button" class="px-4 min-h-[40px] rounded-lg" style="background: {$colorStore.primary}20; color: {$colorStore.text}; opacity: {memberPage <= 1 ? 0.5 : 1};" disabled={memberPage <= 1} onclick={() => { memberPage -= 1; loadInvited(); }}>Previous</button>
-            <span class="px-4 min-h-[40px] flex items-center rounded-lg" style="background: {$colorStore.primary}30; color: {$colorStore.text};">Page {memberPage} of {memberPages} · {formatNumber(invitedPage.total)} joins</span>
-            <button type="button" class="px-4 min-h-[40px] rounded-lg" style="background: {$colorStore.primary}20; color: {$colorStore.text}; opacity: {memberPage >= memberPages ? 0.5 : 1};" disabled={memberPage >= memberPages} onclick={() => { memberPage += 1; loadInvited(); }}>Next</button>
+            <button type="button" class="px-4 min-h-[40px] rounded-lg" style="background: {$colorStore.primary}20; color: {$colorStore.text}; opacity: {memberPage <= 1 ? 0.5 : 1};" disabled={memberPage <= 1} onclick={() => { memberPage -= 1; loadInvited(); }}>{m.common.previous()}</button>
+            <span class="px-4 min-h-[40px] flex items-center rounded-lg" style="background: {$colorStore.primary}30; color: {$colorStore.text};">{m.invites.membersPager({ page: memberPage, pages: memberPages, total: formatNumber(invitedPage.total) })}</span>
+            <button type="button" class="px-4 min-h-[40px] rounded-lg" style="background: {$colorStore.primary}20; color: {$colorStore.text}; opacity: {memberPage >= memberPages ? 0.5 : 1};" disabled={memberPage >= memberPages} onclick={() => { memberPage += 1; loadInvited(); }}>{m.common.next()}</button>
           </div>
         {/if}
       </AsyncState>
@@ -846,9 +863,9 @@
 
   {#if activeTab === "codes"}
     <section>
-      <SectionHeader icon="fa-link" title="Invite Codes & Labels" subtitle="Name codes so they show up in stats, and grant a role to everyone who joins through one" />
+      <SectionHeader icon="fa-link" title={m.invites.codesTitle()} subtitle={m.invites.codesSubtitle()} />
 
-      <AsyncState loading={codesLoading} error={codesError} empty={codes.length === 0} emptyMessage="This server has no invite codes" emptyIcon="fa-link">
+      <AsyncState loading={codesLoading} error={codesError} empty={codes.length === 0} emptyMessage={m.invites.codesEmpty()} emptyIcon="fa-link">
         <div class="space-y-3">
           {#each codes as code (code.code)}
             <div class="rounded-xl p-4 border" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
@@ -856,22 +873,22 @@
                 <div class="min-w-0">
                   <p class="font-mono font-semibold" style="color: {$colorStore.text}">{code.code}</p>
                   <p class="text-xs" style="color: {$colorStore.muted}">
-                    {code.inviterName ?? (code.ownerUserId ? memberName(code.ownerUserId) : "unknown")} · #{channels.find((c) => c.id === code.channelId.toString())?.name ?? code.channelId.toString()}
-                    · {formatNumber(code.uses)} uses{code.maxUses ? ` of ${code.maxUses}` : ""}{code.maxAge ? " · expires" : ""}{code.isTemporary ? " · temporary" : ""}
+                    {code.inviterName ?? (code.ownerUserId ? memberName(code.ownerUserId) : m.common.unknownLower())} · #{channels.find((c) => c.id === code.channelId.toString())?.name ?? code.channelId.toString()}
+                    · {codeUsage(code)}
                   </p>
                 </div>
                 <div class="flex items-center gap-2">
-                  {#if code.ownerUserId}<Pill tone="ok" text={`credits ${memberName(code.ownerUserId)}`} />{/if}
-                  <button type="button" class="min-h-[36px] px-3 rounded-lg text-sm" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={() => deleteCode(code.code)}>Delete</button>
+                  {#if code.ownerUserId}<Pill tone="ok" text={m.invites.codesCredits({ user: memberName(code.ownerUserId) })} />{/if}
+                  <button type="button" class="min-h-[36px] px-3 rounded-lg text-sm" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={() => deleteCode(code.code)}>{m.common.delete()}</button>
                 </div>
               </div>
               {#if labelDrafts[code.code]}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2 items-end">
-                  <SettingField label="Label" hint="Shown in stats, exports and greet placeholders" id={`label-${code.code}`}>
-                    <input id={`label-${code.code}`} type="text" maxlength="64" placeholder="e.g. Twitter campaign" bind:value={labelDrafts[code.code].label} oninput={() => scheduleLabel(code.code)} onblur={() => flushLabel(code.code)} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
+                  <SettingField label={m.common.label()} hint={m.invites.codesLabelHint()} id={`label-${code.code}`}>
+                    <input id={`label-${code.code}`} type="text" maxlength="64" placeholder={m.invites.codesLabelPlaceholder()} bind:value={labelDrafts[code.code].label} oninput={() => scheduleLabel(code.code)} onblur={() => flushLabel(code.code)} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
                   </SettingField>
-                  <SettingField label="Role on join" hint="Granted to everyone who joins through this code" id={`role-${code.code}`}>
-                    <DiscordSelector id={`role-${code.code}`} type="role" options={roles} bind:selected={labelDrafts[code.code].roleId} disabled={!labelDrafts[code.code].label.trim()} placeholder={labelDrafts[code.code].label.trim() ? "No role" : "Add a label first"} onchange={() => saveLabelRole(code.code)} />
+                  <SettingField label={m.invites.codesRole()} hint={m.invites.codesRoleHint()} id={`role-${code.code}`}>
+                    <DiscordSelector id={`role-${code.code}`} type="role" options={roles} bind:selected={labelDrafts[code.code].roleId} disabled={!labelDrafts[code.code].label.trim()} placeholder={labelDrafts[code.code].label.trim() ? m.common.noRole() : m.invites.codesRoleNeedsLabel()} onchange={() => saveLabelRole(code.code)} />
                   </SettingField>
                 </div>
               {/if}
@@ -880,12 +897,12 @@
         </div>
 
         {#if labels.some((l) => !codes.find((c) => c.code === l.inviteCode))}
-          <h3 class="font-semibold mt-8 mb-2" style="color: {$colorStore.text}">Labels for codes that no longer exist</h3>
+          <h3 class="font-semibold mt-8 mb-2" style="color: {$colorStore.text}">{m.invites.codesStaleTitle()}</h3>
           <ul class="space-y-2">
             {#each labels.filter((l) => !codes.find((c) => c.code === l.inviteCode)) as label (label.id)}
               <li class="flex items-center justify-between rounded-lg p-3" style="background: {$colorStore.primary}08;">
                 <span style="color: {$colorStore.text}"><span class="font-mono">{label.inviteCode}</span> · {label.label}</span>
-                <button type="button" class="min-h-[36px] px-3 rounded-lg text-sm" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={() => inviteTrackingApi.removeLabel($currentGuild!.id, label.inviteCode).then(loadCodes).catch((e) => fail(e, "Failed to remove the label"))}>Remove</button>
+                <button type="button" class="min-h-[36px] px-3 rounded-lg text-sm" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={() => inviteTrackingApi.removeLabel($currentGuild!.id, label.inviteCode).then(loadCodes).catch((e) => fail(e, m.invites.errorRemoveLabel()))}>{m.common.remove()}</button>
               </li>
             {/each}
           </ul>
@@ -896,81 +913,81 @@
 
   {#if activeTab === "settings"}
     <section>
-      <SectionHeader icon="fa-gear" title="Invite Tracking Settings" />
+      <SectionHeader icon="fa-gear" title={m.invites.settingsTitle()} />
 
       <AsyncState loading={settingsLoading} error={settingsError} empty={!settings}>
         {#if settings}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
-            <SettingToggle id="tracking" label="Track invites" hint="Attribute every join to an invite, the vanity URL or an app" checked={settings.isEnabled} onchange={(v) => autoSaveSetting("tracking", () => inviteTrackingApi.toggleInviteTracking($currentGuild!.id, v))} />
-            <SettingToggle id="remove-on-leave" label="Remove credit when members leave" hint="The inviter's left count goes up and their total goes down" checked={settings.removeInviteOnLeave} onchange={(v) => autoSaveSetting("remove-on-leave", () => inviteTrackingApi.setRemoveOnLeave($currentGuild!.id, v))} />
-            <SettingToggle id="count-rejoins" label="Count rejoins" hint="Off flags members who have joined before as fake invites" checked={settings.countRejoins} onchange={(v) => autoSaveSetting("count-rejoins", () => inviteTrackingApi.setCountRejoins($currentGuild!.id, v))} />
-            <SettingToggle id="fake-no-avatar" label="Flag members without an avatar" hint="Joins from accounts with no avatar count as fake" checked={settings.fakeOnNoAvatar} onchange={(v) => autoSaveSetting("fake-no-avatar", () => inviteTrackingApi.setFakeOnNoAvatar($currentGuild!.id, v))} />
+            <SettingToggle id="tracking" label={m.invites.settingsTracking()} hint={m.invites.settingsTrackingHint()} checked={settings.isEnabled} onchange={(v) => autoSaveSetting("tracking", () => inviteTrackingApi.toggleInviteTracking($currentGuild!.id, v))} />
+            <SettingToggle id="remove-on-leave" label={m.invites.settingsRemoveOnLeave()} hint={m.invites.settingsRemoveOnLeaveHint()} checked={settings.removeInviteOnLeave} onchange={(v) => autoSaveSetting("remove-on-leave", () => inviteTrackingApi.setRemoveOnLeave($currentGuild!.id, v))} />
+            <SettingToggle id="count-rejoins" label={m.invites.settingsCountRejoins()} hint={m.invites.settingsCountRejoinsHint()} checked={settings.countRejoins} onchange={(v) => autoSaveSetting("count-rejoins", () => inviteTrackingApi.setCountRejoins($currentGuild!.id, v))} />
+            <SettingToggle id="fake-no-avatar" label={m.invites.settingsFakeNoAvatar()} hint={m.invites.settingsFakeNoAvatarHint()} checked={settings.fakeOnNoAvatar} onchange={(v) => autoSaveSetting("fake-no-avatar", () => inviteTrackingApi.setFakeOnNoAvatar($currentGuild!.id, v))} />
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <SettingField label="Minimum account age (days)" hint="Accounts younger than this are flagged as fake. 0 disables the check." id="min-age">
+            <SettingField label={m.common.minAccountAgeDays()} hint={m.invites.settingsMinAgeHint()} id="min-age">
               <input id="min-age" type="number" min="0" max="300" bind:value={minAgeDays} oninput={scheduleMinAge} onblur={flushMinAge} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
             </SettingField>
-            <SettingField label="Personal link channel" hint="Where links from the invitelink command point. Empty uses the system channel." id="link-channel">
-              <DiscordSelector id="link-channel" type="channel" options={channels} selected={settings.linkChannelId ? settings.linkChannelId.toString() : null} placeholder="System channel" onchange={(e) => autoSaveSetting("link-channel", () => inviteTrackingApi.setLinkChannel($currentGuild!.id, typeof e.selected === "string" && e.selected ? BigInt(e.selected) : null))} />
+            <SettingField label={m.invites.settingsLinkChannel()} hint={m.invites.settingsLinkChannelHint()} id="link-channel">
+              <DiscordSelector id="link-channel" type="channel" options={channels} selected={settings.linkChannelId ? settings.linkChannelId.toString() : null} placeholder={m.invites.settingsLinkChannelPlaceholder()} onchange={(e) => autoSaveSetting("link-channel", () => inviteTrackingApi.setLinkChannel($currentGuild!.id, typeof e.selected === "string" && e.selected ? BigInt(e.selected) : null))} />
             </SettingField>
-            <SettingField label="Join and leave log channel" hint="Posts who invited whom and how, on every join and leave" id="log-channel">
-              <DiscordSelector id="log-channel" type="channel" options={channels} selected={settings.logChannelId ? settings.logChannelId.toString() : null} placeholder="Disabled" onchange={(e) => autoSaveSetting("log-channel", () => inviteTrackingApi.setLogChannel($currentGuild!.id, typeof e.selected === "string" && e.selected ? BigInt(e.selected) : null))} />
+            <SettingField label={m.invites.settingsLogChannel()} hint={m.invites.settingsLogChannelHint()} id="log-channel">
+              <DiscordSelector id="log-channel" type="channel" options={channels} selected={settings.logChannelId ? settings.logChannelId.toString() : null} placeholder={m.common.disabled()} onchange={(e) => autoSaveSetting("log-channel", () => inviteTrackingApi.setLogChannel($currentGuild!.id, typeof e.selected === "string" && e.selected ? BigInt(e.selected) : null))} />
             </SettingField>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <Card title="Blacklisted inviters" note="Never earn invite credit">
+            <Card title={m.invites.settingsBlacklistUsers()} note={m.invites.settingsBlacklistUsersNote()}>
               <div class="flex gap-2 mb-3">
-                <div class="grow"><DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder="Add a member" bind:selected={exclusionUser} /></div>
-                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(InviteExclusionKind.BlacklistedUser, exclusionUser)}>Add</button>
+                <div class="grow"><DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder={m.common.addAMember()} bind:selected={exclusionUser} /></div>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(InviteExclusionKind.BlacklistedUser, exclusionUser)}>{m.common.add()}</button>
               </div>
               <ul class="space-y-1">
                 {#each blacklistedUsers as id (id)}
                   <li class="flex items-center justify-between rounded-lg p-2" style="background: {$colorStore.primary}08; color: {$colorStore.text};">
                     <span class="truncate">{memberName(id)}</span>
-                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(InviteExclusionKind.BlacklistedUser, id)} aria-label="Remove">✕</button>
+                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(InviteExclusionKind.BlacklistedUser, id)} aria-label={m.common.remove()}>✕</button>
                   </li>
                 {/each}
               </ul>
             </Card>
-            <Card title="Blacklisted roles" note="Holders never earn invite credit">
+            <Card title={m.common.blacklistedRoles()} note={m.invites.settingsBlacklistRolesNote()}>
               <div class="flex gap-2 mb-3">
-                <div class="grow"><DiscordSelector type="role" options={roles} placeholder="Add a role" bind:selected={exclusionRole} /></div>
-                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(InviteExclusionKind.BlacklistedRole, exclusionRole)}>Add</button>
+                <div class="grow"><DiscordSelector type="role" options={roles} placeholder={m.common.addARole()} bind:selected={exclusionRole} /></div>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(InviteExclusionKind.BlacklistedRole, exclusionRole)}>{m.common.add()}</button>
               </div>
               <ul class="space-y-1">
                 {#each blacklistedRoles as id (id)}
                   <li class="flex items-center justify-between rounded-lg p-2" style="background: {$colorStore.primary}08; color: {$colorStore.text};">
                     <span class="truncate">@{roleName(id)}</span>
-                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(InviteExclusionKind.BlacklistedRole, id)} aria-label="Remove">✕</button>
+                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(InviteExclusionKind.BlacklistedRole, id)} aria-label={m.common.remove()}>✕</button>
                   </li>
                 {/each}
               </ul>
             </Card>
-            <Card title="Hidden from leaderboard" note="Still tracked, never shown">
+            <Card title={m.invites.settingsHidden()} note={m.invites.settingsHiddenNote()}>
               <div class="flex gap-2 mb-3">
-                <div class="grow"><DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder="Add a member" bind:selected={hiddenUser} /></div>
-                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(InviteExclusionKind.HiddenUser, hiddenUser)}>Add</button>
+                <div class="grow"><DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder={m.common.addAMember()} bind:selected={hiddenUser} /></div>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(InviteExclusionKind.HiddenUser, hiddenUser)}>{m.common.add()}</button>
               </div>
               <ul class="space-y-1">
                 {#each hiddenUsers as id (id)}
                   <li class="flex items-center justify-between rounded-lg p-2" style="background: {$colorStore.primary}08; color: {$colorStore.text};">
                     <span class="truncate">{memberName(id)}</span>
-                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(InviteExclusionKind.HiddenUser, id)} aria-label="Remove">✕</button>
+                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(InviteExclusionKind.HiddenUser, id)} aria-label={m.common.remove()}>✕</button>
                   </li>
                 {/each}
               </ul>
             </Card>
           </div>
 
-          <Card title="Maintenance" note="Bulk operations on the tallies">
+          <Card title={m.common.maintenance()} note={m.invites.settingsMaintenanceNote()}>
             <div class="flex flex-wrap gap-2">
-              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}20; color: {$colorStore.primary};" onclick={syncInvites}>Import uses from Discord</button>
-              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={() => resetAll(InviteResetScope.LeftMembers)}>Reset inviters who left</button>
-              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.accent}; color: #fff;" onclick={() => resetAll(InviteResetScope.Server)}>Reset everything</button>
+              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}20; color: {$colorStore.primary};" onclick={syncInvites}>{m.invites.settingsSync()}</button>
+              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={() => resetAll(InviteResetScope.LeftMembers)}>{m.invites.settingsResetLeft()}</button>
+              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.accent}; color: #fff;" onclick={() => resetAll(InviteResetScope.Server)}>{m.common.resetEverything()}</button>
             </div>
-            <p class="text-xs mt-3" style="color: {$colorStore.muted}">Importing raises each inviter's regular total to the sum of uses across their codes and never lowers it, so it is safe to run again.</p>
+            <p class="text-xs mt-3" style="color: {$colorStore.muted}">{m.invites.settingsSyncHint()}</p>
           </Card>
         {/if}
       </AsyncState>

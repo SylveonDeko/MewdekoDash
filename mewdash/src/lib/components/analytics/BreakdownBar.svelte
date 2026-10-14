@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/BreakdownBar.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import { compact } from "./format";
   import type { BreakdownRow } from "$lib/api/analytics/models";
@@ -18,7 +19,7 @@
   let {
     rows,
     loading = false,
-    empty = "No data",
+    empty = m.common.noData(),
     max = 12,
     color,
     format = compact,

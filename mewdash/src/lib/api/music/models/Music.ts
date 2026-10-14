@@ -87,6 +87,8 @@ export interface TtsVcSetting {
   announceJoinLeave: boolean;
   joinFormat: string | null;
   leaveFormat: string | null;
+  /** The bot joins this channel on its own when a member enters it and leaves once it is empty. */
+  autoJoin: boolean;
 }
 
 export interface TtsVcSettingRequest {
@@ -96,6 +98,7 @@ export interface TtsVcSettingRequest {
   announceJoinLeave: boolean;
   joinFormat: string | null;
   leaveFormat: string | null;
+  autoJoin: boolean;
 }
 
 export interface TtsGuildSettingsRequest {

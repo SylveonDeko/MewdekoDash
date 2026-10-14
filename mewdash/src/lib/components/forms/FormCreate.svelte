@@ -1,5 +1,6 @@
 <!-- lib/components/forms/FormCreate.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import {
     clientApi,
@@ -17,6 +18,7 @@
   import { paginateQuestions } from "$lib/api/forms/models";
   import * as pageOps from "$lib/utils/formPages";
   import FormPageBar from "./FormPageBar.svelte";
+  import { questionTypeDescription, questionTypeLabel } from "./formLabels";
   import FormSettingsPanel from "./FormSettingsPanel.svelte";
   import { defaultFormSettings, type FormSettings, settingsToForm } from "$lib/utils/formSettings";
   import { colorStore } from "$lib/stores/colorStore";
@@ -189,7 +191,7 @@
     questions = pageOps.duplicateQuestion(questions, index, {
       ...question,
       id: takeTempId(),
-      questionText: question.questionText + " (Copy)",
+      questionText: question.questionText + m.forms.editCopySuffix(),
       displayOrder: 0,
       options: question.options?.map((opt) => ({ ...opt, id: 0 }))
     });
@@ -268,7 +270,7 @@
         }
 
         if (!$currentGuild?.id) {
-          onShowNotification("No guild selected", "error");
+          onShowNotification(m.common.noGuildSelected(), "error");
           return;
         }
 
@@ -314,7 +316,7 @@
           userId: BigInt(userId)
         });
 
-        onShowNotification("Form created successfully!", "success");
+        onShowNotification(m.forms.createCreated(), "success");
         setTimeout(() => onSuccess(createdForm.id), 1500);
       } catch (err: any) {
         logger.error("Failed to create form:", err);
@@ -324,11 +326,11 @@
         onShowNotification(
           Array.isArray(reasons) && reasons.length > 0
             ? reasons.join(". ")
-            : err?.message || "Failed to create form",
+            : err?.message || m.forms.createFailed(),
           "error"
         );
       }
-    }, "operation", "Creating form...");
+    }, "operation", m.forms.createCreating());
   }
 
   onMount(() => {
@@ -349,7 +351,7 @@
   });
 
   function getQuestionTypeLabel(type: QuestionType): string {
-    return QUESTION_TYPES.find((t) => t.type === type)?.label || type;
+    return questionTypeLabel(type);
   }
 
   function getQuestionTypeIcon(type: QuestionType): string {
@@ -382,7 +384,7 @@
   // Validate question text for Zalgo
   function validateQuestionText(text: string): string | null {
     if (containsZalgo(text)) {
-      return "Text contains invalid characters. Zalgo/corrupted text is not allowed.";
+      return m.forms.editZalgoInvalid();
     }
     return null;
   }
@@ -396,7 +398,7 @@
       // Zalgo detected and removed
       input.value = cleaned;
       updateQuestion(index, { questionText: cleaned });
-      onShowNotification("Excessive combining characters were removed from question text", "error");
+      onShowNotification(m.forms.editQuestionTextCleaned(), "error");
     } else {
       updateQuestion(index, { questionText: input.value });
     }
@@ -411,7 +413,7 @@
       // Zalgo detected and removed
       input.value = cleaned;
       updateOption(questionIndex, optionIndex, { optionText: cleaned, optionValue: cleaned });
-      onShowNotification("Excessive combining characters were removed from option text", "error");
+      onShowNotification(m.forms.editOptionTextCleaned(), "error");
     } else {
       updateOption(questionIndex, optionIndex, { optionText: input.value, optionValue: input.value });
     }
@@ -441,7 +443,7 @@
     <div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
       <h2 class="text-lg sm:text-xl font-bold" style="color: {$colorStore.text};">
         <i class="fa-solid fa-question-circle mr-2" style="color: {$colorStore.primary};"></i>
-        Questions
+        {m.forms.listQuestions()}
       </h2>
 
       <button
@@ -449,10 +451,10 @@
         class="px-3 py-2 rounded-lg text-sm font-medium transition-all"
         style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}25;"
         type="button"
-        title="Splits the form here, so what follows is a separate page"
+        title={m.forms.editAddPageTitle()}
       >
         <i class="fa-solid fa-file-circle-plus mr-2"></i>
-        Add page
+        {m.forms.editAddPage()}
       </button>
     </div>
 
@@ -473,7 +475,7 @@
           class="fa-solid fa-clipboard-question mb-4"
           style="color: {$colorStore.muted}; font-size: 48px; display: block;"
         ></i>
-        <p style="color: {$colorStore.muted};">No questions yet. Click "Add Question" to get started.</p>
+        <p style="color: {$colorStore.muted};">{m.forms.editNoQuestions()}</p>
       </div>
     {:else if currentBuilderPage.questionIndices.length === 0}
       <div class="text-center py-10">
@@ -482,7 +484,7 @@
           style="color: {$colorStore.muted}; font-size: 32px; display: block;"
         ></i>
         <p class="text-sm" style="color: {$colorStore.muted};">
-          Nothing on this page yet. Anything you add lands here.
+          {m.forms.editEmptyPage()}
         </p>
       </div>
     {:else}
@@ -512,7 +514,7 @@
                   type="text"
                   value={question.questionText}
                   oninput={(e) => handleQuestionTextInput(e, index)}
-                  placeholder="Enter your question..."
+                  placeholder={m.forms.editEnterYourQuestionPlaceholder()}
                   class="w-full p-2 rounded-lg mb-2 text-sm"
                   style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
                 />
@@ -531,7 +533,7 @@
                         class="px-2 py-1 rounded text-xs"
                         style="background: #ef444420; color: #ef4444;"
                       >
-                        Required
+                        {m.common.required()}
                       </span>
                   {/if}
                   {#if question.conditionalParentQuestionId}
@@ -540,7 +542,7 @@
                         style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                       >
                         <i class="fa-solid fa-code-branch mr-1"></i>
-                        Conditional
+                        {m.forms.editConditionalBadge()}
                       </span>
                   {/if}
                 </div>
@@ -552,8 +554,8 @@
                     disabled={index === 0}
                     class="p-2 rounded transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
                     style="background: {$colorStore.primary}15; color: {$colorStore.text};"
-                    title="Move up"
-                    aria-label="Move question up"
+                    title={m.common.moveUp()}
+                    aria-label={m.forms.editMoveQuestionUpLabel()}
                   >
                     <i class="fa-solid fa-arrow-up text-sm"></i>
                   </button>
@@ -562,8 +564,8 @@
                     disabled={index === questions.length - 1}
                     class="p-2 rounded transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
                     style="background: {$colorStore.primary}15; color: {$colorStore.text};"
-                    title="Move down"
-                    aria-label="Move question down"
+                    title={m.common.moveDown()}
+                    aria-label={m.forms.editMoveQuestionDownLabel()}
                   >
                     <i class="fa-solid fa-arrow-down text-sm"></i>
                   </button>
@@ -572,8 +574,8 @@
                   onclick={() => duplicateQuestion(index)}
                   class="p-2 rounded transition-all hover:scale-110"
                   style="background: {$colorStore.secondary}15; color: {$colorStore.text};"
-                  title="Duplicate"
-                  aria-label="Duplicate question"
+                  title={m.common.duplicate()}
+                  aria-label={m.forms.editDuplicateQuestionLabel()}
                 >
                   <i class="fa-solid fa-copy text-sm"></i>
                 </button>
@@ -581,8 +583,8 @@
                   onclick={() => deleteQuestion(index)}
                   class="p-2 rounded transition-all hover:scale-110"
                   style="background: #ef444415; color: #ef4444;"
-                  title="Delete"
-                  aria-label="Delete question"
+                  title={m.common.delete()}
+                  aria-label={m.forms.editDeleteQuestionLabel()}
                 >
                   <i class="fa-solid fa-trash text-sm"></i>
                 </button>
@@ -597,7 +599,7 @@
                 style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
               >
                 <i class="fa-solid fa-edit mr-2"></i>
-                Edit Question Details
+                {m.forms.editEditDetails()}
               </button>
             {:else}
               <!-- Desktop: Inline expandable editor -->
@@ -610,7 +612,7 @@
                   <!-- Placeholder -->
                   <div>
                       <span class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                        Placeholder Text
+                        {m.common.placeholderText()}
                       </span>
                     <input
                       type="text"
@@ -618,8 +620,8 @@
                       oninput={(e) => updateQuestion(index, { placeholder: e.currentTarget.value })}
                       class="w-full p-2 rounded-lg"
                       style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
-                      placeholder="e.g., Type your answer here..."
-                      aria-label="Placeholder text"
+                      placeholder={m.forms.editAnswerExamplePlaceholder()}
+                      aria-label={m.common.placeholderText()}
                     />
                   </div>
 
@@ -634,7 +636,7 @@
                       style="accent-color: {$colorStore.primary};"
                     />
                     <label for="required-{question.id}" style="color: {$colorStore.text};">
-                      Required question
+                      {m.forms.editRequiredQuestion()}
                     </label>
                   </div>
 
@@ -643,7 +645,7 @@
                     <div class="grid grid-cols-2 gap-3">
                       <div>
                           <span class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                            Min Length
+                            {m.common.minLength()}
                           </span>
                         <input
                           type="number"
@@ -652,12 +654,12 @@
                           min="0"
                           class="w-full p-2 rounded-lg"
                           style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
-                          aria-label="Minimum length"
+                          aria-label={m.common.minimumLength()}
                         />
                       </div>
                       <div>
                           <span class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                            Max Length
+                            {m.common.maxLength()}
                           </span>
                         <input
                           type="number"
@@ -666,7 +668,7 @@
                           min="1"
                           class="w-full p-2 rounded-lg"
                           style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
-                          aria-label="Maximum length"
+                          aria-label={m.common.maximumLength()}
                         />
                       </div>
                     </div>
@@ -676,7 +678,7 @@
                     <div class="grid grid-cols-2 gap-3">
                       <div>
                           <span class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                            Min Value
+                            {m.forms.editMinValue()}
                           </span>
                         <input
                           type="number"
@@ -684,12 +686,12 @@
                           oninput={(e) => updateQuestion(index, { minValue: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
                           class="w-full p-2 rounded-lg"
                           style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
-                          aria-label="Minimum value"
+                          aria-label={m.forms.createMinimumValue()}
                         />
                       </div>
                       <div>
                           <span class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                            Max Value
+                            {m.forms.editMaxValue()}
                           </span>
                         <input
                           type="number"
@@ -697,7 +699,7 @@
                           oninput={(e) => updateQuestion(index, { maxValue: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
                           class="w-full p-2 rounded-lg"
                           style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
-                          aria-label="Maximum value"
+                          aria-label={m.forms.createMaximumValue()}
                         />
                       </div>
                     </div>
@@ -707,14 +709,14 @@
                   {#if question.questionType && supportsOptions(question.questionType)}
                     <div>
                       <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm" style="color: {$colorStore.muted};">Options</span>
+                        <span class="text-sm" style="color: {$colorStore.muted};">{m.common.options()}</span>
                         <button
                           onclick={() => addOption(index)}
                           class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-[1.02]"
                           style="background: {$colorStore.primary}20; color: {$colorStore.text};"
                         >
                           <i class="fa-solid fa-plus mr-1"></i>
-                          Add Option
+                          {m.common.addOption()}
                         </button>
                       </div>
                       <div class="space-y-2">
@@ -725,7 +727,7 @@
                                 type="text"
                                 value={option.optionText || ""}
                                 oninput={(e) => handleOptionTextInput(e, index, optIndex)}
-                                placeholder="Option {optIndex + 1}"
+                                placeholder={m.common.optionNumber({ number: optIndex + 1 })}
                                 class="flex-1 p-2 rounded-lg"
                                 style="background: {$colorStore.primary}05; border: 1px solid {$colorStore.primary}15; color: {$colorStore.text};"
                               />
@@ -733,7 +735,7 @@
                                 onclick={() => deleteOption(index, optIndex)}
                                 class="px-3 py-2 rounded transition-all hover:scale-[1.02]"
                                 style="background: #ef444415; color: #ef4444;"
-                                aria-label="Delete option"
+                                aria-label={m.common.deleteOption()}
                               >
                                 <i class="fa-solid fa-trash text-sm"></i>
                               </button>
@@ -741,7 +743,7 @@
                           {/each}
                         {:else}
                           <p class="text-xs text-center py-2" style="color: {$colorStore.muted};">
-                            No options yet. Click "Add Option" to create choices.
+                            {m.forms.editNoOptions()}
                           </p>
                         {/if}
                       </div>
@@ -765,7 +767,7 @@
                       style="background: {$colorStore.primary}20; color: {$colorStore.text};"
                     >
                       <i class="fa-solid fa-check mr-2"></i>
-                      Done
+                      {m.common.done()}
                     </button>
                   </div>
                 </div>
@@ -777,7 +779,7 @@
                   style="background: {$colorStore.primary}05; color: {$colorStore.muted};"
                 >
                   <i class="fa-solid fa-edit mr-2"></i>
-                  Click to edit question details
+                  {m.forms.editClickToEdit()}
                 </button>
               {/if}
             {/if}
@@ -814,7 +816,7 @@
 
         <span class="relative z-10">
             <i class="fa-solid fa-plus mr-2"></i>
-            Add Question
+            {m.common.addQuestion()}
           </span>
       </button>
     </div>
@@ -827,7 +829,7 @@
         in:fly={{ y: 20, duration: 300 }}
       >
         <p class="text-sm mb-3 font-medium" style="color: {$colorStore.text};">
-          Select Question Type:
+          {m.forms.editSelectQuestionType()}
         </p>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
           <!-- Section breaks are not offered here. They are what a page is made of, and pages
@@ -861,10 +863,10 @@
               <div class="relative z-10">
                 <i class="fa-solid {qType.icon} mb-2 block" style="color: {$colorStore.primary}; font-size: 20px;"></i>
                 <span class="font-medium text-sm block" style="color: {$colorStore.text};">
-                    {qType.label}
+                    {questionTypeLabel(qType.type)}
                   </span>
                 <span class="text-xs mt-1 block" style="color: {$colorStore.muted};">
-                    {qType.description}
+                    {questionTypeDescription(qType.type)}
                   </span>
               </div>
             </button>
@@ -884,7 +886,7 @@
         type="button"
       >
         <i class="fa-solid fa-check mr-2"></i>
-        {settings.isDraft ? "Save as draft" : "Save and publish"}
+        {settings.isDraft ? m.forms.createSaveAsDraft() : m.forms.createSaveAndPublish()}
       </button>
     </div>
   {/if}
@@ -924,7 +926,7 @@
               {mobileEditingQuestionIndex + 1}
             </div>
             <h3 id="question-editor-title" class="font-bold text-lg truncate" style="color: {$colorStore.text};">
-              Edit Question
+              {m.forms.editEditQuestion()}
             </h3>
           </div>
           <button
@@ -932,7 +934,7 @@
             onclick={closeMobileQuestionEditor}
             class="p-2 rounded-lg transition-all hover:scale-110 flex-shrink-0"
             style="background: {$colorStore.primary}20; color: {$colorStore.text};"
-            aria-label="Close editor"
+            aria-label={m.common.ariaCloseEditor()}
           >
             <i class="fa-solid fa-xmark text-lg"></i>
           </button>
@@ -944,13 +946,13 @@
             <!-- Question Text -->
             <div>
               <label for="f-FormCreate-label-1582" class="block text-sm mb-2 font-medium" style="color: {$colorStore.text};">
-                Question Text <span style="color: #ef4444;">*</span>
+                {m.forms.editQuestionText()} <span style="color: #ef4444;">*</span>
               </label>
               <input id="f-FormCreate-label-1582"
                 type="text"
                 value={question.questionText}
                 oninput={(e) => handleQuestionTextInput(e, mobileIdx)}
-                placeholder="Enter your question..."
+                placeholder={m.forms.editEnterYourQuestionPlaceholder()}
                 class="w-full p-3 rounded-lg"
                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
               />
@@ -972,13 +974,13 @@
             <!-- Placeholder -->
             <div>
               <label for="f-FormCreate-placeholder-text-optional-1610" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                Placeholder Text (Optional)
+                {m.forms.createPlaceholderTextOptional()}
               </label>
               <input id="f-FormCreate-placeholder-text-optional-1610"
                 type="text"
                 value={question.placeholder || ""}
                 oninput={(e) => updateQuestion(mobileIdx, { placeholder: e.currentTarget.value })}
-                placeholder="e.g., Type your answer here..."
+                placeholder={m.forms.editAnswerExamplePlaceholder()}
                 class="w-full p-3 rounded-lg"
                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
               />
@@ -987,7 +989,7 @@
             <!-- Required Toggle -->
             <div class="flex items-center justify-between p-3 rounded-lg" style="background: {$colorStore.primary}08;">
               <label for="mobile-required-{question.id}" class="font-medium" style="color: {$colorStore.text};">
-                Required Question
+                {m.forms.editRequiredQuestion()}
               </label>
               <input
                 type="checkbox"
@@ -1002,31 +1004,31 @@
             <!-- Validation (for text/number fields) -->
             {#if question.questionType === "short_text" || question.questionType === "long_text"}
               <div class="space-y-3">
-                <h4 class="font-semibold text-sm" style="color: {$colorStore.text};">Text Validation</h4>
+                <h4 class="font-semibold text-sm" style="color: {$colorStore.text};">{m.forms.editTextValidation()}</h4>
                 <div>
                   <label for="f-FormCreate-minimum-length-1643" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                    Minimum Length
+                    {m.common.minimumLength()}
                   </label>
                   <input id="f-FormCreate-minimum-length-1643"
                     type="number"
                     value={question.minLength ?? ""}
                     oninput={(e) => updateQuestion(mobileIdx, { minLength: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
                     min="0"
-                    placeholder="No minimum"
+                    placeholder={m.forms.editNoMinimumPlaceholder()}
                     class="w-full p-3 rounded-lg"
                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
                   />
                 </div>
                 <div>
                   <label for="f-FormCreate-maximum-length-1657" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                    Maximum Length
+                    {m.common.maximumLength()}
                   </label>
                   <input id="f-FormCreate-maximum-length-1657"
                     type="number"
                     value={question.maxLength ?? ""}
                     oninput={(e) => updateQuestion(mobileIdx, { maxLength: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
                     min="1"
-                    placeholder="No maximum"
+                    placeholder={m.forms.editNoMaximumPlaceholder()}
                     class="w-full p-3 rounded-lg"
                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
                   />
@@ -1036,29 +1038,29 @@
 
             {#if question.questionType === "number"}
               <div class="space-y-3">
-                <h4 class="font-semibold text-sm" style="color: {$colorStore.text};">Number Validation</h4>
+                <h4 class="font-semibold text-sm" style="color: {$colorStore.text};">{m.forms.editNumberValidation()}</h4>
                 <div>
                   <label for="f-FormCreate-minimum-value-1677" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                    Minimum Value
+                    {m.forms.createMinimumValue()}
                   </label>
                   <input id="f-FormCreate-minimum-value-1677"
                     type="number"
                     value={question.minValue ?? ""}
                     oninput={(e) => updateQuestion(mobileIdx, { minValue: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
-                    placeholder="No minimum"
+                    placeholder={m.forms.editNoMinimumPlaceholder()}
                     class="w-full p-3 rounded-lg"
                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
                   />
                 </div>
                 <div>
                   <label for="f-FormCreate-maximum-value-1690" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                    Maximum Value
+                    {m.forms.createMaximumValue()}
                   </label>
                   <input id="f-FormCreate-maximum-value-1690"
                     type="number"
                     value={question.maxValue ?? ""}
                     oninput={(e) => updateQuestion(mobileIdx, { maxValue: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
-                    placeholder="No maximum"
+                    placeholder={m.forms.editNoMaximumPlaceholder()}
                     class="w-full p-3 rounded-lg"
                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
                   />
@@ -1070,7 +1072,7 @@
             {#if question.questionType && supportsOptions(question.questionType)}
               <div class="space-y-3">
                 <div class="flex items-center justify-between">
-                  <h4 class="font-semibold text-sm" style="color: {$colorStore.text};">Options</h4>
+                  <h4 class="font-semibold text-sm" style="color: {$colorStore.text};">{m.common.options()}</h4>
                   <button
                     onclick={() => addOption(mobileIdx)}
                     class="px-4 py-2 rounded-lg text-sm font-medium transition-all"
@@ -1078,7 +1080,7 @@
                     type="button"
                   >
                     <i class="fa-solid fa-plus mr-2"></i>
-                    Add Option
+                    {m.common.addOption()}
                   </button>
                 </div>
                 <div class="space-y-2">
@@ -1089,7 +1091,7 @@
                           type="text"
                           value={option.optionText || ""}
                           oninput={(e) => handleOptionTextInput(e, mobileIdx, optIndex)}
-                          placeholder="Option {optIndex + 1}"
+                          placeholder={m.common.optionNumber({ number: optIndex + 1 })}
                           class="flex-1 p-3 rounded-lg"
                           style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
                         />
@@ -1097,7 +1099,7 @@
                           onclick={() => deleteOption(mobileIdx, optIndex)}
                           class="px-3 py-2 rounded-lg transition-all"
                           style="background: #ef444420; color: #ef4444;"
-                          aria-label="Delete option"
+                          aria-label={m.common.deleteOption()}
                           type="button"
                         >
                           <i class="fa-solid fa-trash"></i>
@@ -1106,7 +1108,7 @@
                     {/each}
                   {:else}
                     <p class="text-sm text-center py-4" style="color: {$colorStore.muted};">
-                      No options yet. Click "Add Option" to create choices.
+                      {m.forms.editNoOptions()}
                     </p>
                   {/if}
                 </div>
@@ -1117,7 +1119,7 @@
             <div class="border-t pt-4" style="border-color: {$colorStore.primary}20;">
               <h4 class="font-semibold text-sm mb-3" style="color: {$colorStore.text};">
                 <i class="fa-solid fa-code-branch mr-2" style="color: {$colorStore.primary};"></i>
-                Conditional Logic
+                {m.forms.editConditionalLogic()}
               </h4>
               <ConditionalLogicEditor
                 question={question}
@@ -1142,7 +1144,7 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 20px {$colorStore.primary}10;"
           >
             <i class="fa-solid fa-check mr-2"></i>
-            Done
+            {m.common.done()}
           </button>
         </div>
       </div>

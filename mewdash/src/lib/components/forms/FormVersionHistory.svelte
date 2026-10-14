@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   /**
    * The saved history of a form: what each save changed, and the means to put the form back to any
    * of them. Changes are shown before against after side by side, grouped by the part of the form
@@ -60,7 +61,7 @@
       versions = history.versions ?? [];
       versionsKept = history.versionsKept;
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to load version history";
+      error = err instanceof Error ? err.message : m.forms.versionLoadFailed();
     } finally {
       loading = false;
     }
@@ -105,7 +106,7 @@
       // sections start open and collapse is there for the large saves.
       expandAllSections(loaded);
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to compare versions";
+      error = err instanceof Error ? err.message : m.forms.versionCompareFailed();
       openVersion = null;
     } finally {
       loadingDiff = null;
@@ -124,7 +125,7 @@
       await loadVersions();
       onRestored?.();
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to restore this version";
+      error = err instanceof Error ? err.message : m.forms.versionRestoreFailed();
     } finally {
       restoring = false;
     }
@@ -159,11 +160,11 @@
   <div>
     <div class="flex items-center gap-2">
       <i class="fa-solid fa-clock-rotate-left" style="color: {$colorStore.primary};"></i>
-      <h3 class="text-lg font-bold" style="color: {$colorStore.text};">Version history</h3>
+      <h3 class="text-lg font-bold" style="color: {$colorStore.text};">{m.forms.versionTitle()}</h3>
     </div>
     {#if versionsKept > 0}
       <p class="text-sm mt-1" style="color: {$colorStore.muted};">
-        The last {versionsKept} saves are kept. Older ones are dropped.
+        {m.forms.versionKeptNote({ count: versionsKept })}
       </p>
     {/if}
   </div>
@@ -181,14 +182,14 @@
   {#if loading}
     <div class="p-6 text-center" style="color: {$colorStore.muted};">
       <i class="fa-solid fa-spinner fa-spin mr-2"></i>
-      Loading history
+      {m.forms.versionLoading()}
     </div>
   {:else if versions.length === 0}
     <div
       class="p-6 rounded-xl text-center"
       style="background: {$colorStore.primary}05; border: 1px solid {$colorStore.primary}20; color: {$colorStore.muted};"
     >
-      Nothing saved yet. A version is kept every time this form is saved.
+      {m.forms.versionEmpty()}
     </div>
   {:else}
     <div class="space-y-2">
@@ -207,19 +208,19 @@
                 class="flex-shrink-0 px-2.5 py-1 rounded-lg text-sm font-bold"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
               >
-                v{version.versionNumber}
+                {m.forms.versionNumber({ number: version.versionNumber })}
               </span>
               <div class="min-w-0">
                 <div class="font-medium truncate" style="color: {$colorStore.text};">
                   {new Date(version.createdAt).toLocaleString()}
                   {#if index === 0}
                     <span class="text-sm font-normal" style="color: {$colorStore.muted};">
-                      (current)
+                      {m.forms.versionCurrent()}
                     </span>
                   {/if}
                 </div>
                 <div class="text-sm" style="color: {$colorStore.muted};">
-                  {version.questionCount} question{version.questionCount === 1 ? "" : "s"}
+                  {version.questionCount === 1 ? m.forms.publicEmbedQuestionOne({ count: version.questionCount }) : m.forms.publicEmbedQuestionOther({ count: version.questionCount })}
                 </div>
               </div>
             </div>
@@ -235,11 +236,11 @@
               {#if loadingDiff === version.versionNumber}
                 <div class="py-4 text-center" style="color: {$colorStore.muted};">
                   <i class="fa-solid fa-spinner fa-spin mr-2"></i>
-                  Comparing
+                  {m.forms.versionComparing()}
                 </div>
               {:else if groupedChanges.length === 0}
                 <div class="py-4 text-sm" style="color: {$colorStore.muted};">
-                  This save changed nothing.
+                  {m.forms.versionNoChanges()}
                 </div>
               {:else}
                 <div class="space-y-4">
@@ -325,7 +326,7 @@
                   style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                 >
                   <i class="fa-solid fa-rotate-left mr-2"></i>
-                  Restore this version
+                  {m.forms.versionRestoreButton()}
                 </button>
               {/if}
             </div>
@@ -338,11 +339,11 @@
 
 <ConfirmationModal
   isOpen={pendingRestore !== null}
-  title="Restore this version?"
+  title={m.forms.versionRestoreTitle()}
   message={pendingRestore
-    ? `This puts the form back to version ${pendingRestore.versionNumber}, replacing its current questions and settings. The current state is kept in the history, so this can be undone.`
+    ? m.forms.versionRestoreMessage({ number: pendingRestore.versionNumber })
     : ""}
-  confirmText="Restore"
+  confirmText={m.common.restore()}
   variant="warning"
   onconfirm={restore}
   oncancel={() => (pendingRestore = null)}

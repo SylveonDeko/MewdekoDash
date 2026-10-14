@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/tabs/WebsiteTab.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
   import { analyticsApi } from "$lib/api/analytics/analytics";
@@ -25,9 +26,9 @@
   let steps = $derived.by(() => {
     if (!funnel) return [];
     const list = [
-      { label: "Login", visitors: funnel.loginVisitors, views: funnel.loginViews },
-      { label: "OAuth callback", visitors: funnel.callbackVisitors, views: funnel.callbackViews },
-      { label: "Dashboard", visitors: funnel.dashboardVisitors, views: funnel.dashboardViews },
+      { label: m.common.login(), visitors: funnel.loginVisitors, views: funnel.loginViews },
+      { label: m.analytics.tabWebsiteStepOauth(), visitors: funnel.callbackVisitors, views: funnel.callbackViews },
+      { label: m.common.dashboard(), visitors: funnel.dashboardVisitors, views: funnel.dashboardViews },
     ];
     const peak = Math.max(1, ...list.map((s) => s.visitors));
     return list.map((s, i) => ({
@@ -37,20 +38,20 @@
     }));
   });
 
-  const routeColumns: Column<RouteRow>[] = [
-    { key: "route", label: "Route", mono: true },
-    { key: "views", label: "Views", num: true, format: (r) => compact(r.views) },
-    { key: "visitors", label: "Visitors", num: true, format: (r) => compact(r.visitors) },
+  const routeColumns: Column<RouteRow>[] = $derived([
+    { key: "route", label: m.analytics.tabWebsiteColRoute(), mono: true },
+    { key: "views", label: m.analytics.tabWebsiteColViews(), num: true, format: (r) => compact(r.views) },
+    { key: "visitors", label: m.analytics.tabWebsiteColVisitors(), num: true, format: (r) => compact(r.visitors) },
     { key: "p95Ms", label: "p95", num: true, format: (r) => ms(r.p95Ms) },
-    { key: "errors", label: "5xx", num: true, tone: (r) => (r.errors ? "crit" : null) },
-  ];
+    { key: "errors", label: m.analytics.tabWebsiteCol5xx(), num: true, tone: (r) => (r.errors ? "crit" : null) },
+  ]);
 
-  const errorColumns: Column<RouteErrorRow>[] = [
-    { key: "route", label: "Route", mono: true },
-    { key: "status", label: "Status", tone: (r) => (r.status >= 500 ? "crit" : "warn") },
-    { key: "count", label: "Count", num: true },
-    { key: "lastSeen", label: "Last", num: true, muted: true, format: (r) => ago(r.lastSeen), sortValue: (r) => utcParse(r.lastSeen) },
-  ];
+  const errorColumns: Column<RouteErrorRow>[] = $derived([
+    { key: "route", label: m.analytics.tabWebsiteColRoute(), mono: true },
+    { key: "status", label: m.common.status(), tone: (r) => (r.status >= 500 ? "crit" : "warn") },
+    { key: "count", label: m.common.count(), num: true },
+    { key: "lastSeen", label: m.analytics.tableColLast(), num: true, muted: true, format: (r) => ago(r.lastSeen), sortValue: (r) => utcParse(r.lastSeen) },
+  ]);
 
   async function load() {
     const my = ++seq;
@@ -77,35 +78,35 @@
 
 <div class="space-y-4">
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-    <AnalyticsTile label="Page views" metric="page.view" agg="sum" format="int" filters={[]} />
-    <StatTile label="Visitors" value={compact(visitors)} sub="sum over routes" loading={routesLoading} />
-    <AnalyticsTile label="Request p95" metric="page.duration" agg="p95" format="ms" filters={[]} unit="ms" />
-    <AnalyticsTile label="5xx" metric="page.view" agg="sum" format="int" filters={[]} fixed={{ status: "5xx" }} sparkTone="crit" />
+    <AnalyticsTile label={m.analytics.tabWebsitePageViews()} metric="page.view" agg="sum" format="int" filters={[]} />
+    <StatTile label={m.analytics.tabWebsiteColVisitors()} value={compact(visitors)} sub="sum over routes" loading={routesLoading} />
+    <AnalyticsTile label={m.analytics.tabWebsiteRequestP95()} metric="page.duration" agg="p95" format="ms" filters={[]} unit="ms" />
+    <AnalyticsTile label={m.analytics.tabWebsiteCol5xx()} metric="page.view" agg="sum" format="int" filters={[]} fixed={{ status: "5xx" }} sparkTone="crit" />
   </div>
 
   <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-    <Card title="Views by route" note="top routes, rest folded">
-      <AnalyticsChart metric="page.view" agg="sum" groupBy="route" max={8} filters={[]} type="area" unit="views" totalToggle />
+    <Card title={m.analytics.tabWebsiteViewsByRoute()} note={m.analytics.tabWebsiteTopRoutesRestFolded()}>
+      <AnalyticsChart metric="page.view" agg="sum" groupBy="route" max={8} filters={[]} type="area" unit={m.analytics.unitViews()} totalToggle />
     </Card>
-    <Card title="Request duration" note="p50 · p95 · p99">
+    <Card title={m.analytics.tabWebsiteRequestDuration()} note="p50 · p95 · p99">
       <AnalyticsChart metric="page.duration" aggs={["p50", "p95", "p99"]} filters={[]} unit="ms" noCompare />
     </Card>
   </div>
 
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
-    <Card title="Routes" class="xl:col-span-2">
-      <AnalyticsTable columns={routeColumns} rows={routes} loading={routesLoading} empty="No page views" sortKey="views" pageSize={15} />
+    <Card title={m.analytics.tabWebsiteRoutes()} class="xl:col-span-2">
+      <AnalyticsTable columns={routeColumns} rows={routes} loading={routesLoading} empty={m.analytics.tabWebsiteNoPageViews()} sortKey="views" pageSize={15} />
     </Card>
-    <Card title="Errors" note="4xx · 5xx">
-      <AnalyticsTable columns={errorColumns} rows={errors} loading={errorsLoading} empty="No errors" sortKey="count" pageSize={15} />
+    <Card title={m.common.errors()} note={m.analytics.tabWebsite4xx5xx()}>
+      <AnalyticsTable columns={errorColumns} rows={errors} loading={errorsLoading} empty={m.analytics.tabWebsiteNoErrors()} sortKey="count" pageSize={15} />
     </Card>
   </div>
 
-  <Card title="Login funnel" note="distinct visitors · views in brackets">
+  <Card title={m.analytics.tabWebsiteLoginFunnel()} note={m.analytics.tabWebsiteDistinctVisitorsViewsInBrackets()}>
     {#if funnelLoading && !funnel}
       <div class="h-3 rounded animate-pulse" style="background: {$colorStore.primary}20"></div>
     {:else if steps.length === 0}
-      <p class="text-xs py-2" style="color: {$colorStore.muted}">No data</p>
+      <p class="text-xs py-2" style="color: {$colorStore.muted}">{m.common.noData()}</p>
     {:else}
       <div class="space-y-2">
         {#each steps as s (s.label)}

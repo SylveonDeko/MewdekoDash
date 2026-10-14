@@ -1,5 +1,6 @@
 <!-- routes/dashboard/highlights/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import { onMount } from "svelte";
     import { fade, fly } from "svelte/transition";
     import { colorStore } from "$lib/stores/colorStore";
@@ -58,7 +59,7 @@
             disabledUsers = disabledData;
         } catch (err) {
             logger.error("Failed to load highlight data:", err);
-            showMessage("Failed to load highlight data", "error");
+            showMessage(m.highlights.pageErrorLoad(), "error");
         } finally {
             loading = false;
         }
@@ -75,40 +76,40 @@
             searchResults = await highlightsApi.searchHighlights($currentGuild.id, searchQuery);
         } catch (err) {
             logger.error("Failed to search highlights:", err);
-            showMessage("Search failed", "error");
+            showMessage(m.highlights.pageErrorSearch(), "error");
         }
     }
 
     // Delete highlight
     async function deleteHighlight(highlightId: number) {
         if (!$currentGuild?.id) return;
-        if (!(await requestConfirmation({ message: "Are you sure you want to delete this highlight?", confirmText: "Delete" }))) return;
+        if (!(await requestConfirmation({ message: m.highlights.pageConfirmDelete(), confirmText: m.common.delete() }))) return;
 
         try {
             await highlightsApi.removeHighlight($currentGuild.id, highlightId);
-            showMessage("Highlight deleted successfully!", "success");
+            showMessage(m.highlights.pageNotifyDeleted(), "success");
             await loadAllHighlightData();
             if (searchQuery.trim()) {
                 await searchHighlights();
             }
         } catch (err) {
             logger.error("Failed to delete highlight:", err);
-            showMessage("Failed to delete highlight", "error");
+            showMessage(m.highlights.pageErrorDelete(), "error");
         }
     }
 
     // Delete all user highlights
     async function deleteUserHighlights(userId: bigint, username: string) {
         if (!$currentGuild?.id) return;
-        if (!(await requestConfirmation({ message: `Are you sure you want to delete all highlights for ${username}?`, confirmText: "Delete all" }))) return;
+        if (!(await requestConfirmation({ message: m.highlights.pageConfirmDeleteUser({ username }), confirmText: m.highlights.pageDeleteAll() }))) return;
 
         try {
             const result = await highlightsApi.removeUserHighlights($currentGuild.id, userId);
-            showMessage(`Deleted ${result.removedCount} highlight(s)!`, "success");
+            showMessage(m.highlights.pageNotifyDeletedCount({ count: result.removedCount }), "success");
             await loadAllHighlightData();
         } catch (err) {
             logger.error("Failed to delete user highlights:", err);
-            showMessage("Failed to delete highlights", "error");
+            showMessage(m.highlights.pageErrorDeleteMany(), "error");
         }
     }
 
@@ -122,7 +123,7 @@
     }
 
     function formatDate(dateString: string | null): string {
-        if (!dateString) return "Unknown";
+        if (!dateString) return m.common.unknown();
         return new Date(dateString).toLocaleString();
     }
 
@@ -137,7 +138,7 @@
         });
         return Array.from(grouped.entries()).map(([userId, userHighlights]) => ({
             userId: BigInt(userId),
-            username: `User ${userId}`,
+            username: m.common.userFallback({ id: userId }),
             highlights: userHighlights
         }));
     }
@@ -147,17 +148,17 @@
     });
 
     // Tabs configuration
-    const tabs = [
-        { id: "highlights", label: "All Highlights", icon: "fa-bolt" },
-        { id: "search", label: "Search", icon: "fa-magnifying-glass" },
-        { id: "disabled", label: "Disabled Users", icon: "fa-eye-slash" },
-        { id: "stats", label: "Statistics", icon: "fa-chart-column" }
-    ];
+    const tabs = $derived([
+        { id: "highlights", label: m.highlights.pageTabAll(), icon: "fa-bolt" },
+        { id: "search", label: m.common.search(), icon: "fa-magnifying-glass" },
+        { id: "disabled", label: m.highlights.pageTabDisabled(), icon: "fa-eye-slash" },
+        { id: "stats", label: m.common.statistics(), icon: "fa-chart-column" }
+    ]);
 
     // Action buttons configuration
     let actionButtons = $derived([
         {
-            label: "Refresh",
+            label: m.common.refresh(),
             icon: "fa-arrows-rotate",
             action: loadAllHighlightData,
             loading: loading
@@ -193,12 +194,12 @@
 <DashboardPageLayout
   {actionButtons}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-bolt"
   statusMessages={statusMessageContent}
-  subtitle="Manage guild-wide highlight system"
+  subtitle={m.highlights.pageSubtitle()}
   {tabs}
-  title="Highlights"
+  title={m.features.highlightsName()}
 >
 
     {#if activeTab === 'highlights'}
@@ -208,16 +209,16 @@
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">All Highlights ({highlights.length})</h2>
+                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.highlights.pageAllTitle({ count: highlights.length })}</h2>
                 </div>
 
                 <div class="space-y-4">
                     {#if highlights.length === 0}
                         <div class="text-center py-8">
                             <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Highlights</h3>
+                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.highlights.pageAllEmptyTitle()}</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
-                                Users haven't set up any highlights yet.
+                                {m.highlights.pageAllEmptyHint()}
                             </p>
                         </div>
                     {:else}
@@ -232,7 +233,7 @@
                                                 {userGroup.username}
                                             </div>
                                             <div class="text-sm" style="color: {$colorStore.muted}">
-                                                {userGroup.highlights.length} highlight{userGroup.highlights.length !== 1 ? 's' : ''}
+                                                {userGroup.highlights.length === 1 ? m.highlights.pageUserHighlightsOne({ count: userGroup.highlights.length }) : m.highlights.pageUserHighlightsOther({ count: userGroup.highlights.length })}
                                             </div>
                                         </div>
                                     </div>
@@ -241,7 +242,7 @@
                                             style="background: #ef444420; color: #ef4444;"
                                             onclick={() => deleteUserHighlights(userGroup.userId, userGroup.username)}
                                     >
-                                        Delete All
+                                        {m.highlights.pageDeleteAll()}
                                     </button>
                                 </div>
 
@@ -252,7 +253,7 @@
                                             <span class="text-sm font-medium" style="color: {$colorStore.text}">
                                                 "{highlight.word}"
                                             </span>
-                                          <button aria-label="Delete highlight"
+                                          <button aria-label={m.highlights.pageDeleteHighlightAria()}
                                                     class="p-1 rounded hover:bg-red-500/20 transition-colors"
                                                     onclick={() => deleteHighlight(highlight.id)}
                                             >
@@ -275,7 +276,7 @@
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fa-utility-duo fa-regular fa-magnifying-glass" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Search Highlights</h2>
+                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.highlights.pageSearchAria()}</h2>
                 </div>
 
                 <div class="mb-6">
@@ -283,12 +284,12 @@
                         <input
                                 type="text"
                                 bind:value={searchQuery}
-                                placeholder="Enter word or pattern..."
+                                placeholder={m.highlights.pageSearchPlaceholder()}
                                 class="flex-1 p-3 rounded-xl border transition-all text-base"
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                 onkeydown={(e) => e.key === 'Enter' && searchHighlights()}
                         >
-                      <button aria-label="Search highlights"
+                      <button aria-label={m.highlights.pageSearchAria()}
                               class="flex items-center justify-center px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                                 onclick={searchHighlights}
@@ -302,9 +303,9 @@
                     {#if searchResults.length === 0 && searchQuery.trim()}
                         <div class="text-center py-8">
                             <i class="fa-utility-duo fa-regular fa-magnifying-glass" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Results</h3>
+                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.highlights.pageSearchNoResultsTitle()}</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
-                                No highlights match your search query.
+                                {m.highlights.pageSearchNoResultsHint()}
                             </p>
                         </div>
                     {:else if searchResults.length > 0}
@@ -318,11 +319,11 @@
                                             "{highlight.word}"
                                         </div>
                                         <div class="text-sm" style="color: {$colorStore.muted}">
-                                            User {highlight.userId.toString()} • {formatDate(highlight.dateAdded)}
+                                            {m.highlights.pageSearchUserLine({ id: highlight.userId.toString(), date: formatDate(highlight.dateAdded) })}
                                         </div>
                                     </div>
                                 </div>
-                              <button aria-label="Delete word"
+                              <button aria-label={m.highlights.pageDeleteWordAria()}
                                         class="p-2 rounded-lg transition-all hover:scale-110"
                                         style="background: #ef444420; color: #ef4444;"
                                         onclick={() => deleteHighlight(highlight.id)}
@@ -335,7 +336,7 @@
                         <div class="text-center py-8">
                             <i class="fa-utility-duo fa-regular fa-magnifying-glass" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                             <p class="text-sm" style="color: {$colorStore.muted}">
-                                Enter a search term to find highlights.
+                                {m.highlights.pageSearchPrompt()}
                             </p>
                         </div>
                     {/if}
@@ -350,16 +351,16 @@
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fa-utility-duo fa-regular fa-eye-slash" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Disabled Users ({disabledUsers.length})</h2>
+                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.highlights.pageDisabledTitle({ count: disabledUsers.length })}</h2>
                 </div>
 
                 <div class="space-y-3">
                     {#if disabledUsers.length === 0}
                         <div class="text-center py-8">
                             <i class="fa-utility-duo fa-regular fa-eye" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">All Users Enabled</h3>
+                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.highlights.pageDisabledEmptyTitle()}</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
-                                No users have disabled highlights.
+                                {m.highlights.pageDisabledEmptyHint()}
                             </p>
                         </div>
                     {:else}
@@ -373,7 +374,7 @@
                                             {user.username}
                                         </div>
                                         <div class="text-sm" style="color: {$colorStore.muted}">
-                                            Ignoring {user.ignoredChannelsCount} channel(s) • {user.ignoredUsersCount} user(s)
+                                            {m.highlights.pageDisabledIgnoring({ channels: user.ignoredChannelsCount, users: user.ignoredUsersCount })}
                                         </div>
                                     </div>
                                 </div>
@@ -390,36 +391,36 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6">
                     <StatCard
                             icon="fa-bolt"
-                            label="Total Highlights"
+                            label={m.highlights.pageStatTotal()}
                             value={stats.totalHighlights}
-                            subtitle="across server"
+                            subtitle={m.highlights.pageStatTotalSub()}
                             iconColor="primary"
                             animationDelay={0}
                     />
 
                     <StatCard
                             icon="fa-users"
-                            label="Active Users"
+                            label={m.highlights.pageStatUsers()}
                             value={stats.totalUsers}
-                            subtitle="with highlights"
+                            subtitle={m.highlights.pageStatUsersSub()}
                             iconColor="secondary"
                             animationDelay={100}
                     />
 
                     <StatCard
                       icon="fa-star"
-                            label="Top Word"
+                            label={m.highlights.pageStatTopWord()}
                             value={stats.topHighlightedWords[0]?.count || 0}
-                            subtitle={stats.topHighlightedWords[0]?.word || "none"}
+                            subtitle={stats.topHighlightedWords[0]?.word || m.common.noneLower()}
                             iconColor="accent"
                             animationDelay={200}
                     />
 
                     <StatCard
                             icon="fa-user-check"
-                            label="Most Active"
+                            label={m.common.mostActive()}
                             value={stats.topUsers[0]?.highlightCount || 0}
-                            subtitle={stats.topUsers[0]?.username || "none"}
+                            subtitle={stats.topUsers[0]?.username || m.common.noneLower()}
                             iconColor="primary"
                             animationDelay={300}
                     />
@@ -431,7 +432,7 @@
                                 border-color: {$colorStore.primary}30;">
                         <div class="flex items-center gap-3 mb-6">
                             <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Top Highlighted Words</h2>
+                            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.highlights.pageTopWordsTitle()}</h2>
                         </div>
 
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -441,7 +442,7 @@
                                         "{word.word}"
                                     </div>
                                     <div class="text-sm" style="color: {$colorStore.primary}">
-                                        {word.count} user{word.count !== 1 ? 's' : ''}
+                                        {word.count === 1 ? m.highlights.pageTopWordUsersOne({ count: word.count }) : m.highlights.pageTopWordUsersOther({ count: word.count })}
                                     </div>
                                 </div>
                             {/each}
@@ -455,7 +456,7 @@
                                 border-color: {$colorStore.primary}30;">
                         <div class="flex items-center gap-3 mb-6">
                             <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Recent Highlights</h2>
+                            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.highlights.pageRecentTitle()}</h2>
                         </div>
 
                         <div class="space-y-2">
@@ -463,7 +464,7 @@
                                 <div class="flex items-center justify-between p-3 rounded-lg"
                                      style="background: {$colorStore.primary}08;">
                                     <span style="color: {$colorStore.text}">
-                                        <strong>"{highlight.word}"</strong> by {highlight.username}
+                                        {m.highlights.pageRecentLine({ word: highlight.word, username: highlight.username })}
                                     </span>
                                     <span class="text-sm" style="color: {$colorStore.muted}">
                                         {formatDate(highlight.dateAdded)}
@@ -476,9 +477,9 @@
             {:else}
                 <div class="text-center py-12">
                     <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                    <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">No Statistics Available</h3>
+                    <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">{m.common.noStatisticsAvailable()}</h3>
                     <p style="color: {$colorStore.muted}">
-                        Highlight statistics will appear here once users set up highlights.
+                        {m.highlights.pageStatsEmptyHint()}
                     </p>
                 </div>
             {/if}

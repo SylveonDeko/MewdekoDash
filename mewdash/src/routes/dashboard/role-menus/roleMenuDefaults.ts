@@ -1,4 +1,5 @@
 import { RoleMenuButtonColor, RoleMenuMode, RoleMenuStyle } from "$lib/api/rolemenus/models";
+import { m } from "$lib/i18n";
 
 /** Name used when a menu is saved with a blank name. Mirrors rolemenu_default_name. */
 export const DEFAULT_NAME = "Pick your roles";
@@ -34,12 +35,14 @@ export const DESCRIPTION_LENGTH = 100;
 export const PLACEHOLDER_LENGTH = 150;
 
 /** Button color choices, in the order the selectors list them. */
-export const BUTTON_COLOR_OPTIONS = [
-  { id: RoleMenuButtonColor.Blurple.toString(), name: "Blurple" },
-  { id: RoleMenuButtonColor.Grey.toString(), name: "Grey" },
-  { id: RoleMenuButtonColor.Green.toString(), name: "Green" },
-  { id: RoleMenuButtonColor.Red.toString(), name: "Red" }
-];
+export function buttonColorOptions() {
+  return [
+    { id: RoleMenuButtonColor.Blurple.toString(), name: m.common.blurple() },
+    { id: RoleMenuButtonColor.Grey.toString(), name: m.common.colorGrey() },
+    { id: RoleMenuButtonColor.Green.toString(), name: m.common.colorGreen() },
+    { id: RoleMenuButtonColor.Red.toString(), name: m.common.red() }
+  ];
+}
 
 /** One editable option in the editor. Snowflakes are kept as strings until the request is built. */
 export interface RoleMenuOptionDraft {

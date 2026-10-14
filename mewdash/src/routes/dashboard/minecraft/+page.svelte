@@ -1,5 +1,6 @@
 <!-- routes/dashboard/minecraft/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import { onDestroy, tick } from "svelte";
     import { Chart, LineController, LineElement, PointElement, LinearScale, CategoryScale, TimeScale, Filler, Tooltip, Legend } from "chart.js";
 
@@ -88,37 +89,37 @@
         rconPassword: "",
     });
 
-    const serverTypeOptions = [
-        { id: "0", name: "Java Edition", icon: "fa-coffee" },
-        { id: "1", name: "Bedrock Edition", icon: "fa-mobile-screen" },
-        { id: "2", name: "Geyser (Java + Bedrock)", icon: "fa-shuffle" },
-    ];
+    const serverTypeOptions = $derived([
+        { id: "0", name: m.minecraft.serverTypeJava(), icon: "fa-coffee" },
+        { id: "1", name: m.minecraft.serverTypeBedrock(), icon: "fa-mobile-screen" },
+        { id: "2", name: m.minecraft.serverTypeGeyser(), icon: "fa-shuffle" },
+    ]);
 
-    const mcPlaceholders = [
-        { category: "Server", name: "%mc.server.name%", description: "Server label" },
-        { category: "Server", name: "%mc.server.address%", description: "Server address" },
-        { category: "Server", name: "%mc.server.port%", description: "Server port" },
-        { category: "Server", name: "%mc.online%", description: "Online/Offline" },
-        { category: "Server", name: "%mc.version%", description: "Server version" },
-        { category: "Server", name: "%mc.latency%", description: "Ping latency" },
-        { category: "Server", name: "%mc.motd%", description: "Message of the Day" },
-        { category: "Server", name: "%mc.favicon%", description: "Server icon URL" },
-        { category: "Server", name: "%mc.geyser%", description: "Whether Geyser is enabled" },
-        { category: "Players", name: "%mc.players.online%", description: "Online player count" },
-        { category: "Players", name: "%mc.players.max%", description: "Max player count" },
-        { category: "Players", name: "%mc.player.list%", description: "List of online players" },
-        { category: "Query", name: "%mc.map%", description: "Current map name" },
-        { category: "Query", name: "%mc.gamemode%", description: "Game mode" },
-        { category: "Query", name: "%mc.software%", description: "Server software" },
-        { category: "Query", name: "%mc.plugins%", description: "Plugin list" },
-        { category: "Query", name: "%mc.query%", description: "Whether Query protocol was used" },
-    ];
+    const mcPlaceholders = $derived([
+        { category: m.placeholders.categoryServer(), name: "%mc.server.name%", description: m.placeholders.mcServerName() },
+        { category: m.placeholders.categoryServer(), name: "%mc.server.address%", description: m.placeholders.mcServerAddress() },
+        { category: m.placeholders.categoryServer(), name: "%mc.server.port%", description: m.placeholders.mcServerPort() },
+        { category: m.placeholders.categoryServer(), name: "%mc.online%", description: m.placeholders.mcOnline() },
+        { category: m.placeholders.categoryServer(), name: "%mc.version%", description: m.placeholders.mcVersion() },
+        { category: m.placeholders.categoryServer(), name: "%mc.latency%", description: m.placeholders.mcLatency() },
+        { category: m.placeholders.categoryServer(), name: "%mc.motd%", description: m.placeholders.mcMotd() },
+        { category: m.placeholders.categoryServer(), name: "%mc.favicon%", description: m.placeholders.mcFavicon() },
+        { category: m.placeholders.categoryServer(), name: "%mc.geyser%", description: m.placeholders.mcGeyser() },
+        { category: m.common.players(), name: "%mc.players.online%", description: m.placeholders.mcPlayersOnline() },
+        { category: m.common.players(), name: "%mc.players.max%", description: m.placeholders.mcPlayersMax() },
+        { category: m.common.players(), name: "%mc.player.list%", description: m.placeholders.mcPlayerList() },
+        { category: m.minecraft.placeholderCategoryQuery(), name: "%mc.map%", description: m.placeholders.mcMap() },
+        { category: m.minecraft.placeholderCategoryQuery(), name: "%mc.gamemode%", description: m.placeholders.mcGamemode() },
+        { category: m.minecraft.placeholderCategoryQuery(), name: "%mc.software%", description: m.placeholders.mcSoftware() },
+        { category: m.minecraft.placeholderCategoryQuery(), name: "%mc.plugins%", description: m.placeholders.mcPlugins() },
+        { category: m.minecraft.placeholderCategoryQuery(), name: "%mc.query%", description: m.placeholders.mcQuery() },
+    ]);
 
-    const watchModeOptions = [
-        { id: "0", name: "Embed (edit in place)", icon: "fa-message" },
-        { id: "1", name: "Channel Topic", icon: "fa-heading" },
-        { id: "2", name: "Both", icon: "fa-layer-group" },
-    ];
+    const watchModeOptions = $derived([
+        { id: "0", name: m.minecraft.watchModeEmbed(), icon: "fa-message" },
+        { id: "1", name: m.placeholders.channelTopic(), icon: "fa-heading" },
+        { id: "2", name: m.common.both(), icon: "fa-layer-group" },
+    ]);
 
     let selectedHistoryServer: string | null = $state(null);
     let historyHours = $state(24);
@@ -134,27 +135,27 @@
     let rconSending = $state(false);
 
     let tabs = $derived.by(() => {
-        const base = [{ id: "servers", label: "Servers", icon: "fa-server" }];
+        const base = [{ id: "servers", label: m.common.servers(), icon: "fa-server" }];
         if (selectedServer) {
             base.push({ id: "manage", label: selectedServer.name, icon: "fa-sliders" });
         }
         base.push(
-            { id: "history", label: "History", icon: "fa-chart-simple" },
-            { id: "console", label: "Console", icon: "fa-terminal" },
-            { id: "add", label: "Add Server", icon: "fa-plus" },
+            { id: "history", label: m.common.history(), icon: "fa-chart-simple" },
+            { id: "console", label: m.minecraft.tabConsole(), icon: "fa-terminal" },
+            { id: "add", label: m.minecraft.addServer(), icon: "fa-plus" },
         );
         return base;
     });
 
     let actionButtons = $derived([
         {
-            label: "Refresh",
+            label: m.common.refresh(),
             icon: "fa-arrows-rotate",
             action: loadAllData,
             loading: loading,
         },
         ...(servers.length > 0 ? [{
-            label: "Query All",
+            label: m.minecraft.queryAll(),
             icon: "fa-satellite-dish",
             action: queryAllStatuses,
             loading: saving,
@@ -192,7 +193,7 @@
             }
         } catch (err) {
             logger.error("Failed to load minecraft data:", err);
-            showMessage("Failed to load data", "error");
+            showMessage(m.common.failedToLoadData(), "error");
         } finally {
             loading = false;
         }
@@ -218,9 +219,9 @@
         saving = true;
         try {
             await Promise.allSettled(servers.map(s => queryServerStatus(s.name)));
-            showMessage(`Queried ${servers.length} server(s)`, "success");
+            showMessage(servers.length === 1 ? m.minecraft.notifyQueriedOne({ count: servers.length }) : m.minecraft.notifyQueriedOther({ count: servers.length }), "success");
         } catch (err) {
-            showMessage("Failed to refresh statuses", "error");
+            showMessage(m.minecraft.notifyRefreshFailed(), "error");
         } finally {
             saving = false;
         }
@@ -229,7 +230,7 @@
     async function addServer() {
         if (!$currentGuild?.id) return;
         if (!addForm.name.trim() || !addForm.address.trim()) {
-            showMessage("Name and address are required", "error");
+            showMessage(m.minecraft.notifyNameAddressRequired(), "error");
             return;
         }
 
@@ -258,13 +259,13 @@
                 });
             }
 
-            showMessage(`Server "${serverName}" added successfully!`, "success");
+            showMessage(m.minecraft.notifyServerAdded({ name: serverName }), "success");
             addForm = { name: "", address: "", port: 25565, serverType: 0, queryPort: 0, watchChannelId: null, watchInterval: 5, watchMode: 0, customEmbedTemplate: "" };
             activeTab = "servers";
             await loadAllData();
         } catch (err) {
             logger.error("Failed to add server:", err);
-            showMessage("Failed to add server. Name may already exist.", "error");
+            showMessage(m.minecraft.notifyAddFailed(), "error");
         } finally {
             saving = false;
         }
@@ -363,7 +364,7 @@
                 });
             }
 
-            showMessage(`Server "${server.name}" updated!`, "success");
+            showMessage(m.minecraft.notifyServerUpdated({ name: server.name }), "success");
             editingServer = null;
             await loadAllData();
             if (selectedServer?.name === server.name) {
@@ -372,7 +373,7 @@
             }
         } catch (err) {
             logger.error("Failed to update server:", err);
-            showMessage("Failed to update server", "error");
+            showMessage(m.minecraft.notifyUpdateFailed(), "error");
         } finally {
             saving = false;
         }
@@ -380,16 +381,16 @@
 
     async function removeServer(name: string) {
         if (!$currentGuild?.id) return;
-        if (!(await requestConfirmation({ message: `Are you sure you want to remove server "${name}"?`, confirmText: "Remove" }))) return;
+        if (!(await requestConfirmation({ message: m.minecraft.confirmRemoveServer({ name }), confirmText: m.common.remove() }))) return;
 
         saving = true;
         try {
             await minecraftApi.removeServer($currentGuild.id, name);
-            showMessage(`Server "${name}" removed`, "success");
+            showMessage(m.minecraft.notifyServerRemoved({ name }), "success");
             await loadAllData();
         } catch (err) {
             logger.error("Failed to remove server:", err);
-            showMessage("Failed to remove server", "error");
+            showMessage(m.minecraft.notifyRemoveFailed(), "error");
         } finally {
             saving = false;
         }
@@ -400,11 +401,11 @@
         saving = true;
         try {
             await minecraftApi.updateServer($currentGuild.id, name, { isDefault: true });
-            showMessage(`"${name}" set as default server`, "success");
+            showMessage(m.minecraft.notifyDefaultSet({ name }), "success");
             await loadAllData();
         } catch (err) {
             logger.error("Failed to set default:", err);
-            showMessage("Failed to set default server", "error");
+            showMessage(m.minecraft.notifyDefaultFailed(), "error");
         } finally {
             saving = false;
         }
@@ -419,7 +420,7 @@
             createCharts();
         } catch (err) {
             logger.error("Failed to load history:", err);
-            showMessage("Failed to load history", "error");
+            showMessage(m.minecraft.notifyHistoryFailed(), "error");
         }
     }
 
@@ -478,7 +479,7 @@
                         ...commonOptions.plugins,
                         tooltip: {
                             ...commonOptions.plugins.tooltip,
-                            callbacks: { label: (item: any) => `Players: ${item.raw}` }
+                            callbacks: { label: (item: any) => m.minecraft.chartPlayersLabel({ count: item.raw }) }
                         }
                     }
                 }
@@ -507,7 +508,7 @@
                         ...commonOptions.plugins,
                         tooltip: {
                             ...commonOptions.plugins.tooltip,
-                            callbacks: { label: (item: any) => `Latency: ${item.raw}ms` }
+                            callbacks: { label: (item: any) => m.minecraft.chartLatencyLabel({ ms: item.raw }) }
                         }
                     }
                 }
@@ -572,29 +573,29 @@
 
     async function generatePluginKey() {
         if (!$currentGuild?.id || !selectedServer) return;
-        if (selectedServer.hasPluginKey && !(await requestConfirmation({ message: "This will replace the existing key. The old key will stop working.", confirmText: "Replace" }))) return;
+        if (selectedServer.hasPluginKey && !(await requestConfirmation({ message: m.minecraft.confirmReplaceKey(), confirmText: m.minecraft.confirmReplaceButton() }))) return;
         try {
             const result = await minecraftApi.generatePluginKey($currentGuild.id, selectedServer.name);
             pluginKey = result.key;
             showPluginKey = true;
             selectedServer.hasPluginKey = true;
-            showMessage("Plugin API key generated. Copy it now, it won't be shown again.", "success");
+            showMessage(m.minecraft.notifyKeyGenerated(), "success");
         } catch {
-            showMessage("Failed to generate key", "error");
+            showMessage(m.minecraft.notifyKeyGenerateFailed(), "error");
         }
     }
 
     async function revokePluginKey() {
         if (!$currentGuild?.id || !selectedServer) return;
-        if (!(await requestConfirmation({ message: "This will revoke the plugin API key. The companion plugin will disconnect.", confirmText: "Revoke" }))) return;
+        if (!(await requestConfirmation({ message: m.minecraft.confirmRevokeKey(), confirmText: m.minecraft.confirmRevokeButton() }))) return;
         try {
             await minecraftApi.revokePluginKey($currentGuild.id, selectedServer.name);
             pluginKey = null;
             showPluginKey = false;
             selectedServer.hasPluginKey = false;
-            showMessage("Plugin API key revoked", "success");
+            showMessage(m.minecraft.notifyKeyRevoked(), "success");
         } catch {
-            showMessage("Failed to revoke key", "error");
+            showMessage(m.minecraft.notifyKeyRevokeFailed(), "error");
         }
     }
 
@@ -605,9 +606,9 @@
             await minecraftApi.sendRconCommand($currentGuild.id, selectedServer.name, `whitelist add ${whitelistAddName.trim()}`);
             whitelistAddName = "";
             await loadWhitelist(selectedServer.name);
-            showMessage("Player added to whitelist", "success");
+            showMessage(m.minecraft.notifyWhitelistAdded(), "success");
         } catch {
-            showMessage("Failed to add player", "error");
+            showMessage(m.minecraft.notifyWhitelistAddFailed(), "error");
         } finally {
             whitelistLoading = false;
         }
@@ -619,9 +620,9 @@
         try {
             await minecraftApi.sendRconCommand($currentGuild.id, selectedServer.name, `whitelist remove ${player}`);
             await loadWhitelist(selectedServer.name);
-            showMessage(`${player} removed from whitelist`, "success");
+            showMessage(m.minecraft.notifyWhitelistRemoved({ player }), "success");
         } catch {
-            showMessage("Failed to remove player", "error");
+            showMessage(m.minecraft.notifyWhitelistRemoveFailed(), "error");
         } finally {
             whitelistLoading = false;
         }
@@ -686,7 +687,7 @@
 
         const rconServerEntry = servers.find(s => s.name === rconServer);
         if (!rconServerEntry?.rconEnabled) {
-            showMessage("RCON is not enabled for this server. Configure it in the edit panel.", "error");
+            showMessage(m.minecraft.notifyRconDisabled(), "error");
             return;
         }
 
@@ -698,7 +699,7 @@
             rconHistory = [...rconHistory, { command: cmd, response: result.response, rawResponse: result.rawResponse, success: result.success, time: new Date() }];
         } catch (err) {
             logger.error("RCON failed:", err);
-            rconHistory = [...rconHistory, { command: cmd, response: "Failed to send command", rawResponse: null, success: false, time: new Date() }];
+            rconHistory = [...rconHistory, { command: cmd, response: m.minecraft.consoleSendFailed(), rawResponse: null, success: false, time: new Date() }];
         } finally {
             rconSending = false;
         }
@@ -721,9 +722,9 @@
     }
 
     function getChannelName(channelId: bigint | null): string {
-        if (!channelId) return "None";
+        if (!channelId) return m.common.none();
         const ch = guildChannels.find(c => c.id === channelId.toString());
-        return ch ? `#${ch.name}` : "Unknown";
+        return ch ? `#${ch.name}` : m.common.unknown();
     }
 
     onDestroy(() => {
@@ -772,12 +773,12 @@
 <DashboardPageLayout
   {actionButtons}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-server"
   statusMessages={statusMessageContent}
-  subtitle="Minecraft server monitoring and status"
+  subtitle={m.features.minecraftDescription()}
   {tabs}
-  title="Minecraft"
+  title={m.features.minecraftName()}
 >
     {#if activeTab === 'servers'}
         <div class="w-full space-y-4" in:fade={{ duration: 200 }}>
@@ -791,49 +792,49 @@
                         <div class="space-y-4">
                             <div class="flex items-center gap-3 mb-4">
                                 <i class="fa-utility-duo fa-regular fa-pen-to-square" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                                <h3 class="text-lg font-bold" style="color: {$colorStore.text}">Editing: {server.name}</h3>
+                                <h3 class="text-lg font-bold" style="color: {$colorStore.text}">{m.minecraft.editTitle({ name: server.name })}</h3>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div>
-                                    <label for="f-+page-address-803" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Address</label>
+                                    <label for="f-+page-address-803" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldAddress()}</label>
                                     <input id="f-+page-address-803" type="text" bind:value={editForm.address}
                                            class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                 </div>
                                 <div>
-                                    <label for="f-+page-port-809" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Port</label>
+                                    <label for="f-+page-port-809" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldPort()}</label>
                                     <input id="f-+page-port-809" type="number" bind:value={editForm.port}
                                            class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                 </div>
                                 <div>
-                                    <label for="f-+page-type-815" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Type</label>
+                                    <label for="f-+page-type-815" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.common.type()}</label>
                                     <DiscordSelector id="f-+page-type-815"
                                         type="custom"
                                         options={serverTypeOptions}
                                         selected={editForm.serverType.toString()}
-                                        placeholder="Select type"
+                                        placeholder={m.minecraft.placeholderType()}
                                         onchange={(detail) => {
                                             editForm.serverType = detail.selected ? parseInt(detail.selected as string) : 0;
                                         }}
                                     />
                                 </div>
                                 <div>
-                                    <label for="f-+page-query-port-0-game-port-827" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Query Port (0 = game port)</label>
+                                    <label for="f-+page-query-port-0-game-port-827" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldQueryPortEdit()}</label>
                                     <input id="f-+page-query-port-0-game-port-827" type="number" bind:value={editForm.queryPort}
                                            class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                 </div>
                                 <div>
-                                    <label for="mc-edit-watch-channel" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Channel</label>
+                                    <label for="mc-edit-watch-channel" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldWatchChannel()}</label>
                                     <div class="min-h-[44px]">
                                         <DiscordSelector
                                           id="mc-edit-watch-channel"
                                           type="channel"
                                           options={guildChannels}
                                           selected={editForm.watchChannelId}
-                                          placeholder="No watch channel"
+                                          placeholder={m.minecraft.placeholderNoWatchChannel()}
                                           onchange={(detail) => {
                                               editForm.watchChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null;
                                           }}
@@ -841,18 +842,18 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <label for="f-+page-watch-interval-minutes-847" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Interval (minutes)</label>
+                                    <label for="f-+page-watch-interval-minutes-847" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldWatchInterval()}</label>
                                     <input id="f-+page-watch-interval-minutes-847" type="number" min="1" max="60" bind:value={editForm.watchInterval}
                                            class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                 </div>
                                 <div>
-                                    <label for="f-+page-watch-mode-853" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Mode</label>
+                                    <label for="f-+page-watch-mode-853" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldWatchMode()}</label>
                                     <DiscordSelector id="f-+page-watch-mode-853"
                                         type="custom"
                                         options={watchModeOptions}
                                         selected={editForm.watchMode.toString()}
-                                        placeholder="Select watch mode"
+                                        placeholder={m.minecraft.placeholderWatchMode()}
                                         onchange={(detail) => {
                                             editForm.watchMode = detail.selected ? parseInt(detail.selected as string) : 0;
                                         }}
@@ -861,46 +862,46 @@
                             </div>
 
                             <div>
-                                <label for="f-+page-custom-watch-embed-867" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Custom Watch Embed</label>
+                                <label for="f-+page-custom-watch-embed-867" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.minecraft.fieldWatchEmbed()}</label>
                                 <FullscreenEmbedBuilder id="f-+page-custom-watch-embed-867"
                                     value={toBuilderValue(editForm.customEmbedTemplate)}
-                                    previewTitle="Server Status Embed"
-                                    previewDescription="Displayed in the watch channel"
+                                    previewTitle={m.minecraft.previewStatusTitle()}
+                                    previewDescription={m.minecraft.previewStatusDescription()}
                                     icon="fa-server"
                                     allowContent={true}
                                     allowMultipleEmbeds={false}
                                     allowComponents={true}
                                     additionalPlaceholders={[
-                                        { category: "Server", name: "%mc.server.name%", description: "Server label" },
-                                        { category: "Server", name: "%mc.server.address%", description: "Server address" },
-                                        { category: "Server", name: "%mc.server.port%", description: "Server port" },
-                                        { category: "Server", name: "%mc.online%", description: "Online/Offline" },
-                                        { category: "Server", name: "%mc.version%", description: "Server version" },
-                                        { category: "Server", name: "%mc.latency%", description: "Ping latency" },
-                                        { category: "Server", name: "%mc.motd%", description: "Message of the Day" },
-                                        { category: "Server", name: "%mc.favicon%", description: "Server icon URL" },
-                                        { category: "Players", name: "%mc.players.online%", description: "Online player count" },
-                                        { category: "Players", name: "%mc.players.max%", description: "Max player count" },
-                                        { category: "Players", name: "%mc.player.list%", description: "List of online players" },
-                                        { category: "Query", name: "%mc.map%", description: "Current map name" },
-                                        { category: "Query", name: "%mc.gamemode%", description: "Game mode" },
-                                        { category: "Query", name: "%mc.software%", description: "Server software" },
-                                        { category: "Query", name: "%mc.plugins%", description: "Plugin list" },
-                                        { category: "Query", name: "%mc.query%", description: "Whether Query protocol was used" },
+                                        { category: m.placeholders.categoryServer(), name: "%mc.server.name%", description: m.placeholders.mcServerName() },
+                                        { category: m.placeholders.categoryServer(), name: "%mc.server.address%", description: m.placeholders.mcServerAddress() },
+                                        { category: m.placeholders.categoryServer(), name: "%mc.server.port%", description: m.placeholders.mcServerPort() },
+                                        { category: m.placeholders.categoryServer(), name: "%mc.online%", description: m.placeholders.mcOnline() },
+                                        { category: m.placeholders.categoryServer(), name: "%mc.version%", description: m.placeholders.mcVersion() },
+                                        { category: m.placeholders.categoryServer(), name: "%mc.latency%", description: m.placeholders.mcLatency() },
+                                        { category: m.placeholders.categoryServer(), name: "%mc.motd%", description: m.placeholders.mcMotd() },
+                                        { category: m.placeholders.categoryServer(), name: "%mc.favicon%", description: m.placeholders.mcFavicon() },
+                                        { category: m.common.players(), name: "%mc.players.online%", description: m.placeholders.mcPlayersOnline() },
+                                        { category: m.common.players(), name: "%mc.players.max%", description: m.placeholders.mcPlayersMax() },
+                                        { category: m.common.players(), name: "%mc.player.list%", description: m.placeholders.mcPlayerList() },
+                                        { category: m.minecraft.placeholderCategoryQuery(), name: "%mc.map%", description: m.placeholders.mcMap() },
+                                        { category: m.minecraft.placeholderCategoryQuery(), name: "%mc.gamemode%", description: m.placeholders.mcGamemode() },
+                                        { category: m.minecraft.placeholderCategoryQuery(), name: "%mc.software%", description: m.placeholders.mcSoftware() },
+                                        { category: m.minecraft.placeholderCategoryQuery(), name: "%mc.plugins%", description: m.placeholders.mcPlugins() },
+                                        { category: m.minecraft.placeholderCategoryQuery(), name: "%mc.query%", description: m.placeholders.mcQuery() },
                                     ]}
                                     guildId={$currentGuild?.id}
                                     user={data.user}
-                                    placeholder="Click to configure watch embed (leave empty for default)"
+                                    placeholder={m.minecraft.placeholderWatchEmbed()}
                                     onchange={(newValue) => { editForm.customEmbedTemplate = serializeMessage(newValue); }}
                                 />
                             </div>
 
                             <div>
-                                <label for="f-+page-server-online-alert-902" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Online Alert</label>
+                                <label for="f-+page-server-online-alert-902" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.minecraft.fieldOnlineAlert()}</label>
                                 <FullscreenEmbedBuilder id="f-+page-server-online-alert-902"
                                     value={toBuilderValue(editForm.customOnlineMessage)}
-                                    previewTitle="Online Alert"
-                                    previewDescription="Sent when the server comes back online"
+                                    previewTitle={m.minecraft.previewOnlineTitle()}
+                                    previewDescription={m.minecraft.previewOnlineDescription()}
                                     icon="fa-circle-check"
                                     allowContent={true}
                                     allowMultipleEmbeds={false}
@@ -908,17 +909,17 @@
                                     additionalPlaceholders={mcPlaceholders}
                                     guildId={$currentGuild?.id}
                                     user={data.user}
-                                    placeholder="Click to configure online alert (leave empty for default)"
+                                    placeholder={m.minecraft.placeholderOnlineAlert()}
                                     onchange={(newValue) => { editForm.customOnlineMessage = serializeMessage(newValue); }}
                                 />
                             </div>
 
                             <div>
-                                <label for="f-+page-server-offline-alert-920" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Offline Alert</label>
+                                <label for="f-+page-server-offline-alert-920" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.minecraft.fieldOfflineAlert()}</label>
                                 <FullscreenEmbedBuilder id="f-+page-server-offline-alert-920"
                                     value={toBuilderValue(editForm.customOfflineMessage)}
-                                    previewTitle="Offline Alert"
-                                    previewDescription="Sent when the server goes offline"
+                                    previewTitle={m.minecraft.previewOfflineTitle()}
+                                    previewDescription={m.minecraft.previewOfflineDescription()}
                                     icon="fa-circle-exclamation"
                                     allowContent={true}
                                     allowMultipleEmbeds={false}
@@ -926,7 +927,7 @@
                                     additionalPlaceholders={mcPlaceholders}
                                     guildId={$currentGuild?.id}
                                     user={data.user}
-                                    placeholder="Click to configure offline alert (leave empty for default)"
+                                    placeholder={m.minecraft.placeholderOfflineAlert()}
                                     onchange={(newValue) => { editForm.customOfflineMessage = serializeMessage(newValue); }}
                                 />
                             </div>
@@ -934,15 +935,15 @@
                             <div class="rounded-xl border p-4 mt-2" style="border-color: {$colorStore.primary}20; background: {$colorStore.primary}05;">
                                 <div class="flex items-center gap-2 mb-3">
                                     <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 14px;"></i>
-                                    <span class="text-sm font-medium" style="color: {$colorStore.text}">RCON Settings</span>
+                                    <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.minecraft.rconSettings()}</span>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div class="flex items-center gap-3">
-                                        <label for="f-+page-enabled-944" class="text-sm" style="color: {$colorStore.text}">Enabled</label>
+                                        <label for="f-+page-enabled-944" class="text-sm" style="color: {$colorStore.text}">{m.common.enabled()}</label>
                                         <button id="f-+page-enabled-944"
                                           class="w-10 h-6 rounded-full transition-all relative"
                                           style="background: {editForm.rconEnabled ? $colorStore.primary : $colorStore.primary + '30'};"
-                                          aria-label="Toggle RCON"
+                                          aria-label={m.minecraft.ariaToggleRcon()}
                                           aria-pressed={editForm.rconEnabled}
                                           onclick={() => { editForm.rconEnabled = !editForm.rconEnabled; }}
                                         >
@@ -951,15 +952,15 @@
                                         </button>
                                     </div>
                                     <div>
-                                        <label for="f-+page-rcon-port-957" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Port</label>
+                                        <label for="f-+page-rcon-port-957" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.rconPort()}</label>
                                         <input id="f-+page-rcon-port-957" type="number" bind:value={editForm.rconPort}
                                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                     </div>
                                     <div>
-                                        <label for="f-+page-rcon-password-963" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Password</label>
+                                        <label for="f-+page-rcon-password-963" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.rconPassword()}</label>
                                         <input id="f-+page-rcon-password-963" type="password" bind:value={editForm.rconPassword}
-                                               placeholder={server.hasRconPassword ? "••••••• (unchanged)" : "Enter password"}
+                                               placeholder={server.hasRconPassword ? m.minecraft.passwordUnchanged() : m.minecraft.passwordPlaceholder()}
                                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                     </div>
@@ -974,7 +975,7 @@
                                   disabled={saving}
                                 >
                                     <i class="fa-solid fa-floppy-disk" style="font-size: 14px;"></i>
-                                    {saving ? "Saving..." : "Save"}
+                                    {saving ? m.common.saving() : m.common.save()}
                                 </button>
                                 <button
                                   class="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all hover:scale-[1.02]"
@@ -982,7 +983,7 @@
                                   onclick={cancelEditing}
                                 >
                                     <i class="fa-solid fa-xmark" style="font-size: 14px;"></i>
-                                    Cancel
+                                    {m.common.cancel()}
                                 </button>
                             </div>
                         </div>
@@ -1001,7 +1002,7 @@
                                         <h3 class="text-lg font-bold" style="color: {$colorStore.text}">{server.name}</h3>
                                         {#if server.isDefault}
                                             <span class="px-2 py-0.5 rounded-full text-xs font-medium"
-                                                  style="background: {$colorStore.primary}20; color: {$colorStore.primary};">Default</span>
+                                                  style="background: {$colorStore.primary}20; color: {$colorStore.primary};">{m.common.default()}</span>
                                         {/if}
                                         <span class="px-2 py-0.5 rounded-full text-xs font-medium"
                                               style="background: {$colorStore.primary}10; color: {$colorStore.muted};">{getServerTypeLabel(server.serverType)}</span>
@@ -1009,11 +1010,11 @@
                                             {@const status = serverStatuses.get(server.name)!}
                                             {#if status.isOnline}
                                                 <span class="px-2 py-0.5 rounded-full text-xs font-medium" style="background: #10b98120; color: #10b981; border: 1px solid #10b98130;">
-                                                    {status.playersOnline}/{status.playersMax} online
+                                                    {m.minecraft.serversPlayersOnline({ online: status.playersOnline, max: status.playersMax })}
                                                 </span>
                                             {:else}
                                                 <span class="px-2 py-0.5 rounded-full text-xs font-medium" style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;">
-                                                    Offline
+                                                    {m.common.offline()}
                                                 </span>
                                             {/if}
                                         {/if}
@@ -1021,10 +1022,10 @@
                                     <p class="text-sm" style="color: {$colorStore.muted}">
                                         {server.address}:{server.port}
                                         {#if server.watchChannelId}
-                                            &middot; Watching in {getChannelName(server.watchChannelId)} every {server.watchInterval}m
+                                            &middot; {m.minecraft.serversWatching({ channel: getChannelName(server.watchChannelId), minutes: server.watchInterval })}
                                         {/if}
                                         {#if server.rconEnabled}
-                                            &middot; RCON enabled
+                                            &middot; {m.minecraft.serversRconEnabled()}
                                         {/if}
                                     </p>
                                 </div>
@@ -1036,22 +1037,22 @@
                                 {#if status.isOnline}
                                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                                         <div class="p-2.5 rounded-lg" style="background: {$colorStore.primary}08;">
-                                            <div class="text-xs" style="color: {$colorStore.muted}">Version</div>
+                                            <div class="text-xs" style="color: {$colorStore.muted}">{m.minecraft.statusVersion()}</div>
                                             <div class="text-sm font-medium truncate" style="color: {$colorStore.text}">{status.version}</div>
                                         </div>
                                         <div class="p-2.5 rounded-lg" style="background: {$colorStore.primary}08;">
-                                            <div class="text-xs" style="color: {$colorStore.muted}">Latency</div>
+                                            <div class="text-xs" style="color: {$colorStore.muted}">{m.common.latency()}</div>
                                             <div class="text-sm font-medium" style="color: {$colorStore.text}">{status.latency}ms</div>
                                         </div>
                                         {#if status.software}
                                             <div class="p-2.5 rounded-lg" style="background: {$colorStore.primary}08;">
-                                                <div class="text-xs" style="color: {$colorStore.muted}">Software</div>
+                                                <div class="text-xs" style="color: {$colorStore.muted}">{m.minecraft.statusSoftware()}</div>
                                                 <div class="text-sm font-medium truncate" style="color: {$colorStore.text}">{status.software}</div>
                                             </div>
                                         {/if}
                                         {#if status.motd}
                                             <div class="p-2.5 rounded-lg" style="background: {$colorStore.primary}08;">
-                                                <div class="text-xs" style="color: {$colorStore.muted}">MOTD</div>
+                                                <div class="text-xs" style="color: {$colorStore.muted}">{m.minecraft.statusMotd()}</div>
                                                 <div class="text-sm font-medium truncate" style="color: {$colorStore.text}">{status.motd}</div>
                                             </div>
                                         {/if}
@@ -1069,7 +1070,7 @@
                                                 </div>
                                             {/each}
                                             {#if status.playerList.length > 10}
-                                                <span class="px-2 py-1 text-xs" style="color: {$colorStore.muted}">+{status.playerList.length - 10} more</span>
+                                                <span class="px-2 py-1 text-xs" style="color: {$colorStore.muted}">{m.common.moreCount({ count: status.playerList.length - 10 })}</span>
                                             {/if}
                                         </div>
                                     {/if}
@@ -1081,7 +1082,7 @@
                                     style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}25;"
                                     onclick={() => openServerDetail(server)}>
                                 <i class="fa-solid fa-sliders" style="font-size: 14px;"></i>
-                                Manage Server
+                                {m.common.manageServer()}
                             </button>
                         </div>
                     {/if}
@@ -1091,15 +1092,15 @@
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                             border-color: {$colorStore.primary}30;">
                     <i class="fa-utility-duo fa-regular fa-server" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-                    <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">No servers registered</p>
-                    <p class="text-sm mt-1" style="color: {$colorStore.muted}">Add a Minecraft server to start monitoring</p>
+                    <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">{m.minecraft.serversEmptyTitle()}</p>
+                    <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.minecraft.serversEmptyHint()}</p>
                     <button
                       class="mt-4 flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] mx-auto"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                       onclick={() => { activeTab = 'add'; }}
                     >
                         <i class="fa-solid fa-plus" style="font-size: 14px;"></i>
-                        Add Server
+                        {m.minecraft.addServer()}
                     </button>
                 </div>
             {/each}
@@ -1113,7 +1114,7 @@
                 <div class="flex items-center gap-3">
                     <button class="p-2 rounded-lg transition-all hover:scale-110 shrink-0"
                             style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
-                            aria-label="Back to servers list"
+                            aria-label={m.minecraft.ariaBackToServers()}
                             onclick={() => { activeTab = 'servers'; }}>
                         <i class="fa-solid fa-arrow-left" style="font-size: 14px;"></i>
                     </button>
@@ -1130,19 +1131,19 @@
                     <button class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover:scale-[1.02] text-sm {selectedServer.isDefault ? 'col-span-2 md:col-span-1' : ''}"
                             style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                             onclick={() => queryServerStatus(selectedServer!.name)}>
-                        <i class="fa-solid fa-satellite-dish" style="font-size: 13px;"></i> Refresh
+                        <i class="fa-solid fa-satellite-dish" style="font-size: 13px;"></i> {m.common.refresh()}
                     </button>
                     {#if !selectedServer.isDefault}
                         <button class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover:scale-[1.02] text-sm"
                                 style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                                 onclick={() => setDefault(selectedServer!.name)}>
-                            <i class="fa-solid fa-star" style="font-size: 13px;"></i> Default
+                            <i class="fa-solid fa-star" style="font-size: 13px;"></i> {m.common.default()}
                         </button>
                     {/if}
                     <button class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover:scale-[1.02] text-sm col-span-2 md:col-span-1"
                             style="background: #ef444410; color: #ef4444;"
                             onclick={() => { removeServer(selectedServer!.name); activeTab = 'servers'; selectedServer = null; }}>
-                        <i class="fa-solid fa-trash" style="font-size: 13px;"></i> Remove
+                        <i class="fa-solid fa-trash" style="font-size: 13px;"></i> {m.common.remove()}
                     </button>
                 </div>
             </div>
@@ -1155,43 +1156,43 @@
                     {#if status.isOnline}
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div class="p-3 rounded-xl" style="background: {$colorStore.primary}10;">
-                                <div class="text-xs" style="color: {$colorStore.muted}">Status</div>
-                                <div class="font-semibold" style="color: #10b981;">Online</div>
+                                <div class="text-xs" style="color: {$colorStore.muted}">{m.common.status()}</div>
+                                <div class="font-semibold" style="color: #10b981;">{m.common.online()}</div>
                             </div>
                             <div class="p-3 rounded-xl" style="background: {$colorStore.primary}10;">
-                                <div class="text-xs" style="color: {$colorStore.muted}">Players</div>
+                                <div class="text-xs" style="color: {$colorStore.muted}">{m.common.players()}</div>
                                 <div class="font-semibold" style="color: {$colorStore.text}">{status.playersOnline}/{status.playersMax}</div>
                             </div>
                             <div class="p-3 rounded-xl" style="background: {$colorStore.primary}10;">
-                                <div class="text-xs" style="color: {$colorStore.muted}">Version</div>
+                                <div class="text-xs" style="color: {$colorStore.muted}">{m.minecraft.statusVersion()}</div>
                                 <div class="font-semibold" style="color: {$colorStore.text}">{status.version}</div>
                             </div>
                             <div class="p-3 rounded-xl" style="background: {$colorStore.primary}10;">
-                                <div class="text-xs" style="color: {$colorStore.muted}">Latency</div>
+                                <div class="text-xs" style="color: {$colorStore.muted}">{m.common.latency()}</div>
                                 <div class="font-semibold" style="color: {$colorStore.text}">{status.latency}ms</div>
                             </div>
                             {#if status.motd}
                                 <div class="p-3 rounded-xl col-span-2" style="background: {$colorStore.primary}10;">
-                                    <div class="text-xs" style="color: {$colorStore.muted}">MOTD</div>
+                                    <div class="text-xs" style="color: {$colorStore.muted}">{m.minecraft.statusMotd()}</div>
                                     <div class="text-sm" style="color: {$colorStore.text}">{status.motd}</div>
                                 </div>
                             {/if}
                             {#if status.software}
                                 <div class="p-3 rounded-xl" style="background: {$colorStore.primary}10;">
-                                    <div class="text-xs" style="color: {$colorStore.muted}">Software</div>
+                                    <div class="text-xs" style="color: {$colorStore.muted}">{m.minecraft.statusSoftware()}</div>
                                     <div class="text-sm" style="color: {$colorStore.text}">{status.software}</div>
                                 </div>
                             {/if}
                             {#if status.map}
                                 <div class="p-3 rounded-xl" style="background: {$colorStore.primary}10;">
-                                    <div class="text-xs" style="color: {$colorStore.muted}">Map</div>
+                                    <div class="text-xs" style="color: {$colorStore.muted}">{m.minecraft.statusMap()}</div>
                                     <div class="text-sm" style="color: {$colorStore.text}">{status.map}</div>
                                 </div>
                             {/if}
                         </div>
                     {:else}
                         <div class="p-4 rounded-xl text-center" style="background: #ef444410;">
-                            <span class="font-semibold" style="color: #ef4444;">Server is offline or unreachable</span>
+                            <span class="font-semibold" style="color: #ef4444;">{m.minecraft.statusUnreachable()}</span>
                         </div>
                     {/if}
                 </div>
@@ -1204,7 +1205,7 @@
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-2 mb-4">
                         <i class="fa-solid fa-users" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                        <h3 class="font-semibold" style="color: {$colorStore.text}">Online Players ({status.playerList.length})</h3>
+                        <h3 class="font-semibold" style="color: {$colorStore.text}">{m.minecraft.manageOnlinePlayers({ count: status.playerList.length })}</h3>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         {#each status.playerList as player}
@@ -1216,7 +1217,7 @@
                                      onerror={(e) => { (e.target as HTMLImageElement).src = `https://minotar.net/avatar/MHF_Steve/48`; }} />
                                 <div class="flex-1 min-w-0">
                                     <span class="text-sm font-medium truncate block" style="color: {$colorStore.text}">{player}</span>
-                                    <span class="text-xs" style="color: {$colorStore.muted}">Online</span>
+                                    <span class="text-xs" style="color: {$colorStore.muted}">{m.common.online()}</span>
                                 </div>
                                 {#if selectedServer?.rconEnabled}
                                     <div class="absolute right-2 top-2 flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
@@ -1224,14 +1225,14 @@
                                             <button class="p-1.5 rounded-lg text-xs"
                                                     style="background: #ef444420; color: #ef4444;"
                                                     onclick={() => whitelistRemove(player)}
-                                                    title="Remove from whitelist">
+                                                    title={m.minecraft.whitelistRemove()}>
                                                 <i class="fa-solid fa-user-minus" style="font-size: 11px;"></i>
                                             </button>
                                         {:else}
                                             <button class="p-1.5 rounded-lg text-xs"
                                                     style="background: #10b98120; color: #10b981;"
                                                     onclick={() => { whitelistAddName = player; whitelistAdd(); }}
-                                                    title="Add to whitelist">
+                                                    title={m.minecraft.whitelistAdd()}>
                                                 <i class="fa-solid fa-user-plus" style="font-size: 11px;"></i>
                                             </button>
                                         {/if}
@@ -1251,21 +1252,21 @@
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-list-check" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                            <h3 class="font-semibold" style="color: {$colorStore.text}">Whitelist</h3>
+                            <h3 class="font-semibold" style="color: {$colorStore.text}">{m.common.whitelist()}</h3>
                         </div>
                         <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
                                 style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                                 onclick={() => loadWhitelist(selectedServer!.name)}
                                 disabled={whitelistLoading}>
                             <i class="fa-solid fa-arrows-rotate {whitelistLoading ? 'fa-spin' : ''}" style="font-size: 12px;"></i>
-                            Refresh
+                            {m.common.refresh()}
                         </button>
                     </div>
 
                     <!-- Add player -->
                     <div class="flex gap-2 mb-4">
                         <input type="text" bind:value={whitelistAddName}
-                               placeholder="Player name..."
+                               placeholder={m.minecraft.whitelistPlayerPlaceholder()}
                                class="flex-1 p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;"
                                onkeydown={(e) => { if (e.key === 'Enter') whitelistAdd(); }} />
@@ -1273,7 +1274,7 @@
                                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                                 onclick={whitelistAdd}
                                 disabled={whitelistLoading || !whitelistAddName.trim()}>
-                            <i class="fa-solid fa-plus" style="font-size: 13px;"></i> Add
+                            <i class="fa-solid fa-plus" style="font-size: 13px;"></i> {m.common.add()}
                         </button>
                     </div>
 
@@ -1289,19 +1290,19 @@
                                          onerror={(e) => { (e.target as HTMLImageElement).src = `https://minotar.net/avatar/MHF_Steve/48`; }} />
                                     <div class="flex-1 min-w-0">
                                         <span class="text-sm font-medium truncate block" style="color: {$colorStore.text}">{player}</span>
-                                        <span class="text-xs" style="color: {$colorStore.muted}">Whitelisted</span>
+                                        <span class="text-xs" style="color: {$colorStore.muted}">{m.minecraft.whitelistBadge()}</span>
                                     </div>
                                     <button class="absolute right-2 top-2 p-1.5 rounded-lg md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                                             style="background: #ef444420; color: #ef4444;"
                                             onclick={() => whitelistRemove(player)}
-                                            title="Remove from whitelist">
+                                            title={m.minecraft.whitelistRemove()}>
                                         <i class="fa-solid fa-user-minus" style="font-size: 11px;"></i>
                                     </button>
                                 </div>
                             {/each}
                         </div>
                     {:else if !whitelistLoading}
-                        <p class="text-sm text-center py-4" style="color: {$colorStore.muted}">No players on whitelist, or whitelist is disabled on the server.</p>
+                        <p class="text-sm text-center py-4" style="color: {$colorStore.muted}">{m.minecraft.whitelistEmpty()}</p>
                     {/if}
                 </div>
             {/if}
@@ -1313,7 +1314,7 @@
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-2 mb-4">
                         <i class="fa-solid fa-puzzle-piece" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                        <h3 class="font-semibold" style="color: {$colorStore.text}">Plugins ({status.plugins.length})</h3>
+                        <h3 class="font-semibold" style="color: {$colorStore.text}">{m.minecraft.managePlugins({ count: status.plugins.length })}</h3>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         {#each status.plugins as plugin}
@@ -1332,80 +1333,80 @@
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-2 mb-4">
                     <i class="fa-solid fa-gear" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                    <h3 class="font-semibold" style="color: {$colorStore.text}">Configuration</h3>
+                    <h3 class="font-semibold" style="color: {$colorStore.text}">{m.common.configuration()}</h3>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
-                        <label for="f-+page-address-1343" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Address</label>
+                        <label for="f-+page-address-1343" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldAddress()}</label>
                         <input id="f-+page-address-1343" type="text" bind:value={editForm.address}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
-                        <label for="f-+page-port-1349" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Port</label>
+                        <label for="f-+page-port-1349" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldPort()}</label>
                         <input id="f-+page-port-1349" type="number" bind:value={editForm.port}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
-                        <label for="f-+page-type-1355" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Type</label>
+                        <label for="f-+page-type-1355" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.common.type()}</label>
                         <DiscordSelector id="f-+page-type-1355" type="custom" options={serverTypeOptions}
-                            selected={editForm.serverType.toString()} placeholder="Select type"
+                            selected={editForm.serverType.toString()} placeholder={m.minecraft.placeholderType()}
                             onchange={(detail) => { editForm.serverType = detail.selected ? parseInt(detail.selected as string) : 0; }} />
                     </div>
                     <div>
-                        <label for="f-+page-query-port-0-game-port-1361" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Query Port (0 = game port)</label>
+                        <label for="f-+page-query-port-0-game-port-1361" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldQueryPortEdit()}</label>
                         <input id="f-+page-query-port-0-game-port-1361" type="number" bind:value={editForm.queryPort}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
-                        <label for="f-+page-watch-channel-1367" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Channel</label>
+                        <label for="f-+page-watch-channel-1367" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldWatchChannel()}</label>
                         <DiscordSelector id="f-+page-watch-channel-1367" type="channel" options={guildChannels}
-                            selected={editForm.watchChannelId} placeholder="No watch channel"
+                            selected={editForm.watchChannelId} placeholder={m.minecraft.placeholderNoWatchChannel()}
                             onchange={(detail) => { editForm.watchChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
                     </div>
                     <div>
-                        <label for="f-+page-watch-interval-minutes-1373" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Interval (minutes)</label>
+                        <label for="f-+page-watch-interval-minutes-1373" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldWatchInterval()}</label>
                         <input id="f-+page-watch-interval-minutes-1373" type="number" min="1" max="60" bind:value={editForm.watchInterval}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
-                        <label for="f-+page-watch-mode-1379" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Mode</label>
+                        <label for="f-+page-watch-mode-1379" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldWatchMode()}</label>
                         <DiscordSelector id="f-+page-watch-mode-1379" type="custom" options={watchModeOptions}
-                            selected={editForm.watchMode.toString()} placeholder="Select watch mode"
+                            selected={editForm.watchMode.toString()} placeholder={m.minecraft.placeholderWatchMode()}
                             onchange={(detail) => { editForm.watchMode = detail.selected ? parseInt(detail.selected as string) : 0; }} />
                     </div>
                 </div>
 
                 <!-- Event Channels -->
                 <div class="mt-6">
-                    <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.text}">Event Channels (leave empty to use Watch Channel)</h4>
+                    <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.text}">{m.minecraft.eventChannelsTitle()}</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="f-+page-chat-bridge-1391" class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Chat Bridge</label>
+                            <label for="f-+page-chat-bridge-1391" class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">{m.minecraft.eventChatBridge()}</label>
                             <DiscordSelector id="f-+page-chat-bridge-1391" type="channel" options={guildChannels}
-                                selected={editForm.chatChannelId} placeholder="Use watch channel"
+                                selected={editForm.chatChannelId} placeholder={m.minecraft.placeholderUseWatchChannel()}
                                 onchange={(detail) => { editForm.chatChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
                         </div>
                         <div>
-                            <label for="f-+page-join-leave-1397" class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Join/Leave</label>
+                            <label for="f-+page-join-leave-1397" class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">{m.minecraft.eventJoinLeave()}</label>
                             <DiscordSelector id="f-+page-join-leave-1397" type="channel" options={guildChannels}
-                                selected={editForm.joinLeaveChannelId} placeholder="Use watch channel"
+                                selected={editForm.joinLeaveChannelId} placeholder={m.minecraft.placeholderUseWatchChannel()}
                                 onchange={(detail) => { editForm.joinLeaveChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
                         </div>
                         <div>
-                            <label for="f-+page-deaths-1403" class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Deaths</label>
+                            <label for="f-+page-deaths-1403" class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">{m.minecraft.eventDeaths()}</label>
                             <DiscordSelector id="f-+page-deaths-1403" type="channel" options={guildChannels}
-                                selected={editForm.deathChannelId} placeholder="Use watch channel"
+                                selected={editForm.deathChannelId} placeholder={m.minecraft.placeholderUseWatchChannel()}
                                 onchange={(detail) => { editForm.deathChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
                         </div>
                         <div>
-                            <label for="f-+page-advancements-1409" class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Advancements</label>
+                            <label for="f-+page-advancements-1409" class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">{m.minecraft.eventAdvancements()}</label>
                             <DiscordSelector id="f-+page-advancements-1409" type="channel" options={guildChannels}
-                                selected={editForm.advancementChannelId} placeholder="Use watch channel"
+                                selected={editForm.advancementChannelId} placeholder={m.minecraft.placeholderUseWatchChannel()}
                                 onchange={(detail) => { editForm.advancementChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
                         </div>
                     </div>
@@ -1414,96 +1415,96 @@
                 <!-- Embeds -->
                 <div class="mt-6 space-y-4">
                     <div>
-                        <label for="f-+page-custom-watch-embed-1420" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Custom Watch Embed</label>
+                        <label for="f-+page-custom-watch-embed-1420" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.minecraft.fieldWatchEmbed()}</label>
                         <FullscreenEmbedBuilder id="f-+page-custom-watch-embed-1420" value={toBuilderValue(editForm.customEmbedTemplate)}
-                            previewTitle="Server Status Embed" previewDescription="Displayed in the watch channel" icon="fa-server"
+                            previewTitle={m.minecraft.previewStatusTitle()} previewDescription={m.minecraft.previewStatusDescription()} icon="fa-server"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
-                            placeholder="Click to configure watch embed (leave empty for default)"
+                            placeholder={m.minecraft.placeholderWatchEmbed()}
                             onchange={(v) => { editForm.customEmbedTemplate = serializeMessage(v); }} />
                     </div>
                     <div>
-                        <label for="f-+page-server-online-alert-1429" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Online Alert</label>
+                        <label for="f-+page-server-online-alert-1429" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.minecraft.fieldOnlineAlert()}</label>
                         <FullscreenEmbedBuilder id="f-+page-server-online-alert-1429" value={toBuilderValue(editForm.customOnlineMessage)}
-                            previewTitle="Online Alert" previewDescription="Sent when the server comes back online" icon="fa-circle-check"
+                            previewTitle={m.minecraft.previewOnlineTitle()} previewDescription={m.minecraft.previewOnlineDescription()} icon="fa-circle-check"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
-                            placeholder="Click to configure online alert (leave empty for default)"
+                            placeholder={m.minecraft.placeholderOnlineAlert()}
                             onchange={(v) => { editForm.customOnlineMessage = serializeMessage(v); }} />
                     </div>
                     <div>
-                        <label for="f-+page-server-offline-alert-1438" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Offline Alert</label>
+                        <label for="f-+page-server-offline-alert-1438" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.minecraft.fieldOfflineAlert()}</label>
                         <FullscreenEmbedBuilder id="f-+page-server-offline-alert-1438" value={toBuilderValue(editForm.customOfflineMessage)}
-                            previewTitle="Offline Alert" previewDescription="Sent when the server goes offline" icon="fa-circle-exclamation"
+                            previewTitle={m.minecraft.previewOfflineTitle()} previewDescription={m.minecraft.previewOfflineDescription()} icon="fa-circle-exclamation"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
-                            placeholder="Click to configure offline alert (leave empty for default)"
+                            placeholder={m.minecraft.placeholderOfflineAlert()}
                             onchange={(v) => { editForm.customOfflineMessage = serializeMessage(v); }} />
                     </div>
                 </div>
 
                 <!-- Event Templates -->
                 <div class="mt-6 space-y-4">
-                    <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Bridge Event Templates</h4>
+                    <h4 class="text-sm font-medium" style="color: {$colorStore.text}">{m.minecraft.templatesTitle()}</h4>
                     <p class="text-xs" style="color: {$colorStore.muted}">
-                        Customize how events from the companion plugin appear in Discord and in-game. Leave empty for defaults.
-                        Placeholders: %mc.player%, %mc.avatar%, %mc.uuid%, %mc.message%, %mc.death.message%, %mc.advancement%
+                        {m.minecraft.templatesDescription()}
+                        {m.minecraft.placeholdersLabel()} %mc.player%, %mc.avatar%, %mc.uuid%, %mc.message%, %mc.death.message%, %mc.advancement%
                     </p>
 
                     <div>
-                        <label for="f-+page-player-join-discord-1457" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Player Join (Discord)</label>
+                        <label for="f-+page-player-join-discord-1457" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">{m.minecraft.templateJoin()}</label>
                         <FullscreenEmbedBuilder id="f-+page-player-join-discord-1457" value={toBuilderValue(editForm.eventTemplates.joinDiscord)}
-                            previewTitle="Join Event" previewDescription="When a player joins" icon="fa-sign-in"
+                            previewTitle={m.minecraft.previewJoinTitle()} previewDescription={m.minecraft.previewJoinDescription()} icon="fa-sign-in"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
-                            placeholder="Default: green embed with player name"
+                            placeholder={m.minecraft.placeholderTemplateJoin()}
                             onchange={(v) => { editForm.eventTemplates.joinDiscord = serializeMessage(v); }} />
                     </div>
                     <div>
-                        <label for="f-+page-player-leave-discord-1466" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Player Leave (Discord)</label>
+                        <label for="f-+page-player-leave-discord-1466" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">{m.minecraft.templateLeave()}</label>
                         <FullscreenEmbedBuilder id="f-+page-player-leave-discord-1466" value={toBuilderValue(editForm.eventTemplates.leaveDiscord)}
-                            previewTitle="Leave Event" previewDescription="When a player leaves" icon="fa-sign-out"
+                            previewTitle={m.minecraft.previewLeaveTitle()} previewDescription={m.minecraft.previewLeaveDescription()} icon="fa-sign-out"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
-                            placeholder="Default: red embed with player name"
+                            placeholder={m.minecraft.placeholderTemplateLeave()}
                             onchange={(v) => { editForm.eventTemplates.leaveDiscord = serializeMessage(v); }} />
                     </div>
                     <div>
-                        <label for="f-+page-chat-message-discord-1475" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Chat Message (Discord)</label>
+                        <label for="f-+page-chat-message-discord-1475" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">{m.minecraft.templateChatDiscord()}</label>
                         <FullscreenEmbedBuilder id="f-+page-chat-message-discord-1475" value={toBuilderValue(editForm.eventTemplates.chatDiscord)}
-                            previewTitle="Chat Relay" previewDescription="MC chat relayed to Discord" icon="fa-comment"
+                            previewTitle={m.minecraft.previewChatTitle()} previewDescription={m.minecraft.previewChatDescription()} icon="fa-comment"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
-                            additionalPlaceholders={[...mcPlaceholders, { category: "Chat", name: "%mc.message%", description: "Chat message content" }]}
+                            additionalPlaceholders={[...mcPlaceholders, { category: m.minecraft.placeholderCategoryChat(), name: "%mc.message%", description: m.placeholders.mcMessage() }]}
                             guildId={$currentGuild?.id} user={data.user}
-                            placeholder="Default: **player**: message"
+                            placeholder={m.minecraft.placeholderTemplateChat()}
                             onchange={(v) => { editForm.eventTemplates.chatDiscord = serializeMessage(v); }} />
                     </div>
                     <div>
-                        <label for="f-+page-chat-from-discord-in-game-form-1485" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Chat from Discord (In-game format)</label>
+                        <label for="f-+page-chat-from-discord-in-game-form-1485" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">{m.minecraft.templateChatIngame()}</label>
                         <input id="f-+page-chat-from-discord-in-game-form-1485" type="text" bind:value={editForm.eventTemplates.chatIngame}
-                               placeholder="Default: [Discord] %user%: %message%  |  Use §-codes for MC colors"
+                               placeholder={m.minecraft.placeholderTemplateIngame()}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
-                        <p class="text-xs mt-1" style="color: {$colorStore.muted}">Placeholders: %user%, %message%, %channel%</p>
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.minecraft.placeholdersLabel()} %user%, %message%, %channel%</p>
                     </div>
                     <div>
-                        <label for="f-+page-death-message-discord-1493" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Death Message (Discord)</label>
+                        <label for="f-+page-death-message-discord-1493" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">{m.minecraft.templateDeath()}</label>
                         <FullscreenEmbedBuilder id="f-+page-death-message-discord-1493" value={toBuilderValue(editForm.eventTemplates.deathDiscord)}
-                            previewTitle="Death Event" previewDescription="When a player dies" icon="fa-skull"
+                            previewTitle={m.minecraft.previewDeathTitle()} previewDescription={m.minecraft.previewDeathDescription()} icon="fa-skull"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
-                            additionalPlaceholders={[...mcPlaceholders, { category: "Death", name: "%mc.death.message%", description: "Full death message" }]}
+                            additionalPlaceholders={[...mcPlaceholders, { category: m.minecraft.placeholderCategoryDeath(), name: "%mc.death.message%", description: m.placeholders.mcDeathMessage() }]}
                             guildId={$currentGuild?.id} user={data.user}
-                            placeholder="Default: gray embed with skull emoji"
+                            placeholder={m.minecraft.placeholderTemplateDeath()}
                             onchange={(v) => { editForm.eventTemplates.deathDiscord = serializeMessage(v); }} />
                     </div>
                     <div>
-                        <label for="f-+page-advancement-discord-1503" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Advancement (Discord)</label>
+                        <label for="f-+page-advancement-discord-1503" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">{m.minecraft.templateAdvancement()}</label>
                         <FullscreenEmbedBuilder id="f-+page-advancement-discord-1503" value={toBuilderValue(editForm.eventTemplates.advancementDiscord)}
-                            previewTitle="Advancement" previewDescription="When a player earns an advancement" icon="fa-trophy"
+                            previewTitle={m.minecraft.previewAdvancementTitle()} previewDescription={m.minecraft.previewAdvancementDescription()} icon="fa-trophy"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
-                            additionalPlaceholders={[...mcPlaceholders, { category: "Advancement", name: "%mc.advancement%", description: "Advancement title" }]}
+                            additionalPlaceholders={[...mcPlaceholders, { category: m.minecraft.previewAdvancementTitle(), name: "%mc.advancement%", description: m.placeholders.mcAdvancement() }]}
                             guildId={$currentGuild?.id} user={data.user}
-                            placeholder="Default: green embed with trophy emoji"
+                            placeholder={m.minecraft.placeholderTemplateAdvancement()}
                             onchange={(v) => { editForm.eventTemplates.advancementDiscord = serializeMessage(v); }} />
                     </div>
                 </div>
@@ -1512,14 +1513,14 @@
                 <div class="mt-6 rounded-xl border p-4" style="border-color: {$colorStore.primary}20; background: {$colorStore.primary}05;">
                     <div class="flex items-center gap-2 mb-3">
                         <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 14px;"></i>
-                        <span class="text-sm font-medium" style="color: {$colorStore.text}">RCON Settings</span>
+                        <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.minecraft.rconSettings()}</span>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="flex items-center gap-3">
-                            <label for="f-+page-enabled-1522" class="text-sm" style="color: {$colorStore.text}">Enabled</label>
+                            <label for="f-+page-enabled-1522" class="text-sm" style="color: {$colorStore.text}">{m.common.enabled()}</label>
                             <button id="f-+page-enabled-1522" class="w-10 h-6 rounded-full transition-all relative"
                                     style="background: {editForm.rconEnabled ? $colorStore.primary : $colorStore.primary + '30'};"
-                                    aria-label="Toggle RCON"
+                                    aria-label={m.minecraft.ariaToggleRcon()}
                                     aria-pressed={editForm.rconEnabled}
                                     onclick={() => { editForm.rconEnabled = !editForm.rconEnabled; }}>
                                 <div class="w-4 h-4 bg-white rounded-full absolute top-1 transition-all"
@@ -1527,15 +1528,15 @@
                             </button>
                         </div>
                         <div>
-                            <label for="f-+page-rcon-port-1533" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Port</label>
+                            <label for="f-+page-rcon-port-1533" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.rconPort()}</label>
                             <input id="f-+page-rcon-port-1533" type="number" bind:value={editForm.rconPort}
                                    class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                         </div>
                         <div>
-                            <label for="f-+page-rcon-password-1539" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Password</label>
+                            <label for="f-+page-rcon-password-1539" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.rconPassword()}</label>
                             <input id="f-+page-rcon-password-1539" type="password" bind:value={editForm.rconPassword}
-                                   placeholder={selectedServer.hasRconPassword ? "••••••• (unchanged)" : "Enter password"}
+                                   placeholder={selectedServer.hasRconPassword ? m.minecraft.passwordUnchanged() : m.minecraft.passwordPlaceholder()}
                                    class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                         </div>
@@ -1546,23 +1547,23 @@
                 <div class="mt-6 rounded-xl border p-4" style="border-color: {$colorStore.primary}20; background: {$colorStore.primary}05;">
                     <div class="flex items-center gap-2 mb-3">
                         <i class="fa-solid fa-plug" style="color: {$colorStore.primary}; font-size: 14px;"></i>
-                        <span class="text-sm font-medium" style="color: {$colorStore.text}">Companion Plugin</span>
+                        <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.minecraft.pluginTitle()}</span>
                     </div>
                     <p class="text-xs mb-3" style="color: {$colorStore.muted}">
-                        Generate an API key for the Mewdeko companion Minecraft plugin. Each server gets its own key.
+                        {m.minecraft.pluginDescription()}
                     </p>
 
                     {#if showPluginKey && pluginKey}
                         <div class="mb-3 p-3 rounded-lg space-y-3" style="background: #10b98110; border: 1px solid #10b98130;">
-                            <p class="text-xs" style="color: #10b981;">Copy these values into your plugin's config.yml. The key will not be shown again.</p>
+                            <p class="text-xs" style="color: #10b981;">{m.minecraft.pluginCopyHint()}</p>
                             <div>
                                 <span class="text-xs font-medium block mb-1" style="color: {$colorStore.muted}">api-key:</span>
                                 <div class="flex items-center gap-2">
                                     <code class="flex-1 text-xs p-2 rounded" style="background: #00000040; color: {$colorStore.text}; word-break: break-all;">{pluginKey}</code>
                                     <button class="p-2 rounded-lg shrink-0"
                                             style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-                                            aria-label="Copy API key"
-                                            onclick={() => { navigator.clipboard.writeText(pluginKey!); showMessage("Key copied!", "success"); }}>
+                                            aria-label={m.minecraft.ariaCopyApiKey()}
+                                            onclick={() => { navigator.clipboard.writeText(pluginKey!); showMessage(m.minecraft.notifyKeyCopied(), "success"); }}>
                                         <i class="fa-solid fa-copy" style="font-size: 13px;"></i>
                                     </button>
                                 </div>
@@ -1573,8 +1574,8 @@
                                     <code class="flex-1 text-xs p-2 rounded" style="background: #00000040; color: {$colorStore.text}; word-break: break-all;">{pluginWsUrl}</code>
                                     <button class="p-2 rounded-lg shrink-0"
                                             style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-                                            aria-label="Copy API URL"
-                                            onclick={() => { navigator.clipboard.writeText(pluginWsUrl); showMessage("URL copied!", "success"); }}>
+                                            aria-label={m.minecraft.ariaCopyApiUrl()}
+                                            onclick={() => { navigator.clipboard.writeText(pluginWsUrl); showMessage(m.minecraft.notifyUrlCopied(), "success"); }}>
                                         <i class="fa-solid fa-copy" style="font-size: 13px;"></i>
                                     </button>
                                 </div>
@@ -1587,18 +1588,18 @@
                                 style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}25;"
                                 onclick={generatePluginKey}>
                             <i class="fa-solid fa-key" style="font-size: 12px;"></i>
-                            {selectedServer.hasPluginKey ? "Regenerate Key" : "Generate Key"}
+                            {selectedServer.hasPluginKey ? m.minecraft.pluginRegenerate() : m.minecraft.pluginGenerate()}
                         </button>
                         {#if selectedServer.hasPluginKey}
                             <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
                                     style="background: #ef444415; color: #ef4444; border: 1px solid #ef444425;"
                                     onclick={revokePluginKey}>
                                 <i class="fa-solid fa-ban" style="font-size: 12px;"></i>
-                                Revoke Key
+                                {m.minecraft.pluginRevoke()}
                             </button>
                         {/if}
                         <span class="text-xs" style="color: {$colorStore.muted}">
-                            {selectedServer.hasPluginKey ? "Key active" : "No key configured"}
+                            {selectedServer.hasPluginKey ? m.minecraft.pluginKeyActive() : m.minecraft.pluginKeyNone()}
                         </span>
                     </div>
                 </div>
@@ -1609,7 +1610,7 @@
                         onclick={() => saveEditing(selectedServer!)}
                         disabled={saving}>
                     <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}" style="font-size: 16px;"></i>
-                    {saving ? "Saving..." : "Save Configuration"}
+                    {saving ? m.common.saving() : m.common.saveConfiguration()}
                 </button>
             </div>
         </div>
@@ -1620,7 +1621,7 @@
                 <div class="rounded-2xl border p-12 text-center"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                             border-color: {$colorStore.primary}30;">
-                    <p class="text-lg font-medium" style="color: {$colorStore.text}">No servers registered</p>
+                    <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.minecraft.serversEmptyTitle()}</p>
                 </div>
             {:else}
                 <div class="flex flex-wrap items-center gap-3">
@@ -1656,8 +1657,8 @@
                          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                                 border-color: {$colorStore.primary}30;">
                         <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-                        <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">Select a server to view its history</p>
-                        <p class="text-sm mt-1" style="color: {$colorStore.muted}">Player counts, latency, and uptime over time</p>
+                        <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">{m.minecraft.historySelectServer()}</p>
+                        <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.minecraft.historySelectHint()}</p>
                     </div>
                 {:else if snapshots && snapshots.length > 1}
                     <div class="rounded-2xl border p-6 shadow-2xl"
@@ -1666,7 +1667,7 @@
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fa-utility-duo fa-regular fa-users"
                                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-                            <h3 class="font-semibold" style="color: {$colorStore.text}">Players Online ({selectedHistoryServer})</h3>
+                            <h3 class="font-semibold" style="color: {$colorStore.text}">{m.minecraft.historyPlayersOnline({ server: selectedHistoryServer })}</h3>
                         </div>
                         <div class="w-full h-[250px] relative">
                             <canvas bind:this={playersCanvas}></canvas>
@@ -1679,7 +1680,7 @@
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fa-utility-duo fa-regular fa-signal"
                                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-                            <h3 class="font-semibold" style="color: {$colorStore.text}">Latency ({selectedHistoryServer})</h3>
+                            <h3 class="font-semibold" style="color: {$colorStore.text}">{m.minecraft.historyLatency({ server: selectedHistoryServer })}</h3>
                         </div>
                         <div class="w-full h-[250px] relative">
                             <canvas bind:this={latencyCanvas}></canvas>
@@ -1695,19 +1696,19 @@
 
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                             <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10;">
-                                <div class="text-sm" style="color: {$colorStore.muted}">Avg Players</div>
+                                <div class="text-sm" style="color: {$colorStore.muted}">{m.minecraft.historyAvgPlayers()}</div>
                                 <div class="text-lg font-semibold" style="color: {$colorStore.text}">{avgPlayers}</div>
                             </div>
                             <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10;">
-                                <div class="text-sm" style="color: {$colorStore.muted}">Peak Players</div>
+                                <div class="text-sm" style="color: {$colorStore.muted}">{m.minecraft.historyPeakPlayers()}</div>
                                 <div class="text-lg font-semibold" style="color: {$colorStore.text}">{peakPlayers}</div>
                             </div>
                             <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10;">
-                                <div class="text-sm" style="color: {$colorStore.muted}">Avg Latency</div>
+                                <div class="text-sm" style="color: {$colorStore.muted}">{m.minecraft.historyAvgLatency()}</div>
                                 <div class="text-lg font-semibold" style="color: {$colorStore.text}">{avgLatency}ms</div>
                             </div>
                             <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10;">
-                                <div class="text-sm" style="color: {$colorStore.muted}">Uptime</div>
+                                <div class="text-sm" style="color: {$colorStore.muted}">{m.common.uptime()}</div>
                                 <div class="text-lg font-semibold" style="color: {$colorStore.text}">{uptime}%</div>
                             </div>
                         </div>
@@ -1716,7 +1717,7 @@
                     <div class="rounded-2xl border p-8 text-center"
                          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                                 border-color: {$colorStore.primary}30;">
-                        <p style="color: {$colorStore.muted}">Not enough data yet. Snapshots are recorded each time the watch timer runs.</p>
+                        <p style="color: {$colorStore.muted}">{m.minecraft.historyNotEnough()}</p>
                     </div>
                 {/if}
             {/if}
@@ -1729,8 +1730,8 @@
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                             border-color: {$colorStore.primary}30;">
                     <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 48px; opacity: 0.5;"></i>
-                    <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">No servers have RCON enabled</p>
-                    <p class="text-sm mt-1" style="color: {$colorStore.muted}">Edit a server and configure RCON settings to use the console</p>
+                    <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">{m.minecraft.consoleNoRcon()}</p>
+                    <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.minecraft.consoleNoRconHint()}</p>
                 </div>
             {:else}
                 <div class="flex flex-wrap items-center gap-3 mb-2">
@@ -1751,19 +1752,19 @@
                     <div class="rounded-2xl border p-8 text-center"
                          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                                 border-color: {$colorStore.primary}30;">
-                        <p style="color: {$colorStore.muted}">Select a server to open the console</p>
+                        <p style="color: {$colorStore.muted}">{m.minecraft.consoleSelectServer()}</p>
                     </div>
                 {:else}
                     <div class="rounded-2xl border shadow-2xl overflow-hidden"
                          style="background: #0d1117; border-color: {$colorStore.primary}30;">
                         <div class="p-3 flex items-center gap-2" style="background: {$colorStore.primary}10; border-bottom: 1px solid {$colorStore.primary}20;">
                             <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 14px;"></i>
-                            <span class="text-sm font-mono font-medium" style="color: {$colorStore.text}">RCON ({rconServer})</span>
+                            <span class="text-sm font-mono font-medium" style="color: {$colorStore.text}">{m.minecraft.consoleTitle({ server: rconServer })}</span>
                         </div>
 
                         <div class="p-4 font-mono text-sm space-y-2 max-h-[400px] overflow-y-auto" style="color: #c9d1d9;">
                             {#if rconHistory.length === 0}
-                                <p style="color: #484f58;">Type a command below and press Enter...</p>
+                                <p style="color: #484f58;">{m.minecraft.consolePrompt()}</p>
                             {/if}
                             {#each rconHistory as entry}
                                 <div>
@@ -1786,7 +1787,7 @@
                             <input
                               type="text"
                               bind:value={rconCommand}
-                              placeholder="Enter command..."
+                              placeholder={m.minecraft.consoleInputPlaceholder()}
                               class="flex-1 bg-transparent font-mono text-sm focus:outline-none"
                               style="color: #e6edf3;"
                               disabled={rconSending}
@@ -1798,7 +1799,7 @@
                               onclick={sendRconCommand}
                               disabled={rconSending || !rconCommand.trim()}
                             >
-                                {rconSending ? "..." : "Send"}
+                                {rconSending ? "..." : m.common.send()}
                             </button>
                         </div>
                     </div>
@@ -1813,34 +1814,34 @@
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fa-utility-duo fa-regular fa-circle-plus" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Add Minecraft Server</h2>
+                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.minecraft.addTitle()}</h2>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div>
                         <label for="f-+page-server-name-1824" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-tag" style="font-size: 14px;"></i>
-                            Server Name
+                            {m.placeholders.serverName()}
                         </label>
                         <input id="f-+page-server-name-1824" type="text" bind:value={addForm.name}
-                               placeholder="e.g. survival, creative, smp"
+                               placeholder={m.minecraft.addNamePlaceholder()}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
                         <label for="f-+page-server-address-1834" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-globe" style="font-size: 14px;"></i>
-                            Server Address
+                            {m.placeholders.mcServerAddress()}
                         </label>
                         <input id="f-+page-server-address-1834" type="text" bind:value={addForm.address}
-                               placeholder="e.g. play.example.com"
+                               placeholder={m.minecraft.addAddressPlaceholder()}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
                         <label for="f-+page-port-1844" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-ethernet" style="font-size: 14px;"></i>
-                            Port
+                            {m.minecraft.fieldPort()}
                         </label>
                         <input id="f-+page-port-1844" type="number" bind:value={addForm.port}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
@@ -1849,13 +1850,13 @@
                     <div>
                         <label for="f-+page-server-type-1853" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-gamepad" style="font-size: 14px;"></i>
-                            Server Type
+                            {m.minecraft.addFieldType()}
                         </label>
                         <DiscordSelector id="f-+page-server-type-1853"
                             type="custom"
                             options={serverTypeOptions}
                             selected={addForm.serverType.toString()}
-                            placeholder="Select server type"
+                            placeholder={m.minecraft.addTypePlaceholder()}
                             onchange={(detail) => {
                                 addForm.serverType = detail.selected ? parseInt(detail.selected as string) : 0;
                             }}
@@ -1864,17 +1865,17 @@
                     <div>
                         <label for="f-+page-query-port-0-same-as-game-port-1868" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-terminal" style="font-size: 14px;"></i>
-                            Query Port (0 = same as game port)
+                            {m.minecraft.fieldQueryPortAdd()}
                         </label>
                         <input id="f-+page-query-port-0-same-as-game-port-1868" type="number" bind:value={addForm.queryPort}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
-                        <p class="text-xs mt-1" style="color: {$colorStore.muted}">Requires enable-query=true in server.properties for extended info</p>
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.minecraft.addQueryHint()}</p>
                     </div>
                     <div>
                         <label for="mc-add-watch-channel" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-hashtag" style="font-size: 14px;"></i>
-                            Watch Channel
+                            {m.minecraft.fieldWatchChannel()}
                         </label>
                         <div class="min-h-[44px]">
                             <DiscordSelector
@@ -1882,7 +1883,7 @@
                                 type="channel"
                                 options={guildChannels}
                                 selected={addForm.watchChannelId}
-                                placeholder="No watch channel (optional)"
+                                placeholder={m.minecraft.addWatchChannelPlaceholder()}
                                 onchange={(detail) => {
                                     addForm.watchChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null;
                                 }}
@@ -1892,7 +1893,7 @@
                     <div>
                         <label for="f-+page-watch-interval-minutes-1895" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-clock" style="font-size: 14px;"></i>
-                            Watch Interval (minutes)
+                            {m.minecraft.fieldWatchInterval()}
                         </label>
                         <input id="f-+page-watch-interval-minutes-1895" type="number" min="1" max="60" bind:value={addForm.watchInterval}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
@@ -1901,13 +1902,13 @@
                     <div>
                         <label for="f-+page-watch-mode-1904" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-display" style="font-size: 14px;"></i>
-                            Watch Mode
+                            {m.minecraft.fieldWatchMode()}
                         </label>
                         <DiscordSelector id="f-+page-watch-mode-1904"
                             type="custom"
                             options={watchModeOptions}
                             selected={addForm.watchMode.toString()}
-                            placeholder="Select watch mode"
+                            placeholder={m.minecraft.placeholderWatchMode()}
                             onchange={(detail) => {
                                 addForm.watchMode = detail.selected ? parseInt(detail.selected as string) : 0;
                             }}
@@ -1916,11 +1917,11 @@
                 </div>
 
                 <div class="mt-6">
-                    <label for="f-+page-custom-watch-embed-optional-1921" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Custom Watch Embed (optional)</label>
+                    <label for="f-+page-custom-watch-embed-optional-1921" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.minecraft.addFieldWatchEmbed()}</label>
                     <FullscreenEmbedBuilder id="f-+page-custom-watch-embed-optional-1921"
                         value={toBuilderValue(addForm.customEmbedTemplate)}
-                        previewTitle="Server Status Embed"
-                        previewDescription="Displayed in the watch channel"
+                        previewTitle={m.minecraft.previewStatusTitle()}
+                        previewDescription={m.minecraft.previewStatusDescription()}
                         icon="fa-server"
                         allowContent={true}
                         allowMultipleEmbeds={false}
@@ -1928,7 +1929,7 @@
                         additionalPlaceholders={mcPlaceholders}
                         guildId={$currentGuild?.id}
                         user={data.user}
-                        placeholder="Click to configure watch embed (leave empty for default)"
+                        placeholder={m.minecraft.placeholderWatchEmbed()}
                         onchange={(newValue) => { addForm.customEmbedTemplate = serializeMessage(newValue); }}
                     />
                 </div>
@@ -1940,7 +1941,7 @@
                   disabled={saving}
                 >
                     <i class="fa-solid fa-plus {saving ? 'fa-spin' : ''}" style="font-size: 18px;"></i>
-                    {saving ? "Adding..." : "Add Server"}
+                    {saving ? m.common.adding() : m.minecraft.addServer()}
                 </button>
             </div>
         </div>

@@ -1,5 +1,6 @@
 <!-- routes/dashboard/multigreets/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import { onMount } from "svelte";
@@ -61,7 +62,7 @@
       loading = true;
       error = null;
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
       const guildId = BigInt($currentGuild.id);
       const fetchedGreets = await multiGreetApi.getMultiGreets(guildId);
@@ -90,7 +91,7 @@
       greetType = await multiGreetApi.getMultiGreetType(guildId);
     } catch (err) {
       logger.error("Failed to fetch greets:", err);
-      error = err instanceof Error ? err.message : "Failed to fetch greets";
+      error = err instanceof Error ? err.message : m.multigreets.errorFetchGreets();
     } finally {
       loading = false;
     }
@@ -99,26 +100,26 @@
   async function fetchChannels() {
     try {
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
       channels = await clientApi.getTextChannels(BigInt($currentGuild.id));
     } catch (err) {
       logger.error("Failed to fetch channels:", err);
-      error = err instanceof Error ? err.message : "Failed to fetch channels";
+      error = err instanceof Error ? err.message : m.common.failedToFetchChannels();
     }
   }
 
   async function addGreet() {
     try {
       if (!$currentGuild?.id || !selectedChannel) {
-        throw new Error("No guild or channel selected");
+        throw new Error(m.multigreets.errorNoGuildOrChannel());
       }
       await multiGreetApi.addMultiGreet(BigInt($currentGuild.id), BigInt(selectedChannel));
-      showNotificationMessage("Greet added successfully");
+      showNotificationMessage(m.multigreets.notifyAdded());
       await fetchGreets();
     } catch (error) {
       showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to add greet",
+        error instanceof Error ? error.message : m.multigreets.errorAdd(),
         "error"
       );
     }
@@ -127,14 +128,14 @@
   async function removeGreet(id: number) {
     try {
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
       await multiGreetApi.removeMultiGreet(BigInt($currentGuild.id), id);
-      showNotificationMessage("Greet removed successfully");
+      showNotificationMessage(m.multigreets.notifyRemoved());
       await fetchGreets();
     } catch (error) {
       showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to remove greet",
+        error instanceof Error ? error.message : m.multigreets.errorRemove(),
         "error"
       );
     }
@@ -143,16 +144,16 @@
   async function updateMessage(id: number, message: any) {
     try {
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
       const messageToSend = serializeMessage(message);
       await multiGreetApi.updateMultiGreetMessage(BigInt($currentGuild.id), id, messageToSend);
-      showNotificationMessage("Message updated successfully");
+      showNotificationMessage(m.multigreets.notifyMessageUpdated());
       editMessage = null;
       await fetchGreets();
     } catch (error) {
       showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to update message",
+        error instanceof Error ? error.message : m.multigreets.errorUpdateMessage(),
         "error"
       );
     }
@@ -161,15 +162,15 @@
   async function updateDeleteTime(id: number, time: string) {
     try {
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
       await multiGreetApi.updateMultiGreetDeleteTime(BigInt($currentGuild.id), id, time);
-      showNotificationMessage("Delete time updated successfully");
+      showNotificationMessage(m.multigreets.notifyDeleteTimeUpdated());
       editDeleteTime = null;
       await fetchGreets();
     } catch (error) {
       showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to update delete time",
+        error instanceof Error ? error.message : m.multigreets.errorUpdateDeleteTime(),
         "error"
       );
     }
@@ -178,14 +179,14 @@
   async function updateGreetBots(id: number, enabled: boolean) {
     try {
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
       await multiGreetApi.updateMultiGreetGreetBots(BigInt($currentGuild.id), id, enabled);
-      showNotificationMessage("Greet bots setting updated successfully");
+      showNotificationMessage(m.multigreets.notifyGreetBotsUpdated());
       await fetchGreets();
     } catch (error) {
       showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to update greet bots",
+        error instanceof Error ? error.message : m.multigreets.errorUpdateGreetBots(),
         "error"
       );
     }
@@ -194,18 +195,18 @@
   async function updateWebhook(id: number) {
     try {
       if (!$currentGuild?.id || !editWebhook) {
-        throw new Error("No guild selected or webhook data missing");
+        throw new Error(m.multigreets.errorNoWebhookData());
       }
       await multiGreetApi.updateMultiGreetWebhook(BigInt($currentGuild.id), id, {
         name: editWebhook.name,
         avatarUrl: editWebhook.avatarUrl,
       });
-      showNotificationMessage("Webhook updated successfully");
+      showNotificationMessage(m.multigreets.notifyWebhookUpdated());
       editWebhook = null;
       await fetchGreets();
     } catch (error) {
       showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to update webhook",
+        error instanceof Error ? error.message : m.multigreets.errorUpdateWebhook(),
         "error"
       );
     }
@@ -214,14 +215,14 @@
   async function updateDisabled(id: number, disabled: boolean) {
     try {
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
       await multiGreetApi.updateMultiGreetDisabled(BigInt($currentGuild.id), id, disabled);
-      showNotificationMessage("Greet status updated successfully");
+      showNotificationMessage(m.multigreets.notifyStatusUpdated());
       await fetchGreets();
     } catch (error) {
       showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to update status",
+        error instanceof Error ? error.message : m.common.failedToUpdateStatus(),
         "error"
       );
     }
@@ -230,14 +231,14 @@
   async function updateGreetType(type: MultiGreetType) {
     try {
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
       await multiGreetApi.setMultiGreetType(BigInt($currentGuild.id), type);
       greetType = type;
-      showNotificationMessage("Greet type updated successfully");
+      showNotificationMessage(m.multigreets.notifyTypeUpdated());
     } catch (error) {
       showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to update greet type",
+        error instanceof Error ? error.message : m.multigreets.errorUpdateType(),
         "error"
       );
     }
@@ -273,13 +274,13 @@
 
 <DashboardPageLayout
   statusMessages={statusMessages}
-  subtitle="Configure multiple greeting messages for your server"
+  subtitle={m.multigreets.pageSubtitle()}
   icon="fa-comment"
   guildName={$currentGuild?.name || "Dashboard"}
-  title="MultiGreets Configuration"
+  title={m.multigreets.pageTitle()}
   actionButtons={[
     {
-      label: "Add Greet",
+      label: m.multigreets.actionAddGreet(),
       icon: "fa-plus",
       action: addGreet,
       disabled: !selectedChannel,
@@ -297,13 +298,13 @@
     >
       <h2 class="text-xl font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
         <i class="fa-utility-duo fa-regular fa-gear h-5 w-5" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-        Greet Type Configuration
+        {m.multigreets.typeTitle()}
       </h2>
       <div class="flex flex-col sm:flex-row gap-3">
         {#each [
-          { type: MultiGreetType.MultiGreet, label: "All Greets", icon: "🔄", desc: "Send all configured greets" },
-          { type: MultiGreetType.RandomGreet, label: "Random Greet", icon: "🎲", desc: "Send one random greet" },
-          { type: MultiGreetType.Off, label: "Disabled", icon: "⭕", desc: "Disable all greets" }
+          { type: MultiGreetType.MultiGreet, label: m.multigreets.typeAllLabel(), icon: "🔄", desc: m.multigreets.typeAllDesc() },
+          { type: MultiGreetType.RandomGreet, label: m.multigreets.typeRandomLabel(), icon: "🎲", desc: m.multigreets.typeRandomDesc() },
+          { type: MultiGreetType.Off, label: m.common.disabled(), icon: "⭕", desc: m.multigreets.typeOffDesc() }
         ] as option}
           <button
             class="flex-1 px-4 py-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1"
@@ -327,7 +328,7 @@
             class="w-16 h-16 border-4 rounded-full animate-spin"
             style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary}"
           ></div>
-          <span class="mt-4 block text-center" style="color: {$colorStore.muted}">Loading configurations...</span>
+          <span class="mt-4 block text-center" style="color: {$colorStore.muted}">{m.multigreets.loadingConfigurations()}</span>
         </div>
       </div>
     {:else if error}
@@ -339,7 +340,7 @@
         <div class="flex items-center gap-3">
           <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
           <div style="color: {$colorStore.accent}">
-            <div class="font-semibold text-lg">Error Occurred</div>
+            <div class="font-semibold text-lg">{m.common.errorOccurred()}</div>
             <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
           </div>
         </div>
@@ -353,7 +354,7 @@
       >
         <h2 class="text-xl font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
           <i class="fa-utility-duo fa-regular fa-circle-plus h-5 w-5" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-          Add New Greet
+          {m.multigreets.addTitle()}
         </h2>
         <div class="flex flex-col sm:flex-row gap-3">
             <div class="grow">
@@ -361,7 +362,7 @@
               type="channel"
               options={channels}
               selected={selectedChannel}
-              placeholder="Select a channel"
+              placeholder={m.common.selectAChannelPlaceholder()}
               onchange={handleChannelChange}
             />
           </div>
@@ -377,9 +378,9 @@
           transition:fade
         >
           <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-          <p class="text-lg font-medium" style="color: {$colorStore.text}">No Greets Configured</p>
+          <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.multigreets.emptyTitle()}</p>
           <p class="text-sm mt-2" style="color: {$colorStore.muted}">
-            Add your first greet message using the form above.
+            {m.multigreets.emptyHint()}
           </p>
         </div>
       {:else}
@@ -405,7 +406,7 @@
                       <span class="text-sm" style="color: {$colorStore.muted}">#{greet.id}</span>
                     </h3>
                   </div>
-                  <button aria-label="Delete greet"
+                  <button aria-label={m.multigreets.deleteAria()}
                     class="p-2 rounded-lg transition-all duration-200 hover:bg-red-500/10"
                     style="color: {$colorStore.muted}"
                     onclick={() => removeGreet(greet.id)}
@@ -422,29 +423,29 @@
                   <h4 class="text-sm font-medium flex items-center gap-2"
                       style="color: {$colorStore.text}">
                     <i class="fa-solid fa-comment" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                    Greeting Message
+                    {m.common.greetingMessage()}
                   </h4>
 
                   <FullscreenEmbedBuilder
                     value={toBuilderValue(greet.message)}
-                    previewTitle="Greeting Message #{greet.id}"
-                    previewDescription="Message sent when users join"
+                    previewTitle={m.multigreets.previewTitle({ id: greet.id })}
+                    previewDescription={m.multigreets.previewDescription()}
                     icon="fa-comment"
                     allowContent={true}
                     allowMultipleEmbeds={true}
                     maxEmbeds={10}
                     allowComponents={true}
                     additionalPlaceholders={[
-                      { category: "Join", name: "%user%", description: "Username" },
-                      { category: "Join", name: "%user.mention%", description: "Mention the user" },
-                      { category: "Join", name: "%user.id%", description: "User ID" },
-                      { category: "Join", name: "%user.avatar%", description: "User's avatar URL" },
-                      { category: "Server", name: "%server%", description: "Server name" },
-                      { category: "Server", name: "%server.members%", description: "Member count" }
+                      { category: m.multigreets.placeholderCategoryJoin(), name: "%user%", description: m.placeholders.user() },
+                      { category: m.multigreets.placeholderCategoryJoin(), name: "%user.mention%", description: m.placeholders.userMention() },
+                      { category: m.multigreets.placeholderCategoryJoin(), name: "%user.id%", description: m.placeholders.userId() },
+                      { category: m.multigreets.placeholderCategoryJoin(), name: "%user.avatar%", description: m.placeholders.userAvatar() },
+                      { category: m.features.categoryServer(), name: "%server%", description: m.placeholders.server() },
+                      { category: m.features.categoryServer(), name: "%server.members%", description: m.placeholders.serverMembers() }
                     ]}
                     guildId={$currentGuild?.id}
                     user={data.user}
-                    placeholder="Click to configure greeting message"
+                    placeholder={m.multigreets.messagePlaceholder()}
                     onchange={(newValue) => updateMessage(greet.id, newValue)}
                   />
                 </div>
@@ -457,7 +458,7 @@
                         <input
                           type="text"
                           bind:value={editDeleteTime.time}
-                          placeholder="e.g. 1m30s"
+                          placeholder={m.multigreets.deleteTimePlaceholder()}
                           class="w-full p-3 rounded-lg border focus:ring-2"
                           style="background: {$colorStore.primary}10;
                                  border-color: {$colorStore.primary}30;
@@ -472,7 +473,7 @@
                           onclick={() => editDeleteTime && updateDeleteTime(greet.id, editDeleteTime.time)}
                         >
                           <i class="fa-solid fa-check" style="font-size: 16px;"></i>
-                          Save
+                          {m.common.save()}
                         </button>
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
@@ -480,7 +481,7 @@
                           onclick={() => editDeleteTime = null}
                         >
                           <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
-                          Cancel
+                          {m.common.cancel()}
                         </button>
                       </div>
                     </div>
@@ -490,21 +491,21 @@
                         <h4 class="text-sm font-medium flex items-center gap-2"
                             style="color: {$colorStore.text}">
                           <i class="fa-solid fa-clock" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
-                          Delete After
+                          {m.common.deleteAfter()}
                         </h4>
                         <p class="text-sm mt-1">
                           {#if greet.deleteTime}
                             <span class="px-2 py-1 rounded-sm"
                                   style="background: {$colorStore.secondary}10;
                                          color: {$colorStore.secondary}">
-                              {greet.deleteTime}s
+                              {m.multigreets.deleteTimeSeconds({ seconds: greet.deleteTime })}
                             </span>
                           {:else}
-                            <span style="color: {$colorStore.muted}">Never</span>
+                            <span style="color: {$colorStore.muted}">{m.common.never()}</span>
                           {/if}
                         </p>
                       </div>
-                      <button aria-label="Edit delete time"
+                      <button aria-label={m.multigreets.editDeleteTimeAria()}
                         class="p-2 rounded-lg transition-all duration-200"
                         style="background: {$colorStore.primary}10;
                                color: {$colorStore.muted}"
@@ -525,7 +526,7 @@
                           <input
                             type="text"
                             bind:value={editWebhook.name}
-                            placeholder="Webhook Name"
+                            placeholder={m.multigreets.webhookNamePlaceholder()}
                             class="w-full p-3 pl-9 rounded-lg border focus:ring-2"
                             style="background: {$colorStore.primary}10;
                                    border-color: {$colorStore.primary}30;
@@ -537,7 +538,7 @@
                           <input
                             type="text"
                             bind:value={editWebhook.avatarUrl}
-                            placeholder="Avatar URL (optional)"
+                            placeholder={m.multigreets.webhookAvatarPlaceholder()}
                             class="w-full p-3 pl-9 rounded-lg border focus:ring-2"
                             style="background: {$colorStore.primary}10;
                                    border-color: {$colorStore.primary}30;
@@ -553,7 +554,7 @@
                           onclick={() => updateWebhook(greet.id)}
                         >
                           <i class="fa-solid fa-check" style="font-size: 16px;"></i>
-                          Save
+                          {m.common.save()}
                         </button>
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
@@ -561,7 +562,7 @@
                           onclick={() => editWebhook = null}
                         >
                           <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
-                          Cancel
+                          {m.common.cancel()}
                         </button>
                       </div>
                     </div>
@@ -571,21 +572,21 @@
                         <h4 class="text-sm font-medium flex items-center gap-2"
                             style="color: {$colorStore.text}">
                           <i class="fa-solid fa-webhook" style="color: {$colorStore.accent}; font-size: 16px;"></i>
-                          Webhook
+                          {m.multigreets.webhook()}
                         </h4>
                         <p class="text-sm mt-1">
                           {#if greet.webhookUrl}
                             <span class="px-2 py-1 rounded-sm"
                                   style="background: {$colorStore.accent}10;
                                          color: {$colorStore.accent}">
-                              Configured
+                              {m.common.configured()}
                             </span>
                           {:else}
-                            <span style="color: {$colorStore.muted}">Not configured</span>
+                            <span style="color: {$colorStore.muted}">{m.common.notConfigured()}</span>
                           {/if}
                         </p>
                       </div>
-                      <button aria-label="Edit webhook"
+                      <button aria-label={m.multigreets.editWebhookAria()}
                         class="p-2 rounded-lg transition-all duration-200"
                         style="background: {$colorStore.primary}10;
                                color: {$colorStore.muted}"
@@ -619,7 +620,7 @@
                     </span>
                     <span class="ml-3 text-sm font-medium transition-colors duration-200"
                           style="color: {$colorStore.text}">
-                      Greet Bots
+                      {m.common.greetBots()}
                     </span>
                   </label>
 
@@ -638,7 +639,7 @@
                     </span>
                     <span class="ml-3 text-sm font-medium transition-colors duration-200"
                           style="color: {$colorStore.text}">
-                      Enabled
+                      {m.common.enabled()}
                     </span>
                   </label>
                 </div>

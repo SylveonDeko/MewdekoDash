@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -30,8 +31,8 @@
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
       <div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Raid Protection</h2>
-        <p class="text-sm" style="color: {$colorStore.muted}">Protect against mass user joins</p>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.protectionRaidTitle()}</h2>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionRaidSubtitle()}</p>
       </div>
     </div>
 
@@ -45,10 +46,10 @@
       >
         {#if protectionStatus.antiRaid.enabled}
           <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
-          Enabled
+          {m.common.enabled()}
         {:else}
           <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
-          Disabled
+          {m.common.disabled()}
         {/if}
       </button>
 
@@ -63,7 +64,7 @@
           {:else}
             <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
           {/if}
-          {expandedProtectionCard === 'antiRaid' ? 'Collapse' : 'Configure'}
+          {expandedProtectionCard === 'antiRaid' ? m.common.collapse() : m.common.configure()}
         </button>
       {/if}
     </div>
@@ -74,23 +75,23 @@
       <div class="text-center">
         <div class="text-2xl font-bold"
              style="color: {$colorStore.primary}">{protectionStatus.antiRaid.userThreshold}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">User Threshold</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionRaidUserThreshold()}</div>
       </div>
       <div class="text-center">
         <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiRaid.seconds}s</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Time Window</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.common.timeWindow()}</div>
       </div>
       <div class="text-center">
         <div class="text-lg font-semibold"
              style="color: {$colorStore.primary}">{formatAction(protectionStatus.antiRaid.action)}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Punishment</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.common.punishment()}</div>
       </div>
       {#if protectionStatus.antiRaid.punishDuration > 0}
         <div class="text-center">
           <div class="text-2xl font-bold"
                style="color: {$colorStore.primary}">{protectionStatus.antiRaid.punishDuration}m
           </div>
-          <div class="text-sm" style="color: {$colorStore.muted}">Action Duration</div>
+          <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionCommonActionDuration()}</div>
         </div>
       {/if}
     </div>
@@ -102,8 +103,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label for="antiraid-user-threshold" class="block text-sm font-medium mb-2"
-                   style="color: {$colorStore.text}">User
-              Threshold</label>
+                   style="color: {$colorStore.text}">{m.administration.protectionRaidUserThreshold()}</label>
             <input id="antiraid-user-threshold"
                    type="number"
                    bind:value={tempProtectionConfig.userThreshold}
@@ -115,7 +115,7 @@
           </div>
           <div>
             <label for="antiraid-seconds" class="block text-sm font-medium mb-2"
-                   style="color: {$colorStore.text}">Time Window (seconds)</label>
+                   style="color: {$colorStore.text}">{m.administration.protectionCommonTimeWindowSeconds()}</label>
             <input id="antiraid-seconds"
                    type="number"
                    bind:value={tempProtectionConfig.seconds}
@@ -126,19 +126,18 @@
             >
           </div>
           <div>
-            <span id="antiraid-action-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</span>
+            <span id="antiraid-action-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.action()}</span>
             <DiscordSelector
               type="custom"
               options={actionOptions}
               bind:selected={tempProtectionConfig.action}
-              placeholder="Select action..."
+              placeholder={m.administration.protectionCommonSelectAction()}
               multiple={false}
             />
           </div>
           <div>
             <label for="antiraid-punish-duration" class="block text-sm font-medium mb-2"
-                   style="color: {$colorStore.text}">Punishment
-              Duration (minutes)</label>
+                   style="color: {$colorStore.text}">{m.administration.protectionCommonPunishmentDurationMinutes()}</label>
             <input id="antiraid-punish-duration"
                    type="number"
                    bind:value={tempProtectionConfig.punishDuration}
@@ -156,7 +155,7 @@
             style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
             onclick={cancelProtectionEdit}
           >
-            Cancel
+            {m.common.cancel()}
           </button>
           <button
             class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
@@ -170,7 +169,7 @@
               {:else}
                 <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
               {/if}
-              <span>Save Configuration</span>
+              <span>{m.common.saveConfiguration()}</span>
             </div>
           </button>
         </div>
@@ -180,8 +179,8 @@
     <div class="text-center py-8">
       <i class="fa-utility-duo fa-regular fa-shield"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-      <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">Anti-Raid Protection Disabled</p>
-      <p class="text-sm" style="color: {$colorStore.muted}">Enable to protect against mass user joins</p>
+      <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">{m.administration.protectionRaidDisabledTitle()}</p>
+      <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionRaidDisabledHint()}</p>
     </div>
   {/if}
 </div>

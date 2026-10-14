@@ -1,5 +1,6 @@
 <!-- routes/dashboard/auditlog/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { auditLogApi } from "$lib/api/index.ts";
@@ -31,73 +32,73 @@
     [...new Set(entries.map((e) => e.section))].sort(),
   );
 
-  const actionOptions = [
-    { id: String(AuditAction.View), name: "Viewed" },
-    { id: String(AuditAction.Create), name: "Created" },
-    { id: String(AuditAction.Update), name: "Updated" },
-    { id: String(AuditAction.Delete), name: "Deleted" },
-    { id: String(AuditAction.Access), name: "Accessed" },
-  ];
+  const actionOptions = $derived([
+    { id: String(AuditAction.View), name: m.auditlog.pageActionViewed() },
+    { id: String(AuditAction.Create), name: m.common.created() },
+    { id: String(AuditAction.Update), name: m.auditlog.pageActionUpdated() },
+    { id: String(AuditAction.Delete), name: m.auditlog.pageActionDeleted() },
+    { id: String(AuditAction.Access), name: m.auditlog.pageActionAccessed() },
+  ]);
   /**
    * Friendly display names for each bot controller, so the audit log reads in
    * dashboard terms instead of internal controller names.
    */
-  const sectionLabels: Record<string, string> = {
-    Administration: "Administration",
-    Afk: "AFK System",
-    AuditLog: "Audit Log",
-    Birthday: "Birthdays",
-    BotConfig: "Bot Config",
-    BotStatus: "Bot Status",
-    Chat: "Chat Saver",
-    ChatTriggers: "Triggers",
-    ClientOperations: "Client Operations",
-    Confessions: "Confessions",
-    Counting: "Counting",
-    CustomVoice: "Custom Voice",
-    Feeds: "Feeds",
-    Filter: "Word Filter",
-    Forms: "Forms",
-    Giveaways: "Giveaways",
-    Guild: "Server",
-    GuildConfig: "Server Settings",
-    Highlights: "Highlights",
-    InstanceManagement: "Instance Management",
-    InviteTracking: "Invites",
-    JoinLeave: "Join / Leave",
-    LastFm: "Last.fm",
-    Logging: "Logging",
-    Me: "Account",
-    MessageCount: "Message Stats",
-    Minecraft: "Minecraft",
-    MinecraftBridge: "Minecraft Bridge",
-    Moderation: "Moderation",
-    MultiGreets: "Greets",
-    Music: "Music",
-    Ownership: "Ownership",
-    Patreon: "Patreon",
-    Performance: "Performance",
-    Permissions: "Permissions",
-    Poll: "Polls",
-    Protection: "Protection",
-    Repeaters: "Repeaters",
-    Reputation: "Reputation",
-    Reviews: "Reviews",
-    RoleGreet: "Role Greets",
-    RoleStates: "Role States",
-    Starboard: "Starboard",
-    StatChannel: "Stat Channels",
-    StatusRoles: "Status Roles",
-    StreamNotifications: "Streams",
-    Suggestions: "Suggestions",
-    SystemInfo: "System Info",
-    Ticket: "Tickets",
-    Todo: "Todo Lists",
-    Votes: "Votes",
-    Webhook: "Webhooks",
-    Wizard: "Setup Wizard",
-    Xp: "XP System",
-  };
+  const sectionLabels = $derived<Record<string, string>>({
+    Administration: m.features.administrationName(),
+    Afk: m.features.afkName(),
+    AuditLog: m.features.auditlogName(),
+    Birthday: m.features.birthdayName(),
+    BotConfig: m.auditlog.sectionBotConfig(),
+    BotStatus: m.common.botStatus(),
+    Chat: m.features.chatsaverName(),
+    ChatTriggers: m.features.chatTriggersName(),
+    ClientOperations: m.auditlog.sectionClientOperations(),
+    Confessions: m.features.confessionsName(),
+    Counting: m.features.countingName(),
+    CustomVoice: m.features.customvoiceName(),
+    Feeds: m.features.feedsName(),
+    Filter: m.common.wordFilter(),
+    Forms: m.features.formsName(),
+    Giveaways: m.features.giveawaysName(),
+    Guild: m.features.categoryServer(),
+    GuildConfig: m.common.serverSettings(),
+    Highlights: m.features.highlightsName(),
+    InstanceManagement: m.auditlog.sectionInstanceManagement(),
+    InviteTracking: m.features.invitesName(),
+    JoinLeave: m.auditlog.sectionJoinLeave(),
+    LastFm: m.auditlog.sectionLastFm(),
+    Logging: m.features.loggingName(),
+    Me: m.auditlog.sectionMe(),
+    MessageCount: m.features.messagestatsName(),
+    Minecraft: m.features.minecraftName(),
+    MinecraftBridge: m.auditlog.sectionMinecraftBridge(),
+    Moderation: m.features.categoryModeration(),
+    MultiGreets: m.features.multigreetsName(),
+    Music: m.features.musicName(),
+    Ownership: m.auditlog.sectionOwnership(),
+    Patreon: m.features.patreonName(),
+    Performance: m.features.performanceName(),
+    Permissions: m.common.permissions(),
+    Poll: m.features.pollsName(),
+    Protection: m.common.protection(),
+    Repeaters: m.features.repeatersName(),
+    Reputation: m.features.reputationName(),
+    Reviews: m.common.reviews(),
+    RoleGreet: m.features.rolegreetsName(),
+    RoleStates: m.features.rolestatesName(),
+    Starboard: m.features.starboardName(),
+    StatChannel: m.features.statchannelsName(),
+    StatusRoles: m.features.statusrolesName(),
+    StreamNotifications: m.common.streams(),
+    Suggestions: m.features.suggestionsName(),
+    SystemInfo: m.auditlog.sectionSystemInfo(),
+    Ticket: m.features.ticketsName(),
+    Todo: m.features.todoName(),
+    Votes: m.features.votesName(),
+    Webhook: m.auditlog.sectionWebhook(),
+    Wizard: m.common.setupWizard(),
+    Xp: m.features.xpName(),
+  });
 
   function sectionLabel(section: string): string {
     return sectionLabels[section] ?? humanizeKey(section);
@@ -117,13 +118,13 @@
     applyFilters();
   }
 
-  const actionMeta: Record<AuditAction, { label: string; icon: string; tone: "primary" | "secondary" | "accent" }> = {
-    [AuditAction.View]: { label: "Viewed", icon: "fa-eye", tone: "secondary" },
-    [AuditAction.Create]: { label: "Created", icon: "fa-plus", tone: "primary" },
-    [AuditAction.Update]: { label: "Updated", icon: "fa-pen", tone: "primary" },
-    [AuditAction.Delete]: { label: "Deleted", icon: "fa-trash", tone: "accent" },
-    [AuditAction.Access]: { label: "Accessed", icon: "fa-arrow-right-to-bracket", tone: "secondary" },
-  };
+  const actionMeta: Record<AuditAction, { label: string; icon: string; tone: "primary" | "secondary" | "accent" }> = $derived({
+    [AuditAction.View]: { label: m.auditlog.pageActionViewed(), icon: "fa-eye", tone: "secondary" },
+    [AuditAction.Create]: { label: m.common.created(), icon: "fa-plus", tone: "primary" },
+    [AuditAction.Update]: { label: m.auditlog.pageActionUpdated(), icon: "fa-pen", tone: "primary" },
+    [AuditAction.Delete]: { label: m.auditlog.pageActionDeleted(), icon: "fa-trash", tone: "accent" },
+    [AuditAction.Access]: { label: m.auditlog.pageActionAccessed(), icon: "fa-arrow-right-to-bracket", tone: "secondary" },
+  });
 
   function toneColor(tone: "primary" | "secondary" | "accent"): string {
     if (tone === "accent") return $colorStore.accent;
@@ -138,7 +139,7 @@
    * from misreading the instant as local time.
    */
   function formatDate(value: string): string {
-    if (!value) return "Unknown";
+    if (!value) return m.common.unknown();
     const utc = /[zZ]|[+-]\d\d:?\d\d$/.test(value) ? value : `${value}Z`;
     return new Date(utc).toLocaleString();
   }
@@ -177,18 +178,18 @@
    * Renders a raw value as something a non-technical user can read.
    */
   function humanizeValue(value: unknown): string {
-    if (value === null || value === undefined) return "none";
-    if (typeof value === "boolean") return value ? "On" : "Off";
+    if (value === null || value === undefined) return m.common.noneLower();
+    if (typeof value === "boolean") return value ? m.common.on() : m.common.off();
     if (typeof value === "number" || typeof value === "bigint") return value.toString();
-    if (typeof value === "string") return value.length ? value : "empty";
+    if (typeof value === "string") return value.length ? value : m.auditlog.pageValueEmpty();
     if (Array.isArray(value)) {
-      return value.length ? `${value.length} item${value.length === 1 ? "" : "s"}` : "none";
+      return value.length ? (value.length === 1 ? m.common.itemsOne({ count: value.length }) : m.common.itemsOther({ count: value.length })) : m.common.noneLower();
     }
     if (typeof value === "object") {
       try {
         return JSON.stringify(value);
       } catch {
-        return "object";
+        return m.auditlog.pageValueObject();
       }
     }
     return String(value);
@@ -236,11 +237,11 @@
     }
 
     if (before !== undefined && after !== undefined) {
-      return [{ label: "Value", before: humanizeValue(before), after: humanizeValue(after) }];
+      return [{ label: m.common.value(), before: humanizeValue(before), after: humanizeValue(after) }];
     }
 
     if (isPlainObject(after)) return flattenSet(after);
-    if (after !== undefined) return [{ label: "Value", after: humanizeValue(after) }];
+    if (after !== undefined) return [{ label: m.common.value(), after: humanizeValue(after) }];
     return [];
   }
 
@@ -267,13 +268,13 @@
           total = result.total ?? 0;
         } catch (err) {
           logger.error("Failed to fetch audit log:", err);
-          error = "Failed to load the audit log";
+          error = m.auditlog.pageErrorLoad();
         } finally {
           loading = false;
         }
       },
       "api",
-      "Loading audit log...",
+      m.auditlog.pageLoading(),
     );
   }
 
@@ -311,10 +312,10 @@
 
 <DashboardPageLayout
   category="Security"
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-clipboard-check"
-  subtitle="Who accessed the dashboard, what they changed, and what they viewed"
-  title="Audit Log"
+  subtitle={m.auditlog.pageSubtitle()}
+  title={m.features.auditlogName()}
 >
   <!-- Filters -->
   <div
@@ -325,14 +326,14 @@
   >
     <div class="flex-1 min-w-0">
       <span class="block text-sm font-medium mb-1" id="action-filter-label" style="color: {$colorStore.muted}">
-        Action
+        {m.common.action()}
       </span>
       <DiscordSelector
         type="custom"
         customIcon="fa-filter"
         options={actionOptions}
         selected={actionFilter === null ? null : String(actionFilter)}
-        placeholder="All actions"
+        placeholder={m.common.allActions()}
         searchable={false}
         ariaLabelledby="action-filter-label"
         onchange={onActionChange}
@@ -341,14 +342,14 @@
 
     <div class="flex-1 min-w-0">
       <span class="block text-sm font-medium mb-1" id="section-filter-label" style="color: {$colorStore.muted}">
-        Section
+        {m.auditlog.pageColSection()}
       </span>
       <DiscordSelector
         type="custom"
         customIcon="fa-layer-group"
         options={sectionOptions}
         selected={sectionFilter}
-        placeholder="All sections"
+        placeholder={m.auditlog.pageFilterSectionPlaceholder()}
         ariaLabelledby="section-filter-label"
         onchange={onSectionChange}
       />
@@ -361,12 +362,12 @@
     >
       <i class="fa-utility-duo fa-regular fa-arrows-rotate mr-2"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-      Refresh
+      {m.common.refresh()}
     </button>
   </div>
 
   {#if loading}
-    <div class="space-y-2" aria-busy="true" aria-label="Loading audit log">
+    <div class="space-y-2" aria-busy="true" aria-label={m.auditlog.pageLoading()}>
       {#each Array(6) as _, i (i)}
         <SkeletonLoader type="feature" delay={i * 60} />
       {/each}
@@ -375,7 +376,7 @@
     <div class="text-center py-12" style="color: {$colorStore.accent}">{error}</div>
   {:else if entries.length === 0}
     <div class="text-center py-12" style="color: {$colorStore.muted}">
-      No audit log entries match the current filters.
+      {m.auditlog.pageEmpty()}
     </div>
   {:else}
     <!-- Desktop table -->
@@ -387,10 +388,10 @@
       <table class="w-full text-sm">
         <thead>
           <tr style="background: {$colorStore.primary}15;">
-            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">When</th>
-            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">User</th>
-            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">Action</th>
-            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">Section</th>
+            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">{m.common.when()}</th>
+            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">{m.common.user()}</th>
+            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">{m.common.action()}</th>
+            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">{m.auditlog.pageColSection()}</th>
             <th class="px-4 py-3"></th>
           </tr>
         </thead>
@@ -429,7 +430,7 @@
                     class="rounded-lg px-2 py-1 min-h-[36px] text-xs"
                     style="background: {$colorStore.primary}15; color: {$colorStore.text};"
                   >
-                    {expandedId === entry.id ? "Hide" : "Details"}
+                    {expandedId === entry.id ? m.common.hide() : m.common.details()}
                   </button>
                 {/if}
               </td>
@@ -496,7 +497,7 @@
               class="mt-3 w-full rounded-xl px-3 min-h-[44px] text-sm font-medium"
               style="background: {$colorStore.primary}15; color: {$colorStore.text};"
             >
-              {expandedId === entry.id ? "Hide details" : "Show details"}
+              {expandedId === entry.id ? m.auditlog.pageDetailsHideLong() : m.auditlog.pageDetailsShowLong()}
             </button>
             {#if expandedId === entry.id}
               <div class="mt-2 space-y-1.5 rounded-xl p-3" style="background: {$colorStore.primary}10;">
@@ -520,7 +521,7 @@
     <!-- Pagination -->
     <div class="flex items-center justify-between gap-4 mt-6">
       <span class="text-sm" style="color: {$colorStore.muted}">
-        {total} entries &middot; page {page} of {totalPages}
+        {m.auditlog.pagePagination({ total, page, pages: totalPages })}
       </span>
       <div class="flex gap-2">
         <button
@@ -529,7 +530,7 @@
           class="rounded-xl px-4 min-h-[44px] font-medium disabled:opacity-40"
           style="background: {$colorStore.primary}20; color: {$colorStore.text};"
         >
-          Previous
+          {m.common.previous()}
         </button>
         <button
           onclick={() => changePage(page + 1)}
@@ -537,7 +538,7 @@
           class="rounded-xl px-4 min-h-[44px] font-medium disabled:opacity-40"
           style="background: {$colorStore.primary}20; color: {$colorStore.text};"
         >
-          Next
+          {m.common.next()}
         </button>
       </div>
     </div>

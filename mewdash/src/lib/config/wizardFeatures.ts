@@ -1,3 +1,10 @@
+import { m } from "$lib/i18n";
+
+/** Formats an estimated setup time as "2-3 min" or "2 min". */
+function setupTime(min: number, max?: number): string {
+  return max === undefined ? m.features.setupTimeSingle({ minutes: min }) : m.features.setupTimeRange({ min, max });
+}
+
 /**
  * Single source of truth for the setup wizard's feature catalog.
  *
@@ -38,13 +45,17 @@ export interface WizardFeature {
   quickSafe?: boolean;
   difficulty: WizardDifficulty;
   setupTime: string;
+  /** Estimated setup time in minutes (upper bound of the displayed range), used for totals. */
+  setupMinutes: number;
   benefits: string[];
   steps: WizardFeatureStep[];
 }
 
 /** A named grouping of features shown as one collapsible section. */
 export interface WizardFeatureCategory {
+  /** Stable key (also matched on by the wizard page); display `label` instead. */
   name: string;
+  label: string;
   description: string;
   features: WizardFeature[];
 }
@@ -58,6 +69,8 @@ export interface WizardLoggingEvent {
   enabled: boolean;
   channelId: string | null;
   category: string;
+  /** Localized display label for {@link category}; `category` itself is the matching key. */
+  categoryLabel: string;
 }
 
 /**
@@ -67,273 +80,303 @@ export interface WizardLoggingEvent {
 export const wizardLoggingEvents: WizardLoggingEvent[] = [
   {
     id: "UserJoined",
-    name: "Member Joined",
+    get name() { return m.features.wizardUserJoinedName(); },
     icon: "fa-utility-duo fa-regular fa-user-plus",
-    description: "When someone joins the server",
+    get description() { return m.features.wizardUserJoinedDescription(); },
     enabled: true,
     channelId: null,
-    category: "Members"
+    category: "Members",
+    get categoryLabel() { return m.features.categoryMembers(); }
   },
   {
     id: "UserLeft",
-    name: "Member Left",
+    get name() { return m.features.wizardUserLeftName(); },
     icon: "fa-utility-duo fa-regular fa-user-minus",
-    description: "When someone leaves the server",
+    get description() { return m.features.wizardUserLeftDescription(); },
     enabled: true,
     channelId: null,
-    category: "Members"
+    category: "Members",
+    get categoryLabel() { return m.features.categoryMembers(); }
   },
   {
     id: "MessageDeleted",
-    name: "Message Deleted",
+    get name() { return m.features.wizardMessageDeletedName(); },
     icon: "fa-utility-duo fa-regular fa-trash",
-    description: "When messages are deleted",
+    get description() { return m.features.wizardMessageDeletedDescription(); },
     enabled: true,
     channelId: null,
-    category: "Messages"
+    category: "Messages",
+    get categoryLabel() { return m.features.categoryMessages(); }
   },
   {
     id: "MessagesBulkDeleted",
-    name: "Messages Bulk Deleted",
+    get name() { return m.features.wizardMessagesBulkDeletedName(); },
     icon: "fa-utility-duo fa-regular fa-trash",
-    description: "When many messages are purged at once",
+    get description() { return m.features.wizardMessagesBulkDeletedDescription(); },
     enabled: true,
     channelId: null,
-    category: "Messages"
+    category: "Messages",
+    get categoryLabel() { return m.features.categoryMessages(); }
   },
   {
     id: "UserBanned",
-    name: "Member Banned",
+    get name() { return m.features.wizardUserBannedName(); },
     icon: "fa-utility-duo fa-regular fa-shield-slash",
-    description: "When someone is banned",
+    get description() { return m.features.wizardUserBannedDescription(); },
     enabled: true,
     channelId: null,
-    category: "Moderation"
+    category: "Moderation",
+    get categoryLabel() { return m.features.categoryModeration(); }
   },
   {
     id: "UserUnbanned",
-    name: "Member Unbanned",
+    get name() { return m.features.wizardUserUnbannedName(); },
     icon: "fa-utility-duo fa-regular fa-circle-check",
-    description: "When someone is unbanned",
+    get description() { return m.features.wizardUserUnbannedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Moderation"
+    category: "Moderation",
+    get categoryLabel() { return m.features.categoryModeration(); }
   },
   {
     id: "UserMuted",
-    name: "Member Muted",
+    get name() { return m.features.wizardUserMutedName(); },
     icon: "fa-utility-duo fa-regular fa-volume-slash",
-    description: "When someone is muted or timed out",
+    get description() { return m.features.wizardUserMutedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Moderation"
+    category: "Moderation",
+    get categoryLabel() { return m.features.categoryModeration(); }
   },
   {
     id: "UserRoleAdded",
-    name: "Role Added",
+    get name() { return m.features.wizardUserRoleAddedName(); },
     icon: "fa-utility-duo fa-regular fa-crown",
-    description: "When a role is given to a member",
+    get description() { return m.features.wizardUserRoleAddedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Members"
+    category: "Members",
+    get categoryLabel() { return m.features.categoryMembers(); }
   },
   {
     id: "UserRoleRemoved",
-    name: "Role Removed",
+    get name() { return m.features.wizardUserRoleRemovedName(); },
     icon: "fa-utility-duo fa-regular fa-crown",
-    description: "When a role is taken from a member",
+    get description() { return m.features.wizardUserRoleRemovedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Members"
+    category: "Members",
+    get categoryLabel() { return m.features.categoryMembers(); }
   },
   {
     id: "MessageUpdated",
-    name: "Message Edited",
+    get name() { return m.features.wizardMessageUpdatedName(); },
     icon: "fa-utility-duo fa-regular fa-pen-to-square",
-    description: "When messages are edited",
+    get description() { return m.features.wizardMessageUpdatedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Messages"
+    category: "Messages",
+    get categoryLabel() { return m.features.categoryMessages(); }
   },
   {
     id: "ReactionEvents",
-    name: "Reactions",
+    get name() { return m.features.wizardReactionEventsName(); },
     icon: "fa-utility-duo fa-regular fa-face-smile",
-    description: "When reactions are added or removed",
+    get description() { return m.features.wizardReactionEventsDescription(); },
     enabled: false,
     channelId: null,
-    category: "Messages"
+    category: "Messages",
+    get categoryLabel() { return m.features.categoryMessages(); }
   },
   {
     id: "UsernameUpdated",
-    name: "Username Changed",
+    get name() { return m.features.wizardUsernameUpdatedName(); },
     icon: "fa-utility-duo fa-regular fa-user",
-    description: "When a member changes their username",
+    get description() { return m.features.wizardUsernameUpdatedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Profile"
+    category: "Profile",
+    get categoryLabel() { return m.features.categoryProfile(); }
   },
   {
     id: "NicknameUpdated",
-    name: "Nickname Changed",
+    get name() { return m.features.wizardNicknameUpdatedName(); },
     icon: "fa-utility-duo fa-regular fa-id-card",
-    description: "When a member changes their server nickname",
+    get description() { return m.features.wizardNicknameUpdatedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Profile"
+    category: "Profile",
+    get categoryLabel() { return m.features.categoryProfile(); }
   },
   {
     id: "AvatarUpdated",
-    name: "Avatar Changed",
+    get name() { return m.features.wizardAvatarUpdatedName(); },
     icon: "fa-utility-duo fa-regular fa-image",
-    description: "When a member changes their avatar",
+    get description() { return m.features.wizardAvatarUpdatedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Profile"
+    category: "Profile",
+    get categoryLabel() { return m.features.categoryProfile(); }
   },
   {
     id: "ChannelCreated",
-    name: "Channel Created",
+    get name() { return m.features.wizardChannelCreatedName(); },
     icon: "fa-utility-duo fa-regular fa-circle-plus",
-    description: "When channels are created",
+    get description() { return m.features.wizardChannelCreatedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Server"
+    category: "Server",
+    get categoryLabel() { return m.features.categoryServer(); }
   },
   {
     id: "ChannelDestroyed",
-    name: "Channel Deleted",
+    get name() { return m.features.wizardChannelDestroyedName(); },
     icon: "fa-utility-duo fa-regular fa-trash",
-    description: "When channels are deleted",
+    get description() { return m.features.wizardChannelDestroyedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Server"
+    category: "Server",
+    get categoryLabel() { return m.features.categoryServer(); }
   },
   {
     id: "ChannelUpdated",
-    name: "Channel Updated",
+    get name() { return m.features.wizardChannelUpdatedName(); },
     icon: "fa-utility-duo fa-regular fa-pen-to-square",
-    description: "When channels are modified",
+    get description() { return m.features.wizardChannelUpdatedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Server"
+    category: "Server",
+    get categoryLabel() { return m.features.categoryServer(); }
   },
   {
     id: "RoleCreated",
-    name: "Role Created",
+    get name() { return m.features.wizardRoleCreatedName(); },
     icon: "fa-utility-duo fa-regular fa-crown",
-    description: "When roles are created",
+    get description() { return m.features.wizardRoleCreatedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Server"
+    category: "Server",
+    get categoryLabel() { return m.features.categoryServer(); }
   },
   {
     id: "RoleDeleted",
-    name: "Role Deleted",
+    get name() { return m.features.wizardRoleDeletedName(); },
     icon: "fa-utility-duo fa-regular fa-crown",
-    description: "When roles are deleted",
+    get description() { return m.features.wizardRoleDeletedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Server"
+    category: "Server",
+    get categoryLabel() { return m.features.categoryServer(); }
   },
   {
     id: "RoleUpdated",
-    name: "Role Updated",
+    get name() { return m.features.wizardRoleUpdatedName(); },
     icon: "fa-utility-duo fa-regular fa-crown",
-    description: "When roles are modified",
+    get description() { return m.features.wizardRoleUpdatedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Server"
+    category: "Server",
+    get categoryLabel() { return m.features.categoryServer(); }
   },
   {
     id: "ThreadCreated",
-    name: "Thread Created",
+    get name() { return m.features.wizardThreadCreatedName(); },
     icon: "fa-utility-duo fa-regular fa-comments",
-    description: "When threads are created",
+    get description() { return m.features.wizardThreadCreatedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Server"
+    category: "Server",
+    get categoryLabel() { return m.features.categoryServer(); }
   },
   {
     id: "ThreadDeleted",
-    name: "Thread Deleted",
+    get name() { return m.features.wizardThreadDeletedName(); },
     icon: "fa-utility-duo fa-regular fa-comments",
-    description: "When threads are deleted",
+    get description() { return m.features.wizardThreadDeletedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Server"
+    category: "Server",
+    get categoryLabel() { return m.features.categoryServer(); }
   },
   {
     id: "ThreadUpdated",
-    name: "Thread Updated",
+    get name() { return m.features.wizardThreadUpdatedName(); },
     icon: "fa-utility-duo fa-regular fa-comments",
-    description: "When threads are modified",
+    get description() { return m.features.wizardThreadUpdatedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Server"
+    category: "Server",
+    get categoryLabel() { return m.features.categoryServer(); }
   },
   {
     id: "InviteCreated",
-    name: "Invite Created",
+    get name() { return m.features.wizardInviteCreatedName(); },
     icon: "fa-utility-duo fa-regular fa-link",
-    description: "When an invite link is created",
+    get description() { return m.features.wizardInviteCreatedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Server"
+    category: "Server",
+    get categoryLabel() { return m.features.categoryServer(); }
   },
   {
     id: "InviteDeleted",
-    name: "Invite Deleted",
+    get name() { return m.features.wizardInviteDeletedName(); },
     icon: "fa-utility-duo fa-regular fa-chain",
-    description: "When an invite link is revoked or expires",
+    get description() { return m.features.wizardInviteDeletedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Server"
+    category: "Server",
+    get categoryLabel() { return m.features.categoryServer(); }
   },
   {
     id: "VoicePresence",
-    name: "Voice Activity",
+    get name() { return m.features.wizardVoicePresenceName(); },
     icon: "fa-utility-duo fa-regular fa-microphone",
-    description: "When members join or leave voice channels",
+    get description() { return m.features.wizardVoicePresenceDescription(); },
     enabled: false,
     channelId: null,
-    category: "Voice"
+    category: "Voice",
+    get categoryLabel() { return m.features.categoryVoice(); }
   },
   {
     id: "VoicePresenceTts",
-    name: "Voice Activity (TTS)",
+    get name() { return m.features.wizardVoicePresenceTtsName(); },
     icon: "fa-utility-duo fa-regular fa-volume",
-    description: "Announces voice joins and leaves out loud",
+    get description() { return m.features.wizardVoicePresenceTtsDescription(); },
     enabled: false,
     channelId: null,
-    category: "Voice"
+    category: "Voice",
+    get categoryLabel() { return m.features.categoryVoice(); }
   },
   {
     id: "ServerUpdated",
-    name: "Server Updated",
+    get name() { return m.features.wizardServerUpdatedName(); },
     icon: "fa-utility-duo fa-regular fa-gear",
-    description: "When server settings change",
+    get description() { return m.features.wizardServerUpdatedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Server"
+    category: "Server",
+    get categoryLabel() { return m.features.categoryServer(); }
   },
   {
     id: "EventCreated",
-    name: "Event Created",
+    get name() { return m.features.wizardEventCreatedName(); },
     icon: "fa-utility-duo fa-regular fa-calendar",
-    description: "When server events are created",
+    get description() { return m.features.wizardEventCreatedDescription(); },
     enabled: false,
     channelId: null,
-    category: "Server"
+    category: "Server",
+    get categoryLabel() { return m.features.categoryServer(); }
   },
   {
     id: "Other",
-    name: "Other Events",
+    get name() { return m.features.wizardOtherName(); },
     icon: "fa-utility-duo fa-regular fa-circle-info",
-    description: "Anything not covered by the categories above",
+    get description() { return m.features.wizardOtherDescription(); },
     enabled: false,
     channelId: null,
-    category: "Server"
+    category: "Server",
+    get categoryLabel() { return m.features.categoryServer(); }
   }
 ];
 
@@ -341,146 +384,162 @@ export const wizardLoggingEvents: WizardLoggingEvent[] = [
 export const wizardFeatureCategories: WizardFeatureCategory[] = [
   {
     name: "Essential",
-    description: "Core features every server should consider",
+    get label() { return m.features.categoryEssential(); },
+    get description() { return m.features.categoryEssentialDescription(); },
     features: [
       {
         id: "multigreets",
-        title: "Welcome Messages",
-        description: "Greet new members when they join/leave",
+        get title() { return m.features.wizardMultigreetsName(); },
+        get description() { return m.features.wizardMultigreetsDescription(); },
         icon: "fa-utility-duo fa-regular fa-bell",
         recommended: true,
         quickSafe: true,
         difficulty: "easy",
-        setupTime: "3-5 min",
-        benefits: [
-          "Make new members feel welcome instantly",
-          "Customize messages with embeds and buttons",
-          "Set up multiple welcome channels",
-          "Track member count in messages"
-        ],
+        setupMinutes: 5,
+        get setupTime() { return setupTime(3, 5); },
+        get benefits() {
+          return [
+            m.features.wizardMultigreetsBenefit1(),
+            m.features.wizardMultigreetsBenefit2(),
+            m.features.wizardMultigreetsBenefit3(),
+            m.features.wizardMultigreetsBenefit4()
+          ];
+        },
         steps: [
           {
             id: "channel",
-            title: "Choose Channels",
-            description: "Where should welcome messages be sent?",
+            get title() { return m.features.wizardMultigreetsStepChannelTitle(); },
+            get description() { return m.features.wizardMultigreetsStepChannelDescription(); },
             component: "channel"
           },
           {
             id: "message",
-            title: "Design Message",
-            description: "Create your welcome message",
+            get title() { return m.features.wizardMultigreetsStepMessageTitle(); },
+            get description() { return m.features.wizardMultigreetsStepMessageDescription(); },
             component: "message"
           }
         ]
       },
       {
         id: "protection",
-        title: "Raid & Spam Protection",
-        description: "Automatically stop raids, spam and alt accounts",
+        get title() { return m.features.wizardProtectionName(); },
+        get description() { return m.features.wizardProtectionDescription(); },
         icon: "fa-utility-duo fa-regular fa-shield-halved",
         recommended: true,
         quickSafe: true,
         difficulty: "medium",
-        setupTime: "3-5 min",
-        benefits: [
-          "Catch join raids before they flood your server",
-          "Auto-punish message spam and mention spam",
-          "Block brand-new alt accounts",
-          "Runs entirely on its own once configured"
-        ],
+        setupMinutes: 5,
+        get setupTime() { return setupTime(3, 5); },
+        get benefits() {
+          return [
+            m.features.wizardProtectionBenefit1(),
+            m.features.wizardProtectionBenefit2(),
+            m.features.wizardProtectionBenefit3(),
+            m.features.wizardProtectionBenefit4()
+          ];
+        },
         steps: [
           {
             id: "raid",
-            title: "Raid & Spam",
-            description: "Protect against join raids and message spam",
+            get title() { return m.features.wizardProtectionStepRaidTitle(); },
+            get description() { return m.features.wizardProtectionStepRaidDescription(); },
             component: "custom"
           },
           {
             id: "alts",
-            title: "Alts & Mentions",
-            description: "Screen new accounts and stop mass mentions",
+            get title() { return m.features.wizardProtectionStepAltsTitle(); },
+            get description() { return m.features.wizardProtectionStepAltsDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "rolegreets",
-        title: "Role Messages",
-        description: "Greet members when they get roles (perfect for verification)",
+        get title() { return m.features.wizardRolegreetsName(); },
+        get description() { return m.features.wizardRolegreetsDescription(); },
         icon: "fa-utility-duo fa-regular fa-user",
         recommended: true,
         difficulty: "easy",
-        setupTime: "2-4 min",
-        benefits: [
-          "Perfect for verification systems",
-          "Celebrate staff promotions",
-          "Reduce spam from unverified users",
-          "Announce achievement roles"
-        ],
+        setupMinutes: 4,
+        get setupTime() { return setupTime(2, 4); },
+        get benefits() {
+          return [
+            m.features.wizardRolegreetsBenefit1(),
+            m.features.wizardRolegreetsBenefit2(),
+            m.features.wizardRolegreetsBenefit3(),
+            m.features.wizardRolegreetsBenefit4()
+          ];
+        },
         steps: [
           {
             id: "role",
-            title: "Choose Role",
-            description: "Which role should trigger the message?",
+            get title() { return m.features.wizardRolegreetsStepRoleTitle(); },
+            get description() { return m.features.wizardRolegreetsStepRoleDescription(); },
             component: "custom"
           },
           {
             id: "channel",
-            title: "Choose Channel",
-            description: "Where should the message be sent?",
+            get title() { return m.features.wizardRolegreetsStepChannelTitle(); },
+            get description() { return m.features.wizardRolegreetsStepChannelDescription(); },
             component: "channel"
           },
           {
             id: "message",
-            title: "Design Message",
-            description: "Create your role greet message",
+            get title() { return m.features.wizardMultigreetsStepMessageTitle(); },
+            get description() { return m.features.wizardRolegreetsStepMessageDescription(); },
             component: "message"
           }
         ]
       },
       {
         id: "logging",
-        title: "Event Logging",
-        description: "Track joins, leaves, and moderation actions",
+        get title() { return m.features.wizardLoggingName(); },
+        get description() { return m.features.wizardLoggingDescription(); },
         icon: "fa-utility-duo fa-regular fa-file",
         recommended: true,
         quickSafe: true,
         difficulty: "easy",
-        setupTime: "2-3 min",
-        benefits: [
-          "Track all member activity",
-          "Monitor message edits and deletions",
-          "Log moderation actions",
-          "Separate logs by event type"
-        ],
+        setupMinutes: 3,
+        get setupTime() { return setupTime(2, 3); },
+        get benefits() {
+          return [
+            m.features.wizardLoggingBenefit1(),
+            m.features.wizardLoggingBenefit2(),
+            m.features.wizardLoggingBenefit3(),
+            m.features.wizardLoggingBenefit4()
+          ];
+        },
         steps: [
           {
             id: "channels",
-            title: "Configure Logging",
-            description: "Set up event log channels",
+            get title() { return m.features.wizardLoggingStepChannelsTitle(); },
+            get description() { return m.features.wizardLoggingStepChannelsDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "administration",
-        title: "Auto-Assign Roles",
-        description: "Give roles to new members automatically",
+        get title() { return m.features.wizardAdministrationName(); },
+        get description() { return m.features.wizardAdministrationDescription(); },
         icon: "fa-utility-duo fa-regular fa-cog",
         recommended: false,
         difficulty: "easy",
-        setupTime: "2-3 min",
-        benefits: [
-          "Instant permissions for new members",
-          "Distinguish members from bots",
-          "Separate roles for users vs bots",
-          "Grant channel access automatically"
-        ],
+        setupMinutes: 3,
+        get setupTime() { return setupTime(2, 3); },
+        get benefits() {
+          return [
+            m.features.wizardAdministrationBenefit1(),
+            m.features.wizardAdministrationBenefit2(),
+            m.features.wizardAdministrationBenefit3(),
+            m.features.wizardAdministrationBenefit4()
+          ];
+        },
         steps: [
           {
             id: "roles",
-            title: "Choose Roles",
-            description: "Select roles to auto-assign",
+            get title() { return m.features.wizardAdministrationStepRolesTitle(); },
+            get description() { return m.features.wizardAdministrationStepRolesDescription(); },
             component: "custom"
           }
         ]
@@ -489,74 +548,84 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
   },
   {
     name: "Moderation & Support",
-    description: "Keep your server safe and organized",
+    get label() { return m.features.categoryModerationSupport(); },
+    get description() { return m.features.categoryModerationSupportDescription(); },
     features: [
       {
         id: "moderation",
-        title: "Moderation Tools",
-        description: "Warning system for rule breakers",
+        get title() { return m.features.wizardModerationName(); },
+        get description() { return m.features.wizardModerationDescription(); },
         icon: "fa-utility-duo fa-regular fa-flag",
         recommended: false,
         difficulty: "medium",
-        setupTime: "3-5 min",
-        benefits: [
-          "Track warnings per user",
-          "Send warnings to a dedicated log channel",
-          "Expire old warnings automatically",
-          "Case management system"
-        ],
+        setupMinutes: 5,
+        get setupTime() { return setupTime(3, 5); },
+        get benefits() {
+          return [
+            m.features.wizardModerationBenefit1(),
+            m.features.wizardModerationBenefit2(),
+            m.features.wizardModerationBenefit3(),
+            m.features.wizardModerationBenefit4()
+          ];
+        },
         steps: [
           {
             id: "config",
-            title: "Moderation Setup",
-            description: "Configure warning logs and expiry",
+            get title() { return m.features.wizardModerationStepConfigTitle(); },
+            get description() { return m.features.wizardModerationStepConfigDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "tickets",
-        title: "Support Tickets",
-        description: "Private support channels for members",
+        get title() { return m.features.wizardTicketsName(); },
+        get description() { return m.features.wizardTicketsDescription(); },
         icon: "fa-utility-duo fa-regular fa-ticket",
         recommended: false,
         quickSafe: true,
         difficulty: "medium",
-        setupTime: "3-5 min",
-        benefits: [
-          "Private support channels",
-          "A ready-to-use ticket panel with a button",
-          "Support roles added automatically",
-          "Transcript saving"
-        ],
+        setupMinutes: 5,
+        get setupTime() { return setupTime(3, 5); },
+        get benefits() {
+          return [
+            m.features.wizardTicketsBenefit1(),
+            m.features.wizardTicketsBenefit2(),
+            m.features.wizardTicketsBenefit3(),
+            m.features.wizardTicketsBenefit4()
+          ];
+        },
         steps: [
           {
             id: "panel",
-            title: "Ticket Panel",
-            description: "Create a panel members can open tickets from",
+            get title() { return m.features.wizardTicketsStepPanelTitle(); },
+            get description() { return m.features.wizardTicketsStepPanelDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "rolestates",
-        title: "Role Persistence",
-        description: "Give members their roles back when they rejoin",
+        get title() { return m.features.wizardRolestatesName(); },
+        get description() { return m.features.wizardRolestatesDescription(); },
         icon: "fa-utility-duo fa-regular fa-clipboard-check",
         recommended: false,
         difficulty: "easy",
-        setupTime: "1-2 min",
-        benefits: [
-          "Stops members leaving to shed a mute role",
-          "Restores ranks and colours on rejoin",
-          "Optionally clears saved roles on ban",
-          "Works silently in the background"
-        ],
+        setupMinutes: 2,
+        get setupTime() { return setupTime(1, 2); },
+        get benefits() {
+          return [
+            m.features.wizardRolestatesBenefit1(),
+            m.features.wizardRolestatesBenefit2(),
+            m.features.wizardRolestatesBenefit3(),
+            m.features.wizardRolestatesBenefit4()
+          ];
+        },
         steps: [
           {
             id: "config",
-            title: "Persistence Rules",
-            description: "Choose how saved roles behave",
+            get title() { return m.features.wizardRolestatesStepConfigTitle(); },
+            get description() { return m.features.wizardRolestatesStepConfigDescription(); },
             component: "custom"
           }
         ]
@@ -565,201 +634,226 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
   },
   {
     name: "Community Growth",
-    description: "Features to engage and grow your community",
+    get label() { return m.features.categoryCommunityGrowth(); },
+    get description() { return m.features.categoryCommunityGrowthDescription(); },
     features: [
       {
         id: "xp",
-        title: "XP & Leveling",
-        description: "Reward active members with levels and role rewards",
+        get title() { return m.features.wizardXpName(); },
+        get description() { return m.features.wizardXpDescription(); },
         icon: "fa-utility-duo fa-regular fa-star",
         recommended: false,
         difficulty: "medium",
-        setupTime: "5-8 min",
-        benefits: [
-          "Reward active members",
-          "Automatic role rewards at levels",
-          "Exclude spam channels",
-          "Voice and text XP tracking"
-        ],
+        setupMinutes: 8,
+        get setupTime() { return setupTime(5, 8); },
+        get benefits() {
+          return [
+            m.features.wizardXpBenefit1(),
+            m.features.wizardXpBenefit2(),
+            m.features.wizardXpBenefit3(),
+            m.features.wizardXpBenefit4()
+          ];
+        },
         steps: [
           { id: "rates", title: "XP Rates", description: "Configure XP earning rates", component: "custom" },
           {
             id: "rewards",
-            title: "Role Rewards",
-            description: "Set up level-based role rewards",
+            get title() { return m.features.wizardXpStepRewardsTitle(); },
+            get description() { return m.features.wizardXpStepRewardsDescription(); },
             component: "custom"
           },
           {
             id: "exclusions",
-            title: "Exclusions",
-            description: "Exclude channels from XP gain",
+            get title() { return m.features.wizardXpStepExclusionsTitle(); },
+            get description() { return m.features.wizardXpStepExclusionsDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "starboard",
-        title: "Starboard",
-        description: "Highlight the best messages with reactions",
+        get title() { return m.features.starboardName(); },
+        get description() { return m.features.wizardStarboardDescription(); },
         icon: "fa-utility-duo fa-regular fa-star",
         recommended: false,
         quickSafe: true,
         difficulty: "easy",
-        setupTime: "2-3 min",
-        benefits: [
-          "Showcase community highlights",
-          "Encourage positive interactions",
-          "Custom star emoji and threshold",
-          "Multiple starboards support"
-        ],
+        setupMinutes: 3,
+        get setupTime() { return setupTime(2, 3); },
+        get benefits() {
+          return [
+            m.features.wizardStarboardBenefit1(),
+            m.features.wizardStarboardBenefit2(),
+            m.features.wizardStarboardBenefit3(),
+            m.features.wizardStarboardBenefit4()
+          ];
+        },
         steps: [
           {
             id: "config",
-            title: "Configure Starboard",
-            description: "Set up your starboard",
+            get title() { return m.features.wizardStarboardStepConfigTitle(); },
+            get description() { return m.features.wizardStarboardStepConfigDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "suggestions",
-        title: "Suggestions",
-        description: "Let members suggest server improvements",
+        get title() { return m.features.suggestionsName(); },
+        get description() { return m.features.wizardSuggestionsDescription(); },
         icon: "fa-utility-duo fa-regular fa-lightbulb",
         recommended: false,
         quickSafe: true,
         difficulty: "easy",
-        setupTime: "2-4 min",
-        benefits: [
-          "Gather community feedback",
-          "Automatic voting reactions",
-          "Staff approval workflow",
-          "Optional channels for accepted/denied"
-        ],
+        setupMinutes: 4,
+        get setupTime() { return setupTime(2, 4); },
+        get benefits() {
+          return [
+            m.features.wizardSuggestionsBenefit1(),
+            m.features.wizardSuggestionsBenefit2(),
+            m.features.wizardSuggestionsBenefit3(),
+            m.features.wizardSuggestionsBenefit4()
+          ];
+        },
         steps: [
           {
             id: "channels",
-            title: "Suggestion Channels",
-            description: "Configure where suggestions are managed",
+            get title() { return m.features.wizardSuggestionsStepChannelsTitle(); },
+            get description() { return m.features.wizardSuggestionsStepChannelsDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "giveaways",
-        title: "Giveaways",
-        description: "Host contests and events (configured per giveaway)",
+        get title() { return m.features.giveawaysName(); },
+        get description() { return m.features.wizardGiveawaysDescription(); },
         icon: "fa-utility-duo fa-regular fa-gift",
         recommended: false,
         difficulty: "easy",
-        setupTime: "N/A",
-        benefits: [
-          "Host engaging events",
-          "Automatic winner selection",
-          "Role and message requirements",
-          "Multiple winners support",
-          "Configured per-giveaway in dashboard"
-        ],
+        setupMinutes: 0,
+        get setupTime() { return m.common.notAvailable(); },
+        get benefits() {
+          return [
+            m.features.wizardGiveawaysBenefit1(),
+            m.features.wizardGiveawaysBenefit2(),
+            m.features.wizardGiveawaysBenefit3(),
+            m.features.wizardGiveawaysBenefit4(),
+            m.features.wizardGiveawaysBenefit5()
+          ];
+        },
         steps: []
       },
       {
         id: "confessions",
-        title: "Anonymous Confessions",
-        description: "Let members submit anonymous confessions",
+        get title() { return m.features.wizardConfessionsName(); },
+        get description() { return m.features.wizardConfessionsDescription(); },
         icon: "fa-utility-duo fa-regular fa-comment",
         recommended: false,
         quickSafe: true,
         difficulty: "easy",
-        setupTime: "2-3 min",
-        benefits: [
-          "Anonymous community feedback",
-          "Staff moderation via log channel",
-          "Build trust and openness",
-          "Track confession statistics"
-        ],
+        setupMinutes: 3,
+        get setupTime() { return setupTime(2, 3); },
+        get benefits() {
+          return [
+            m.features.wizardConfessionsBenefit1(),
+            m.features.wizardConfessionsBenefit2(),
+            m.features.wizardConfessionsBenefit3(),
+            m.features.wizardConfessionsBenefit4()
+          ];
+        },
         steps: [
           {
             id: "config",
-            title: "Confession Setup",
-            description: "Configure confession channels",
+            get title() { return m.features.wizardConfessionsStepConfigTitle(); },
+            get description() { return m.features.wizardConfessionsStepConfigDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "counting",
-        title: "Counting Game",
-        description: "Count to infinity (or chaos ensues)",
+        get title() { return m.features.wizardCountingName(); },
+        get description() { return m.features.wizardCountingDescription(); },
         icon: "fa-utility-duo fa-regular fa-list-numeric",
         recommended: false,
         quickSafe: true,
         difficulty: "easy",
-        setupTime: "1 min",
-        benefits: [
-          "Fun community activity",
-          "Simple but engaging",
-          "Automatic number tracking",
-          "Prevents duplicate counts"
-        ],
+        setupMinutes: 1,
+        get setupTime() { return setupTime(1); },
+        get benefits() {
+          return [
+            m.features.wizardCountingBenefit1(),
+            m.features.wizardCountingBenefit2(),
+            m.features.wizardCountingBenefit3(),
+            m.features.wizardCountingBenefit4()
+          ];
+        },
         steps: [
           {
             id: "channel",
-            title: "Counting Channel",
-            description: "Where should counting happen?",
+            get title() { return m.features.wizardCountingStepChannelTitle(); },
+            get description() { return m.features.wizardCountingStepChannelDescription(); },
             component: "channel"
           }
         ]
       },
       {
         id: "birthday",
-        title: "Birthday Celebrations",
-        description: "Celebrate member birthdays automatically",
+        get title() { return m.features.wizardBirthdayName(); },
+        get description() { return m.features.wizardBirthdayDescription(); },
         icon: "fa-utility-duo fa-regular fa-birthday-cake",
         recommended: false,
         quickSafe: true,
         difficulty: "easy",
-        setupTime: "3-4 min",
-        benefits: [
-          "Auto birthday announcements",
-          "Optional birthday role",
-          "Customizable messages/embeds",
-          "Never miss a birthday"
-        ],
+        setupMinutes: 4,
+        get setupTime() { return setupTime(3, 4); },
+        get benefits() {
+          return [
+            m.features.wizardBirthdayBenefit1(),
+            m.features.wizardBirthdayBenefit2(),
+            m.features.wizardBirthdayBenefit3(),
+            m.features.wizardBirthdayBenefit4()
+          ];
+        },
         steps: [
           {
             id: "channel",
-            title: "Birthday Channel & Role",
-            description: "Where to announce birthdays",
+            get title() { return m.features.wizardBirthdayStepChannelTitle(); },
+            get description() { return m.features.wizardBirthdayStepChannelDescription(); },
             component: "custom"
           },
           {
             id: "message",
-            title: "Birthday Message",
-            description: "Customize the birthday announcement",
+            get title() { return m.features.wizardBirthdayStepMessageTitle(); },
+            get description() { return m.features.wizardBirthdayStepMessageDescription(); },
             component: "message"
           }
         ]
       },
       {
         id: "reputation",
-        title: "Reputation",
-        description: "Let members thank each other and earn standing",
+        get title() { return m.features.reputationName(); },
+        get description() { return m.features.wizardReputationDescription(); },
         icon: "fa-utility-duo fa-regular fa-thumbs-up",
         recommended: false,
         quickSafe: true,
         difficulty: "easy",
-        setupTime: "2-3 min",
-        benefits: [
-          "Recognise genuinely helpful members",
-          "Cooldowns and daily limits stop farming",
-          "Optional announcement channel",
-          "Leaderboard and role rewards"
-        ],
+        setupMinutes: 3,
+        get setupTime() { return setupTime(2, 3); },
+        get benefits() {
+          return [
+            m.features.wizardReputationBenefit1(),
+            m.features.wizardReputationBenefit2(),
+            m.features.wizardReputationBenefit3(),
+            m.features.wizardReputationBenefit4()
+          ];
+        },
         steps: [
           {
             id: "config",
-            title: "Reputation Rules",
-            description: "Set cooldowns, limits and announcements",
+            get title() { return m.features.wizardReputationStepConfigTitle(); },
+            get description() { return m.features.wizardReputationStepConfigDescription(); },
             component: "custom"
           }
         ]
@@ -768,79 +862,89 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
   },
   {
     name: "Roles & Access",
-    description: "Control who gets what in your server",
+    get label() { return m.features.categoryRolesAccess(); },
+    get description() { return m.features.categoryRolesAccessDescription(); },
     features: [
       {
         id: "roles",
-        title: "Server Roles",
-        description: "Set staff and member roles, plus self-assignable roles",
+        get title() { return m.features.wizardRolesName(); },
+        get description() { return m.features.wizardRolesDescription(); },
         icon: "fa-utility-duo fa-regular fa-crown",
         recommended: true,
         difficulty: "easy",
-        setupTime: "2-4 min",
-        benefits: [
-          "Tell the bot which role is your staff role",
-          "Let members pick their own roles",
-          "Powers permission checks across features",
-          "No commands needed to hand out cosmetic roles"
-        ],
+        setupMinutes: 4,
+        get setupTime() { return setupTime(2, 4); },
+        get benefits() {
+          return [
+            m.features.wizardRolesBenefit1(),
+            m.features.wizardRolesBenefit2(),
+            m.features.wizardRolesBenefit3(),
+            m.features.wizardRolesBenefit4()
+          ];
+        },
         steps: [
           {
             id: "core",
-            title: "Staff & Member Roles",
-            description: "Which roles identify your staff and members?",
+            get title() { return m.features.wizardRolesStepCoreTitle(); },
+            get description() { return m.features.wizardRolesStepCoreDescription(); },
             component: "custom"
           },
           {
             id: "selfassign",
-            title: "Self-Assignable Roles",
-            description: "Roles members can give themselves",
+            get title() { return m.features.wizardRolesStepSelfassignTitle(); },
+            get description() { return m.features.wizardRolesStepSelfassignDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "statusroles",
-        title: "Status Roles",
-        description: "Give a role to members who put text in their status",
+        get title() { return m.features.statusrolesName(); },
+        get description() { return m.features.wizardStatusrolesDescription(); },
         icon: "fa-utility-duo fa-regular fa-circle-user",
         recommended: false,
         difficulty: "easy",
-        setupTime: "2 min",
-        benefits: [
-          "Reward members who advertise your server",
-          "Automatic add and remove as the status changes",
-          "Great for /vanity or invite links",
-          "Optional announcement message"
-        ],
+        setupMinutes: 2,
+        get setupTime() { return setupTime(2); },
+        get benefits() {
+          return [
+            m.features.wizardStatusrolesBenefit1(),
+            m.features.wizardStatusrolesBenefit2(),
+            m.features.wizardStatusrolesBenefit3(),
+            m.features.wizardStatusrolesBenefit4()
+          ];
+        },
         steps: [
           {
             id: "config",
-            title: "Status & Roles",
-            description: "Pick the status text and the roles to grant",
+            get title() { return m.features.wizardStatusrolesStepConfigTitle(); },
+            get description() { return m.features.wizardStatusrolesStepConfigDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "customvoice",
-        title: "Custom Voice Channels",
-        description: "Members create their own voice channels on demand",
+        get title() { return m.features.customvoiceDescription(); },
+        get description() { return m.features.wizardCustomvoiceDescription(); },
         icon: "fa-utility-duo fa-regular fa-microphone",
         recommended: false,
         difficulty: "medium",
-        setupTime: "3-4 min",
-        benefits: [
-          "One hub channel spawns personal voice rooms",
-          "Owners can rename, lock and limit their room",
-          "Empty channels clean themselves up",
-          "No more dozens of unused voice channels"
-        ],
+        setupMinutes: 4,
+        get setupTime() { return setupTime(3, 4); },
+        get benefits() {
+          return [
+            m.features.wizardCustomvoiceBenefit1(),
+            m.features.wizardCustomvoiceBenefit2(),
+            m.features.wizardCustomvoiceBenefit3(),
+            m.features.wizardCustomvoiceBenefit4()
+          ];
+        },
         steps: [
           {
             id: "hub",
-            title: "Hub & Category",
-            description: "Where should personal channels be created?",
+            get title() { return m.features.wizardCustomvoiceStepHubTitle(); },
+            get description() { return m.features.wizardCustomvoiceStepHubDescription(); },
             component: "custom"
           }
         ]
@@ -849,96 +953,109 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
   },
   {
     name: "Notifications & Content",
-    description: "Bring outside content into your server",
+    get label() { return m.features.categoryNotificationsContent(); },
+    get description() { return m.features.categoryNotificationsContentDescription(); },
     features: [
       {
         id: "feeds",
-        title: "RSS Feeds",
-        description: "Post new articles from any RSS feed",
+        get title() { return m.features.wizardFeedsName(); },
+        get description() { return m.features.wizardFeedsDescription(); },
         icon: "fa-utility-duo fa-regular fa-newspaper",
         recommended: false,
         difficulty: "easy",
-        setupTime: "2-3 min",
-        benefits: [
-          "Follow blogs, news sites and release notes",
-          "Each feed posts to the channel you choose",
-          "Automatic polling, no commands needed",
-          "Custom message per feed"
-        ],
+        setupMinutes: 3,
+        get setupTime() { return setupTime(2, 3); },
+        get benefits() {
+          return [
+            m.features.wizardFeedsBenefit1(),
+            m.features.wizardFeedsBenefit2(),
+            m.features.wizardFeedsBenefit3(),
+            m.features.wizardFeedsBenefit4()
+          ];
+        },
         steps: [
           {
             id: "feeds",
-            title: "Add Feeds",
-            description: "Which feeds should post, and where?",
+            get title() { return m.features.wizardFeedsStepFeedsTitle(); },
+            get description() { return m.features.wizardFeedsStepFeedsDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "streams",
-        title: "Stream Notifications",
-        description: "Announce when your streamers go live",
+        get title() { return m.features.wizardStreamsName(); },
+        get description() { return m.features.wizardStreamsDescription(); },
         icon: "fa-utility-duo fa-regular fa-video",
         recommended: false,
         difficulty: "easy",
-        setupTime: "2-3 min",
-        benefits: [
-          "Twitch, YouTube, Trovo and Picarto support",
-          "Announce the moment a stream starts",
-          "Optional offline notifications",
-          "Custom announcement message"
-        ],
+        setupMinutes: 3,
+        get setupTime() { return setupTime(2, 3); },
+        get benefits() {
+          return [
+            m.features.wizardStreamsBenefit1(),
+            m.features.wizardStreamsBenefit2(),
+            m.features.wizardStreamsBenefit3(),
+            m.features.wizardStreamsBenefit4()
+          ];
+        },
         steps: [
           {
             id: "streams",
-            title: "Follow Streamers",
-            description: "Which streams should be announced, and where?",
+            get title() { return m.features.wizardStreamsStepStreamsTitle(); },
+            get description() { return m.features.wizardStreamsStepStreamsDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "repeaters",
-        title: "Repeating Messages",
-        description: "Post a recurring or sticky message in a channel",
+        get title() { return m.features.wizardRepeatersName(); },
+        get description() { return m.features.wizardRepeatersDescription(); },
         icon: "fa-utility-duo fa-regular fa-arrows-rotate",
         recommended: false,
         difficulty: "easy",
-        setupTime: "2-3 min",
-        benefits: [
-          "Keep rules or links visible in busy channels",
-          "Sticky mode reposts after conversation",
-          "Choose any interval you like",
-          "Skips reposting when nothing has changed"
-        ],
+        setupMinutes: 3,
+        get setupTime() { return setupTime(2, 3); },
+        get benefits() {
+          return [
+            m.features.wizardRepeatersBenefit1(),
+            m.features.wizardRepeatersBenefit2(),
+            m.features.wizardRepeatersBenefit3(),
+            m.features.wizardRepeatersBenefit4()
+          ];
+        },
         steps: [
           {
             id: "config",
-            title: "Message & Interval",
-            description: "What should repeat, where, and how often?",
+            get title() { return m.features.wizardRepeatersStepConfigTitle(); },
+            get description() { return m.features.wizardRepeatersStepConfigDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "votes",
-        title: "Vote Rewards",
-        description: "Reward members for voting for your server",
+        get title() { return m.features.wizardVotesName(); },
+        get description() { return m.features.wizardVotesDescription(); },
         icon: "fa-utility-duo fa-regular fa-heart",
         recommended: false,
         difficulty: "medium",
-        setupTime: "2-4 min",
-        benefits: [
-          "Thank voters automatically",
-          "Optional temporary reward roles",
-          "Announcement channel for every vote",
-          "Works with top.gg webhooks"
-        ],
+        setupMinutes: 4,
+        get setupTime() { return setupTime(2, 4); },
+        get benefits() {
+          return [
+            m.features.wizardVotesBenefit1(),
+            m.features.wizardVotesBenefit2(),
+            m.features.wizardVotesBenefit3(),
+            m.features.wizardVotesBenefit4()
+          ];
+        },
         steps: [
           {
             id: "config",
-            title: "Vote Setup",
-            description: "Announcement channel, message and webhook password",
+            get title() { return m.features.wizardVotesStepConfigTitle(); },
+            get description() { return m.features.wizardVotesStepConfigDescription(); },
             component: "custom"
           }
         ]
@@ -947,74 +1064,84 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
   },
   {
     name: "Server Insights",
-    description: "Surface what's happening in your server",
+    get label() { return m.features.categoryServerInsights(); },
+    get description() { return m.features.categoryServerInsightsDescription(); },
     features: [
       {
         id: "statchannels",
-        title: "Stat Channels",
-        description: "Live member and server counts in your channel list",
+        get title() { return m.features.statchannelsName(); },
+        get description() { return m.features.wizardStatchannelsDescription(); },
         icon: "fa-utility-duo fa-regular fa-chart-simple",
         recommended: false,
         difficulty: "easy",
-        setupTime: "2 min",
-        benefits: [
-          "Member, human, bot and boost counters",
-          "Channels are created for you",
-          "Updates automatically as numbers change",
-          "Fully customisable templates later"
-        ],
+        setupMinutes: 2,
+        get setupTime() { return setupTime(2); },
+        get benefits() {
+          return [
+            m.features.wizardStatchannelsBenefit1(),
+            m.features.wizardStatchannelsBenefit2(),
+            m.features.wizardStatchannelsBenefit3(),
+            m.features.wizardStatchannelsBenefit4()
+          ];
+        },
         steps: [
           {
             id: "stats",
-            title: "Choose Counters",
-            description: "Which counters should be created?",
+            get title() { return m.features.wizardStatchannelsStepStatsTitle(); },
+            get description() { return m.features.wizardStatchannelsStepStatsDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "invitetracking",
-        title: "Invite Tracking",
-        description: "See who invited each new member",
+        get title() { return m.features.wizardInvitetrackingName(); },
+        get description() { return m.features.wizardInvitetrackingDescription(); },
         icon: "fa-utility-duo fa-regular fa-link",
         recommended: false,
         quickSafe: true,
         difficulty: "easy",
-        setupTime: "1-2 min",
-        benefits: [
-          "Attribute every join to an inviter",
-          "Invite leaderboard for your community",
-          "Use %inviter% placeholders in greets",
-          "Optional minimum account age"
-        ],
+        setupMinutes: 2,
+        get setupTime() { return setupTime(1, 2); },
+        get benefits() {
+          return [
+            m.features.wizardInvitetrackingBenefit1(),
+            m.features.wizardInvitetrackingBenefit2(),
+            m.features.wizardInvitetrackingBenefit3(),
+            m.features.wizardInvitetrackingBenefit4()
+          ];
+        },
         steps: [
           {
             id: "config",
-            title: "Tracking Rules",
-            description: "How should invites be counted?",
+            get title() { return m.features.wizardInvitetrackingStepConfigTitle(); },
+            get description() { return m.features.wizardInvitetrackingStepConfigDescription(); },
             component: "custom"
           }
         ]
       },
       {
         id: "afk",
-        title: "AFK System",
-        description: "Let members mark themselves away",
+        get title() { return m.features.afkName(); },
+        get description() { return m.features.wizardAfkDescription(); },
         icon: "fa-utility-duo fa-regular fa-moon",
         recommended: false,
         difficulty: "easy",
-        setupTime: "1-2 min",
-        benefits: [
-          "Tells people why someone isn't replying",
-          "Auto-clears when the member speaks",
-          "Disable it in channels where it's noise",
-          "Custom AFK response message"
-        ],
+        setupMinutes: 2,
+        get setupTime() { return setupTime(1, 2); },
+        get benefits() {
+          return [
+            m.features.wizardAfkBenefit1(),
+            m.features.wizardAfkBenefit2(),
+            m.features.wizardAfkBenefit3(),
+            m.features.wizardAfkBenefit4()
+          ];
+        },
         steps: [
           {
             id: "config",
-            title: "AFK Behaviour",
-            description: "How should AFK messages work?",
+            get title() { return m.features.wizardAfkStepConfigTitle(); },
+            get description() { return m.features.wizardAfkStepConfigDescription(); },
             component: "custom"
           }
         ]
@@ -1069,18 +1196,18 @@ const BUSY_SERVER_MEMBERS = 500;
  * A channel called "tickets" is a statement of intent, and matching on it lets the
  * wizard arrive with an opinion rather than 26 identical toggles.
  */
-const KEYWORD_RULES: Array<{ feature: string; keywords: string[]; label: string }> = [
-  { feature: "tickets", keywords: ["ticket", "support", "modmail", "helpdesk"], label: "support channel" },
-  { feature: "suggestions", keywords: ["suggestion", "idea", "feedback"], label: "suggestions channel" },
-  { feature: "xp", keywords: ["level", "rank", "leaderboard"], label: "levels channel" },
-  { feature: "confessions", keywords: ["confession"], label: "confessions channel" },
-  { feature: "starboard", keywords: ["starboard", "hall-of-fame", "best-of", "highlight"], label: "starboard channel" },
-  { feature: "counting", keywords: ["counting"], label: "counting channel" },
-  { feature: "rolegreets", keywords: ["verify", "verification", "unverified"], label: "verification setup" },
-  { feature: "birthday", keywords: ["birthday"], label: "birthdays channel" },
-  { feature: "giveaways", keywords: ["giveaway"], label: "giveaways channel" },
-  { feature: "invitetracking", keywords: ["invite"], label: "invites channel" },
-  { feature: "reputation", keywords: ["reputation", "kudos", "thanks"], label: "reputation channel" }
+const KEYWORD_RULES: Array<{ feature: string; keywords: string[]; reason: () => string }> = [
+  { feature: "tickets", keywords: ["ticket", "support", "modmail", "helpdesk"], reason: () => m.features.wizardReasonExistingTickets() },
+  { feature: "suggestions", keywords: ["suggestion", "idea", "feedback"], reason: () => m.features.wizardReasonExistingSuggestions() },
+  { feature: "xp", keywords: ["level", "rank", "leaderboard"], reason: () => m.features.wizardReasonExistingXp() },
+  { feature: "confessions", keywords: ["confession"], reason: () => m.features.wizardReasonExistingConfessions() },
+  { feature: "starboard", keywords: ["starboard", "hall-of-fame", "best-of", "highlight"], reason: () => m.features.wizardReasonExistingStarboard() },
+  { feature: "counting", keywords: ["counting"], reason: () => m.features.wizardReasonExistingCounting() },
+  { feature: "rolegreets", keywords: ["verify", "verification", "unverified"], reason: () => m.features.wizardReasonExistingRolegreets() },
+  { feature: "birthday", keywords: ["birthday"], reason: () => m.features.wizardReasonExistingBirthday() },
+  { feature: "giveaways", keywords: ["giveaway"], reason: () => m.features.wizardReasonExistingGiveaways() },
+  { feature: "invitetracking", keywords: ["invite"], reason: () => m.features.wizardReasonExistingInvitetracking() },
+  { feature: "reputation", keywords: ["reputation", "kudos", "thanks"], reason: () => m.features.wizardReasonExistingReputation() }
 ];
 
 /**
@@ -1097,23 +1224,24 @@ export function recommendFeatures(context: WizardServerContext): Record<string, 
   const suggestions: Record<string, WizardSuggestion> = {};
   const quickSafeIds = new Set(allWizardFeatures.filter((f) => f.quickSafe).map((f) => f.id));
 
-  const suggest = (feature: string, reason: string) => {
+  // `reason` is a getter so the text is resolved at render time and follows locale switches.
+  const suggest = (feature: string, reason: () => string) => {
     if (suggestions[feature]) return;
     suggestions[feature] = {
       state: quickSafeIds.has(feature) ? "quick" : "full",
-      reason
+      get reason() { return reason(); }
     };
   };
 
-  suggest("multigreets", "Most servers greet new members");
-  suggest("logging", "Keeps a record of joins, leaves and moderation");
+  suggest("multigreets", () => m.features.wizardReasonMultigreets());
+  suggest("logging", () => m.features.wizardReasonLogging());
 
   if (context.memberCount >= PROTECTION_MIN_MEMBERS)
-    suggest("protection", `Worth having on a server of ${context.memberCount.toLocaleString()} members`);
+    suggest("protection", () => m.features.wizardReasonProtection({ count: context.memberCount.toLocaleString() }));
 
   if (context.memberCount >= BUSY_SERVER_MEMBERS) {
-    suggest("moderation", "Busy servers need moderation tooling");
-    suggest("tickets", "Gives members a private way to reach staff");
+    suggest("moderation", () => m.features.wizardReasonModeration());
+    suggest("tickets", () => m.features.wizardReasonTickets());
   }
 
   const haystack = [
@@ -1125,7 +1253,7 @@ export function recommendFeatures(context: WizardServerContext): Record<string, 
 
   for (const rule of KEYWORD_RULES) {
     const match = haystack.find((name) => rule.keywords.some((keyword) => name.includes(keyword)));
-    if (match) suggest(rule.feature, `You already have a ${rule.label}`);
+    if (match) suggest(rule.feature, rule.reason);
   }
 
   return suggestions;
@@ -1142,13 +1270,13 @@ export function createDefaultFeatureConfigs(): Record<string, any> {
     multigreets: {
       channelId: null,
       channelIds: [],
-      message: { content: "Welcome to %server.name%, %user.mention%! 🎉" },
+      message: { content: m.features.defaultMultigreetMessage() },
       applyToMultiple: false
     },
     rolegreets: {
       roleId: null,
       channelId: null,
-      message: { content: "Congratulations %user.mention% on getting the %role.name% role! 🎉" }
+      message: { content: m.features.defaultRolegreetMessage() }
     },
     logging: {},
     administration: {
@@ -1214,10 +1342,10 @@ export function createDefaultFeatureConfigs(): Record<string, any> {
       panelChannelId: null,
       categoryId: null,
       supportRoles: [],
-      buttonLabel: "Create Ticket",
+      buttonLabel: m.features.defaultTicketButtonLabel(),
       buttonEmoji: "🎫",
-      panelTitle: "Need help?",
-      panelDescription: "Click the button below to open a private support ticket.",
+      panelTitle: m.features.defaultTicketPanelTitle(),
+      panelDescription: m.features.defaultTicketPanelDescription(),
       maxActiveTickets: 1,
       autoCloseHours: 0
     },
@@ -1236,7 +1364,7 @@ export function createDefaultFeatureConfigs(): Record<string, any> {
     birthday: {
       channelId: null,
       roleId: null,
-      message: { content: "Happy Birthday, %user.mention%! 🎉🎂" }
+      message: { content: m.features.defaultBirthdayMessage() }
     },
     reputation: {
       cooldownMinutes: 60,
@@ -1258,7 +1386,7 @@ export function createDefaultFeatureConfigs(): Record<string, any> {
     customvoice: {
       hubChannelId: null,
       categoryId: null,
-      defaultNameFormat: "%username%'s Channel",
+      defaultNameFormat: m.features.defaultCustomVoiceNameFormat(),
       defaultUserLimit: 0,
       deleteWhenEmpty: true,
       emptyChannelTimeout: 1,
@@ -1281,7 +1409,7 @@ export function createDefaultFeatureConfigs(): Record<string, any> {
     },
     votes: {
       channelId: null,
-      message: "Thanks for voting, %user.mention%!",
+      message: m.features.defaultVoteMessage(),
       password: ""
     },
     statchannels: {
@@ -1327,23 +1455,23 @@ export const wizardChannelPatterns: Record<string, string[]> = {
 
 /** Counters offered by the stat channel setup step. */
 export const wizardStatChannelTypes = [
-  { type: 0, label: "Total Members", description: "Everyone in the server" },
-  { type: 1, label: "Humans", description: "Members excluding bots" },
-  { type: 2, label: "Bots", description: "Bot accounts only" },
-  { type: 3, label: "Online Members", description: "Members currently online" },
-  { type: 5, label: "Channels", description: "Total channel count" },
-  { type: 6, label: "Roles", description: "Total role count" },
-  { type: 7, label: "Boosts", description: "Server boost count" }
+  { type: 0, get label() { return m.common.totalMembers(); }, get description() { return m.features.wizardStatType0Description(); } },
+  { type: 1, get label() { return m.common.humans(); }, get description() { return m.features.wizardStatType1Description(); } },
+  { type: 2, get label() { return m.common.bots(); }, get description() { return m.features.wizardStatType2Description(); } },
+  { type: 3, get label() { return m.features.wizardStatType3Label(); }, get description() { return m.features.wizardStatType3Description(); } },
+  { type: 5, get label() { return m.common.channels(); }, get description() { return m.features.wizardStatType5Description(); } },
+  { type: 6, get label() { return m.common.roles(); }, get description() { return m.features.wizardStatType6Description(); } },
+  { type: 7, get label() { return m.features.wizardStatType7Label(); }, get description() { return m.placeholders.serverBoostcount(); } }
 ];
 
 /** Punishment options offered by the protection setup steps. */
 export const wizardPunishmentActions = [
-  { id: "0", name: "Mute" },
-  { id: "1", name: "Kick" },
-  { id: "2", name: "Ban" },
-  { id: "3", name: "Softban" },
-  { id: "5", name: "Chat mute" },
-  { id: "6", name: "Voice mute" }
+  { id: "0", get name() { return m.common.actionMute(); } },
+  { id: "1", get name() { return m.common.actionKick(); } },
+  { id: "2", get name() { return m.common.actionBan(); } },
+  { id: "3", get name() { return m.features.wizardPun3(); } },
+  { id: "5", get name() { return m.features.wizardPun5(); } },
+  { id: "6", get name() { return m.features.wizardPun6(); } }
 ];
 
 /**
@@ -1351,8 +1479,8 @@ export const wizardPunishmentActions = [
  * Matches `Mewdeko.Modules.Afk.Afk.AfkTypeEnum`.
  */
 export const wizardAfkTypes = [
-  { id: "1", name: "Self Disable" },
-  { id: "2", name: "On Message" },
-  { id: "3", name: "On Type" },
-  { id: "4", name: "Either" }
+  { id: "1", get name() { return m.features.wizardAfk1(); } },
+  { id: "2", get name() { return m.features.wizardAfk2(); } },
+  { id: "3", get name() { return m.features.wizardAfk3(); } },
+  { id: "4", get name() { return m.features.wizardAfk4(); } }
 ];

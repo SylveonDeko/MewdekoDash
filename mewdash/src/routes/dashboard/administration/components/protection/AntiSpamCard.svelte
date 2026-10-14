@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -48,6 +49,17 @@
     }
   }
 
+  async function removeIgnoredChannel(channelId: bigint) {
+    if (!$currentGuild?.id) return;
+
+    try {
+      await administrationApi.toggleAntiSpamIgnoredChannel($currentGuild.id, channelId);
+      await fetchAllData();
+    } catch (err) {
+      logger.error("Failed to remove ignored channel:", err);
+    }
+  }
+
   $effect(() => {
     if (protectionStatus.antiSpam.enabled) {
       loadIgnoredChannels();
@@ -68,8 +80,8 @@
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
       <div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Spam Protection</h2>
-        <p class="text-sm" style="color: {$colorStore.muted}">Prevent message spam attacks</p>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.protectionSpamTitle()}</h2>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionSpamSubtitle()}</p>
       </div>
     </div>
 
@@ -83,10 +95,10 @@
       >
         {#if protectionStatus.antiSpam.enabled}
           <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
-          Enabled
+          {m.common.enabled()}
         {:else}
           <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
-          Disabled
+          {m.common.disabled()}
         {/if}
       </button>
 
@@ -101,7 +113,7 @@
           {:else}
             <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
           {/if}
-          {expandedProtectionCard === 'antiSpam' ? 'Collapse' : 'Configure'}
+          {expandedProtectionCard === 'antiSpam' ? m.common.collapse() : m.common.configure()}
         </button>
       {/if}
     </div>
@@ -112,18 +124,18 @@
       <div class="text-center">
         <div class="text-2xl font-bold"
              style="color: {$colorStore.primary}">{protectionStatus.antiSpam.messageThreshold}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Message Threshold</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionSpamMessageThreshold()}</div>
       </div>
       <div class="text-center">
         <div class="text-lg font-semibold"
              style="color: {$colorStore.primary}">{formatAction(protectionStatus.antiSpam.action)}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Punishment</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.common.punishment()}</div>
       </div>
       {#if protectionStatus.antiSpam.muteTime > 0}
         <div class="text-center">
           <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiSpam.muteTime}m
           </div>
-          <div class="text-sm" style="color: {$colorStore.muted}">Action Duration</div>
+          <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionCommonActionDuration()}</div>
         </div>
       {/if}
     </div>
@@ -135,7 +147,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label for="antispam-message-threshold" class="block text-sm font-medium mb-2"
-                   style="color: {$colorStore.text}">Message Threshold</label>
+                   style="color: {$colorStore.text}">{m.administration.protectionSpamMessageThreshold()}</label>
             <input id="antispam-message-threshold"
                    type="number"
                    bind:value={tempProtectionConfig.messageThreshold}
@@ -146,18 +158,17 @@
             >
           </div>
           <div>
-            <span id="antispam-action-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</span>
+            <span id="antispam-action-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.action()}</span>
             <DiscordSelector
               type="custom"
               options={actionOptions}
               bind:selected={tempProtectionConfig.action}
-              placeholder="Select action..."
+              placeholder={m.administration.protectionCommonSelectAction()}
               multiple={false}
             />
           </div>
           <div>
-            <label for="antispam-mute-time" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Mute
-              Time (minutes)</label>
+            <label for="antispam-mute-time" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.administration.protectionCommonMuteTimeMinutes()}</label>
             <input id="antispam-mute-time"
                    type="number"
                    bind:value={tempProtectionConfig.muteTime}
@@ -171,8 +182,8 @@
 
         <!-- Ignored Channels -->
         <div class="space-y-3">
-          <h5 class="font-medium" style="color: {$colorStore.text}">Ignored Channels</h5>
-          <p class="text-xs" style="color: {$colorStore.muted}">Channels where anti-spam won't trigger</p>
+          <h5 class="font-medium" style="color: {$colorStore.text}">{m.common.ignoredChannels()}</h5>
+          <p class="text-xs" style="color: {$colorStore.muted}">{m.administration.protectionSpamIgnoredChannelsHint()}</p>
 
           <div class="flex gap-2">
             <div class="flex-1">
@@ -180,7 +191,7 @@
                 type="channel"
                 options={textChannels.map((c: any) => ({ id: c.id, name: c.name, type: 0 }))}
                 bind:selected={selectedIgnoredChannel}
-                placeholder="Select channel to toggle..."
+                placeholder={m.administration.protectionSpamSelectChannelToggle()}
                 multiple={false}
               />
             </div>
@@ -190,7 +201,7 @@
               onclick={toggleIgnoredChannel}
               disabled={!selectedIgnoredChannel || saving}
             >
-              Toggle
+              {m.common.toggle()}
             </button>
           </div>
 
@@ -199,12 +210,12 @@
               {#each ignoredChannels as channelId}
                 <div class="flex items-center justify-between px-3 py-2 rounded-lg"
                      style="background: {$colorStore.primary}08;">
-                  <span class="text-sm" style="color: {$colorStore.text}">Channel ID: {channelId.toString()}</span>
+                  <span class="text-sm" style="color: {$colorStore.text}">{m.common.channelIdLabel({ id: channelId.toString() })}</span>
                   <button
                     class="px-2 py-1 rounded transition-all hover:scale-110"
                     style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                    aria-label="Remove ignored channel"
-                    onclick={() => $currentGuild && administrationApi.toggleAntiSpamIgnoredChannel($currentGuild.id, channelId).then(() => fetchAllData())}
+                    aria-label={m.administration.protectionSpamRemoveIgnoredChannel()}
+                    onclick={() => removeIgnoredChannel(channelId)}
                   >
                     <i class="fa-solid fa-xmark"></i>
                   </button>
@@ -220,7 +231,7 @@
             style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
             onclick={cancelProtectionEdit}
           >
-            Cancel
+            {m.common.cancel()}
           </button>
           <button
             class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
@@ -234,7 +245,7 @@
               {:else}
                 <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
               {/if}
-              <span>Save Configuration</span>
+              <span>{m.common.saveConfiguration()}</span>
             </div>
           </button>
         </div>
@@ -244,8 +255,8 @@
     <div class="text-center py-8">
       <i class="fa-utility-duo fa-regular fa-comment"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-      <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-Spam Protection Disabled</p>
-      <p class="text-sm" style="color: {$colorStore.muted}">Enable to prevent message spam</p>
+      <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.administration.protectionSpamDisabledTitle()}</p>
+      <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionSpamDisabledHint()}</p>
     </div>
   {/if}
 </div>

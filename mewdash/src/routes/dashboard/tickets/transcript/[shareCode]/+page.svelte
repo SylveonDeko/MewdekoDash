@@ -8,6 +8,7 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
   import { safeUrl } from "$lib/utils/sanitize";
+  import { getLocale, m } from "$lib/i18n";
   import type { PageData } from "./$types";
 
   interface Props {
@@ -135,11 +136,11 @@
 
     // User mentions <@123456789>
     text = text.replace(/<@!?(\d+)>/g, (match, userId) => {
-      const member = guildMembers.find(m => m.id === userId);
+      const member = guildMembers.find(gm => gm.id === userId);
       if (member) {
         return `<span class="mention user">@${sanitizeText(member.username)}</span>`;
       }
-      return `<span class="mention user">@Unknown User</span>`;
+      return `<span class="mention user">@${m.common.unknownUser()}</span>`;
     });
 
     // Channel mentions <#123456789>
@@ -148,11 +149,11 @@
       if (channel) {
         return `<span class="mention channel">#${sanitizeText(channel.name)}</span>`;
       }
-      return `<span class="mention channel">#unknown-channel</span>`;
+      return `<span class="mention channel">#${m.tickets.transcriptUnknownChannel()}</span>`;
     });
 
     // Role mentions <@&123456789>
-    text = text.replace(/<@&(\d+)>/g, "<span class=\"mention role\">@Role</span>");
+    text = text.replace(/<@&(\d+)>/g, `<span class="mention role">@${m.common.role()}</span>`);
 
     // Plain URLs
     text = text.replace(/(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g,
@@ -237,14 +238,14 @@
 
       const shareCode = $page.params.shareCode;
       if (!shareCode) {
-        error = "Missing share code in URL.";
+        error = m.tickets.transcriptMissingShareCode();
         return;
       }
       logger.info("Loading transcript with share code:", shareCode);
 
       const decoded = decodeShareCode(shareCode);
       if (!decoded) {
-        error = `Invalid or expired transcript link. Share code: ${shareCode}. Check browser console for details.`;
+        error = m.tickets.transcriptInvalidLink({ code: shareCode });
         return;
       }
 
@@ -257,7 +258,7 @@
       if (targetInstance) {
         currentInstance.set(targetInstance);
       } else {
-        error = `Could not find bot instance on port ${decoded.instancePort}. Please check your instance configuration.`;
+        error = m.tickets.transcriptInstanceNotFound({ port: decoded.instancePort });
         return;
       }
 
@@ -267,13 +268,13 @@
         const guild = userGuilds?.find((g: any) => g.id.toString() === decoded.guildId.toString());
 
         if (!guild) {
-          error = "You do not have access to view this transcript. Only server administrators can view ticket transcripts.";
+          error = m.tickets.transcriptNoAccess();
           return;
         }
         hasAccess = true;
       } catch (err) {
         logger.error("Failed to verify guild access:", err);
-        error = "Failed to verify guild access";
+        error = m.tickets.transcriptAccessCheckFailed();
         return;
       }
 
@@ -281,7 +282,7 @@
       chatLog = await chatApi.getChatLog(decoded.guildId, chatLogId.toString());
 
       if (!chatLog) {
-        error = "Transcript not found";
+        error = m.tickets.transcriptNotFound();
         return;
       }
 
@@ -299,7 +300,7 @@
 
     } catch (err) {
       logger.error("Failed to load transcript:", err);
-      error = "Failed to load transcript";
+      error = m.tickets.transcriptLoadFailed();
     } finally {
       loading = false;
     }
@@ -309,11 +310,11 @@
     if (messages.length === 0 || !chatLog) return;
 
     let html = `<!DOCTYPE html>
-<html lang="en">
+<html lang="${getLocale()}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ticket Transcript - ${chatLog.name}</title>
+  <title>${m.tickets.transcriptExportTitle()} - ${chatLog.name}</title>
   <style>
     :root {
       --primary-color: ${$colorStore.primary};
@@ -423,9 +424,9 @@
 </head>
 <body>
   <header>
-    <h1>Ticket Transcript</h1>
+    <h1>${m.tickets.transcriptExportTitle()}</h1>
     <div class="subtitle">${chatLog.name}</div>
-    <div class="timestamp">Generated ${new Date().toLocaleString()}</div>
+    <div class="timestamp">${m.tickets.transcriptExportGenerated({ date: new Date().toLocaleString() })}</div>
   </header>
   <main class="messages">`;
 
@@ -487,8 +488,8 @@
     html += `
   </main>
   <footer>
-    <p>Generated on ${new Date().toLocaleString()}</p>
-    <p>Ticket Transcript System - Mewdeko</p>
+    <p>${m.common.generatedOnDate({ date: new Date().toLocaleString() })}</p>
+    <p>${m.tickets.transcriptExportFooterSystem()}</p>
   </footer>
 </body>
 </html>`;
@@ -517,7 +518,7 @@
 </script>
 
 <svelte:head>
-  <title>{chatLog?.name || "Ticket Transcript"} - Mewdeko</title>
+  <title>{m.tickets.transcriptPageTitle({ name: chatLog?.name || m.tickets.transcriptExportTitle() })}</title>
 </svelte:head>
 
 <main
@@ -535,7 +536,7 @@
           class="w-12 h-12 border-4 rounded-full animate-spin mx-auto mb-4"
           style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"
         ></div>
-        <p style="color: {$colorStore.muted};">Loading transcript...</p>
+        <p style="color: {$colorStore.muted};">{m.tickets.transcriptLoading()}</p>
       </div>
     {:else if error}
       <div
@@ -546,14 +547,14 @@
         <div class="flex justify-center mb-4">
           <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 48px;"></i>
         </div>
-        <h2 class="text-2xl font-bold mb-4" style="color: #ef4444;">Error</h2>
+        <h2 class="text-2xl font-bold mb-4" style="color: #ef4444;">{m.common.error()}</h2>
         <p class="text-lg mb-6" style="color: {$colorStore.text};">{error}</p>
         <button
           onclick={() => goto("/dashboard")}
           class="px-6 py-3 rounded-lg font-medium transition-all hover:scale-[1.02]"
           style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
         >
-          Return to Dashboard
+          {m.common.returnToDashboard()}
         </button>
       </div>
     {:else if hasAccess && chatLog}
@@ -577,7 +578,7 @@
                   {chatLog.name}
                 </h1>
                 <p class="text-sm" style="color: {$colorStore.muted};">
-                  {messages.length} messages • {formatTimestamp(chatLog.timestamp)}
+                  {messages.length === 1 ? m.tickets.transcriptMetaOne({ count: 1, timestamp: formatTimestamp(chatLog.timestamp) }) : m.tickets.transcriptMetaOther({ count: messages.length, timestamp: formatTimestamp(chatLog.timestamp) })}
                 </p>
               </div>
             </div>
@@ -590,7 +591,7 @@
                 onclick={exportAsHTML}
               >
                 <i class="fa-solid fa-download" style="font-size: 16px;"></i>
-                Export HTML
+                {m.common.exportHtml()}
               </button>
             </div>
           </div>
@@ -701,7 +702,7 @@
                                         {#if embed.author.iconUrl}
                                           <img
                                             src={embed.author.iconUrl}
-                                            alt="Author"
+                                            alt={m.common.author()}
                                             class="w-5 h-5 rounded-full shrink-0"
                                           >
                                         {/if}
@@ -757,7 +758,7 @@
                                     <div class="shrink-0">
                                       <img
                                         src={embed.thumbnail}
-                                        alt="Thumbnail"
+                                        alt={m.common.thumbnail()}
                                         class="w-20 h-20 rounded-md object-cover"
                                       >
                                     </div>
@@ -783,7 +784,7 @@
             <div class="text-center py-12">
               <i class="fa-solid fa-inbox"
                  style="color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"></i>
-              <p style="color: {$colorStore.muted};">No messages in this transcript</p>
+              <p style="color: {$colorStore.muted};">{m.tickets.transcriptNoMessages()}</p>
             </div>
           {/if}
         </div>

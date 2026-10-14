@@ -1,4 +1,5 @@
 <script lang="ts" module>
+  import { m } from "$lib/i18n";
   import type { EmojiInfo, GuildEmojiInfo } from "$lib/api/client/models";
 
   export type EmojiOption = EmojiInfo & {
@@ -50,7 +51,7 @@
     selected = $bindable(null),
     multiple = false,
     maxSelection,
-    placeholder = "Select an emoji...",
+    placeholder = m.widgets.emojiPlaceholder(),
     searchable = true,
     disabled = false,
     groupByGuild = true,
@@ -486,7 +487,7 @@
       requireColons: true,
       url: `https://cdn.discordapp.com/emojis/${id}.${animated ? "gif" : "png"}?size=256&quality=lossless`,
       guildId: "custom",
-      guildName: "Custom Input"
+      guildName: m.widgets.emojiCustomInput()
     };
   }
 
@@ -495,14 +496,14 @@
     manualInputError = "";
 
     if (!manualInput.trim()) {
-      manualInputError = "Please enter an emoji";
+      manualInputError = m.widgets.emojiErrorEmpty();
       return;
     }
 
     const parsedEmoji = parseDiscordEmoji(manualInput);
 
     if (!parsedEmoji) {
-      manualInputError = "Invalid emoji format. Use Discord format: <:name:id> or <a:name:id>";
+      manualInputError = m.widgets.emojiErrorFormat();
       return;
     }
 
@@ -510,7 +511,7 @@
     if (multiple) {
       const currentSelected = Array.isArray(selected) ? selected : [];
       if (currentSelected.includes(parsedEmoji.id)) {
-        manualInputError = "This emoji is already selected";
+        manualInputError = m.widgets.emojiErrorDuplicate();
         return;
       }
 
@@ -615,7 +616,7 @@
     if (multiple) {
       const count = selectedArray().length;
       if (count === 0) return placeholder;
-      return `${count} emoji${count !== 1 ? "s" : ""} selected`;
+      return count === 1 ? m.widgets.emojiSelectedOne({ count }) : m.widgets.emojiSelectedOther({ count });
     } else {
       const firstEmoji = selectedEmojis()[0];
       if (!firstEmoji) return placeholder;
@@ -682,7 +683,7 @@
           bind:this={searchInputRef}
           bind:value={searchTerm}
           type="text"
-          placeholder="Search emojis..."
+          placeholder={m.widgets.emojiSearchPlaceholder()}
           class="w-full pl-10 pr-3 py-2 rounded-lg border transition-all duration-200"
           style="background: {$colorStore.primary}08;
                  border-color: {$colorStore.primary}30;
@@ -696,7 +697,7 @@
   {#if activeTab === 'discord'}
     <div class="p-4 pb-2 border-b border-opacity-30" style="border-color: {$colorStore.primary};">
       <div class="text-xs font-semibold mb-2" style="color: {$colorStore.muted}">
-        Or paste emoji code:
+        {m.widgets.emojiPasteCode()}
       </div>
     <div class="flex gap-2">
       <div class="relative flex-1">
@@ -718,7 +719,7 @@
       <button
         type="button"
         onclick={handleManualInput}
-        aria-label="Add emoji"
+        aria-label={m.widgets.emojiAdd()}
         class="px-4 py-2 rounded-lg transition-all duration-200 font-medium shrink-0"
         style="background: {$colorStore.primary}30; color: {$colorStore.text};"
       >
@@ -759,7 +760,7 @@
         <!-- Unicode emoji grid -->
         {#if unicodeEmojis.length === 0}
           <div class="text-center py-8" style="color: {$colorStore.muted}">
-            {searchTerm ? 'No matching emojis found' : 'No emojis available'}
+            {searchTerm ? m.widgets.emojiNoneFound() : m.widgets.emojiNoneAvailable()}
           </div>
         {:else}
           <div class="grid gap-2" class:grid-cols-6={isMobile} class:grid-cols-12={!isMobile}>
@@ -804,7 +805,7 @@
         {/if}
       {:else if filteredEmojis.length === 0}
       <div class="text-center py-8" style="color: {$colorStore.muted}">
-        {searchTerm ? 'No matching emojis found' : 'No emojis available'}
+        {searchTerm ? m.widgets.emojiNoneFound() : m.widgets.emojiNoneAvailable()}
       </div>
     {:else if groupByGuild && groupedEmojis()}
         {#each groupedEmojis() || [] as group}
@@ -917,7 +918,7 @@
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
       >
         <i class="fa-solid fa-check inline mr-2" style="font-size: 14px;"></i>
-        Done{selectedArray().length > 0 ? ` (${selectedArray().length} selected)` : ''}
+        {selectedArray().length > 0 ? m.widgets.emojiDoneWithCount({ count: selectedArray().length }) : m.common.done()}
       </button>
     </div>
   {/if}
@@ -938,7 +939,7 @@
 >
   <!-- Main selector button -->
   <button
-    aria-label="Select emoji"
+    aria-label={m.common.selectEmojiPlaceholder()}
     class="group w-full p-2.5 rounded-xl border transition-all duration-200 text-left flex items-center backdrop-blur-md relative overflow-hidden"
     class:cursor-not-allowed={disabled}
     class:opacity-50={disabled}
@@ -967,7 +968,7 @@
         {:else if display && display.type === 'url'}
           <img
             src={display.value}
-            alt={selectedEmojis()[0]?.name || 'emoji'}
+            alt={selectedEmojis()[0]?.name || m.widgets.emojiFallbackAlt()}
             class="w-6 h-6 shrink-0 object-contain"
           />
         {/if}
@@ -1010,7 +1011,7 @@
                     }}
                     role="button"
                     tabindex="0"
-                    aria-label="Remove {emoji.name}"
+                    aria-label={m.common.ariaRemoveNamed({ name: emoji.name })}
                   >
                     <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
                   </span>
@@ -1027,7 +1028,7 @@
                     }}
                     role="button"
                     tabindex="0"
-                    aria-label="Remove {emoji.name}"
+                    aria-label={m.common.ariaRemoveNamed({ name: emoji.name })}
                   >
                     <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
                   </span>
@@ -1072,7 +1073,7 @@
           }}
           role="button"
           tabindex="0"
-          aria-label="Clear selection"
+          aria-label={m.widgets.emojiClearSelection()}
         >
           <i class="fa-solid fa-xmark" style="color: {$colorStore.muted}; font-size: 14px;"></i>
         </span>
@@ -1100,12 +1101,12 @@
         <!-- Mobile Header -->
         <div class="flex items-center justify-between p-4 border-b shrink-0"
              style="border-color: {$colorStore.primary}50;">
-          <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Select Emoji</h3>
+          <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.common.selectEmojiPlaceholder()}</h3>
           <button
             type="button"
             onclick={closeDropdown}
             class="p-2 rounded-lg hover:bg-white/10 transition-colors"
-            aria-label="Close"
+            aria-label={m.common.close()}
           >
             <i class="fa-solid fa-xmark" style="color: {$colorStore.text}; font-size: 20px;"></i>
           </button>

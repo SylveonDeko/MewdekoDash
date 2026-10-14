@@ -1,5 +1,6 @@
 <!-- routes/dashboard/statusroles/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -17,7 +18,7 @@
   import { serializeMessage } from "$lib/utils/embedMessage";
 
   const autoSave = createAutoSave({
-    onError: () => showMessage("Couldn't save status role settings. Use Retry to try again.", "error")
+    onError: () => showMessage(m.statusroles.pageErrorAutosave(), "error")
   });
 
   interface Props {
@@ -90,7 +91,7 @@
                 .sort((a, b) => a.name.localeCompare(b.name));
         } catch (err) {
             logger.error("Failed to load status role data:", err);
-            showMessage("Failed to load status role data", "error");
+            showMessage(m.statusroles.pageErrorLoad(), "error");
         } finally {
             loading = false;
         }
@@ -103,12 +104,12 @@
         saving = true;
         try {
           await statusRolesApi.addStatusRole($currentGuild.id, newStatusRole.status);
-            showMessage("Status role added successfully!", "success");
+            showMessage(m.statusroles.pageNotifyAdded(), "success");
             newStatusRole = { status: "" };
             await loadAllStatusRoleData();
         } catch (err) {
             logger.error("Failed to add status role:", err);
-            showMessage("Failed to add status role", "error");
+            showMessage(m.statusroles.pageErrorAdd(), "error");
         } finally {
             saving = false;
         }
@@ -117,16 +118,16 @@
     // Remove status role
     async function removeStatusRole(id: number) {
         if (!$currentGuild?.id) return;
-        if (!(await requestConfirmation({ message: "Are you sure you want to remove this status role?", confirmText: "Remove" }))) return;
+        if (!(await requestConfirmation({ message: m.statusroles.pageConfirmRemove(), confirmText: m.common.remove() }))) return;
 
         saving = true;
         try {
           await statusRolesApi.removeStatusRole($currentGuild.id, id);
-            showMessage("Status role removed successfully!", "success");
+            showMessage(m.statusroles.pageNotifyRemoved(), "success");
             await loadAllStatusRoleData();
         } catch (err) {
             logger.error("Failed to remove status role:", err);
-            showMessage("Failed to remove status role", "error");
+            showMessage(m.statusroles.pageErrorRemove(), "error");
         } finally {
             saving = false;
         }
@@ -280,10 +281,10 @@
 
     function getRoleNames(roleString: string): string {
         const ids = parseRoleIds(roleString);
-        if (ids.length === 0) return "None";
+        if (ids.length === 0) return m.common.none();
         return ids.map(id => {
             const role = guildRoles.find(r => r.id === id);
-            return role ? role.name : `Unknown Role`;
+            return role ? role.name : m.common.unknownRole();
         }).join(", ");
     }
 
@@ -298,16 +299,16 @@
     });
 
     // Tabs configuration
-    const tabs = [
-      { id: "list", label: "Status Roles", icon: "fa-user-check" },
-      { id: "add", label: "Add New", icon: "fa-plus" },
-      { id: "stats", label: "Statistics", icon: "fa-chart-column" }
-    ];
+    const tabs = $derived([
+      { id: "list", label: m.features.statusrolesName(), icon: "fa-user-check" },
+      { id: "add", label: m.statusroles.pageTabAdd(), icon: "fa-plus" },
+      { id: "stats", label: m.common.statistics(), icon: "fa-chart-column" }
+    ]);
 
     // Action buttons configuration
     let actionButtons = $derived([
         {
-            label: "Refresh",
+            label: m.common.refresh(),
           icon: "fa-arrows-rotate",
             action: loadAllStatusRoleData,
             loading: loading
@@ -342,12 +343,12 @@
   {actionButtons}
   {autoSave}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-user-check"
   statusMessages={statusMessages}
-  subtitle="Manage roles based on Discord custom status"
+  subtitle={m.statusroles.pageSubtitle()}
   {tabs}
-  title="Status Roles"
+  title={m.features.statusrolesName()}
 >
 
     <!-- Tab Content -->
@@ -360,7 +361,7 @@
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-utility-duo fa-regular fa-user-check"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Status Roles ({statusRoles.length})</h2>
+                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.statusroles.pageListTitle({ count: statusRoles.length })}</h2>
                 </div>
 
                 <div class="space-y-3">
@@ -368,9 +369,9 @@
                         <div class="text-center py-8">
                           <i class="fa-utility-duo fa-regular fa-user-check"
                              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Status Roles</h3>
+                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.statusroles.pageListEmptyTitle()}</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
-                                Add status-based role assignments to automatically manage roles based on custom status text.
+                                {m.statusroles.pageListEmptyHint()}
                             </p>
                         </div>
                     {:else}
@@ -383,10 +384,10 @@
                                          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                         <div class="flex-1">
                                             <div class="font-semibold" style="color: {$colorStore.text}">
-                                                Status: "{role.status}"
+                                                {m.statusroles.pageItemStatus({ status: role.status })}
                                             </div>
                                             <div class="text-sm" style="color: {$colorStore.muted}">
-                                                Adds: {getRoleNames(role.toAdd)} • Removes: {getRoleNames(role.toRemove)}
+                                                {m.statusroles.pageItemRoles({ adds: getRoleNames(role.toAdd), removes: getRoleNames(role.toRemove) })}
                                             </div>
                                         </div>
                                     </div>
@@ -398,7 +399,7 @@
                                         >
                                             {expandedRole === role.id ? "▼" : "▶"}
                                         </button>
-                                      <button aria-label="Delete"
+                                      <button aria-label={m.common.delete()}
                                                 class="p-2 rounded-lg transition-all hover:scale-110"
                                               style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                                 onclick={() => removeStatusRole(role.id)}
@@ -416,7 +417,7 @@
                                                 <div>
                                                   <label for="input-8035" class="block text-sm font-medium mb-2"
                                                          style="color: {$colorStore.text}">
-                                                        Roles to Add (space-separated IDs)
+                                                        {m.statusroles.pageEditAddRoles()}
                                                     </label>
                                                   <input id="input-8035"
                                                             type="text"
@@ -432,7 +433,7 @@
                                                 <div>
                                                   <label for="input-6007" class="block text-sm font-medium mb-2"
                                                          style="color: {$colorStore.text}">
-                                                        Roles to Remove (space-separated IDs)
+                                                        {m.statusroles.pageEditRemoveRoles()}
                                                     </label>
                                                   <input id="input-6007"
                                                             type="text"
@@ -449,13 +450,13 @@
                                                     <span id="notification-channel-label"
                                                           class="block text-sm font-medium mb-2"
                                                           style="color: {$colorStore.text}">
-                                                        Notification Channel
+                                                        {m.common.notificationChannel()}
                                                     </span>
                                                     <DiscordSelector
                                                             type="channel"
                                                             options={guildChannels}
                                                             selected={editForm.channelId}
-                                                            placeholder="No channel"
+                                                            placeholder={m.common.noChannel()}
                                                             onchange={(detail) => setStatusChannel(role.id, typeof detail.selected === "string" && detail.selected ? detail.selected : null)} />
                                                 </div>
 
@@ -463,28 +464,28 @@
                                                   <label for="f-+page-notification-message-422" class="block text-sm font-medium mb-3"
                                                          style="color: {$colorStore.text}">
                                                     <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
-                                                    Notification Message
+                                                    {m.statusroles.pageEditMessage()}
                                                   </label>
 
                                                   <FullscreenEmbedBuilder id="f-+page-notification-message-422"
                                                     bind:value={editForm.embedText}
                                                     onchange={(value) => saveStatusEmbed(role.id, value)}
-                                                    previewTitle="Status Role Notification"
-                                                    previewDescription="Message sent when status is detected"
+                                                    previewTitle={m.statusroles.pageEditPreviewTitle()}
+                                                    previewDescription={m.statusroles.pageEditPreviewDescription()}
                                                     icon="fa-user-check"
                                                     allowContent={true}
                                                     allowMultipleEmbeds={true}
                                                     maxEmbeds={10}
                                                     allowComponents={true}
                                                     additionalPlaceholders={[
-                                                      { category: "User", name: "%user%", description: "Username" },
-                                                      { category: "User", name: "%user.mention%", description: "Mention the user" },
-                                                      { category: "Status", name: "%status%", description: "The detected status text" },
-                                                      { category: "Server", name: "%server%", description: "Server name" }
+                                                      { category: "User", name: "%user%", description: m.placeholders.user() },
+                                                      { category: "User", name: "%user.mention%", description: m.placeholders.userMention() },
+                                                      { category: "Status", name: "%status%", description: m.placeholders.status() },
+                                                      { category: "Server", name: "%server%", description: m.placeholders.server() }
                                                     ]}
                                                     guildId={$currentGuild?.id}
                                                     user={data.user}
-                                                    placeholder="Click to configure notification message"
+                                                    placeholder={m.statusroles.pageEditMessagePlaceholder()}
                                                   />
                                                 </div>
 
@@ -495,10 +496,10 @@
                                                       onclick={stopEditing}
                                                     >
                                                       <i class="fa-solid fa-check" style="font-size: 14px;" aria-hidden="true"></i>
-                                                      Done
+                                                      {m.common.done()}
                                                     </button>
                                                     <span class="text-xs" style="color: {$colorStore.muted}">
-                                                      Changes save automatically.
+                                                      {m.common.changesSaveAutomatically()}
                                                     </span>
                                                 </div>
                                             </div>
@@ -507,8 +508,8 @@
                                             <div class="space-y-3">
                                                 <div class="flex items-center justify-between p-3 rounded-lg"
                                                      style="background: {$colorStore.primary}05;">
-                                                    <span style="color: {$colorStore.muted}">Remove added roles when status removed:</span>
-                                                  <button aria-label="Add role"
+                                                    <span style="color: {$colorStore.muted}">{m.statusroles.pageToggleRemoveAdded()}</span>
+                                                  <button aria-label={m.statusroles.pageToggleRemoveAdded()}
                                                             onclick={() => toggleSetting(role.id, "removeAdded")}
                                                             class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
                                                           style="background: {role.removeAdded ? $colorStore.primary : $colorStore.muted};"
@@ -520,8 +521,8 @@
 
                                                 <div class="flex items-center justify-between p-3 rounded-lg"
                                                      style="background: {$colorStore.primary}05;">
-                                                    <span style="color: {$colorStore.muted}">Re-add removed roles when status removed:</span>
-                                                  <button aria-label="Remove role"
+                                                    <span style="color: {$colorStore.muted}">{m.statusroles.pageToggleReaddRemoved()}</span>
+                                                  <button aria-label={m.statusroles.pageToggleReaddRemoved()}
                                                             onclick={() => toggleSetting(role.id, "readdRemoved")}
                                                             class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
                                                           style="background: {role.readdRemoved ? $colorStore.primary : $colorStore.muted};"
@@ -536,7 +537,7 @@
                                                         style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                                         onclick={() => startEditing(role)}
                                                 >
-                                                    Edit Settings
+                                                    {m.statusroles.pageEditSettings()}
                                                 </button>
                                             </div>
                                         {/if}
@@ -558,23 +559,23 @@
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-utility-duo fa-regular fa-circle-plus"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Add Status Role</h2>
+                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.statusroles.pageAddAria()}</h2>
                 </div>
 
                 <div class="space-y-4">
                     <div>
                       <label for="input-1942" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                            Status Text to Watch For
+                            {m.statusroles.pageAddStatusLabel()}
                         </label>
                       <input id="input-1942"
                                 type="text"
                                 bind:value={newStatusRole.status}
-                                placeholder="Enter status text (e.g., 'playing minecraft')"
+                                placeholder={m.statusroles.pageAddStatusPlaceholder()}
                                 class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       >
                         <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-                            When a user's custom status contains this text, the configured roles will be added/removed.
+                            {m.statusroles.pageAddStatusHint()}
                         </p>
                     </div>
 
@@ -584,16 +585,16 @@
                     onclick={addStatusRole}
                     disabled={saving || !newStatusRole.status.trim()}
                     aria-busy={saving}
-                    aria-label="Add Status Role"
+                    aria-label={m.statusroles.pageAddAria()}
                   >
                     <i class="fa-solid fa-plus {saving ? 'fa-spin' : ''}" style="font-size: 18px;"
                        aria-hidden="true"></i>
-                    <span class="text-sm sm:text-base">{saving ? "Adding..." : "Add Status Role"}</span>
+                    <span class="text-sm sm:text-base">{saving ? m.common.adding() : m.statusroles.pageAddAria()}</span>
                   </button>
 
                     <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30;">
                         <p class="text-sm" style="color: {$colorStore.text}">
-                            <strong>Note:</strong> After adding a status role, you can configure which roles to add/remove and notification settings by expanding it in the Status Roles tab.
+                            {@html m.statusroles.pageAddNote()}
                         </p>
                     </div>
                 </div>
@@ -605,27 +606,27 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 <StatCard
                   icon="fa-user-check"
-                        label="Total Status Roles"
+                        label={m.statusroles.pageStatTotal()}
                         value={statusRoles.length}
-                        subtitle="configured"
+                        subtitle={m.common.configuredLower()}
                         iconColor="primary"
                         animationDelay={0}
                 />
 
                 <StatCard
                   icon="fa-crown"
-                        label="Active Configs"
+                        label={m.statusroles.pageStatActive()}
                         value={statusRoles.filter(r => r.toAdd || r.toRemove).length}
-                        subtitle="with role changes"
+                        subtitle={m.statusroles.pageStatActiveSub()}
                         iconColor="secondary"
                         animationDelay={100}
                 />
 
                 <StatCard
                   icon="fa-bell"
-                        label="With Notifications"
+                        label={m.statusroles.pageStatNotify()}
                         value={statusRoles.filter(r => r.statusChannelId && r.statusChannelId !== BigInt(0)).length}
-                        subtitle="have notification channels"
+                        subtitle={m.statusroles.pageStatNotifySub()}
                         iconColor="accent"
                         animationDelay={200}
                 />

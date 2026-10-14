@@ -1,5 +1,6 @@
 <!-- lib/components/ui/Notification.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import {fly} from "svelte/transition";
     import {cubicOut} from "svelte/easing";
     import {colorStore} from "$lib/stores/colorStore";
@@ -118,7 +119,7 @@
       </div>
 
       <!-- Dismiss Button -->
-      <button aria-label="Button action"
+      <button aria-label={m.common.ariaDismissNotification()}
               class="shrink-0 p-1 rounded-lg transition-all duration-200 hover:scale-110"
         style="color: {$colorStore.muted};
                hover:background-color: {type === 'success' ? successColor : errorColor}20;

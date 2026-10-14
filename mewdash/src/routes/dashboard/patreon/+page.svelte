@@ -1,5 +1,6 @@
 <!-- routes/dashboard/patreon/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import {
     clientApi,
@@ -69,12 +70,12 @@
   // Layout state
     let activeTab = $state("overview");
   
-  const tabs = [
-    { id: "overview", label: "Overview", icon: "fa-heart" },
-    { id: "supporters", label: "Supporters", icon: "fa-users" },
-    { id: "tiers", label: "Tier Mapping", icon: "fa-star" },
-    { id: "settings", label: "Configuration", icon: "fa-gear" }
-  ];
+  const tabs = $derived([
+    { id: "overview", label: m.common.overview(), icon: "fa-heart" },
+    { id: "supporters", label: m.patreon.supportersTitle(), icon: "fa-users" },
+    { id: "tiers", label: m.patreon.tabTiers(), icon: "fa-star" },
+    { id: "settings", label: m.common.configuration(), icon: "fa-gear" }
+  ]);
 
   // Handle URL parameters for success/error messages
   onMount(async () => {
@@ -98,7 +99,7 @@
       }
 
       if (success === "true") {
-        showNotificationMessage("Patreon integration configured successfully!", "success");
+        showNotificationMessage(m.patreon.notifyConfigured(), "success");
         const cleanUrl = new URL(window.location.href);
         cleanUrl.searchParams.delete("success");
         await goto(cleanUrl.toString(), { replaceState: true });
@@ -142,7 +143,7 @@
       }
     } catch (err) {
       logger.error("Failed to load data:", err);
-      error = err instanceof Error ? err.message : "Failed to load data";
+      error = err instanceof Error ? err.message : m.common.failedToLoadData();
     } finally {
       loading = false;
     }
@@ -247,7 +248,7 @@
     const guildId = stateParts[0];
 
     if (!guildId) {
-      showNotificationMessage("Invalid OAuth state - missing guild ID", "error");
+      showNotificationMessage(m.patreon.errorOauthState(), "error");
       return;
     }
 
@@ -255,14 +256,14 @@
       isConnecting = true;
       const result = await patreonApi.handlePatreonOAuthCallback(code, state);
 
-      showNotificationMessage(result.message || "Patreon integration configured successfully!", "success");
+      showNotificationMessage(result.message || m.patreon.notifyConfigured(), "success");
 
       if ($currentGuild) {
         await loadAllData();
       }
     } catch (err) {
       logger.error("OAuth callback failed:", err);
-      showNotificationMessage(err instanceof Error ? err.message : "Failed to configure Patreon integration", "error");
+      showNotificationMessage(err instanceof Error ? err.message : m.patreon.errorConfigureFailed(), "error");
     } finally {
       isConnecting = false;
     }
@@ -270,7 +271,7 @@
 
   async function connectPatreon() {
     if (!$currentGuild) {
-      showNotificationMessage("Please select a server first", "error");
+      showNotificationMessage(m.patreon.errorSelectServer(), "error");
       return;
     }
 
@@ -280,7 +281,7 @@
       window.location.href = oauthData.authorizationUrl;
     } catch (err) {
       logger.error("Failed to get OAuth URL:", err);
-      showNotificationMessage(err instanceof Error ? err.message : "Failed to start OAuth flow", "error");
+      showNotificationMessage(err instanceof Error ? err.message : m.patreon.errorOauthStart(), "error");
       isConnecting = false;
     }
   }
@@ -289,9 +290,9 @@
     isRefreshing = true;
     try {
       await loadAllData();
-      showNotificationMessage("Data refreshed successfully!", "success");
+      showNotificationMessage(m.patreon.notifyRefreshed(), "success");
     } catch (err) {
-      showNotificationMessage("Failed to refresh data", "error");
+      showNotificationMessage(m.patreon.notifyRefreshFailed(), "error");
     } finally {
       isRefreshing = false;
     }
@@ -314,7 +315,12 @@
       }
     } catch (err) {
       logger.error(`Failed to trigger ${operation}:`, err);
-      showNotificationMessage(`Failed to ${operation}`, "error");
+      showNotificationMessage(
+        operation === "sync" ? m.patreon.notifySyncFailed()
+          : operation === "syncRoles" ? m.patreon.notifySyncRolesFailed()
+          : m.patreon.notifyAnnounceFailed(),
+        "error"
+      );
     } finally {
       isSyncing = false;
     }
@@ -333,14 +339,16 @@
 
       const configToSave = {
         ...configForm,
+        // 0 clears the announcement channel (undefined would be dropped from the payload)
+        channelId: configForm.channelId ?? BigInt(0),
         message: messageToSend
       };
 
       patreonConfig = await patreonApi.updatePatreonConfig(BigInt($currentGuild.id), configToSave);
-      showNotificationMessage("Configuration updated successfully!", "success");
+      showNotificationMessage(m.patreon.notifyConfigUpdated(), "success");
     } catch (err) {
       logger.error("Failed to update config:", err);
-      showNotificationMessage("Failed to update configuration", "error");
+      showNotificationMessage(m.patreon.notifyConfigFailed(), "error");
     } finally {
       isUpdatingConfig = false;
     }
@@ -364,7 +372,7 @@
       await loadPatreonTiers();
     } catch (err) {
       logger.error("Failed to map tier to role:", err);
-      showNotificationMessage("Failed to map tier to role", "error");
+      showNotificationMessage(m.patreon.notifyMapFailed(), "error");
     } finally {
       isMappingTier = false;
     }
@@ -378,7 +386,7 @@
   }
 
   function formatDate(dateString?: string | null) {
-    if (!dateString) return "Never";
+    if (!dateString) return m.common.never();
     return new Date(dateString).toLocaleDateString();
   }
 
@@ -394,7 +402,7 @@
       await loadAllData();
     } catch (err) {
       logger.error("Failed to disconnect Patreon:", err);
-      showNotificationMessage(err instanceof Error ? err.message : "Failed to disconnect Patreon", "error");
+      showNotificationMessage(err instanceof Error ? err.message : m.patreon.errorDisconnectFailed(), "error");
     } finally {
       isConnecting = false;
     }
@@ -414,15 +422,13 @@
     }
 
     function handleChannelChange(detail: any) {
-      if (detail.selected) {
-        configForm.channelId = detail.selected ? BigInt(detail.selected) : undefined;
-      }
+      configForm.channelId = detail.selected && typeof detail.selected === "string" ? BigInt(detail.selected) : undefined;
     }
 
     function getTierOptions() {
       return patreonTiers.map((tier: any) => ({
         id: tier.id,
-        name: `${tier.attributes?.title || "Unknown"} - ${formatCurrency(tier.attributes?.amountCents || 0)}`
+        name: `${tier.attributes?.title || m.common.unknown()} - ${formatCurrency(tier.attributes?.amountCents || 0)}`
       }));
     }
 </script>
@@ -436,31 +442,31 @@
 {/snippet}
 
 <svelte:head>
-  <title>Patreon Integration - {$currentGuild?.name || 'Mewdeko Dashboard'}</title>
+  <title>{m.patreon.pageHeadTitle({ guild: $currentGuild?.name || m.patreon.pageHeadFallback() })}</title>
 </svelte:head>
 
 <DashboardPageLayout
   actionButtons={patreonStatus?.isConfigured ? [
     {
-      label: "Refresh Data",
+      label: m.common.refreshData(),
       icon: "fa-arrows-rotate",
       action: refreshData,
       loading: isRefreshing
     },
     {
-      label: "Sync Supporters",
+      label: m.patreon.actionSyncSupporters(),
       icon: "fa-users",
       action: () => triggerOperation("sync"),
       loading: isSyncing
     }
   ] : []}
   icon="fa-heart"
-  subtitle="Connect your Patreon campaign to automatically sync supporters and manage perks"
-  guildName={$currentGuild?.name || "Dashboard"}
+  subtitle={m.patreon.pageSubtitle()}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   tabs={tabs}
   bind:activeTab
   statusMessages={statusMessages}
-  title="Patreon Integration"
+  title={m.patreon.pageTitle()}
 >
 
     {#if loading}
@@ -472,7 +478,7 @@
       >
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
              style="border-color: {$colorStore.primary};"></div>
-        <p style="color: {$colorStore.text};">Loading Patreon data...</p>
+        <p style="color: {$colorStore.text};">{m.patreon.loading()}</p>
       </div>
     {:else if error}
       <div
@@ -484,7 +490,7 @@
         <div class="flex items-center gap-3 mb-2">
           <i class="fa-utility-duo fa-regular fa-circle-exclamation"
              style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-          <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Error</h3>
+          <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.common.error()}</h3>
         </div>
         <p style="color: {$colorStore.accent};">{error}</p>
         <button
@@ -493,7 +499,7 @@
           onclick={loadAllData}
         >
           <i class="fa-solid fa-arrows-rotate" style="font-size: 16px;"></i>
-          Retry
+          {m.common.retry()}
         </button>
       </div>
     {:else if !patreonStatus?.isConfigured}
@@ -506,9 +512,9 @@
       >
         <i class="fa-utility-duo fa-regular fa-heart"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-        <h3 class="text-2xl font-bold mb-2" style="color: {$colorStore.text};">Connect Your Patreon</h3>
+        <h3 class="text-2xl font-bold mb-2" style="color: {$colorStore.text};">{m.patreon.connectTitle()}</h3>
         <p class="mb-8 max-w-md mx-auto text-lg" style="color: {$colorStore.muted};">
-          Link your Patreon campaign to automatically sync supporters and provide exclusive perks to your community.
+          {m.patreon.connectIntro()}
         </p>
 
         <button
@@ -519,10 +525,10 @@
         >
           {#if isConnecting}
             <div class="animate-spin rounded-full h-5 w-5 border-b-2" style="border-color: {$colorStore.text};"></div>
-            Connecting...
+            {m.patreon.connectConnecting()}
           {:else}
             <i class="fa-solid fa-heart" style="font-size: 20px;"></i>
-            Connect to Patreon
+            {m.patreon.connectButton()}
           {/if}
         </button>
 
@@ -532,7 +538,7 @@
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}05, {$colorStore.gradientMid}10);
                  border-color: {$colorStore.primary}20;"
         >
-          <h4 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">How it works</h4>
+          <h4 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.common.howItWorks()}</h4>
           <div class="space-y-3">
             <div class="flex items-start gap-3">
               <div
@@ -540,8 +546,7 @@
                 style="background: {$colorStore.primary};"
               >1
               </div>
-              <p style="color: {$colorStore.muted};">Connect your Patreon account by clicking the "Connect to Patreon"
-                button above.</p>
+              <p style="color: {$colorStore.muted};">{m.patreon.howStep1()}</p>
             </div>
             <div class="flex items-start gap-3">
               <div
@@ -549,8 +554,7 @@
                 style="background: {$colorStore.primary};"
               >2
               </div>
-              <p style="color: {$colorStore.muted};">Authorize Mewdeko to access your campaign information and supporter
-                data.</p>
+              <p style="color: {$colorStore.muted};">{m.patreon.howStep2()}</p>
             </div>
             <div class="flex items-start gap-3">
               <div
@@ -558,8 +562,7 @@
                 style="background: {$colorStore.primary};"
               >3
               </div>
-              <p style="color: {$colorStore.muted};">Configure automatic role rewards and exclusive perks for your
-                supporters.</p>
+              <p style="color: {$colorStore.muted};">{m.patreon.howStep3()}</p>
             </div>
             <div class="flex items-start gap-3">
               <div
@@ -567,8 +570,7 @@
                 style="background: {$colorStore.primary};"
               >4
               </div>
-              <p style="color: {$colorStore.muted};">Supporters will automatically receive their Discord roles and
-                perks!</p>
+              <p style="color: {$colorStore.muted};">{m.patreon.howStep4()}</p>
             </div>
           </div>
         </div>
@@ -588,20 +590,20 @@
               <div class="flex items-center gap-3 mb-4">
                 <i class="fa-utility-duo fa-regular fa-circle-check"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-                <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Connected</h3>
+                <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.patreon.overviewConnected()}</h3>
               </div>
               <div class="space-y-2">
                 <div>
-                  <p class="text-sm" style="color: {$colorStore.muted};">Campaign ID</p>
+                  <p class="text-sm" style="color: {$colorStore.muted};">{m.patreon.overviewCampaignId()}</p>
                   <p class="font-mono text-sm"
-                     style="color: {$colorStore.text};">{patreonStatus.campaignId || 'Unknown'}</p>
+                     style="color: {$colorStore.text};">{patreonStatus.campaignId || m.common.unknown()}</p>
                 </div>
                 <div>
-                  <p class="text-sm" style="color: {$colorStore.muted};">Last Sync</p>
+                  <p class="text-sm" style="color: {$colorStore.muted};">{m.patreon.overviewLastSync()}</p>
                   <p class="text-sm" style="color: {$colorStore.text};">{formatDate(patreonStatus.lastSync)}</p>
                 </div>
                 <div>
-                  <p class="text-sm" style="color: {$colorStore.muted};">Token Expires</p>
+                  <p class="text-sm" style="color: {$colorStore.muted};">{m.patreon.overviewTokenExpires()}</p>
                   <p class="text-sm" style="color: {$colorStore.text};">{formatDate(patreonStatus.tokenExpiry)}</p>
                 </div>
               </div>
@@ -617,12 +619,12 @@
                 <div class="flex items-center gap-3 mb-4">
                   <i class="fa-utility-duo fa-regular fa-users"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-                  <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Supporters</h3>
+                  <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.patreon.supportersTitle()}</h3>
                 </div>
                 <!-- FIX: Use activeSupporters for the count -->
                 <p class="text-3xl font-bold mb-2"
                    style="color: {$colorStore.text};">{patreonAnalytics.activeSupporters}</p>
-                <p class="text-sm" style="color: {$colorStore.muted};">Active supporters</p>
+                <p class="text-sm" style="color: {$colorStore.muted};">{m.placeholders.supporterCount()}</p>
               </div>
 
               <div
@@ -633,11 +635,11 @@
                 <div class="flex items-center gap-3 mb-4">
                   <i class="fa-utility-duo fa-regular fa-circle"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-                  <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Revenue</h3>
+                  <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.patreon.overviewRevenue()}</h3>
                 </div>
                 <p class="text-3xl font-bold mb-2"
                    style="color: {$colorStore.text};">{formatCurrency(patreonAnalytics.totalMonthlyRevenue)}</p>
-                <p class="text-sm" style="color: {$colorStore.muted};">Monthly recurring</p>
+                <p class="text-sm" style="color: {$colorStore.muted};">{m.patreon.overviewMonthly()}</p>
               </div>
             {/if}
 
@@ -651,7 +653,7 @@
                 <div class="flex items-center gap-3 mb-4">
                   <i class="fa-utility-duo fa-regular fa-heart"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-                  <h3 class="text-base md:text-lg font-semibold" style="color: {$colorStore.text};">Campaign Creator</h3>
+                  <h3 class="text-base md:text-lg font-semibold" style="color: {$colorStore.text};">{m.patreon.creatorTitle()}</h3>
                 </div>
                 
                 <!-- Mobile-first layout -->
@@ -660,7 +662,7 @@
                     {#if patreonCreator.imageUrl}
                       <img
                         src={patreonCreator.imageUrl}
-                              alt="Creator avatar"
+                              alt={m.patreon.creatorAvatarAlt()}
                               class="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover shrink-0"
                       >
                     {:else}
@@ -675,13 +677,13 @@
 
                     <div class="flex-1 min-w-0">
                       <p class="font-semibold text-sm md:text-base truncate" style="color: {$colorStore.text};">
-                        {patreonCreator.fullName || 'Unknown Creator'}
+                        {patreonCreator.fullName || m.patreon.creatorUnknown()}
                       </p>
 
                       <div class="flex items-center gap-1 mt-1">
                         <div class="w-2 h-2 rounded-full" style="background: {$colorStore.primary};"></div>
                         <span class="text-xs"
-                              style="color: {$colorStore.muted};">Patron Count: {patreonCreator.patronCount || 0}</span>
+                              style="color: {$colorStore.muted};">{m.patreon.creatorPatronCount({ count: patreonCreator.patronCount || 0 })}</span>
                       </div>
                     </div>
                   </div>
@@ -696,7 +698,7 @@
                       style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                     >
                       <i class="fa-solid fa-heart" style="font-size: 16px;"></i>
-                      View Patreon Profile
+                      {m.patreon.creatorViewProfile()}
                     </a>
                   {/if}
                 </div>
@@ -710,7 +712,7 @@
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
           >
-            <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Quick Actions</h3>
+            <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.common.quickActions()}</h3>
             <div class="flex flex-wrap gap-3">
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
@@ -719,7 +721,7 @@
                 disabled={isSyncing}
               >
                 <i class="fa-solid fa-sync {isSyncing ? 'fa-spin' : ''}" style="font-size: 16px;"></i>
-                Sync All Data
+                {m.patreon.actionSyncAll()}
               </button>
 
               <button
@@ -729,7 +731,7 @@
                 disabled={isSyncing}
               >
                 <i class="fa-solid fa-star" style="font-size: 16px;"></i>
-                Sync Roles
+                {m.patreon.actionSyncRoles()}
               </button>
 
               <button
@@ -739,7 +741,7 @@
                 disabled={isSyncing}
               >
                 <i class="fa-solid fa-comment" style="font-size: 16px;"></i>
-                Send Announcement
+                {m.patreon.actionAnnounce()}
               </button>
 
               <button
@@ -749,7 +751,7 @@
                 disabled={isConnecting}
               >
                 <i class="fa-solid fa-link-slash" style="font-size: 16px;"></i>
-                Re-login
+                {m.patreon.actionRelogin()}
               </button>
             </div>
           </div>
@@ -763,8 +765,7 @@
             in:fly={{ y: 20, duration: 300 }}
           >
             <div class="flex items-center justify-between mb-6">
-              <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">All Supporters
-                ({patreonSupporters.length})</h3>
+              <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.patreon.supportersAll({ count: patreonSupporters.length })}</h3>
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 style="background: {$colorStore.primary}; color: {$colorStore.text};"
@@ -772,7 +773,7 @@
                 disabled={isSyncing}
               >
                 <i class="fa-solid fa-sync {isSyncing ? 'fa-spin' : ''}" style="font-size: 16px;"></i>
-                Sync Now
+                {m.patreon.actionSyncNow()}
               </button>
             </div>
 
@@ -780,17 +781,17 @@
               <div class="text-center py-8">
                 <i class="fa-utility-duo fa-regular fa-users"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                <p style="color: {$colorStore.muted};">No supporters found. Try syncing to load the latest data.</p>
+                <p style="color: {$colorStore.muted};">{m.patreon.supportersEmpty()}</p>
               </div>
             {:else}
               <div class="overflow-x-auto">
                 <table class="w-full">
                   <thead>
                   <tr class="border-b" style="border-color: {$colorStore.primary}30;">
-                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">Name</th>
-                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">Pledge</th>
-                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">Joined</th>
-                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">Status</th>
+                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">{m.common.name()}</th>
+                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">{m.patreon.supportersPledge()}</th>
+                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">{m.common.joined()}</th>
+                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">{m.common.status()}</th>
                   </tr>
                   </thead>
                   <tbody>
@@ -799,7 +800,7 @@
                       <td class="py-3 px-4">
                         <div>
                           <p class="font-medium" style="color: {$colorStore.text};">{supporter.fullName}</p>
-                          <p class="text-sm" style="color: {$colorStore.muted};">{supporter.email || 'No email'}</p>
+                          <p class="text-sm" style="color: {$colorStore.muted};">{supporter.email || m.patreon.supportersNoEmail()}</p>
                         </div>
                       </td>
                       <td class="py-3 px-4"
@@ -830,28 +831,28 @@
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
-              <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Map Tier to Role</h3>
+              <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.patreon.tiersMapTitle()}</h3>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                 <div>
-                  <label for="patreon-tier" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">Patreon
-                    Tier</label>
+                  <label for="patreon-tier" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">{m.patreon.tiersPatreonTier()}</label>
                   <DiscordSelector
+                    id="patreon-tier"
                     type="custom"
                     options={getTierOptions()}
                     selected={selectedTierId}
-                    placeholder="Select a tier..."
+                    placeholder={m.patreon.tiersPlaceholder()}
                     customIcon="fa-star"
                     onchange={handleTierChange}
                   />
                 </div>
                 <div>
-                  <label for="discord-role" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">Discord
-                    Role</label>
+                  <label for="discord-role" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">{m.patreon.tiersDiscordRole()}</label>
                   <DiscordSelector
+                    id="discord-role"
                     type="role"
                     options={guildRoles}
                     selected={selectedRoleId}
-                    placeholder="Select a role..."
+                    placeholder={m.common.selectARolePlaceholder()}
                     onchange={handleRoleChange}
                   />
                 </div>
@@ -868,7 +869,7 @@
                     {:else}
                       <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                     {/if}
-                    Map Tier
+                    {m.patreon.tiersMapButton()}
                   </button>
                 </div>
               </div>
@@ -880,13 +881,12 @@
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
-              <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Available Tiers</h3>
+              <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.patreon.tiersAvailableTitle()}</h3>
               {#if patreonTiers.length === 0}
                 <div class="text-center py-8">
                   <i class="fa-utility-duo fa-regular fa-star"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                  <p style="color: {$colorStore.muted};">No tiers found. Make sure your Patreon campaign has published
-                    tiers. Try clicking "Sync All Data".</p>
+                  <p style="color: {$colorStore.muted};">{m.patreon.tiersEmpty()}</p>
                 </div>
               {:else}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -897,10 +897,10 @@
                     >
                       <div class="flex items-start justify-between mb-2">
                         <h4 class="font-semibold"
-                            style="color: {$colorStore.text};">{tier.attributes?.title || 'Unknown Tier'}</h4>
+                            style="color: {$colorStore.text};">{tier.attributes?.title || m.patreon.tiersUnknown()}</h4>
                         <span class="text-sm px-2 py-1 rounded-full"
                               style="background: {$colorStore.primary}20; color: {$colorStore.text};">
-                          {tier.attributes?.discordRoleIds?.length ? 'Mapped' : 'Unmapped'}
+                          {tier.attributes?.discordRoleIds?.length ? m.patreon.tiersMapped() : m.patreon.tiersUnmapped()}
                         </span>
                       </div>
                       <p class="text-lg font-bold mb-2"
@@ -922,23 +922,24 @@
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
-              <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Configuration</h3>
+              <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.common.configuration()}</h3>
               <form onsubmit={(e) => { e.preventDefault(); updateConfig(); }} class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label for="announcement-channel" class="block text-sm font-medium mb-2"
-                           style="color: {$colorStore.text};">Announcement Channel</label>
+                           style="color: {$colorStore.text};">{m.patreon.settingsChannel()}</label>
                     <DiscordSelector
+                      id="announcement-channel"
                       type="channel"
                       options={guildChannels}
                       selected={configForm.channelId ? configForm.channelId.toString() : ""}
-                      placeholder="Select a channel..."
+                      placeholder={m.common.selectAChannelPlaceholder()}
                       onchange={handleChannelChange}
                     />
                   </div>
                   <div>
                     <label for="announcement-day" class="block text-sm font-medium mb-2"
-                           style="color: {$colorStore.text};">Announcement Day (1-28)</label>
+                           style="color: {$colorStore.text};">{m.patreon.settingsDay()}</label>
                     <input
                       id="announcement-day"
                       type="number"
@@ -947,7 +948,7 @@
                       bind:value={configForm.announcementDay}
                       class="w-full px-3 py-2 rounded-lg border"
                       style="background: {$colorStore.primary}10; color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
-                      placeholder="Day of month"
+                      placeholder={m.patreon.settingsDayPlaceholder()}
                     >
                   </div>
                 </div>
@@ -955,43 +956,43 @@
                 <div>
                   <label for="f-+page-custom-announcement-message-957" class="block text-sm font-medium mb-3" style="color: {$colorStore.text};">
                     <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
-                    Custom Announcement Message
+                    {m.features.wizardStreamsBenefit4()}
                   </label>
 
                   <FullscreenEmbedBuilder id="f-+page-custom-announcement-message-957"
                     bind:value={configForm.message}
-                    previewTitle="Patreon Announcement"
-                    previewDescription="Message sent for Patreon announcements"
+                    previewTitle={m.patreon.settingsPreviewTitle()}
+                    previewDescription={m.patreon.settingsPreviewDescription()}
                     icon="fa-heart"
                     allowContent={true}
                     allowMultipleEmbeds={true}
                     maxEmbeds={10}
                     allowComponents={true}
                     additionalPlaceholders={[
-                      { category: "Patreon", name: "%month%", description: "Current month name" },
-                      { category: "Patreon", name: "%year%", description: "Current year" },
-                      { category: "Patreon", name: "%patreon.link%", description: "Patreon link" },
-                      { category: "Patreon", name: "%patron.name%", description: "Highest pledging supporter's name" },
-                      { category: "Patreon", name: "%patron.tier%", description: "Highest pledging supporter's tier" },
-                      { category: "Patreon", name: "%patron.amount%", description: "Highest pledging supporter's monthly pledge" },
-                      { category: "Patreon", name: "%supporter.count%", description: "Active supporters" },
-                      { category: "Patreon", name: "%supporter.total%", description: "All supporters ever recorded" },
-                      { category: "Patreon", name: "%supporter.new%", description: "New supporters this month" },
-                      { category: "Patreon", name: "%supporter.former%", description: "Former supporters" },
-                      { category: "Patreon", name: "%supporter.linked%", description: "Supporters with a linked Discord account" },
-                      { category: "Patreon", name: "%revenue.monthly%", description: "Current monthly pledges" },
-                      { category: "Patreon", name: "%revenue.average%", description: "Average pledge" },
-                      { category: "Patreon", name: "%revenue.lifetime%", description: "Lifetime revenue" },
-                      { category: "Patreon", name: "%tiers.count%", description: "Number of tiers" },
-                      { category: "Patreon", name: "%tier.popular%", description: "Tier with the most supporters" },
-                      { category: "Patreon", name: "%tier.popular.count%", description: "How many are on the most popular tier" },
-                      { category: "Patreon", name: "%supporters.summary%", description: "Ready made sentence about supporter count" },
-                      { category: "Patreon", name: "%revenue.summary%", description: "Ready made sentence about revenue" },
-                      { category: "Patreon", name: "%growth.summary%", description: "Ready made sentence about growth" }
+                      { category: "Patreon", name: "%month%", description: m.placeholders.month() },
+                      { category: "Patreon", name: "%year%", description: m.placeholders.timeYear() },
+                      { category: "Patreon", name: "%patreon.link%", description: m.placeholders.patreonLink() },
+                      { category: "Patreon", name: "%patron.name%", description: m.placeholders.patronName() },
+                      { category: "Patreon", name: "%patron.tier%", description: m.placeholders.patronTier() },
+                      { category: "Patreon", name: "%patron.amount%", description: m.placeholders.patronAmount() },
+                      { category: "Patreon", name: "%supporter.count%", description: m.placeholders.supporterCount() },
+                      { category: "Patreon", name: "%supporter.total%", description: m.placeholders.supporterTotal() },
+                      { category: "Patreon", name: "%supporter.new%", description: m.placeholders.supporterNew() },
+                      { category: "Patreon", name: "%supporter.former%", description: m.placeholders.supporterFormer() },
+                      { category: "Patreon", name: "%supporter.linked%", description: m.placeholders.supporterLinked() },
+                      { category: "Patreon", name: "%revenue.monthly%", description: m.placeholders.revenueMonthly() },
+                      { category: "Patreon", name: "%revenue.average%", description: m.placeholders.revenueAverage() },
+                      { category: "Patreon", name: "%revenue.lifetime%", description: m.placeholders.revenueLifetime() },
+                      { category: "Patreon", name: "%tiers.count%", description: m.placeholders.tiersCount() },
+                      { category: "Patreon", name: "%tier.popular%", description: m.placeholders.tierPopular() },
+                      { category: "Patreon", name: "%tier.popular.count%", description: m.placeholders.tierPopularCount() },
+                      { category: "Patreon", name: "%supporters.summary%", description: m.placeholders.supportersSummary() },
+                      { category: "Patreon", name: "%revenue.summary%", description: m.placeholders.revenueSummary() },
+                      { category: "Patreon", name: "%growth.summary%", description: m.placeholders.growthSummary() }
                     ]}
                     guildId={$currentGuild?.id}
                     user={data.user}
-                    placeholder="Click to configure announcement message with rich embeds"
+                    placeholder={m.patreon.settingsMessagePlaceholder()}
                   />
                 </div>
 
@@ -1003,7 +1004,7 @@
                       class="rounded-sm"
                       style="accent-color: {$colorStore.primary};"
                     >
-                    <span style="color: {$colorStore.text};">Enable Announcements</span>
+                    <span style="color: {$colorStore.text};">{m.patreon.settingsEnableAnnouncements()}</span>
                   </label>
 
                   <label class="flex items-center gap-2 cursor-pointer">
@@ -1013,7 +1014,7 @@
                       class="rounded-sm"
                       style="accent-color: {$colorStore.primary};"
                     >
-                    <span style="color: {$colorStore.text};">Enable Role Sync</span>
+                    <span style="color: {$colorStore.text};">{m.patreon.settingsEnableRoleSync()}</span>
                   </label>
                 </div>
 
@@ -1030,7 +1031,7 @@
                     {:else}
                       <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                     {/if}
-                    Save Configuration
+                    {m.common.saveConfiguration()}
                   </button>
                 </div>
               </form>

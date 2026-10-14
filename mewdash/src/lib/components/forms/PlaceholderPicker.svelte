@@ -1,6 +1,7 @@
 <!-- PlaceholderPicker.svelte -->
 <script lang="ts">
   import { onMount, tick } from "svelte";
+  import { m } from "$lib/i18n";
     import {fade, fly} from 'svelte/transition';
     import {cubicOut} from 'svelte/easing';
     import {colorStore} from "$lib/stores/colorStore";
@@ -366,10 +367,10 @@
                      border: 1px solid {$colorStore.primary}30;
                      color: {$colorStore.text};
                      focus:ring-color: {$colorStore.primary}50;"
-              placeholder="Search placeholders..."
+              placeholder={m.placeholders.pickerSearchPlaceholder()}
               value={searchTerm}
               oninput={handleSearch}
-              aria-label="Search placeholders"
+              aria-label={m.placeholders.pickerSearchLabel()}
             >
           </div>
         </div>
@@ -380,7 +381,7 @@
             <!-- No Results -->
             <div class="p-6 text-center">
               <i class="fa-utility-duo fa-regular fa-magnifying-glass" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 32px; opacity: 0.5; display: block; margin: 0 auto 12px;"></i>
-              <p class="text-sm font-medium mb-1" style="color: {$colorStore.text};">No placeholders found</p>
+              <p class="text-sm font-medium mb-1" style="color: {$colorStore.text};">{m.placeholders.pickerEmpty()}</p>
               <p class="text-xs" style="color: {$colorStore.muted};">
                 Try adjusting your search terms
               </p>
@@ -494,10 +495,10 @@
                    border: 1px solid {$colorStore.primary}30;
                    color: {$colorStore.text};
                    focus:ring-color: {$colorStore.primary}50;"
-            placeholder="Search placeholders..."
+            placeholder={m.placeholders.pickerSearchPlaceholder()}
             value={searchTerm}
             oninput={handleSearch}
-            aria-label="Search placeholders"
+            aria-label={m.placeholders.pickerSearchLabel()}
           >
         </div>
       </div>
@@ -508,7 +509,7 @@
           <!-- No Results -->
           <div class="p-6 text-center">
             <i class="fa-utility-duo fa-regular fa-magnifying-glass" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 32px; opacity: 0.5; display: block; margin: 0 auto 12px;"></i>
-            <p class="text-sm font-medium mb-1" style="color: {$colorStore.text};">No placeholders found</p>
+            <p class="text-sm font-medium mb-1" style="color: {$colorStore.text};">{m.placeholders.pickerEmpty()}</p>
             <p class="text-xs" style="color: {$colorStore.muted};">
               Try adjusting your search terms
             </p>

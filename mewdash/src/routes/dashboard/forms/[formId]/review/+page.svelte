@@ -6,6 +6,7 @@
   import Notification from "$lib/components/ui/Notification.svelte";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade } from "svelte/transition";
+  import { m } from "$lib/i18n";
   import type { PageData } from "./$types";
 
   interface Props {
@@ -32,8 +33,8 @@
 </script>
 
 <svelte:head>
-  <title>Review Responses - {$currentGuild?.name || "Dashboard"} - Mewdeko</title>
-  <meta content="Review and manage form submissions" name="description" />
+  <title>{m.forms.reviewHeadTitle({ guild: $currentGuild?.name || m.common.dashboard() })}</title>
+  <meta content={m.forms.reviewHeadDescription()} name="description" />
 </svelte:head>
 
 {#snippet statusMessagesSnippet()}
@@ -47,18 +48,18 @@
 <DashboardPageLayout
   actionButtons={[
     {
-      label: "Back to Forms",
+      label: m.forms.reviewBack(),
       icon: "fa-arrow-left",
       action: goBackToForms,
     }
   ]}
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-clipboard-check"
-  subtitle="Approve or reject pending submissions"
+  subtitle={m.forms.reviewSubtitle()}
   tabs={[
-    { id: "back", label: "Back to Forms", icon: "fa-arrow-left" }
+    { id: "back", label: m.forms.reviewBack(), icon: "fa-arrow-left" }
   ]}
-  title="Review Form Responses"
+  title={m.forms.reviewTitle()}
   statusMessages={statusMessagesSnippet}
 >
   <FormResponseQueue

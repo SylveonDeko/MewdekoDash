@@ -1,6 +1,7 @@
-<!-- routes/dashboard/analytics/+page.svelte -->
+<!-- routes/owner/analytics/+page.svelte -->
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { m } from "$lib/i18n";
+  import { onMount, untrack } from "svelte";
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
@@ -24,23 +25,23 @@
 
   let { data } = $props();
 
-  const tabs = [
-    { id: "overview", label: "Overview", icon: "fa-gauge-high" },
-    { id: "commands", label: "Commands", icon: "fa-terminal" },
-    { id: "events", label: "Events", icon: "fa-bolt" },
-    { id: "latency", label: "Latency", icon: "fa-stopwatch" },
-    { id: "servers", label: "Servers", icon: "fa-server" },
-    { id: "guilds", label: "Guilds", icon: "fa-people-group" },
-    { id: "features", label: "Features", icon: "fa-puzzle-piece" },
-    { id: "ai", label: "AI", icon: "fa-robot" },
-    { id: "music", label: "Music", icon: "fa-music" },
-    { id: "website", label: "Website", icon: "fa-globe" },
-    { id: "alerts", label: "Alerts", icon: "fa-bell" },
-    { id: "pipeline", label: "Pipeline", icon: "fa-diagram-project" },
-  ];
+  const tabs = $derived([
+    { id: "overview", label: m.common.overview(), icon: "fa-gauge-high" },
+    { id: "commands", label: m.common.commands(), icon: "fa-terminal" },
+    { id: "events", label: m.common.events(), icon: "fa-bolt" },
+    { id: "latency", label: m.common.latency(), icon: "fa-stopwatch" },
+    { id: "servers", label: m.common.servers(), icon: "fa-server" },
+    { id: "guilds", label: m.analytics.pageTabGuilds(), icon: "fa-people-group" },
+    { id: "features", label: m.common.features(), icon: "fa-puzzle-piece" },
+    { id: "ai", label: m.analytics.pageTabAi(), icon: "fa-robot" },
+    { id: "music", label: m.features.musicName(), icon: "fa-music" },
+    { id: "website", label: m.analytics.pageTabWebsite(), icon: "fa-globe" },
+    { id: "alerts", label: m.common.alerts(), icon: "fa-bell" },
+    { id: "pipeline", label: m.analytics.pageTabPipeline(), icon: "fa-diagram-project" },
+  ]);
 
   const parsed = readFilters(page.url.searchParams);
-  const initial = tabs.some((t) => t.id === parsed.tab) ? parsed : { ...parsed, tab: "overview" };
+  const initial = untrack(() => tabs).some((t) => t.id === parsed.tab) ? parsed : { ...parsed, tab: "overview" };
   if (browser) analyticsFilters.set(initial);
 
   let activeTab = $state(initial.tab);
@@ -63,15 +64,15 @@
       } catch {
         goto("/dashboard");
       }
-    }, "critical", "Checking permissions...");
+    }, "critical", m.common.checkingPermissions());
   });
 </script>
 
 <DashboardPageLayout
   icon="fa-chart-simple"
-  title="Analytics"
-  subtitle="Fleet telemetry, commands, events, errors, growth and alerts"
-  guildName="Owner analytics"
+  title={m.features.analyticsName()}
+  subtitle={m.features.analyticsDescription()}
+  guildName={m.analytics.pageGuildName()}
   category="Analytics"
   basePath="/owner/analytics"
   {tabs}

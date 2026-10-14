@@ -1,5 +1,6 @@
 <!-- lib/components/EventMetricsMonitor.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onDestroy, onMount } from "svelte";
   import { performanceApi } from "$lib/api/index.ts";
   import { logger } from "$lib/logger.ts";
@@ -39,7 +40,7 @@
       sortData();
     } catch (err) {
       logger.error("Error fetching event metrics:", err);
-      error = "Failed to load event metrics";
+      error = m.monitoring.eventMetricsLoadFailed();
       eventMetrics = []; // Ensure it's always an array
     } finally {
       loading = false;
@@ -49,9 +50,9 @@
 
   const formatTime = (ms: any) => {
     const num = safeNumber(ms);
-    if (num < 1) return `${(num * 1000).toFixed(2)}μs`;
-    if (num < 1000) return `${num.toFixed(2)}ms`;
-    return `${(num / 1000).toFixed(2)}s`;
+    if (num < 1) return m.monitoring.performanceTimeMicroseconds({ value: (num * 1000).toFixed(2) });
+    if (num < 1000) return m.monitoring.performanceTimeMilliseconds({ value: num.toFixed(2) });
+    return m.monitoring.performanceTimeSeconds({ value: (num / 1000).toFixed(2) });
   };
 
   const formatNumber = (num: any) => {
@@ -148,9 +149,9 @@
           <i class="fa-utility-duo fa-regular fa-bell"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
         </div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Event Metrics</h2>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.monitoring.eventMetricsTitle()}</h2>
       </div>
-      <button aria-label="Navigate"
+      <button aria-label={m.common.refresh()}
               class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
         disabled={refreshInProgress}
@@ -159,7 +160,7 @@
         <div class:animate-spin={refreshInProgress}>
           <i class="fa-solid fa-arrows-rotate" style="font-size: 16px;"></i>
         </div>
-        {refreshInProgress ? 'Refreshing...' : 'Refresh'}
+        {refreshInProgress ? m.common.refreshing() : m.common.refresh()}
       </button>
     </div>
 
@@ -179,36 +180,36 @@
       <div class="text-center p-8">
         <i class="fa-utility-duo fa-regular fa-bell"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-        <p class="font-medium mb-2" style="color: {$colorStore.text}">No event metrics available yet.</p>
-        <p class="text-sm" style="color: {$colorStore.muted}">Event metrics will appear as your bot processes Discord events.</p>
+        <p class="font-medium mb-2" style="color: {$colorStore.text}">{m.monitoring.eventMetricsEmpty()}</p>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.monitoring.eventMetricsEmptyHint()}</p>
       </div>
     {:else}
       <!-- Summary Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
-          <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">Total Events</h3>
+          <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">{m.monitoring.eventMetricsTotalEvents()}</h3>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">
             {formatNumber(safeEventMetrics.reduce((sum, metric) => sum + safeNumber(metric?.totalProcessed), 0))}
           </div>
         </div>
         <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
-          <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">Total Errors</h3>
+          <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">{m.common.totalErrors()}</h3>
           <div class="text-2xl font-bold" style="color: {$colorStore.accent}">
             {formatNumber(safeEventMetrics.reduce((sum, metric) => sum + safeNumber(metric?.totalErrors), 0))}
           </div>
         </div>
         <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
-          <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">Event Types</h3>
+          <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">{m.monitoring.eventMetricsEventTypes()}</h3>
           <div class="text-2xl font-bold" style="color: {$colorStore.secondary}">
             {safeEventMetrics.length}
           </div>
         </div>
         <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
-          <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">Avg Error Rate</h3>
+          <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">{m.monitoring.eventMetricsAvgErrorRate()}</h3>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">
             {safeToFixed(safeEventMetrics.length > 0 ? safeEventMetrics.reduce((sum, metric) => sum + safeNumber(metric?.errorRate), 0) / safeEventMetrics.length : 0)}%
           </div>
@@ -224,7 +225,7 @@
                 <button class="text-left font-bold hover:opacity-80 transition-opacity flex items-center gap-1"
                         style="color: {$colorStore.text}"
                         onclick={() => sortBy('eventType')}>
-                  Event Type
+                  {m.common.eventType()}
                   {#if sortField === 'eventType'}
                     <i class="fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
                        style="font-size: 12px;"></i>
@@ -238,7 +239,7 @@
                   class="text-right font-bold hover:opacity-80 transition-opacity flex items-center gap-1 justify-end ml-auto"
                         style="color: {$colorStore.text}"
                         onclick={() => sortBy('totalProcessed')}>
-                  Processed
+                  {m.monitoring.eventMetricsColProcessed()}
                   {#if sortField === 'totalProcessed'}
                     <i class="fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
                        style="font-size: 12px;"></i>
@@ -252,7 +253,7 @@
                   class="text-right font-bold hover:opacity-80 transition-opacity flex items-center gap-1 justify-end ml-auto"
                         style="color: {$colorStore.text}"
                         onclick={() => sortBy('totalErrors')}>
-                  Errors
+                  {m.common.errors()}
                   {#if sortField === 'totalErrors'}
                     <i class="fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
                        style="font-size: 12px;"></i>
@@ -266,7 +267,7 @@
                   class="text-right font-bold hover:opacity-80 transition-opacity flex items-center gap-1 justify-end ml-auto"
                         style="color: {$colorStore.text}"
                         onclick={() => sortBy('errorRate')}>
-                  Error Rate
+                  {m.monitoring.eventMetricsColErrorRate()}
                   {#if sortField === 'errorRate'}
                     <i class="fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
                        style="font-size: 12px;"></i>
@@ -280,7 +281,7 @@
                   class="text-right font-bold hover:opacity-80 transition-opacity flex items-center gap-1 justify-end ml-auto"
                         style="color: {$colorStore.text}"
                         onclick={() => sortBy('averageExecutionTime')}>
-                  Avg Time
+                  {m.monitoring.performanceColAvgTime()}
                   {#if sortField === 'averageExecutionTime'}
                     <i class="fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
                        style="font-size: 12px;"></i>
@@ -294,7 +295,7 @@
                   class="text-right font-bold hover:opacity-80 transition-opacity flex items-center gap-1 justify-end ml-auto"
                         style="color: {$colorStore.text}"
                         onclick={() => sortBy('totalExecutionTime')}>
-                  Total Time
+                  {m.common.totalTime()}
                   {#if sortField === 'totalExecutionTime'}
                     <i class="fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
                        style="font-size: 12px;"></i>
@@ -311,7 +312,7 @@
                 <tr class="border-b transition-all hover:scale-[1.01]"
                     style="background: {i % 2 === 0 ? $colorStore.primary + '08' : 'transparent'};
                            border-color: {$colorStore.primary}10;">
-                  <td class="px-4 py-3 font-mono text-sm" style="color: {$colorStore.text}">{metric.eventType || 'Unknown'}</td>
+                  <td class="px-4 py-3 font-mono text-sm" style="color: {$colorStore.text}">{metric.eventType || m.common.unknown()}</td>
                   <td class="px-4 py-3 text-right" style="color: {$colorStore.text}">{formatNumber(safeNumber(metric.totalProcessed))}</td>
                   <td class="px-4 py-3 text-right" style="color: {safeNumber(metric.totalErrors) > 0 ? $colorStore.accent : '#10b981'}">
                     {formatNumber(safeNumber(metric.totalErrors))}

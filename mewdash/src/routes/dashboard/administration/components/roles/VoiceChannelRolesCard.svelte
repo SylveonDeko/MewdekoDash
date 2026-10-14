@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -28,7 +29,7 @@
         <i class="fa-utility-duo fa-regular fa-volume"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
-      <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Voice Channel Roles</h2>
+      <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.rolesVoiceChannelTitle()}</h2>
     </div>
 
     <button
@@ -41,21 +42,21 @@
       {:else}
         <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
       {/if}
-      {expandedRoleCard === 'voiceChannel' ? 'Collapse' : 'Add Mapping'}
+      {expandedRoleCard === 'voiceChannel' ? m.common.collapse() : m.administration.rolesVoiceChannelAddMapping()}
     </button>
   </div>
 
   <div class="space-y-4">
     <p class="text-sm" style="color: {$colorStore.muted}">
-      Automatically assign roles when users join specific voice channels
+      {m.administration.rolesVoiceChannelDescription()}
     </p>
 
     {#if voiceChannelRoles.length === 0}
       <div class="text-center py-8">
         <i class="fa-utility-duo fa-regular fa-volume"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-        <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">No voice channel roles configured</p>
-        <p class="text-sm" style="color: {$colorStore.muted}">Add voice channel to role mappings</p>
+        <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">{m.administration.rolesVoiceChannelEmptyTitle()}</p>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.rolesVoiceChannelEmptyHint()}</p>
       </div>
     {:else}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -74,10 +75,10 @@
             <button
               class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-              onclick={() => showConfirm("Remove Voice Channel Role", `Remove role mapping for ${vcRole.channelName}?`, () => removeVoiceChannelRole(vcRole.channelId))}
-              aria-label="Remove voice channel role mapping for {vcRole.channelName}"
+              onclick={() => showConfirm(m.administration.rolesVoiceChannelRemoveTitle(), m.administration.rolesVoiceChannelRemoveConfirm({ channel: vcRole.channelName }), () => removeVoiceChannelRole(vcRole.channelId))}
+              aria-label={m.administration.rolesVoiceChannelRemoveAria({ channel: vcRole.channelName })}
             >
-              Remove
+              {m.common.remove()}
             </button>
           </div>
         {/each}
@@ -90,29 +91,29 @@
            style="border-color: {$colorStore.primary}20;">
         <div class="p-4 rounded-xl border-2 border-dashed"
              style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
-          <h5 class="font-medium mb-3" style="color: {$colorStore.text}">Add Voice Channel Role Mapping</h5>
+          <h5 class="font-medium mb-3" style="color: {$colorStore.text}">{m.administration.rolesVoiceChannelFormTitle()}</h5>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <span id="voice-channel-label" class="block text-sm font-medium mb-2"
-                    style="color: {$colorStore.text}">Voice Channel</span>
+                    style="color: {$colorStore.text}">{m.common.voiceChannel()}</span>
               <DiscordSelector
                 type="channel"
                 options={voiceChannels}
                 bind:selected={newVoiceChannelRole.channelId}
-                placeholder="Select voice channel..."
+                placeholder={m.common.selectVoiceChannelPlaceholder()}
                 multiple={false}
               />
             </div>
 
             <div>
               <span id="role-to-assign-label" class="block text-sm font-medium mb-2"
-                    style="color: {$colorStore.text}">Role to Assign</span>
+                    style="color: {$colorStore.text}">{m.administration.rolesVoiceChannelRoleToAssign()}</span>
               <DiscordSelector
                 type="role"
                 options={availableRoles}
                 bind:selected={newVoiceChannelRole.roleId}
-                placeholder="Select role..."
+                placeholder={m.common.selectRolePlaceholder()}
                 multiple={false}
               />
             </div>
@@ -124,7 +125,7 @@
               style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
               onclick={() => { expandedRoleCard = null; newVoiceChannelRole = { channelId: null, roleId: null }; }}
             >
-              Cancel
+              {m.common.cancel()}
             </button>
             <button
               class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
@@ -137,7 +138,7 @@
               {:else}
                 <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
               {/if}
-              Add Mapping
+              {m.administration.rolesVoiceChannelAddMapping()}
             </button>
           </div>
         </div>

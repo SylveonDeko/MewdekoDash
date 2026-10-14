@@ -1,5 +1,6 @@
 <!-- routes/dashboard/wordoftheday/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -40,66 +41,84 @@
   const autoSave = createAutoSave({
     onError: (_err, key) => showMessage(
       TEXT_KEYS.has(key)
-        ? "Couldn't save Word of the Day settings."
-        : "Couldn't save Word of the Day settings. Your last change was undone.",
+        ? m.wordoftheday.notifySaveFailed()
+        : m.wordoftheday.notifySaveFailedUndone(),
       "error"
     )
   });
 
-  const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  const MONTH_NAMES = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
+  const DAY_NAMES = $derived([
+    m.wordoftheday.daySunday(),
+    m.wordoftheday.dayMonday(),
+    m.wordoftheday.dayTuesday(),
+    m.wordoftheday.dayWednesday(),
+    m.wordoftheday.dayThursday(),
+    m.wordoftheday.dayFriday(),
+    m.wordoftheday.daySaturday()
+  ]);
+  const MONTH_NAMES = $derived([
+    m.wordoftheday.monthJanuary(),
+    m.wordoftheday.monthFebruary(),
+    m.wordoftheday.monthMarch(),
+    m.wordoftheday.monthApril(),
+    m.wordoftheday.monthMay(),
+    m.wordoftheday.monthJune(),
+    m.wordoftheday.monthJuly(),
+    m.wordoftheday.monthAugust(),
+    m.wordoftheday.monthSeptember(),
+    m.wordoftheday.monthOctober(),
+    m.wordoftheday.monthNovember(),
+    m.wordoftheday.monthDecember()
+  ]);
 
   const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => ({
     id: i.toString(),
     name: `${i.toString().padStart(2, "0")}:00`
   }));
 
-  const MODE_OPTIONS = [
-    { id: WordSourceMode.Dictionary.toString(), name: "Dictionary (Datamuse)" },
-    { id: WordSourceMode.Custom.toString(), name: "Custom list only" },
-    { id: WordSourceMode.Mixed.toString(), name: "Custom list first, then dictionary" }
-  ];
+  const MODE_OPTIONS = $derived([
+    { id: WordSourceMode.Dictionary.toString(), name: m.wordoftheday.sourceDictionary() },
+    { id: WordSourceMode.Custom.toString(), name: m.wordoftheday.sourceCustom() },
+    { id: WordSourceMode.Mixed.toString(), name: m.wordoftheday.sourceMixed() }
+  ]);
 
-  const POS_OPTIONS = [
-    { id: WordPartOfSpeech.Any.toString(), name: "Any" },
-    { id: WordPartOfSpeech.Noun.toString(), name: "Noun" },
-    { id: WordPartOfSpeech.Verb.toString(), name: "Verb" },
-    { id: WordPartOfSpeech.Adjective.toString(), name: "Adjective" },
-    { id: WordPartOfSpeech.Adverb.toString(), name: "Adverb" }
-  ];
+  const POS_OPTIONS = $derived([
+    { id: WordPartOfSpeech.Any.toString(), name: m.wordoftheday.optionAny() },
+    { id: WordPartOfSpeech.Noun.toString(), name: m.wordoftheday.posNoun() },
+    { id: WordPartOfSpeech.Verb.toString(), name: m.wordoftheday.posVerb() },
+    { id: WordPartOfSpeech.Adjective.toString(), name: m.wordoftheday.posAdjective() },
+    { id: WordPartOfSpeech.Adverb.toString(), name: m.wordoftheday.posAdverb() }
+  ]);
 
-  const DIFFICULTY_OPTIONS = [
-    { id: WordDifficulty.Any.toString(), name: "Any" },
-    { id: WordDifficulty.Common.toString(), name: "Common" },
-    { id: WordDifficulty.Moderate.toString(), name: "Moderate" },
-    { id: WordDifficulty.Rare.toString(), name: "Rare" }
-  ];
+  const DIFFICULTY_OPTIONS = $derived([
+    { id: WordDifficulty.Any.toString(), name: m.wordoftheday.optionAny() },
+    { id: WordDifficulty.Common.toString(), name: m.wordoftheday.difficultyCommon() },
+    { id: WordDifficulty.Moderate.toString(), name: m.wordoftheday.difficultyModerate() },
+    { id: WordDifficulty.Rare.toString(), name: m.wordoftheday.difficultyRare() }
+  ]);
 
-  const THREAD_ARCHIVE_OPTIONS = [
-    { id: "60", name: "1 hour" },
-    { id: "1440", name: "1 day" },
-    { id: "4320", name: "3 days" },
-    { id: "10080", name: "1 week" }
-  ];
+  const THREAD_ARCHIVE_OPTIONS = $derived([
+    { id: "60", name: m.common.oneHour() },
+    { id: "1440", name: m.common.oneDay() },
+    { id: "4320", name: m.wordoftheday.archive3d() },
+    { id: "10080", name: m.wordoftheday.archive1w() }
+  ]);
 
   const DEFAULT_THREAD_NAME = "Word of the day: %wotd.word%";
 
-  const RULE_POS_OPTIONS = [{ id: "0", name: "Inherit" }, ...POS_OPTIONS.slice(1)];
-  const RULE_DIFFICULTY_OPTIONS = [{ id: "0", name: "Inherit" }, ...DIFFICULTY_OPTIONS.slice(1)];
+  const RULE_POS_OPTIONS = $derived([{ id: "0", name: m.wordoftheday.optionInherit() }, ...POS_OPTIONS.slice(1)]);
+  const RULE_DIFFICULTY_OPTIONS = $derived([{ id: "0", name: m.wordoftheday.optionInherit() }, ...DIFFICULTY_OPTIONS.slice(1)]);
 
-  const TEMPLATE_PLACEHOLDERS = [
-    { category: "Word", name: "%wotd.word%", description: "The word itself" },
-    { category: "Word", name: "%wotd.definition%", description: "The definition" },
-    { category: "Word", name: "%wotd.pos%", description: "Part of speech" },
-    { category: "Word", name: "%wotd.example%", description: "Example sentence, if any" },
-    { category: "Word", name: "%wotd.phonetic%", description: "Pronunciation, if any" },
-    { category: "Word", name: "%wotd.date%", description: "Today's date in the server timezone" },
-    { category: "Word", name: "%wotd.ping%", description: "Mention of the ping role, if set" },
-    { category: "Server", name: "%server.name%", description: "Server name" }
-  ];
+  const TEMPLATE_PLACEHOLDERS = $derived([
+    { category: m.common.word(), name: "%wotd.word%", description: m.placeholders.wotdWord() },
+    { category: m.common.word(), name: "%wotd.definition%", description: m.placeholders.wotdDefinition() },
+    { category: m.common.word(), name: "%wotd.pos%", description: m.placeholders.wotdPos() },
+    { category: m.common.word(), name: "%wotd.example%", description: m.placeholders.wotdExample() },
+    { category: m.common.word(), name: "%wotd.phonetic%", description: m.placeholders.wotdPhonetic() },
+    { category: m.common.word(), name: "%wotd.date%", description: m.placeholders.wotdDate() },
+    { category: m.common.word(), name: "%wotd.ping%", description: m.placeholders.wotdPing() },
+    { category: m.placeholders.categoryServer(), name: "%server.name%", description: m.placeholders.serverName() }
+  ]);
 
   /** One editable row on the schedule tab. */
   interface RuleDraft {
@@ -266,7 +285,7 @@
         .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
     } catch (err) {
       logger.error("Failed to load word of the day data:", err);
-      showMessage("Failed to load Word of the Day data", "error");
+      showMessage(m.wordoftheday.notifyLoadFailed(), "error");
     } finally {
       loading = false;
     }
@@ -398,9 +417,9 @@
   async function resetConfig() {
     if (!$currentGuild?.id) return;
     const ok = await requestConfirmation({
-      title: "Reset Word of the Day",
-      message: "This removes the configuration, every custom word, all weekday and month rules, and the posting history for this server.",
-      confirmText: "Reset everything",
+      title: m.wordoftheday.resetTitle(),
+      message: m.wordoftheday.resetMessage(),
+      confirmText: m.common.resetEverything(),
       variant: "danger"
     });
     if (!ok) return;
@@ -413,7 +432,7 @@
       await loadAll();
     } catch (err) {
       logger.error("Failed to reset word of the day config:", err);
-      showMessage("Failed to reset configuration", "error");
+      showMessage(m.common.failedToResetConfiguration(), "error");
     } finally {
       saving = false;
     }
@@ -425,14 +444,14 @@
     try {
       const result = await wordOfTheDayApi.postNow($currentGuild.id);
       templateWarning = result.usedFallback
-        ? result.warning || "Your custom template rendered an empty message, so the default embed was posted instead."
+        ? result.warning || m.wordoftheday.templateFallbackWarning()
         : "";
-      showMessage(`Posted "${result.entry.word}" to the channel`, "success");
+      showMessage(m.wordoftheday.notifyPosted({ word: result.entry.word }), "success");
       history = await wordOfTheDayApi.getHistory($currentGuild.id, 30).catch(() => history);
       config = await wordOfTheDayApi.getConfig($currentGuild.id).catch(() => config);
     } catch (err: any) {
       logger.error("Failed to post word of the day:", err);
-      showMessage(err?.message || "Failed to post a word. Check the channel and filters.", "error");
+      showMessage(err?.message || m.wordoftheday.notifyPostFailed(), "error");
     } finally {
       posting = false;
     }
@@ -452,7 +471,7 @@
       rules = [...rules.filter((r) => !(r.ruleType === saved.ruleType && r.ruleKey === saved.ruleKey)), saved];
     } catch (err) {
       logger.error("Failed to save schedule rule:", err);
-      showMessage(`Failed to save the ${draft.name} rule`, "error");
+      showMessage(m.wordoftheday.notifyRuleSaveFailed({ name: draft.name }), "error");
     } finally {
       draft.saving = false;
     }
@@ -466,7 +485,7 @@
       rules = rules.filter((r) => !(r.ruleType === draft.type && r.ruleKey === draft.key));
     } catch (err) {
       logger.error("Failed to clear schedule rule:", err);
-      showMessage(`Failed to clear the ${draft.name} rule`, "error");
+      showMessage(m.wordoftheday.notifyRuleClearFailed({ name: draft.name }), "error");
     } finally {
       draft.saving = false;
     }
@@ -487,7 +506,7 @@
       if (config) config = { ...config, customWordCount: words.length };
     } catch (err: any) {
       logger.error("Failed to add custom word:", err);
-      showMessage(err?.message || "Couldn't add that word. Try supplying a definition.", "error");
+      showMessage(err?.message || m.wordoftheday.notifyAddFailed(), "error");
     } finally {
       addingWord = false;
     }
@@ -496,8 +515,8 @@
   async function removeWord(word: WordOfTheDayWord) {
     if (!$currentGuild?.id) return;
     const ok = await requestConfirmation({
-      message: `Remove "${word.word}" from the custom list?`,
-      confirmText: "Remove"
+      message: m.wordoftheday.confirmRemoveWord({ word: word.word }),
+      confirmText: m.common.remove()
     });
     if (!ok) return;
 
@@ -507,7 +526,7 @@
       if (config) config = { ...config, customWordCount: words.length };
     } catch (err) {
       logger.error("Failed to remove custom word:", err);
-      showMessage("Failed to remove the word", "error");
+      showMessage(m.wordoftheday.notifyRemoveFailed(), "error");
     }
   }
 
@@ -520,23 +539,23 @@
   }
 
   function getChannelName(channelId: bigint | null | undefined): string {
-    if (!channelId) return "Not set";
+    if (!channelId) return m.common.notSet();
     const channel = guildChannels.find((c) => c.id === channelId.toString());
-    return channel ? `#${channel.name}` : "Unknown channel";
+    return channel ? `#${channel.name}` : m.common.unknownChannel();
   }
 
   function getRoleName(roleId: bigint | null | undefined): string {
-    if (!roleId) return "None";
+    if (!roleId) return m.common.none();
     const role = guildRoles.find((r) => r.id === roleId.toString());
-    return role ? `@${role.name}` : "Unknown role";
+    return role ? `@${role.name}` : m.common.unknownRole();
   }
 
   function optionName(options: Array<{ id: string; name: string }>, value: number): string {
-    return options.find((o) => o.id === value.toString())?.name ?? "Any";
+    return options.find((o) => o.id === value.toString())?.name ?? m.wordoftheday.optionAny();
   }
 
   function formatDate(value: string | null | undefined): string {
-    if (!value) return "Never";
+    if (!value) return m.common.never();
     return new Date(value).toLocaleDateString();
   }
 
@@ -546,10 +565,10 @@
 
   function describeRule(draft: RuleDraft): string {
     const parts: string[] = [];
-    if (draft.topic.trim()) parts.push(`topic "${draft.topic.trim()}"`);
+    if (draft.topic.trim()) parts.push(m.wordoftheday.ruleTopic({ topic: draft.topic.trim() }));
     if (draft.partOfSpeech) parts.push(optionName(POS_OPTIONS, draft.partOfSpeech).toLowerCase());
     if (draft.difficulty) parts.push(optionName(DIFFICULTY_OPTIONS, draft.difficulty).toLowerCase());
-    return parts.length ? parts.join(", ") : "inherits base settings";
+    return parts.length ? parts.join(", ") : m.wordoftheday.ruleInherits();
   }
 
   let ruleCount = $derived(rules.length);
@@ -558,22 +577,22 @@
     loadAll();
   });
 
-  const tabs = [
-    { id: "settings", label: "Settings", icon: "fa-gear" },
-    { id: "schedule", label: "Schedule", icon: "fa-calendar" },
-    { id: "words", label: "Custom Words", icon: "fa-list" },
-    { id: "history", label: "History", icon: "fa-clock-rotate-left" }
-  ];
+  const tabs = $derived([
+    { id: "settings", label: m.common.settings(), icon: "fa-gear" },
+    { id: "schedule", label: m.common.schedule(), icon: "fa-calendar" },
+    { id: "words", label: m.wordoftheday.tabWords(), icon: "fa-list" },
+    { id: "history", label: m.common.history(), icon: "fa-clock-rotate-left" }
+  ]);
 
   let actionButtons = $derived([
     {
-      label: "Post now",
+      label: m.wordoftheday.actionPostNow(),
       icon: "fa-paper-plane",
       action: postNow,
       loading: posting
     },
     {
-      label: "Refresh",
+      label: m.common.refresh(),
       icon: "fa-arrows-rotate",
       action: loadAll,
       loading: loading
@@ -605,11 +624,11 @@
       <i class="fa-utility-duo fa-regular fa-circle-exclamation mt-0.5"
          style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
       <div class="flex-1 min-w-0">
-        <p class="font-medium" style="color: {$colorStore.text}">Posted with the default embed</p>
+        <p class="font-medium" style="color: {$colorStore.text}">{m.wordoftheday.warningTitle()}</p>
         <p class="text-sm" style="color: {$colorStore.muted}">{templateWarning}</p>
       </div>
       <button type="button" class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg"
-              style="color: {$colorStore.muted}" aria-label="Dismiss"
+              style="color: {$colorStore.muted}" aria-label={m.common.dismiss()}
               onclick={() => (templateWarning = "")}>
         <i class="fa-utility-duo fa-regular fa-xmark"
            style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
@@ -623,7 +642,7 @@
          in:fly={{ x: -20, duration: 300 }}>
       <i class="fa-utility-duo fa-regular fa-circle-exclamation"
          style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
-      <span style="color: {$colorStore.text}">Posting is enabled but no channel is set, so nothing will be posted.</span>
+      <span style="color: {$colorStore.text}">{m.wordoftheday.warningNoChannel()}</span>
     </div>
   {/if}
 {/snippet}
@@ -632,12 +651,12 @@
   {actionButtons}
   {autoSave}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-book-open"
   statusMessages={statusMessageContent}
-  subtitle="A daily vocabulary word with topics, filters, and a custom list"
+  subtitle={m.features.wordofthedayDescription()}
   {tabs}
-  title="Word of the Day"
+  title={m.features.wordofthedayName()}
 >
 
   {#if activeTab === 'settings'}
@@ -650,21 +669,21 @@
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-paper-plane"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Posting</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.wordoftheday.postingTitle()}</h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <div>
             <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               <i class="fa-solid fa-hashtag" style="font-size: 14px;"></i>
-              Channel
+              {m.common.channel()}
             </span>
             <div class="min-h-[44px]">
               <DiscordSelector
                 type="channel"
                 options={guildChannels}
                 selected={form.channelId?.toString() || null}
-                placeholder="No channel selected"
+                placeholder={m.common.noChannelSelected()}
                 onchange={(detail) => saveChannel(detail.selected)}
               />
             </div>
@@ -673,14 +692,14 @@
           <div>
             <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               <i class="fa-solid fa-clock" style="font-size: 14px;"></i>
-              Post at
+              {m.wordoftheday.postingHour()}
             </span>
             <div class="min-h-[44px]">
               <DiscordSelector
                 type="custom"
                 options={HOUR_OPTIONS}
                 selected={form.postHour.toString()}
-                placeholder="Hour"
+                placeholder={m.wordoftheday.postingHourPlaceholder()}
                 searchable={false}
                 onchange={(detail) => savePostHour(selectedNumber(detail, 9))}
               />
@@ -690,14 +709,14 @@
           <div>
             <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               <i class="fa-solid fa-location-dot" style="font-size: 14px;"></i>
-              Timezone
+              {m.common.timezone()}
             </span>
             <div class="min-h-[44px]">
               <DiscordSelector
                 type="timezone"
                 options={TIMEZONE_OPTIONS}
                 selected={form.timezone}
-                placeholder="Select timezone"
+                placeholder={m.common.selectTimezonePlaceholder()}
                 onchange={(detail) => saveTimezone(detail.selected && typeof detail.selected === 'string' ? detail.selected : "UTC")}
               />
             </div>
@@ -706,14 +725,14 @@
           <div>
             <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               <i class="fa-solid fa-bell" style="font-size: 14px;"></i>
-              Ping role
+              {m.common.pingRole()}
             </span>
             <div class="min-h-[44px]">
               <DiscordSelector
                 type="role"
                 options={guildRoles}
                 selected={form.pingRoleId?.toString() || null}
-                placeholder="No ping role"
+                placeholder={m.common.noPingRole()}
                 onchange={(detail) => savePingRole(detail.selected)}
               />
             </div>
@@ -723,8 +742,8 @@
         <div class="mt-6">
           <ToggleRow
             checked={form.enabled}
-            title="Post a word every day"
-            subtitle={form.channelId ? "Runs at the hour above in the selected timezone" : "Pick a channel first"}
+            title={m.wordoftheday.postingToggle()}
+            subtitle={form.channelId ? m.wordoftheday.postingToggleHint() : m.common.pickChannelFirstPlaceholder()}
             colors={$colorStore}
             disabled={!form.channelId}
             onchange={saveEnabled}
@@ -739,21 +758,21 @@
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-filter"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Word source</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.wordoftheday.sourceTitle()}</h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <div>
             <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               <i class="fa-solid fa-book" style="font-size: 14px;"></i>
-              Source
+              {m.wordoftheday.sourceLabel()}
             </span>
             <div class="min-h-[44px]">
               <DiscordSelector
                 type="custom"
                 options={MODE_OPTIONS}
                 selected={form.sourceMode.toString()}
-                placeholder="Source"
+                placeholder={m.wordoftheday.sourceLabel()}
                 searchable={false}
                 onchange={(detail) => saveSourceMode(selectedNumber(detail, WordSourceMode.Dictionary))}
               />
@@ -763,14 +782,14 @@
           <div>
             <label for="wotd-topic" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               <i class="fa-solid fa-tag" style="font-size: 14px;"></i>
-              Topic
+              {m.wordoftheday.sourceTopic()}
             </label>
             <input id="wotd-topic"
                    type="text"
                    bind:value={form.topic}
                    oninput={saveTopic}
                    onblur={() => autoSave.flush("topic")}
-                   placeholder="e.g. science, cooking, space"
+                   placeholder={m.wordoftheday.sourceTopicPlaceholder()}
                    maxlength="80"
                    class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -780,14 +799,14 @@
           <div>
             <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               <i class="fa-solid fa-font" style="font-size: 14px;"></i>
-              Part of speech
+              {m.placeholders.wotdPos()}
             </span>
             <div class="min-h-[44px]">
               <DiscordSelector
                 type="custom"
                 options={POS_OPTIONS}
                 selected={form.partOfSpeech.toString()}
-                placeholder="Any"
+                placeholder={m.wordoftheday.optionAny()}
                 searchable={false}
                 onchange={(detail) => savePartOfSpeech(selectedNumber(detail, WordPartOfSpeech.Any))}
               />
@@ -797,14 +816,14 @@
           <div>
             <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               <i class="fa-solid fa-sliders" style="font-size: 14px;"></i>
-              Difficulty
+              {m.wordoftheday.sourceDifficulty()}
             </span>
             <div class="min-h-[44px]">
               <DiscordSelector
                 type="custom"
                 options={DIFFICULTY_OPTIONS}
                 selected={form.difficulty.toString()}
-                placeholder="Any"
+                placeholder={m.wordoftheday.optionAny()}
                 searchable={false}
                 onchange={(detail) => saveDifficulty(selectedNumber(detail, WordDifficulty.Any))}
               />
@@ -813,7 +832,7 @@
         </div>
 
         <p class="text-xs mt-4" style="color: {$colorStore.muted}">
-          Topic and filters apply to dictionary words. Up to five topic words, e.g. "medieval history". Difficulty is based on how often a word appears in written English. Weekday and month rules on the Schedule tab override these.
+          {m.wordoftheday.sourceHint()}
         </p>
       </div>
 
@@ -824,13 +843,13 @@
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-comments"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Discussion thread</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.wordoftheday.threadTitle()}</h2>
         </div>
 
         <ToggleRow
           checked={form.createThread}
-          title="Create a thread under each post"
-          subtitle="Invites people to use the word in a sentence"
+          title={m.wordoftheday.threadToggle()}
+          subtitle={m.wordoftheday.threadToggleHint()}
           colors={$colorStore}
           onchange={saveCreateThread}
         />
@@ -839,7 +858,7 @@
           <div>
             <label for="wotd-thread-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               <i class="fa-solid fa-input-text" style="font-size: 14px;"></i>
-              Thread name
+              {m.wordoftheday.threadName()}
             </label>
             <input id="wotd-thread-name"
                    type="text"
@@ -853,21 +872,21 @@
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             >
             <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-              Leave empty to use the default, "{DEFAULT_THREAD_NAME}". Supports %wotd.word%, %wotd.date%, %wotd.pos%, and server placeholders.
+              {m.wordoftheday.threadNameHint({ default: DEFAULT_THREAD_NAME, wordToken: "%wotd.word%", dateToken: "%wotd.date%", posToken: "%wotd.pos%" })}
             </p>
           </div>
 
           <div>
             <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               <i class="fa-solid fa-box-archive" style="font-size: 14px;"></i>
-              Auto-archive after
+              {m.wordoftheday.threadArchive()}
             </span>
             <div class="min-h-[44px]">
               <DiscordSelector
                 type="custom"
                 options={THREAD_ARCHIVE_OPTIONS}
                 selected={form.threadAutoArchiveMinutes.toString()}
-                placeholder="Auto-archive"
+                placeholder={m.wordoftheday.threadArchivePlaceholder()}
                 searchable={false}
                 disabled={!form.createThread}
                 onchange={(detail) => saveThreadArchive(selectedNumber(detail, 1440))}
@@ -884,14 +903,14 @@
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-comment"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Message template</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.wordoftheday.templateTitle()}</h2>
         </div>
 
         <FullscreenEmbedBuilder id="wotd-template"
                                 bind:value={form.messageTemplate}
                                 onclose={saveTemplate}
-                                previewTitle="Word of the Day"
-                                previewDescription="Message posted each day"
+                                previewTitle={m.features.wordofthedayName()}
+                                previewDescription={m.wordoftheday.templatePreviewDescription()}
                                 icon="fa-book-open"
                                 allowContent={true}
                                 allowMultipleEmbeds={true}
@@ -900,11 +919,11 @@
                                 additionalPlaceholders={TEMPLATE_PLACEHOLDERS}
                                 guildId={$currentGuild?.id}
                                 user={data.user}
-                                placeholder="Click to build a custom message, or leave empty for the default embed"
+                                placeholder={m.wordoftheday.templatePlaceholder()}
         />
 
         <p class="text-xs mt-3" style="color: {$colorStore.muted}">
-          Leave empty to use the built-in embed with pronunciation, definition, and example.
+          {m.wordoftheday.templateHint()}
         </p>
       </div>
 
@@ -916,7 +935,7 @@
           disabled={saving}
         >
           <i class="fa-solid fa-arrows-rotate" style="font-size: 20px;"></i>
-          Reset everything
+          {m.common.resetEverything()}
         </button>
       </div>
 
@@ -927,48 +946,48 @@
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-circle-exclamation"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Current configuration</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.currentConfiguration()}</h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
           <div class="flex justify-between items-center">
-            <span style="color: {$colorStore.muted}">Status:</span>
-            <span style="color: {config?.enabled ? '#10b981' : $colorStore.text}">{config?.enabled ? "Enabled" : "Disabled"}</span>
+            <span style="color: {$colorStore.muted}">{m.wordoftheday.summaryStatus()}</span>
+            <span style="color: {config?.enabled ? '#10b981' : $colorStore.text}">{config?.enabled ? m.common.enabled() : m.common.disabled()}</span>
           </div>
           <div class="flex justify-between items-center">
-            <span style="color: {$colorStore.muted}">Channel:</span>
+            <span style="color: {$colorStore.muted}">{m.common.channelLabel()}</span>
             <span style="color: {$colorStore.text}">{getChannelName(config?.channelId)}</span>
           </div>
           <div class="flex justify-between items-center">
-            <span style="color: {$colorStore.muted}">Posts at:</span>
+            <span style="color: {$colorStore.muted}">{m.wordoftheday.summaryPostsAt()}</span>
             <span style="color: {$colorStore.text}">{(config?.postHour ?? 9).toString().padStart(2, "0")}:00 {config?.timezone ?? "UTC"}</span>
           </div>
           <div class="flex justify-between items-center">
-            <span style="color: {$colorStore.muted}">Ping role:</span>
+            <span style="color: {$colorStore.muted}">{m.common.pingRoleLabel()}</span>
             <span style="color: {$colorStore.text}">{getRoleName(config?.pingRoleId)}</span>
           </div>
           <div class="flex justify-between items-center">
-            <span style="color: {$colorStore.muted}">Source:</span>
+            <span style="color: {$colorStore.muted}">{m.wordoftheday.summarySource()}</span>
             <span style="color: {$colorStore.text}">{optionName(MODE_OPTIONS, config?.sourceMode ?? 0)}</span>
           </div>
           <div class="flex justify-between items-center">
-            <span style="color: {$colorStore.muted}">Custom words:</span>
+            <span style="color: {$colorStore.muted}">{m.wordoftheday.summaryCustomWords()}</span>
             <span style="color: {$colorStore.text}">{config?.customWordCount ?? 0}</span>
           </div>
           <div class="flex justify-between items-center">
-            <span style="color: {$colorStore.muted}">Schedule rules:</span>
+            <span style="color: {$colorStore.muted}">{m.wordoftheday.summaryRules()}</span>
             <span style="color: {$colorStore.text}">{ruleCount}</span>
           </div>
           <div class="flex justify-between items-center">
-            <span style="color: {$colorStore.muted}">Discussion thread:</span>
+            <span style="color: {$colorStore.muted}">{m.wordoftheday.summaryThread()}</span>
             <span style="color: {config?.createThread ? '#10b981' : $colorStore.text}">
               {config?.createThread
-                ? `On, ${optionName(THREAD_ARCHIVE_OPTIONS, config?.threadAutoArchiveMinutes ?? 1440)}, "${config?.threadName || DEFAULT_THREAD_NAME}"`
-                : "Off"}
+                ? m.wordoftheday.summaryThreadOn({ archive: optionName(THREAD_ARCHIVE_OPTIONS, config?.threadAutoArchiveMinutes ?? 1440), name: config?.threadName || DEFAULT_THREAD_NAME })
+                : m.common.off()}
             </span>
           </div>
           <div class="flex justify-between items-center">
-            <span style="color: {$colorStore.muted}">Last posted:</span>
+            <span style="color: {$colorStore.muted}">{m.wordoftheday.summaryLastPosted()}</span>
             <span style="color: {$colorStore.text}">{formatDate(config?.lastPostedDate)}</span>
           </div>
         </div>
@@ -978,10 +997,10 @@
   {:else if activeTab === 'schedule'}
     <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
       <p class="text-sm" style="color: {$colorStore.muted}">
-        Each rule only overrides what it sets and inherits the rest from the Settings tab. Weekday rules win over month rules.
+        {m.wordoftheday.scheduleHint()}
       </p>
 
-      {#each [{ title: "Weekdays", icon: "fa-calendar", drafts: dayDrafts }, { title: "Months", icon: "fa-calendar", drafts: monthDrafts }] as group}
+      {#each [{ title: m.wordoftheday.scheduleWeekdays(), icon: "fa-calendar", drafts: dayDrafts }, { title: m.wordoftheday.scheduleMonths(), icon: "fa-calendar", drafts: monthDrafts }] as group}
         <div class="rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                     border-color: {$colorStore.primary}30;">
@@ -1003,9 +1022,9 @@
                 <div class="lg:col-span-4">
                   <input type="text"
                          bind:value={draft.topic}
-                         placeholder="Topic (optional)"
+                         placeholder={m.wordoftheday.ruleTopicPlaceholder()}
                          maxlength="80"
-                         aria-label="{draft.name} topic"
+                         aria-label={m.wordoftheday.ruleTopicAria({ name: draft.name })}
                          class="w-full p-2.5 rounded-lg border transition-all min-h-[44px] text-sm"
                          style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                          onkeydown={(e) => e.key === 'Enter' && saveRule(draft)}
@@ -1017,7 +1036,7 @@
                     type="custom"
                     options={RULE_POS_OPTIONS}
                     selected={draft.partOfSpeech.toString()}
-                    placeholder="Part of speech"
+                    placeholder={m.placeholders.wotdPos()}
                     searchable={false}
                     onchange={(detail) => { draft.partOfSpeech = selectedNumber(detail, 0); }}
                   />
@@ -1028,7 +1047,7 @@
                     type="custom"
                     options={RULE_DIFFICULTY_OPTIONS}
                     selected={draft.difficulty.toString()}
-                    placeholder="Difficulty"
+                    placeholder={m.wordoftheday.sourceDifficulty()}
                     searchable={false}
                     onchange={(detail) => { draft.difficulty = selectedNumber(detail, 0); }}
                   />
@@ -1040,10 +1059,10 @@
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                     onclick={() => saveRule(draft)}
                     disabled={draft.saving}
-                    aria-label="Save {draft.name} rule"
+                    aria-label={m.wordoftheday.ruleSaveAria({ name: draft.name })}
                   >
                     <i class="fa-solid fa-floppy-disk {draft.saving ? 'fa-spin' : ''}" aria-hidden="true"></i>
-                    Save
+                    {m.common.save()}
                   </button>
                   {#if draft.exists}
                     <button
@@ -1051,7 +1070,7 @@
                       style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
                       onclick={() => clearRule(draft)}
                       disabled={draft.saving}
-                      aria-label="Clear {draft.name} rule"
+                      aria-label={m.wordoftheday.ruleClearAria({ name: draft.name })}
                     >
                       <i class="fa-solid fa-trash" aria-hidden="true"></i>
                     </button>
@@ -1072,24 +1091,24 @@
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-wand-magic-sparkles"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Add a word</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.wordoftheday.wordsAddTitle()}</h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
           <input type="text"
                  bind:value={newWord}
-                 placeholder="Word"
+                 placeholder={m.common.word()}
                  maxlength="64"
-                 aria-label="Word to add"
+                 aria-label={m.wordoftheday.wordsWordAria()}
                  class="md:col-span-3 p-3 rounded-xl border transition-all min-h-[44px] text-base"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                  onkeydown={(e) => e.key === 'Enter' && addWord()}
           >
           <input type="text"
                  bind:value={newDefinition}
-                 placeholder="Definition (optional, looked up if empty)"
+                 placeholder={m.wordoftheday.wordsDefinitionPlaceholder()}
                  maxlength="1000"
-                 aria-label="Definition"
+                 aria-label={m.wordoftheday.wordsDefinitionAria()}
                  class="md:col-span-7 p-3 rounded-xl border transition-all min-h-[44px] text-base"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                  onkeydown={(e) => e.key === 'Enter' && addWord()}
@@ -1102,7 +1121,7 @@
             aria-busy={addingWord}
           >
             <i class="fa-solid fa-plus {addingWord ? 'fa-spin' : ''}" aria-hidden="true"></i>
-            {addingWord ? "Adding..." : "Add"}
+            {addingWord ? m.common.adding() : m.common.add()}
           </button>
         </div>
       </div>
@@ -1113,16 +1132,16 @@
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-book"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Custom words ({words.length})</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.wordoftheday.wordsTitle({ count: words.length })}</h2>
         </div>
 
         {#if words.length === 0}
           <div class="text-center py-8">
             <i class="fa-utility-duo fa-regular fa-book"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5;"></i>
-            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No custom words yet</h3>
+            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.wordoftheday.wordsEmptyTitle()}</h3>
             <p class="text-sm" style="color: {$colorStore.muted}">
-              Add words above, then switch the source to "Custom" or "Mixed" on the Settings tab.
+              {m.wordoftheday.wordsEmptyHint()}
             </p>
           </div>
         {:else}
@@ -1138,20 +1157,20 @@
                     {/if}
                   </div>
                   <div class="text-sm" style="color: {$colorStore.muted}">
-                    {word.definition || "No definition, one will be looked up when posted"}
+                    {word.definition || m.wordoftheday.wordsNoDefinition()}
                   </div>
                 </div>
                 <div class="text-right shrink-0">
                   <div class="text-xs px-2 py-1 rounded-lg"
                        style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-                    posted {word.timesUsed}×
+                    {m.wordoftheday.wordsTimesUsed({ count: word.timesUsed })}
                   </div>
                 </div>
                 <button
                   class="flex items-center justify-center rounded-lg transition-all hover:scale-[1.05] min-h-[44px] min-w-[44px]"
                   style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
                   onclick={() => removeWord(word)}
-                  aria-label="Remove {word.word}"
+                  aria-label={m.common.ariaRemoveWord({ word: word.word })}
                 >
                   <i class="fa-solid fa-trash" aria-hidden="true"></i>
                 </button>
@@ -1170,16 +1189,16 @@
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-clock"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Recent words</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.wordoftheday.historyTitle()}</h2>
         </div>
 
         {#if history.length === 0}
           <div class="text-center py-8">
             <i class="fa-utility-duo fa-regular fa-clock"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5;"></i>
-            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">Nothing posted yet</h3>
+            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.wordoftheday.historyEmptyTitle()}</h3>
             <p class="text-sm" style="color: {$colorStore.muted}">
-              Words appear here after the first scheduled post or "Post now".
+              {m.wordoftheday.historyEmptyHint()}
             </p>
           </div>
         {:else}

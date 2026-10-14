@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { administrationApi } from "$lib/api/index.ts";
@@ -121,8 +122,8 @@
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
     </div>
     <div>
-      <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Mass Operations</h2>
-      <p class="text-sm" style="color: {$colorStore.muted}">Bulk server management actions</p>
+      <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.advancedMassTitle()}</h2>
+      <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.advancedMassSubtitle()}</p>
     </div>
   </div>
 
@@ -132,12 +133,11 @@
          style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
       <h3 class="font-semibold mb-3 flex items-center gap-2" style="color: {$colorStore.text}">
         <i class="fa-solid fa-user-slash"></i>
-        Prune Inactive Users
+        {m.administration.advancedMassPruneTitle()}
       </h3>
       <div class="space-y-3">
         <div>
-          <label class="block text-sm font-medium mb-1" for="prune-days" style="color: {$colorStore.text}">Days of
-            Inactivity</label>
+          <label class="block text-sm font-medium mb-1" for="prune-days" style="color: {$colorStore.text}">{m.administration.advancedMassPruneDays()}</label>
           <input bind:value={pruneDays}
                  class="w-full px-3 py-2 rounded-lg border transition-colors"
                  id="prune-days"
@@ -151,10 +151,10 @@
         <button
           class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
           disabled={pruneDays <= 0 || saving}
-          onclick={() => showConfirm("Prune Users", `Remove users inactive for ${pruneDays} days?`, performPrune)}
+          onclick={() => showConfirm(m.administration.advancedMassPruneConfirmTitle(), m.administration.advancedMassPruneConfirmMessage({ days: pruneDays }), performPrune)}
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
         >
-          Execute Prune
+          {m.administration.advancedMassPruneExecute()}
         </button>
       </div>
     </div>
@@ -164,14 +164,14 @@
          style="background: {$colorStore.accent}05; border-color: {$colorStore.accent}30;">
       <h3 class="font-semibold mb-3 flex items-center gap-2" style="color: {$colorStore.text}">
         <i class="fa-solid fa-gavel"></i>
-        Mass Ban Users
+        {m.administration.advancedMassBanTitle()}
       </h3>
       <button
         class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
         onclick={() => expandedOperation = expandedOperation === 'massBan' ? null : 'massBan'}
         style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
       >
-        {expandedOperation === 'massBan' ? 'Collapse' : 'Configure'}
+        {expandedOperation === 'massBan' ? m.common.collapse() : m.common.configure()}
       </button>
     </div>
 
@@ -180,14 +180,14 @@
          style="background: {$colorStore.secondary}05; border-color: {$colorStore.secondary}30;">
       <h3 class="font-semibold mb-3 flex items-center gap-2" style="color: {$colorStore.text}">
         <i class="fa-solid fa-pen"></i>
-        Mass Rename Users
+        {m.administration.advancedMassRenameTitle()}
       </h3>
       <button
         class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
         onclick={() => expandedOperation = expandedOperation === 'massRename' ? null : 'massRename'}
         style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
       >
-        {expandedOperation === 'massRename' ? 'Collapse' : 'Configure'}
+        {expandedOperation === 'massRename' ? m.common.collapse() : m.common.configure()}
       </button>
     </div>
 
@@ -196,14 +196,14 @@
          style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
       <h3 class="font-semibold mb-3 flex items-center gap-2" style="color: {$colorStore.text}">
         <i class="fa-solid fa-eraser"></i>
-        Prune to Message
+        {m.administration.advancedMassPruneMessageTitle()}
       </h3>
       <button
         class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
         onclick={() => expandedOperation = expandedOperation === 'pruneToMessage' ? null : 'pruneToMessage'}
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
       >
-        {expandedOperation === 'pruneToMessage' ? 'Collapse' : 'Configure'}
+        {expandedOperation === 'pruneToMessage' ? m.common.collapse() : m.common.configure()}
       </button>
     </div>
   </div>
@@ -212,31 +212,30 @@
   {#if expandedOperation === 'massBan'}
     <div transition:slide={{ duration: 300 }} class="mt-6 p-4 rounded-xl border-2 border-dashed"
          style="border-color: {$colorStore.accent}30; background: {$colorStore.accent}05;">
-      <h4 class="font-medium mb-3" style="color: {$colorStore.text}">Mass Ban Configuration</h4>
+      <h4 class="font-medium mb-3" style="color: {$colorStore.text}">{m.administration.advancedMassBanConfig()}</h4>
 
       <div class="space-y-3">
         <div>
           <label for="mass-ban-users" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">
-            User IDs (one per line or comma-separated)
+            {m.administration.advancedMassBanUserIds()}
           </label>
           <textarea
             id="mass-ban-users"
             bind:value={massBanUserIds}
             class="w-full px-3 py-2 rounded-lg border transition-colors resize-none"
             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-            placeholder="123456789&#10;987654321&#10;or: 123456789, 987654321"
+            placeholder={m.administration.advancedMassBanUserIdsPlaceholder()}
             rows="4"
           ></textarea>
         </div>
 
         <div>
-          <label for="mass-ban-reason" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Ban
-            Reason</label>
+          <label for="mass-ban-reason" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.common.banReason()}</label>
           <input
             id="mass-ban-reason"
             type="text"
             bind:value={massBanReason}
-            placeholder="Enter ban reason..."
+            placeholder={m.administration.advancedMassBanReasonPlaceholder()}
             class="w-full px-3 py-2 rounded-lg border transition-colors"
             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
           />
@@ -245,7 +244,7 @@
         <button
           class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-          onclick={() => showConfirm("Mass Ban Users", `Ban ${massBanUserIds.split(/[\n,]/).filter(id => id.trim()).length} users?`, performMassBan, "danger")}
+          onclick={() => showConfirm(m.administration.advancedMassBanTitle(), m.administration.advancedMassBanConfirmMessage({ count: massBanUserIds.split(/[\n,]/).filter(id => id.trim()).length }), performMassBan, "danger")}
           disabled={!massBanUserIds.trim() || saving}
         >
           {#if saving}
@@ -253,7 +252,7 @@
           {:else}
             <i class="fa-solid fa-gavel"></i>
           {/if}
-          Execute Mass Ban
+          {m.administration.advancedMassBanExecute()}
         </button>
       </div>
     </div>
@@ -263,12 +262,12 @@
   {#if expandedOperation === 'massRename'}
     <div transition:slide={{ duration: 300 }} class="mt-6 p-4 rounded-xl border-2 border-dashed"
          style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
-      <h4 class="font-medium mb-3" style="color: {$colorStore.text}">Mass Rename Configuration</h4>
+      <h4 class="font-medium mb-3" style="color: {$colorStore.text}">{m.administration.advancedMassRenameConfig()}</h4>
 
       <div class="space-y-3">
         <div>
           <label for="rename-pattern" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">
-            Nickname Pattern
+            {m.administration.advancedMassRenamePattern()}
           </label>
           <input
             id="rename-pattern"
@@ -279,21 +278,21 @@
             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
           />
           <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-            Use {"{username}"} as placeholder. Example: "[AFK] {"{username}"}"
+            {m.administration.advancedMassRenameHint({ placeholder: "{username}" })}
           </p>
         </div>
 
         <div class="p-3 rounded-lg" style="background: {$colorStore.accent}10;">
           <p class="text-xs" style="color: {$colorStore.accent}">
             <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-            This will rename ALL users in the server. Use with caution!
+            {m.administration.advancedMassRenameWarning()}
           </p>
         </div>
 
         <button
           class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-          onclick={() => showConfirm("Mass Rename Users", "This will rename ALL users in the server. Are you sure?", performMassRename, "danger")}
+          onclick={() => showConfirm(m.administration.advancedMassRenameTitle(), m.administration.advancedMassRenameConfirmMessage(), performMassRename, "danger")}
           disabled={!massRenamePattern.trim() || saving}
         >
           {#if saving}
@@ -301,7 +300,7 @@
           {:else}
             <i class="fa-solid fa-pen"></i>
           {/if}
-          Execute Mass Rename
+          {m.administration.advancedMassRenameExecute()}
         </button>
       </div>
     </div>
@@ -311,41 +310,41 @@
   {#if expandedOperation === 'pruneToMessage'}
     <div transition:slide={{ duration: 300 }} class="mt-6 p-4 rounded-xl border-2 border-dashed"
          style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-      <h4 class="font-medium mb-3" style="color: {$colorStore.text}">Prune to Message Configuration</h4>
+      <h4 class="font-medium mb-3" style="color: {$colorStore.text}">{m.administration.advancedMassPruneMessageConfig()}</h4>
 
       <div class="space-y-3">
         <div>
-          <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel</span>
+          <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.channel()}</span>
           <DiscordSelector
             type="channel"
             options={textChannels}
             bind:selected={pruneToChannel}
-            placeholder="Select channel..."
+            placeholder={m.common.selectChannelPlaceholder()}
             multiple={false}
           />
         </div>
 
         <div>
           <label for="prune-message-id" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">
-            Message ID
+            {m.administration.advancedMassPruneMessageId()}
           </label>
           <input
             id="prune-message-id"
             type="text"
             bind:value={pruneToMessageId}
-            placeholder="Enter message ID..."
+            placeholder={m.administration.advancedMassPruneMessageIdPlaceholder()}
             class="w-full px-3 py-2 rounded-lg border transition-colors"
             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
           />
           <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-            All messages AFTER this message will be deleted
+            {m.administration.advancedMassPruneMessageHint()}
           </p>
         </div>
 
         <button
           class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-          onclick={() => showConfirm("Prune Messages", "Delete all messages after the specified message?", performPruneToMessage, "danger")}
+          onclick={() => showConfirm(m.administration.advancedMassPruneMessageConfirmTitle(), m.administration.advancedMassPruneMessageConfirmMessage(), performPruneToMessage, "danger")}
           disabled={!pruneToChannel || !pruneToMessageId.trim() || saving}
         >
           {#if saving}
@@ -353,7 +352,7 @@
           {:else}
             <i class="fa-solid fa-eraser"></i>
           {/if}
-          Execute Prune
+          {m.administration.advancedMassPruneExecute()}
         </button>
       </div>
     </div>

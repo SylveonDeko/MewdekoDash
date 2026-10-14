@@ -1,3 +1,5 @@
+import { m } from "$lib/i18n";
+
 // lib/api/statroles/models/StatRole.ts
 
 /** What a stat role measures. Mirrors StatRoleStat (numeric on the wire). */
@@ -22,20 +24,20 @@ export type StatRoleLimitValue = (typeof StatRoleLimit)[keyof typeof StatRoleLim
 
 /** Display labels for stats. */
 export const statRoleStatLabels: Record<StatRoleStatValue, string> = {
-  0: "Messages",
-  1: "Voice minutes",
-  2: "Invites",
-  3: "Days in server",
-  4: "Account age (days)",
-  5: "Minutes in a game",
+  get 0() { return m.common.messages(); },
+  get 1() { return m.statroles.statLabel1(); },
+  get 2() { return m.features.invitesName(); },
+  get 3() { return m.statroles.statLabel3(); },
+  get 4() { return m.statroles.statLabel4(); },
+  get 5() { return m.statroles.statLabel5(); },
 };
 
 /** Display labels for limit types. */
 export const statRoleLimitLabels: Record<StatRoleLimitValue, string> = {
-  0: "Threshold",
-  1: "Top rank",
-  2: "Top percent",
-  3: "Daily streak",
+  get 0() { return m.common.threshold(); },
+  get 1() { return m.common.topRank(); },
+  get 2() { return m.statroles.limitLabel2(); },
+  get 3() { return m.statroles.limitLabel3(); },
 };
 
 /** A stat role as returned by the bot. */

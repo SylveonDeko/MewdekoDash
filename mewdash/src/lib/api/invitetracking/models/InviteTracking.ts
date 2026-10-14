@@ -1,3 +1,5 @@
+import { m } from "$lib/i18n";
+
 // lib/api/invitetracking/models/InviteTracking.ts
 
 /** Time window for leaderboards and analytics. Mirrors Mewdeko.Modules.Utility.Common.StatsRange (numeric on the wire). */
@@ -11,10 +13,10 @@ export type StatsRangeValue = (typeof StatsRange)[keyof typeof StatsRange];
 
 /** Display names for {@link StatsRange} values. */
 export const statsRangeLabels: Record<StatsRangeValue, string> = {
-  0: "All time",
-  1: "Last 24 hours",
-  2: "Last 7 days",
-  3: "Last 30 days",
+  get 0() { return m.common.allTime(); },
+  get 1() { return m.common.last24Hours(); },
+  get 2() { return m.invites.rangeLabel2(); },
+  get 3() { return m.invites.rangeLabel3(); },
 };
 
 /** How a member arrived. Mirrors InviteJoinType. */

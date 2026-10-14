@@ -1,5 +1,6 @@
 <!-- routes/commands/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import { createSearchStore, searchHandler } from "$lib/stores/commandSearch";
@@ -21,18 +22,18 @@
   const requestedCommand = page.url.searchParams.get("command")?.toLowerCase() ?? "";
   const requestedModule = page.url.searchParams.get("module")?.toLowerCase() ?? "";
 
-  const previewEmbed = (() => {
+  const previewEmbed = $derived.by(() => {
     const url = `${SITE_ORIGIN}/commands${page.url.search}`;
-    const viewAll = buttons(linkButton("View all commands", url));
+    const viewAll = buttons(linkButton(m.public.commandsEmbedViewAll(), url));
     const totalCommands = data.modules.reduce((count, module) => count + module.Commands.length, 0);
 
     for (const module of data.modules) {
       const command = module.Commands.find((c) => c.CommandName.toLowerCase() === requestedCommand);
       if (!command) continue;
       const details = [
-        command.Example?.length ? `Usage: \`${command.Example[0]}\`` : null,
-        command.GuildUserPermissions ? `Requires: ${command.GuildUserPermissions}` : null,
-        `Module: ${module.Name}`
+        command.Example?.length ? m.public.commandsEmbedUsage({ example: command.Example[0] }) : null,
+        command.GuildUserPermissions ? m.public.commandsEmbedRequires({ permissions: command.GuildUserPermissions }) : null,
+        m.public.commandsEmbedModule({ module: module.Name })
       ].filter(Boolean);
       return container(
         text(`## .${plain(command.CommandName)}\n${plain(command.Description)}`),
@@ -42,12 +43,12 @@
       );
     }
 
-    const module = data.modules.find((m) => m.Name.toLowerCase() === requestedModule);
+    const module = data.modules.find((mod) => mod.Name.toLowerCase() === requestedModule);
     if (module) {
       return withRows(
         (rows) =>
           container(
-            text(`## ${plain(module.Name)}\n${module.Commands.length} commands`),
+            text(`## ${plain(module.Name)}\n${m.public.commandsCountOther({ count: module.Commands.length })}`),
             separator(),
             text(rows.join("\n")),
             separator(),
@@ -58,12 +59,12 @@
     }
 
     return container(
-      text(`## Mewdeko Commands\nFind out more about Mewdeko's commands and how to use them.`),
-      text(`${totalCommands} commands · ${data.modules.length} modules`),
+      text(`## ${m.public.commandsEmbedTitle()}\n${m.public.commandsDescription()}`),
+      text(m.public.commandsEmbedTotals({ commands: totalCommands, modules: data.modules.length })),
       separator(),
       viewAll
     );
-  })();
+  });
 
   function commandAnchor(name: string): string {
     return `cmd-${name.toLowerCase()}`;
@@ -72,11 +73,11 @@
   async function openRequested() {
     const name = requestedCommand || location.hash.replace(/^#cmd-/, "");
     if (!name) {
-      const moduleIndex = data.modules.findIndex((m) => m.Name.toLowerCase() === requestedModule);
+      const moduleIndex = data.modules.findIndex((mod) => mod.Name.toLowerCase() === requestedModule);
       if (moduleIndex >= 0) activeTabIndex = moduleIndex;
       return;
     }
-    const moduleIndex = data.modules.findIndex((m) => m.Commands.some((c) => c.CommandName.toLowerCase() === name));
+    const moduleIndex = data.modules.findIndex((mod) => mod.Commands.some((c) => c.CommandName.toLowerCase() === name));
     if (moduleIndex < 0) return;
     activeTabIndex = moduleIndex;
     await tick();
@@ -194,18 +195,18 @@
 <ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
-  <title>Mewdeko - Commands</title>
-  <meta content="Mewdeko - All the commands! Searchable!" property="og:title" />
+  <title>{m.public.commandsMewdekoCommands()}</title>
+  <meta content={m.public.commandsOgTitle()} property="og:title" />
   <meta
-    content="Find out more about Mewdeko's commands and how to use them."
+    content={m.public.commandsDescription()}
     name="description"
   >
   <meta
-    content="Find out more about Mewdeko's commands and how to use them."
+    content={m.public.commandsDescription()}
     property="og:description"
   >
   <meta
-    content="Find out more about Mewdeko's commands and how to use them."
+    content={m.public.commandsDescription()}
     name="twitter:description"
   >
 </svelte:head>
@@ -235,10 +236,10 @@
             in:fade={{ duration: 300 }}
             style="color: {$colorStore.text};"
           >
-            Command Reference
+            {m.common.commandReference()}
           </h1>
           <p class="text-sm opacity-80" style="color: {$colorStore.text};">
-            Explore all available commands and modules
+            {m.public.commandsExploreAllAvailableCommandsAnd()}
           </p>
         </div>
         <div class="shrink-0 lg:max-w-md lg:w-full">
@@ -247,13 +248,13 @@
               <i class="fa-solid fa-magnifying-glass" style="color: {$colorStore.muted}; font-size: 20px;"></i>
             </div>
             <input
-              aria-label="Search commands and modules"
+              aria-label={m.public.commandsSearchCommandsAndModules()}
               bind:value={searchValue}
               class="block w-full pl-12 pr-12 py-2 sm:py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden "
               id="search"
               onblur={handleSearchBlur}
               onfocus={handleSearchFocus}
-              placeholder="Search modules or commands..."
+              placeholder={m.public.commandsSearchModulesOrCommands()}
               style="background: {$colorStore.primary}20;
                      color: {$colorStore.text};
                      border: 1px solid {$colorStore.primary}30;
@@ -261,7 +262,7 @@
               type="search"
             >
             {#if searchValue}
-              <button aria-label="Button action"
+              <button aria-label={m.common.ariaClearSearch()}
                 class="absolute inset-y-0 right-0 pr-4 flex items-center text-sm transition-colors duration-200 hover:opacity-70"
                 style="color: {$colorStore.muted};"
                 onclick={clearSearch}
@@ -280,10 +281,9 @@
           {#if searchValue.trim()}
             <div class="mt-2 text-sm" style="color: {$colorStore.muted};" in:fade={{ duration: 200 }}>
               {#if searchResultCount > 0}
-                Showing {searchResultCount} command{searchResultCount !== 1 ? 's' : ''} across {filteredModules.length}
-                module{filteredModules.length !== 1 ? 's' : ''}
+                {m.public.commandsShowingCounts({ commands: searchResultCount === 1 ? m.public.commandsCountOne({ count: searchResultCount }) : m.public.commandsCountOther({ count: searchResultCount }), modules: filteredModules.length === 1 ? m.public.commandsModuleCountOne({ count: filteredModules.length }) : m.public.commandsModuleCountOther({ count: filteredModules.length }) })}
               {:else}
-                No commands found for "{searchValue}"
+                {m.public.commandsNoCommandsFor({ query: searchValue })}
               {/if}
             </div>
           {/if}
@@ -303,34 +303,34 @@
                  style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; --fa-primary-opacity: 0.5; --fa-secondary-opacity: 0.3;"></i>
             </div>
             <h3 class="text-2xl font-bold mb-3" style="color: {$colorStore.text};">
-              No commands found
+              {m.public.commandsNoCommandsFound()}
             </h3>
             <p class="text-lg mb-4" style="color: {$colorStore.muted};">
-              No results for "{searchValue}"
+              {m.placeholders.pageNoResults({ query: searchValue })}
             </p>
             <div class="space-y-2 text-sm" style="color: {$colorStore.muted};">
-              <p>Try searching for:</p>
+              <p>{m.public.commandsTrySearchingFor()}</p>
               <div class="flex flex-wrap gap-2 justify-center">
                 <button
                   class="px-3 py-1 rounded-full transition-all hover:scale-[1.02]"
                   style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30;"
                   onclick={() => searchValue = 'music'}
                 >
-                  music
+                  {m.public.commandsMusic()}
                 </button>
                 <button
                   class="px-3 py-1 rounded-full transition-all hover:scale-[1.02]"
                   style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30;"
                   onclick={() => searchValue = 'moderation'}
                 >
-                  moderation
+                  {m.public.commandsModeration()}
                 </button>
                 <button
                   class="px-3 py-1 rounded-full transition-all hover:scale-[1.02]"
                   style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30;"
                   onclick={() => searchValue = 'fun'}
                 >
-                  fun
+                  {m.public.commandsFun()}
                 </button>
               </div>
             </div>
@@ -341,14 +341,13 @@
         <div class="py-6">
           <!-- Mobile: Dropdown for module selection -->
           <div class="md:hidden mb-4">
-            <label for="module-select" class="block text-sm font-medium mb-2" style="color: {$colorStore.muted};">Select
-              Module:</label>
+            <label for="module-select" class="block text-sm font-medium mb-2" style="color: {$colorStore.muted};">{m.public.commandsSelectModule()}</label>
             <DiscordSelector
               type="custom"
               id="module-select"
               options={filteredModules.map((module, index) => ({
                 id: index.toString(),
-                name: `${capitalizeFirstLetter(module.Name)} (${module.Commands?.length || 0} commands)`
+                name: m.public.commandsModuleOption({ module: capitalizeFirstLetter(module.Name), count: module.Commands?.length || 0 })
               }))}
               selected={activeTabIndex.toString()}
               ariaLabel="Select module"
@@ -361,7 +360,7 @@
             <div
               class="-mb-px flex space-x-1 overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 pb-2"
               role="tablist"
-              aria-label="Command modules"
+              aria-label={m.public.commandsCommandModules()}
               style="scrollbar-color: {$colorStore.primary}30 transparent;">
               {#each filteredModules as module, index}
                 <button
@@ -425,7 +424,7 @@
                       {capitalizeFirstLetter(activeModule.Name)}
                     </h2>
                     <p class="text-sm opacity-80" style="color: {$colorStore.text};">
-                      {activeModule.Commands.length} command{activeModule.Commands.length !== 1 ? 's' : ''} available
+                      {m.public.commandsAvailable({ count: activeModule.Commands.length })}
                     </p>
                   </div>
                 </div>
@@ -447,7 +446,7 @@
                         <a
                           href="?command={command.CommandName.toLowerCase()}#{commandAnchor(command.CommandName)}"
                           onclick={(event) => { event.preventDefault(); linkCommand(command.CommandName); }}
-                          title="Link to this command"
+                          title={m.public.commandsLinkToThisCommand()}
                           class="hover:underline">{capitalizeFirstLetter(command.CommandName)}</a>
                       </h3>
                     </header>
@@ -464,7 +463,7 @@
                       <div class="mb-4">
                         <h4 class="text-xs font-semibold uppercase tracking-wide mb-2"
                             style="color: {$colorStore.muted};">
-                          Usage Examples
+                          {m.public.commandsUsageExamples()}
                         </h4>
                         <div class="space-y-2">
                           {#each command.Example.slice(0, 2) as example}
@@ -478,7 +477,7 @@
                           {/each}
                           {#if command.Example.length > 2}
                             <p class="text-xs" style="color: {$colorStore.muted};">
-                              +{command.Example.length - 2} more example{command.Example.length - 2 !== 1 ? 's' : ''}
+                              {command.Example.length - 2 === 1 ? m.public.commandsMoreExamplesOne({ count: command.Example.length - 2 }) : m.public.commandsMoreExamplesOther({ count: command.Example.length - 2 })}
                             </p>
                           {/if}
                         </div>
@@ -503,35 +502,35 @@
                                           color: {$colorStore.text};
                                           border: 1px solid {$colorStore.primary}30;">
                             <i class="fa-solid fa-lock mr-1" style="font-size: 12px;"></i>
-                            Permissions
+                            {m.common.permissions()}
                             <i class="fa-solid fa-chevron-down ml-1 transform transition-transform group-open/perms:rotate-180" style="font-size: 12px;"></i>
                           </summary>
                           <div class="mt-2 p-2 rounded-lg text-xs space-y-1"
                                style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
                             {#if command.GuildUserPermissions}
                               <div>
-                                <span class="font-semibold" style="color: {$colorStore.text};">User (Server):</span>
+                                <span class="font-semibold" style="color: {$colorStore.text};">{m.public.commandsUserServer()}</span>
                                 <span
                                   style="color: {$colorStore.text}; opacity: 0.8;"> {command.GuildUserPermissions}</span>
                               </div>
                             {/if}
                             {#if command.ChannelUserPermissions}
                               <div>
-                                <span class="font-semibold" style="color: {$colorStore.text};">User (Channel):</span>
+                                <span class="font-semibold" style="color: {$colorStore.text};">{m.public.commandsUserChannel()}</span>
                                 <span
                                   style="color: {$colorStore.text}; opacity: 0.8;"> {command.ChannelUserPermissions}</span>
                               </div>
                             {/if}
                             {#if command.GuildBotPermissions}
                               <div>
-                                <span class="font-semibold" style="color: {$colorStore.text};">Bot (Server):</span>
+                                <span class="font-semibold" style="color: {$colorStore.text};">{m.public.commandsBotServer()}</span>
                                 <span
                                   style="color: {$colorStore.text}; opacity: 0.8;"> {command.GuildBotPermissions}</span>
                               </div>
                             {/if}
                             {#if command.ChannelBotPermissions}
                               <div>
-                                <span class="font-semibold" style="color: {$colorStore.text};">Bot (Channel):</span>
+                                <span class="font-semibold" style="color: {$colorStore.text};">{m.public.commandsBotChannel()}</span>
                                 <span
                                   style="color: {$colorStore.text}; opacity: 0.8;"> {command.ChannelBotPermissions}</span>
                               </div>
@@ -545,9 +544,9 @@
                               style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                                      color: {$colorStore.text};
                                      border: 1px solid {$colorStore.primary}20;"
-                              title="Has selectable options">
+                              title={m.public.commandsHasSelectableOptions()}>
                           <i class="fa-solid fa-terminal mr-1" style="font-size: 12px;"></i>
-                          Options Available
+                          {m.public.commandsOptionsAvailable()}
                         </span>
                       {/if}
                     </footer>

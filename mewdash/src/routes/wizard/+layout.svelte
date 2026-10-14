@@ -3,6 +3,7 @@
 Wizard layout - minimal layout for focused setup experience
 -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import { colorStore } from "$lib/stores/colorStore";
@@ -48,8 +49,8 @@ Wizard layout - minimal layout for focused setup experience
 </script>
 
 <svelte:head>
-  <title>Setup Wizard - Mewdeko Dashboard</title>
-  <meta name="description" content="Set up Mewdeko for your Discord server with our guided setup wizard." />
+  <title>{m.wizard.layoutPageTitle()}</title>
+  <meta name="description" content={m.wizard.layoutMetaDescription()} />
 </svelte:head>
 
 <!-- Minimal wizard layout with brand header -->
@@ -65,8 +66,8 @@ Wizard layout - minimal layout for focused setup experience
       <div class="flex items-center gap-2 sm:gap-3">
         <Mascot variant="head" label={null} class="h-8 w-8 sm:h-10 sm:w-10 shrink-0" />
         <div>
-          <h1 class="text-lg sm:text-xl font-bold" style="color: {$colorStore.text};">Setup Wizard</h1>
-          <p class="text-xs sm:text-sm hidden sm:block" style="color: {$colorStore.muted};">Get your server configured in minutes</p>
+          <h1 class="text-lg sm:text-xl font-bold" style="color: {$colorStore.text};">{m.common.setupWizard()}</h1>
+          <p class="text-xs sm:text-sm hidden sm:block" style="color: {$colorStore.muted};">{m.wizard.layoutSubtitle()}</p>
         </div>
       </div>
     </div>

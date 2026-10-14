@@ -1,5 +1,6 @@
 <!-- lib/IntervalPicker.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onDestroy, onMount } from "svelte";
     import {fade} from "svelte/transition";
 
@@ -70,11 +71,11 @@
   }
 
   let durationText = $derived([
-    days > 0 ? `${days}d` : null,
-    hours > 0 ? `${hours}h` : null,
-    minutes > 0 ? `${minutes}m` : null,
-    seconds > 0 ? `${seconds}s` : null,
-  ].filter(Boolean).join(' ') || '0s');
+    days > 0 ? m.common.daysShort({ count: days }) : null,
+    hours > 0 ? m.common.hoursShort({ count: hours }) : null,
+    minutes > 0 ? m.common.minutesShort({ count: minutes }) : null,
+    seconds > 0 ? m.widgets.intervalSecondsShort({ count: seconds }) : null,
+  ].filter(Boolean).join(' ') || m.widgets.intervalSecondsShort({ count: 0 }));
 
   // Generate unique ID for fieldset
   const fieldsetId = `interval-picker-${Math.random().toString(36).substr(2, 9)}`;
@@ -98,17 +99,17 @@
   <div class="relative space-y-6">
     <!-- Live region for duration updates -->
     <div aria-atomic="true" aria-live="polite" class="sr-only" id="{liveRegionId}">
-      Duration set to {durationText}, ending at {endTime.toLocaleString()}
+      {m.widgets.intervalLiveRegion({ duration: durationText, end: endTime.toLocaleString() })}
     </div>
 
     <!-- Duration units -->
     <fieldset class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <legend class="sr-only" id="{fieldsetId}-legend">Set duration for timer</legend>
+      <legend class="sr-only" id="{fieldsetId}-legend">{m.widgets.intervalLegend()}</legend>
       {#each [
-        { label: 'Days', value: days, unit: 'days', icon: 'fa-calendar', max: undefined },
-        { label: 'Hours', value: hours, unit: 'hours', icon: 'fa-clock', max: 23 },
-        { label: 'Minutes', value: minutes, unit: 'minutes', icon: 'fa-clock', max: 59 },
-        { label: 'Seconds', value: seconds, unit: 'seconds', icon: 'fa-hourglass', max: 59 }
+        { label: m.common.days(), value: days, unit: 'days', icon: 'fa-calendar', max: undefined },
+        { label: m.common.hours(), value: hours, unit: 'hours', icon: 'fa-clock', max: 23 },
+        { label: m.common.minutes(), value: minutes, unit: 'minutes', icon: 'fa-clock', max: 59 },
+        { label: m.widgets.intervalSeconds(), value: seconds, unit: 'seconds', icon: 'fa-hourglass', max: 59 }
       ] as { label, value, unit, icon, max }}
         <div class="group relative">
           <div class="absolute inset-0 rounded-lg transition-transform group-focus-within:scale-95"
@@ -137,7 +138,7 @@
                      color: var(--color-text);
                      focus:border-color: var(--color-primary);"
               aria-describedby="{fieldsetId}-description"
-              aria-label="{label}: {value} {unit}"
+              aria-label={m.common.labelValue({ label, value })}
             >
           </div>
         </div>
@@ -146,32 +147,32 @@
 
     <!-- Instructions for screen readers -->
     <div class="sr-only" id="{fieldsetId}-description">
-      Use arrow keys or number input to set duration. Maximum values: hours 23, minutes and seconds 59.
+      {m.widgets.intervalInstructions()}
     </div>
 
     <!-- Duration summary -->
     <div
-      aria-label="Duration summary"
+      aria-label={m.widgets.intervalSummaryLabel()}
       class="flex items-center gap-3 p-3 rounded-lg"
       role="status"
       style="background: var(--color-primary)10;"
     >
       <div class="flex items-center gap-2" style="color: var(--color-muted)">
         <i aria-hidden="true" class="fa-solid fa-calendar" style="color: var(--color-primary); font-size: 16px;"></i>
-        <span class="text-sm">Duration:</span>
+        <span class="text-sm">{m.widgets.intervalDuration()}</span>
       </div>
       <div class="flex-1">
-        <span aria-label="Total duration: {durationText}" class="text-sm font-medium" style="color: var(--color-text)">
+        <span aria-label={m.widgets.intervalTotalLabel({ duration: durationText })} class="text-sm font-medium" style="color: var(--color-text)">
           {durationText}
         </span>
       </div>
       <div aria-hidden="true" class="h-4 w-px" style="background: var(--color-primary)20;"></div>
       <div class="flex items-center gap-2" style="color: var(--color-muted)">
         <i aria-hidden="true" class="fa-solid fa-clock" style="color: var(--color-secondary); font-size: 16px;"></i>
-        <span class="text-sm">Ends:</span>
+        <span class="text-sm">{m.widgets.intervalEnds()}</span>
       </div>
       <div>
-        <span aria-label="End time: {endTime.toLocaleString()}" class="text-sm font-medium"
+        <span aria-label={m.widgets.intervalEndLabel({ end: endTime.toLocaleString() })} class="text-sm font-medium"
               style="color: var(--color-text)">
           {endTime.toLocaleString()}
         </span>

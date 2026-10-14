@@ -1,5 +1,6 @@
 <!-- EmbedEditor.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import TabNavigation from "$lib/components/specialized/TabNavigation.svelte";
@@ -26,28 +27,28 @@
   let currentInputElement: HTMLInputElement | HTMLTextAreaElement | null = $state(null);
 
   // Tabs configuration
-  const tabs = [
-    { id: 'content', label: 'Content', icon: "fa-text" },
-    { id: 'appearance', label: 'Appearance', icon: "fa-layer-group" },
-    { id: 'fields', label: 'Fields', icon: "fa-table-cells" },
-    { id: 'media', label: 'Media', icon: "fa-image" }
-  ];
+  const tabs = $derived([
+    { id: 'content', label: m.embedbuilder.editorTabContent(), icon: "fa-text" },
+    { id: 'appearance', label: m.embedbuilder.editorTabAppearance(), icon: "fa-layer-group" },
+    { id: 'fields', label: m.embedbuilder.editorTabFields(), icon: "fa-table-cells" },
+    { id: 'media', label: m.embedbuilder.editorTabMedia(), icon: "fa-image" }
+  ]);
 
   // Discord color options
-  const discordColors = [
-    { id: '#5865F2', name: 'Blurple', icon: '🟦' },
-    { id: '#57F287', name: 'Green', icon: '🟩' },
-    { id: '#FEE75C', name: 'Yellow', icon: '🟨' },
-    { id: '#ED4245', name: 'Red', icon: '🟥' },
-    { id: '#EB459E', name: 'Fuchsia', icon: '🟪' },
-    { id: '#00D166', name: 'Brand Green', icon: '💚' },
-    { id: '#3498DB', name: 'Blue', icon: '🔵' },
-    { id: '#9C59B6', name: 'Purple', icon: '🟣' },
-    { id: '#E67E22', name: 'Orange', icon: '🟠' },
-    { id: '#95A5A6', name: 'Grey', icon: '⚪' },
-    { id: '#000000', name: 'Black', icon: '⚫' },
-    { id: '#FFFFFF', name: 'White', icon: '⚪' }
-  ];
+  const discordColors = $derived([
+    { id: '#5865F2', name: m.common.blurple(), icon: '🟦' },
+    { id: '#57F287', name: m.common.colorGreen(), icon: '🟩' },
+    { id: '#FEE75C', name: m.embedbuilder.editorColorYellow(), icon: '🟨' },
+    { id: '#ED4245', name: m.common.red(), icon: '🟥' },
+    { id: '#EB459E', name: m.embedbuilder.editorColorFuchsia(), icon: '🟪' },
+    { id: '#00D166', name: m.embedbuilder.editorColorBrandGreen(), icon: '💚' },
+    { id: '#3498DB', name: m.common.blue(), icon: '🔵' },
+    { id: '#9C59B6', name: m.embedbuilder.editorColorPurple(), icon: '🟣' },
+    { id: '#E67E22', name: m.embedbuilder.editorColorOrange(), icon: '🟠' },
+    { id: '#95A5A6', name: m.common.colorGrey(), icon: '⚪' },
+    { id: '#000000', name: m.embedbuilder.editorColorBlack(), icon: '⚫' },
+    { id: '#FFFFFF', name: m.embedbuilder.editorColorWhite(), icon: '⚪' }
+  ]);
 
   // Update embed and dispatch
   function updateEmbed(field: string, value: any) {
@@ -184,7 +185,7 @@
   <!-- Header with Actions -->
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
     <h3 class="text-base sm:text-lg font-semibold" style="color: {$colorStore.text};">
-      Embed {index + 1}
+      {m.embedbuilder.editorEmbedNumber({ number: index + 1 })}
     </h3>
 
     <div class="flex items-center gap-1.5 sm:gap-2">
@@ -192,8 +193,8 @@
         class="p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:scale-[1.02]"
         style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
         onclick={() => onduplicate?.({ index })}
-        title="Duplicate embed"
-        aria-label="Duplicate embed"
+        title={m.embedbuilder.editorDuplicateEmbed()}
+        aria-label={m.embedbuilder.editorDuplicateEmbed()}
       >
         <i class="fa-solid fa-copy" style="font-size: 14px;"></i>
       </button>
@@ -202,8 +203,8 @@
         class="p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:scale-[1.02]"
         style="background: #ED424515; color: #ED4245;"
         onclick={() => onremove?.({ index })}
-        title="Remove embed"
-        aria-label="Remove embed"
+        title={m.embedbuilder.editorRemoveEmbed()}
+        aria-label={m.embedbuilder.editorRemoveEmbed()}
       >
         <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
       </button>
@@ -214,7 +215,7 @@
   <TabNavigation
     bind:activeTab
     {tabs}
-    ariaLabel="Embed editor sections"
+    ariaLabel={m.embedbuilder.editorTabsAria()}
   />
 
   <!-- Tab Content -->
@@ -224,7 +225,7 @@
         <!-- Title -->
         <div>
           <label for="embed-title-{index}" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-            Title
+            {m.common.title()}
             <span class="text-xs ml-2" style="color: {getCharCountColor(getCharCount(embed.title), 256)};">
               {getCharCount(embed.title)}/256
             </span>
@@ -237,7 +238,7 @@
               style="background: {$colorStore.primary}10; 
                      border-color: {$colorStore.primary}30; 
                      color: {$colorStore.text};"
-              placeholder="Enter embed title..."
+              placeholder={m.embedbuilder.editorTitlePlaceholder()}
               value={embed.title}
               maxlength="256"
               oninput={(e) => handleInput(e, 'title')}
@@ -246,7 +247,7 @@
                     class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
               style="color: {$colorStore.muted};"
               onclick={() => togglePlaceholderDropdown(`embed-title-${index}`)}
-              title="Insert placeholder"
+              title={m.embedbuilder.editorInsertPlaceholder()}
             >
               %
             </button>
@@ -268,7 +269,7 @@
         <!-- Description -->
         <div>
           <label for="embed-description-{index}" class="block text-sm font-medium mb-2 z-50" style="color: {$colorStore.text};">
-            Description
+            {m.common.description()}
             <span class="text-xs ml-2" style="color: {getCharCountColor(getCharCount(embed.description), 4096)};">
               {getCharCount(embed.description)}/4096
             </span>
@@ -281,7 +282,7 @@
               style="background: {$colorStore.primary}10;
                      border-color: {$colorStore.primary}30;
                      color: {$colorStore.text};"
-              placeholder="Enter embed description... (Supports Discord markdown)"
+              placeholder={m.embedbuilder.editorDescriptionPlaceholder()}
               value={embed.description}
               maxlength="4096"
               oninput={(e) => handleInput(e, 'description')}
@@ -290,7 +291,7 @@
                     class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
               style="color: {$colorStore.muted};"
               onclick={() => togglePlaceholderDropdown(`embed-description-${index}`)}
-              title="Insert placeholder"
+              title={m.embedbuilder.editorInsertPlaceholder()}
             >
               %
             </button>
@@ -308,14 +309,14 @@
             />
           </div>
           <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-            Supports **bold**, *italic*, __underline__, ~~strikethrough~~, `code`, and more. Click % for placeholders.
+            {m.embedbuilder.editorDescriptionHint()}
           </p>
         </div>
 
         <!-- URL -->
         <div>
           <label for="embed-url-{index}" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-            URL (makes title clickable)
+            {m.embedbuilder.editorUrlTitle()}
           </label>
           <input
             id="embed-url-{index}"
@@ -324,12 +325,12 @@
             style="background: {$colorStore.primary}10; 
                    border-color: {isValidUrl(embed.url) ? $colorStore.primary + '30' : '#ED4245'}; 
                    color: {$colorStore.text};"
-            placeholder="https://example.com"
+            placeholder={m.embedbuilder.editorUrlPlaceholder()}
             value={embed.url}
             oninput={(e) => handleInput(e, 'url')}
           >
           {#if embed.url && !isValidUrl(embed.url)}
-            <p class="text-xs mt-1 text-red-400">Please enter a valid URL</p>
+            <p class="text-xs mt-1 text-red-400">{m.embedbuilder.editorUrlInvalid()}</p>
           {/if}
         </div>
       </div>
@@ -339,20 +340,20 @@
         <!-- Color -->
         <div>
           <span id="embed-color-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-            Embed Color
+            {m.embedbuilder.editorEmbedColor()}
           </span>
           <DiscordSelector
             type="custom"
             options={discordColors}
             selected={embed.color}
-            placeholder="Select embed color"
+            placeholder={m.embedbuilder.editorEmbedColorPlaceholder()}
             onchange={(detail) => updateEmbed('color', detail.selected)}
           />
           
           <!-- Custom Color Input -->
           <div class="mt-3">
             <label for="custom-color-{index}" class="block text-xs font-medium mb-1" style="color: {$colorStore.muted};">
-              Or enter custom hex color:
+              {m.embedbuilder.editorCustomColor()}
             </label>
             <input
               id="custom-color-{index}"
@@ -367,12 +368,12 @@
 
         <!-- Author -->
         <fieldset class="border rounded-lg p-4" style="border-color: {$colorStore.primary}20;">
-          <legend class="px-2 text-sm font-medium" style="color: {$colorStore.text};">Author</legend>
+          <legend class="px-2 text-sm font-medium" style="color: {$colorStore.text};">{m.common.author()}</legend>
           
           <div class="space-y-3">
             <div>
               <label for="author-name-{index}" class="block text-sm font-medium mb-1" style="color: {$colorStore.text};">
-                Name
+                {m.common.name()}
                 <span class="text-xs ml-2" style="color: {getCharCountColor(getCharCount(embed.author?.name), 256)};">
                   {getCharCount(embed.author?.name)}/256
                 </span>
@@ -383,7 +384,7 @@
                   type="text"
                   class="w-full px-3 py-2 pr-10 rounded-lg border"
                   style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                  placeholder="Author name"
+                  placeholder={m.embedbuilder.editorAuthorNamePlaceholder()}
                   value={embed.author?.name || ''}
                   maxlength="256"
                   oninput={(e) => handleInput(e, 'author.name')}
@@ -392,7 +393,7 @@
                         class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
                   style="color: {$colorStore.muted};"
                   onclick={() => togglePlaceholderDropdown(`author-name-${index}`)}
-                  title="Insert placeholder"
+                  title={m.embedbuilder.editorInsertPlaceholder()}
                 >
                   %
                 </button>
@@ -413,14 +414,14 @@
 
             <div>
               <label for="author-url-{index}" class="block text-sm font-medium mb-1" style="color: {$colorStore.text};">
-                URL (makes author name clickable)
+                {m.embedbuilder.editorAuthorUrl()}
               </label>
               <input
                 id="author-url-{index}"
                 type="url"
                 class="w-full px-3 py-2 rounded-lg border"
                 style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                placeholder="https://example.com"
+                placeholder={m.embedbuilder.editorUrlPlaceholder()}
                 value={embed.author?.url || ''}
                 oninput={(e) => handleInput(e, 'author.url')}
               >
@@ -428,14 +429,14 @@
 
             <div>
               <label for="author-icon-{index}" class="block text-sm font-medium mb-1" style="color: {$colorStore.text};">
-                Icon URL
+                {m.embedbuilder.editorIconUrl()}
               </label>
               <input
                 id="author-icon-{index}"
                 type="url"
                 class="w-full px-3 py-2 rounded-lg border"
                 style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                placeholder="https://example.com/icon.png"
+                placeholder={m.embedbuilder.editorIconUrlPlaceholder()}
                 value={embed.author?.icon_url || ''}
                 oninput={(e) => handleInput(e, 'author.icon_url')}
               >
@@ -445,12 +446,12 @@
 
         <!-- Footer -->
         <fieldset class="border rounded-lg p-4" style="border-color: {$colorStore.primary}20;">
-          <legend class="px-2 text-sm font-medium" style="color: {$colorStore.text};">Footer</legend>
+          <legend class="px-2 text-sm font-medium" style="color: {$colorStore.text};">{m.embedbuilder.editorFooter()}</legend>
           
           <div class="space-y-3">
             <div>
               <label for="footer-text-{index}" class="block text-sm font-medium mb-1" style="color: {$colorStore.text};">
-                Text
+                {m.common.text()}
                 <span class="text-xs ml-2" style="color: {getCharCountColor(getCharCount(embed.footer?.text), 2048)};">
                   {getCharCount(embed.footer?.text)}/2048
                 </span>
@@ -461,7 +462,7 @@
                   type="text"
                   class="w-full px-3 py-2 pr-10 rounded-lg border"
                   style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                  placeholder="Footer text"
+                  placeholder={m.embedbuilder.editorFooterTextPlaceholder()}
                   value={embed.footer?.text || ''}
                   maxlength="2048"
                   oninput={(e) => handleInput(e, 'footer.text')}
@@ -470,7 +471,7 @@
                         class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
                   style="color: {$colorStore.muted};"
                   onclick={() => togglePlaceholderDropdown(`footer-text-${index}`)}
-                  title="Insert placeholder"
+                  title={m.embedbuilder.editorInsertPlaceholder()}
                 >
                   %
                 </button>
@@ -491,14 +492,14 @@
 
             <div>
               <label for="footer-icon-{index}" class="block text-sm font-medium mb-1" style="color: {$colorStore.text};">
-                Icon URL
+                {m.embedbuilder.editorIconUrl()}
               </label>
               <input
                 id="footer-icon-{index}"
                 type="url"
                 class="w-full px-3 py-2 rounded-lg border"
                 style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                placeholder="https://example.com/icon.png"
+                placeholder={m.embedbuilder.editorIconUrlPlaceholder()}
                 value={embed.footer?.icon_url || ''}
                 oninput={(e) => handleInput(e, 'footer.icon_url')}
               >
@@ -512,7 +513,7 @@
         <!-- Add Field Button -->
         <div class="flex justify-between items-center">
           <h4 class="text-sm sm:text-md font-medium" style="color: {$colorStore.text};">
-            Fields ({embed.fields?.length || 0}/25)
+            {m.embedbuilder.editorFieldsCount({ count: embed.fields?.length || 0 })}
           </h4>
           <button
             class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-1.5 sm:gap-2 disabled:opacity-50 text-sm"
@@ -521,8 +522,8 @@
             onclick={addField}
           >
             <i class="fa-solid fa-plus" style="font-size: 14px;"></i>
-            <span class="hidden sm:inline">Add Field</span>
-            <span class="sm:hidden">Add</span>
+            <span class="hidden sm:inline">{m.common.addField()}</span>
+            <span class="sm:hidden">{m.common.add()}</span>
           </button>
         </div>
 
@@ -531,11 +532,11 @@
           {#each (embed.fields || []) as field, fieldIndex}
             <div class="border rounded-lg p-4" style="border-color: {$colorStore.primary}20; background: {$colorStore.primary}05;">
               <div class="flex justify-between items-center mb-3">
-                <span class="text-sm font-medium" style="color: {$colorStore.text};">Field {fieldIndex + 1}</span>
-                <button aria-label="Add field"
+                <span class="text-sm font-medium" style="color: {$colorStore.text};">{m.embedbuilder.editorFieldNumber({ number: fieldIndex + 1 })}</span>
+                <button aria-label={m.common.removeField()}
                         class="p-1 rounded-sm text-red-400 hover:bg-red-400/10 transition-colors"
                   onclick={() => removeField(fieldIndex)}
-                  title="Remove field"
+                  title={m.common.removeField()}
                 >
                   <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
                 </button>
@@ -545,7 +546,7 @@
                 <!-- Field Name -->
                 <div>
                   <label for="field-name" class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
-                    Name
+                    {m.common.name()}
                     <span class="ml-2" style="color: {getCharCountColor(getCharCount(field.name), 256)};">
                       {getCharCount(field.name)}/256
                     </span>
@@ -556,7 +557,7 @@
                       type="text"
                       class="w-full px-3 py-2 pr-10 rounded-sm border text-sm"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      placeholder="Field name"
+                      placeholder={m.embedbuilder.editorFieldNamePlaceholder()}
                       value={field.name}
                       maxlength="256"
                       oninput={(e) => handleFieldInput(e, fieldIndex, 'name')}
@@ -565,7 +566,7 @@
                             class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
                       style="color: {$colorStore.muted};"
                       onclick={() => togglePlaceholderDropdown(`field-name-${index}-${fieldIndex}`)}
-                      title="Insert placeholder"
+                      title={m.embedbuilder.editorInsertPlaceholder()}
                     >
                       %
                     </button>
@@ -587,7 +588,7 @@
                 <!-- Field Value -->
                 <div>
                   <label for="field-value" class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
-                    Value
+                    {m.common.value()}
                     <span class="ml-2" style="color: {getCharCountColor(getCharCount(field.value), 1024)};">
                       {getCharCount(field.value)}/1024
                     </span>
@@ -598,7 +599,7 @@
                       rows="3"
                       class="w-full px-3 py-2 pr-10 rounded-sm border text-sm resize-y"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      placeholder="Field value"
+                      placeholder={m.embedbuilder.editorFieldValuePlaceholder()}
                       value={field.value}
                       maxlength="1024"
                       oninput={(e) => handleFieldInput(e, fieldIndex, 'value')}
@@ -607,7 +608,7 @@
                             class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
                       style="color: {$colorStore.muted};"
                       onclick={() => togglePlaceholderDropdown(`field-value-${index}-${fieldIndex}`)}
-                      title="Insert placeholder"
+                      title={m.embedbuilder.editorInsertPlaceholder()}
                     >
                       %
                     </button>
@@ -636,7 +637,7 @@
                     onchange={(e) => handleCheckboxChange(e, fieldIndex, 'inline')}
                   >
                   <label for="inline-{index}-{fieldIndex}" class="text-xs" style="color: {$colorStore.text};">
-                    Display inline (up to 3 fields per row)
+                    {m.embedbuilder.editorFieldInline()}
                   </label>
                 </div>
               </div>
@@ -646,7 +647,7 @@
 
         {#if !embed.fields || embed.fields.length === 0}
           <div class="text-center py-8">
-            <p class="text-sm" style="color: {$colorStore.muted};">No fields added yet. Click "Add Field" to get started.</p>
+            <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.editorFieldsEmpty()}</p>
           </div>
         {/if}
       </div>
@@ -656,46 +657,46 @@
         <!-- Thumbnail -->
         <div>
           <label for="thumbnail-{index}" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-            Thumbnail URL
+            {m.embedbuilder.editorThumbnailUrl()}
           </label>
           <input
             id="thumbnail-{index}"
             type="url"
             class="w-full px-3 py-2 rounded-lg border"
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            placeholder="https://example.com/thumbnail.png"
+            placeholder={m.embedbuilder.editorThumbnailPlaceholder()}
             value={embed.thumbnail?.url || ''}
             oninput={(e) => handleInput(e, 'thumbnail.url')}
           >
-          <p class="text-xs mt-1" style="color: {$colorStore.muted};">Small image displayed in the top-right corner</p>
+          <p class="text-xs mt-1" style="color: {$colorStore.muted};">{m.embedbuilder.editorThumbnailHint()}</p>
         </div>
 
         <!-- Image -->
         <div>
           <label for="image-{index}" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-            Image URL
+            {m.common.imageUrl()}
           </label>
           <input
             id="image-{index}"
             type="url"
             class="w-full px-3 py-2 rounded-lg border"
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            placeholder="https://example.com/image.png"
+            placeholder={m.embedbuilder.editorImagePlaceholder()}
             value={embed.image?.url || ''}
             oninput={(e) => handleInput(e, 'image.url')}
           >
-          <p class="text-xs mt-1" style="color: {$colorStore.muted};">Large image displayed at the bottom of the embed</p>
+          <p class="text-xs mt-1" style="color: {$colorStore.muted};">{m.embedbuilder.editorImageHint()}</p>
         </div>
 
         <!-- Media Tips -->
         <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <h5 class="font-medium text-blue-800 dark:text-blue-200 mb-2">Media Tips:</h5>
+          <h5 class="font-medium text-blue-800 dark:text-blue-200 mb-2">{m.embedbuilder.editorMediaTips()}</h5>
           <ul class="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-            <li>• Supported formats: PNG, JPG, GIF, WebP</li>
-            <li>• Use direct image URLs (ending in .png, .jpg, etc.)</li>
-            <li>• Images should be publicly accessible</li>
-            <li>• Recommended thumbnail size: 80x80px</li>
-            <li>• Maximum image size: 8MB</li>
+            <li>• {m.embedbuilder.editorMediaTipFormats()}</li>
+            <li>• {m.embedbuilder.editorMediaTipDirect()}</li>
+            <li>• {m.embedbuilder.editorMediaTipPublic()}</li>
+            <li>• {m.embedbuilder.editorMediaTipThumbnail()}</li>
+            <li>• {m.embedbuilder.editorMediaTipMax()}</li>
           </ul>
         </div>
       </div>

@@ -1,6 +1,7 @@
 <!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot (status-messages to status_messages) making the component unusable -->
 <!-- DashboardPageLayout.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import {fade, fly} from "svelte/transition";
   import {colorStore} from "$lib/stores/colorStore";
   // Lifecycle
@@ -55,7 +56,7 @@
     subTabs = [],
     activeSubTab = $bindable(""),
     actionButtons = [],
-    guildName = "Dashboard",
+    guildName = undefined,
     notificationMessage = $bindable(""),
     notificationType = "success",
     basePath = "/dashboard",
@@ -285,7 +286,7 @@
 </script>
 
 <svelte:head>
-  <title>{title} - {guildName}</title>
+  <title>{title} - {guildName ?? m.common.dashboard()}</title>
 </svelte:head>
 
 <div class="min-h-screen p-4 md:p-6 overflow-x-hidden w-full transition-all duration-500 relative z-10"
@@ -330,11 +331,11 @@
             class="flex items-center justify-center gap-3 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] min-w-[44px] shrink-0 sm:flex-initial font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
             style="background: {$colorStore.primary}10; color: {$colorStore.primary}; border: 1px dashed {$colorStore.primary}40;"
             onclick={() => (wikiOpen = true)}
-            aria-label="How {title} works"
-            title="Read the wiki page for this feature"
+            aria-label={m.layout.pageLayoutWikiAria({ title })}
+            title={m.layout.pageLayoutWikiTitle()}
           >
             <i class="fa-solid fa-circle-question" style="font-size: 18px;" aria-hidden="true"></i>
-            <span class="hidden sm:inline text-sm sm:text-base">How it works</span>
+            <span class="hidden sm:inline text-sm sm:text-base">{m.common.howItWorks()}</span>
           </button>
         {/if}
         {#each actionButtons as button}
@@ -372,7 +373,7 @@
 
   <!-- Main Tab Navigation -->
   {#if tabs.length > 0}
-    <nav class="mb-6" aria-label="Page tabs">
+    <nav class="mb-6" aria-label={m.layout.pageLayoutTabsAria()}>
       <div class="flex items-center justify-center gap-2 max-w-[98%] sm:max-w-[90%] lg:max-w-[80%] mx-auto">
         <!-- Left scroll button -->
         {#if tabsOverflow}
@@ -380,7 +381,7 @@
             class="shrink-0 p-2 rounded-lg transition-all hover:scale-[1.02] "
             style="background: rgba(15, 23, 42, 0.9); border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
             onclick={() => scrollTabs('left', tabContainer)}
-            aria-label="Scroll tabs left"
+            aria-label={m.layout.pageLayoutScrollTabsLeft()}
           >
             <i class="fa-solid fa-chevron-left" style="color: {$colorStore.primary}; font-size: 16px;"></i>
           </button>
@@ -392,7 +393,7 @@
           class="flex items-center space-x-1 p-2 rounded-xl overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth flex-1 min-w-0 {tabsOverflow ? 'justify-start' : 'justify-center'}"
           style="background: {$colorStore.primary}10;"
           role="tablist"
-          aria-label="{title} navigation tabs"
+          aria-label={m.layout.pageLayoutTabListAria({ title })}
         >
           {#each tabs as tab, index}
             <button
@@ -422,7 +423,7 @@
             class="shrink-0 p-2 rounded-lg transition-all hover:scale-[1.02] "
             style="background: rgba(15, 23, 42, 0.9); border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
             onclick={() => scrollTabs('right', tabContainer)}
-            aria-label="Scroll tabs right"
+            aria-label={m.layout.pageLayoutScrollTabsRight()}
           >
             <i class="fa-solid fa-chevron-right" style="color: {$colorStore.primary}; font-size: 16px;"></i>
           </button>
@@ -445,7 +446,7 @@
         </div>
       </div>
       
-      <nav aria-label="Sub navigation">
+      <nav aria-label={m.layout.pageLayoutSubNavAria()}>
         <div class="relative">
           <!-- Mobile scroll buttons for sub-tabs -->
           {#if subTabsOverflow}
@@ -453,7 +454,7 @@
               class="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-lg md:hidden transition-opacity"
               style="background: #0f172a; border: 1px solid {$colorStore.primary}20;"
               onclick={() => scrollTabs('left', subTabContainer)}
-              aria-label="Scroll sub-tabs left"
+              aria-label={m.layout.pageLayoutScrollSubTabsLeft()}
             >
               <i class="fa-solid fa-chevron-left" style="color: {$colorStore.primary}; font-size: 14px;"></i>
             </button>
@@ -462,7 +463,7 @@
               class="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-lg md:hidden transition-opacity"
               style="background: #0f172a; border: 1px solid {$colorStore.primary}20;"
               onclick={() => scrollTabs('right', subTabContainer)}
-              aria-label="Scroll sub-tabs right"
+              aria-label={m.layout.pageLayoutScrollSubTabsRight()}
             >
               <i class="fa-solid fa-chevron-right" style="color: {$colorStore.primary}; font-size: 14px;"></i>
             </button>
@@ -475,7 +476,7 @@
               class="flex items-center gap-2 overflow-x-auto scrollbar-hide scroll-smooth p-1.5 rounded-xl {subTabsOverflow ? 'mx-8 md:mx-0' : ''}"
               style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;"
               role="tablist"
-              aria-label="Sub navigation tabs"
+              aria-label={m.layout.pageLayoutSubTabListAria()}
             >
             {#each currentSubTabs as subTab, index}
               <button

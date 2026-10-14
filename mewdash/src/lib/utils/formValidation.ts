@@ -1,6 +1,8 @@
 // lib/utils/formValidation.ts
 import type { FormQuestion } from "$lib/api/forms/models";
 import { containsZalgo } from "$lib/utils/sanitize";
+import { m } from "$lib/i18n";
+import { questionTypeLabel } from "$lib/components/forms/formLabels";
 
 export interface ValidationError {
   field: string;
@@ -18,7 +20,7 @@ function validateQuestionText(
   if (!question.questionText?.trim()) {
     errors.push({
       field: "questionText",
-      message: "Question text is required",
+      message: m.shared.validationQuestionTextRequired(),
     });
   }
 
@@ -26,14 +28,14 @@ function validateQuestionText(
     errors.push({
       field: "questionText",
       message:
-        "Question text contains invalid characters (excessive combining marks)",
+        m.shared.validationQuestionTextInvalidChars(),
     });
   }
 
   if (question.questionText && question.questionText.length > 500) {
     errors.push({
       field: "questionText",
-      message: "Question text cannot exceed 500 characters",
+      message: m.shared.validationQuestionTextTooLong(),
     });
   }
 
@@ -62,28 +64,28 @@ function validateTextLengthConstraints(
   ) {
     errors.push({
       field: "minLength",
-      message: "Minimum length cannot be greater than maximum length",
+      message: m.shared.validationMinLengthGreaterThanMax(),
     });
   }
 
   if (question.minLength !== undefined && question.minLength < 0) {
     errors.push({
       field: "minLength",
-      message: "Minimum length cannot be negative",
+      message: m.shared.validationMinLengthNegative(),
     });
   }
 
   if (question.maxLength !== undefined && question.maxLength < 1) {
     errors.push({
       field: "maxLength",
-      message: "Maximum length must be at least 1",
+      message: m.shared.validationMaxLengthTooSmall(),
     });
   }
 
   if (question.maxLength !== undefined && question.maxLength > 5000) {
     errors.push({
       field: "maxLength",
-      message: "Maximum length cannot exceed 5000 characters",
+      message: m.shared.validationMaxLengthTooLarge(),
     });
   }
 
@@ -105,7 +107,7 @@ function validateNumberConstraints(
     return [
       {
         field: "minValue",
-        message: "Minimum value cannot be greater than maximum value",
+        message: m.shared.validationMinValueGreaterThanMax(),
       },
     ];
   }
@@ -132,14 +134,14 @@ function validateOptions(
   if (!question.options || question.options.length === 0) {
     errors.push({
       field: "options",
-      message: `${getQuestionTypeLabel(question.questionType ?? "")} questions must have at least one option`,
+      message: m.shared.validationOptionsRequired({ type: questionTypeLabel(question.questionType ?? "") }),
     });
   }
 
   if (question.options && question.options.length > 25) {
     errors.push({
       field: "options",
-      message: "Cannot have more than 25 options (Discord embed limit)",
+      message: m.shared.validationOptionsTooMany(),
     });
   }
 
@@ -150,7 +152,7 @@ function validateOptions(
     if (emptyOptions.length > 0) {
       errors.push({
         field: "options",
-        message: "All options must have text",
+        message: m.shared.validationOptionsEmptyText(),
       });
     }
 
@@ -161,7 +163,7 @@ function validateOptions(
     if (optionValues.length !== uniqueValues.size) {
       errors.push({
         field: "options",
-        message: "Option values must be unique",
+        message: m.shared.validationOptionsNotUnique(),
       });
     }
   }
@@ -182,7 +184,7 @@ function validateConditionalLogic(
   if (!question.conditionalOperator) {
     errors.push({
       field: "conditionalOperator",
-      message: "Conditional operator is required when parent question is set",
+      message: m.shared.validationConditionalOperatorRequired(),
     });
   }
 
@@ -192,7 +194,7 @@ function validateConditionalLogic(
   ) {
     errors.push({
       field: "conditionalExpectedValue",
-      message: "Expected value is required for conditional logic",
+      message: m.shared.validationConditionalValueRequired(),
     });
   }
 
@@ -202,7 +204,7 @@ function validateConditionalLogic(
   ) {
     errors.push({
       field: "conditionalParentQuestionId",
-      message: "Parent question must come before this question",
+      message: m.shared.validationParentMustPrecede(),
     });
   }
 
@@ -228,14 +230,14 @@ export function validateFormQuestion(
   if (!question.questionType) {
     errors.push({
       field: "questionType",
-      message: "Question type is required",
+      message: m.shared.validationQuestionTypeRequired(),
     });
   }
 
   if (question.placeholder && question.placeholder.length > 200) {
     errors.push({
       field: "placeholder",
-      message: "Placeholder text cannot exceed 200 characters",
+      message: m.shared.validationPlaceholderTooLong(),
     });
   }
 
@@ -258,14 +260,14 @@ export function validateForm(
   if (!formName?.trim()) {
     errors.push({
       field: "formName",
-      message: "Form name is required",
+      message: m.shared.validationFormNameRequired(),
     });
   }
 
   if (formName && formName.length > 255) {
     errors.push({
       field: "formName",
-      message: "Form name cannot exceed 255 characters",
+      message: m.shared.validationFormNameTooLong(),
     });
   }
 
@@ -273,7 +275,7 @@ export function validateForm(
   if (questions.length === 0) {
     errors.push({
       field: "questions",
-      message: "Form must have at least one question",
+      message: m.shared.validationFormNeedsQuestion(),
     });
   }
 
@@ -283,7 +285,7 @@ export function validateForm(
     questionErrors.forEach((err) => {
       errors.push({
         field: `question-${index}-${err.field}`,
-        message: `Question ${index + 1}: ${err.message}`,
+        message: m.shared.validationQuestionPrefixed({ number: index + 1, message: err.message }),
       });
     });
   });
@@ -293,7 +295,7 @@ export function validateForm(
   if (hasCircularDependency) {
     errors.push({
       field: "conditionalLogic",
-      message: "Circular dependency detected in conditional logic",
+      message: m.shared.validationCircularDependency(),
     });
   }
 
@@ -337,18 +339,4 @@ function checkCircularDependencies(
   }
 
   return false;
-}
-
-function getQuestionTypeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    short_text: "Short Text",
-    long_text: "Long Text",
-    multiple_choice: "Multiple Choice",
-    checkboxes: "Checkboxes",
-    dropdown: "Dropdown",
-    number: "Number",
-    email: "Email",
-    url: "URL",
-  };
-  return labels[type] || type;
 }

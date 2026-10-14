@@ -1,5 +1,6 @@
 <!-- routes/wiki/+layout.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { page } from "$app/stores";
   import { colorStore } from "$lib/stores/colorStore";
   import { wikiIconClass } from "$lib/wiki";
@@ -36,11 +37,11 @@
           >
             <i class="fa-utility-duo fa-regular fa-book-open w-4 text-center"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-            <span>Wiki home</span>
+            <span>{m.wiki.wikiHome()}</span>
           </a>
           <input
             type="search"
-            placeholder="Filter articles"
+            placeholder={m.wiki.filterArticles()}
             bind:value={sidebarQuery}
             class="w-full px-3 py-2 rounded-lg text-sm outline-none focus:ring-2"
             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}25; color: {$colorStore.text};"
@@ -60,7 +61,7 @@
                 </a>
               </li>
             {:else}
-              <li class="px-3 py-2 text-sm" style="color: {$colorStore.muted}">No matches</li>
+              <li class="px-3 py-2 text-sm" style="color: {$colorStore.muted}">{m.common.noMatches()}</li>
             {/each}
           </ul>
         </div>

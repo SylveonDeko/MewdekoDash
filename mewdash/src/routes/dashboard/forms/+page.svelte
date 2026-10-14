@@ -1,5 +1,6 @@
 <!-- routes/dashboard/forms/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { type Form, formsApi } from "$lib/api/index.ts";
   import type { PageData } from "./$types";
@@ -57,11 +58,11 @@
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        showNotificationMessage("Responses exported successfully", "success");
+        showNotificationMessage(m.forms.pageNotifyExported(), "success");
       } catch (err) {
-        showNotificationMessage("Failed to export responses", "error");
+        showNotificationMessage(m.forms.pageErrorExport(), "error");
       }
-    }, "operation", "Exporting responses...");
+    }, "operation", m.forms.pageLoadingExport());
   }
 
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
@@ -92,11 +93,11 @@
         forms = sanitizedForms;
       } catch (err) {
         logger.error("Failed to load forms:", err);
-        error = err instanceof Error ? err.message : "Failed to load forms";
+        error = err instanceof Error ? err.message : m.forms.pageErrorLoad();
       } finally {
         loading = false;
       }
-    }, "api", "Loading forms...");
+    }, "api", m.forms.listLoading());
   }
 
   async function toggleFormStatus(form: Form) {
@@ -105,16 +106,16 @@
         await formsApi.setFormActiveStatus(form.id, !form.isActive);
         form.isActive = !form.isActive;
         showNotificationMessage(
-          `Form ${form.isActive ? "activated" : "deactivated"} successfully`
+          form.isActive ? m.forms.pageNotifyActivated() : m.forms.pageNotifyDeactivated()
         );
       } catch (err) {
-        showNotificationMessage("Failed to update form status", "error");
+        showNotificationMessage(m.forms.pageErrorStatus(), "error");
       }
-    }, "operation", "Updating form...");
+    }, "operation", m.forms.pageLoadingStatus());
   }
 
   async function deleteForm(form: Form) {
-    if (!(await requestConfirmation({ message: `Are you sure you want to delete "${form.name}"? This will delete all responses.`, confirmText: "Delete" }))) {
+    if (!(await requestConfirmation({ message: m.forms.pageConfirmDelete({ name: form.name }), confirmText: m.common.delete() }))) {
       return;
     }
 
@@ -122,16 +123,16 @@
       try {
         await formsApi.deleteForm(form.id);
         forms = forms.filter((f) => f.id !== form.id);
-        showNotificationMessage("Form deleted successfully");
+        showNotificationMessage(m.forms.pageNotifyDeleted());
         // If we were viewing this form, go back to list
         if (selectedFormId === form.id) {
           selectedFormId = null;
           activeTab = "list";
         }
       } catch (err) {
-        showNotificationMessage("Failed to delete form", "error");
+        showNotificationMessage(m.forms.pageErrorDelete(), "error");
       }
-    }, "operation", "Deleting form...");
+    }, "operation", m.forms.pageLoadingDelete());
   }
 
   async function duplicateForm(form: Form) {
@@ -139,11 +140,11 @@
       try {
         const duplicated = await formsApi.duplicateForm(form.id, data.user.id);
         await loadForms(); // Reload to show new form
-        showNotificationMessage(`Form duplicated as "${duplicated.name}"`);
+        showNotificationMessage(m.forms.pageNotifyDuplicated({ name: duplicated.name }));
       } catch (err) {
-        showNotificationMessage("Failed to duplicate form", "error");
+        showNotificationMessage(m.forms.pageErrorDuplicate(), "error");
       }
-    }, "operation", "Duplicating form...");
+    }, "operation", m.forms.pageLoadingDuplicate());
   }
 
   async function publishForm(form: Form) {
@@ -151,7 +152,7 @@
       try {
         await formsApi.publishForm(form.id);
         form.isDraft = false;
-        showNotificationMessage("Form published successfully!");
+        showNotificationMessage(m.forms.pageNotifyPublished());
       } catch (err: any) {
         // Publishing is where the checks spanning the whole form run, so a refusal usually names
         // something specific and fixable. Saying what beats saying that it failed.
@@ -160,11 +161,11 @@
         showNotificationMessage(
           Array.isArray(reasons) && reasons.length > 0
             ? reasons.join(". ")
-            : err?.message || "Failed to publish form",
+            : err?.message || m.forms.pageErrorPublish(),
           "error"
         );
       }
-    }, "operation", "Publishing form...");
+    }, "operation", m.forms.pageLoadingPublish());
   }
 
   async function copyFormLink(formId: number) {
@@ -172,7 +173,7 @@
       try {
         const instance = $currentInstance;
         if (!instance) {
-          showNotificationMessage("No instance selected", "error");
+          showNotificationMessage(m.forms.pageErrorNoInstance(), "error");
           return;
         }
 
@@ -191,10 +192,10 @@
         logger.error("Error details:", err?.error || err);
 
         // Provide more detailed error message
-        const errorMessage = err?.error?.message || err?.message || "Failed to generate share link";
+        const errorMessage = err?.error?.message || err?.message || m.forms.pageErrorShareLink();
         showNotificationMessage(errorMessage, "error");
       }
-    }, "operation", "Getting share link...");
+    }, "operation", m.forms.pageLoadingShareLink());
   }
 
   /**
@@ -230,13 +231,13 @@
 
   async function copyToClipboard() {
     if (await writeToClipboard(currentShareLink)) {
-      showNotificationMessage("Link copied to clipboard!");
+      showNotificationMessage(m.forms.pageNotifyLinkCopied());
       showShareLinkModal = false;
       return;
     }
 
     // The modal stays open with the link visible, so it can still be copied by hand.
-    showNotificationMessage("Could not copy automatically, select the link and copy it", "error");
+    showNotificationMessage(m.forms.pageErrorCopyFailed(), "error");
   }
 
   async function previewForm(formId: number) {
@@ -244,7 +245,7 @@
       try {
         const instance = $currentInstance;
         if (!instance) {
-          showNotificationMessage("No instance selected", "error");
+          showNotificationMessage(m.forms.pageErrorNoInstance(), "error");
           return;
         }
 
@@ -257,10 +258,10 @@
         window.open(`/forms/${shareCode}?preview=true`, "_blank");
       } catch (err: any) {
         logger.error("Failed to generate preview link:", err);
-        const errorMessage = err?.error?.message || err?.message || "Failed to generate preview link";
+        const errorMessage = err?.error?.message || err?.message || m.forms.pageErrorPreview();
         showNotificationMessage(errorMessage, "error");
       }
-    }, "operation", "Generating preview...");
+    }, "operation", m.forms.pageLoadingPreview());
   }
 
   // Tab navigation handlers
@@ -298,7 +299,7 @@
       logger.warn(`Created form with ID ${formId} not found in forms list`);
       activeTab = "list";
       selectedFormId = null;
-      showNotificationMessage("Form created successfully", "success");
+      showNotificationMessage(m.forms.pageNotifyCreated(), "success");
     }
   }
 
@@ -311,9 +312,9 @@
   // Tabs configuration - dynamically show edit/responses/review tabs only when form is selected
   let tabs = $derived((() => {
     const baseTabs = [
-      { id: "list", label: "Forms", icon: "fa-list" },
-      { id: "create", label: "Create", icon: "fa-plus" },
-      { id: "settings", label: "Settings", icon: "fa-sliders" }
+      { id: "list", label: m.features.formsName(), icon: "fa-list" },
+      { id: "create", label: m.common.create(), icon: "fa-plus" },
+      { id: "settings", label: m.common.settings(), icon: "fa-sliders" }
     ];
 
     if (selectedFormId) {
@@ -323,11 +324,11 @@
       if (selectedForm) {
         // Reading a response and deciding on it are the same task, so they are one tab. The
         // pending count rides on it, since that is the number a reviewer is looking for.
-        const pending = selectedForm.pendingCount ? ` (${selectedForm.pendingCount})` : "";
+        const responsesLabel = selectedForm.pendingCount ? m.forms.pageTabResponsesPending({ count: selectedForm.pendingCount }) : m.common.responses();
 
         baseTabs.push(
-          { id: "edit", label: "Edit", icon: "fa-edit" },
-          { id: "responses", label: `Responses${pending}`, icon: "fa-inbox" }
+          { id: "edit", label: m.common.edit(), icon: "fa-edit" },
+          { id: "responses", label: responsesLabel, icon: "fa-inbox" }
         );
       }
     }
@@ -340,7 +341,7 @@
     if (activeTab === "create") {
       return [
         {
-          label: "Save Form",
+          label: m.forms.pageActionSaveForm(),
           icon: "fa-check",
           action: () => formCreateRef?.saveForm()
         }
@@ -348,7 +349,7 @@
     } else if (activeTab === "edit") {
       return [
         {
-          label: "Save Changes",
+          label: m.common.saveChanges(),
           icon: "fa-check",
           action: () => formEditRef?.saveForm()
         }
@@ -356,12 +357,12 @@
     } else if (activeTab === "responses" && selectedFormId) {
       return [
         {
-          label: "Export CSV",
+          label: m.forms.queueExportCsv(),
           icon: "fa-download",
           action: exportResponses
         },
         {
-          label: "Edit Form",
+          label: m.forms.pageActionEditForm(),
           icon: "fa-edit",
           action: () => selectedFormId !== null && handleEdit(selectedFormId)
         }
@@ -369,7 +370,7 @@
     } else {
       return [
         {
-          label: "Create Form",
+          label: m.forms.pageActionCreateForm(),
           icon: "fa-plus",
           action: handleCreateNew
         }
@@ -407,12 +408,12 @@
 <DashboardPageLayout
   {actionButtons}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-clipboard-check"
   ontabChange={handleTabChange}
-  subtitle="Create and manage custom forms for your community"
+  subtitle={m.forms.pageSubtitle()}
   {tabs}
-  title="Forms"
+  title={m.features.formsName()}
 >
   {#snippet statusMessages()}
     {#if showNotification}
@@ -444,13 +445,13 @@
         <div class="flex items-start justify-between mb-4">
           <h2 class="text-2xl font-bold" style="color: {$colorStore.text};">
             <i class="fa-solid fa-link mr-2" style="color: {$colorStore.primary};"></i>
-            Share Form
+            {m.forms.pageShareTitle()}
           </h2>
           <button
             onclick={() => (showShareLinkModal = false)}
             class="p-2 rounded-lg transition-all hover:scale-110"
             style="background: {$colorStore.primary}20; color: {$colorStore.text};"
-            aria-label="Close share modal"
+            aria-label={m.forms.pageShareCloseAria()}
           >
             <i class="fa-solid fa-times"></i>
           </button>
@@ -460,14 +461,14 @@
           <div class="flex items-start gap-2 text-xs">
             <i class="fa-solid fa-info-circle flex-shrink-0 mt-0.5" style="color: #3b82f6;"></i>
             <span style="color: {$colorStore.muted};">
-              This link is permanent and reusable. Share it anywhere - clicking "Copy" again won't invalidate it.
+              {m.forms.pageShareHint()}
             </span>
           </div>
         </div>
 
         <div class="mb-4">
           <label for="f-+page-share-link-428" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-            Share Link
+            {m.forms.pageShareLinkLabel()}
           </label>
           <input id="f-+page-share-link-428"
             type="text"
@@ -486,14 +487,14 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border-color: {$colorStore.primary}30; box-shadow: 0 4px 20px {$colorStore.primary}10;"
           >
             <i class="fa-solid fa-copy mr-2"></i>
-            Copy to Clipboard
+            {m.common.copyToClipboard()}
           </button>
           <button
             onclick={() => (showShareLinkModal = false)}
             class="px-6 py-3 rounded-lg font-medium transition-all hover:scale-[1.02]"
             style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
           >
-            Close
+            {m.common.close()}
           </button>
         </div>
       </div>

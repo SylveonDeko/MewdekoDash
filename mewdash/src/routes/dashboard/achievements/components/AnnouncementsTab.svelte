@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { untrack } from "svelte";
   import { fade } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -55,19 +56,28 @@
     logChannelId && lookups ? !(lookups.channels.find((c) => c.id.toString() === logChannelId)?.canSend ?? false) : false
   );
   /** How long unlock messages stay, from never to a day. */
-  const deleteOptions = [
-    { id: "0", name: "Never" },
-    { id: "5", name: "After 5 seconds" },
-    { id: "15", name: "After 15 seconds" },
-    { id: "30", name: "After 30 seconds" },
-    { id: "60", name: "After 1 minute" },
-    { id: "300", name: "After 5 minutes" },
-    { id: "900", name: "After 15 minutes" },
-    { id: "3600", name: "After 1 hour" },
-    { id: "86400", name: "After 1 day" }
-  ];
+  const deleteOptions = $derived([
+    { id: "0", name: m.common.never() },
+    { id: "5", name: m.achievements.announcementsDelete5s() },
+    { id: "15", name: m.achievements.announcementsDelete15s() },
+    { id: "30", name: m.achievements.announcementsDelete30s() },
+    { id: "60", name: m.achievements.announcementsDelete1m() },
+    { id: "300", name: m.achievements.announcementsDelete5m() },
+    { id: "900", name: m.achievements.announcementsDelete15m() },
+    { id: "3600", name: m.achievements.announcementsDelete1h() },
+    { id: "86400", name: m.achievements.announcementsDelete1d() }
+  ]);
+  let modeChoices = $derived(ANNOUNCE_MODES.map((choice) => {
+    switch (choice.value) {
+      case 0: return { ...choice, title: m.achievements.cardDesignerAutomatic(), text: m.achievements.announcementsMode0Text() };
+      case 1: return { ...choice, title: m.achievements.announcementsMode1Title(), text: m.achievements.announcementsMode1Text() };
+      case 2: return { ...choice, title: m.achievements.announcementsMode2Title(), text: m.achievements.announcementsMode2Text() };
+      case 3: return { ...choice, title: m.achievements.announcementsMode3Title(), text: m.achievements.announcementsMode3Text() };
+      default: return { ...choice, title: m.achievements.announcementsMode4Title(), text: m.achievements.announcementsMode4Text() };
+    }
+  }));
   let needsLog = $derived(mode === AchievementAnnounceMode.LogChannel && !logChannelId);
-  let placeholders = $derived(catalog.placeholders.map((p) => ({ category: "Achievements", name: p.name, description: p.description })));
+  let placeholders = $derived(catalog.placeholders.map((p) => ({ category: m.features.achievementsName(), name: p.name, description: p.description })));
 
   /** The form state as text, for change tracking. */
   function snapshot(): string {
@@ -95,7 +105,7 @@
       baseline = snapshot();
     } catch (err: any) {
       logger.error("Failed to save announcement settings:", err);
-      onerror(err?.message || "Couldn't save the announcement settings.");
+      onerror(err?.message || m.achievements.announcementsErrorSave());
     } finally {
       saving = false;
     }
@@ -122,13 +132,13 @@
        border-color: {$colorStore.primary}30;">
     <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
       <DuoIcon icon="fa-bell" />
-      Where unlocks are announced
+      {m.achievements.announcementsWhereTitle()}
     </h2>
     <p class="text-sm mt-1 mb-5" style="color: {$colorStore.muted}">
-      Several unlocks at once share one message. Members can turn messages, mentions, and DMs off for themselves.
+      {m.achievements.announcementsWhereHint()}
     </p>
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3" role="radiogroup" aria-label="Announcement mode">
-      {#each ANNOUNCE_MODES as choice (choice.value)}
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3" role="radiogroup" aria-label={m.achievements.announcementsModeLabel()}>
+      {#each modeChoices as choice (choice.value)}
         {@const pressed = mode === choice.value}
         <button type="button" role="radio" aria-checked={pressed}
                 class="flex items-start gap-3 p-4 rounded-xl border text-left transition-all hover:scale-[1.01] min-h-[44px]"
@@ -145,15 +155,15 @@
     </div>
 
     <div class="mt-6 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
-      <span id="ach-log-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Log channel</span>
+      <span id="ach-log-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.logChannel()}</span>
       <div class="flex items-center gap-2 md:max-w-xl">
         <div class="flex-1 min-w-0">
           <DiscordSelector type="channel" options={channelOptions} selected={logChannelId}
-                           placeholder="No log channel" ariaLabelledby="ach-log-label"
+                           placeholder={m.common.noLogChannel()} ariaLabelledby="ach-log-label"
                            onchange={(d) => { logChannelId = typeof d.selected === "string" && d.selected ? d.selected : null; }} />
         </div>
         {#if logChannelId}
-          <button type="button" class="w-[44px] h-[44px] rounded-xl shrink-0" aria-label="No log channel"
+          <button type="button" class="w-[44px] h-[44px] rounded-xl shrink-0" aria-label={m.common.noLogChannel()}
                   style="background: {$colorStore.primary}08; color: {$colorStore.muted};"
                   onclick={() => { logChannelId = null; }}>
             <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -161,57 +171,55 @@
         {/if}
       </div>
       {#if logChannelProblem}
-        <p class="text-xs mt-2" style="color: #ef4444">The bot can't post or embed links there.</p>
+        <p class="text-xs mt-2" style="color: #ef4444">{m.achievements.announcementsLogProblem()}</p>
       {:else if needsLog}
-        <p class="text-xs mt-2" style="color: {$colorStore.accent}">Pick a channel, or nothing gets announced.</p>
+        <p class="text-xs mt-2" style="color: {$colorStore.accent}">{m.achievements.announcementsLogNeeded()}</p>
       {:else}
-        <p class="text-xs mt-2" style="color: {$colorStore.muted}">Where unlocks go when the announce mode uses a log channel.</p>
+        <p class="text-xs mt-2" style="color: {$colorStore.muted}">{m.achievements.announcementsLogHint()}</p>
       {/if}
     </div>
 
     <div class="mt-6 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
-      <span id="ach-quiet-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Keep unlocks out of some channels</span>
+      <span id="ach-quiet-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.achievements.announcementsQuietLabel()}</span>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 items-start">
         <div>
           <DiscordSelector type="channel" multiple={true} options={quietOptions} selected={quietChannels}
-                           placeholder="No quiet channels" ariaLabelledby="ach-quiet-label"
+                           placeholder={m.achievements.announcementsQuietPlaceholder()} ariaLabelledby="ach-quiet-label"
                            onchange={(d) => { quietChannels = Array.isArray(d.selected) ? d.selected : []; }} />
           <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-            Members still earn achievements in these channels. The unlock is posted in the log channel instead, or not at all
-            when there isn't one.
+            {m.achievements.announcementsQuietHint()}
           </p>
         </div>
-        <ToggleRow checked={requireSendPermission} title="Only post where the member can talk"
-                   subtitle="Skips channels the member can't send messages in, such as a read only channel they reacted in. The log channel is never skipped."
+        <ToggleRow checked={requireSendPermission} title={m.achievements.announcementsRequireSendTitle()}
+                   subtitle={m.achievements.announcementsRequireSendSubtitle()}
                    colors={$colorStore} onchange={(v) => { requireSendPermission = v; }} />
       </div>
     </div>
 
     <div class="mt-6 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
-      <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Delivery</span>
+      <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.achievements.announcementsDelivery()}</span>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <ToggleRow checked={dmByDefault} title="DM members by default" class="h-full"
-                   subtitle="Members who haven't chosen get their unlocks in DMs too."
+        <ToggleRow checked={dmByDefault} title={m.achievements.announcementsDmTitle()} class="h-full"
+                   subtitle={m.achievements.announcementsDmSubtitle()}
                    colors={$colorStore} onchange={(v) => { dmByDefault = v; }} />
-        <ToggleRow checked={mentionUsers} title="Mention members" class="h-full"
-                   subtitle="Ping members in unlock messages unless they turn it off."
+        <ToggleRow checked={mentionUsers} title={m.achievements.announcementsMentionTitle()} class="h-full"
+                   subtitle={m.achievements.announcementsMentionSubtitle()}
                    colors={$colorStore} onchange={(v) => { mentionUsers = v; }} />
-        <ToggleRow checked={unlockImage} title="Attach the achievement card" class="h-full"
-                   subtitle="Design it in the Cards tab. Custom messages place it with %achievement.image%."
+        <ToggleRow checked={unlockImage} title={m.achievements.announcementsImageTitle()} class="h-full"
+                   subtitle={m.achievements.announcementsImageSubtitle()}
                    colors={$colorStore} onchange={(v) => { unlockImage = v; }} />
       </div>
     </div>
 
     <div class="mt-6 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
-      <span id="ach-delete-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Delete unlock messages</span>
+      <span id="ach-delete-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.achievements.announcementsDeleteLabel()}</span>
       <div class="md:max-w-xs">
         <DiscordSelector type="custom" options={deleteOptions} selected={deleteAfter.toString()} searchable={false}
                          ariaLabelledby="ach-delete-label" customIcon="fa-clock"
                          onchange={(d) => { deleteAfter = typeof d.selected === "string" ? Number(d.selected) : 0; }} />
       </div>
       <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-        Removes announcements from channels after a while to keep busy channels clean. 5 seconds unless you change it. DMs are
-        never deleted.
+        {m.achievements.announcementsDeleteHint()}
       </p>
     </div>
   </div>
@@ -221,16 +229,15 @@
        border-color: {$colorStore.primary}30;">
     <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
       <DuoIcon icon="fa-envelope-open" />
-      Unlock message
+      {m.achievements.announcementsMessageTitle()}
     </h2>
     <p class="text-sm mt-1 mb-5" style="color: {$colorStore.muted}">
-      Leave it empty for the default embed in the grade's color. When several unlock at once, the placeholders use the best one and
-      %achievement.list% lists them all.
+      {m.achievements.announcementsMessageHint()}
     </p>
     <FullscreenEmbedBuilder id="achievement-unlock-message"
                             bind:value={message}
-                            previewTitle="Unlock message"
-                            previewDescription="Sent when a member unlocks achievements"
+                            previewTitle={m.achievements.announcementsMessageTitle()}
+                            previewDescription={m.achievements.announcementsMessagePreviewDescription()}
                             icon="fa-crown"
                             allowContent={true}
                             allowMultipleEmbeds={true}
@@ -239,7 +246,7 @@
                             additionalPlaceholders={placeholders}
                             guildId={$currentGuild?.id ?? null}
                             user={user ?? null}
-                            placeholder="Click to write a custom unlock message, or leave it for the default" />
+                            placeholder={m.achievements.announcementsMessagePlaceholder()} />
     <div class="flex flex-wrap gap-2 mt-4">
       {#each catalog.placeholders as p (p.name)}
         <code class="text-xs px-2 py-1 rounded-md" style="background: {$colorStore.primary}10; color: {$colorStore.primary}" title={p.description}>{p.name}</code>
@@ -251,14 +258,14 @@
     <div class="sticky bottom-4 z-40 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 rounded-2xl border shadow-2xl"
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20), #1a202c; border-color: {$colorStore.primary}40;"
          in:fade={{ duration: 150 }}>
-      <span class="flex-1 text-sm" style="color: {$colorStore.text}">You have unsaved changes.</span>
+      <span class="flex-1 text-sm" style="color: {$colorStore.text}">{m.achievements.settingsUnsaved()}</span>
       <button type="button" class="px-4 py-2.5 rounded-xl min-h-[44px]"
               style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
-              onclick={discard}>Discard</button>
+              onclick={discard}>{m.common.discard()}</button>
       <button type="button" class="px-5 py-2.5 rounded-xl min-h-[44px] font-semibold disabled:opacity-50"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               disabled={saving || logChannelProblem} onclick={save}>
-        {#if saving}<i class="fa-solid fa-spinner fa-spin mr-2" aria-hidden="true"></i>{/if}Save
+        {#if saving}<i class="fa-solid fa-spinner fa-spin mr-2" aria-hidden="true"></i>{/if}{m.common.save()}
       </button>
     </div>
   {/if}

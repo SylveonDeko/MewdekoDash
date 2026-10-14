@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import {onMount} from "svelte";
   import { logger } from "$lib/logger";
   import { instanceManagementApi, clientApi, type BotInstance } from "$lib/api/index.ts";
@@ -79,7 +80,7 @@
         instanceStates[instanceId] = {
           loading: false,
           hasMutualGuild: false,
-          error: "Failed to check mutual guilds",
+          error: m.layout.instanceErrorMutualGuilds(),
           checked: true
         };
       }
@@ -128,7 +129,7 @@
       checkingInstances = false;
     } catch (err) {
       logger.error("Error loading bot instances:", err);
-      error = "Failed to load bot instances. Please try again later.";
+      error = m.common.failedToLoadBotInstances();
       checkingInstances = false;
     } finally {
       loading = false;
@@ -185,9 +186,8 @@
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
-      <h1 class="text-3xl font-bold mb-2" id="instance-selector-title" style="color: {$colorStore.text}">Select Bot
-        Instance</h1>
-      <p style="color: {$colorStore.muted}">Choose a bot instance from servers you're in</p>
+      <h1 class="text-3xl font-bold mb-2" id="instance-selector-title" style="color: {$colorStore.text}">{m.layout.instanceTitle()}</h1>
+      <p style="color: {$colorStore.muted}">{m.layout.instanceSubtitle()}</p>
     </div>
 
   {#if showLoading}
@@ -205,9 +205,9 @@
       ></div>
       <p style="color: {$colorStore.text}">
         {#if loading}
-          Loading bot instances...
+          {m.layout.instanceLoading()}
         {:else if checkingInstances || stillChecking}
-          Checking which servers you share with each bot...
+          {m.layout.instanceChecking()}
         {/if}
       </p>
     </div>
@@ -228,8 +228,8 @@
              border-color: {$colorStore.primary}30;"
       role="status"
     >
-      <p class="text-xl" style="color: {$colorStore.text}">No bot instances available</p>
-      <p class="mt-2" style="color: {$colorStore.muted}">Please contact an administrator</p>
+      <p class="text-xl" style="color: {$colorStore.text}">{m.common.noBotInstancesAvailable()}</p>
+      <p class="mt-2" style="color: {$colorStore.muted}">{m.layout.instanceContactAdmin()}</p>
     </div>
   {:else if visibleInstances.length === 0}
     <div
@@ -238,8 +238,8 @@
              border-color: {$colorStore.primary}30;"
       role="status"
     >
-      <p class="text-xl" style="color: {$colorStore.text}">No bot instances found in your servers</p>
-      <p class="mt-2" style="color: {$colorStore.muted}">Join a server with one of our bots to manage it</p>
+      <p class="text-xl" style="color: {$colorStore.text}">{m.layout.instanceNoneInServers()}</p>
+      <p class="mt-2" style="color: {$colorStore.muted}">{m.layout.instanceJoinServerHint()}</p>
     </div>
   {:else}
     <div
@@ -258,16 +258,16 @@
                  border-color: {$colorStore.primary}30;
                  focus:ring-color: {$colorStore.primary};
                  focus:ring-offset-color: {$colorStore.gradientStart};"
-          aria-label="Select {instance.botName} bot instance - {!instance.isActive ? 'Offline' : 'Available'}"
+          aria-label={m.layout.instanceSelectAria({ bot: instance.botName, status: !instance.isActive ? m.common.offline() : m.layout.instanceAvailable() })}
         >
           <img
             src={instance.botAvatar}
-            alt="{instance.botName} avatar"
+            alt={m.layout.instanceAvatarAlt({ bot: instance.botName })}
             class="w-16 h-16 rounded-full mr-6"
           >
             <div class="text-left grow">
             <h2 class="text-xl font-semibold" style="color: {$colorStore.text}">{instance.botName}</h2>
-            <p style="color: {$colorStore.muted}">Port: {instance.port}</p>
+            <p style="color: {$colorStore.muted}">{m.layout.instancePort({ port: instance.port })}</p>
             {#if state?.error}
               <p class="text-sm mt-1" style="color: {$colorStore.accent}">{state.error}</p>
             {/if}
@@ -278,22 +278,22 @@
               style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"
               aria-hidden="true"
             ></div>
-            <span class="sr-only">Loading...</span>
+            <span class="sr-only">{m.common.loading()}</span>
           {:else if !instance.isActive}
             <span
               class="ml-auto px-3 py-1 rounded-full text-sm"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-              aria-label="Status: Offline"
+              aria-label={m.layout.instanceStatusAria({ status: m.common.offline() })}
             >
-              Offline
+              {m.common.offline()}
             </span>
           {:else}
             <span
               class="ml-auto px-3 py-1 rounded-full text-sm"
               style="background: #22c55e20; color: #22c55e;"
-              aria-label="Status: Available"
+              aria-label={m.layout.instanceStatusAria({ status: m.layout.instanceAvailable() })}
             >
-              Available
+              {m.layout.instanceAvailable()}
             </span>
           {/if}
         </button>

@@ -1,5 +1,7 @@
 <!-- lib/components/search/SearchModal.svelte -->
 <script lang="ts">
+  import { categoryLabel as featureCategoryLabel } from "$lib/config/navigationItems";
+  import { m } from "$lib/i18n";
 
   import {onDestroy, onMount} from "svelte";
   import { safeLocalStorage } from "$lib/safeStorage";
@@ -26,6 +28,32 @@
   let selectedIndex = $state(0);
   let categories = ['All', 'Navigation', 'Community', 'Entertainment', 'Actions', 'Security', 'Settings', 'Analytics'];
   let activeCategory = $state('All');
+
+  /**
+   * Categories are English keys the filter and the registered items match on. Only what is
+   * shown is translated, here.
+   */
+  function categoryLabel(key: string): string {
+    switch (key) {
+      case 'All': return m.common.all();
+      case 'Navigation': return m.common.navigation();
+      default: return featureCategoryLabel(key);
+    }
+  }
+
+  /** The chip beside a result names the dashboard tab it lives under; translate the known slugs. */
+  function tabLabel(slug: string): string {
+    switch (slug) {
+      case 'overview': return m.common.overview();
+      case 'community': return m.features.categoryCommunity();
+      case 'entertainment': return m.features.categoryEntertainment();
+      case 'actions': return m.features.categoryActions();
+      case 'security': return m.features.categorySecurity();
+      case 'settings': return m.features.categorySettings();
+      case 'analytics': return m.features.analyticsName();
+      default: return slug;
+    }
+  }
   let recentSearches: string[] = $state([]);
 
 
@@ -201,7 +229,7 @@
       onkeydown={(e) => e.key === 'Escape' && handleClickOutside()}
       role="dialog"
       aria-modal="true"
-      aria-label="Search dashboard features"
+      aria-label={m.layout.searchDialogAria()}
       tabindex="-1"
     >
       <div
@@ -233,14 +261,14 @@
             bind:this={searchInput}
             bind:value={query}
             type="text"
-            placeholder="Search..."
+            placeholder={m.common.searchPlaceholder()}
             class="flex-1 bg-transparent text-base md:text-xl outline-hidden"
             style="color: {$colorStore.text}; font-weight: 300;"
           >
         </div>
 
         <!-- Close Button -->
-        <button aria-label="Button action"
+        <button aria-label={m.layout.searchCloseAria()}
           class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all"
           style="color: {$colorStore.muted}; hover:background: {$colorStore.primary}10;"
           onclick={closeSearch}
@@ -262,7 +290,7 @@
                    border: 1px solid {activeCategory === category ? $colorStore.primary + '40' : $colorStore.primary + '15'};"
             onclick={() => { activeCategory = category; selectedIndex = 0; }}
           >
-            {category}
+            {categoryLabel(category)}
           </button>
         {/each}
       </div>
@@ -274,9 +302,9 @@
           <div class="p-6 md:p-12 text-center">
             <i class="fa-utility-duo fa-regular fa-magnifying-glass text-4xl md:text-6xl mx-auto mb-4 md:mb-6 block"
                style="--fa-primary-color: {$colorStore.primary}40; --fa-secondary-color: {$colorStore.primary}40;"></i>
-            <h3 class="text-lg md:text-xl font-light mb-2 md:mb-3" style="color: {$colorStore.text};">No results found</h3>
+            <h3 class="text-lg md:text-xl font-light mb-2 md:mb-3" style="color: {$colorStore.text};">{m.common.noResultsFound()}</h3>
             <p class="text-xs md:text-sm" style="color: {$colorStore.muted};">
-              Try adjusting your search or browse by category
+              {m.layout.searchNoResultsHint()}
             </p>
           </div>
         {:else if results.length === 0 && !query.trim()}
@@ -285,12 +313,12 @@
             <div class="flex items-center gap-3 mb-4">
               <i class="fa-utility-duo fa-regular fa-star"
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-              <span class="text-base font-light" style="color: {$colorStore.text};">Quick Access</span>
+              <span class="text-base font-light" style="color: {$colorStore.text};">{m.layout.searchQuickAccess()}</span>
             </div>
             
             {#if recentSearches.length > 0}
               <div class="space-y-2 mb-6">
-                <p class="text-xs font-medium mb-3" style="color: {$colorStore.muted};">Recent Searches</p>
+                <p class="text-xs font-medium mb-3" style="color: {$colorStore.muted};">{m.layout.searchRecent()}</p>
                 {#each recentSearches.slice(0, 3) as recentSearch}
                   <button 
                     class="block w-full text-left px-4 py-3 rounded-xl text-sm transition-all"
@@ -305,7 +333,7 @@
 
             <!-- Popular Features -->
             <div class="space-y-2 pb-6">
-              <p class="text-xs font-medium mb-3" style="color: {$colorStore.muted};">Popular Features</p>
+              <p class="text-xs font-medium mb-3" style="color: {$colorStore.muted};">{m.layout.searchPopular()}</p>
               {#each getSearchableFeatures(isOwner).filter(f => ['feature-music', 'feature-xp', 'feature-moderation', 'feature-chat-triggers'].includes(f.id)) as feature}
                 <button
                   class="search-result-item popular-feature flex items-center gap-4 w-full p-4 rounded-xl transition-all duration-200 ease-in-out border border-transparent relative group"
@@ -359,12 +387,12 @@
                   <div class="flex items-center gap-1 md:gap-2 mt-1 md:mt-2">
                     <div class="text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full"
                          style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};">
-                      {result.category}
+                      {categoryLabel(result.category)}
                     </div>
                     {#if result.tab}
                       <div class="text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full hidden md:block"
                            style="background: {$colorStore.accent}10; color: {$colorStore.accent};">
-                        {result.tab}
+                        {tabLabel(result.tab)}
                       </div>
                     {/if}
                   </div>
@@ -394,23 +422,23 @@
               <i class="fa-utility-duo fa-regular fa-arrow-down text-xs"
                  style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
             </div>
-            <span>Navigate</span>
+            <span>{m.layout.searchHintNavigate()}</span>
           </div>
           <div class="hidden md:flex items-center gap-2">
             <i class="fa-utility-duo fa-regular fa-keyboard text-xs"
                style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
-            <span>Select</span>
+            <span>{m.layout.searchHintSelect()}</span>
           </div>
           <div class="hidden md:flex items-center gap-2">
             <span class="px-2 py-1 rounded-md border font-mono text-xs"
                   style="border-color: {$colorStore.primary}30; color: {$colorStore.text};">Tab</span>
-            <span>Categories</span>
+            <span>{m.common.categories()}</span>
           </div>
         </div>
         <div class="flex items-center gap-2">
           <span class="px-1.5 md:px-2 py-0.5 md:py-1 rounded-md border font-mono text-xs"
                 style="border-color: {$colorStore.primary}30; color: {$colorStore.text};">Esc</span>
-          <span>Close</span>
+          <span>{m.common.close()}</span>
         </div>
       </div>
       </div>

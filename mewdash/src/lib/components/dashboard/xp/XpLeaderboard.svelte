@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import { fade } from "svelte/transition";
 
@@ -36,11 +37,11 @@
   let adjustSaving = $state(false);
   let adjustError = $state("");
 
-  const adjustModeOptions = [
-    { id: "add", name: "Add XP" },
-    { id: "set", name: "Set total XP" },
-    { id: "reset", name: "Reset XP" }
-  ];
+  const adjustModeOptions = $derived([
+    { id: "add", name: m.xp.leaderboardAddXp() },
+    { id: "set", name: m.xp.leaderboardSetTotalXp() },
+    { id: "reset", name: m.xp.leaderboardResetXp() }
+  ]);
 
   function formatNumber(num: number): string {
     return new Intl.NumberFormat().format(num);
@@ -68,11 +69,11 @@
     if (!adjustTarget || !onAdjust) return;
     adjustError = "";
     if (adjustMode !== "reset" && (!Number.isFinite(adjustAmount) || adjustAmount < 0)) {
-      adjustError = "Enter a non-negative amount of XP.";
+      adjustError = m.xp.leaderboardErrorNegative();
       return;
     }
     if (adjustMode === "add" && adjustAmount === 0) {
-      adjustError = "Amount must be greater than zero.";
+      adjustError = m.xp.leaderboardErrorZero();
       return;
     }
     adjustSaving = true;
@@ -82,7 +83,7 @@
       else await onAdjust({ mode: adjustMode, userId, amount: Math.floor(adjustAmount) });
       closeAdjust();
     } catch (err) {
-      adjustError = err instanceof Error ? err.message : "Failed to update XP.";
+      adjustError = err instanceof Error ? err.message : m.xp.leaderboardErrorUpdate();
     } finally {
       adjustSaving = false;
     }
@@ -99,7 +100,7 @@
        class="fa-utility-duo fa-regular fa-star"
        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
   </div>
-  <h2 class="text-xl font-bold" style="color: {$colorStore.text}">XP Leaderboard</h2>
+  <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.xpLeaderboard()}</h2>
 </div>
 
 {#if loading}
@@ -108,7 +109,7 @@
       class="w-12 h-12 border-4 rounded-full animate-spin"
       style="border-color: {$colorStore.primary}20;
              border-top-color: {$colorStore.primary};"
-      aria-label="Loading"
+      aria-label={m.common.loading()}
     >
     </div>
   </div>
@@ -132,7 +133,7 @@
       <i class="fa-utility-duo fa-regular fa-users"
          style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"
          aria-hidden="true"></i>
-      <p style="color: {$colorStore.muted}">No XP data available</p>
+      <p style="color: {$colorStore.muted}">{m.xp.leaderboardEmpty()}</p>
     </div>
   {:else}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -148,7 +149,7 @@
                     class="w-12 h-12 flex items-center justify-center rounded-full text-lg font-bold shrink-0"
               style="background: {i === 0 ? '#FFD700' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : $colorStore.primary}20;
                      color: {i === 0 ? '#FFD700' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : $colorStore.primary};"
-              aria-label={`Rank ${user.rank}`}
+              aria-label={m.xp.leaderboardRankAria({ rank: user.rank })}
             >
               #{user.rank}
             </div>
@@ -161,9 +162,9 @@
             <div class="grow min-w-0">
               <p class="font-medium truncate" style="color: {$colorStore.text}">{user.username}</p>
               <div class="flex flex-col sm:flex-row sm:items-center text-sm gap-1" style="color: {$colorStore.muted}">
-                <span class="font-medium" style="color: {$colorStore.secondary}">Level {user.level}</span>
+                <span class="font-medium" style="color: {$colorStore.secondary}">{m.common.levelNumber({ level: user.level })}</span>
                 <span class="hidden sm:inline">•</span>
-                <span>{formatNumber(user.totalXp)} XP</span>
+                <span>{m.common.xpXp({ xp: formatNumber(user.totalXp) })}</span>
               </div>
             </div>
             {#if onAdjust}
@@ -171,8 +172,8 @@
                 class="p-2 rounded-lg transition-all hover:scale-[1.05] shrink-0 min-h-[40px] min-w-[40px]"
                 style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                 onclick={() => openAdjust(user)}
-                aria-label={`Adjust XP for ${user.username}`}
-                title="Adjust XP"
+                aria-label={m.xp.leaderboardAdjustFor({ name: user.username })}
+                title={m.xp.leaderboardAdjustTitle()}
               >
                 <i class="fa-solid fa-sliders" style="font-size: 14px;"></i>
               </button>
@@ -191,9 +192,9 @@
                opacity: {leaderboardPage <= 1 ? '0.5' : '1'};"
         onclick={() => goToPage(leaderboardPage - 1)}
         disabled={leaderboardPage <= 1}
-        aria-label="Previous page"
+        aria-label={m.common.previousPage()}
       >
-        Previous
+        {m.common.previous()}
       </button>
       <div
         class="px-4 py-2 rounded-lg min-h-[44px] flex items-center"
@@ -201,16 +202,16 @@
                color: {$colorStore.text};"
         aria-current="page"
       >
-        Page {leaderboardPage}
+        {m.common.pageNumber({ page: leaderboardPage })}
       </div>
       <button
         class="px-4 py-2 rounded-lg transition-all duration-200 min-h-[44px]"
         style="background: {$colorStore.primary}20;
                color: {$colorStore.text};"
         onclick={() => goToPage(leaderboardPage + 1)}
-        aria-label="Next page"
+        aria-label={m.common.nextPage()}
       >
-        Next
+        {m.common.next()}
       </button>
     </div>
   {/if}
@@ -235,14 +236,14 @@
         <div class="flex items-center gap-3 mb-4">
           <img src={adjustTarget.avatarUrl} alt="" class="w-10 h-10 rounded-full border-2" style="border-color: {$colorStore.primary}30;">
           <div class="min-w-0">
-            <h3 id="xp-adjust-title" class="text-lg font-bold truncate" style="color: {$colorStore.text}">Adjust XP</h3>
-            <p class="text-xs truncate" style="color: {$colorStore.muted}">{adjustTarget.username} · Level {adjustTarget.level} · {formatNumber(adjustTarget.totalXp)} XP</p>
+            <h3 id="xp-adjust-title" class="text-lg font-bold truncate" style="color: {$colorStore.text}">{m.xp.leaderboardAdjustTitle()}</h3>
+            <p class="text-xs truncate" style="color: {$colorStore.muted}">{m.xp.leaderboardAdjustSummary({ name: adjustTarget.username, level: adjustTarget.level, xp: formatNumber(adjustTarget.totalXp) })}</p>
           </div>
         </div>
 
         <form class="space-y-4" onsubmit={(e) => { e.preventDefault(); submitAdjust(); }}>
           <div>
-            <span id="xp-adjust-mode" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</span>
+            <span id="xp-adjust-mode" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.action()}</span>
             <DiscordSelector type="custom" options={adjustModeOptions} selected={adjustMode} searchable={false}
                              ariaLabelledby="xp-adjust-mode"
                              onchange={(e) => { if (typeof e.selected === "string") adjustMode = e.selected as typeof adjustMode; }} />
@@ -252,13 +253,13 @@
             <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer min-h-[44px]"
                    style="background: {$colorStore.primary}08; color: {$colorStore.text};">
               <input type="checkbox" bind:checked={adjustResetBonus} class="w-4 h-4 rounded" style="accent-color: {$colorStore.primary};">
-              <span class="text-sm">Also reset bonus XP</span>
+              <span class="text-sm">{m.xp.leaderboardResetBonus()}</span>
             </label>
-            <p class="text-xs" style="color: {$colorStore.muted}">This sets the member's server XP back to zero. It cannot be undone.</p>
+            <p class="text-xs" style="color: {$colorStore.muted}">{m.xp.leaderboardResetWarning()}</p>
           {:else}
             <div>
               <label for="xp-adjust-amount" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                {adjustMode === "add" ? "XP to add" : "New total XP"}
+                {adjustMode === "add" ? m.xp.leaderboardXpToAdd() : m.xp.leaderboardNewTotalXp()}
               </label>
               <input id="xp-adjust-amount" type="number" min="0" step="1" bind:value={adjustAmount}
                      class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
@@ -278,13 +279,13 @@
             <button type="button" onclick={closeAdjust}
                     class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};">
-              Cancel
+              {m.common.cancel()}
             </button>
             <button type="submit" disabled={adjustSaving}
                     class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
                     style="background: {adjustMode === 'reset' ? '#ef444420' : $colorStore.primary + '20'}; color: {adjustMode === 'reset' ? '#ef4444' : $colorStore.primary}; border: 1px solid {adjustMode === 'reset' ? '#ef444430' : $colorStore.primary + '30'};">
               {#if adjustSaving}<i class="fa-solid fa-spinner fa-spin mr-2"></i>{/if}
-              {adjustMode === "reset" ? "Reset XP" : "Apply"}
+              {adjustMode === "reset" ? m.xp.leaderboardResetXp() : m.common.apply()}
             </button>
           </div>
         </form>

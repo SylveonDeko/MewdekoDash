@@ -61,7 +61,7 @@ const sectionsByHref: Record<string, string[]> = {
 };
 
 export interface DashboardAccessSectionGroup {
-  label: string;
+  label: () => string;
   icon: string;
   category: string;
   /** Bot API controller name(s) this dashboard feature depends on. */

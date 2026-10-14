@@ -4,6 +4,7 @@
 
   import { onMount } from "svelte";
   import { logger } from "$lib/logger";
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -106,10 +107,10 @@
   }
 
   function getPermissionSummary(permission: TodoListPermission): string {
-    if (permission.canManageList) return "Manager";
-    if (permission.canEdit) return "Editor";
-    if (permission.canAdd) return "Contributor";
-    return "Viewer";
+    if (permission.canManageList) return m.todo.permissionsLevelManager();
+    if (permission.canEdit) return m.common.editor();
+    if (permission.canAdd) return m.todo.permissionsLevelContributor();
+    return m.todo.permissionsLevelViewer();
   }
 
   function getPermissionIcon(permission: TodoListPermission) {
@@ -153,11 +154,11 @@
             <i class="fa-solid fa-shield" style="color: {$colorStore.primary}; font-size: 20px;"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">
-            Manage Permissions
+            {m.todo.permissionsManageTitle()}
           </h2>
         </div>
 
-        <button aria-label="Button action"
+        <button aria-label={m.common.close()}
           class="p-2 rounded-lg transition-all hover:scale-110"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
           onclick={closeModal}
@@ -185,14 +186,14 @@
           <!-- Add User Section -->
           <div class="mb-6">
             <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Current Permissions</h3>
+              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.todo.permissionsCurrent()}</h3>
               <button
                 class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02]"
                 style="background: {$colorStore.primary}; color: white;"
                 onclick={() => showAddUser = !showAddUser}
               >
                 <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                <span>Add User</span>
+                <span>{m.todo.permissionsAddUser()}</span>
               </button>
             </div>
 
@@ -202,7 +203,7 @@
                 <!-- User Search -->
                 <div class="mb-4">
                   <label for="user-search" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                    Select User
+                    {m.common.selectUserTitle()}
                   </label>
                   
                   <div class="relative">
@@ -210,7 +211,7 @@
                        style="color: {$colorStore.muted}; font-size: 16px;"></i>
                     <input
                       type="text"
-                      placeholder="Search members..."
+                      placeholder={m.todo.permissionsSearchMembers()}
                       class="w-full pl-10 pr-4 py-2 rounded-lg border"
                       style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       bind:value={searchQuery}
@@ -244,7 +245,7 @@
                 <div class="mb-4">
                   <label for="permission-level" class="block text-sm font-medium mb-2"
                          style="color: {$colorStore.text}">
-                    Permission Level
+                    {m.todo.permissionsLevel()}
                   </label>
                   
                   <div class="space-y-2">
@@ -257,9 +258,9 @@
                       >
                       <span class="flex items-center gap-2">
                         <i class="fa-solid fa-eye" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                        <span style="color: {$colorStore.text}">Can View</span>
+                        <span style="color: {$colorStore.text}">{m.todo.permissionsCanView()}</span>
                       </span>
-                      <span class="text-sm ml-auto" style="color: {$colorStore.muted}">See list and items</span>
+                      <span class="text-sm ml-auto" style="color: {$colorStore.muted}">{m.todo.permissionsCanViewHint()}</span>
                     </label>
 
                     <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors"
@@ -271,9 +272,9 @@
                       >
                       <span class="flex items-center gap-2">
                         <i class="fa-solid fa-pen" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
-                        <span style="color: {$colorStore.text}">Can Edit</span>
+                        <span style="color: {$colorStore.text}">{m.todo.permissionsCanEdit()}</span>
                       </span>
-                      <span class="text-sm ml-auto" style="color: {$colorStore.muted}">Add, edit, complete items</span>
+                      <span class="text-sm ml-auto" style="color: {$colorStore.muted}">{m.todo.permissionsCanEditHint()}</span>
                     </label>
 
                     <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors"
@@ -285,9 +286,9 @@
                       >
                       <span class="flex items-center gap-2">
                         <i class="fa-solid fa-shield" style="color: {$colorStore.accent}; font-size: 16px;"></i>
-                        <span style="color: {$colorStore.text}">Can Manage</span>
+                        <span style="color: {$colorStore.text}">{m.todo.permissionsCanManage()}</span>
                       </span>
-                      <span class="text-sm ml-auto" style="color: {$colorStore.muted}">Change settings, permissions</span>
+                      <span class="text-sm ml-auto" style="color: {$colorStore.muted}">{m.todo.permissionsCanManageHint()}</span>
                     </label>
                   </div>
                 </div>
@@ -300,7 +301,7 @@
                     onclick={grantPermissions}
                     disabled={!selectedUserId || !newPermissions.canView}
                   >
-                    Grant Permissions
+                    {m.todo.permissionsGrant()}
                   </button>
                   
                   <button
@@ -308,7 +309,7 @@
                     style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
                     onclick={() => showAddUser = false}
                   >
-                    Cancel
+                    {m.common.cancel()}
                   </button>
                 </div>
               </div>
@@ -321,14 +322,14 @@
               <div class="text-center py-8">
                 <i class="fa-solid fa-users"
                    style="color: {$colorStore.primary}50; font-size: 48px; display: block; margin: 0 auto 16px;"></i>
-                <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Permissions Set</h3>
+                <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.todo.permissionsEmptyTitle()}</h3>
                 <p class="text-sm" style="color: {$colorStore.muted}">
-                  Add users to collaborate on this todo list.
+                  {m.todo.permissionsEmptyHint()}
                 </p>
               </div>
             {:else}
               {#each permissions as permission, index}
-                {@const member = guildMembers.find(m => m.id === permission.userId.toString())}
+                {@const member = guildMembers.find(gm => gm.id === permission.userId.toString())}
                 <div class="flex items-center justify-between p-4 rounded-xl transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.primary}08;"
                      in:fly={{ y: 20, duration: 200, delay: index * 50 }}>
@@ -343,7 +344,7 @@
                     <!-- User Info -->
                     <div>
                       <div class="font-medium" style="color: {$colorStore.text}">
-                        {member?.displayName || "Unknown User"}
+                        {member?.displayName || m.common.unknownUser()}
                       </div>
                       <div class="text-sm" style="color: {$colorStore.muted}">
                         @{member?.username || permission.userId}
@@ -360,11 +361,11 @@
                     </div>
 
                     <!-- Revoke Button -->
-                    <button aria-label="Remove permission"
+                    <button aria-label={m.todo.permissionsRevokeAria()}
                       class="p-2 rounded-lg transition-all hover:scale-110"
                       style="color: #ef4444; background: #ef444415;"
                       onclick={() => revokePermissions(permission.userId)}
-                      title="Revoke permissions"
+                      title={m.todo.permissionsRevoke()}
                     >
                       <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
                     </button>
@@ -383,7 +384,7 @@
           style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
           onclick={closeModal}
         >
-          Close
+          {m.common.close()}
         </button>
       </div>
     </div>

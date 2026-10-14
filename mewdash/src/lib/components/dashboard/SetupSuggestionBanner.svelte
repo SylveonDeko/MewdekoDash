@@ -4,6 +4,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
 -->
 <script lang="ts">
   import { colorStore } from "$lib/stores/colorStore";
+  import { m } from "$lib/i18n";
   import { slide } from "svelte/transition";
   import type { DiscordGuild } from "$lib/types/discordGuild";
 
@@ -31,7 +32,9 @@ Setup suggestion banner for experienced users with unconfigured guilds
   }
 
   // Estimated setup time based on experience level
-  let estimatedTime = $derived(context.experienceLevel >= 2 ? "2-3 min" : "5 min");
+  let estimatedTime = $derived(
+    context.experienceLevel >= 2 ? m.dashboard.setupBannerTimeShort() : m.dashboard.setupBannerTimeLong()
+  );
 </script>
 
 {#if visible}
@@ -64,26 +67,25 @@ Setup suggestion banner for experienced users with unconfigured guilds
       <!-- Content -->
       <div class="flex-1 min-w-0">
         <h3 class="font-semibold mb-1" style="color: {$colorStore.text};">
-          Quick Setup Available
+          {m.dashboard.setupBannerTitle()}
         </h3>
         <p class="text-sm mb-3" style="color: {$colorStore.muted};">
-          {guild.name} doesn't have any features configured yet. 
-          Want to set up essential features quickly?
+          {m.dashboard.setupBannerBody({ guild: guild.name })}
         </p>
 
         <!-- Benefits -->
         <div class="flex flex-wrap gap-4 text-xs mb-4" style="color: {$colorStore.text};">
           <div class="flex items-center gap-1">
             <i class="fa-solid fa-clock" style="color: {$colorStore.secondary}; font-size: 12px;"></i>
-            <span>~{estimatedTime} setup</span>
+            <span>{m.dashboard.setupBannerBenefitTime({ time: estimatedTime })}</span>
           </div>
           <div class="flex items-center gap-1">
             <i class="fa-solid fa-lightbulb" style="color: {$colorStore.secondary}; font-size: 12px;"></i>
-            <span>Smart defaults</span>
+            <span>{m.dashboard.setupBannerBenefitDefaults()}</span>
           </div>
           <div class="flex items-center gap-1">
             <i class="fa-solid fa-arrow-right" style="color: {$colorStore.secondary}; font-size: 12px;"></i>
-            <span>Skip anytime</span>
+            <span>{m.dashboard.setupBannerBenefitSkip()}</span>
           </div>
         </div>
 
@@ -94,7 +96,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
             style="background: {$colorStore.secondary}; color: white;"
             onclick={handleStartSetup}
           >
-            Quick Setup
+            {m.common.quickSetup()}
             <i class="fa-solid fa-arrow-right" style="font-size: 12px;"></i>
           </button>
           
@@ -103,13 +105,13 @@ Setup suggestion banner for experienced users with unconfigured guilds
             style="background: {$colorStore.muted}15; color: {$colorStore.muted};"
             onclick={handleDismiss}
           >
-            Maybe Later
+            {m.dashboard.setupBannerLater()}
           </button>
         </div>
       </div>
 
       <!-- Dismiss button -->
-      <button aria-label="Button action"
+      <button aria-label={m.common.dismiss()}
               class="flex items-center justify-center w-8 h-8 rounded-lg transition-all hover:scale-110 shrink-0"
         style="
           background: {$colorStore.muted}15;

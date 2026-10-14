@@ -1,5 +1,6 @@
 <!-- routes/dashboard/tickets/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { clientApi, ticketApi } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -26,14 +27,14 @@
   // Layout state
   let activeTab = $state("overview");
 
-  const tabs = [
-    { id: "overview", label: "Overview", icon: "fa-chart-line" },
-    { id: "tickets", label: "Tickets", icon: "fa-ticket" },
-    { id: "panels", label: "Ticket Panels", icon: "fa-table-cells" },
-    { id: "configuration", label: "Configuration", icon: "fa-sliders" },
-    { id: "cases", label: "Cases", icon: "fa-folder-open" },
-    { id: "advanced", label: "Advanced", icon: "fa-screwdriver-wrench" }
-  ];
+  const tabs = $derived([
+    { id: "overview", label: m.common.overview(), icon: "fa-chart-line" },
+    { id: "tickets", label: m.features.ticketsName(), icon: "fa-ticket" },
+    { id: "panels", label: m.tickets.tabPanels(), icon: "fa-table-cells" },
+    { id: "configuration", label: m.common.configuration(), icon: "fa-sliders" },
+    { id: "cases", label: m.tickets.tabCases(), icon: "fa-folder-open" },
+    { id: "advanced", label: m.common.advanced(), icon: "fa-screwdriver-wrench" }
+  ]);
 
   // Overview data
   let statistics: any = $state(null);
@@ -82,8 +83,8 @@
   let newPanel = $state({
     channelId: null as string | null,
     embedJson: "",
-    title: "Support Tickets",
-    description: "Click a button below to create a ticket",
+    title: m.features.wizardTicketsName(),
+    description: m.tickets.pageDefaultPanelDescription(),
     color: null as number | null
   });
 
@@ -124,7 +125,7 @@
   // Select menu creation state
   let showSelectMenuCreator = $state(false);
   let newSelectMenu = $state({
-    placeholder: "Select a ticket type",
+    placeholder: m.tickets.pageDefaultSelectPlaceholder(),
     firstOptionLabel: "",
     firstOptionDescription: null as string | null,
     firstOptionEmoji: null as string | null
@@ -223,11 +224,11 @@
 
       } catch (err) {
         logger.error("Failed to fetch ticket data:", err);
-        error = "Failed to load ticket data";
+        error = m.tickets.pageLoadFailed();
       } finally {
         loading = false;
       }
-    }, "api", "Loading ticket data...");
+    }, "api", m.tickets.pageLoadingData());
   }
 
   async function loadPanelDetails(panelId: bigint) {
@@ -280,8 +281,8 @@
 
   // Panel embed for creator
   let panelEmbed = $state({
-    title: "Support Tickets",
-    description: "Click a button below to create a ticket",
+    title: m.features.wizardTicketsName(),
+    description: m.tickets.pageDefaultPanelDescription(),
     color: "#5865F2",
     url: "",
     author: { name: "", url: "", icon_url: "" },
@@ -340,13 +341,13 @@
       newPanel = {
         channelId: null,
         embedJson: "",
-        title: "Support Tickets",
-        description: "Click a button below to create a ticket",
+        title: m.features.wizardTicketsName(),
+        description: m.tickets.pageDefaultPanelDescription(),
         color: null
       };
       panelEmbed = {
-        title: "Support Tickets",
-        description: "Click a button below to create a ticket",
+        title: m.features.wizardTicketsName(),
+        description: m.tickets.pageDefaultPanelDescription(),
         color: "#5865F2",
         url: "",
         author: { name: "", url: "", icon_url: "" },
@@ -602,7 +603,7 @@
 
       showSelectMenuCreator = false;
       newSelectMenu = {
-        placeholder: "Select a ticket type",
+        placeholder: m.tickets.pageDefaultSelectPlaceholder(),
         firstOptionLabel: "",
         firstOptionDescription: null,
         firstOptionEmoji: null
@@ -1019,18 +1020,18 @@
 </script>
 
 <DashboardPageLayout
-  guildName={$currentGuild?.name || "Dashboard"}
-  subtitle="Manage support tickets, panels, and cases"
+  guildName={$currentGuild?.name || m.common.dashboard()}
+  subtitle={m.tickets.pageSubtitle()}
   icon="fa-ticket"
   tabs={tabs}
-  title="Ticket System"
+  title={m.tickets.pageTitle()}
   bind:activeTab
 >
 
   {#if loading}
     <div class="flex items-center justify-center py-12">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2" style="border-color: {$colorStore.primary}"></div>
-      <span class="ml-3" style="color: {$colorStore.text}">Loading ticket system data...</span>
+      <span class="ml-3" style="color: {$colorStore.text}">{m.tickets.pageLoadingSystem()}</span>
     </div>
   {:else if error}
     <div class="p-6 rounded-xl mb-6 transition-all" role="alert"
@@ -1039,7 +1040,7 @@
         <i class="fa-utility-duo fa-regular fa-circle-exclamation"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         <div style="color: {$colorStore.accent}">
-          <div class="font-semibold text-lg">Error Occurred</div>
+          <div class="font-semibold text-lg">{m.common.errorOccurred()}</div>
           <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
         </div>
       </div>

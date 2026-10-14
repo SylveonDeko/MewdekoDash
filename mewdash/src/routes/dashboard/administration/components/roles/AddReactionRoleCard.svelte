@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { administrationApi, clientApi } from "$lib/api/index.ts";
@@ -58,9 +59,9 @@
 
   // Get role name from ID
   function getRoleName(roleId: string | null): string {
-    if (!roleId) return "Select role...";
+    if (!roleId) return m.common.selectRolePlaceholder();
     const role = availableRoles.find((r: any) => r.id === roleId);
-    return role ? role.name : `Role ${roleId}`;
+    return role ? role.name : m.common.roleFallback({ id: roleId });
   }
 
   // Load guild emojis when component mounts
@@ -116,20 +117,20 @@
     const total = totalEmojisOnMessage();
 
     if (total > DISCORD_MAX_REACTIONS) {
-      errorMessage = `Total emoji count (${total}) exceeds Discord's limit of ${DISCORD_MAX_REACTIONS} reactions per message!`;
+      errorMessage = m.administration.rolesAddReactionRoleErrorTotalExceeds({ total, max: DISCORD_MAX_REACTIONS });
     } else if (total >= DISCORD_MAX_REACTIONS - 2) {
-      warningMessage = `Warning: You're approaching Discord's limit of ${DISCORD_MAX_REACTIONS} reactions per message (currently at ${total}).`;
+      warningMessage = m.administration.rolesAddReactionRoleWarningApproaching({ max: DISCORD_MAX_REACTIONS, total });
     }
 
     const existing = existingMessage();
     if (existing) {
-      warningMessage = `This message already has ${existing.reactionRoles.length} reaction role${existing.reactionRoles.length !== 1 ? "s" : ""}. Adding to existing setup.`;
+      warningMessage = existing.reactionRoles.length !== 1 ? m.administration.rolesAddReactionRoleWarningExistingOther({ count: existing.reactionRoles.length }) : m.administration.rolesAddReactionRoleWarningExistingOne({ count: existing.reactionRoles.length });
     }
   });
 
   function addReaction() {
     if (reactions.length >= DISCORD_MAX_REACTIONS) {
-      errorMessage = `Cannot add more than ${DISCORD_MAX_REACTIONS} reactions!`;
+      errorMessage = m.administration.rolesAddReactionRoleErrorMaxReactions({ max: DISCORD_MAX_REACTIONS });
       return;
     }
     reactions = [...reactions, { emoji: null, roleId: null }];
@@ -155,13 +156,13 @@
     const validReactions = reactions.filter(r => r.emoji && r.roleId);
 
     if (validReactions.length === 0) {
-      errorMessage = "Please select at least one emoji and role pair.";
+      errorMessage = m.administration.rolesAddReactionRoleErrorNeedPair();
       return;
     }
 
     // Check final emoji count
     if (totalEmojisOnMessage() > DISCORD_MAX_REACTIONS) {
-      errorMessage = `Cannot add reactions: total would exceed Discord's ${DISCORD_MAX_REACTIONS} emoji limit.`;
+      errorMessage = m.administration.rolesAddReactionRoleErrorWouldExceed({ max: DISCORD_MAX_REACTIONS });
       return;
     }
 
@@ -193,7 +194,7 @@
       await fetchAllData();
     } catch (err: any) {
       logger.error("Failed to add reaction role:", err);
-      errorMessage = err?.error?.message || "Failed to add reaction roles. Please check that the message and channel IDs are correct and the bot has access.";
+      errorMessage = err?.error?.message || m.administration.rolesAddReactionRoleErrorAddFailed();
     } finally {
       saving = false;
     }
@@ -204,13 +205,13 @@
   <div transition:slide={{ duration: 300 }} class="mb-4 p-4 rounded-xl border-2 border-dashed"
        style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
     <div class="flex items-center justify-between mb-3">
-      <h5 class="font-medium" style="color: {$colorStore.text}">Add Reaction Role</h5>
+      <h5 class="font-medium" style="color: {$colorStore.text}">{m.administration.rolesAddReactionRoleTitle()}</h5>
       <button
         class="px-2 py-1 rounded-lg text-sm"
         style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
         onclick={() => { expanded = false; reset(); }}
       >
-        Cancel
+        {m.common.cancel()}
       </button>
     </div>
 
@@ -218,8 +219,7 @@
       <!-- Message ID and Channel -->
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label for="reaction-message-id" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Message
-            ID</label>
+          <label for="reaction-message-id" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.administration.advancedMassPruneMessageId()}</label>
           <input
             id="reaction-message-id"
             type="text"
@@ -230,12 +230,12 @@
           />
         </div>
         <div>
-          <label for="f-AddReactionRoleCard-channel-233" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Channel</label>
+          <label for="f-AddReactionRoleCard-channel-233" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.common.channel()}</label>
           <DiscordSelector id="f-AddReactionRoleCard-channel-233"
             type="channel"
             options={textChannels}
             bind:selected={channelId}
-            placeholder="Select channel..."
+            placeholder={m.common.selectChannelPlaceholder()}
             multiple={false}
           />
         </div>
@@ -243,7 +243,7 @@
 
       <p class="text-xs" style="color: {$colorStore.muted}">
         <i class="fa-solid fa-circle-info mr-1"></i>
-        Right-click a message and "Copy ID" (requires Developer Mode enabled in Discord settings)
+        {m.administration.rolesAddReactionRoleCopyIdHint()}
       </p>
 
       <!-- Existing message warning -->
@@ -252,8 +252,7 @@
              style="background: {$colorStore.accent}10; border-color: {$colorStore.accent}40;">
           <p class="text-sm" style="color: {$colorStore.accent}">
             <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-            This message already has {existingMessage()!.reactionRoles.length} reaction
-            role{existingMessage()!.reactionRoles.length !== 1 ? 's' : ''}. Your new reactions will be added to it.
+            {existingMessage()!.reactionRoles.length !== 1 ? m.administration.rolesAddReactionRoleExistingNoticeOther({ count: existingMessage()!.reactionRoles.length }) : m.administration.rolesAddReactionRoleExistingNoticeOne({ count: existingMessage()!.reactionRoles.length })}
           </p>
         </div>
       {/if}
@@ -287,7 +286,7 @@
           style="accent-color: {$colorStore.primary};"
         />
         <label for="reaction-exclusive" class="text-sm cursor-pointer" style="color: {$colorStore.text}">
-          Exclusive (users can only have one role from this message)
+          {m.administration.rolesAddReactionRoleExclusive()}
         </label>
       </div>
 
@@ -295,9 +294,9 @@
       <div class="space-y-2">
         <div class="flex items-center justify-between">
           <span class="text-sm font-medium" style="color: {$colorStore.text}">
-            Reactions & Roles
+            {m.administration.rolesAddReactionRoleReactionsAndRoles()}
             <span class="text-xs ml-2" style="color: {$colorStore.muted}">
-              ({totalEmojisOnMessage()} / {DISCORD_MAX_REACTIONS} emojis on message)
+              {m.administration.rolesAddReactionRoleEmojiCount({ total: totalEmojisOnMessage(), max: DISCORD_MAX_REACTIONS })}
             </span>
           </span>
           <button
@@ -307,36 +306,36 @@
             disabled={reactions.length >= DISCORD_MAX_REACTIONS || totalEmojisOnMessage() >= DISCORD_MAX_REACTIONS}
           >
             <i class="fa-solid fa-plus mr-1"></i>
-            Add Another Pair
+            {m.administration.rolesAddReactionRoleAddPair()}
           </button>
         </div>
 
         {#each reactions as reaction, index (index)}
-          <div class="grid grid-cols-[2fr,2fr,auto] gap-2 items-end">
+          <div class="grid grid-cols-[2fr_2fr_auto] gap-2 items-end">
             <div>
-              <label for="f-AddReactionRoleCard-emoji-317" class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">Emoji</label>
+              <label for="f-AddReactionRoleCard-emoji-317" class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">{m.common.emoji()}</label>
               <EmojiPicker id="f-AddReactionRoleCard-emoji-317"
                 {guildEmojis}
                 bind:selected={reaction.emoji}
                 multiple={false}
-                placeholder="Select emoji..."
+                placeholder={m.common.selectEmojiPlaceholder()}
                 showUnicodeEmojis={true}
               />
             </div>
             <div>
-              <label for="f-AddReactionRoleCard-role-327" class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">Role</label>
+              <label for="f-AddReactionRoleCard-role-327" class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">{m.common.role()}</label>
               <DiscordSelector id="f-AddReactionRoleCard-role-327"
                 type="role"
                 options={availableRoles}
                 bind:selected={reaction.roleId}
-                placeholder="Select role..."
+                placeholder={m.common.selectRolePlaceholder()}
                 multiple={false}
               />
             </div>
             <button
               class="px-2 py-2 rounded-lg"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-              aria-label="Remove reaction"
+              aria-label={m.administration.rolesAddReactionRoleRemoveReaction()}
               onclick={() => removeReaction(index)}
               disabled={reactions.length === 1}
             >
@@ -349,7 +348,7 @@
         {#if reactions.filter(r => r.emoji && r.roleId).length > 0}
           <div class="mt-4 p-3 rounded-lg border"
                style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-            <div class="text-xs font-medium mb-2" style="color: {$colorStore.muted}">Preview:</div>
+            <div class="text-xs font-medium mb-2" style="color: {$colorStore.muted}">{m.common.preview()}:</div>
             <div class="space-y-1">
               {#each reactions.filter(r => r.emoji && r.roleId) as reaction}
                 {@const emojiInfo = parseEmojiForPreview(reaction.emoji)}
@@ -382,10 +381,10 @@
       >
         {#if saving}
           <i class="fa-solid fa-spinner fa-spin"></i>
-          Saving...
+          {m.common.saving()}
         {:else}
           <i class="fa-solid fa-save"></i>
-          Save All Reaction Roles
+          {m.administration.rolesAddReactionRoleSaveAll()}
         {/if}
       </button>
     </div>
@@ -397,6 +396,6 @@
     onclick={() => expanded = true}
   >
     <i class="fa-solid fa-plus"></i>
-    Set Up New Reaction Roles
+    {m.administration.rolesAddReactionRoleSetUp()}
   </button>
 {/if}

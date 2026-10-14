@@ -1,4 +1,5 @@
 // lib/utils/unsavedChanges.ts
+import { m } from "$lib/i18n";
 import { onMount } from "svelte";
 import { beforeNavigate } from "$app/navigation";
 import { requestConfirmation } from "$lib/stores/confirmationStore";
@@ -21,10 +22,10 @@ export function useUnsavedChangesGuard(isDirty: () => boolean) {
     }
     navigation.cancel();
     requestConfirmation({
-      title: "Discard unsaved changes?",
-      message: "You have changes that have not been saved. Leaving this page will lose them.",
-      confirmText: "Leave without saving",
-      cancelText: "Stay",
+      title: m.shared.unsavedTitle(),
+      message: m.shared.unsavedMessage(),
+      confirmText: m.shared.unsavedLeave(),
+      cancelText: m.shared.unsavedStay(),
       variant: "warning"
     }).then((confirmed) => {
       if (confirmed && navigation.to?.url) {

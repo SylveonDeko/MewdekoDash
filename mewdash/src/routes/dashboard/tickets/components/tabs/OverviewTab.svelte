@@ -1,5 +1,6 @@
 <!-- components/tabs/OverviewTab.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
 
   interface Props {
@@ -78,57 +79,57 @@
 
   const statCards = $derived([
     {
-      title: "Total Tickets",
+      title: m.tickets.overviewTotalTickets(),
       value: statistics?.totalTickets || 0,
       icon: "fa-ticket",
       color: $colorStore.primary
     },
     {
-      title: "Open Tickets",
+      title: m.tickets.overviewOpenTickets(),
       value: statistics?.openTickets || 0,
       icon: "fa-folder-open",
       color: "#10b981"
     },
     {
-      title: "Closed Tickets",
+      title: m.tickets.overviewClosedTickets(),
       value: statistics?.closedTickets || 0,
       icon: "fa-folder-closed",
       color: "#6b7280"
     },
     {
-      title: "Active Panels",
+      title: m.tickets.overviewActivePanels(),
       value: panels.length || 0,
       icon: "fa-table-cells",
       color: $colorStore.secondary
     }
   ]);
 
-  const quickLinks = [
+  const quickLinks = $derived([
     {
-      title: "Manage Panels",
-      description: "Create and configure ticket panels",
+      title: m.tickets.overviewLinkPanelsTitle(),
+      description: m.tickets.overviewLinkPanelsDescription(),
       icon: "fa-table-cells",
       tab: "panels"
     },
     {
-      title: "Configuration",
-      description: "Set up priorities, tags, and channels",
+      title: m.common.configuration(),
+      description: m.tickets.overviewLinkConfigurationDescription(),
       icon: "fa-sliders",
       tab: "configuration"
     },
     {
-      title: "View Cases",
-      description: "Manage linked ticket cases",
+      title: m.tickets.overviewLinkCasesTitle(),
+      description: m.tickets.overviewLinkCasesDescription(),
       icon: "fa-folder-open",
       tab: "cases"
     },
     {
-      title: "Advanced Tools",
-      description: "Batch operations and blacklist",
+      title: m.tickets.overviewLinkAdvancedTitle(),
+      description: m.tickets.overviewLinkAdvancedDescription(),
       icon: "fa-screwdriver-wrench",
       tab: "advanced"
     }
-  ];
+  ]);
 </script>
 
 <!-- Statistics Cards -->
@@ -157,19 +158,19 @@
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
       <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
         <i class="fa-solid fa-clock" style="color: {$colorStore.primary};"></i>
-        Response Times
+        {m.tickets.overviewResponseTimes()}
       </h3>
       <div class="space-y-3">
         <div class="flex justify-between items-center">
-          <span style="color: {$colorStore.muted}">Average Response</span>
+          <span style="color: {$colorStore.muted}">{m.tickets.overviewAverageResponse()}</span>
           <span class="font-semibold" style="color: {$colorStore.text}">
-            {parseTimeSpanToMinutes(statistics.averageResponseTime).toFixed(1)} min
+            {m.tickets.overviewMinutesValue({ value: parseTimeSpanToMinutes(statistics.averageResponseTime).toFixed(1) })}
           </span>
         </div>
         <div class="flex justify-between items-center">
-          <span style="color: {$colorStore.muted}">Average Resolution</span>
+          <span style="color: {$colorStore.muted}">{m.tickets.overviewAverageResolution()}</span>
           <span class="font-semibold" style="color: {$colorStore.text}">
-            {parseTimeSpanToHours(statistics.averageResolutionTime).toFixed(1)} hrs
+            {m.tickets.overviewHoursValue({ value: parseTimeSpanToHours(statistics.averageResolutionTime).toFixed(1) })}
           </span>
         </div>
       </div>
@@ -180,13 +181,13 @@
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
       <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
         <i class="fa-solid fa-flag" style="color: {$colorStore.primary};"></i>
-        Tickets by Priority
+        {m.tickets.overviewTicketsByPriority()}
       </h3>
       {#if statistics.ticketsByPriority && Object.keys(statistics.ticketsByPriority).length > 0}
         <div class="space-y-2">
           {#each Object.entries(statistics.ticketsByPriority) as [priority, count]}
             <div class="flex justify-between items-center">
-              <span style="color: {$colorStore.muted}">{priority || "None"}</span>
+              <span style="color: {$colorStore.muted}">{priority || m.common.none()}</span>
               <span class="px-3 py-1 rounded-full text-sm font-medium"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
                 {count}
@@ -195,7 +196,7 @@
           {/each}
         </div>
       {:else}
-        <p class="text-sm" style="color: {$colorStore.muted}">No priority data available</p>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.tickets.overviewNoPriorityData()}</p>
       {/if}
     </div>
   </div>
@@ -207,7 +208,7 @@
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
     <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
       <i class="fa-solid fa-user-headset" style="color: {$colorStore.primary};"></i>
-      Staff Performance
+      {m.tickets.overviewStaffPerformance()}
     </h3>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {#each staffResponseStats as staff}
@@ -215,7 +216,7 @@
              style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
           <p class="font-medium" style="color: {$colorStore.text}">{staff.staffName}</p>
           <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-            Avg Response: {parseTimeSpanToMinutes(staff.averageResponseTimeMinutes).toFixed(1)} min
+            {m.tickets.overviewStaffAvgResponse({ value: parseTimeSpanToMinutes(staff.averageResponseTimeMinutes).toFixed(1) })}
           </p>
         </div>
       {/each}
@@ -229,40 +230,40 @@
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
     <div class="flex items-center gap-3 mb-2">
       <i class="fa-solid fa-table-cells" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-      <span class="font-semibold" style="color: {$colorStore.text}">Panels</span>
+      <span class="font-semibold" style="color: {$colorStore.text}">{m.tickets.overviewPanels()}</span>
     </div>
     <p class="text-2xl font-bold" style="color: {$colorStore.text}">{panels.length}</p>
-    <p class="text-sm mt-1" style="color: {$colorStore.muted}">Active ticket panels</p>
+    <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.tickets.overviewPanelsHint()}</p>
   </div>
 
   <div class="p-6 rounded-xl"
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
     <div class="flex items-center gap-3 mb-2">
       <i class="fa-solid fa-flag" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
-      <span class="font-semibold" style="color: {$colorStore.text}">Priorities</span>
+      <span class="font-semibold" style="color: {$colorStore.text}">{m.tickets.overviewPriorities()}</span>
     </div>
     <p class="text-2xl font-bold" style="color: {$colorStore.text}">{priorities.length}</p>
-    <p class="text-sm mt-1" style="color: {$colorStore.muted}">Priority levels configured</p>
+    <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.tickets.overviewPrioritiesHint()}</p>
   </div>
 
   <div class="p-6 rounded-xl"
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
     <div class="flex items-center gap-3 mb-2">
       <i class="fa-solid fa-tags" style="color: {$colorStore.accent}; font-size: 20px;"></i>
-      <span class="font-semibold" style="color: {$colorStore.text}">Tags</span>
+      <span class="font-semibold" style="color: {$colorStore.text}">{m.tickets.overviewTags()}</span>
     </div>
     <p class="text-2xl font-bold" style="color: {$colorStore.text}">{tags.length}</p>
-    <p class="text-sm mt-1" style="color: {$colorStore.muted}">Available tags</p>
+    <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.tickets.overviewTagsHint()}</p>
   </div>
 
   <div class="p-6 rounded-xl"
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
     <div class="flex items-center gap-3 mb-2">
       <i class="fa-solid fa-folder-open" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-      <span class="font-semibold" style="color: {$colorStore.text}">Cases</span>
+      <span class="font-semibold" style="color: {$colorStore.text}">{m.tickets.tabCases()}</span>
     </div>
     <p class="text-2xl font-bold" style="color: {$colorStore.text}">{cases.length}</p>
-    <p class="text-sm mt-1" style="color: {$colorStore.muted}">Ticket cases</p>
+    <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.tickets.overviewCasesHint()}</p>
   </div>
 </div>
 

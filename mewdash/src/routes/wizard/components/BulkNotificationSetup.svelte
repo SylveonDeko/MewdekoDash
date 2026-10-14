@@ -4,21 +4,27 @@ Bulk setup for notification-type features (greets, logging, suggestions, etc.)
 Groups similar features together for efficient configuration with category support
 -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
   interface NotificationFeature {
     id: string;
-    name: string;
+    /** Optional when {@link Props.resolveText} supplies the live text. */
+    name?: string;
     icon: string;
-    description: string;
+    description?: string;
     enabled: boolean;
     channelId: string | null;
     category?: string;
+    /** Localized display label for {@link category}; `category` stays the grouping key. */
+    categoryLabel?: string;
   }
 
   interface Props {
     features: NotificationFeature[];
+    /** Resolves localized texts by feature id at render time so they follow locale switches. */
+    resolveText?: (id: string) => { name?: string; description?: string; categoryLabel?: string };
     channels: any[];
     title?: string;
     description?: string;
@@ -28,12 +34,22 @@ Groups similar features together for efficient configuration with category suppo
 
   let {
     features = $bindable([]),
+    resolveText,
     channels = [],
-    title = "Notification Channels",
-    description = "Configure where each notification type should be sent",
+    title = m.wizard.bulkTitle(),
+    description = m.wizard.bulkDescription(),
     showCategories = true,
     onchange
   }: Props = $props();
+
+  function textOf(f: NotificationFeature) {
+    const live = resolveText?.(f.id);
+    return {
+      name: live?.name ?? f.name ?? f.id,
+      description: live?.description ?? f.description ?? "",
+      categoryLabel: live?.categoryLabel ?? f.categoryLabel
+    };
+  }
 
   function toggleFeature(featureId: string) {
     features = features.map(f =>
@@ -96,6 +112,12 @@ Groups similar features together for efficient configuration with category suppo
 
   let categoryChannelSelectors = $state<Record<string, string | null>>({});
 
+  /** Display text for a category group; the key itself is only used for matching. */
+  function categoryLabel(category: string, group: NotificationFeature[]): string {
+    const first = group[0];
+    return (first && textOf(first).categoryLabel) ?? (category === "Other" ? m.common.other() : category);
+  }
+
   function toggleCategory(category: string) {
     expandedCategories[category] = !expandedCategories[category];
   }
@@ -122,7 +144,7 @@ Groups similar features together for efficient configuration with category suppo
       </h3>
       <span class="text-sm px-3 py-1 rounded-full"
             style="background: {$colorStore.primary}15; color: {$colorStore.primary};">
-        {enabledCount}/{features.length} enabled
+        {m.wizard.bulkEnabledCount({ enabled: enabledCount, total: features.length })}
       </span>
     </div>
     {#if description}
@@ -141,7 +163,7 @@ Groups similar features together for efficient configuration with category suppo
       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
     >
       <i class="fa-solid fa-copy" style="font-size: 12px;"></i>
-      Apply First Channel to All
+      {m.wizard.bulkApplyFirstToAll()}
     </button>
     <button
       class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
@@ -149,7 +171,7 @@ Groups similar features together for efficient configuration with category suppo
       style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
     >
       <i class="fa-solid fa-check-double" style="font-size: 12px;"></i>
-      Enable All
+      {m.wizard.bulkEnableAll()}
     </button>
     <button
       class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
@@ -157,7 +179,7 @@ Groups similar features together for efficient configuration with category suppo
       style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30;"
     >
       <i class="fa-solid fa-ban" style="font-size: 12px;"></i>
-      Disable All
+      {m.common.disableAll()}
     </button>
   </div>
 
@@ -174,7 +196,7 @@ Groups similar features together for efficient configuration with category suppo
           >
             <div class="flex items-center gap-2">
               <span class="font-semibold text-sm" style="color: {$colorStore.text};">
-                {category}
+                {categoryLabel(category, categoryFeatures)}
               </span>
               <span class="text-xs px-2 py-0.5 rounded-full"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
@@ -190,7 +212,7 @@ Groups similar features together for efficient configuration with category suppo
             <div class="p-3 border-x border-b rounded-b-lg mb-2"
                  style="background: {$colorStore.secondary}05; border-color: {$colorStore.primary}15;">
               <span class="block text-xs font-medium mb-2" style="color: {$colorStore.text};">
-                Apply to all {category}:
+                {m.wizard.bulkApplyToCategory({ category: categoryLabel(category, categoryFeatures) })}
               </span>
               <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
                 <div class="flex-1 min-w-0">
@@ -198,7 +220,7 @@ Groups similar features together for efficient configuration with category suppo
                     type="channel"
                     options={channels}
                     selected={categoryChannelSelectors[category]}
-                    placeholder="Choose channel..."
+                    placeholder={m.wizard.bulkChooseChannelPlaceholder()}
                     onchange={(detail) => categoryChannelSelectors[category] = typeof detail.selected === "string" ? detail.selected : null}
                   />
                 </div>
@@ -208,7 +230,7 @@ Groups similar features together for efficient configuration with category suppo
                   onclick={() => applyToCategory(category)}
                   disabled={!categoryChannelSelectors[category]}
                 >
-                  Apply
+                  {m.common.apply()}
                 </button>
               </div>
             </div>
@@ -244,11 +266,11 @@ Groups similar features together for efficient configuration with category suppo
                            style="color: {feature.enabled ? $colorStore.primary : $colorStore.muted}; font-size: 16px;"></i>
                         <h4 class="font-semibold text-sm"
                             style="color: {feature.enabled ? $colorStore.text : $colorStore.muted};">
-                          {feature.name}
+                          {textOf(feature).name}
                         </h4>
                       </div>
                       <p class="text-xs mb-3" style="color: {$colorStore.muted};">
-                        {feature.description}
+                        {textOf(feature).description}
                       </p>
 
                       <!-- Channel Selector (shown when enabled) -->
@@ -258,7 +280,7 @@ Groups similar features together for efficient configuration with category suppo
                             type="channel"
                             options={channels}
                             selected={feature.channelId}
-                            placeholder="Choose a channel..."
+                            placeholder={m.wizard.bulkChooseAChannelPlaceholder()}
                             onchange={(detail) => setChannel(feature.id, typeof detail.selected === "string" ? detail.selected : null)}
                           />
                         </div>
@@ -300,11 +322,11 @@ Groups similar features together for efficient configuration with category suppo
                      style="color: {feature.enabled ? $colorStore.primary : $colorStore.muted}; font-size: 16px;"></i>
                   <h4 class="font-semibold text-sm"
                       style="color: {feature.enabled ? $colorStore.text : $colorStore.muted};">
-                    {feature.name}
+                    {textOf(feature).name}
                   </h4>
                 </div>
                 <p class="text-xs mb-3" style="color: {$colorStore.muted};">
-                  {feature.description}
+                  {textOf(feature).description}
                 </p>
 
                 <!-- Channel Selector (shown when enabled) -->
@@ -314,7 +336,7 @@ Groups similar features together for efficient configuration with category suppo
                       type="channel"
                       options={channels}
                       selected={feature.channelId}
-                      placeholder="Choose a channel..."
+                      placeholder={m.wizard.bulkChooseAChannelPlaceholder()}
                       onchange={(detail) => setChannel(feature.id, typeof detail.selected === "string" ? detail.selected : null)}
                     />
                   </div>

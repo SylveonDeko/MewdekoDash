@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import Portal from "$lib/components/ui/Portal.svelte";
@@ -78,7 +79,7 @@
           <div class="min-w-0 flex-1">
             {#if showingArchive}
               <h2 id="product-update-title" class="text-lg font-semibold" style="color: {$colorStore.text}">
-                Everything that's new
+                {m.dashboard.productUpdateEverythingNew()}
               </h2>
             {:else}
               <span class="block text-xs font-semibold uppercase tracking-[0.12em]"
@@ -94,7 +95,7 @@
             class="-mr-2 -mt-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors hover:opacity-70"
             style="color: {$colorStore.muted};"
             onclick={ondismiss}
-            aria-label="Dismiss updates"
+            aria-label={m.dashboard.productUpdateDismiss()}
           >
             <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
           </button>
@@ -116,7 +117,7 @@
                   onclick={ondismiss}
                   style="color: {$colorStore.primary}"
                 >
-                  {update.action} →
+                  {m.dashboard.productUpdateActionArrow({ action: update.action })}
                 </a>
               </div>
             {/each}
@@ -140,7 +141,7 @@
         <div class="flex flex-wrap items-center gap-3 border-t p-6" style="border-color: {$colorStore.primary}20;">
           {#if !showingArchive && updates.length > 1}
             <span class="text-xs" style="color: {$colorStore.muted}">
-              {index + 1} of {updates.length}
+              {m.common.currentOfTotal({ current: index + 1, total: updates.length })}
             </span>
           {/if}
 
@@ -152,7 +153,7 @@
                        border: 1px solid {$colorStore.primary}30;"
                 onclick={() => (chosenView = !showingArchive)}
               >
-                {showingArchive ? "Back" : "See all updates"}
+                {showingArchive ? m.common.back() : m.dashboard.productUpdateSeeAll()}
               </button>
             {/if}
 
@@ -174,7 +175,7 @@
                      border: 1px solid {$colorStore.primary}30;"
               onclick={showingArchive ? ondismiss : next}
             >
-              {showingArchive || isLast ? "Done" : "Next"}
+              {showingArchive || isLast ? m.common.done() : m.common.next()}
             </button>
           </div>
         </div>

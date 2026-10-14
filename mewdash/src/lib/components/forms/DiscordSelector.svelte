@@ -1,4 +1,5 @@
 <script module lang="ts">
+  import { m } from "$lib/i18n";
   export type SelectorType = "role" | "channel" | "user" | "timezone" | "custom";
   export type OptionType = {
     id: string;
@@ -39,7 +40,7 @@
     options = [],
     selected = $bindable(null),
     multiple = false,
-    placeholder = "Select...",
+    placeholder = m.common.selectPlaceholder(),
     searchable = true,
     disabled = false,
     customIcon = null,
@@ -317,9 +318,9 @@
       if (count === 0) return placeholder;
       if (count === 1) {
         const option = options.find(opt => opt.id === selectedArray[0]);
-        return option ? getOptionDisplayName(option) : `${count} selected`;
+        return option ? getOptionDisplayName(option) : m.common.selectedCount({ count });
       }
-      return `${count} selected`;
+      return m.common.selectedCount({ count });
     } else {
       const option = options.find(opt => opt.id === selected);
       return option ? getOptionDisplayName(option) : placeholder;
@@ -346,7 +347,7 @@
   tabindex={disabled ? -1 : 0}
 >
   <!-- Main selector button -->
-  <button aria-label="Button action"
+  <button aria-label={ariaLabelledby ? undefined : (ariaLabel ?? placeholder)}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
           class="group w-full px-3 h-[44px] rounded-xl border transition-all duration-200 text-left flex items-center backdrop-blur-md relative overflow-hidden"
@@ -405,7 +406,7 @@
                     onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); removeOption(selectedId, e); } }}
                     role="button"
                     tabindex="0"
-                    aria-label="Remove {getOptionDisplayName(option)}"
+                    aria-label={m.common.ariaRemoveNamed({ name: getOptionDisplayName(option) })}
                   >
                     <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
                   </span>
@@ -438,7 +439,7 @@
           onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); clearAll(e); } }}
           role="button"
           tabindex="0"
-          aria-label="Clear selection"
+          aria-label={m.widgets.emojiClearSelection()}
         >
           <i class="fa-solid fa-xmark" style="color: {$colorStore.muted}; font-size: 14px;"></i>
         </span>
@@ -478,7 +479,7 @@
               bind:this={searchInputRef}
               bind:value={searchTerm}
               type="text"
-              placeholder="Search..."
+              placeholder={m.common.searchPlaceholder()}
               class="w-full pl-10 pr-3 py-2 rounded-lg border transition-all duration-200"
               style="background: {$colorStore.primary}08;
                      border-color: {$colorStore.primary}30;
@@ -492,7 +493,7 @@
       <div class="flex-1 overflow-y-auto overflow-x-hidden">
         {#if filteredOptions.length === 0}
           <div class="px-4 py-3 text-center" style="color: {$colorStore.muted}">
-            {searchTerm ? 'No matches found' : 'No options available'}
+            {searchTerm ? m.widgets.selectorNoMatches() : m.widgets.selectorNoOptions()}
           </div>
         {:else}
           {#each filteredOptions as option, index (option.id)}

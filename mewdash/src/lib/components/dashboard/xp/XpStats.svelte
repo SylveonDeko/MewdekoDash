@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
 
   interface Props {
@@ -24,7 +25,7 @@
        class="fa-utility-duo fa-regular fa-star"
        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
   </div>
-  <h2 class="text-xl font-bold" style="color: {$colorStore.text}">XP Statistics</h2>
+  <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.xp.statsTitle()}</h2>
 </div>
 
 {#if loading}
@@ -33,7 +34,7 @@
       class="w-12 h-12 border-4 rounded-full animate-spin"
       style="border-color: {$colorStore.primary}20;
              border-top-color: {$colorStore.primary};"
-      aria-label="Loading"
+      aria-label={m.common.loading()}
     >
     </div>
   </div>
@@ -56,7 +57,7 @@
       style="background: {$colorStore.primary}10;"
     >
       <div class="flex flex-col">
-        <span class="text-sm" style="color: {$colorStore.muted}">Total Users</span>
+        <span class="text-sm" style="color: {$colorStore.muted}">{m.common.totalUsers()}</span>
         <span class="text-3xl font-bold"
               style="color: {$colorStore.text}">{formatNumber(serverStats.totalUsers)}</span>
       </div>
@@ -68,7 +69,7 @@
       style="background: {$colorStore.secondary}10;"
     >
       <div class="flex flex-col">
-        <span class="text-sm" style="color: {$colorStore.muted}">Total XP</span>
+        <span class="text-sm" style="color: {$colorStore.muted}">{m.common.totalXp()}</span>
         <span class="text-3xl font-bold"
               style="color: {$colorStore.text}">{formatNumber(serverStats.totalXp)}</span>
       </div>
@@ -80,7 +81,7 @@
       style="background: {$colorStore.accent}10;"
     >
       <div class="flex flex-col">
-        <span class="text-sm" style="color: {$colorStore.muted}">Average Level</span>
+        <span class="text-sm" style="color: {$colorStore.muted}">{m.xp.statsAverageLevel()}</span>
         <span class="text-3xl font-bold" style="color: {$colorStore.text}">{serverStats.averageLevel}</span>
       </div>
     </div>
@@ -91,7 +92,7 @@
       style="background: {$colorStore.primary}10;"
     >
       <div class="flex flex-col">
-        <span class="text-sm" style="color: {$colorStore.muted}">Highest Level</span>
+        <span class="text-sm" style="color: {$colorStore.muted}">{m.common.highestLevel()}</span>
         <span class="text-3xl font-bold" style="color: {$colorStore.text}">{serverStats.highestLevel}</span>
       </div>
     </div>
@@ -102,7 +103,7 @@
     class="rounded-xl p-4"
     style="background: {$colorStore.primary}15;"
   >
-    <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">Recent XP Activity</h3>
+    <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">{m.xp.statsRecentActivity()}</h3>
 
     {#if serverStats.recentActivity && serverStats.recentActivity.length > 0}
       <ul class="space-y-3">
@@ -122,7 +123,7 @@
                 </span>
               </div>
               <div class="text-sm" style="color: {$colorStore.secondary}">
-                Recent activity
+                {m.common.recentActivity()}
               </div>
             </div>
           </li>
@@ -130,7 +131,7 @@
       </ul>
     {:else}
       <div class="text-center py-6" style="color: {$colorStore.muted}">
-        No recent XP activity
+        {m.xp.statsNoActivity()}
       </div>
     {/if}
   </div>

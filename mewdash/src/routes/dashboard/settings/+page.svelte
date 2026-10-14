@@ -1,5 +1,6 @@
 <!-- routes/dashboard/settings/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { guildApi, clientApi, administrationApi, type GuildConfig } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -40,12 +41,12 @@
   let loadedGuildId: string | null = null;
 
   const autoSave = createAutoSave({
-    onError: () => showNotificationMessage("Couldn't save bot settings.", "error")
+    onError: () => showNotificationMessage(m.settings.pageSaveFailed(), "error")
   });
 
   /** Languages the bot ships response strings for */
-  const languageOptions = [
-    { id: "", name: "Bot default" },
+  const languageOptions = $derived([
+    { id: "", name: m.settings.pageLanguageDefault() },
     { id: "en-US", name: "English" },
     { id: "ar", name: "العربية (Arabic)" },
     { id: "cs-CZ", name: "Čeština (Czech)" },
@@ -73,7 +74,7 @@
     { id: "zh-CN", name: "简体中文 (Chinese, Simplified)" },
     { id: "zh-TW", name: "繁體中文 (Chinese, Traditional)" },
     { id: "owo", name: "OwO" }
-  ];
+  ]);
 
   /** Server timezone state, saved separately from the guild config */
   let timezones: Array<{ id: string; name: string; label: string; offset: string; value: string }> = $state([]);
@@ -142,7 +143,7 @@
       savedSettings = { ...settings };
     } catch (err) {
       logger.error("Failed to fetch guild settings:", err);
-      error = err instanceof Error ? err.message : "Failed to fetch guild settings";
+      error = err instanceof Error ? err.message : m.settings.pageFetchFailed();
     }
   }
 
@@ -268,7 +269,7 @@
         fetchChannels()
       ]);
     } catch (err) {
-      error = "Failed to fetch data";
+      error = m.common.failedToFetchData();
       logger.error(error, err);
     } finally {
       loading = false;
@@ -288,9 +289,9 @@
   {autoSave}
   statusMessages={statusMessages}
   icon="fa-gear"
-  guildName={$currentGuild?.name || "Dashboard"}
-  subtitle="Configure bot-wide settings for your server"
-  title="Bot Settings"
+  guildName={$currentGuild?.name || m.common.dashboard()}
+  subtitle={m.settings.pageSubtitle()}
+  title={m.common.botSettings()}
 >
 
   {#if loading}
@@ -323,7 +324,7 @@
             <i class="fa-utility-duo fa-regular fa-gear"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Bot Configuration</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.botConfiguration()}</h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -331,10 +332,10 @@
           <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
             <div class="flex items-center gap-2 mb-3">
               <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">Command Prefix</h3>
+              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.common.commandPrefix()}</h3>
             </div>
             <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              The prefix used to invoke bot commands
+              {m.settings.pagePrefixHint()}
             </p>
             <input
               type="text"
@@ -351,16 +352,16 @@
           <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
             <div class="flex items-center gap-2 mb-3">
               <i class="fa-solid fa-list" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">Command Log Channel</h3>
+              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.settings.pageCmdlogTitle()}</h3>
             </div>
             <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              Channel where command usage is logged
+              {m.settings.pageCmdlogHint()}
             </p>
             <DiscordSelector
               type="channel"
               options={channels}
               bind:selected={settings.commandLogChannel}
-              placeholder="No command logging"
+              placeholder={m.settings.pageCmdlogPlaceholder()}
               onchange={handleCommandLogChannelChange}
             />
           </div>
@@ -369,10 +370,10 @@
           <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
             <div class="flex items-center gap-2 mb-3">
               <i class="fa-solid fa-coins" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">Currency Emoji</h3>
+              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.settings.pageCurrencyTitle()}</h3>
             </div>
             <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              The emoji displayed for your server currency
+              {m.settings.pageCurrencyHint()}
             </p>
             <input
               type="text"
@@ -389,16 +390,16 @@
           <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
             <div class="flex items-center gap-2 mb-3">
               <i class="fa-solid fa-triangle-exclamation" style="color: {$colorStore.accent}; font-size: 20px;"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">Warning Log Channel</h3>
+              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.common.warningLogChannel()}</h3>
             </div>
             <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              Channel where warnings are logged
+              {m.settings.pageWarnlogHint()}
             </p>
             <DiscordSelector
               type="channel"
               options={channels}
               bind:selected={settings.warnlogChannelId}
-              placeholder="No warning logging"
+              placeholder={m.settings.pageWarnlogPlaceholder()}
               onchange={handleWarnlogChannelChange}
             />
           </div>
@@ -407,10 +408,10 @@
           <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
             <div class="flex items-center gap-2 mb-3">
               <i class="fa-solid fa-clock" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">Warning Expiry</h3>
+              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.settings.pageWarnexpiryTitle()}</h3>
             </div>
             <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              Hours until warnings automatically expire (0 = never)
+              {m.settings.pageWarnexpiryHint()}
             </p>
             <input
               type="number"
@@ -428,16 +429,16 @@
           <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
             <div class="flex items-center gap-2 mb-3">
               <i class="fa-solid fa-language" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-              <h3 id="language-label" class="font-semibold" style="color: {$colorStore.text}">Language</h3>
+              <h3 id="language-label" class="font-semibold" style="color: {$colorStore.text}">{m.common.language()}</h3>
             </div>
             <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              Language the bot replies in for this server
+              {m.settings.pageLanguageHint()}
             </p>
             <DiscordSelector
               type="custom"
               options={languageOptions}
               selected={settings.locale}
-              placeholder="Bot default"
+              placeholder={m.settings.pageLanguageDefault()}
               ariaLabelledby="language-label"
               onchange={handleLocaleChange}
             />
@@ -447,16 +448,16 @@
           <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
             <div class="flex items-center gap-2 mb-3">
               <i class="fa-solid fa-earth-americas" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
-              <h3 id="timezone-label" class="font-semibold" style="color: {$colorStore.text}">Server Timezone</h3>
+              <h3 id="timezone-label" class="font-semibold" style="color: {$colorStore.text}">{m.common.serverTimezone()}</h3>
             </div>
             <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              Used for scheduled messages, reminders and time displays.
+              {m.settings.pageTimezoneHint()}
             </p>
             <DiscordSelector
               type="timezone"
               options={timezones}
               selected={guildTimezone}
-              placeholder={timezones.length ? "Select timezone" : "Loading timezones..."}
+              placeholder={timezones.length ? m.common.selectTimezonePlaceholder() : m.settings.pageTimezoneLoading()}
               ariaLabelledby="timezone-label"
               disabled={timezones.length === 0}
               onchange={(e) => saveTimezone(typeof e.selected === "string" ? e.selected : null)}
@@ -467,10 +468,10 @@
           <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
             <div class="flex items-center gap-2 mb-3">
               <i class="fa-solid fa-volume-xmark" style="color: {$colorStore.accent}; font-size: 20px;"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">Mute Role</h3>
+              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.settings.pageMuteTitle()}</h3>
             </div>
             <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              Name of the role applied by mute commands and punishments. Created automatically if missing.
+              {m.settings.pageMuteHint()}
             </p>
             <input
               type="text"
@@ -480,11 +481,11 @@
               maxlength="100"
               class="w-full p-3 rounded-lg border transition-all"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-              placeholder="Muted"
+              placeholder={m.settings.pageMutePlaceholder()}
             >
             <label class="flex items-center gap-3 mt-3 cursor-pointer min-h-[32px]" style="color: {$colorStore.text};">
               <input type="checkbox" bind:checked={settings.removeRolesOnMute} onchange={() => handleToggle("removeRolesOnMute")} class="w-4 h-4 rounded" style="accent-color: {$colorStore.primary};">
-              <span class="text-sm">Remove all other roles while muted</span>
+              <span class="text-sm">{m.settings.pageMuteRemoveRoles()}</span>
             </label>
           </div>
 
@@ -492,21 +493,21 @@
           <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
             <div class="flex items-center gap-2 mb-3">
               <i class="fa-solid fa-comments" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">Chat Utilities</h3>
+              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.settings.pageChatTitle()}</h3>
             </div>
             <div class="space-y-3">
               <label class="flex items-start gap-3 cursor-pointer" style="color: {$colorStore.text};">
                 <input type="checkbox" bind:checked={settings.snipeset} onchange={() => handleToggle("snipeset")} class="w-4 h-4 rounded mt-0.5" style="accent-color: {$colorStore.primary};">
                 <span>
-                  <span class="text-sm font-medium block">Message sniping</span>
-                  <span class="text-xs" style="color: {$colorStore.muted}">Let members recover recently deleted or edited messages with the snipe commands</span>
+                  <span class="text-sm font-medium block">{m.settings.pageSnipeTitle()}</span>
+                  <span class="text-xs" style="color: {$colorStore.muted}">{m.settings.pageSnipeHint()}</span>
                 </span>
               </label>
               <label class="flex items-start gap-3 cursor-pointer" style="color: {$colorStore.text};">
                 <input type="checkbox" bind:checked={settings.previewLinks} onchange={() => handleToggle("previewLinks")} class="w-4 h-4 rounded mt-0.5" style="accent-color: {$colorStore.primary};">
                 <span>
-                  <span class="text-sm font-medium block">Message link previews</span>
-                  <span class="text-xs" style="color: {$colorStore.muted}">Show the contents of Discord message links when they are posted</span>
+                  <span class="text-sm font-medium block">{m.settings.pagePreviewsTitle()}</span>
+                  <span class="text-xs" style="color: {$colorStore.muted}">{m.settings.pagePreviewsHint()}</span>
                 </span>
               </label>
             </div>
@@ -520,11 +521,9 @@
         <div class="flex items-start gap-3">
           <i class="fa-solid fa-circle-info" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
           <div>
-            <h3 class="font-semibold mb-1" style="color: {$colorStore.text}">More Settings Available</h3>
+            <h3 class="font-semibold mb-1" style="color: {$colorStore.text}">{m.settings.pageMoreTitle()}</h3>
             <p class="text-sm" style="color: {$colorStore.muted}">
-              Additional settings like roles, permissions, and module-specific configurations can be found in their
-              respective dashboard pages:
-              <strong>Administration</strong>, <strong>Message Stats</strong>, <strong>Starboard</strong>, and more.
+              {@html m.settings.pageMoreHint()}
             </p>
           </div>
         </div>

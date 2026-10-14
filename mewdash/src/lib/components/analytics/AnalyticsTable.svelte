@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/AnalyticsTable.svelte -->
 <script lang="ts" module>
+  import { m } from "$lib/i18n";
   import type { PillTone } from "./palette";
 
   export interface Column<Row> {
@@ -45,7 +46,7 @@
     columns,
     rows,
     loading = false,
-    empty = "No data",
+    empty = m.common.noData(),
     pageSize,
     page,
     total,
@@ -182,9 +183,9 @@
   <div class="flex items-center justify-between mt-2 text-xs" style="color: {$colorStore.muted}">
     <span>
       {#if serverPaged}
-        {n(total ?? 0)} rows
+        {(total ?? 0) === 1 ? m.analytics.tableRowsOne({ count: n(total ?? 0) }) : m.analytics.tableRowsOther({ count: n(total ?? 0) })}
       {:else}
-        {n(rows.length)} rows
+        {rows.length === 1 ? m.analytics.tableRowsOne({ count: n(rows.length) }) : m.analytics.tableRowsOther({ count: n(rows.length) })}
       {/if}
     </span>
     <div class="flex items-center gap-1">
@@ -194,7 +195,7 @@
         style="background: {$colorStore.primary}10; color: {$colorStore.text}"
         disabled={currentPage <= 1}
         onclick={() => go(-1)}
-        aria-label="Previous page"
+        aria-label={m.common.previousPage()}
       ><i class="fa-solid fa-chevron-left"></i></button>
       <span class="px-2">{currentPage} / {pageCount}</span>
       <button
@@ -203,7 +204,7 @@
         style="background: {$colorStore.primary}10; color: {$colorStore.text}"
         disabled={currentPage >= pageCount}
         onclick={() => go(1)}
-        aria-label="Next page"
+        aria-label={m.common.nextPage()}
       ><i class="fa-solid fa-chevron-right"></i></button>
     </div>
   </div>

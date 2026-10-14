@@ -1,5 +1,6 @@
-<!-- routes/dashboard/process-logs/+page.svelte -->
+<!-- routes/owner/process-logs/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount, tick } from "svelte";
   import { goto } from "$app/navigation";
   import { ownershipApi, pm2Api } from "$lib/api/index.ts";
@@ -65,14 +66,14 @@
     FTL: "#f0abfc",
   };
 
-  const levelNames: Record<LogLevel, string> = {
-    VRB: "Verbose",
-    DBG: "Debug",
-    INF: "Info",
-    WRN: "Warning",
-    ERR: "Error",
-    FTL: "Fatal",
-  };
+  const levelNames = $derived<Record<LogLevel, string>>({
+    VRB: m.owner.processLogsLevelVerbose(),
+    DBG: m.owner.processLogsLevelDebug(),
+    INF: m.owner.processLogsLevelInfo(),
+    WRN: m.common.warning(),
+    ERR: m.common.error(),
+    FTL: m.owner.processLogsLevelFatal(),
+  });
 
   let allowed = $state(false);
 
@@ -150,7 +151,7 @@
   }
 
   function describeError(err: unknown, fallback: string): string {
-    if (err instanceof ApiError && err.status === 403) return "Only bot owners can read process logs";
+    if (err instanceof ApiError && err.status === 403) return m.owner.processLogsErrorOwnersOnly();
     return err instanceof Error && err.message ? err.message : fallback;
   }
 
@@ -195,7 +196,7 @@
       }
     } catch (err) {
       logger.error("Failed to load pm2 processes:", err);
-      processesError = describeError(err, "Failed to load the process list");
+      processesError = describeError(err, m.owner.processLogsErrorLoad());
     } finally {
       processesLoading = false;
     }
@@ -216,7 +217,7 @@
       await scrollToBottom();
     } catch (err) {
       logger.error("Failed to load pm2 log tail:", err);
-      logError = describeError(err, "Failed to read the log");
+      logError = describeError(err, m.owner.logsErrorReadLog());
       lines = [];
       chunk = null;
     } finally {
@@ -259,7 +260,7 @@
       logError = null;
     } catch (err) {
       logger.error("Failed to poll pm2 log:", err);
-      logError = describeError(err, "Lost contact with the log; retrying");
+      logError = describeError(err, m.owner.logsErrorLogLost());
     } finally {
       polling = false;
     }
@@ -305,7 +306,7 @@
       setTimeout(() => (copied = false), 1500);
     } catch (err) {
       logger.error("Failed to copy log lines:", err);
-      logError = "The browser refused clipboard access";
+      logError = m.owner.logsErrorClipboard();
     }
   }
 
@@ -351,7 +352,7 @@
         }
       },
       "critical",
-      "Checking permissions...",
+      m.common.checkingPermissions(),
     );
 
     if (!isOwner) {
@@ -366,14 +367,14 @@
 
 <DashboardPageLayout
   category="Analytics"
-  guildName="Bot Owner Tools"
+  guildName={m.common.botOwnerTools()}
   icon="fa-rectangle-code"
-  subtitle="Read and follow the pm2 logs of every process on the bot's host"
-  title="Process Logs"
+  subtitle={m.features.processLogsDescription()}
+  title={m.features.processLogsName()}
 >
   {#if allowed}
     <section class="mb-6">
-      <SectionHeader icon="fa-server" title="Processes" subtitle="What pm2 is running on the selected instance's host">
+      <SectionHeader icon="fa-server" title={m.owner.processLogsProcesses()} subtitle={m.owner.processLogsWhatPm2IsRunningOnThe()}>
         {#snippet actions()}
           <button
             type="button"
@@ -382,7 +383,7 @@
             onclick={() => loadProcesses()}
           >
             <i class="fa-solid fa-rotate" aria-hidden="true"></i>
-            Refresh
+            {m.common.refresh()}
           </button>
         {/snippet}
       </SectionHeader>
@@ -391,7 +392,7 @@
         loading={processesLoading}
         error={processesError}
         empty={!processList || processList.processes.length === 0}
-        emptyMessage={processList?.message ?? "pm2 has no processes registered"}
+        emptyMessage={processList?.message ?? m.owner.processLogsNoProcesses()}
         emptyIcon="fa-server"
       >
         {#if processList && processList.source === Pm2ListSource.LogDirectory}
@@ -416,28 +417,28 @@
                 <div class="flex items-center gap-2 min-w-0">
                   <span class="font-semibold truncate" style="color: {$colorStore.text}">{process.name}</span>
                   {#if process.isSelf}
-                    <Pill tone="ok" text="this bot" icon="fa-star" />
+                    <Pill tone="ok" text={m.owner.logsThisBot()} icon="fa-star" />
                   {/if}
                 </div>
                 <Pill tone={statusTone(process.status)} text={process.status} />
               </div>
               <dl class="grid grid-cols-3 gap-x-3 gap-y-1 text-xs">
-                <dt style="color: {$colorStore.muted}">pm2 id</dt>
+                <dt style="color: {$colorStore.muted}">{m.owner.processLogsPm2Id()}</dt>
                 <dd class="col-span-2 font-mono" style="color: {$colorStore.text}">
-                  {process.pmId >= 0 ? process.pmId : "-"}{#if process.pid}<span style="color: {$colorStore.muted}"> pid {process.pid}</span>{/if}
+                  {process.pmId >= 0 ? process.pmId : "-"}{#if process.pid}<span style="color: {$colorStore.muted}"> {m.owner.processLogsPid({ pid: process.pid })}</span>{/if}
                 </dd>
-                <dt style="color: {$colorStore.muted}">Uptime</dt>
+                <dt style="color: {$colorStore.muted}">{m.common.uptime()}</dt>
                 <dd class="col-span-2" style="color: {$colorStore.text}">
-                  {uptime(process)}{#if process.restarts > 0}<span style="color: {$colorStore.muted}"> ({formatNumber(process.restarts)} restarts)</span>{/if}
+                  {uptime(process)}{#if process.restarts > 0}<span style="color: {$colorStore.muted}"> {m.owner.processLogsRestarts({ count: formatNumber(process.restarts) })}</span>{/if}
                 </dd>
-                <dt style="color: {$colorStore.muted}">Usage</dt>
+                <dt style="color: {$colorStore.muted}">{m.owner.processLogsUsage()}</dt>
                 <dd class="col-span-2" style="color: {$colorStore.text}">
-                  {process.cpu !== undefined ? `${process.cpu.toFixed(1)}% cpu` : "-"}
+                  {process.cpu !== undefined ? m.owner.processLogsCpu({ percent: process.cpu.toFixed(1) }) : "-"}
                   {#if process.memoryBytes !== undefined}<span style="color: {$colorStore.muted}"> / </span>{formatBytes(process.memoryBytes)}{/if}
                 </dd>
-                <dt style="color: {$colorStore.muted}">Logs</dt>
+                <dt style="color: {$colorStore.muted}">{m.owner.logsTitle()}</dt>
                 <dd class="col-span-2" style="color: {$colorStore.text}">
-                  out {formatBytes(process.outLogBytes)}<span style="color: {$colorStore.muted}"> / </span>err {formatBytes(process.errorLogBytes)}
+                  {m.owner.processLogsOutErr({ out: formatBytes(process.outLogBytes), err: formatBytes(process.errorLogBytes) })}
                 </dd>
               </dl>
             </button>
@@ -451,11 +452,11 @@
         <SectionHeader
           icon="fa-rectangle-code"
           title={selected.name}
-          subtitle={chunk?.path ?? (stream === Pm2LogStream.Error ? selected.errorLogPath : selected.outLogPath) ?? "No log file yet"}
+          subtitle={chunk?.path ?? (stream === Pm2LogStream.Error ? selected.errorLogPath : selected.outLogPath) ?? m.owner.processLogsNoLogFile()}
         >
           {#snippet actions()}
-            <WindowPicker value={stream} options={streamOptions} ariaLabel="Log stream" onchange={changeStream} />
-            <WindowPicker value={lineCount} options={lineOptions} ariaLabel="Lines to load" onchange={changeLineCount} />
+            <WindowPicker value={stream} options={streamOptions} ariaLabel={m.owner.processLogsLogStream()} onchange={changeStream} />
+            <WindowPicker value={lineCount} options={lineOptions} ariaLabel={m.owner.logsLinesToLoad()} onchange={changeLineCount} />
           {/snippet}
         </SectionHeader>
 
@@ -469,8 +470,8 @@
             <input
               type="search"
               bind:value={search}
-              placeholder="Filter lines"
-              aria-label="Filter lines"
+              placeholder={m.owner.logsFilterLines()}
+              aria-label={m.owner.logsFilterLines()}
               class="w-full rounded-lg pl-8 pr-3 min-h-[40px] text-sm outline-none"
               style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
             />
@@ -484,7 +485,7 @@
             onclick={() => (follow = !follow)}
           >
             <i class="fa-solid {follow ? 'fa-pause' : 'fa-play'}" aria-hidden="true"></i>
-            {follow ? "Following" : "Follow"}
+            {follow ? m.owner.logsFollowing() : m.owner.logsFollow()}
           </button>
 
           <button
@@ -495,7 +496,7 @@
             onclick={() => (wrap = !wrap)}
           >
             <i class="fa-solid fa-text-width" aria-hidden="true"></i>
-            Wrap
+            {m.owner.logsWrap()}
           </button>
 
           <button
@@ -506,7 +507,7 @@
             onclick={copyVisible}
           >
             <i class="fa-solid {copied ? 'fa-check' : 'fa-copy'}" aria-hidden="true"></i>
-            {copied ? "Copied" : "Copy"}
+            {copied ? m.common.copied() : m.owner.logsCopy()}
           </button>
 
           <button
@@ -516,7 +517,7 @@
             onclick={loadTail}
           >
             <i class="fa-solid fa-rotate" aria-hidden="true"></i>
-            Reload
+            {m.owner.logsReload()}
           </button>
 
           {#if downloadUrl}
@@ -527,12 +528,12 @@
               style="background: {$colorStore.secondary}20; color: {$colorStore.text};"
             >
               <i class="fa-solid fa-download" aria-hidden="true"></i>
-              Download {formatBytes(selectedLogBytes)}
+              {m.owner.processLogsDownload({ size: formatBytes(selectedLogBytes) })}
             </a>
           {/if}
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 mb-3" role="group" aria-label="Level filters">
+        <div class="flex flex-wrap items-center gap-2 mb-3" role="group" aria-label={m.owner.processLogsLevelFilters()}>
           {#each LOG_LEVELS as level}
             {@const hidden = hiddenLevels.includes(level)}
             <button
@@ -541,7 +542,7 @@
               style="background: {levelColors[level]}{hidden ? '10' : '25'}; color: {levelColors[level]}; opacity: {hidden ? 0.45 : 1};
                      text-decoration: {hidden ? 'line-through' : 'none'};"
               aria-pressed={!hidden}
-              title="{levelNames[level]}: click to {hidden ? 'show' : 'hide'}"
+              title={hidden ? m.owner.processLogsLevelShow({ level: levelNames[level] }) : m.owner.processLogsLevelHide({ level: levelNames[level] })}
               onclick={() => toggleLevel(level)}
             >
               {level}
@@ -555,7 +556,7 @@
               style="background: {$colorStore.primary}15; color: {$colorStore.text};"
               onclick={showAllLevels}
             >
-              Show all
+              {m.owner.processLogsShowAll()}
             </button>
           {/if}
         </div>
@@ -570,15 +571,15 @@
           >
             <div class="flex flex-wrap items-center gap-3">
               <span>
-                {formatNumber(visibleLines.length)} lines{#if hiddenCount > 0}, {formatNumber(hiddenCount)} hidden by filters{/if}
+                {hiddenCount > 0 ? m.owner.logsLinesHidden({ count: formatNumber(visibleLines.length), hidden: formatNumber(hiddenCount) }) : m.owner.logsLines({ count: formatNumber(visibleLines.length) })}
               </span>
               {#if chunk}
-                <span>{formatBytes(chunk.fileSize)} on disk</span>
+                <span>{m.owner.processLogsOnDisk({ size: formatBytes(chunk.fileSize) })}</span>
                 {#if chunk.truncated}
-                  <span style="color: #fdac41">older lines skipped past the 1 MB read limit</span>
+                  <span style="color: #fdac41">{m.owner.processLogsOlderLinesSkippedPastThe1()}</span>
                 {/if}
                 {#if chunk.rotated}
-                  <span style="color: #fdac41">file was rotated, showing the new tail</span>
+                  <span style="color: #fdac41">{m.owner.processLogsFileWasRotatedShowingTheNew()}</span>
                 {/if}
               {/if}
             </div>
@@ -586,11 +587,11 @@
               {#if follow}
                 <span class="flex items-center gap-1.5">
                   <span class="inline-block w-2 h-2 rounded-full animate-pulse" style="background: #4ade80;"></span>
-                  live
+                  {m.common.live()}
                 </span>
               {/if}
               {#if lastUpdated}
-                <span>updated {lastUpdated.toLocaleTimeString()}</span>
+                <span>{m.owner.logsUpdatedAt({ time: lastUpdated.toLocaleTimeString() })}</span>
               {/if}
             </div>
           </div>
@@ -609,19 +610,19 @@
               onscroll={updateScrollState}
               role="log"
               aria-live="off"
-              aria-label="Log output"
+              aria-label={m.owner.processLogsLogOutput()}
             >
               {#if logLoading && lines.length === 0}
                 <div class="flex justify-center items-center min-h-[200px]">
                   <div
                     class="w-8 h-8 border-4 rounded-full animate-spin"
                     style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"
-                    aria-label="Loading"
+                    aria-label={m.common.loading()}
                   ></div>
                 </div>
               {:else if visibleLines.length === 0}
                 <div class="px-4 py-12 text-center text-sm" style="color: {$colorStore.muted}">
-                  {lines.length === 0 ? "The log is empty" : "No lines match the current filters"}
+                  {lines.length === 0 ? m.owner.logsLogEmpty() : m.owner.logsLogNoMatch()}
                 </div>
               {:else}
                 {#each visibleLines as line (line.id)}
@@ -644,7 +645,7 @@
                 onclick={scrollToBottom}
               >
                 <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
-                {pendingNew > 0 ? `${formatNumber(pendingNew)} new` : "Bottom"}
+                {pendingNew > 0 ? m.owner.logsNewLines({ count: formatNumber(pendingNew) }) : m.owner.logsBottom()}
               </button>
             {/if}
           </div>

@@ -1,5 +1,6 @@
 <!-- routes/dashboard/currency/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onDestroy } from "svelte";
   import { fade, fly } from "svelte/transition";
   import {
@@ -35,8 +36,8 @@
   const autoSave = createAutoSave({
     onError: (_err, key) => notify(
       typeof savedConfig?.[key as keyof EconomyConfig] === "boolean"
-        ? "Couldn't save economy settings. Your last change was undone."
-        : "Couldn't save economy settings.",
+        ? m.currency.notifySaveFailedUndone()
+        : m.currency.notifySaveFailed(),
       "error",
     ),
   });
@@ -81,11 +82,11 @@
   let supplyCanvas = $state<HTMLCanvasElement | null>(null);
   let supplyChart: Chart<"line", number[], string> | null = null;
 
-  const itemTypeOptions = [
-    { id: ShopItemType.Role.toString(), name: "Role", label: "Role (grants a Discord role)" },
-    { id: ShopItemType.Collectible.toString(), name: "Collectible", label: "Collectible (inventory only)" },
-    { id: ShopItemType.Text.toString(), name: "Text", label: "Text (DMs the buyer some content)" },
-  ];
+  const itemTypeOptions = $derived([
+    { id: ShopItemType.Role.toString(), name: m.common.role(), label: m.currency.itemTypeRoleLabel() },
+    { id: ShopItemType.Collectible.toString(), name: m.currency.itemTypeCollectible(), label: m.currency.itemTypeCollectibleLabel() },
+    { id: ShopItemType.Text.toString(), name: m.common.text(), label: m.currency.itemTypeTextLabel() },
+  ]);
 
   function blankShopItem(): ShopItemRequest {
     return {
@@ -123,7 +124,7 @@
   }
 
   function formatDuration(seconds: number): string {
-    if (seconds <= 0) return "none";
+    if (seconds <= 0) return m.common.noneLower();
     if (seconds < 60) return `${seconds}s`;
     if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
     return `${(seconds / 3600).toFixed(seconds % 3600 === 0 ? 0 : 1)}h`;
@@ -175,7 +176,7 @@
         .sort((a, b) => a.name.localeCompare(b.name));
     } catch (err) {
       logger.error("Failed to load currency data", err);
-      notify("Failed to load economy data", "error");
+      notify(m.currency.notifyLoadFailed(), "error");
     } finally {
       loading = false;
     }
@@ -189,7 +190,7 @@
       analytics = await currencyApi.getAnalytics($currentGuild.id, windowDays);
     } catch (err) {
       logger.error("Failed to load analytics", err);
-      notify("Failed to load analytics", "error");
+      notify(m.common.failedToLoadAnalytics(), "error");
     } finally {
       loading = false;
     }
@@ -205,7 +206,7 @@
       leaderboardTotal = data.total;
     } catch (err) {
       logger.error("Failed to load leaderboard", err);
-      notify("Failed to load leaderboard", "error");
+      notify(m.common.failedToLoadLeaderboard(), "error");
     }
   }
 
@@ -252,7 +253,7 @@
 
   async function resetConfig() {
     if (!$currentGuild?.id) return;
-    if (!(await requestConfirmation({ message: "Reset every economy setting to its default?", confirmText: "Reset" }))) return;
+    if (!(await requestConfirmation({ message: m.currency.confirmReset(), confirmText: m.common.reset() }))) return;
 
     saving = true;
     try {
@@ -260,10 +261,10 @@
       await autoSave.flush();
       config = await currencyApi.resetConfig($currentGuild.id);
       savedConfig = { ...config };
-      notify("Economy settings reset to defaults");
+      notify(m.currency.notifyResetDone());
     } catch (err) {
       logger.error("Failed to reset economy config", err);
-      notify("Failed to reset settings", "error");
+      notify(m.currency.notifyResetFailed(), "error");
     } finally {
       saving = false;
     }
@@ -298,12 +299,12 @@
     if (!$currentGuild?.id) return;
 
     if (!shopForm.name.trim()) {
-      notify("The item needs a name", "error");
+      notify(m.currency.notifyItemNeedsName(), "error");
       return;
     }
 
     if (shopForm.itemType === ShopItemType.Role && !shopForm.roleId) {
-      notify("Role items need a role to grant", "error");
+      notify(m.currency.notifyItemNeedsRole(), "error");
       return;
     }
 
@@ -311,17 +312,17 @@
     try {
       if (editingName) {
         await currencyApi.updateShopItem($currentGuild.id, editingName, shopForm);
-        notify(`Updated ${shopForm.name}`);
+        notify(m.currency.notifyItemUpdated({ name: shopForm.name }));
       } else {
         await currencyApi.createShopItem($currentGuild.id, shopForm);
-        notify(`Added ${shopForm.name} to the shop`);
+        notify(m.currency.notifyItemAdded({ name: shopForm.name }));
       }
 
       showShopEditor = false;
       shopItems = await currencyApi.getShop($currentGuild.id);
     } catch (err: any) {
       logger.error("Failed to save shop item", err);
-      notify(err?.message ?? "Failed to save item", "error");
+      notify(err?.message ?? m.currency.notifyItemSaveFailed(), "error");
     } finally {
       saving = false;
     }
@@ -329,15 +330,15 @@
 
   async function deleteShopItem(item: ShopItem) {
     if (!$currentGuild?.id) return;
-    if (!(await requestConfirmation({ message: `Delete "${item.name}"? Everyone who owns one loses it.`, confirmText: "Delete" }))) return;
+    if (!(await requestConfirmation({ message: m.currency.confirmDeleteItem({ name: item.name }), confirmText: m.common.delete() }))) return;
 
     try {
       await currencyApi.deleteShopItem($currentGuild.id, item.name);
       shopItems = shopItems.filter((x) => x.id !== item.id);
-      notify(`Deleted ${item.name}`);
+      notify(m.currency.notifyItemDeleted({ name: item.name }));
     } catch (err) {
       logger.error("Failed to delete shop item", err);
-      notify("Failed to delete item", "error");
+      notify(m.currency.notifyItemDeleteFailed(), "error");
     }
   }
 
@@ -363,7 +364,7 @@
       shopItems = await currencyApi.getShop($currentGuild.id);
     } catch (err) {
       logger.error("Failed to toggle shop item", err);
-      notify("Failed to update item", "error");
+      notify(m.currency.notifyItemUpdateFailed(), "error");
     }
   }
 
@@ -371,14 +372,14 @@
     if (!$currentGuild?.id) return;
 
     if (!adjustUserId) {
-      notify("Pick a member first", "error");
+      notify(m.currency.notifyPickMember(), "error");
       return;
     }
 
     const userId = BigInt(adjustUserId);
 
     if (!adjustAmount) {
-      notify("Enter a non-zero amount", "error");
+      notify(m.currency.notifyAmountZero(), "error");
       return;
     }
 
@@ -390,14 +391,14 @@
         reason: adjustReason || null,
       });
 
-      notify(`Adjusted. Wallet is now ${formatNumber(result.wallet)}.`);
+      notify(m.currency.notifyAdjusted({ wallet: formatNumber(result.wallet) }));
       adjustUserId = null;
       adjustAmount = 0;
       adjustReason = "";
       await loadLeaderboardPage(leaderboardPage);
     } catch (err) {
       logger.error("Failed to adjust balance", err);
-      notify("Failed to adjust balance", "error");
+      notify(m.currency.notifyAdjustFailed(), "error");
     } finally {
       saving = false;
     }
@@ -427,7 +428,7 @@
         labels: points.map((p) => new Date(p.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })),
         datasets: [
           {
-            label: "Cumulative change",
+            label: m.currency.chartCumulative(),
             data: cumulative,
             borderColor: $colorStore.primary,
             backgroundColor: `${$colorStore.primary}20`,
@@ -439,7 +440,7 @@
             borderWidth: 2,
           },
           {
-            label: "Daily net",
+            label: m.currency.chartDailyNet(),
             data: points.map((p) => p.net),
             borderColor: $colorStore.accent,
             backgroundColor: "transparent",
@@ -487,16 +488,16 @@
 
   onDestroy(() => supplyChart?.destroy());
 
-  const tabs = [
-    { id: "analytics", label: "Analytics", icon: "fa-chart-line" },
-    { id: "config", label: "Configuration", icon: "fa-gear" },
-    { id: "shop", label: "Shop", icon: "fa-bag-shopping" },
-    { id: "leaderboard", label: "Leaderboard", icon: "fa-ranking-star" },
-  ];
+  const tabs = $derived([
+    { id: "analytics", label: m.features.analyticsName(), icon: "fa-chart-line" },
+    { id: "config", label: m.common.configuration(), icon: "fa-gear" },
+    { id: "shop", label: m.currency.tabShop(), icon: "fa-bag-shopping" },
+    { id: "leaderboard", label: m.common.leaderboard(), icon: "fa-ranking-star" },
+  ]);
 
   let actionButtons = $derived([
     {
-      label: "Refresh",
+      label: m.common.refresh(),
       icon: "fa-arrows-rotate",
       action: loadAll,
       loading: loading,
@@ -551,21 +552,21 @@
   {actionButtons}
   {autoSave}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-money-bill"
   statusMessages={statusMessages}
-  subtitle="Money supply, payout rates, shop and balances"
+  subtitle={m.currency.pageSubtitle()}
   {tabs}
-  title="Currency & Economy"
+  title={m.currency.pageTitle()}
 >
 
   {#if activeTab === 'analytics'}
     <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
 
       <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-        <span id="window-label" class="text-sm font-medium shrink-0" style="color: {$colorStore.muted}">Window</span>
+        <span id="window-label" class="text-sm font-medium shrink-0" style="color: {$colorStore.muted}">{m.common.window()}</span>
         <div class="grid grid-cols-4 gap-2 sm:flex sm:gap-3" role="radiogroup" aria-labelledby="window-label">
-          {#each [{ days: 7, short: "7d", long: "7 days" }, { days: 30, short: "30d", long: "30 days" }, { days: 90, short: "90d", long: "90 days" }, { days: 365, short: "1y", long: "1 year" }] as option}
+          {#each [{ days: 7, short: m.currency.window7dShort(), long: m.currency.window7d() }, { days: 30, short: m.common.thirtyDaysShort(), long: m.currency.window30d() }, { days: 90, short: m.currency.window90dShort(), long: m.currency.window90d() }, { days: 365, short: m.currency.window1yShort(), long: m.currency.window1y() }] as option}
             <button
               onclick={() => { windowDays = option.days; reloadAnalytics(); }}
               role="radio"
@@ -589,9 +590,9 @@
                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
             <StatCard
               icon="fa-circle-dollar"
-              label="Money Supply"
+              label={m.currency.statMoneySupply()}
               value={formatNumber(analytics.snapshot.moneySupply)}
-              subtitle="{formatNumber(analytics.snapshot.holders)} holders"
+              subtitle={m.currency.statHolders({ count: formatNumber(analytics.snapshot.holders) })}
               iconColor="primary"
             />
           </div>
@@ -599,9 +600,9 @@
                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
             <StatCard
               icon="fa-chart-simple"
-              label="Net Change"
+              label={m.currency.statNetChange()}
               value={formatSigned(analytics.snapshot.netChange)}
-              subtitle="over {analytics.windowDays} days"
+              subtitle={m.currency.statOverDays({ count: analytics.windowDays })}
               iconColor={analytics.snapshot.netChange >= 0 ? "accent" : "secondary"}
               trend={analytics.snapshot.netChange > 0 ? "up" : analytics.snapshot.netChange < 0 ? "down" : "neutral"}
             />
@@ -610,9 +611,9 @@
                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
             <StatCard
               icon="fa-chart-pie"
-              label="Gini"
+              label={m.currency.statGini()}
               value={analytics.snapshot.gini.toFixed(3)}
-              subtitle="top 10% hold {formatPercent(analytics.snapshot.topTenPercentShare)}"
+              subtitle={m.currency.statTopTen({ share: formatPercent(analytics.snapshot.topTenPercentShare) })}
               iconColor="secondary"
             />
           </div>
@@ -620,9 +621,9 @@
                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
             <StatCard
               icon="fa-credit-card"
-              label="Median Holding"
+              label={m.currency.statMedian()}
               value={formatNumber(analytics.snapshot.median)}
-              subtitle="mean {formatNumber(analytics.snapshot.mean)}"
+              subtitle={m.currency.statMean({ value: formatNumber(analytics.snapshot.mean) })}
               iconColor="primary"
             />
           </div>
@@ -635,10 +636,10 @@
           <div class="flex items-center gap-3 mb-2">
             <i class="fa-utility-duo fa-regular fa-clock"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Money supply over time</h2>
+            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.currency.supplyTitle()}</h2>
           </div>
           <p class="text-sm mb-6" style="color: {$colorStore.muted}">
-            Currency created minus currency destroyed. A line that only climbs means your faucets outpace your sinks.
+            {m.currency.supplyHint()}
           </p>
 
           {#if analytics.supplyHistory.length > 0}
@@ -646,7 +647,7 @@
               <canvas bind:this={supplyCanvas}></canvas>
             </div>
           {:else}
-            <p class="text-center py-12" style="color: {$colorStore.muted}">No ledger activity in this window.</p>
+            <p class="text-center py-12" style="color: {$colorStore.muted}">{m.currency.supplyEmpty()}</p>
           {/if}
         </div>
 
@@ -654,7 +655,7 @@
         <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                     border-color: {$colorStore.primary}30;">
-          <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Where the money sits</h2>
+          <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.currency.whereTitle()}</h2>
           <div class="flex h-8 rounded-full overflow-hidden mb-3" style="background: {$colorStore.primary}10;">
             {#if analytics.snapshot.moneySupply > 0}
               <div style="width: {(analytics.snapshot.inWallets / analytics.snapshot.moneySupply) * 100}%; background: {$colorStore.primary};"></div>
@@ -664,20 +665,20 @@
           <div class="flex flex-wrap gap-6 text-sm">
             <div class="flex items-center gap-2">
               <span class="w-3 h-3 rounded-full" style="background: {$colorStore.primary}"></span>
-              <span style="color: {$colorStore.text}">Wallets {formatNumber(analytics.snapshot.inWallets)}</span>
-              <span style="color: {$colorStore.muted}">(robbable, spendable)</span>
+              <span style="color: {$colorStore.text}">{m.currency.whereWallets({ amount: formatNumber(analytics.snapshot.inWallets) })}</span>
+              <span style="color: {$colorStore.muted}">{m.currency.whereWalletsNote()}</span>
             </div>
             <div class="flex items-center gap-2">
               <span class="w-3 h-3 rounded-full" style="background: {$colorStore.secondary}"></span>
-              <span style="color: {$colorStore.text}">Banked {formatNumber(analytics.snapshot.inBanks)}</span>
-              <span style="color: {$colorStore.muted}">(safe, idle)</span>
+              <span style="color: {$colorStore.text}">{m.currency.whereBanked({ amount: formatNumber(analytics.snapshot.inBanks) })}</span>
+              <span style="color: {$colorStore.muted}">{m.currency.whereBankedNote()}</span>
             </div>
           </div>
         </div>
 
         <!-- Faucets and sinks -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {#each [{ title: "Faucets", note: "currency entering circulation", data: faucets, color: $colorStore.primary }, { title: "Sinks", note: "currency leaving circulation", data: sinks, color: $colorStore.accent }] as panel}
+          {#each [{ title: m.currency.flowFaucets(), note: m.currency.flowFaucetsNote(), data: faucets, color: $colorStore.primary }, { title: m.currency.flowSinks(), note: m.currency.flowSinksNote(), data: sinks, color: $colorStore.accent }] as panel}
             <div class="rounded-2xl border p-6 shadow-2xl"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
@@ -685,7 +686,7 @@
               <p class="text-sm mb-4" style="color: {$colorStore.muted}">{panel.note}</p>
 
               {#if panel.data.length === 0}
-                <p class="text-sm py-6 text-center" style="color: {$colorStore.muted}">Nothing recorded.</p>
+                <p class="text-sm py-6 text-center" style="color: {$colorStore.muted}">{m.currency.flowEmpty()}</p>
               {:else}
                 <div class="space-y-3">
                   {#each panel.data as bucket}
@@ -699,7 +700,7 @@
                              style="width: {(Math.abs(bucket.net) / largestFlow) * 100}%; background: {panel.color};"></div>
                       </div>
                       <div class="text-xs mt-1" style="color: {$colorStore.muted}">
-                        {formatNumber(bucket.entries)} entries
+                        {bucket.entries === 1 ? m.currency.flowEntriesOne({ count: formatNumber(bucket.entries) }) : m.currency.flowEntriesOther({ count: formatNumber(bucket.entries) })}
                       </div>
                     </div>
                   {/each}
@@ -711,9 +712,7 @@
 
         {#if analytics.transferTax > 0}
           <div class="rounded-xl p-4 text-sm" style="background: {$colorStore.primary}08; color: {$colorStore.muted};">
-            <strong style="color: {$colorStore.text}">{formatNumber(analytics.transferTax)}</strong>
-            was destroyed as transfer tax over this window. Tax has no ledger row of its own, so it is derived from the
-            gap between what senders paid and what recipients received.
+            {m.currency.transferTaxNote({ amount: formatNumber(analytics.transferTax) })}
           </div>
         {/if}
 
@@ -724,27 +723,26 @@
           <div class="flex items-center gap-3 mb-2">
             <i class="fa-utility-duo fa-regular fa-gamepad-modern"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Game performance</h2>
+            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.currency.gamesTitle()}</h2>
           </div>
           <p class="text-sm mb-6" style="color: {$colorStore.muted}">
-            RTP is what players actually got back per unit wagered. Above 100% means the game is printing currency and
-            wants its payout multiplier lowered.
+            {m.currency.gamesHint()}
           </p>
 
           {#if analytics.games.length === 0}
-            <p class="text-center py-8" style="color: {$colorStore.muted}">No games played in this window.</p>
+            <p class="text-center py-8" style="color: {$colorStore.muted}">{m.currency.gamesEmpty()}</p>
           {:else}
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
                 <thead>
                 <tr style="color: {$colorStore.muted}">
-                  <th class="text-left py-2 px-3">Game</th>
-                  <th class="text-right py-2 px-3">RTP</th>
-                  <th class="text-right py-2 px-3">Wagered</th>
-                  <th class="text-right py-2 px-3">Returned</th>
-                  <th class="text-right py-2 px-3">House</th>
-                  <th class="text-right py-2 px-3">Plays</th>
-                  <th class="text-right py-2 px-3">Players</th>
+                  <th class="text-left py-2 px-3">{m.currency.gamesColGame()}</th>
+                  <th class="text-right py-2 px-3">{m.currency.gamesColRtp()}</th>
+                  <th class="text-right py-2 px-3">{m.currency.gamesColWagered()}</th>
+                  <th class="text-right py-2 px-3">{m.currency.gamesColReturned()}</th>
+                  <th class="text-right py-2 px-3">{m.currency.gamesColHouse()}</th>
+                  <th class="text-right py-2 px-3">{m.currency.gamesColPlays()}</th>
+                  <th class="text-right py-2 px-3">{m.common.players()}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -773,7 +771,7 @@
       {:else if !loading}
         <div class="rounded-2xl border p-12 text-center"
              style="border-color: {$colorStore.primary}30; color: {$colorStore.muted};">
-          Nobody on this server holds any currency yet.
+          {m.currency.analyticsEmpty()}
         </div>
       {/if}
     </div>
@@ -808,14 +806,14 @@
         <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                     border-color: {$colorStore.primary}30;">
-          <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Betting</h2>
+          <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.currency.configBetting()}</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle("Enable gambling", "Turns every wagering game on or off", config.gamblingEnabled, () => toggleSetting("gamblingEnabled"))}
-            {@render numberField("Minimum bet", "", "minBet", 1)}
-            {@render numberField("Maximum bet", "0 for unlimited. A ceiling stops one lucky run ending the economy.", "maxBet")}
-            {@render numberField("Payout multiplier", "Scales winnings only, never the returned stake. Below 1.0 widens the house edge.", "payoutMultiplier")}
-            {@render numberField("Game cooldown (seconds)", formatDuration(config.gameCooldownSeconds), "gameCooldownSeconds")}
-            {@render numberField("Daily loss limit", "0 to disable. Cuts a user off after losing this much in 24h.", "lossLimitPerDay")}
+            {@render toggle(m.currency.cfgEnableGambling(), m.currency.cfghintTurnsEveryWageringGameOnOrOff(), config.gamblingEnabled, () => toggleSetting("gamblingEnabled"))}
+            {@render numberField(m.currency.cfgMinimumBet(), "", "minBet", 1)}
+            {@render numberField(m.currency.cfgMaximumBet(), m.currency.cfghint0ForUnlimitedACeilingStopsOneLuck(), "maxBet")}
+            {@render numberField(m.currency.cfgPayoutMultiplier(), m.currency.cfghintScalesWinningsOnlyNeverTheReturned(), "payoutMultiplier")}
+            {@render numberField(m.currency.cfgGameCooldownSeconds(), formatDuration(config.gameCooldownSeconds), "gameCooldownSeconds")}
+            {@render numberField(m.currency.cfgDailyLossLimit(), m.currency.cfghint0ToDisableCutsAUserOffAfterLosin(), "lossLimitPerDay")}
           </div>
         </div>
 
@@ -823,19 +821,19 @@
         <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                     border-color: {$colorStore.primary}30;">
-          <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Earning</h2>
+          <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.currency.configEarning()}</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle("Enable work", "The low-risk, steady earning command", config.workEnabled, () => toggleSetting("workEnabled"))}
-            {@render numberField("Work minimum", "", "workMinReward")}
-            {@render numberField("Work maximum", "", "workMaxReward")}
-            {@render numberField("Work cooldown (seconds)", formatDuration(config.workCooldownSeconds), "workCooldownSeconds")}
-            {@render toggle("Enable crime", "Pays better than work but fails often enough to stay behind it on average", config.crimeEnabled, () => toggleSetting("crimeEnabled"))}
-            {@render numberField("Crime minimum", "", "crimeMinReward")}
-            {@render numberField("Crime maximum", "", "crimeMaxReward")}
-            {@render numberField("Crime success chance (%)", "", "crimeSuccessChance")}
-            {@render numberField("Crime fine minimum", "", "crimeFineMin")}
-            {@render numberField("Crime fine maximum", "", "crimeFineMax")}
-            {@render numberField("Crime cooldown (seconds)", formatDuration(config.crimeCooldownSeconds), "crimeCooldownSeconds")}
+            {@render toggle(m.currency.cfgEnableWork(), m.currency.cfghintTheLowRiskSteadyEarningCommand(), config.workEnabled, () => toggleSetting("workEnabled"))}
+            {@render numberField(m.currency.cfgWorkMinimum(), "", "workMinReward")}
+            {@render numberField(m.currency.cfgWorkMaximum(), "", "workMaxReward")}
+            {@render numberField(m.currency.cfgWorkCooldownSeconds(), formatDuration(config.workCooldownSeconds), "workCooldownSeconds")}
+            {@render toggle(m.currency.cfgEnableCrime(), m.currency.cfghintPaysBetterThanWorkButFailsOftenEn(), config.crimeEnabled, () => toggleSetting("crimeEnabled"))}
+            {@render numberField(m.currency.cfgCrimeMinimum(), "", "crimeMinReward")}
+            {@render numberField(m.currency.cfgCrimeMaximum(), "", "crimeMaxReward")}
+            {@render numberField(m.currency.cfgCrimeSuccessChance(), "", "crimeSuccessChance")}
+            {@render numberField(m.currency.cfgCrimeFineMinimum(), "", "crimeFineMin")}
+            {@render numberField(m.currency.cfgCrimeFineMaximum(), "", "crimeFineMax")}
+            {@render numberField(m.currency.cfgCrimeCooldownSeconds(), formatDuration(config.crimeCooldownSeconds), "crimeCooldownSeconds")}
           </div>
         </div>
 
@@ -843,15 +841,15 @@
         <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                     border-color: {$colorStore.primary}30;">
-          <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">Bank</h2>
+          <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">{m.currency.configBank()}</h2>
           <p class="text-sm mb-6" style="color: {$colorStore.muted}">
-            Banked currency cannot be robbed. Interest is a faucet, so it is off by default.
+            {m.currency.configBankHint()}
           </p>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle("Enable bank", "Lets users move currency out of reach of robbery", config.bankEnabled, () => toggleSetting("bankEnabled"))}
-            {@render numberField("Bank capacity", "0 for unlimited", "bankCapacity")}
-            {@render numberField("Interest (%)", "Paid per interval on the banked balance", "bankInterestPercent")}
-            {@render numberField("Interest interval (hours)", "", "bankInterestHours", 1)}
+            {@render toggle(m.currency.cfgEnableBank(), m.currency.cfghintLetsUsersMoveCurrencyOutOfReachOf(), config.bankEnabled, () => toggleSetting("bankEnabled"))}
+            {@render numberField(m.currency.cfgBankCapacity(), m.currency.shopMaxPerUserHint(), "bankCapacity")}
+            {@render numberField(m.currency.cfgInterest(), m.currency.cfghintPaidPerIntervalOnTheBankedBalance(), "bankInterestPercent")}
+            {@render numberField(m.currency.cfgInterestIntervalHours(), "", "bankInterestHours", 1)}
           </div>
         </div>
 
@@ -859,15 +857,15 @@
         <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                     border-color: {$colorStore.primary}30;">
-          <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">Transfers</h2>
+          <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">{m.currency.configTransfers()}</h2>
           <p class="text-sm mb-6" style="color: {$colorStore.muted}">
-            Transfer tax is a sink: the taxed portion is destroyed rather than moved.
+            {m.currency.configTransfersHint()}
           </p>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle("Enable transfers", "Lets users pay each other", config.payEnabled, () => toggleSetting("payEnabled"))}
-            {@render numberField("Transfer tax (%)", "", "payTaxPercent")}
-            {@render numberField("Transfer cooldown (seconds)", formatDuration(config.payCooldownSeconds), "payCooldownSeconds")}
-            {@render numberField("Minimum transfer", "", "payMinimum", 1)}
+            {@render toggle(m.currency.cfgEnableTransfers(), m.currency.cfghintLetsUsersPayEachOther(), config.payEnabled, () => toggleSetting("payEnabled"))}
+            {@render numberField(m.currency.cfgTransferTax(), "", "payTaxPercent")}
+            {@render numberField(m.currency.cfgTransferCooldownSeconds(), formatDuration(config.payCooldownSeconds), "payCooldownSeconds")}
+            {@render numberField(m.currency.cfgMinimumTransfer(), "", "payMinimum", 1)}
           </div>
         </div>
 
@@ -875,17 +873,17 @@
         <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                     border-color: {$colorStore.primary}30;">
-          <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">Robbery</h2>
+          <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">{m.currency.configRobbery()}</h2>
           <p class="text-sm mb-6" style="color: {$colorStore.muted}">
-            Off by default because it is disruptive in servers that did not opt into it. Only wallets can be robbed.
+            {m.currency.configRobberyHint()}
           </p>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle("Enable robbery", "Lets users steal from each other's wallets", config.robEnabled, () => toggleSetting("robEnabled"))}
-            {@render numberField("Success chance (%)", "", "robSuccessChance")}
-            {@render numberField("Maximum steal (%)", "Share of the target's wallet a success takes", "robMaxStealPercent", 1)}
-            {@render numberField("Failure fine (%)", "Share of the robber's wallet destroyed on failure", "robFinePercent")}
-            {@render numberField("Protected below", "Targets holding less than this cannot be robbed", "robMinimumWallet")}
-            {@render numberField("Robbery cooldown (seconds)", formatDuration(config.robCooldownSeconds), "robCooldownSeconds")}
+            {@render toggle(m.currency.cfgEnableRobbery(), m.currency.cfghintLetsUsersStealFromEachOtherSWalle(), config.robEnabled, () => toggleSetting("robEnabled"))}
+            {@render numberField(m.currency.cfgSuccessChance(), "", "robSuccessChance")}
+            {@render numberField(m.currency.cfgMaximumSteal(), m.currency.cfghintShareOfTheTargetSWalletASuccessT(), "robMaxStealPercent", 1)}
+            {@render numberField(m.currency.cfgFailureFine(), m.currency.cfghintShareOfTheRobberSWalletDestroyedO(), "robFinePercent")}
+            {@render numberField(m.currency.cfgProtectedBelow(), m.currency.cfghintTargetsHoldingLessThanThisCannotBe(), "robMinimumWallet")}
+            {@render numberField(m.currency.cfgRobberyCooldownSeconds(), formatDuration(config.robCooldownSeconds), "robCooldownSeconds")}
           </div>
         </div>
 
@@ -893,11 +891,11 @@
         <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                     border-color: {$colorStore.primary}30;">
-          <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Daily reward streaks</h2>
+          <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.currency.configDaily()}</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle("Enable streaks", "Consecutive daily claims earn an escalating bonus", config.dailyStreakEnabled, () => toggleSetting("dailyStreakEnabled"))}
-            {@render numberField("Bonus per day", "Added per consecutive day claimed", "dailyStreakBonus")}
-            {@render numberField("Maximum bonus", "0 for uncapped", "dailyStreakMaxBonus")}
+            {@render toggle(m.currency.cfgEnableStreaks(), m.currency.cfghintConsecutiveDailyClaimsEarnAnEscalat(), config.dailyStreakEnabled, () => toggleSetting("dailyStreakEnabled"))}
+            {@render numberField(m.currency.cfgBonusPerDay(), m.currency.cfghintAddedPerConsecutiveDayClaimed(), "dailyStreakBonus")}
+            {@render numberField(m.currency.cfgMaximumBonus(), m.currency.cfghint0ForUncapped(), "dailyStreakMaxBonus")}
           </div>
         </div>
 
@@ -905,11 +903,11 @@
           <button onclick={resetConfig} disabled={saving}
                   class="px-6 py-3 rounded-xl font-medium transition-all min-h-[44px] disabled:opacity-50"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;">
-            Reset to defaults
+            {m.currency.configReset()}
           </button>
         </div>
       {:else if !loading}
-        <p class="text-center py-12" style="color: {$colorStore.muted}">Could not load economy settings.</p>
+        <p class="text-center py-12" style="color: {$colorStore.muted}">{m.currency.configLoadFailed()}</p>
       {/if}
     </div>
   {/if}
@@ -918,22 +916,22 @@
     <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Shop items</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.currency.shopTitle()}</h2>
           <p class="text-sm" style="color: {$colorStore.muted}">
-            The shop is the economy's main sink. Without one, balances only ever accumulate.
+            {m.currency.shopHint()}
           </p>
         </div>
         <button onclick={() => openShopEditor(null)}
                 class="px-6 py-3 rounded-xl font-medium transition-all min-h-[44px]"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-          Add item
+          {m.common.addItem()}
         </button>
       </div>
 
       {#if shopItems.length === 0}
         <div class="rounded-2xl border p-12 text-center"
              style="border-color: {$colorStore.primary}30; color: {$colorStore.muted};">
-          No shop items yet. Add one to give currency somewhere to go.
+          {m.currency.shopEmpty()}
         </div>
       {:else}
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -950,7 +948,7 @@
                 </div>
                 <span class="text-xs px-2 py-1 rounded-lg shrink-0"
                       style="background: {$colorStore.primary}15; color: {$colorStore.muted};">
-                  {item.itemType === ShopItemType.Role ? "Role" : item.itemType === ShopItemType.Text ? "Text" : "Item"}
+                  {item.itemType === ShopItemType.Role ? m.common.role() : item.itemType === ShopItemType.Text ? m.common.text() : m.currency.shopTypeItem()}
                 </span>
               </div>
 
@@ -959,26 +957,26 @@
               {/if}
 
               <div class="text-xs space-y-1 mb-4" style="color: {$colorStore.muted}">
-                {#if item.roleName}<div>Grants {item.roleName}</div>{/if}
-                {#if item.requiredRoleName}<div>Requires {item.requiredRoleName}</div>{/if}
-                <div>{item.stock < 0 ? "Unlimited stock" : `${item.stock} in stock`}</div>
-                {#if item.maxPerUser > 0}<div>Limit {item.maxPerUser} per person</div>{/if}
-                <div>{formatNumber(item.owned)} owned · {formatNumber(item.revenue)} spent</div>
+                {#if item.roleName}<div>{m.common.grantsRole({ role: item.roleName })}</div>{/if}
+                {#if item.requiredRoleName}<div>{m.currency.shopRequires({ role: item.requiredRoleName })}</div>{/if}
+                <div>{item.stock < 0 ? m.currency.shopStockUnlimited() : m.currency.shopStockCount({ count: item.stock })}</div>
+                {#if item.maxPerUser > 0}<div>{m.currency.shopLimit({ count: item.maxPerUser })}</div>{/if}
+                <div>{m.currency.shopOwnedSpent({ owned: formatNumber(item.owned), spent: formatNumber(item.revenue) })}</div>
               </div>
 
               <div class="flex flex-wrap gap-2">
                 <button onclick={() => openShopEditor(item)}
                         class="px-3 py-2 rounded-lg text-sm transition-all"
-                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">Edit
+                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{m.common.edit()}
                 </button>
                 <button onclick={() => toggleShopItem(item)}
                         class="px-3 py-2 rounded-lg text-sm transition-all"
                         style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;">
-                  {item.enabled ? "Hide" : "Show"}
+                  {item.enabled ? m.common.hide() : m.common.show()}
                 </button>
                 <button onclick={() => deleteShopItem(item)}
                         class="px-3 py-2 rounded-lg text-sm transition-all"
-                        style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;">Delete
+                        style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;">{m.common.delete()}
                 </button>
               </div>
             </div>
@@ -992,51 +990,51 @@
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 200 }}>
           <h3 class="text-lg font-bold mb-6" style="color: {$colorStore.text}">
-            {editingName ? `Editing ${editingName}` : "New shop item"}
+            {editingName ? m.currency.shopEditing({ name: editingName }) : m.currency.shopNew()}
           </h3>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div>
-              <label for="shop-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Name</label>
+              <label for="shop-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.name()}</label>
               <input id="shop-name" type="text" bind:value={shopForm.name}
                      class="w-full p-3 rounded-xl border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             </div>
 
             <div>
-              <label for="shop-price" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Price</label>
+              <label for="shop-price" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.currency.shopPrice()}</label>
               <input id="shop-price" type="number" min="0" bind:value={shopForm.price}
                      class="w-full p-3 rounded-xl border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             </div>
 
             <div class="md:col-span-2">
-              <label for="shop-desc" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Description</label>
+              <label for="shop-desc" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.description()}</label>
               <input id="shop-desc" type="text" bind:value={shopForm.description}
                      class="w-full p-3 rounded-xl border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             </div>
 
             <div>
-              <label for="shop-type" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Type</label>
-              <DiscordSelector id="shop-type" ariaLabel="Item type" type="custom" options={itemTypeOptions}
+              <label for="shop-type" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.type()}</label>
+              <DiscordSelector id="shop-type" ariaLabel={m.currency.shopTypeAria()} type="custom" options={itemTypeOptions}
                                selected={shopForm.itemType.toString()}
                                onchange={(d) => (shopForm.itemType = Number(d.selected) as ShopItemType)} />
             </div>
 
             {#if shopForm.itemType === ShopItemType.Role}
               <div>
-                <label for="shop-role" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Role granted</label>
-                <DiscordSelector id="shop-role" ariaLabel="Role granted" type="role" options={guildRoles}
+                <label for="shop-role" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.currency.shopRoleGranted()}</label>
+                <DiscordSelector id="shop-role" ariaLabel={m.currency.shopRoleGranted()} type="role" options={guildRoles}
                                  selected={shopForm.roleId?.toString() ?? null}
-                                 placeholder="Pick a role"
+                                 placeholder={m.common.pickRolePlaceholder()}
                                  onchange={(d) => (shopForm.roleId = d.selected ? BigInt(d.selected as string) : null)} />
               </div>
             {/if}
 
             {#if shopForm.itemType === ShopItemType.Text}
               <div class="md:col-span-2">
-                <label for="shop-text" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Delivered text</label>
+                <label for="shop-text" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.currency.shopText()}</label>
                 <textarea id="shop-text" rows="3" bind:value={shopForm.textContent}
                           class="w-full p-3 rounded-xl border"
                           style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"></textarea>
@@ -1044,40 +1042,40 @@
             {/if}
 
             <div>
-              <label for="shop-stock" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Stock</label>
+              <label for="shop-stock" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.currency.shopStock()}</label>
               <input id="shop-stock" type="number" min="-1" bind:value={shopForm.stock}
                      class="w-full p-3 rounded-xl border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-              <p class="text-xs mt-1" style="color: {$colorStore.muted}">-1 for unlimited</p>
+              <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.currency.shopStockHint()}</p>
             </div>
 
             <div>
-              <label for="shop-max" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Limit per user</label>
+              <label for="shop-max" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.currency.shopMaxPerUser()}</label>
               <input id="shop-max" type="number" min="0" bind:value={shopForm.maxPerUser}
                      class="w-full p-3 rounded-xl border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-              <p class="text-xs mt-1" style="color: {$colorStore.muted}">0 for unlimited</p>
+              <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.currency.shopMaxPerUserHint()}</p>
             </div>
 
             <div>
-              <label for="shop-required-role" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Required role</label>
-              <DiscordSelector id="shop-required-role" ariaLabel="Required role" type="role" options={guildRoles}
+              <label for="shop-required-role" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.requiredRole()}</label>
+              <DiscordSelector id="shop-required-role" ariaLabel={m.common.requiredRole()} type="role" options={guildRoles}
                                selected={shopForm.requiredRoleId?.toString() ?? null}
-                               placeholder="Anyone can buy"
+                               placeholder={m.currency.shopRequiredRolePlaceholder()}
                                onchange={(d) => (shopForm.requiredRoleId = d.selected ? BigInt(d.selected as string) : null)} />
             </div>
 
             <div>
-              <label for="shop-sort" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Sort order</label>
+              <label for="shop-sort" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.currency.shopSortOrder()}</label>
               <input id="shop-sort" type="number" bind:value={shopForm.sortOrder}
                      class="w-full p-3 rounded-xl border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             </div>
 
             <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {@render switchRow("Consumable", "Can be used up after purchase", shopForm.consumable,
+              {@render switchRow(m.currency.shopConsumable(), m.currency.shopConsumableHint(), shopForm.consumable,
                 () => (shopForm.consumable = !shopForm.consumable))}
-              {@render switchRow("Visible in shop", "Members can see and buy this item", shopForm.enabled,
+              {@render switchRow(m.currency.shopVisible(), m.currency.shopVisibleHint(), shopForm.enabled,
                 () => (shopForm.enabled = !shopForm.enabled))}
             </div>
           </div>
@@ -1086,12 +1084,12 @@
             <button onclick={saveShopItem} disabled={saving}
                     class="px-6 py-3 rounded-xl font-medium min-h-[44px] disabled:opacity-50"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-              {saving ? "Saving..." : editingName ? "Save changes" : "Create item"}
+              {saving ? m.common.saving() : editingName ? m.common.saveChanges() : m.currency.shopCreate()}
             </button>
             <button onclick={() => (showShopEditor = false)}
                     class="px-6 py-3 rounded-xl font-medium min-h-[44px]"
                     style="background: transparent; color: {$colorStore.muted}; border: 1px solid {$colorStore.primary}30;">
-              Cancel
+              {m.common.cancel()}
             </button>
           </div>
         </div>
@@ -1106,22 +1104,22 @@
       <div class="rounded-2xl border p-6 shadow-2xl"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                   border-color: {$colorStore.primary}30;">
-        <h2 class="text-lg font-bold mb-4" style="color: {$colorStore.text}">Adjust a balance</h2>
+        <h2 class="text-lg font-bold mb-4" style="color: {$colorStore.text}">{m.currency.adjustTitle()}</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label for="adj-user" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Member</label>
-            <DiscordSelector id="adj-user" ariaLabel="Member" type="user" options={guildMembers}
-                             bind:selected={adjustUserId} searchable placeholder="Select a member" />
+            <label for="adj-user" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.member()}</label>
+            <DiscordSelector id="adj-user" ariaLabel={m.common.member()} type="user" options={guildMembers}
+                             bind:selected={adjustUserId} searchable placeholder={m.currency.adjustMemberPlaceholder()} />
           </div>
           <div>
-            <label for="adj-amount" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Amount</label>
+            <label for="adj-amount" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.amount()}</label>
             <input id="adj-amount" type="number" bind:value={adjustAmount}
                    class="w-full p-3 rounded-xl border min-h-[44px]"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           </div>
           <div>
-            <label for="adj-reason" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Reason</label>
-            <input id="adj-reason" type="text" bind:value={adjustReason} placeholder="Recorded on the ledger"
+            <label for="adj-reason" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.reason()}</label>
+            <input id="adj-reason" type="text" bind:value={adjustReason} placeholder={m.currency.adjustReasonPlaceholder()}
                    class="w-full p-3 rounded-xl border min-h-[44px]"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           </div>
@@ -1131,9 +1129,9 @@
           <button onclick={adjustBalance} disabled={saving}
                   class="px-6 py-3 rounded-xl font-medium min-h-[44px] disabled:opacity-50"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-            Apply
+            {m.common.apply()}
           </button>
-          <span class="text-xs" style="color: {$colorStore.muted}">A negative amount removes currency.</span>
+          <span class="text-xs" style="color: {$colorStore.muted}">{m.currency.adjustHint()}</span>
         </div>
       </div>
 
@@ -1142,23 +1140,23 @@
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                   border-color: {$colorStore.primary}30;">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Richest members</h2>
-          <span class="text-sm" style="color: {$colorStore.muted}">{formatNumber(leaderboardTotal)} holders</span>
+          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">{m.currency.boardTitle()}</h2>
+          <span class="text-sm" style="color: {$colorStore.muted}">{m.currency.statHolders({ count: formatNumber(leaderboardTotal) })}</span>
         </div>
 
         {#if leaderboard.length === 0}
-          <p class="text-center py-12" style="color: {$colorStore.muted}">Nobody holds any currency yet.</p>
+          <p class="text-center py-12" style="color: {$colorStore.muted}">{m.currency.boardEmpty()}</p>
         {:else}
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
               <tr style="color: {$colorStore.muted}">
                 <th class="text-left py-2 px-3">#</th>
-                <th class="text-left py-2 px-3">Member</th>
-                <th class="text-right py-2 px-3">Wallet</th>
-                <th class="text-right py-2 px-3">Bank</th>
-                <th class="text-right py-2 px-3">Net worth</th>
-                <th class="text-right py-2 px-3">Share</th>
+                <th class="text-left py-2 px-3">{m.common.member()}</th>
+                <th class="text-right py-2 px-3">{m.currency.boardColWallet()}</th>
+                <th class="text-right py-2 px-3">{m.currency.configBank()}</th>
+                <th class="text-right py-2 px-3">{m.currency.boardColNetWorth()}</th>
+                <th class="text-right py-2 px-3">{m.currency.boardColShare()}</th>
               </tr>
               </thead>
               <tbody>
@@ -1186,15 +1184,15 @@
           <div class="flex items-center justify-between mt-4">
             <button onclick={() => loadLeaderboardPage(leaderboardPage - 1)} disabled={leaderboardPage === 0}
                     class="px-4 py-2 rounded-xl text-sm min-h-[40px] disabled:opacity-40"
-                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">Previous
+                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{m.common.previous()}
             </button>
             <span class="text-sm" style="color: {$colorStore.muted}">
-              Page {leaderboardPage + 1} of {Math.max(1, Math.ceil(leaderboardTotal / leaderboardPageSize))}
+              {m.common.pageOfTotal({ page: leaderboardPage + 1, total: Math.max(1, Math.ceil(leaderboardTotal / leaderboardPageSize)) })}
             </span>
             <button onclick={() => loadLeaderboardPage(leaderboardPage + 1)}
                     disabled={(leaderboardPage + 1) * leaderboardPageSize >= leaderboardTotal}
                     class="px-4 py-2 rounded-xl text-sm min-h-[40px] disabled:opacity-40"
-                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">Next
+                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{m.common.next()}
             </button>
           </div>
         {/if}

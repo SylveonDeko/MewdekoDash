@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -20,6 +21,12 @@
     addAntiPatternPattern,
     removeAntiPatternPattern
   } = $props();
+
+  let patternCountLabel = $derived(
+    protectionStatus.antiPattern.patternCount === 1
+      ? m.administration.protectionPatternCountOne({ count: protectionStatus.antiPattern.patternCount })
+      : m.administration.protectionPatternCountOther({ count: protectionStatus.antiPattern.patternCount })
+  );
 </script>
 
 <div class=" rounded-2xl border p-6 shadow-2xl transition-all"
@@ -35,8 +42,8 @@
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
       <div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Pattern Protection</h2>
-        <p class="text-sm" style="color: {$colorStore.muted}">Advanced user behavior analysis</p>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.protectionPatternTitle()}</h2>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionPatternSubtitle()}</p>
       </div>
     </div>
 
@@ -50,10 +57,10 @@
       >
         {#if protectionStatus.antiPattern.enabled}
           <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
-          Enabled
+          {m.common.enabled()}
         {:else}
           <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
-          Disabled
+          {m.common.disabled()}
         {/if}
       </button>
 
@@ -68,7 +75,7 @@
           {:else}
             <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
           {/if}
-          {expandedProtectionCard === 'antiPattern' ? 'Collapse' : 'Configure'}
+          {expandedProtectionCard === 'antiPattern' ? m.common.collapse() : m.common.configure()}
         </button>
         <button
           class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
@@ -80,7 +87,7 @@
           {:else}
             <i class="fa-solid fa-chevron-right" style="font-size: 16px;"></i>
           {/if}
-          Patterns
+          {m.administration.protectionPatternPatterns()}
         </button>
       {/if}
     </div>
@@ -92,22 +99,22 @@
       <div class="text-center">
         <div class="text-2xl font-bold"
              style="color: {$colorStore.primary}">{protectionStatus.antiPattern.minimumScore}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Min Score</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionPatternMinScore()}</div>
       </div>
       <div class="text-center">
         <div class="text-lg font-semibold"
              style="color: {$colorStore.primary}">{formatAction(protectionStatus.antiPattern.action)}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Punishment</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.common.punishment()}</div>
       </div>
       <div class="text-center">
         <div class="text-2xl font-bold"
              style="color: {$colorStore.primary}">{protectionStatus.antiPattern.patternCount}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Patterns</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionPatternPatterns()}</div>
       </div>
       <div class="text-center">
         <div class="text-2xl font-bold"
              style="color: {$colorStore.primary}">{protectionStatus.antiPattern.counter}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Triggers</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.features.chatTriggersName()}</div>
       </div>
     </div>
 
@@ -120,19 +127,18 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <span id="antipattern-action-label" class="block text-sm font-medium mb-2"
-                  style="color: {$colorStore.text}">Action</span>
+                  style="color: {$colorStore.text}">{m.common.action()}</span>
             <DiscordSelector
               type="custom"
               options={actionOptions}
               bind:selected={tempProtectionConfig.action}
-              placeholder="Select action..."
+              placeholder={m.administration.protectionCommonSelectAction()}
               multiple={false}
             />
           </div>
           <div>
             <label for="antipattern-punish-duration" class="block text-sm font-medium mb-2"
-                   style="color: {$colorStore.text}">Punishment
-              Duration (minutes)</label>
+                   style="color: {$colorStore.text}">{m.administration.protectionCommonPunishmentDurationMinutes()}</label>
             <input id="antipattern-punish-duration"
                    type="number"
                    bind:value={tempProtectionConfig.punishDuration}
@@ -144,8 +150,7 @@
           </div>
           <div>
             <label for="antipattern-minimum-score" class="block text-sm font-medium mb-2"
-                   style="color: {$colorStore.text}">Minimum
-              Score</label>
+                   style="color: {$colorStore.text}">{m.administration.protectionPatternMinimumScore()}</label>
             <input id="antipattern-minimum-score"
                    type="number"
                    bind:value={tempProtectionConfig.minimumScore}
@@ -159,7 +164,7 @@
 
         <!-- Behavior Analysis Toggles -->
         <div class="space-y-4">
-          <h4 class="font-medium" style="color: {$colorStore.text}">Behavior Analysis</h4>
+          <h4 class="font-medium" style="color: {$colorStore.text}">{m.administration.protectionPatternBehaviorAnalysis()}</h4>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <label for="antipattern-check-account-age"
@@ -175,7 +180,7 @@
                   <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
                 {/if}
               </div>
-              <span style="color: {$colorStore.text}">Check Account Age</span>
+              <span style="color: {$colorStore.text}">{m.administration.protectionPatternCheckAccountAge()}</span>
             </label>
 
             <label for="antipattern-check-join-timing"
@@ -191,7 +196,7 @@
                   <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
                 {/if}
               </div>
-              <span style="color: {$colorStore.text}">Check Join Timing</span>
+              <span style="color: {$colorStore.text}">{m.administration.protectionPatternCheckJoinTiming()}</span>
             </label>
 
             <label for="antipattern-check-batch-creation"
@@ -207,7 +212,7 @@
                   <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
                 {/if}
               </div>
-              <span style="color: {$colorStore.text}">Check Batch Creation</span>
+              <span style="color: {$colorStore.text}">{m.administration.protectionPatternCheckBatchCreation()}</span>
             </label>
 
             <label for="antipattern-check-offline-status"
@@ -223,7 +228,7 @@
                   <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
                 {/if}
               </div>
-              <span style="color: {$colorStore.text}">Check Offline Status</span>
+              <span style="color: {$colorStore.text}">{m.administration.protectionPatternCheckOfflineStatus()}</span>
             </label>
 
             <label for="antipattern-check-new-accounts"
@@ -239,7 +244,7 @@
                   <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
                 {/if}
               </div>
-              <span style="color: {$colorStore.text}">Check New Accounts</span>
+              <span style="color: {$colorStore.text}">{m.administration.protectionPatternCheckNewAccounts()}</span>
             </label>
           </div>
 
@@ -249,7 +254,7 @@
               {#if tempProtectionConfig.checkAccountAge}
                 <div>
                   <label for="antipattern-max-account-age" class="block text-sm font-medium mb-2"
-                         style="color: {$colorStore.text}">Max Account Age (months)</label>
+                         style="color: {$colorStore.text}">{m.administration.protectionPatternMaxAccountAgeMonths()}</label>
                   <input id="antipattern-max-account-age"
                          type="number"
                          bind:value={tempProtectionConfig.maxAccountAgeMonths}
@@ -264,7 +269,7 @@
               {#if tempProtectionConfig.checkJoinTiming}
                 <div>
                   <label for="antipattern-max-join-hours" class="block text-sm font-medium mb-2"
-                         style="color: {$colorStore.text}">Max Join Hours</label>
+                         style="color: {$colorStore.text}">{m.administration.protectionPatternMaxJoinHours()}</label>
                   <input id="antipattern-max-join-hours"
                          type="number"
                          bind:value={tempProtectionConfig.maxJoinHours}
@@ -280,7 +285,7 @@
               {#if tempProtectionConfig.checkNewAccounts}
                 <div>
                   <label for="antipattern-new-account-days" class="block text-sm font-medium mb-2"
-                         style="color: {$colorStore.text}">New Account Days</label>
+                         style="color: {$colorStore.text}">{m.administration.protectionPatternNewAccountDays()}</label>
                   <input id="antipattern-new-account-days"
                          type="number"
                          bind:value={tempProtectionConfig.newAccountDays}
@@ -302,7 +307,7 @@
             style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
             onclick={cancelProtectionEdit}
           >
-            Cancel
+            {m.common.cancel()}
           </button>
           <button
             class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
@@ -316,7 +321,7 @@
               {:else}
                 <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
               {/if}
-              <span>Save Configuration</span>
+              <span>{m.common.saveConfiguration()}</span>
             </div>
           </button>
         </div>
@@ -328,34 +333,32 @@
       <div transition:slide={{ duration: 300 }} class="mt-6 pt-6 border-t space-y-4"
            style="border-color: {$colorStore.primary}20;">
         <div class="flex items-center justify-between">
-          <h4 class="font-semibold" style="color: {$colorStore.text}">Pattern Management</h4>
+          <h4 class="font-semibold" style="color: {$colorStore.text}">{m.administration.protectionPatternManagement()}</h4>
           <span class="text-sm px-3 py-1 rounded-full"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-            {protectionStatus.antiPattern.patternCount} patterns
+            {patternCountLabel}
           </span>
         </div>
 
         <!-- Add New Pattern Form -->
         <div class="p-4 rounded-xl border-2 border-dashed transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-          <h5 class="font-medium mb-3" style="color: {$colorStore.text}">Add New Pattern</h5>
+          <h5 class="font-medium mb-3" style="color: {$colorStore.text}">{m.administration.protectionPatternAddNew()}</h5>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label for="new-pattern-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Pattern
-                Name</label>
+              <label for="new-pattern-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.administration.protectionPatternPatternName()}</label>
               <input id="new-pattern-name"
                      type="text"
                      bind:value={newPattern.name}
                      class="w-full px-3 py-2 rounded-lg border transition-colors"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                     placeholder="e.g., Suspicious Username Pattern"
+                     placeholder={m.administration.protectionPatternNamePlaceholder()}
               >
             </div>
 
             <div>
-              <label for="new-pattern-regex" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Regex
-                Pattern</label>
+              <label for="new-pattern-regex" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.administration.protectionPatternRegexPattern()}</label>
               <input id="new-pattern-regex"
                      type="text"
                      bind:value={newPattern.pattern}
@@ -367,7 +370,7 @@
           </div>
 
           <div class="mt-4">
-            <h6 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Check Against:</h6>
+            <h6 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.administration.protectionPatternCheckAgainst()}</h6>
             <div class="flex flex-wrap gap-3">
               <label for="new-pattern-check-username" class="flex items-center gap-2 cursor-pointer">
                 <input id="new-pattern-check-username" type="checkbox" bind:checked={newPattern.checkUsername}
@@ -377,7 +380,7 @@
                   {#if newPattern.checkUsername}<i class="fa-solid fa-check text-white"
                                                    style="font-size: 12px;"></i>{/if}
                 </div>
-                <span class="text-sm" style="color: {$colorStore.text}">Username</span>
+                <span class="text-sm" style="color: {$colorStore.text}">{m.common.username()}</span>
               </label>
 
               <label for="new-pattern-check-display-name" class="flex items-center gap-2 cursor-pointer">
@@ -388,7 +391,7 @@
                   {#if newPattern.checkDisplayName}<i class="fa-solid fa-check text-white"
                                                       style="font-size: 12px;"></i>{/if}
                 </div>
-                <span class="text-sm" style="color: {$colorStore.text}">Display Name</span>
+                <span class="text-sm" style="color: {$colorStore.text}">{m.common.displayName()}</span>
               </label>
             </div>
           </div>
@@ -401,7 +404,7 @@
               disabled={!newPattern.name.trim() || !newPattern.pattern.trim() || saving}
             >
               <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-              Add Pattern
+              {m.administration.protectionPatternAddPattern()}
             </button>
           </div>
         </div>
@@ -409,7 +412,7 @@
         <!-- Existing Patterns List -->
         {#if antiPatternPatterns.length > 0}
           <div class="space-y-3">
-            <h5 class="font-medium" style="color: {$colorStore.text}">Current Patterns</h5>
+            <h5 class="font-medium" style="color: {$colorStore.text}">{m.administration.protectionPatternCurrentPatterns()}</h5>
             {#each antiPatternPatterns as pattern (pattern.name)}
               <div class="flex items-center justify-between p-3 rounded-lg border"
                    style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
@@ -419,11 +422,11 @@
                   <div class="flex gap-2 mt-1">
                     {#if pattern.checkUsername}
                       <span class="text-xs px-2 py-1 rounded-sm"
-                            style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">Username</span>
+                            style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">{m.common.username()}</span>
                     {/if}
                     {#if pattern.checkDisplayName}
                       <span class="text-xs px-2 py-1 rounded-sm"
-                            style="background: {$colorStore.accent}20; color: {$colorStore.accent}">Display Name</span>
+                            style="background: {$colorStore.accent}20; color: {$colorStore.accent}">{m.common.displayName()}</span>
                     {/if}
                   </div>
                 </div>
@@ -432,7 +435,7 @@
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                   onclick={() => removeAntiPatternPattern(pattern.id)}
                 >
-                  Remove
+                  {m.common.remove()}
                 </button>
               </div>
             {/each}
@@ -444,8 +447,8 @@
     <div class="text-center py-8">
       <i class="fa-utility-duo fa-regular fa-layer-group"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-      <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-Pattern Protection Disabled</p>
-      <p class="text-sm" style="color: {$colorStore.muted}">Enable to analyze user behavior patterns</p>
+      <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.administration.protectionPatternDisabledTitle()}</p>
+      <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionPatternDisabledHint()}</p>
     </div>
   {/if}
 </div>

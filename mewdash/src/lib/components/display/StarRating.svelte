@@ -1,5 +1,6 @@
 <!-- lib/StarRating.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   interface Props {
     value?: number;
     readonly?: boolean;
@@ -63,7 +64,7 @@
   aria-valuenow={value}
   aria-valuemin="0"
   aria-valuemax={max}
-  aria-label="Star rating"
+  aria-label={m.brand.starRatingLabel()}
 >
   {#each Array(max) as _, i}
     <button
@@ -72,7 +73,7 @@
       disabled={readonly}
       onclick={() => handleClick(i + 1)}
       onmouseenter={() => handleMouseEnter(i + 1)}
-      aria-label={`Rate ${i + 1} star${i !== 0 ? "s" : ""}`}
+      aria-label={i === 0 ? m.brand.starRatingRateOne() : m.brand.starRatingRateOther({ count: i + 1 })}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

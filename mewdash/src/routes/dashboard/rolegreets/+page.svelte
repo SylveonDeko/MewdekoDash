@@ -1,5 +1,6 @@
 <!-- routes/dashboard/rolegreets/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import { onMount } from "svelte";
@@ -19,7 +20,7 @@
   import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
   const autoSave = createAutoSave({
-    onError: () => showNotificationMessage("Couldn't save role greet settings. Use Retry to try again.", "error")
+    onError: () => showNotificationMessage(m.rolegreets.pageErrorAutosave(), "error")
   });
 
   interface Props {
@@ -117,13 +118,13 @@
       loading = true;
       error = null;
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
 
       roleGreets = await roleGreetApi.getAllRoleGreets($currentGuild.id);
     } catch (err) {
       logger.error("Failed to fetch role greets:", err);
-      error = err instanceof Error ? err.message : "Failed to fetch role greets";
+      error = err instanceof Error ? err.message : m.rolegreets.pageErrorFetch();
     } finally {
       loading = false;
     }
@@ -132,7 +133,7 @@
   async function fetchGuildRoles() {
     try {
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
 
       guildRoles = await clientApi.getRoles($currentGuild.id);
@@ -144,7 +145,7 @@
   async function fetchGuildChannels() {
     try {
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
 
       guildChannels = await clientApi.getTextChannels($currentGuild.id);
@@ -155,19 +156,19 @@
 
   async function addRoleGreet() {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-      if (!selectedRoleId) throw new Error("Please select a role");
-      if (!selectedChannelId) throw new Error("Please select a channel");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
+      if (!selectedRoleId) throw new Error(m.common.notifySelectRole());
+      if (!selectedChannelId) throw new Error(m.common.notifySelectChannel());
 
       await roleGreetApi.addRoleGreet($currentGuild.id, BigInt(selectedRoleId), BigInt(selectedChannelId));
 
-      showNotificationMessage("Role greet added successfully", "success");
+      showNotificationMessage(m.rolegreets.pageNotifyAdded(), "success");
       selectedRoleId = "";
       selectedChannelId = "";
       await fetchRoleGreets();
     } catch (err) {
       logger.error("Failed to add role greet:", err);
-      showNotificationMessage(err instanceof Error ? err.message : "Failed to add role greet", "error");
+      showNotificationMessage(err instanceof Error ? err.message : m.rolegreets.pageErrorAdd(), "error");
     }
   }
 
@@ -249,14 +250,14 @@
 
   async function toggleRoleGreetDisabled(greetId: number, disabled: boolean) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
 
       await roleGreetApi.disableRoleGreet($currentGuild.id, greetId, disabled);
-      showNotificationMessage(disabled ? "Role greet disabled" : "Role greet enabled", "success");
+      showNotificationMessage(disabled ? m.rolegreets.pageNotifyDisabled() : m.rolegreets.pageNotifyEnabled(), "success");
       await fetchRoleGreets();
     } catch (err) {
       logger.error("Failed to toggle role greet state:", err);
-      showNotificationMessage("Failed to update role greet state", "error");
+      showNotificationMessage(m.rolegreets.pageErrorToggle(), "error");
     }
   }
 
@@ -265,17 +266,17 @@
    */
   async function deleteRoleGreet(greetId: number) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
 
       for (const field of ["message", "deleteTime", "webhook", "greetBots"]) autoSave.cancel(greetKey(greetId, field));
       await roleGreetApi.deleteRoleGreet($currentGuild.id, greetId);
-      showNotificationMessage("Role greet deleted", "success");
+      showNotificationMessage(m.rolegreets.pageNotifyDeleted(), "success");
       pendingDeleteId = null;
       if (editingGreetId === greetId) editingGreetId = null;
       await fetchRoleGreets();
     } catch (err) {
       logger.error("Failed to delete role greet:", err);
-      showNotificationMessage("Failed to delete role greet", "error");
+      showNotificationMessage(m.rolegreets.pageErrorDelete(), "error");
     }
   }
 
@@ -312,13 +313,13 @@
     function getRoleName(roleId: bigint | string): string {
       const id = typeof roleId === "bigint" ? roleId.toString() : roleId;
       const role = guildRoles.find(r => r.id === id);
-      return role ? role.name : `Role ID: ${id}`;
+      return role ? role.name : m.common.roleIdLabel({ id });
   }
 
     function getChannelName(channelId: bigint | string): string {
       const id = typeof channelId === "bigint" ? channelId.toString() : channelId;
       const channel = guildChannels.find(c => c.id === id);
-      return channel ? channel.name : `Channel ID: ${id}`;
+      return channel ? channel.name : m.common.channelIdLabel({ id });
   }
 
   function handleRoleChange(detail: any) {
@@ -357,27 +358,27 @@
 
 <DashboardPageLayout
   {autoSave}
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-envelope"
   statusMessages={statusMessages}
-  subtitle="Configure greeting messages when users receive specific roles"
-  title="Role Greets"
+  subtitle={m.rolegreets.pageSubtitle()}
+  title={m.features.rolegreetsName()}
 >
 
       <!-- Add Role Greet Form -->
       <div class="mb-8 p-4 rounded-xl" style="background: {$colorStore.primary}10;">
-        <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text}">Add New Role Greet</h3>
+        <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text}">{m.rolegreets.pageAddTitle()}</h3>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <!-- Role Selection -->
           <div>
             <span class="block text-sm mb-2" id="role-to-greet-for-label" style="color: {$colorStore.muted}">
-              Role to Greet For
+              {m.rolegreets.pageAddRoleLabel()}
             </span>
             <DiscordSelector
               onchange={handleRoleChange}
               options={guildRoles}
-              placeholder="Select a Role"
+              placeholder={m.common.selectARolePlaceholder()}
               selected={selectedRoleId}
               type="role" />
           </div>
@@ -385,12 +386,12 @@
           <!-- Channel Selection -->
           <div>
             <span class="block text-sm mb-2" id="send-greet-to-channel-label" style="color: {$colorStore.muted}">
-              Send Greet To Channel
+              {m.rolegreets.pageAddChannelLabel()}
             </span>
             <DiscordSelector
               onchange={handleChannelChange}
               options={guildChannels}
-              placeholder="Select a Channel"
+              placeholder={m.common.selectAChannelPlaceholder()}
               selected={selectedChannelId}
               type="channel" />
           </div>
@@ -403,7 +404,7 @@
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary}; opacity: {!selectedRoleId || !selectedChannelId ? '0.5' : '1'};"
         >
           <i class="fa-solid fa-plus" style="font-size: 18px;"></i>
-          <span>Add Role Greet</span>
+          <span>{m.rolegreets.pageAddButton()}</span>
         </button>
       </div>
 
@@ -414,7 +415,7 @@
             class="w-12 h-12 border-4 rounded-full animate-spin"
             style="border-color: {$colorStore.primary}20;
                    border-top-color: {$colorStore.primary};"
-            aria-label="Loading"
+            aria-label={m.common.loading()}
           >
           </div>
         </div>
@@ -437,9 +438,8 @@
           <i class="fa-utility-duo fa-regular fa-envelope"
              style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"
              aria-hidden="true"></i>
-          <p style="color: {$colorStore.muted}">No role greets configured</p>
-          <p class="mt-2 text-sm" style="color: {$colorStore.muted}">Create a role greet to welcome users when they get
-            a specific role</p>
+          <p style="color: {$colorStore.muted}">{m.rolegreets.pageEmptyTitle()}</p>
+          <p class="mt-2 text-sm" style="color: {$colorStore.muted}">{m.rolegreets.pageEmptyHint()}</p>
         </div>
       {:else}
         <div class="space-y-4">
@@ -470,9 +470,9 @@
                            color: {$colorStore.text};"
                     onclick={() => requestEdit(greet)}
                     data-greet-edit
-                    aria-label={editingGreetId === greet.id ? "Close editor" : "Edit"}
+                    aria-label={editingGreetId === greet.id ? m.common.ariaCloseEditor() : m.common.edit()}
                     aria-pressed={editingGreetId === greet.id}
-                    title={editingGreetId === greet.id ? "Close editor" : "Edit"}
+                    title={editingGreetId === greet.id ? m.common.ariaCloseEditor() : m.common.edit()}
                   >
                     <i class="fa-solid {editingGreetId === greet.id ? 'fa-xmark' : 'fa-pen'}" style="font-size: 16px;"></i>
                   </button>
@@ -482,8 +482,8 @@
                     style="background: {greet.disabled ? $colorStore.primary + '20' : $colorStore.accent + '20'};
                            color: {greet.disabled ? $colorStore.primary : $colorStore.accent};"
                     onclick={() => toggleRoleGreetDisabled(greet.id, !greet.disabled)}
-                    aria-label={greet.disabled ? "Enable" : "Disable"}
-                    title={greet.disabled ? "Enable" : "Disable"}
+                    aria-label={greet.disabled ? m.common.enable() : m.common.disable()}
+                    title={greet.disabled ? m.common.enable() : m.common.disable()}
                   >
                     <i class="fa-solid fa-power-off" style="font-size: 16px;"></i>
                   </button>
@@ -493,25 +493,25 @@
                       class="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px]"
                       style="background: #ef444430; color: #ef4444;"
                       onclick={() => deleteRoleGreet(greet.id)}
-                      title="Confirm delete"
+                      title={m.common.confirmDelete()}
                     >
-                      Confirm
+                      {m.common.confirm()}
                     </button>
                     <button
                       class="px-3 py-2 rounded-lg text-sm transition-all duration-200 min-h-[44px]"
                       style="background: {$colorStore.primary}20; color: {$colorStore.text};"
                       onclick={() => (pendingDeleteId = null)}
-                      title="Cancel delete"
+                      title={m.rolegreets.pageCancelDeleteTitle()}
                     >
-                      Cancel
+                      {m.common.cancel()}
                     </button>
                   {:else}
                     <button
                       class="p-2 rounded-lg transition-all duration-200"
                       style="background: #ef444420; color: #ef4444;"
                       onclick={() => (pendingDeleteId = greet.id)}
-                      aria-label="Delete"
-                      title="Delete"
+                      aria-label={m.common.delete()}
+                      title={m.common.delete()}
                     >
                       <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
                     </button>
@@ -527,35 +527,35 @@
                   <div>
                     <label for="f-+page-greeting-message-403" class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">
                       <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
-                      Greeting Message
+                      {m.common.greetingMessage()}
                     </label>
 
                     <FullscreenEmbedBuilder id="f-+page-greeting-message-403"
                       bind:value={editGreetMessage}
                       onchange={(value) => saveGreetMessage(greet.id, value)}
-                      previewTitle="Role Greeting Message"
-                      previewDescription="Message sent when users receive this role"
+                      previewTitle={m.rolegreets.pageEditPreviewTitle()}
+                      previewDescription={m.rolegreets.pageEditPreviewDescription()}
                       icon="fa-envelope"
                       allowContent={true}
                       allowMultipleEmbeds={true}
                       maxEmbeds={10}
                       allowComponents={true}
                       additionalPlaceholders={[
-                        { category: "User", name: "%user.username%", description: "User's username" },
-                        { category: "User", name: "%user.mention%", description: "Mention the user" },
-                        { category: "Server", name: "%server.name%", description: "Server name" },
-                        { category: "Role", name: "%role.name%", description: "Role name" }
+                        { category: "User", name: "%user.username%", description: m.placeholders.userUsername() },
+                        { category: "User", name: "%user.mention%", description: m.placeholders.userMention() },
+                        { category: "Server", name: "%server.name%", description: m.placeholders.serverName() },
+                        { category: "Role", name: "%role.name%", description: m.placeholders.roleName() }
                       ]}
                       guildId={$currentGuild?.id}
                       user={data.user}
-                      placeholder="Click to configure role greeting message"
+                      placeholder={m.rolegreets.pageEditMessagePlaceholder()}
                     />
                   </div>
 
                   <!-- Delete Time -->
                   <div>
                     <label for="greet-delete-time" class="block text-sm mb-2" style="color: {$colorStore.muted}">
-                      Delete Time (seconds, 0 for never)
+                      {m.rolegreets.pageEditDeleteTimeLabel()}
                     </label>
                     <input
                       id="greet-delete-time"
@@ -572,7 +572,7 @@
                   <!-- Webhook URL -->
                   <div>
                     <label for="greet-webhook" class="block text-sm mb-2" style="color: {$colorStore.muted}">
-                      Webhook URL (optional)
+                      {m.common.webhookUrlOptional()}
                     </label>
                     <input
                       id="greet-webhook"
@@ -587,7 +587,7 @@
                     >
                     {#if webhookInvalid}
                       <p class="text-xs mt-1" style="color: #ef4444;">
-                        Enter a full Discord webhook URL, or leave it empty. It saves once it is complete.
+                        {m.rolegreets.pageEditWebhookInvalid()}
                       </p>
                     {/if}
                   </div>
@@ -596,9 +596,8 @@
                   <div class="flex items-center justify-between p-3 rounded-lg"
                        style="background: {$colorStore.primary}15;">
                     <div>
-                      <span class="font-medium" style="color: {$colorStore.text}">Greet Bots</span>
-                      <p class="text-sm" style="color: {$colorStore.muted}">Should bot accounts receive this
-                        greeting?</p>
+                      <span class="font-medium" style="color: {$colorStore.text}">{m.common.greetBots()}</span>
+                      <p class="text-sm" style="color: {$colorStore.muted}">{m.rolegreets.pageGreetBotsHint()}</p>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
                       <input
@@ -617,14 +616,14 @@
 
                   <!-- Action Buttons -->
                   <div class="flex items-center justify-end gap-3 mt-4 flex-wrap">
-                    <span class="text-xs" style="color: {$colorStore.muted}">Changes save automatically.</span>
+                    <span class="text-xs" style="color: {$colorStore.muted}">{m.common.changesSaveAutomatically()}</span>
                     <button
                       class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] font-medium"
                       onclick={stopEditing}
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     >
                       <i class="fa-solid fa-check" style="font-size: 14px;"></i>
-                      Done
+                      {m.common.done()}
                     </button>
                   </div>
                 </div>
@@ -632,7 +631,7 @@
                 <!-- View Mode -->
                 <div class="space-y-3">
                   <div class="p-3 rounded-lg" style="background: {$colorStore.primary}15;">
-                    <h4 class="text-sm font-medium mb-2" style="color: {$colorStore.muted}">Message</h4>
+                    <h4 class="text-sm font-medium mb-2" style="color: {$colorStore.muted}">{m.common.message()}</h4>
                     {#if greet.message}
                       {@const preview = parseStoredMessage(greet.message)}
                       <PreviewCard
@@ -644,7 +643,7 @@
                         showEmpty={false}
                       />
                     {:else}
-                      <p style="color: {$colorStore.text}">No message set</p>
+                      <p style="color: {$colorStore.text}">{m.rolegreets.pageViewNoMessage()}</p>
                     {/if}
                   </div>
 
@@ -652,9 +651,9 @@
                     <div class="p-3 rounded-lg flex items-center gap-2" style="background: {$colorStore.secondary}15;">
                       <i class="fa-solid fa-clock" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                       <div>
-                        <div class="text-sm font-medium" style="color: {$colorStore.muted}">Delete After</div>
+                        <div class="text-sm font-medium" style="color: {$colorStore.muted}">{m.common.deleteAfter()}</div>
                         <div style="color: {$colorStore.text}">
-                          {greet.deleteTime > 0 ? `${greet.deleteTime} seconds` : 'Never'}
+                          {greet.deleteTime > 0 ? m.common.secondsCount({ count: greet.deleteTime }) : m.common.never()}
                         </div>
                       </div>
                     </div>
@@ -662,8 +661,8 @@
                     <div class="p-3 rounded-lg flex items-center gap-2" style="background: {$colorStore.secondary}15;">
                       <i class="fa-solid fa-robot" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                       <div>
-                        <div class="text-sm font-medium" style="color: {$colorStore.muted}">Greet Bots</div>
-                        <div style="color: {$colorStore.text}">{greet.greetBots ? 'Yes' : 'No'}</div>
+                        <div class="text-sm font-medium" style="color: {$colorStore.muted}">{m.common.greetBots()}</div>
+                        <div style="color: {$colorStore.text}">{greet.greetBots ? m.common.yes() : m.common.no()}</div>
                       </div>
                     </div>
                   </div>
@@ -672,7 +671,7 @@
                     <div class="p-3 rounded-lg flex items-center gap-2" style="background: {$colorStore.accent}15;">
                       <i class="fa-solid fa-globe" style="color: {$colorStore.accent}; font-size: 16px;"></i>
                       <div>
-                        <h4 class="text-sm font-medium" style="color: {$colorStore.muted}">Using Webhook</h4>
+                        <h4 class="text-sm font-medium" style="color: {$colorStore.muted}">{m.rolegreets.pageViewUsingWebhook()}</h4>
                         <p class="text-sm truncate" style="color: {$colorStore.text}">{greet.webhookUrl}</p>
                       </div>
                     </div>

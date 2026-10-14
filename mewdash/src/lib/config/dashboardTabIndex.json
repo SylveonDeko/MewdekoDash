@@ -161,7 +161,7 @@
     "tabs": [
       {
         "id": "channels",
-        "label": "Channels",
+        "label": "Channels ()",
         "icon": "fa-hashtag"
       },
       {
@@ -219,13 +219,47 @@
       },
       {
         "id": "channels",
-        "label": "Active Channels",
+        "label": "Active Channels ()",
         "icon": "fa-microphone"
       },
       {
         "id": "preferences",
         "label": "User Preferences",
         "icon": "fa-user"
+      }
+    ]
+  },
+  "/dashboard/embedbuilder": {
+    "tabs": [
+      {
+        "id": "templates",
+        "label": "Templates",
+        "icon": "fa-sparkles"
+      },
+      {
+        "id": "editor",
+        "label": "Editor",
+        "icon": "fa-layer-group"
+      },
+      {
+        "id": "components",
+        "label": "Components",
+        "icon": "fa-comment"
+      },
+      {
+        "id": "json",
+        "label": "JSON",
+        "icon": "fa-code"
+      },
+      {
+        "id": "saved",
+        "label": "Saved",
+        "icon": "fa-floppy-disk"
+      },
+      {
+        "id": "send",
+        "label": "Send",
+        "icon": "fa-paper-plane"
       }
     ]
   },
@@ -281,12 +315,12 @@
       },
       {
         "id": "words",
-        "label": "Filtered Words",
+        "label": "Filtered words",
         "icon": "fa-comment-slash"
       },
       {
         "id": "autoban",
-        "label": "Auto-ban Words",
+        "label": "Auto-ban words",
         "icon": "fa-ban"
       },
       {
@@ -424,7 +458,7 @@
       },
       {
         "id": "ignored",
-        "label": "Ignored Channels",
+        "label": "Ignored Channels ()",
         "icon": "fa-xmark"
       }
     ]
@@ -455,7 +489,7 @@
       },
       {
         "id": "channels",
-        "label": "Top Channels",
+        "label": "Top channels",
         "icon": "fa-hashtag"
       },
       {
@@ -767,7 +801,7 @@
     "subTabs": [
       {
         "id": "general",
-        "label": "General",
+        "label": "Basic Settings",
         "icon": "fa-gear"
       },
       {
@@ -845,7 +879,7 @@
       },
       {
         "id": "links",
-        "label": "Account Links",
+        "label": "Account links",
         "icon": "fa-link"
       }
     ],
@@ -862,7 +896,7 @@
       },
       {
         "id": "custom",
-        "label": "Custom Commands",
+        "label": "Custom commands",
         "icon": "fa-code"
       },
       {
@@ -901,17 +935,17 @@
       },
       {
         "id": "autopublish",
-        "label": "Auto Publish",
+        "label": "Auto publish",
         "icon": "fa-bullhorn"
       },
       {
         "id": "streamrole",
-        "label": "Stream Role",
+        "label": "Stream role",
         "icon": "fa-video"
       },
       {
         "id": "ai",
-        "label": "AI Assistant",
+        "label": "AI assistant",
         "icon": "fa-robot"
       },
       {
@@ -921,7 +955,7 @@
       },
       {
         "id": "rolemonitor",
-        "label": "Role Monitor",
+        "label": "Role monitor",
         "icon": "fa-user-shield"
       }
     ]

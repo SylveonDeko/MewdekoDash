@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fade } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -86,7 +87,7 @@
       onmoved(menu, source.id);
     } catch (err: any) {
       logger.error("Failed to move an older setup:", err);
-      onerror(err?.message || "Couldn't save the menu.");
+      onerror(err?.message || m.roleMenus.pageSaveFailed());
     } finally {
       entry.busy = false;
     }
@@ -95,8 +96,7 @@
 
 <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
   <p class="text-sm" style="color: {$colorStore.muted}">
-    Older setups had members add an emoji under a message to get a role. Move one to a role menu and members pick from a
-    dropdown or buttons instead.
+    {m.roleMenus.importIntro()}
   </p>
 
   {#if sources.length === 0}
@@ -105,9 +105,9 @@
                 border-color: {$colorStore.primary}30;">
       <i class="fa-utility-duo fa-regular fa-arrow-right-arrow-left"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5;"></i>
-      <h3 class="text-lg font-semibold mt-4 mb-2" style="color: {$colorStore.text}">Nothing to move</h3>
+      <h3 class="text-lg font-semibold mt-4 mb-2" style="color: {$colorStore.text}">{m.roleMenus.importEmptyTitle()}</h3>
       <p class="text-sm" style="color: {$colorStore.muted}">
-        Older emoji role setups made with the old command show up here.
+        {m.roleMenus.importEmptyText()}
       </p>
     </div>
   {:else}
@@ -120,11 +120,11 @@
           <i class="fa-utility-duo fa-regular fa-comment"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">
-            {source.channelName ? `#${source.channelName}` : "Deleted channel"}
+            {source.channelName ? `#${source.channelName}` : m.roleMenus.channelDeleted()}
           </h2>
           {#if source.exclusive}
             <span class="text-xs px-2 py-1 rounded-lg font-medium"
-                  style="background: {$colorStore.primary}20; color: {$colorStore.primary};">Pick one</span>
+                  style="background: {$colorStore.primary}20; color: {$colorStore.primary};">{m.roleMenus.menuModePickOne()}</span>
           {/if}
           <a href={source.jumpUrl}
              target="_blank"
@@ -132,7 +132,7 @@
              class="ml-auto flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium min-h-[44px] transition-all hover:scale-[1.02]"
              style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;">
             <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
-            Open in Discord
+            {m.roleMenus.menuOpenInDiscord()}
           </a>
         </div>
 
@@ -150,7 +150,7 @@
               {#if pair.roleExists}
                 <span>@{pair.roleName ?? pair.roleId.toString()}</span>
               {:else}
-                <span class="line-through">deleted role</span>
+                <span class="line-through">{m.common.deletedRole()}</span>
               {/if}
             </span>
           {/each}
@@ -159,9 +159,9 @@
         {#if entry}
           <div class="space-y-4">
             <div>
-              <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Menu type</span>
+              <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.roleMenus.importMenuType()}</span>
               <div class="flex flex-wrap gap-2">
-                {#each [{ value: RoleMenuStyle.Dropdown, label: "Dropdown", icon: "fa-square-caret-down" }, { value: RoleMenuStyle.Buttons, label: "Buttons", icon: "fa-grip" }] as choice (choice.value)}
+                {#each [{ value: RoleMenuStyle.Dropdown, label: m.common.dropdown(), icon: "fa-square-caret-down" }, { value: RoleMenuStyle.Buttons, label: m.common.buttons(), icon: "fa-grip" }] as choice (choice.value)}
                   <button
                     type="button"
                     class="flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium min-h-[44px] transition-all hover:scale-[1.02]"
@@ -181,14 +181,14 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div class="relative z-10">
                 <span id="rm-import-{source.id}-channel" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                  Post in
+                  {m.roleMenus.importPostIn()}
                 </span>
                 <div class="min-h-[44px]">
                   <DiscordSelector
                     type="channel"
                     options={channelOptionsFor(source)}
                     selected={entry.channelId}
-                    placeholder="Pick a channel"
+                    placeholder={m.common.pickChannelPlaceholder()}
                     ariaLabelledby="rm-import-{source.id}-channel"
                     onchange={(detail) => {
                       entry.channelId = typeof detail.selected === "string" && detail.selected ? detail.selected : null;
@@ -199,7 +199,7 @@
 
               <div>
                 <label for="rm-import-{source.id}-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                  Name
+                  {m.common.name()}
                 </label>
                 <input id="rm-import-{source.id}-name"
                        type="text"
@@ -215,15 +215,15 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <ToggleRow
                 checked={entry.copyMessage}
-                title="Copy the original message"
-                subtitle="Uses the text and embeds from the old message"
+                title={m.roleMenus.importCopyTitle()}
+                subtitle={m.roleMenus.importCopySubtitle()}
                 colors={$colorStore}
                 onchange={(checked) => { entry.copyMessage = checked; }}
               />
               <ToggleRow
                 checked={entry.retireOriginal}
-                title="Retire the old setup"
-                subtitle="Stops the old emoji setup and clears its emojis. If the bot posted the original message, it's deleted."
+                title={m.roleMenus.importRetireTitle()}
+                subtitle={m.roleMenus.importRetireSubtitle()}
                 colors={$colorStore}
                 onchange={(checked) => { entry.retireOriginal = checked; }}
               />
@@ -238,7 +238,7 @@
               aria-busy={entry.busy}
             >
               <i class="fa-solid {entry.busy ? 'fa-spinner fa-spin' : 'fa-arrow-right-arrow-left'}" aria-hidden="true"></i>
-              Move to a role menu
+              {m.roleMenus.importMove()}
             </button>
           </div>
         {/if}

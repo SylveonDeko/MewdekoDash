@@ -1,5 +1,6 @@
 <!-- lib/components/dashboard/xp/XpMobileTemplateEditor.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount, onDestroy } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { fly, fade, slide } from "svelte/transition";
@@ -7,18 +8,18 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
   /** Options for the text alignment selector */
-  const textAlignOptions = [
-    { id: "left", name: "Left" },
-    { id: "center", name: "Center" },
-    { id: "right", name: "Right" }
-  ];
+  const textAlignOptions = $derived([
+    { id: "left", name: m.common.left() },
+    { id: "center", name: m.xp.editorTextAlignCenter() },
+    { id: "right", name: m.xp.editorDirectionRight() }
+  ]);
 
   /** Options for the progress bar style selector */
-  const progressStyleOptions = [
-    { id: "rounded", name: "Rounded" },
-    { id: "segmented", name: "Segmented" },
-    { id: "radial", name: "Radial" }
-  ];
+  const progressStyleOptions = $derived([
+    { id: "rounded", name: m.xp.editorStyleRounded() },
+    { id: "segmented", name: m.xp.editorStyleSegmented() },
+    { id: "radial", name: m.xp.editorStyleRadial() }
+  ]);
 
   interface Props {
     localTemplate: any;
@@ -143,7 +144,7 @@
     {
       id: "user-icon",
       type: "image",
-      label: "User Avatar",
+      label: m.xp.editorLayerUserAvatar(),
       visible: localTemplate?.templateUser?.showIcon,
       locked: false,
       x: localTemplate?.templateUser?.iconX || 0,
@@ -154,7 +155,7 @@
     {
       id: "user-text",
       type: "text",
-      label: "Username",
+      label: m.common.username(),
       visible: localTemplate?.templateUser?.showText,
       locked: false,
       x: localTemplate?.templateUser?.textX || 120,
@@ -165,7 +166,7 @@
     {
       id: "progress-bar",
       type: "bar",
-      label: "XP Progress Bar",
+      label: m.xp.editorLayerProgressBar(),
       visible: localTemplate?.templateBar?.showBar,
       locked: false,
       x1: localTemplate?.templateBar?.barPointAx || 319,
@@ -181,7 +182,7 @@
     {
       id: "guild-rank",
       type: "text",
-      label: "Guild Rank",
+      label: m.xp.editorLayerGuildRank(),
       visible: localTemplate?.templateGuild?.showGuildRank,
       locked: false,
       x: localTemplate?.templateGuild?.guildRankX || 50,
@@ -192,7 +193,7 @@
     {
       id: "guild-level",
       type: "text",
-      label: "Guild Level",
+      label: m.xp.editorLayerGuildLevel(),
       visible: localTemplate?.templateGuild?.showGuildLevel,
       locked: false,
       x: localTemplate?.templateGuild?.guildLevelX || 350,
@@ -203,7 +204,7 @@
     {
       id: "time-on-level",
       type: "text",
-      label: "Time on Level",
+      label: m.xp.editorLayerTimeOnLevel(),
       visible: localTemplate?.showTimeOnLevel,
       locked: false,
       x: localTemplate?.timeOnLevelX || 200,
@@ -214,7 +215,7 @@
     {
       id: "awarded",
       type: "text",
-      label: "Awarded XP",
+      label: m.xp.editorLayerAwarded(),
       visible: localTemplate?.showAwarded,
       locked: false,
       x: localTemplate?.awardedX || 200,
@@ -241,10 +242,26 @@
   // Drawing is back-to-front, while layer panels conventionally show the topmost layer first.
   let layerElements = $derived([...renderElements].reverse());
 
+  /**
+   * The display name of a custom layer type.
+   * @param type The layer type
+   */
+  function layerTypeLabel(type: string): string {
+    switch (type) {
+      case "rectangle": return m.common.rectangle();
+      case "ellipse": return m.common.ellipse();
+      case "line": return m.xp.editorToolLine();
+      case "text": return m.common.text();
+      case "image": return m.common.image();
+      case "progress": return m.xp.editorToolProgress();
+      default: return type;
+    }
+  }
+
   function addCustomElement(type: "rectangle" | "ellipse" | "line" | "text" | "image" | "progress") {
     saveUndoState();
     const id = `custom-${crypto.randomUUID()}`;
-    const labels = { rectangle: "Rectangle", ellipse: "Ellipse", line: "Line", text: "Custom text", image: "Image", progress: "XP progress" };
+    const labels = { rectangle: m.common.rectangle(), ellipse: m.common.ellipse(), line: m.xp.editorToolLine(), text: m.xp.editorNewLayerText(), image: m.common.image(), progress: m.xp.editorToolProgress() };
     const element = {
       id, type, label: labels[type], visible: true,
       zIndex: localTemplate.customElements?.length || 0,
@@ -307,7 +324,7 @@
     const source = localTemplate.customElements?.find((item: any) => item.id === id);
     if (!source) return;
     saveUndoState();
-    const copy = { ...source, id: `custom-${crypto.randomUUID()}`, label: `${source.label} copy`, x: source.x + 20, y: source.y + 20,
+    const copy = { ...source, id: `custom-${crypto.randomUUID()}`, label: m.xp.editorLayerCopy({ label: source.label }), x: source.x + 20, y: source.y + 20,
       zIndex: localTemplate.customElements.length };
     localTemplate.customElements = [...localTemplate.customElements, copy];
     selectedElement = copy.id;
@@ -354,18 +371,18 @@
   function applyPreset(name: "minimal" | "glass" | "gaming") {
     const presets: Record<string, any[]> = {
       minimal: [
-        { type: "text", label: "Level and rank", x: 130, y: 90, width: 360, height: 36, fill: "#FFFFFF", text: "Level %xp.level.current%  •  Rank #%xp.rank%", fontSize: 26 },
-        { type: "progress", label: "XP progress", x: 130, y: 140, width: 540, height: 18, fill: "#5865F2", trackFill: "#FFFFFF30", cornerRadius: 9, progressStyle: "rounded" }
+        { type: "text", label: m.xp.editorPresetLevelRank(), x: 130, y: 90, width: 360, height: 36, fill: "#FFFFFF", text: "Level %xp.level.current%  •  Rank #%xp.rank%", fontSize: 26 },
+        { type: "progress", label: m.xp.editorToolProgress(), x: 130, y: 140, width: 540, height: 18, fill: "#5865F2", trackFill: "#FFFFFF30", cornerRadius: 9, progressStyle: "rounded" }
       ],
       glass: [
-        { type: "rectangle", label: "Glass panel", x: 110, y: 45, width: 610, height: 190, fill: "#111827B8", stroke: "#FFFFFF30", strokeWidth: 1, cornerRadius: 24, shadowBlur: 16, shadowY: 8 },
-        { type: "text", label: "Profile heading", x: 145, y: 76, width: 480, height: 40, fill: "#FFFFFF", text: "%xp.user.displayname%", fontSize: 30 },
-        { type: "progress", label: "XP progress", x: 145, y: 160, width: 520, height: 20, fill: "#7C3AED", gradientEnd: "#22D3EE", trackFill: "#FFFFFF25", cornerRadius: 10, progressStyle: "rounded" }
+        { type: "rectangle", label: m.xp.editorPresetGlassPanel(), x: 110, y: 45, width: 610, height: 190, fill: "#111827B8", stroke: "#FFFFFF30", strokeWidth: 1, cornerRadius: 24, shadowBlur: 16, shadowY: 8 },
+        { type: "text", label: m.xp.editorPresetProfileHeading(), x: 145, y: 76, width: 480, height: 40, fill: "#FFFFFF", text: "%xp.user.displayname%", fontSize: 30 },
+        { type: "progress", label: m.xp.editorToolProgress(), x: 145, y: 160, width: 520, height: 20, fill: "#7C3AED", gradientEnd: "#22D3EE", trackFill: "#FFFFFF25", cornerRadius: 10, progressStyle: "rounded" }
       ],
       gaming: [
-        { type: "rectangle", label: "Rank plate", x: 485, y: 38, width: 250, height: 72, fill: "#EF4444", gradientEnd: "#F59E0B", cornerRadius: 8, rotation: -2 },
-        { type: "text", label: "Rank", x: 505, y: 52, width: 210, height: 42, fill: "#FFFFFF", text: "RANK  #%xp.rank%", fontSize: 30, textAlign: "center" },
-        { type: "progress", label: "Segmented XP", x: 130, y: 205, width: 590, height: 22, fill: "#F59E0B", trackFill: "#FFFFFF25", progressStyle: "segmented", segments: 12, cornerRadius: 3 }
+        { type: "rectangle", label: m.xp.editorPresetRankPlate(), x: 485, y: 38, width: 250, height: 72, fill: "#EF4444", gradientEnd: "#F59E0B", cornerRadius: 8, rotation: -2 },
+        { type: "text", label: m.common.rank(), x: 505, y: 52, width: 210, height: 42, fill: "#FFFFFF", text: "RANK  #%xp.rank%", fontSize: 30, textAlign: "center" },
+        { type: "progress", label: m.xp.editorPresetSegmentedXp(), x: 130, y: 205, width: 590, height: 22, fill: "#F59E0B", trackFill: "#FFFFFF25", progressStyle: "segmented", segments: 12, cornerRadius: 3 }
       ]
     };
     saveUndoState();
@@ -379,9 +396,9 @@
 
   function resolveCustomText(value: string, data: any) {
     return (value || "")
-      .replaceAll(/%xp\.user%/gi, data?.username || "Username")
-      .replaceAll(/%xp\.user\.name%/gi, data?.username || "Username")
-      .replaceAll(/%xp\.user\.displayname%/gi, data?.displayName || data?.username || "Display name")
+      .replaceAll(/%xp\.user%/gi, data?.username || m.common.username())
+      .replaceAll(/%xp\.user\.name%/gi, data?.username || m.common.username())
+      .replaceAll(/%xp\.user\.displayname%/gi, data?.displayName || data?.username || m.common.displayName())
       .replaceAll(/%xp\.level\.current%/gi, String(data?.level || 1))
       .replaceAll(/%xp\.level\.next%/gi, String((data?.level || 1) + 1))
       .replaceAll(/%xp\.rank%/gi, String(data?.rank || 1))
@@ -1001,13 +1018,13 @@
   function getTextContent(elementId: string, data: any): string {
     switch (elementId) {
       case "user-text":
-        return data?.username || "Username";
+        return data?.username || m.common.username();
       case "guild-rank":
         return String(data?.rank || 1);
       case "guild-level":
         return String(data?.level || 1);
       case "club-name":
-        return data?.clubName || "Club Name";
+        return data?.clubName || m.xp.editorClubNameFallback();
       case "time-on-level":
         return data?.timeOnLevel || "0d 0h 0m";
       case "awarded":
@@ -1303,7 +1320,7 @@
       >
         <!-- Left section -->
         <div class="flex items-center gap-2">
-          <button aria-label="Close editor"
+          <button aria-label={m.common.ariaCloseEditor()}
                   class="p-2 rounded-lg transition-all hover:scale-[1.02]"
                   onclick={() => { showEditor = false; }}
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
@@ -1321,7 +1338,7 @@
               style="background: {previewMode === 'edit' ? $colorStore.primary + '30' : 'transparent'};
                    color: {previewMode === 'edit' ? $colorStore.primary : $colorStore.muted};"
             >
-              Edit
+              {m.common.edit()}
             </button>
             <button
               class="px-2 py-1 rounded-md text-xs font-medium transition-all"
@@ -1329,7 +1346,7 @@
               style="background: {previewMode === 'preview' ? $colorStore.primary + '30' : 'transparent'};
                    color: {previewMode === 'preview' ? $colorStore.primary : $colorStore.muted};"
             >
-              Preview
+              {m.common.preview()}
             </button>
           </div>
         </div>
@@ -1350,7 +1367,7 @@
           </button>
 
           <!-- Zoom controls -->
-          <button aria-label="Undo"
+          <button aria-label={m.xp.editorZoomOut()}
                   class="p-1.5 rounded-lg transition-all hover:scale-[1.02]"
                   onclick={() => { zoom = Math.max(0.5, zoom - 0.1); redrawCanvas(); }}
                   style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
@@ -1360,7 +1377,7 @@
           <span class="text-xs min-w-[40px] text-center" style="color: {$colorStore.text}">
           {Math.round(zoom * 100)}%
         </span>
-          <button aria-label="Redo"
+          <button aria-label={m.xp.editorZoomIn()}
                   class="p-1.5 rounded-lg transition-all hover:scale-[1.02]"
                   onclick={() => { zoom = Math.min(3, zoom + 0.1); redrawCanvas(); }}
                   style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
@@ -1384,7 +1401,7 @@
                    color: {useRealData ? $colorStore.secondary : $colorStore.muted};"
               onclick={() => { useRealData = !useRealData; redrawCanvas(); }}
             >
-              {useRealData ? "Real Data" : "Sample Data"}
+              {useRealData ? m.xp.editorRealData() : m.xp.editorSampleData()}
             </button>
 
             <button
@@ -1394,7 +1411,7 @@
               onclick={() => { showGrid = !showGrid; redrawCanvas(); }}
             >
               <i class="fa-solid fa-border-all" style="font-size: 12px;"></i>
-              Grid
+              {m.xp.editorGrid()}
             </button>
 
             <button
@@ -1404,7 +1421,7 @@
               onclick={() => { snapToGrid = !snapToGrid; }}
             >
               <i class="fa-solid fa-crosshairs" style="font-size: 12px;"></i>
-              Snap
+              {m.xp.editorSnap()}
             </button>
 
             <button
@@ -1414,7 +1431,7 @@
               onclick={() => { showRulers = !showRulers; redrawCanvas(); }}
             >
               <i class="fa-solid fa-ruler" style="font-size: 12px;"></i>
-              Rulers
+              {m.xp.editorRulers()}
             </button>
           </div>
         </div>
@@ -1438,7 +1455,7 @@
       <!-- Quick Action Buttons -->
       {#if showQuickActions && previewMode === "edit"}
         <div class="absolute right-3 top-3 flex flex-col gap-2">
-          <button aria-label="Zoom out"
+          <button aria-label={m.xp.editorOpenLayers()}
                   class="p-3 rounded-xl border shadow-lg transition-all hover:scale-[1.02] backdrop-blur-md"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
                   onclick={() => { bottomSheetOpen = true; bottomSheetTab = "layers"; }}
@@ -1446,7 +1463,7 @@
             <i class="fa-solid fa-layer-group" style="font-size: 20px;"></i>
           </button>
 
-          <button aria-label="Zoom in"
+          <button aria-label={m.xp.editorOpenTools()}
                   class="p-3 rounded-xl border shadow-lg transition-all hover:scale-[1.02] backdrop-blur-md"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
                   onclick={() => { bottomSheetOpen = true; bottomSheetTab = "tools"; }}
@@ -1455,7 +1472,7 @@
           </button>
 
           {#if undoStack.length > 0}
-            <button aria-label="Button action"
+            <button aria-label={m.common.undo()}
                     class="p-3 rounded-xl border shadow-lg transition-all hover:scale-[1.02] backdrop-blur-md"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border-color: {$colorStore.secondary}30;"
                     onclick={undo}
@@ -1465,7 +1482,7 @@
           {/if}
 
           {#if redoStack.length > 0}
-            <button aria-label="Navigate"
+            <button aria-label={m.common.redo()}
                     class="p-3 rounded-xl border shadow-lg transition-all hover:scale-[1.02] backdrop-blur-md"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border-color: {$colorStore.secondary}30;"
                     onclick={redo}
@@ -1502,7 +1519,7 @@
                    color: {bottomSheetTab === 'layers' ? $colorStore.primary : $colorStore.muted};"
               onclick={() => { bottomSheetTab = 'layers'; }}
             >
-              Layers
+              {m.xp.editorLayers()}
             </button>
             {#if selectedElement}
               <button
@@ -1511,7 +1528,7 @@
                      color: {bottomSheetTab === 'properties' ? $colorStore.primary : $colorStore.muted};"
                 onclick={() => { bottomSheetTab = 'properties'; }}
               >
-                Properties
+                {m.xp.editorProperties()}
               </button>
             {/if}
             <button
@@ -1520,11 +1537,11 @@
                    color: {bottomSheetTab === 'tools' ? $colorStore.primary : $colorStore.muted};"
               onclick={() => { bottomSheetTab = 'tools'; }}
             >
-              Tools
+              {m.xp.editorTools()}
             </button>
           </div>
 
-          <button aria-label="Close sheet"
+          <button aria-label={m.xp.editorCloseSheet()}
                   class="p-2 rounded-lg transition-all hover:scale-[1.02]"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                   onclick={() => { bottomSheetOpen = false; }}
@@ -1538,14 +1555,14 @@
           {#if bottomSheetTab === "layers"}
             <div class="grid grid-cols-6 gap-1 pb-2 mb-2 border-b" style="border-color: {$colorStore.primary}20;">
               {#each [
-                ["rectangle", "fa-square", "Rectangle"], ["ellipse", "fa-circle", "Ellipse"],
-                ["line", "fa-minus", "Line"], ["text", "fa-font", "Text"], ["image", "fa-image", "Image"],
-                ["progress", "fa-chart-simple", "XP progress"]
+                ["rectangle", "fa-square", m.common.rectangle()], ["ellipse", "fa-circle", m.common.ellipse()],
+                ["line", "fa-minus", m.xp.editorToolLine()], ["text", "fa-font", m.common.text()], ["image", "fa-image", m.common.image()],
+                ["progress", "fa-chart-simple", m.xp.editorToolProgress()]
               ] as tool}
                 <button class="aspect-square min-h-11 rounded-lg transition-transform hover:scale-105"
                         style="background: {$colorStore.primary}12; color: {$colorStore.primary};"
-                        aria-label={`Add ${tool[2]}`}
-                        title={`Add ${tool[2]}`}
+                        aria-label={m.xp.editorAddTool({ tool: tool[2] })}
+                        title={m.xp.editorAddTool({ tool: tool[2] })}
                         onclick={() => { addCustomElement(tool[0] as any); bottomSheetTab = "properties"; }}>
                   <i class={`fa-solid ${tool[1]}`}></i>
                 </button>
@@ -1585,9 +1602,9 @@
                           {:else if element.type === "text"}
                             {element.fontSize}px
                           {:else if element.type === "bar"}
-                            Progress Bar
+                            {m.common.progressBar()}
                           {:else if element.custom}
-                            {element.type}
+                            {layerTypeLabel(element.type)}
                           {/if}
                         </div>
                       </div>
@@ -1596,14 +1613,14 @@
                       {#if element.locked}
                         <i class="fa-solid fa-lock" style="color: {$colorStore.accent}; font-size: 16px;"></i>
                       {:else}
-                        <button aria-label="Move layer down" class="p-2 rounded-lg" onclick={(e) => { e.stopPropagation(); moveElement(element.id, -1); }}>
+                        <button aria-label={m.xp.editorMoveLayerDown()} class="p-2 rounded-lg" onclick={(e) => { e.stopPropagation(); moveElement(element.id, -1); }}>
                           <i class="fa-solid fa-chevron-down text-xs" style="color: {$colorStore.muted};"></i>
                         </button>
-                        <button aria-label="Move layer up" class="p-2 rounded-lg" onclick={(e) => { e.stopPropagation(); moveElement(element.id, 1); }}>
+                        <button aria-label={m.xp.editorMoveLayerUp()} class="p-2 rounded-lg" onclick={(e) => { e.stopPropagation(); moveElement(element.id, 1); }}>
                           <i class="fa-solid fa-chevron-up text-xs" style="color: {$colorStore.muted};"></i>
                         </button>
                         {#if element.custom || element.visible}
-                          <button aria-label={`Delete ${element.label}`} title="Remove from card" class="p-2 rounded-lg"
+                          <button aria-label={m.common.ariaDeleteNamed({ name: element.label })} title={m.xp.editorRemoveFromCard()} class="p-2 rounded-lg"
                                   style="color: {$colorStore.accent};"
                                   onclick={(e) => { e.stopPropagation(); element.custom ? deleteCustomElement(element.id) : removeDefaultElement(element.id); }}>
                             <i class="fa-solid fa-trash text-xs"></i>
@@ -1628,7 +1645,7 @@
                 {#if element.custom}
                   <div class="space-y-3">
                     <div class="grid grid-cols-2 gap-2">
-                      {#each [["X", "x"], ["Y", "y"], ["Width", "width"], ["Height", "height"]] as field}
+                      {#each [["X", "x"], ["Y", "y"], [m.xp.editorWidth(), "width"], [m.xp.editorHeight(), "height"]] as field}
                         <label class="text-xs" style="color: {$colorStore.muted}">{field[0]}
                           <input type="number" class="w-full px-3 py-2 rounded-lg border text-sm"
                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -1638,33 +1655,33 @@
                       {/each}
                     </div>
                     {#if element.type === "text"}
-                      <label class="text-xs block" style="color: {$colorStore.muted}">Text and variables
+                      <label class="text-xs block" style="color: {$colorStore.muted}">{m.xp.editorTextAndVariables()}
                         <textarea class="w-full px-3 py-2 rounded-lg border text-sm min-h-20"
                                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                   value={element.text}
                                   onchange={(e) => updateCustomElement(element.id, { text: e.currentTarget.value })}></textarea>
                       </label>
                       <p class="text-[11px] leading-relaxed" style="color: {$colorStore.muted}">
-                        Variables: %xp.user.name%, %xp.user.displayname%, %xp.level.current%, %xp.rank%, %xp.current%, %xp.needed%, %xp.total%, %xp.progress%
+                        {m.xp.editorVariablesLabel()} %xp.user.name%, %xp.user.displayname%, %xp.level.current%, %xp.rank%, %xp.current%, %xp.needed%, %xp.total%, %xp.progress%
                       </p>
-                      <label class="text-xs block" style="color: {$colorStore.muted}">Font size
+                      <label class="text-xs block" style="color: {$colorStore.muted}">{m.xp.editorFontSize()}
                         <input type="number" class="w-full px-3 py-2 rounded-lg border text-sm"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                value={element.fontSize}
                                onchange={(e) => updateCustomElement(element.id, { fontSize: Number(e.currentTarget.value) })}>
                       </label>
-                      <div class="text-xs" style="color: {$colorStore.muted}">Text alignment
+                      <div class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorTextAlignment()}
                         <DiscordSelector
                           type="custom"
                           options={textAlignOptions}
                           selected={element.textAlign || "left"}
                           searchable={false}
-                          ariaLabel="Text alignment"
+                          ariaLabel={m.xp.editorTextAlignment()}
                           onchange={(e) => updateCustomElement(element.id, { textAlign: String(e.selected) })}
                         />
                       </div>
                     {:else if element.type === "image"}
-                      <label class="text-xs block" style="color: {$colorStore.muted}">Image URL
+                      <label class="text-xs block" style="color: {$colorStore.muted}">{m.common.imageUrl()}
                         <input type="url" class="w-full px-3 py-2 rounded-lg border text-sm"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                value={element.url}
@@ -1672,18 +1689,18 @@
                       </label>
                     {:else if element.type === "progress"}
                       <div class="grid grid-cols-2 gap-2">
-                        <div class="text-xs" style="color: {$colorStore.muted}">Style
+                        <div class="text-xs" style="color: {$colorStore.muted}">{m.common.style()}
                           <DiscordSelector
                             type="custom"
                             options={progressStyleOptions}
                             selected={element.progressStyle || "rounded"}
                             searchable={false}
-                            ariaLabel="Progress bar style"
+                            ariaLabel={m.xp.editorProgressStyleAria()}
                             onchange={(e) => updateCustomElement(element.id, { progressStyle: String(e.selected) })}
                           />
                         </div>
                         {#if element.progressStyle === "segmented"}
-                          <label class="text-xs" style="color: {$colorStore.muted}">Segments
+                          <label class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorSegments()}
                             <input type="number" min="2" max="50" class="w-full px-2 py-2 rounded-lg border text-sm"
                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                    value={element.segments || 10}
@@ -1691,39 +1708,39 @@
                           </label>
                         {/if}
                       </div>
-                      <label class="text-xs block" style="color: {$colorStore.muted}">Track color
+                      <label class="text-xs block" style="color: {$colorStore.muted}">{m.xp.editorTrackColor()}
                         <input type="color" class="w-full h-10 rounded-lg border" style="border-color: {$colorStore.primary}30;" value={element.trackFill?.slice(0, 7) || "#ffffff"}
                                onchange={(e) => updateCustomElement(element.id, { trackFill: e.currentTarget.value })}>
                       </label>
                     {/if}
                     {#if element.type !== "image"}
-                      <label class="text-xs block" style="color: {$colorStore.muted}">Fill
+                      <label class="text-xs block" style="color: {$colorStore.muted}">{m.common.fill()}
                         <input type="color" class="w-full h-10 rounded-lg border" style="border-color: {$colorStore.primary}30;" value={element.fill?.slice(0, 7) || "#5865f2"}
                                onchange={(e) => updateCustomElement(element.id, { fill: e.currentTarget.value })}>
                       </label>
                     {/if}
                     {#if element.type !== "image"}
                       <div class="grid grid-cols-2 gap-2">
-                        <label class="text-xs" style="color: {$colorStore.muted}">Gradient end
+                        <label class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorGradientEnd()}
                           <input type="color" class="w-full h-10 rounded-lg border" style="border-color: {$colorStore.primary}30;" value={element.gradientEnd?.slice(0, 7) || element.fill?.slice(0, 7) || "#5865f2"}
                                  onchange={(e) => updateCustomElement(element.id, { gradientEnd: e.currentTarget.value })}>
                         </label>
-                        <label class="text-xs" style="color: {$colorStore.muted}">Angle
+                        <label class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorAngle()}
                           <input type="number" class="w-full px-2 py-2 rounded-lg border text-sm"
                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                  value={element.gradientAngle || 0}
                                  onchange={(e) => updateCustomElement(element.id, { gradientAngle: Number(e.currentTarget.value) })}>
                         </label>
                       </div>
-                      <button class="text-[11px]" style="color: {$colorStore.muted}" onclick={() => updateCustomElement(element.id, { gradientEnd: "" })}>Use solid fill</button>
+                      <button class="text-[11px]" style="color: {$colorStore.muted}" onclick={() => updateCustomElement(element.id, { gradientEnd: "" })}>{m.xp.editorUseSolidFill()}</button>
                     {/if}
                     {#if element.type !== "text" && element.type !== "image" && element.type !== "progress"}
                       <div class="grid grid-cols-3 gap-2">
-                        <label class="text-xs" style="color: {$colorStore.muted}">Border
+                        <label class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorBorder()}
                           <input type="color" class="w-full h-10 rounded-lg border" style="border-color: {$colorStore.primary}30;" value={element.stroke?.slice(0, 7) || "#000000"}
                                  onchange={(e) => updateCustomElement(element.id, { stroke: e.currentTarget.value })}>
                         </label>
-                        <label class="text-xs col-span-2" style="color: {$colorStore.muted}">Border width
+                        <label class="text-xs col-span-2" style="color: {$colorStore.muted}">{m.xp.editorBorderWidth()}
                           <input type="number" min="0" class="w-full px-2 py-2 rounded-lg border text-sm"
                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                  value={element.strokeWidth || 0}
@@ -1732,19 +1749,19 @@
                       </div>
                     {/if}
                     <div class="grid grid-cols-3 gap-2">
-                      <label class="text-xs" style="color: {$colorStore.muted}">Shadow
+                      <label class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorShadow()}
                         <input type="number" min="0" class="w-full px-2 py-2 rounded-lg border text-sm"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                value={element.shadowBlur || 0}
                                onchange={(e) => updateCustomElement(element.id, { shadowBlur: Number(e.currentTarget.value) })}>
                       </label>
-                      <label class="text-xs" style="color: {$colorStore.muted}">Offset X
+                      <label class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorOffsetX()}
                         <input type="number" class="w-full px-2 py-2 rounded-lg border text-sm"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                value={element.shadowX || 0}
                                onchange={(e) => updateCustomElement(element.id, { shadowX: Number(e.currentTarget.value) })}>
                       </label>
-                      <label class="text-xs" style="color: {$colorStore.muted}">Offset Y
+                      <label class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorOffsetY()}
                         <input type="number" class="w-full px-2 py-2 rounded-lg border text-sm"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                value={element.shadowY || 0}
@@ -1752,13 +1769,13 @@
                       </label>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
-                      <label class="text-xs" style="color: {$colorStore.muted}">Rotation
+                      <label class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorRotation()}
                         <input type="number" class="w-full px-3 py-2 rounded-lg border text-sm"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                value={element.rotation || 0}
                                onchange={(e) => updateCustomElement(element.id, { rotation: Number(e.currentTarget.value) })}>
                       </label>
-                      <label class="text-xs" style="color: {$colorStore.muted}">Opacity
+                      <label class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorOpacity()}
                         <input type="number" min="0" max="1" step="0.05" class="w-full px-3 py-2 rounded-lg border text-sm"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                value={element.opacity ?? 1}
@@ -1766,23 +1783,23 @@
                       </label>
                     </div>
                     <div class="grid grid-cols-6 gap-1">
-                      {#each [["left", "fa-align-left"], ["center", "fa-align-center"], ["right", "fa-align-right"], ["top", "fa-arrow-up"], ["middle", "fa-arrows-up-down"], ["bottom", "fa-arrow-down"]] as action}
-                        <button class="aspect-square min-h-11 rounded-lg" title={`Align ${action[0]}`} aria-label={`Align ${action[0]}`}
+                      {#each [["left", "fa-align-left", m.xp.editorAlignLeft()], ["center", "fa-align-center", m.xp.editorAlignCenter()], ["right", "fa-align-right", m.xp.editorAlignRight()], ["top", "fa-arrow-up", m.xp.editorAlignTop()], ["middle", "fa-arrows-up-down", m.xp.editorAlignMiddle()], ["bottom", "fa-arrow-down", m.xp.editorAlignBottom()]] as action}
+                        <button class="aspect-square min-h-11 rounded-lg" title={action[2]} aria-label={action[2]}
                                 style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                                 onclick={() => alignCustomElement(element.id, action[0] as any)}><i class={`fa-solid ${action[1]}`}></i></button>
                       {/each}
                     </div>
                     <button class="w-full min-h-11 px-3 py-2 rounded-lg text-sm" style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
-                            onclick={() => duplicateCustomElement(element.id)}><i class="fa-solid fa-copy mr-2"></i>Duplicate layer</button>
+                            onclick={() => duplicateCustomElement(element.id)}><i class="fa-solid fa-copy mr-2"></i>{m.xp.editorDuplicateLayer()}</button>
                     <button class="w-full min-h-11 px-3 py-2 rounded-lg text-sm" style="background: {$colorStore.accent}22; color: {$colorStore.accent};"
                             onclick={() => deleteCustomElement(element.id)}>
-                      <i class="fa-solid fa-trash mr-2"></i>Delete layer
+                      <i class="fa-solid fa-trash mr-2"></i>{m.xp.editorDeleteLayer()}
                     </button>
                   </div>
                 {:else}
                 <!-- Position -->
                 <div>
-                  <label for="input-8739" class="text-xs" style="color: {$colorStore.muted}">Position</label>
+                  <label for="input-8739" class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorPosition()}</label>
                   <div class="grid grid-cols-2 gap-2 mt-1">
                     <div>
                       <input
@@ -1810,14 +1827,14 @@
                 {#if element.type === "image"}
                   <!-- Size -->
                   <div>
-                    <label for="input-8739" class="text-xs" style="color: {$colorStore.muted}">Size</label>
+                    <label for="input-8739" class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorSize()}</label>
                     <div class="grid grid-cols-2 gap-2 mt-1">
                       <div>
                         <input
                           type="number"
                           class="w-full px-3 py-2 rounded-lg border text-sm"
                           style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          placeholder="Width"
+                          placeholder={m.xp.editorWidth()}
                           value={element.width}
                           onchange={(e) => updateElementProperty(element.id, "width", Number(e.currentTarget.value))}
                         >
@@ -1827,7 +1844,7 @@
                           type="number"
                           class="w-full px-3 py-2 rounded-lg border text-sm"
                           style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          placeholder="Height"
+                          placeholder={m.xp.editorHeight()}
                           value={element.height}
                           onchange={(e) => updateElementProperty(element.id, "height", Number(e.currentTarget.value))}
                         >
@@ -1845,14 +1862,14 @@
                         {:else}
                           <i class="fa-solid fa-lock-open" style="font-size: 12px;"></i>
                         {/if}
-                        Proportions
+                        {m.xp.editorProportions()}
                       </button>
                     </div>
                   </div>
                 {:else if element.type === "text"}
                   <!-- Font Size -->
                   <div>
-                    <label for="input-8739" class="text-xs" style="color: {$colorStore.muted}">Font Size</label>
+                    <label for="input-8739" class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorFontSize()}</label>
                     <input id="input-8739"
                            type="number"
                            class="w-full px-3 py-2 rounded-lg border text-sm mt-1"
@@ -1864,7 +1881,7 @@
 
                   <!-- Color -->
                   <div>
-                    <label for="input-6443" class="text-xs" style="color: {$colorStore.muted}">Color</label>
+                    <label for="input-6443" class="text-xs" style="color: {$colorStore.muted}">{m.common.color()}</label>
                     <div class="flex gap-2 mt-1">
                       <input
                         type="color"
@@ -1885,7 +1902,7 @@
                 {:else if element.type === "bar"}
                   <!-- Bar Settings -->
                   <div>
-                    <label for="input-6443" class="text-xs" style="color: {$colorStore.muted}">Bar Thickness</label>
+                    <label for="input-6443" class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorBarThickness()}</label>
                     <input id="input-6443"
                            type="number"
                            class="w-full px-3 py-2 rounded-lg border text-sm mt-1"
@@ -1896,7 +1913,7 @@
                   </div>
 
                   <div>
-                    <label for="input-77" class="text-xs" style="color: {$colorStore.muted}">Bar Length</label>
+                    <label for="input-77" class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorBarLength()}</label>
                     <input id="input-77"
                            type="number"
                            class="w-full px-3 py-2 rounded-lg border text-sm mt-1"
@@ -1907,12 +1924,9 @@
                   </div>
 
                   <div>
-                    <label for="input-1363" class="text-xs" style="color: {$colorStore.muted}">Direction</label>
+                    <label for="input-1363" class="text-xs" style="color: {$colorStore.muted}">{m.common.direction()}</label>
                     <div class="grid grid-cols-2 gap-2 mt-1">
-                      {#each [{ id: 3, label: "Right" }, { id: 2, label: "Left" }, {
-                        id: 1,
-                        label: "Down"
-                      }, { id: 0, label: "Up" }] as dir (dir.id)}
+                      {#each [{ id: 3, label: m.xp.editorDirectionRight() }, { id: 2, label: m.common.left() }, { id: 1, label: m.xp.editorDirectionDown() }, { id: 0, label: m.common.up() }] as dir (dir.id)}
                         <button
                           class="py-2 px-3 rounded-lg text-xs font-medium transition-all"
                           style="background: {element.direction === dir.id ? $colorStore.primary + '20' : $colorStore.primary + '10'};
@@ -1926,7 +1940,7 @@
                   </div>
 
                   <div>
-                    <label for="input-1363" class="text-xs" style="color: {$colorStore.muted}">Color</label>
+                    <label for="input-1363" class="text-xs" style="color: {$colorStore.muted}">{m.common.color()}</label>
                     <div class="flex gap-2 mt-1">
                       <input
                         type="color"
@@ -1947,7 +1961,7 @@
 
                   <div>
                     <label for="input-1363" class="text-xs" style="color: {$colorStore.muted}">
-                      Opacity: {element.transparency}%
+                      {m.xp.editorOpacityPercent({ percent: element.transparency })}
                     </label>
                     <input id="input-1363"
                            type="range"
@@ -1969,20 +1983,20 @@
                 <h3 class="text-sm font-semibold flex items-center gap-2 mb-3"
                     style="color: {$colorStore.text}">
                   <i class="fa-solid fa-wand-magic-sparkles" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                  Presets
+                  {m.xp.editorPresets()}
                 </h3>
                 <div class="grid grid-cols-3 gap-1 mb-2">
-                  {#each ["minimal", "glass", "gaming"] as preset}
+                  {#each [["minimal", m.xp.editorPresetMinimal()], ["glass", m.xp.editorPresetGlass()], ["gaming", m.xp.editorPresetGaming()]] as preset}
                     <button class="min-h-11 px-2 py-2 rounded-lg text-xs capitalize" style="background: {$colorStore.primary}10; color: {$colorStore.text};"
-                            onclick={() => { applyPreset(preset as any); bottomSheetTab = "layers"; }}>{preset}</button>
+                            onclick={() => { applyPreset(preset[0] as any); bottomSheetTab = "layers"; }}>{preset[1]}</button>
                   {/each}
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                   <button class="min-h-11 p-2 rounded-lg text-xs" style="background: {$colorStore.primary}10; color: {$colorStore.primary};" onclick={exportTemplate}>
-                    <i class="fa-solid fa-file-export mr-1"></i>Export
+                    <i class="fa-solid fa-file-export mr-1"></i>{m.xp.editorExport()}
                   </button>
                   <button class="min-h-11 p-2 rounded-lg text-xs" style="background: {$colorStore.primary}10; color: {$colorStore.primary};" onclick={() => importInput?.click()}>
-                    <i class="fa-solid fa-file-import mr-1"></i>Import
+                    <i class="fa-solid fa-file-import mr-1"></i>{m.common.import()}
                   </button>
                   <input class="hidden" type="file" accept="application/json,.json" bind:this={importInput} onchange={importTemplate}>
                 </div>
@@ -1993,11 +2007,11 @@
                 <h3 class="text-sm font-semibold flex items-center gap-2 mb-3"
                     style="color: {$colorStore.text}">
                   <i class="fa-solid fa-image" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                  Canvas Size
+                  {m.xp.editorCanvasSize()}
                 </h3>
                 <div class="grid grid-cols-2 gap-2">
                   <div>
-                    <label for="input-7763" class="text-xs" style="color: {$colorStore.muted}">Width</label>
+                    <label for="input-7763" class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorWidth()}</label>
                     <input id="input-7763"
                            type="number"
                            class="w-full px-3 py-2 rounded-lg border text-sm"
@@ -2007,7 +2021,7 @@
                     >
                   </div>
                   <div>
-                    <label for="input-148" class="text-xs" style="color: {$colorStore.muted}">Height</label>
+                    <label for="input-148" class="text-xs" style="color: {$colorStore.muted}">{m.xp.editorHeight()}</label>
                     <input id="input-148"
                            type="number"
                            class="w-full px-3 py-2 rounded-lg border text-sm"
@@ -2024,14 +2038,14 @@
                 <h3 class="text-sm font-semibold flex items-center gap-2 mb-3"
                     style="color: {$colorStore.text}">
                   <i class="fa-solid fa-paint-brush" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                  Background
+                  {m.xp.editorBackground()}
                 </h3>
                 <div class="space-y-2">
                   <input
                     type="url"
                     class="w-full px-3 py-2 rounded-lg border text-sm"
                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                    placeholder="Custom background URL..."
+                    placeholder={m.xp.editorBackgroundUrlPlaceholder()}
                     value={localTemplate.customXpImageUrl || ""}
                     onchange={(e) => {
                     saveUndoState();
@@ -2045,14 +2059,14 @@
                       style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                     >
                       <i class="fa-solid fa-upload" style="font-size: 16px;"></i>
-                      Upload
+                      {m.common.upload()}
                     </button>
                     <button
                       class="flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2"
                       style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                     >
                       <i class="fa-solid fa-download" style="font-size: 16px;"></i>
-                      Export
+                      {m.xp.editorExport()}
                     </button>
                   </div>
                 </div>
@@ -2063,7 +2077,7 @@
                 <h3 class="text-sm font-semibold flex items-center gap-2 mb-3"
                     style="color: {$colorStore.text}">
                   <i class="fa-solid fa-border-all" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                  Grid Size
+                  {m.xp.editorGridSize()}
                 </h3>
                 <input
                   type="range"
@@ -2093,7 +2107,7 @@
               }}
               >
                 <i class="fa-solid fa-expand" style="font-size: 16px;"></i>
-                Reset View
+                {m.xp.editorResetView()}
               </button>
             </div>
           {/if}

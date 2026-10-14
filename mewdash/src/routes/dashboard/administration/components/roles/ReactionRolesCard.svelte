@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { logger } from "$lib/logger";
   import { colorStore } from "$lib/stores/colorStore";
@@ -15,12 +16,12 @@
 
   function getRoleName(roleId: bigint): string {
     const role = availableRoles.find((r: any) => r.id === roleId);
-    return role ? role.name : `Role ${roleId.toString()}`;
+    return role ? role.name : m.common.roleFallback({ id: roleId.toString() });
   }
 
   function getChannelName(channelId: bigint): string {
     const channel = textChannels?.find((c: any) => c.id === channelId.toString());
-    return channel ? `#${channel.name}` : `Channel ${channelId.toString()}`;
+    return channel ? `#${channel.name}` : m.common.channelFallback({ id: channelId.toString() });
   }
 
   async function removeReactionRole(index: number) {
@@ -67,7 +68,7 @@
       <i class="fa-utility-duo fa-regular fa-face-smile"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
     </div>
-    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Reaction Roles</h2>
+    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.reactionRoles()}</h2>
   </div>
 
   <div class="mb-6 p-4 rounded-xl flex items-start gap-3"
@@ -75,22 +76,21 @@
     <i class="fa-utility-duo fa-regular fa-circle-info mt-0.5"
        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
     <p class="text-sm" style="color: {$colorStore.text}">
-      <a href="/dashboard/role-menus" class="font-semibold underline" style="color: {$colorStore.primary}">Role Menus</a>
-      does this with a dropdown or buttons. Open Role Menus and use Move older setups to bring these over.
+      {@html m.administration.rolesReactionRolesRoleMenusNotice({ link: `<a href="/dashboard/role-menus" class="font-semibold underline" style="color: ${$colorStore.primary}">${m.features.roleMenusName()}</a>` })}
     </p>
   </div>
 
   <div class="space-y-4">
     <p class="text-sm" style="color: {$colorStore.muted}">
-      Allow users to get roles by reacting to messages with specific emojis
+      {m.administration.rolesReactionRolesDescription()}
     </p>
 
     {#if !reactionRoles.success || reactionRoles.reactionRoles.length === 0}
       <div class="text-center py-8">
         <i class="fa-utility-duo fa-regular fa-face-smile"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-        <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">No reaction roles configured</p>
-        <p class="text-sm" style="color: {$colorStore.muted}">Set up reaction-based role assignment</p>
+        <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">{m.administration.rolesReactionRolesEmptyTitle()}</p>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.rolesReactionRolesEmptyHint()}</p>
       </div>
     {:else}
       <div class="space-y-4">
@@ -101,17 +101,16 @@
             <div class="flex items-center justify-between mb-3">
               <div>
                 <p class="font-medium" style="color: {$colorStore.text}">
-                  Message ID: {rr.messageId.toString()}
+                  {m.administration.rolesReactionRolesMessageId({ id: rr.messageId.toString() })}
                 </p>
                 <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                  {getChannelName(rr.channelId)} • {rr.reactionRoles.length}
-                  reaction{rr.reactionRoles.length !== 1 ? 's' : ''}
+                  {rr.reactionRoles.length !== 1 ? m.administration.rolesReactionRolesChannelReactionsOther({ channel: getChannelName(rr.channelId), count: rr.reactionRoles.length }) : m.administration.rolesReactionRolesChannelReactionsOne({ channel: getChannelName(rr.channelId), count: rr.reactionRoles.length })}
                 </p>
               </div>
               <span class="text-xs px-2 py-1 rounded-full"
                     style="background: {rr.exclusive ? $colorStore.accent + '20' : $colorStore.secondary + '20'};
                            color: {rr.exclusive ? $colorStore.accent : $colorStore.secondary}">
-                {rr.exclusive ? 'Exclusive' : 'Multiple'}
+                {rr.exclusive ? m.administration.rolesReactionRolesExclusive() : m.common.multiple()}
               </span>
             </div>
 
@@ -140,9 +139,9 @@
               <button
                 class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
                 style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                onclick={() => showConfirm("Remove Reaction Role", "Remove this reaction role setup?", () => removeReactionRole(index))}
+                onclick={() => showConfirm(m.administration.rolesReactionRolesRemoveTitle(), m.administration.rolesReactionRolesRemoveConfirm(), () => removeReactionRole(index))}
               >
-                Remove
+                {m.common.remove()}
               </button>
             </div>
           </div>

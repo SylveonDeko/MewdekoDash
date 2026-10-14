@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
@@ -67,7 +68,7 @@
        class="fa-utility-duo fa-regular fa-database"
        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
   </div>
-  <h2 class="text-xl font-bold" style="color: {$colorStore.text}">XP Exclusions</h2>
+  <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.xp.exclusionsTitle()}</h2>
 </div>
 
 {#if loading}
@@ -76,7 +77,7 @@
       class="w-12 h-12 border-4 rounded-full animate-spin"
       style="border-color: {$colorStore.primary}20;
              border-top-color: {$colorStore.primary};"
-      aria-label="Loading"
+      aria-label={m.common.loading()}
     >
     </div>
   </div>
@@ -98,18 +99,18 @@
       class="rounded-xl p-4 h-full flex flex-col"
       style="background: {$colorStore.primary}10;"
     >
-      <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">Excluded Channels</h3>
+      <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">{m.xp.exclusionsChannelsTitle()}</h3>
 
       <!-- Add Excluded Channel Form -->
       <div class="mb-6 p-4 rounded-lg" style="background: {$colorStore.primary}15;">
-        <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.muted}">Exclude Channel from XP</h4>
+        <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.muted}">{m.xp.exclusionsChannelForm()}</h4>
         <div class="flex flex-col sm:flex-row gap-3">
           <div class="flex-1">
             <DiscordSelector
               type="channel"
               options={channelOptions}
               selected={selectedChannelId}
-              placeholder="Select Channel"
+              placeholder={m.common.selectChannelPlaceholder()}
               onchange={(detail) => {
                 if (detail.selected && typeof detail.selected === 'string') {
                   selectedChannelId = detail.selected;
@@ -123,20 +124,20 @@
             onclick={handleExcludeChannel}
             style="background: {$colorStore.primary}20;
                    color: {$colorStore.text};"
-            aria-label="Exclude selected channel"
+            aria-label={m.xp.exclusionsExcludeChannelAria()}
           >
-            Exclude
+            {m.xp.exclusionsExclude()}
           </button>
         </div>
         <p class="mt-2 text-xs" style="color: {$colorStore.muted}">
-          Users won't earn XP from messages in excluded channels.
+          {m.xp.exclusionsChannelHint()}
         </p>
       </div>
 
       <!-- Excluded Channels List -->
       {#if excludedChannels.length === 0}
         <div class="text-center py-4" style="color: {$colorStore.muted}">
-          No excluded channels
+          {m.xp.exclusionsNoChannels()}
         </div>
       {:else}
         <ul class="space-y-2">
@@ -146,14 +147,14 @@
               style="background: {$colorStore.primary}15;"
             >
               <span class="truncate flex-1 min-w-0" style="color: {$colorStore.text}">
-                #{guildChannels.find(c => c.id === channelId.toString())?.name || `Channel ID: ${channelId}`}
+                #{guildChannels.find(c => c.id === channelId.toString())?.name || m.common.channelIdLabel({ id: channelId })}
               </span>
               <button
                       class="p-2 rounded-full transition-all duration-200 shrink-0 ml-2 min-w-[44px] min-h-[44px]"
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.accent};"
                 onclick={() => onIncludeChannel(channelId)}
-                aria-label={`Include channel ${guildChannels.find(c => c.id === channelId.toString())?.name || channelId}`}
+                aria-label={m.xp.exclusionsIncludeChannelAria({ name: guildChannels.find(c => c.id === channelId.toString())?.name || channelId })}
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2}
@@ -171,18 +172,18 @@
       class="rounded-xl p-4 h-full flex flex-col"
       style="background: {$colorStore.secondary}10;"
     >
-      <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">Excluded Roles</h3>
+      <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">{m.common.excludedRoles()}</h3>
 
       <!-- Add Excluded Role Form -->
       <div class="mb-6 p-4 rounded-lg" style="background: {$colorStore.secondary}15;">
-        <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.muted}">Exclude Role from XP</h4>
+        <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.muted}">{m.xp.exclusionsRoleForm()}</h4>
         <div class="flex flex-col sm:flex-row gap-3">
           <div class="flex-1">
             <DiscordSelector
               type="role"
               options={roleOptions}
               selected={selectedRoleId}
-              placeholder="Select Role"
+              placeholder={m.common.selectRolePlaceholder()}
               onchange={(detail) => {
                 if (detail.selected && typeof detail.selected === 'string') {
                   selectedRoleId = detail.selected;
@@ -196,20 +197,20 @@
             onclick={handleExcludeRole}
             style="background: {$colorStore.secondary}20;
                    color: {$colorStore.text};"
-            aria-label="Exclude selected role"
+            aria-label={m.xp.exclusionsExcludeRoleAria()}
           >
-            Exclude
+            {m.xp.exclusionsExclude()}
           </button>
         </div>
         <p class="mt-2 text-xs" style="color: {$colorStore.muted}">
-          Users with excluded roles won't earn XP from any source.
+          {m.xp.exclusionsRoleHint()}
         </p>
       </div>
 
       <!-- Excluded Roles List -->
       {#if excludedRoles.length === 0}
         <div class="text-center py-4" style="color: {$colorStore.muted}">
-          No excluded roles
+          {m.xp.exclusionsNoRoles()}
         </div>
       {:else}
         <ul class="space-y-2">
@@ -219,14 +220,14 @@
               style="background: {$colorStore.secondary}15;"
             >
               <span class="truncate flex-1 min-w-0" style="color: {$colorStore.text}">
-                @{guildRoles.find(r => r.id === roleId.toString())?.name || `Role ID: ${roleId}`}
+                @{guildRoles.find(r => r.id === roleId.toString())?.name || m.common.roleIdLabel({ id: roleId })}
               </span>
               <button
                       class="p-2 rounded-full transition-all duration-200 shrink-0 ml-2 min-w-[44px] min-h-[44px]"
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.accent};"
                 onclick={() => onIncludeRole(roleId)}
-                aria-label={`Include role ${guildRoles.find(r => r.id === roleId.toString())?.name || roleId}`}
+                aria-label={m.xp.exclusionsIncludeRoleAria({ name: guildRoles.find(r => r.id === roleId.toString())?.name || roleId })}
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2}

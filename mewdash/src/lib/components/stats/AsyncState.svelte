@@ -1,5 +1,6 @@
 <!-- lib/components/stats/AsyncState.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import type { Snippet } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
 
@@ -17,8 +18,8 @@
     loading = false,
     error = null,
     empty = false,
-    emptyMessage = "Nothing here yet",
-    emptyIcon = "fa-chart-simple",
+    emptyMessage,
+        emptyIcon = "fa-chart-simple",
     children,
   }: Props = $props();
 </script>
@@ -28,7 +29,7 @@
     <div
       class="w-10 h-10 border-4 rounded-full animate-spin"
       style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"
-      aria-label="Loading"
+      aria-label={m.common.loading()}
     ></div>
   </div>
 {:else if error}
@@ -47,7 +48,7 @@
       style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5;"
       aria-hidden="true"
     ></i>
-    <p style="color: {$colorStore.muted}">{emptyMessage}</p>
+    <p style="color: {$colorStore.muted}">{emptyMessage ?? m.common.nothingHereYet()}</p>
   </div>
 {:else}
   {@render children()}

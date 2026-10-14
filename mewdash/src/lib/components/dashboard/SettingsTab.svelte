@@ -1,5 +1,6 @@
 <!-- lib/components/dashboard/SettingsTab.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
@@ -167,58 +168,58 @@
             <i class="fa-utility-duo fa-regular fa-gear text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
-          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">General Settings</h2>
+          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.generalSettings()}</h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <!-- Multi Greets -->
           <FeatureCard
             animationDelay={0}
-            description="Multiple greeting channels and messages"
+            description={m.dashboard.settingsTabMultigreetsDesc()}
             href="/dashboard/multigreets"
             icon="fa-bell"
             isActive={getFeatureStatus('multigreets')}
-            title="Multi Greets"
+            title={m.dashboard.actionsMultiGreets()}
           />
 
           <!-- Starboard -->
           <FeatureCard
             animationDelay={50}
-            description="Highlight popular messages"
+            description={m.dashboard.settingsTabStarboardDesc()}
             href="/dashboard/starboard"
             icon="fa-palette"
             isActive={getFeatureStatus('starboard')}
-            title="Starboard"
+            title={m.features.starboardName()}
           />
 
           <!-- Suggestions -->
           <FeatureCard
             animationDelay={100}
-            description="User suggestion voting system"
+            description={m.dashboard.settingsTabSuggestionsDesc()}
             href="/dashboard/suggestions"
             icon="fa-comment"
             isActive={getFeatureStatus('suggestions')}
-            title="Suggestions"
+            title={m.features.suggestionsName()}
           />
 
           <!-- Logging System -->
           <FeatureCard
             animationDelay={150}
-            description="Event logging and audit trails"
+            description={m.dashboard.settingsTabLoggingDesc()}
             href="/dashboard/logging"
             icon="fa-file"
             isActive={getFeatureStatus('logging')}
-            title="Logging"
+            title={m.features.loggingName()}
           />
 
           <!-- AFK System -->
           <FeatureCard
             animationDelay={200}
-            description="Away from keyboard status"
+            description={m.dashboard.settingsTabAfkDesc()}
             href="/dashboard/afk"
             icon="fa-globe"
             isActive={getFeatureStatus('afk')}
-            title="AFK System"
+            title={m.features.afkName()}
           />
         </div>
       </div>
@@ -233,7 +234,7 @@
             <i class="fa-utility-duo fa-regular fa-users text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
-          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Role Management</h2>
+          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">{m.dashboard.settingsTabRoleManagement()}</h2>
         </div>
 
         <div class="grid grid-cols-1 gap-3">
@@ -243,17 +244,17 @@
             <div class="flex items-center gap-3 mb-3">
               <i class="fa-utility-duo fa-regular fa-shield text-xl"
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">Auto-Assign</h3>
+              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.common.autoAssign()}</h3>
             </div>
             <div class="text-2xl font-bold mb-1" style="color: {$colorStore.primary}">
               {totalAutoAssignRoles}
             </div>
             <div class="text-sm" style="color: {$colorStore.muted}">
-              Roles auto-assigned to new members
+              {m.dashboard.settingsTabAutoAssignDesc()}
             </div>
             <a class="text-xs mt-2 inline-block"
                href="/dashboard/administration" style="color: {$colorStore.primary}">
-              Configure →
+              {m.dashboard.settingsTabConfigureArrow()}
             </a>
           </div>
 
@@ -263,17 +264,17 @@
             <div class="flex items-center gap-3 mb-3">
               <i class="fa-utility-duo fa-regular fa-users text-xl"
                  style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">Self-Assign</h3>
+              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.dashboard.settingsTabSelfAssign()}</h3>
             </div>
             <div class="text-2xl font-bold mb-1" style="color: {$colorStore.secondary}">
               {totalSelfAssignRoles}
             </div>
             <div class="text-sm" style="color: {$colorStore.muted}">
-              Roles users can self-assign
+              {m.dashboard.settingsTabSelfAssignDesc()}
             </div>
             <a class="text-xs mt-2 inline-block"
                href="/dashboard/administration" style="color: {$colorStore.secondary}">
-              Configure →
+              {m.dashboard.settingsTabConfigureArrow()}
             </a>
           </div>
 
@@ -283,22 +284,22 @@
             <div class="flex items-center gap-3 mb-3">
               <i class="fa-utility-duo fa-regular fa-star text-xl"
                  style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">Role Features</h3>
+              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.dashboard.settingsTabRoleFeatures()}</h3>
             </div>
             <div class="text-2xl font-bold mb-1" style="color: {$colorStore.accent}">
               {totalRoleFeatures}
             </div>
             <div class="text-sm" style="color: {$colorStore.muted}">
-              Role states + role greets configured
+              {m.dashboard.settingsTabRoleFeaturesDesc()}
             </div>
             <div class="flex gap-2 mt-2">
               <a class="text-xs"
                  href="/dashboard/rolestates" style="color: {$colorStore.accent}">
-                States →
+                {m.dashboard.settingsTabStatesArrow()}
               </a>
               <a class="text-xs"
                  href="/dashboard/rolegreets" style="color: {$colorStore.accent}">
-                Greets →
+                {m.dashboard.settingsTabGreetsArrow()}
               </a>
             </div>
           </div>
@@ -315,28 +316,28 @@
             <i class="fa-utility-duo fa-regular fa-database text-2xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Integrations</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.dashboard.settingsTabIntegrations()}</h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Patreon Integration -->
           <FeatureCard
             animationDelay={0}
-            description="Supporter tier management"
+            description={m.dashboard.settingsTabPatreonDesc()}
             href="/dashboard/patreon"
             icon="fa-database"
             isActive={integrationSettings.patreonEnabled}
-            title="Patreon"
+            title={m.features.patreonName()}
           />
 
           <!-- Bot Settings -->
           <FeatureCard
             animationDelay={50}
-            description="Core bot settings"
+            description={m.dashboard.settingsTabBotSettingsDesc()}
             href="/dashboard/settings"
             icon="fa-gear"
             isActive={true}
-            title="Bot Configuration"
+            title={m.common.botConfiguration()}
           />
         </div>
       </div>
@@ -360,14 +361,14 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">{totalAutoAssignRoles}</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Auto-Assign Roles</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.features.wizardAdministrationName()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Roles given to new members</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.settingsTabAutoAssignRolesDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/administration"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-              Configure
+              {m.common.configure()}
             </a>
           </div>
         </div>
@@ -385,14 +386,14 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">{totalSelfAssignRoles}</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Self-Assign Roles</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.dashboard.settingsTabSelfAssignRoles()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Roles users can assign themselves</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.settingsTabSelfAssignRolesDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/administration"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
-              Configure
+              {m.common.configure()}
             </a>
           </div>
         </div>
@@ -410,9 +411,9 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">{totalRoleFeatures}</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Role Features</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.dashboard.settingsTabRoleFeatures()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">{roleSettings.roleStates} states, {roleSettings.roleGreets} greets</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.settingsTabRoleFeaturesCounts({ states: roleSettings.roleStates, greets: roleSettings.roleGreets })}</div>
             </div>
           </div>
         </div>
@@ -430,14 +431,14 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">{integrationSettings.patreonEnabled ? 1 : 0}</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Integrations</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.dashboard.settingsTabIntegrations()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">{integrationSettings.patreonEnabled ? "Patreon active" : "None active"}</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{integrationSettings.patreonEnabled ? m.dashboard.settingsTabPatreonActive() : m.dashboard.settingsTabNoneActive()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/patreon"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-              Manage
+              {m.common.manage()}
             </a>
           </div>
         </div>
@@ -450,26 +451,26 @@
         <div class="flex items-center gap-3 mb-4">
           <i class="fa-utility-duo fa-regular fa-gear text-xl"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-          <h3 class="font-semibold" style="color: {$colorStore.text}">Quick Actions</h3>
+          <h3 class="font-semibold" style="color: {$colorStore.text}">{m.common.quickActions()}</h3>
         </div>
 
         <div class="space-y-3">
           <a class="block w-full text-center py-2 px-4 rounded-xl transition-all hover:scale-[1.02]"
              href="/dashboard/settings"
              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-            General Settings
+            {m.common.generalSettings()}
           </a>
 
           <a class="block w-full text-center py-2 px-4 rounded-xl transition-all hover:scale-[1.02]"
              href="/dashboard/administration"
              style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;">
-            Role Management
+            {m.dashboard.settingsTabRoleManagement()}
           </a>
 
           <a class="block w-full text-center py-2 px-4 rounded-xl transition-all hover:scale-[1.02]"
              href="/dashboard/administration"
              style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;">
-            Permissions
+            {m.common.permissions()}
           </a>
         </div>
       </div>
@@ -479,26 +480,26 @@
         <div class=" rounded-2xl p-6 border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
-          <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">Server Info</h3>
+          <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">{m.dashboard.settingsTabServerInfo()}</h3>
 
           <div class="space-y-2 text-sm">
             {#if guildConfig.prefix}
               <div class="flex justify-between">
-                <span style="color: {$colorStore.muted}">Prefix:</span>
+                <span style="color: {$colorStore.muted}">{m.dashboard.settingsTabPrefix()}</span>
                 <span style="color: {$colorStore.text}" class="font-mono">{guildConfig.prefix}</span>
               </div>
             {/if}
 
             {#if guildConfig.locale}
               <div class="flex justify-between">
-                <span style="color: {$colorStore.muted}">Language:</span>
+                <span style="color: {$colorStore.muted}">{m.common.language()}:</span>
                 <span style="color: {$colorStore.text}">{guildConfig.locale}</span>
               </div>
             {/if}
 
             {#if guildConfig.timeZone}
               <div class="flex justify-between">
-                <span style="color: {$colorStore.muted}">Timezone:</span>
+                <span style="color: {$colorStore.muted}">{m.common.timezone()}:</span>
                 <span style="color: {$colorStore.text}">{guildConfig.timeZone}</span>
               </div>
             {/if}

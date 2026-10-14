@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -23,15 +24,15 @@
   let savingSettings = $state(false);
   let openCategory = $state<string | null>(null);
 
-  const DM_OPTIONS = [
-    { id: "0", name: "Server default" },
-    { id: "1", name: "Always" },
-    { id: "2", name: "Never" }
-  ];
+  const dmOptions = $derived([
+    { id: "0", name: m.common.serverDefault() },
+    { id: "1", name: m.me.achDmAlways() },
+    { id: "2", name: m.common.never() }
+  ]);
 
   let progressByKey = $derived(new Map((data?.progress ?? []).map((p) => [p.key, p])));
   let badgeOptions = $derived([
-    { id: "", name: "Empty" },
+    { id: "", name: m.common.empty() },
     ...(data?.badges ?? []).map((b) => ({ id: b.key, name: b.name }))
   ]);
   let tierFraction = $derived.by(() => {
@@ -79,7 +80,7 @@
       data = { ...data, equipped: result.equipped };
     } catch (err: any) {
       logger.error("Failed to save badges:", err);
-      onerror(err?.message || "Couldn't save your badges.");
+      onerror(err?.message || m.me.achSaveBadgesFailed());
     } finally {
       savingSlots = false;
     }
@@ -97,7 +98,7 @@
       data = { ...data, settings };
     } catch (err: any) {
       logger.error("Failed to save achievement preferences:", err);
-      onerror(err?.message || "Couldn't save that.");
+      onerror(err?.message || m.common.saveFailedInline());
     } finally {
       savingSettings = false;
     }
@@ -115,43 +116,43 @@
   <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
     <i class="fa-utility-duo fa-regular fa-crown text-xl"
        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-    Achievements
+    {m.features.achievementsName()}
   </h3>
 
   {#if loading}
     <div class="py-8 text-center" style="color: {$colorStore.muted}"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i></div>
   {:else if !data}
-    <p class="text-sm" style="color: {$colorStore.muted}">Couldn't load your achievements.</p>
+    <p class="text-sm" style="color: {$colorStore.muted}">{m.me.couldnTLoadYourAchievements()}</p>
   {:else}
     {#if !data.enabled}
       <p class="text-sm mb-4 p-3 rounded-lg" style="background: {$colorStore.accent}15; color: {$colorStore.text}">
-        Earning is paused in this server, so nothing new unlocks right now.
+        {m.me.earningIsPausedInThisServer()}
       </p>
     {/if}
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
       <div class="p-3 rounded-xl text-center" style="background: {gradeColor(data.member.tierGrade)}15; border: 1px solid {gradeColor(data.member.tierGrade)}30;">
         <div class="text-lg font-bold" style="color: {gradeColor(data.member.tierGrade)}">{data.member.tier}</div>
-        <div class="text-xs" style="color: {$colorStore.muted}">Rank</div>
+        <div class="text-xs" style="color: {$colorStore.muted}">{m.common.rank()}</div>
       </div>
       <div class="p-3 rounded-xl text-center" style="background: {$colorStore.primary}08;">
         <div class="text-lg font-bold" style="color: {$colorStore.primary}">{data.member.points.toLocaleString()}</div>
-        <div class="text-xs" style="color: {$colorStore.muted}">Points{data.member.rank > 0 ? ` · #${data.member.rank}` : ""}</div>
+        <div class="text-xs" style="color: {$colorStore.muted}">{data.member.rank > 0 ? m.me.achPointsRanked({ rank: data.member.rank }) : m.common.points()}</div>
       </div>
       <div class="p-3 rounded-xl text-center" style="background: {$colorStore.primary}08;">
         <div class="text-lg font-bold" style="color: {$colorStore.primary}">{data.member.unlocked} / {data.total}</div>
-        <div class="text-xs" style="color: {$colorStore.muted}">Unlocked</div>
+        <div class="text-xs" style="color: {$colorStore.muted}">{m.common.unlocked()}</div>
       </div>
       <div class="p-3 rounded-xl text-center" style="background: {$colorStore.primary}08;">
         <div class="text-lg font-bold" style="color: {$colorStore.primary}">{data.globalPoints.toLocaleString()}</div>
-        <div class="text-xs" style="color: {$colorStore.muted}">Global points · {data.globalServers} servers</div>
+        <div class="text-xs" style="color: {$colorStore.muted}">{m.me.achGlobalPoints({ servers: data.globalServers })}</div>
       </div>
     </div>
 
     <div class="mb-6">
       <div class="flex justify-between text-xs mb-1" style="color: {$colorStore.muted}">
         <span>{data.member.tier}</span>
-        <span>{data.nextTier ? `${(data.nextTierPoints! - data.member.points).toLocaleString()} points to ${data.nextTier}` : "Top rank"}</span>
+        <span>{data.nextTier ? m.me.achPointsToTier({ points: (data.nextTierPoints! - data.member.points).toLocaleString(), tier: data.nextTier }) : m.common.topRank()}</span>
       </div>
       <div class="h-2 rounded-full overflow-hidden" style="background: {$colorStore.primary}15;">
         <div class="h-full rounded-full" style="width: {tierFraction * 100}%; background: {gradeColor(data.member.tierGrade)};"></div>
@@ -160,7 +161,7 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold" style="color: {$colorStore.text}">Progress</h4>
+        <h4 class="text-sm font-semibold" style="color: {$colorStore.text}">{m.common.progress()}</h4>
         {#each data.categories as category (category.key)}
           {@const items = data.achievements.filter((a) => a.categoryKey === category.key)}
           {@const done = items.filter((a) => progressByKey.get(a.key)?.unlockedAt).length}
@@ -187,7 +188,7 @@
                     <span class="flex-1 min-w-0">
                       <span class="block text-sm truncate" style="color: {$colorStore.text}">{a.name}</span>
                       <span class="block text-xs truncate" style="color: {$colorStore.muted}">
-                        {#if unlocked}Unlocked{:else if p?.current != null && a.threshold > 0}{Math.min(p.current, a.threshold).toLocaleString()} / {a.threshold.toLocaleString()}{:else}{a.description}{/if}
+                        {#if unlocked}{m.common.unlocked()}{:else if p?.current != null && a.threshold > 0}{Math.min(p.current, a.threshold).toLocaleString()} / {a.threshold.toLocaleString()}{:else}{a.description}{/if}
                       </span>
                     </span>
                     <span class="text-xs shrink-0" style="color: {gradeColor(a.grade)}">+{a.points}</span>
@@ -201,15 +202,15 @@
 
       <div class="space-y-5">
         <div>
-          <h4 class="text-sm font-semibold mb-2" style="color: {$colorStore.text}">Profile badges</h4>
+          <h4 class="text-sm font-semibold mb-2" style="color: {$colorStore.text}">{m.me.profileBadges()}</h4>
           {#if data.badges.length === 0}
-            <p class="text-sm" style="color: {$colorStore.muted}">Unlock achievements to earn badges for your profile card.</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.me.unlockAchievementsToEarnBadgesFor()}</p>
           {:else}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {#each [0, 1, 2, 3] as slot (slot)}
                 <div class="min-h-[44px]">
                   <DiscordSelector type="custom" options={badgeOptions} selected={data.equipped[slot] ?? ""}
-                                   placeholder="Slot {slot + 1}" ariaLabel="Badge slot {slot + 1}" disabled={savingSlots}
+                                   placeholder={m.me.achSlot({ number: slot + 1 })} ariaLabel={m.me.achBadgeSlotAria({ number: slot + 1 })} disabled={savingSlots}
                                    onchange={(d) => setSlot(slot, typeof d.selected === "string" ? d.selected : "")} />
                 </div>
               {/each}
@@ -218,39 +219,39 @@
         </div>
 
         <div>
-          <h4 class="text-sm font-semibold mb-2" style="color: {$colorStore.text}">Privacy</h4>
-          <p class="text-xs mb-2" style="color: {$colorStore.muted}">These apply in every server.</p>
+          <h4 class="text-sm font-semibold mb-2" style="color: {$colorStore.text}">{m.common.privacy()}</h4>
+          <p class="text-xs mb-2" style="color: {$colorStore.muted}">{m.me.theseApplyInEveryServer()}</p>
           <div class="space-y-2">
-            <ToggleRow checked={data.settings.profileVisibility === 0} title="Others can see my profile card and stats"
+            <ToggleRow checked={data.settings.profileVisibility === 0} title={m.me.othersCanSeeMyProfileCard()}
                        colors={$colorStore} disabled={savingSettings}
                        onchange={(v) => setPreference({ profileVisibility: v ? 0 : 1 })} />
-            <ToggleRow checked={data.settings.achievementsVisibility === 0} title="Others can see my achievements"
+            <ToggleRow checked={data.settings.achievementsVisibility === 0} title={m.me.othersCanSeeMyAchievements()}
                        colors={$colorStore} disabled={savingSettings}
                        onchange={(v) => setPreference({ achievementsVisibility: v ? 0 : 1 })} />
-            <ToggleRow checked={data.settings.badgesVisibility === 0} title="Others can see my badges"
+            <ToggleRow checked={data.settings.badgesVisibility === 0} title={m.me.othersCanSeeMyBadges()}
                        colors={$colorStore} disabled={savingSettings}
                        onchange={(v) => setPreference({ badgesVisibility: v ? 0 : 1 })} />
-            <ToggleRow checked={!data.settings.hideFromLeaderboards} title="Show me on leaderboards"
+            <ToggleRow checked={!data.settings.hideFromLeaderboards} title={m.me.showMeOnLeaderboards()}
                        colors={$colorStore} disabled={savingSettings}
                        onchange={(v) => setPreference({ hideFromLeaderboards: !v })} />
           </div>
         </div>
 
         <div>
-          <h4 class="text-sm font-semibold mb-2" style="color: {$colorStore.text}">Notifications</h4>
+          <h4 class="text-sm font-semibold mb-2" style="color: {$colorStore.text}">{m.me.notifications()}</h4>
           <div class="space-y-2">
             <div class="flex items-center gap-3 p-3 rounded-lg" style="background: {$colorStore.primary}08;">
-              <span id="ach-dm-label" class="flex-1 text-sm" style="color: {$colorStore.text}">Unlocks in my DMs</span>
+              <span id="ach-dm-label" class="flex-1 text-sm" style="color: {$colorStore.text}">{m.me.unlocksInMyDms()}</span>
               <div class="w-44">
-                <DiscordSelector type="custom" options={DM_OPTIONS} selected={data.settings.dmUnlocks.toString()}
+                <DiscordSelector type="custom" options={dmOptions} selected={data.settings.dmUnlocks.toString()}
                                  searchable={false} ariaLabelledby="ach-dm-label" disabled={savingSettings}
                                  onchange={(d) => { if (typeof d.selected === "string") setPreference({ dmUnlocks: Number(d.selected) }); }} />
               </div>
             </div>
-            <ToggleRow checked={data.settings.showInLog} title="Announce my unlocks in servers"
+            <ToggleRow checked={data.settings.showInLog} title={m.me.announceMyUnlocksInServers()}
                        colors={$colorStore} disabled={savingSettings}
                        onchange={(v) => setPreference({ showInLog: v })} />
-            <ToggleRow checked={data.settings.mentionMe} title="Mention me in unlock messages"
+            <ToggleRow checked={data.settings.mentionMe} title={m.me.mentionMeInUnlockMessages()}
                        colors={$colorStore} disabled={savingSettings}
                        onchange={(v) => setPreference({ mentionMe: v })} />
           </div>

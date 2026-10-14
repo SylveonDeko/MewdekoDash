@@ -1,5 +1,6 @@
 <!-- routes/dashboard/xp/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onDestroy, onMount } from "svelte";
   import { clientApi, xpApi } from "$lib/api/index.ts";
   import type { GuildXpSetting } from "$lib/api/xp/models/index.ts";
@@ -74,7 +75,7 @@
     let lastTriggeredXpSettings: GuildXpSetting | null = null;
 
   const autoSave = createAutoSave({
-    onError: () => showNotificationMessage("Couldn't save XP settings. Toggles were put back; use Retry for typed fields.", "error")
+    onError: () => showNotificationMessage(m.xp.pageErrorAutosave(), "error")
   });
 
   // XP Stats
@@ -270,8 +271,8 @@
 
       // Format the timeOnLevel for display
       const timeStr = userData.timeOnLevel ?
-        `${userData.timeOnLevel.days}d ${userData.timeOnLevel.hours}h ${userData.timeOnLevel.minutes}m` :
-        "0d 0h 0m";
+        m.xp.pageTimeOnLevel({ days: userData.timeOnLevel.days, hours: userData.timeOnLevel.hours, minutes: userData.timeOnLevel.minutes }) :
+        m.xp.pageTimeOnLevel({ days: 0, hours: 0, minutes: 0 });
 
       // Calculate progress percentage
       const progress = userData.requiredXp ?
@@ -285,12 +286,12 @@
         level: userData.level,
         rank: userData.rank,
         timeOnLevel: timeStr,
-        clubName: "Your Club",
+        clubName: m.xp.pageClubFallback(),
         progress: progress
       };
     } catch (err) {
       logger.error("Failed to fetch user XP data:", err);
-      showNotificationMessage("Could not load user data", "error");
+      showNotificationMessage(m.xp.pageErrorUserData(), "error");
     }
   }
 
@@ -304,7 +305,7 @@
       loading.settings = true;
       error.settings = null;
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
 
       xpSettings = await xpApi.getXpSettings($currentGuild.id);
@@ -312,7 +313,7 @@
       lastTriggeredXpSettings = null;
     } catch (err) {
       logger.error("Failed to fetch XP settings:", err);
-      error.settings = err instanceof Error ? err.message : "Failed to fetch XP settings";
+      error.settings = err instanceof Error ? err.message : m.xp.pageErrorFetchSettings();
     } finally {
       loading.settings = false;
     }
@@ -323,7 +324,7 @@
       loading.stats = true;
       error.stats = null;
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
 
       const stats = await xpApi.getXpServerStats($currentGuild.id);
@@ -336,7 +337,7 @@
       };
     } catch (err) {
       logger.error("Failed to fetch XP server stats:", err);
-      error.stats = err instanceof Error ? err.message : "Failed to fetch XP server stats";
+      error.stats = err instanceof Error ? err.message : m.xp.pageErrorFetchStats();
     } finally {
       loading.stats = false;
     }
@@ -347,7 +348,7 @@
       loading.leaderboard = true;
       error.leaderboard = null;
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
 
       const board = await xpApi.getXpLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize);
@@ -358,7 +359,7 @@
       }));
     } catch (err) {
       logger.error("Failed to fetch XP leaderboard:", err);
-      error.leaderboard = err instanceof Error ? err.message : "Failed to fetch XP leaderboard";
+      error.leaderboard = err instanceof Error ? err.message : m.xp.pageErrorFetchLeaderboard();
     } finally {
       loading.leaderboard = false;
     }
@@ -370,7 +371,7 @@
         error = {...error, template: null};
 
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
 
 
@@ -414,7 +415,7 @@
 
     } catch (err) {
       logger.error("Failed to fetch XP template:", err);
-        error = {...error, template: err instanceof Error ? err.message : "Failed to fetch XP template"};
+        error = {...error, template: err instanceof Error ? err.message : m.xp.pageErrorFetchTemplate()};
     } finally {
         loading = {...loading, template: false};
     }
@@ -425,7 +426,7 @@
       loading.rewards = true;
       error.rewards = null;
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
 
       const [roles, currency] = await Promise.all([
@@ -444,7 +445,7 @@
       }));
     } catch (err) {
       logger.error("Failed to fetch XP rewards:", err);
-      error.rewards = err instanceof Error ? err.message : "Failed to fetch XP rewards";
+      error.rewards = err instanceof Error ? err.message : m.xp.pageErrorFetchRewards();
     } finally {
       loading.rewards = false;
     }
@@ -455,7 +456,7 @@
       loading.exclusions = true;
       error.exclusions = null;
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
 
       const [channels, roles] = await Promise.all([
@@ -467,7 +468,7 @@
       excludedRoles = roles.map(id => id.toString());
     } catch (err) {
       logger.error("Failed to fetch XP exclusions:", err);
-      error.exclusions = err instanceof Error ? err.message : "Failed to fetch XP exclusions";
+      error.exclusions = err instanceof Error ? err.message : m.xp.pageErrorFetchExclusions();
     } finally {
       loading.exclusions = false;
     }
@@ -476,7 +477,7 @@
   async function fetchChannelsAndRoles() {
     try {
       if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+        throw new Error(m.common.noGuildSelected());
       }
 
       const [channels, roles] = await Promise.all([
@@ -554,9 +555,9 @@
 
   async function updateXpTemplate() {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-      if (!localTemplate) throw new Error("No template to update");
-      if (!xpSettings) throw new Error("Settings not loaded");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
+      if (!localTemplate) throw new Error(m.xp.pageErrorNoTemplate());
+      if (!xpSettings) throw new Error(m.common.settingsNotLoaded());
 
       const templateCopy = JSON.parse(JSON.stringify(localTemplate));
       const imageUrl = templateCopy.customXpImageUrl;
@@ -590,124 +591,124 @@
         if (!settingsSaved) return;
       }
 
-      showNotificationMessage("XP template updated successfully", "success");
+      showNotificationMessage(m.xp.pageNotifyTemplateUpdated(), "success");
       const newSet = new Set(changedSettings);
       newSet.delete("template");
       changedSettings = newSet;
     } catch (err) {
       logger.error("Failed to update XP template:", err);
-      showNotificationMessage("Failed to update XP template", "error");
+      showNotificationMessage(m.xp.pageErrorTemplateUpdate(), "error");
     }
   }
 
   async function addRoleReward(level: number, roleId: string) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-      if (!roleId) throw new Error("Please select a role");
-      if (level < 1) throw new Error("Level must be at least 1");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
+      if (!roleId) throw new Error(m.common.notifySelectRole());
+      if (level < 1) throw new Error(m.xp.pageErrorLevelMin());
 
       await xpApi.addXpRoleReward($currentGuild.id, level, BigInt(roleId));
 
-      showNotificationMessage("Role reward added successfully", "success");
+      showNotificationMessage(m.xp.pageNotifyRoleRewardAdded(), "success");
       await fetchRewards();
     } catch (err) {
       logger.error("Failed to add role reward:", err);
-      showNotificationMessage(err instanceof Error ? err.message : "Failed to add role reward", "error");
+      showNotificationMessage(err instanceof Error ? err.message : m.common.failedToAddRoleReward(), "error");
     }
   }
 
   async function removeRoleReward(level: number) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
 
       await xpApi.removeXpRoleReward($currentGuild.id, level);
-      showNotificationMessage("Role reward removed successfully", "success");
+      showNotificationMessage(m.xp.pageNotifyRoleRewardRemoved(), "success");
       await fetchRewards();
     } catch (err) {
       logger.error("Failed to remove role reward:", err);
-      showNotificationMessage("Failed to remove role reward", "error");
+      showNotificationMessage(m.common.failedToRemoveRoleReward(), "error");
     }
   }
 
   async function addCurrencyReward(level: number, amount: number) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-      if (amount <= 0) throw new Error("Amount must be greater than 0");
-      if (level < 1) throw new Error("Level must be at least 1");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
+      if (amount <= 0) throw new Error(m.xp.pageErrorAmountMin());
+      if (level < 1) throw new Error(m.xp.pageErrorLevelMin());
 
       await xpApi.addXpCurrencyReward($currentGuild.id, level, amount);
-      showNotificationMessage("Currency reward added successfully", "success");
+      showNotificationMessage(m.xp.pageNotifyCurrencyRewardAdded(), "success");
       await fetchRewards();
     } catch (err) {
       logger.error("Failed to add currency reward:", err);
-      showNotificationMessage(err instanceof Error ? err.message : "Failed to add currency reward", "error");
+      showNotificationMessage(err instanceof Error ? err.message : m.xp.pageErrorCurrencyRewardAdd(), "error");
     }
   }
 
   async function removeCurrencyReward(level: number) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
 
       await xpApi.removeXpCurrencyReward($currentGuild.id, level);
-      showNotificationMessage("Currency reward removed successfully", "success");
+      showNotificationMessage(m.xp.pageNotifyCurrencyRewardRemoved(), "success");
       await fetchRewards();
     } catch (err) {
       logger.error("Failed to remove currency reward:", err);
-      showNotificationMessage("Failed to remove currency reward", "error");
+      showNotificationMessage(m.xp.pageErrorCurrencyRewardRemove(), "error");
     }
   }
 
   async function excludeChannel(channelId: string) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-      if (!channelId) throw new Error("Please select a channel");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
+      if (!channelId) throw new Error(m.common.notifySelectChannel());
 
       await xpApi.excludeXpChannel($currentGuild.id, BigInt(channelId));
-      showNotificationMessage("Channel excluded successfully", "success");
+      showNotificationMessage(m.xp.pageNotifyChannelExcluded(), "success");
       await fetchExclusions();
     } catch (err) {
       logger.error("Failed to exclude channel:", err);
-      showNotificationMessage("Failed to exclude channel", "error");
+      showNotificationMessage(m.xp.pageErrorChannelExclude(), "error");
     }
   }
 
   async function includeChannel(channelId: string) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
 
       await xpApi.includeXpChannel($currentGuild.id, BigInt(channelId));
-      showNotificationMessage("Channel included successfully", "success");
+      showNotificationMessage(m.xp.pageNotifyChannelIncluded(), "success");
       await fetchExclusions();
     } catch (err) {
       logger.error("Failed to include channel:", err);
-      showNotificationMessage("Failed to include channel", "error");
+      showNotificationMessage(m.xp.pageErrorChannelInclude(), "error");
     }
   }
 
   async function excludeRole(roleId: string) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-      if (!roleId) throw new Error("Please select a role");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
+      if (!roleId) throw new Error(m.common.notifySelectRole());
 
       await xpApi.excludeXpRole($currentGuild.id, BigInt(roleId));
-      showNotificationMessage("Role excluded successfully", "success");
+      showNotificationMessage(m.xp.pageNotifyRoleExcluded(), "success");
       await fetchExclusions();
     } catch (err) {
       logger.error("Failed to exclude role:", err);
-      showNotificationMessage("Failed to exclude role", "error");
+      showNotificationMessage(m.xp.pageErrorRoleExclude(), "error");
     }
   }
 
   async function includeRole(roleId: string) {
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
 
       await xpApi.includeXpRole($currentGuild.id, BigInt(roleId));
-      showNotificationMessage("Role included successfully", "success");
+      showNotificationMessage(m.xp.pageNotifyRoleIncluded(), "success");
       await fetchExclusions();
     } catch (err) {
       logger.error("Failed to include role:", err);
-      showNotificationMessage("Failed to include role", "error");
+      showNotificationMessage(m.xp.pageErrorRoleInclude(), "error");
     }
   }
 
@@ -728,7 +729,7 @@
       await Promise.all([fetchLeaderboard(), fetchServerStats()]);
     } catch (err) {
       logger.error("Failed to adjust user XP:", err);
-      showNotificationMessage("Failed to update XP", "error");
+      showNotificationMessage(m.xp.pageErrorUpdateXp(), "error");
       throw err;
     }
   }
@@ -879,8 +880,8 @@
       if (!localTemplate) return;
       const data: any = currentUserData || sampleData;
       const resolveText = (text: string) => (text || "")
-        .replaceAll(/%xp\.user(%|\.name%)/gi, data?.username || "Username")
-        .replaceAll(/%xp\.user\.displayname%/gi, data?.displayName || data?.username || "Display name")
+        .replaceAll(/%xp\.user(%|\.name%)/gi, data?.username || m.common.username())
+        .replaceAll(/%xp\.user\.displayname%/gi, data?.displayName || data?.username || m.common.displayName())
         .replaceAll(/%xp\.level\.current%/gi, String(data?.level || 1))
         .replaceAll(/%xp\.level\.next%/gi, String((data?.level || 1) + 1))
         .replaceAll(/%xp\.rank%/gi, String(data?.rank || 1))
@@ -1162,25 +1163,25 @@
 </script>
 
 <svelte:head>
-  <title>XP Management - Dashboard</title>
+  <title>{m.xp.pageHeadTitle()}</title>
 </svelte:head>
 
 <DashboardPageLayout
-  title="XP Management"
+  title={m.xp.pageTitle()}
   {autoSave}
   icon="fa-star"
   bind:notificationMessage
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
-  subtitle="Configure XP settings, rewards, and manage users' experience"
+  subtitle={m.xp.pageSubtitle()}
   notificationType={notificationType}
   tabs={[
-    {id: "settings", label: "Settings", icon: "fa-gear"},
-    {id: "stats", label: "Stats", icon: "fa-chart-bar"},
-    {id: "leaderboard", label: "Leaderboard", icon: "fa-users"},
-    {id: "rewards", label: "Rewards", icon: "fa-star"},
-    {id: "template", label: "Template", icon: "fa-image"},
-    {id: "exclusions", label: "Exclusions", icon: "fa-bell"}
+    {id: "settings", label: m.common.settings(), icon: "fa-gear"},
+    {id: "stats", label: m.xp.pageTabStats(), icon: "fa-chart-bar"},
+    {id: "leaderboard", label: m.common.leaderboard(), icon: "fa-users"},
+    {id: "rewards", label: m.common.rewards(), icon: "fa-star"},
+    {id: "template", label: m.common.template(), icon: "fa-image"},
+    {id: "exclusions", label: m.features.wizardXpStepExclusionsTitle(), icon: "fa-bell"}
   ]}
 >
 
@@ -1275,7 +1276,7 @@
             class="w-12 h-12 border-4 rounded-full animate-spin"
             style="border-color: {$colorStore.primary}20;
              border-top-color: {$colorStore.primary};"
-            aria-label="Loading"
+            aria-label={m.common.loading()}
           >
           </div>
         </div>
@@ -1294,7 +1295,7 @@
         {#if localTemplate}
             <!-- XP Card Preview -->
             <div class="flex flex-col items-center gap-4 sm:gap-6 py-4 sm:py-8">
-                <h3 class="text-lg sm:text-xl font-semibold" style="color: {$colorStore.text}">XP Card Preview</h3>
+                <h3 class="text-lg sm:text-xl font-semibold" style="color: {$colorStore.text}">{m.xp.pageCardPreview()}</h3>
 
                 <!-- Preview Container -->
                 <div
@@ -1319,14 +1320,14 @@
                         <button
                                 class="absolute inset-0 flex items-end justify-end p-3 transition-transform active:scale-[0.99]"
                                 onclick={() => { showTemplateEditor = true; }}
-                                aria-label="Edit XP card template"
+                                aria-label={m.xp.pageEditTemplateAria()}
                         >
                             <span
                                     class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium shadow-lg"
                                     style="background: {$colorStore.primary}; color: white;"
                             >
                                 <i class="fa-solid fa-pen" style="font-size: 14px;"></i>
-                                Edit
+                                {m.common.edit()}
                             </span>
                         </button>
                     {/if}
@@ -1341,16 +1342,16 @@
                             onclick={() => { showTemplateEditor = true; }}
                     >
                       <i class="fa-solid fa-image" style="font-size: 20px;"></i>
-                        Edit Template
+                        {m.xp.pageEditTemplate()}
                     </button>
                 {/if}
 
                 <!-- Template Info -->
                 <div class="flex flex-row flex-wrap justify-center gap-x-3 gap-y-1 text-xs sm:text-sm"
                      style="color: {$colorStore.muted}">
-                    <span>Size: {localTemplate.outputSizeX} × {localTemplate.outputSizeY}px</span>
+                    <span>{m.xp.pageTemplateSize({ width: localTemplate.outputSizeX, height: localTemplate.outputSizeY })}</span>
                     <span>•</span>
-                    <span>Background: {localTemplate.customXpImageUrl ? 'Custom Image' : 'Default'}</span>
+                    <span>{m.xp.pageTemplateBackground({ background: localTemplate.customXpImageUrl ? m.xp.pageTemplateBackgroundCustom() : m.common.default() })}</span>
                 </div>
             </div>
 
@@ -1376,7 +1377,7 @@
           {/if}
         {:else}
           <div class="text-center py-12" style="color: {$colorStore.muted}">
-            Template loaded but localTemplate is null. Raw template: {JSON.stringify(template)}
+            {m.xp.pageTemplateInconsistent({ raw: JSON.stringify(template) })}
           </div>
         {/if}
 
@@ -1387,24 +1388,24 @@
               class="px-4 py-2 rounded-lg transition-all duration-200 min-h-[44px]"
               onclick={resetChanges}
               style="background: {$colorStore.accent}30; color: {$colorStore.accent};"
-              aria-label="Reset changes"
+              aria-label={m.xp.pageResetChanges()}
             >
-              Reset Changes
+              {m.xp.pageResetChanges()}
             </button>
             <button
               class="px-6 py-2 rounded-lg font-medium transition-all duration-200 min-h-[44px]"
               onclick={updateXpTemplate}
               style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
                color: {$colorStore.text};"
-              aria-label="Save template changes"
+              aria-label={m.xp.pageSaveTemplate()}
             >
-              Save Template Changes
+              {m.xp.pageSaveTemplate()}
             </button>
           {/if}
         </div>
       {:else}
         <div class="text-center py-12" style="color: {$colorStore.muted}">
-          No template data available
+          {m.xp.pageNoTemplate()}
         </div>
       {/if}
     </div>

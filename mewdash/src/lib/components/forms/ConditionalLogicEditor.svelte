@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import {
     CONDITIONAL_TYPES,
     CONDITIONAL_OPERATORS,
@@ -13,6 +14,7 @@
   import { slide } from "svelte/transition";
   import DiscordSelector from "./DiscordSelector.svelte";
   import MultiConditionEditor from "./MultiConditionEditor.svelte";
+  import { conditionalOperatorLabel, conditionalTypeDescription, conditionalTypeLabel, permissionLabel, roleLogicDescription, roleLogicLabel } from "./formLabels";
 
   interface Props {
     question: Partial<FormQuestion>;
@@ -94,10 +96,10 @@
   <div>
     <span class="block text-sm mb-2 font-medium" style="color: {$colorStore.muted};">
       <i class="fa-solid fa-code-branch mr-1"></i>
-      Conditional Logic (Optional)
+      {m.forms.conditionalTitle()}
     </span>
     <p class="text-xs mb-3" style="color: {$colorStore.muted};">
-      Control when this question appears to users
+      {m.forms.conditionalIntro()}
     </p>
 
     <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -114,10 +116,10 @@
                style="color: {conditionalType === condType.value ? $colorStore.primary : $colorStore.muted}; font-size: 16px;"></i>
             <div class="flex-1 min-w-0">
               <div class="font-medium text-sm mb-0.5" style="color: {$colorStore.text};">
-                {condType.label}
+                {conditionalTypeLabel(condType.value)}
               </div>
               <div class="text-xs" style="color: {$colorStore.muted};">
-                {condType.description}
+                {conditionalTypeDescription(condType.value)}
               </div>
             </div>
             {#if conditionalType === condType.value}
@@ -137,21 +139,21 @@
       <!-- Parent Question -->
       <div>
         <span class="block text-xs mb-1" style="color: {$colorStore.muted};">
-          Show when question:
+          {m.forms.conditionalShowWhen()}
         </span>
         <DiscordSelector
           type="custom"
           options={[
-            { id: "", name: "Always show (no condition)" },
+            { id: "", name: m.forms.conditionalAlwaysShow() },
             ...allQuestions.slice(0, questionIndex)
               .filter(q => q.questionText)
               .map((q, i) => ({
                 id: String(q.id),
-                name: `Q${i + 1}: ${q.questionText?.slice(0, 50)}`
+                name: m.forms.conditionalQuestionOption({ number: i + 1, text: q.questionText?.slice(0, 50) ?? "" })
               }))
           ]}
           selected={question.conditionalParentQuestionId ? String(question.conditionalParentQuestionId) : ""}
-          placeholder="Select parent question"
+          placeholder={m.forms.conditionalSelectParent()}
           onchange={(e) => onUpdate({
             conditionalParentQuestionId: e.selected ? parseInt(e.selected as string) : undefined
           })}
@@ -162,12 +164,12 @@
       {#if question.conditionalParentQuestionId}
         <!-- Operator -->
         <div>
-          <span class="block text-xs mb-1" style="color: {$colorStore.muted};">Operator:</span>
+          <span class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.forms.conditionalOperator()}</span>
           <DiscordSelector
             type="custom"
-            options={CONDITIONAL_OPERATORS.map(op => ({ id: op.value, name: op.label }))}
+            options={CONDITIONAL_OPERATORS.map(op => ({ id: op.value, name: conditionalOperatorLabel(op.value) }))}
             selected={question.conditionalOperator || "equals"}
-            placeholder="Select operator"
+            placeholder={m.forms.conditionalSelectOperator()}
             onchange={(e) => onUpdate({ conditionalOperator: e.selected as any })}
             searchable={false}
           />
@@ -175,12 +177,12 @@
 
         <!-- Expected Value -->
         <div>
-          <span class="block text-xs mb-1" style="color: {$colorStore.muted};">Expected value:</span>
+          <span class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.forms.conditionalExpectedValue()}</span>
           <input
             type="text"
             value={question.conditionalExpectedValue || ""}
             oninput={(e) => onUpdate({ conditionalExpectedValue: e.currentTarget.value })}
-            placeholder="Enter expected value..."
+            placeholder={m.forms.conditionalExpectedValuePlaceholder()}
             class="w-full p-2 rounded-lg"
             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
           />
@@ -196,12 +198,12 @@
          transition:slide>
       <!-- Role Logic Type -->
       <div>
-        <span class="block text-xs mb-1" style="color: {$colorStore.muted};">User must have:</span>
+        <span class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.forms.conditionalUserMustHave()}</span>
         <DiscordSelector
           type="custom"
-          options={ROLE_LOGIC_TYPES.map(t => ({ id: t.value, name: `${t.label} - ${t.description}` }))}
+          options={ROLE_LOGIC_TYPES.map(t => ({ id: t.value, name: m.forms.conditionalRoleLogicOption({ label: roleLogicLabel(t.value), description: roleLogicDescription(t.value) }) }))}
           selected={question.conditionalRoleLogic || "any"}
-          placeholder="Select logic type"
+          placeholder={m.forms.conditionalSelectLogic()}
           onchange={(e) => onUpdate({ conditionalRoleLogic: e.selected as RoleLogicType })}
           searchable={false}
         />
@@ -209,12 +211,12 @@
 
       <!-- Roles -->
       <div>
-        <span class="block text-xs mb-1" style="color: {$colorStore.muted};">Roles:</span>
+        <span class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.forms.conditionalRoles()}</span>
         <DiscordSelector
           type="role"
           options={roles}
           selected={question.conditionalRoleIds?.split(",").filter(x => x) || []}
-          placeholder="Select roles..."
+          placeholder={m.common.selectRolesPlaceholder()}
           multiple
           onchange={(e) => onUpdate({ conditionalRoleIds: (e.selected as string[]).join(",") })}
         />
@@ -232,14 +234,14 @@
         <div>
           <span class="block text-xs mb-1" style="color: {$colorStore.muted};">
             <i class="fa-solid fa-calendar mr-1"></i>
-            Min days in server:
+            {m.forms.conditionalMinDays()}
           </span>
           <input
             type="number"
             value={question.conditionalDaysInServer ?? ""}
             oninput={(e) => onUpdate({ conditionalDaysInServer: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
             min="0"
-            placeholder="e.g., 30"
+            placeholder={m.forms.conditionalMinDaysPlaceholder()}
             class="w-full p-2 rounded-lg"
             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
           />
@@ -249,14 +251,14 @@
         <div>
           <span class="block text-xs mb-1" style="color: {$colorStore.muted};">
             <i class="fa-solid fa-user-clock mr-1"></i>
-            Min account age (days):
+            {m.forms.conditionalMinAccountAge()}
           </span>
           <input
             type="number"
             value={question.conditionalAccountAgeDays ?? ""}
             oninput={(e) => onUpdate({ conditionalAccountAgeDays: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
             min="0"
-            placeholder="e.g., 180"
+            placeholder={m.forms.conditionalMinAccountAgePlaceholder()}
             class="w-full p-2 rounded-lg"
             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
           />
@@ -274,7 +276,7 @@
       <div class="flex items-center justify-between p-2.5 rounded-lg" style="background: {$colorStore.primary}08;">
         <div class="text-sm" style="color: {$colorStore.text};">
           <i class="fa-solid fa-arrow-up mr-1.5" style="color: #f47fff;"></i>
-          User must be boosting server
+          {m.forms.conditionalMustBoost()}
         </div>
         <label class="relative inline-flex items-center cursor-pointer">
           <input
@@ -294,7 +296,7 @@
       <div class="flex items-center justify-between p-2.5 rounded-lg" style="background: {$colorStore.primary}08;">
         <div class="text-sm" style="color: {$colorStore.text};">
           <i class="fa-brands fa-discord mr-1.5" style="color: #5865f2;"></i>
-          User must have Discord Nitro
+          {m.forms.conditionalMustNitro()}
         </div>
         <label class="relative inline-flex items-center cursor-pointer">
           <input
@@ -318,18 +320,18 @@
          style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
          transition:slide>
       <span class="block text-xs mb-1" style="color: {$colorStore.muted};">
-        User must have permission:
+        {m.forms.conditionalMustPermission()}
       </span>
       <DiscordSelector
         type="custom"
-        options={COMMON_PERMISSIONS.map(p => ({ id: String(p.value), name: p.label }))}
+        options={COMMON_PERMISSIONS.map(p => ({ id: String(p.value), name: permissionLabel(p.flag) }))}
         selected={question.conditionalPermissionFlags ? String(question.conditionalPermissionFlags) : ""}
-        placeholder="Select required permission..."
+        placeholder={m.common.selectRequiredPermissionPlaceholder()}
         onchange={(e) => onUpdate({ conditionalPermissionFlags: e.selected ? parseInt(e.selected as string) : undefined })}
         searchable={false}
       />
       <p class="text-xs" style="color: {$colorStore.muted};">
-        Question will only show to users with this permission
+        {m.forms.conditionalPermissionHint()}
       </p>
     </div>
   {/if}
@@ -344,7 +346,7 @@
         <div class="flex items-center gap-2 mb-2">
           <i class="fa-solid fa-code-branch" style="color: {$colorStore.accent}; font-size: 16px;"></i>
           <span class="font-semibold text-sm" style="color: {$colorStore.text};">
-            Advanced: Multiple Conditions with AND/OR Logic
+            {m.forms.conditionalMultiTitle()}
           </span>
         </div>
 
@@ -368,8 +370,7 @@
         <div class="flex items-start gap-2">
           <i class="fa-solid fa-info-circle flex-shrink-0 mt-0.5" style="color: #f59e0b;"></i>
           <div class="text-sm" style="color: {$colorStore.text};">
-            <strong>Multiple Conditions:</strong> This advanced feature is only available when editing existing forms.
-            Save the form first, then edit the question to add multiple conditions with AND/OR logic.
+            {@html m.forms.conditionalMultiUnavailable()}
           </div>
         </div>
       </div>
@@ -381,33 +382,33 @@
     <div class="flex items-center gap-2 mb-3">
       <i class="fa-solid fa-asterisk" style="color: #ef4444; font-size: 10px;"></i>
       <span class="text-sm font-medium" style="color: {$colorStore.text};">
-        Conditional Required
+        {m.forms.conditionalRequiredTitle()}
       </span>
     </div>
     <p class="text-xs mb-3" style="color: {$colorStore.muted};">
-      Make this question required only when a condition is met
+      {m.forms.conditionalRequiredIntro()}
     </p>
 
     <!-- Required When Parent Question -->
     <div class="space-y-3">
       <div>
         <span class="block text-xs mb-1" style="color: {$colorStore.muted};">
-          Required when question:
+          {m.forms.conditionalRequiredWhen()}
         </span>
         <DiscordSelector
           onchange={(e) => onUpdate({
             requiredWhenParentQuestionId: e.selected ? parseInt(e.selected as string) : undefined
           })}
           options={[
-            { id: "", name: "Not conditionally required" },
+            { id: "", name: m.forms.conditionalNotRequired() },
             ...allQuestions.slice(0, questionIndex)
               .filter(q => q.questionText)
               .map((q, i) => ({
                 id: String(q.id),
-                name: `Q${i + 1}: ${q.questionText?.slice(0, 50)}`
+                name: m.forms.conditionalQuestionOption({ number: i + 1, text: q.questionText?.slice(0, 50) ?? "" })
               }))
           ]}
-          placeholder="Select question"
+          placeholder={m.forms.conditionalSelectQuestion()}
           searchable={false}
           selected={question.requiredWhenParentQuestionId ? String(question.requiredWhenParentQuestionId) : ""}
           type="custom"
@@ -417,12 +418,12 @@
       {#if question.requiredWhenParentQuestionId}
         <!-- Operator -->
         <div>
-          <span class="block text-xs mb-1" style="color: {$colorStore.muted};">Operator:</span>
+          <span class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.forms.conditionalOperator()}</span>
           <DiscordSelector
             type="custom"
-            options={CONDITIONAL_OPERATORS.map(op => ({ id: op.value, name: op.label }))}
+            options={CONDITIONAL_OPERATORS.map(op => ({ id: op.value, name: conditionalOperatorLabel(op.value) }))}
             selected={question.requiredWhenOperator || "equals"}
-            placeholder="Select operator"
+            placeholder={m.forms.conditionalSelectOperator()}
             onchange={(e) => onUpdate({ requiredWhenOperator: e.selected as any })}
             searchable={false}
           />
@@ -430,12 +431,12 @@
 
         <!-- Expected Value -->
         <div>
-          <span class="block text-xs mb-1" style="color: {$colorStore.muted};">Expected value:</span>
+          <span class="block text-xs mb-1" style="color: {$colorStore.muted};">{m.forms.conditionalExpectedValue()}</span>
           <input
             type="text"
             value={question.requiredWhenValue || ""}
             oninput={(e) => onUpdate({ requiredWhenValue: e.currentTarget.value })}
-            placeholder="Enter expected value..."
+            placeholder={m.forms.conditionalExpectedValuePlaceholder()}
             class="w-full p-2 rounded-lg"
             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
           />
@@ -444,16 +445,16 @@
     </div>
   </div>
 
-  <!-- Answer Piping Toggle -->
+  <!-- Answer piping toggle -->
   <div class="border-t pt-4" style="border-color: {$colorStore.primary}20;">
     <div class="flex items-center justify-between p-2.5 rounded-lg" style="background: {$colorStore.primary}08;">
       <div>
         <div class="text-sm font-medium mb-0.5" style="color: {$colorStore.text};">
           <i class="fa-solid fa-arrows-left-right mr-1.5" style="color: {$colorStore.accent};"></i>
-          Answer Piping
+          {m.forms.conditionalPipingTitle()}
         </div>
         <div class="text-xs" style="color: {$colorStore.muted};">
-          Use &#123;&#123;Q1&#125;&#125;, &#123;&#123;Q2&#125;&#125;, etc. in question text to insert previous answers
+          {m.forms.conditionalPipingHint({ first: "{{Q1}}", second: "{{Q2}}" })}
         </div>
       </div>
       <label class="relative inline-flex items-center cursor-pointer">
@@ -472,8 +473,7 @@
 
     {#if question.enableAnswerPiping}
       <div class="mt-2 p-2 rounded text-xs" style="background: {$colorStore.accent}10; color: {$colorStore.muted};">
-        <strong>Example:</strong> "Thanks &#123;&#123;Q1&#125;&#125;, what's your &#123;&#123;Q2&#125;&#125; experience
-        level?"
+        {@html m.forms.conditionalPipingExample({ first: "{{Q1}}", second: "{{Q2}}" })}
       </div>
     {/if}
   </div>

@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/tabs/AlertRuleEditor.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import Portal from "$lib/components/ui/Portal.svelte";
   import { colorStore } from "$lib/stores/colorStore";
@@ -11,7 +12,9 @@
   import {
     AGGREGATIONS,
     COMPARATORS,
-    COMPARATOR_SYMBOL,
+    comparatorLabel,
+    comparatorSymbol,
+    severityLabel,
     COOLDOWNS,
     FOR_SECONDS,
     REPEATS,
@@ -38,13 +41,13 @@
   let saving = $state(false);
   let error = $state("");
 
-  let labels = $derived(Object.keys(metrics.find((m) => m.metric === draft.metric)?.labels ?? {}));
+  let labels = $derived(Object.keys(metrics.find((md) => md.metric === draft.metric)?.labels ?? {}));
   let filters = $derived(Object.fromEntries(filterRows.filter((r) => r.key && r.value).map((r) => [r.key, r.value])));
   let baseline = $derived(draft.comparator === "pct_change" || draft.comparator === "deviates");
   let absolute = $derived(!baseline && draft.comparator !== "nodata");
   let previewBands = $derived<AlertBand[]>(
     absolute && draft.metric
-      ? [{ id: 0, name: draft.name || "draft", threshold: Number(draft.threshold) || 0, thresholdHigh: draft.comparator === "outside" ? draft.thresholdHigh : null, comparator: COMPARATOR_SYMBOL[draft.comparator] ?? draft.comparator, severity: draft.severity }]
+      ? [{ id: 0, name: draft.name || "draft", threshold: Number(draft.threshold) || 0, thresholdHigh: draft.comparator === "outside" ? draft.thresholdHigh : null, comparator: comparatorSymbol(draft.comparator), severity: draft.severity }]
       : [],
   );
 
@@ -92,9 +95,9 @@
       quietEndMinute: quietEnd ? clockToMinutes(quietEnd) : null,
       minSamples: num(draft.minSamples),
     };
-    if (!body.name) return void (error = "Name required");
-    if (!body.metric) return void (error = "Metric required");
-    if (!body.webhookUrl) return void (error = "Webhook required");
+    if (!body.name) return void (error = m.analytics.tabAlertEditorErrName());
+    if (!body.metric) return void (error = m.analytics.tabAlertEditorErrMetric());
+    if (!body.webhookUrl) return void (error = m.analytics.tabAlertEditorErrWebhook());
     saving = true;
     error = "";
     try {
@@ -103,7 +106,7 @@
       close();
     } catch (err) {
       logger.warn("Alert rule save failed", err);
-      error = err instanceof Error ? err.message : "Save failed";
+      error = err instanceof Error ? err.message : m.analytics.tabAlertEditorErrSave();
     } finally {
       saving = false;
     }
@@ -138,43 +141,43 @@
         out:fly={{ y: -20, duration: 150 }}
         role="dialog"
         aria-modal="true"
-        aria-label={rule ? `Edit ${rule.name}` : "New rule"}
+        aria-label={rule ? m.common.editName({ name: rule.name }) : m.analytics.tabAlertsNewRule()}
       >
         <div class="flex items-center justify-between gap-3 p-4 border-b" style="border-color: {$colorStore.primary}20;">
-          <h3 class="text-base font-semibold truncate" style="color: {$colorStore.text}">{rule ? `Edit · ${rule.name}` : "New rule"}</h3>
-          <button type="button" class="min-h-[44px] min-w-[44px] rounded-lg hover:opacity-70" style="background: {$colorStore.primary}10; color: {$colorStore.muted}" onclick={close} aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+          <h3 class="text-base font-semibold truncate" style="color: {$colorStore.text}">{rule ? m.analytics.tabAlertEditorTitleEdit({ name: rule.name }) : m.analytics.tabAlertsNewRule()}</h3>
+          <button type="button" class="min-h-[44px] min-w-[44px] rounded-lg hover:opacity-70" style="background: {$colorStore.primary}10; color: {$colorStore.muted}" onclick={close} aria-label={m.common.close()}><i class="fa-solid fa-xmark"></i></button>
         </div>
 
         <div class="p-4 grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs" style="color: {$colorStore.muted}">
           <div class="space-y-3">
-            <label class="block">Name
+            <label class="block">{m.common.name()}
               <input type="text" class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} bind:value={draft.name} />
             </label>
-            <label class="block">Description
+            <label class="block">{m.common.description()}
               <input type="text" class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} value={draft.description ?? ""} oninput={(e) => (draft.description = e.currentTarget.value)} />
             </label>
             <div class="grid grid-cols-2 gap-2">
-              <label class="block">Severity
+              <label class="block">{m.analytics.tabAlertsColSeverity()}
                 <select class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} bind:value={draft.severity}>
-                  <option value="info">info</option>
-                  <option value="warning">warning</option>
-                  <option value="critical">critical</option>
+                  <option value="info">{severityLabel("info")}</option>
+                  <option value="warning">{severityLabel("warning")}</option>
+                  <option value="critical">{severityLabel("critical")}</option>
                 </select>
               </label>
               <label class="flex items-end gap-2 min-h-[44px] pb-3">
-                <input type="checkbox" bind:checked={draft.enabled} style="accent-color: {$colorStore.primary}" /> enabled
+                <input type="checkbox" bind:checked={draft.enabled} style="accent-color: {$colorStore.primary}" /> {m.common.enabled()}
               </label>
             </div>
-            <label class="block">Metric
+            <label class="block">{m.analytics.tabAlertEditorMetric()}
               <select class="mt-1 w-full min-h-[44px] rounded-lg border px-2 font-mono" style={field} bind:value={draft.metric} onchange={() => { draft.groupBy = null; filterRows = []; }}>
-                {#if draft.metric && !metrics.some((m) => m.metric === draft.metric)}<option value={draft.metric}>{draft.metric}</option>{/if}
-                {#each metrics as m (m.metric)}<option value={m.metric}>{m.metric} · {m.kind}</option>{/each}
+                {#if draft.metric && !metrics.some((md) => md.metric === draft.metric)}<option value={draft.metric}>{draft.metric}</option>{/if}
+                {#each metrics as md (md.metric)}<option value={md.metric}>{md.metric} · {md.kind}</option>{/each}
               </select>
             </label>
             <div>
               <div class="flex items-center justify-between">
-                <span>Filters</span>
-                <button type="button" class="min-h-[32px] px-2 rounded" style="background: {$colorStore.primary}10; color: {$colorStore.text}" onclick={() => (filterRows = [...filterRows, { key: labels[0] ?? "", value: "" }])}><i class="fa-solid fa-plus mr-1"></i>add</button>
+                <span>{m.common.filters()}</span>
+                <button type="button" class="min-h-[32px] px-2 rounded" style="background: {$colorStore.primary}10; color: {$colorStore.text}" onclick={() => (filterRows = [...filterRows, { key: labels[0] ?? "", value: "" }])}><i class="fa-solid fa-plus mr-1"></i>{m.analytics.tabAlertEditorAdd()}</button>
               </div>
               {#each filterRows as row, i (i)}
                 <div class="flex items-center gap-1 mt-1">
@@ -185,127 +188,127 @@
                   <span>=</span>
                   <input type="text" class="flex-1 min-h-[44px] rounded-lg border px-2 font-mono" style={field} bind:value={row.value} list="an-values-{i}" />
                   <datalist id="an-values-{i}">
-                    {#each metrics.find((m) => m.metric === draft.metric)?.labels[row.key] ?? [] as v}<option value={v}></option>{/each}
+                    {#each metrics.find((md) => md.metric === draft.metric)?.labels[row.key] ?? [] as v}<option value={v}></option>{/each}
                   </datalist>
-                  <button type="button" class="min-h-[44px] min-w-[44px] rounded-lg" style="background: {$colorStore.primary}10; color: {$colorStore.muted}" onclick={() => (filterRows = filterRows.filter((_, j) => j !== i))} aria-label="Remove filter"><i class="fa-solid fa-xmark"></i></button>
+                  <button type="button" class="min-h-[44px] min-w-[44px] rounded-lg" style="background: {$colorStore.primary}10; color: {$colorStore.muted}" onclick={() => (filterRows = filterRows.filter((_, j) => j !== i))} aria-label={m.analytics.tabAlertEditorRemoveFilter()}><i class="fa-solid fa-xmark"></i></button>
                 </div>
               {/each}
             </div>
             <div class="grid grid-cols-3 gap-2">
-              <label class="block">Group by
+              <label class="block">{m.analytics.tabAlertEditorGroupBy()}
                 <select class="mt-1 w-full min-h-[44px] rounded-lg border px-2 font-mono" style={field} value={draft.groupBy ?? ""} onchange={(e) => (draft.groupBy = e.currentTarget.value || null)}>
-                  <option value="">none</option>
+                  <option value="">{m.common.noneLower()}</option>
                   {#each labels as l}<option value={l}>{l}</option>{/each}
                 </select>
               </label>
-              <label class="block">Agg
+              <label class="block">{m.analytics.tabAlertEditorAgg()}
                 <select class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} bind:value={draft.aggregation}>
                   {#each AGGREGATIONS as a}<option value={a}>{a}</option>{/each}
                 </select>
               </label>
-              <label class="block">Window
+              <label class="block">{m.common.window()}
                 <select class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} bind:value={draft.windowSeconds}>
                   {#each WINDOWS as w}<option value={w}>{duration(w)}</option>{/each}
                 </select>
               </label>
             </div>
             <div class="grid grid-cols-3 gap-2">
-              <label class="block">Comparator
+              <label class="block">{m.analytics.tabAlertEditorComparator()}
                 <select class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} bind:value={draft.comparator}>
-                  {#each COMPARATORS as c}<option value={c}>{c}</option>{/each}
+                  {#each COMPARATORS as c}<option value={c}>{comparatorLabel(c)}</option>{/each}
                 </select>
               </label>
               {#if draft.comparator !== "nodata"}
-                <label class="block">{baseline ? "Threshold %" : "Threshold"}
+                <label class="block">{baseline ? m.analytics.tabAlertEditorThresholdPct() : m.common.threshold()}
                   <input type="number" step="any" class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} bind:value={draft.threshold} />
                 </label>
               {/if}
               {#if draft.comparator === "outside"}
-                <label class="block">High
+                <label class="block">{m.common.high()}
                   <input type="number" step="any" class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} bind:value={draft.thresholdHigh} />
                 </label>
               {/if}
             </div>
             {#if baseline}
               <div class="grid grid-cols-2 gap-2">
-                <label class="block">Baseline
+                <label class="block">{m.analytics.tabAlertEditorBaseline()}
                   <select class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} value={String(draft.baselineDays ?? 7)} onchange={(e) => (draft.baselineDays = Number(e.currentTarget.value))}>
-                    <option value="1">yesterday</option>
-                    <option value="7">last week</option>
+                    <option value="1">{m.analytics.tabAlertEditorYesterday()}</option>
+                    <option value="7">{m.analytics.tabAlertEditorLastWeek()}</option>
                   </select>
                 </label>
-                <label class="block">Direction
+                <label class="block">{m.common.direction()}
                   <select class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} value={draft.direction ?? "both"} onchange={(e) => (draft.direction = e.currentTarget.value)}>
-                    <option value="both">both</option>
-                    <option value="up">up</option>
-                    <option value="down">down</option>
+                    <option value="both">{m.analytics.tabAlertEditorDirBoth()}</option>
+                    <option value="up">{m.analytics.tabAlertEditorDirUp()}</option>
+                    <option value="down">{m.analytics.tabShardsDown()}</option>
                   </select>
                 </label>
               </div>
             {/if}
             <div class="grid grid-cols-3 gap-2">
-              <label class="block">For
+              <label class="block">{m.common.for()}
                 <select class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} bind:value={draft.forSeconds}>
-                  {#each FOR_SECONDS as s}<option value={s}>{s ? duration(s) : "immediately"}</option>{/each}
+                  {#each FOR_SECONDS as s}<option value={s}>{s ? duration(s) : m.analytics.tabAlertEditorImmediately()}</option>{/each}
                 </select>
               </label>
-              <label class="block">Cooldown
+              <label class="block">{m.analytics.tabAlertEditorCooldown()}
                 <select class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} bind:value={draft.cooldownSeconds}>
-                  {#each COOLDOWNS as s}<option value={s}>{s ? duration(s) : "none"}</option>{/each}
+                  {#each COOLDOWNS as s}<option value={s}>{s ? duration(s) : m.common.noneLower()}</option>{/each}
                 </select>
               </label>
-              <label class="block">Repeat
+              <label class="block">{m.common.repeat()}
                 <select class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} value={String(draft.repeatSeconds ?? 0)} onchange={(e) => (draft.repeatSeconds = Number(e.currentTarget.value) || null)}>
-                  {#each REPEATS as s}<option value={String(s)}>{s ? duration(s) : "once"}</option>{/each}
+                  {#each REPEATS as s}<option value={String(s)}>{s ? duration(s) : m.analytics.tabAlertEditorOnce()}</option>{/each}
                 </select>
               </label>
             </div>
-            <label class="block">Min samples
-              <input type="number" min="0" step="1" class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} bind:value={draft.minSamples} placeholder="none" />
+            <label class="block">{m.analytics.tabAlertEditorMinSamples()}
+              <input type="number" min="0" step="1" class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} bind:value={draft.minSamples} placeholder={m.common.noneLower()} />
             </label>
           </div>
 
           <div class="space-y-3">
             <div>
-              <p class="mb-1">Preview · {absolute ? "dashed = draft threshold" : "no fixed line for this comparator"}</p>
+              <p class="mb-1">{absolute ? m.analytics.tabAlertEditorPreviewDraft() : m.analytics.tabAlertEditorPreviewNoLine()}</p>
               {#if draft.metric}
                 {#key draft.metric}
                   <AnalyticsChart metric={draft.metric} agg={draft.aggregation as AnalyticsAgg} groupBy={draft.groupBy ?? undefined} max={8} filters={[]} fixed={filters} bands extraBands={previewBands} noCompare height={200} />
                 {/key}
               {:else}
-                <p class="py-6 text-center">Pick a metric</p>
+                <p class="py-6 text-center">{m.analytics.tabAlertEditorPickMetric()}</p>
               {/if}
             </div>
-            <label class="block">Webhook URL
+            <label class="block">{m.analytics.tabAlertEditorWebhookUrl()}
               <input type="url" class="mt-1 w-full min-h-[44px] rounded-lg border px-2 font-mono" style={field} bind:value={draft.webhookUrl} placeholder="https://discord.com/api/webhooks/…" />
             </label>
             <div class="grid grid-cols-2 gap-2">
-              <label class="block">Mention role id
+              <label class="block">{m.analytics.tabAlertEditorMentionRoleId()}
                 <input type="text" inputmode="numeric" class="mt-1 w-full min-h-[44px] rounded-lg border px-2 font-mono" style={field} value={draft.mentionRoleId ?? ""} oninput={(e) => (draft.mentionRoleId = e.currentTarget.value)} />
               </label>
-              <label class="block">Thread id
+              <label class="block">{m.analytics.tabAlertEditorThreadId()}
                 <input type="text" inputmode="numeric" class="mt-1 w-full min-h-[44px] rounded-lg border px-2 font-mono" style={field} value={draft.threadId ?? ""} oninput={(e) => (draft.threadId = e.currentTarget.value)} />
               </label>
             </div>
             <div class="grid grid-cols-2 gap-2">
-              <label class="block">Quiet from (UTC)
+              <label class="block">{m.analytics.tabAlertEditorQuietFrom()}
                 <input type="time" class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} bind:value={quietStart} />
               </label>
-              <label class="block">Quiet to (UTC)
+              <label class="block">{m.analytics.tabAlertEditorQuietTo()}
                 <input type="time" class="mt-1 w-full min-h-[44px] rounded-lg border px-2" style={field} bind:value={quietEnd} />
               </label>
             </div>
             <label class="flex items-center gap-2 min-h-[44px]">
-              <input type="checkbox" bind:checked={draft.notifyOnResolve} style="accent-color: {$colorStore.primary}" /> notify on resolve
+              <input type="checkbox" bind:checked={draft.notifyOnResolve} style="accent-color: {$colorStore.primary}" /> {m.analytics.tabAlertEditorNotifyResolve()}
             </label>
           </div>
         </div>
 
         <div class="flex flex-wrap items-center justify-end gap-2 p-4 border-t" style="border-color: {$colorStore.primary}20;">
           {#if error}<span class="text-xs mr-auto" style="color: #f87171">{error}</span>{/if}
-          <button type="button" class="min-h-[44px] px-4 rounded-lg text-sm" style="background: {$colorStore.primary}10; color: {$colorStore.muted}" onclick={close}>Cancel</button>
+          <button type="button" class="min-h-[44px] px-4 rounded-lg text-sm" style="background: {$colorStore.primary}10; color: {$colorStore.muted}" onclick={close}>{m.common.cancel()}</button>
           <button type="button" class="min-h-[44px] px-4 rounded-lg text-sm font-medium disabled:opacity-50" style="background: {$colorStore.primary}30; color: {$colorStore.text}" onclick={save} disabled={saving}>
-            {saving ? "Saving…" : rule ? "Save" : "Create"}
+            {saving ? m.common.saving() : rule ? m.common.save() : m.common.create()}
           </button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 <!-- lib/components/dashboard/CommunityTab.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import {fly} from "svelte/transition";
     import {onMount} from "svelte";
     import {colorStore} from "$lib/stores/colorStore";
@@ -113,10 +114,10 @@
       if (messageStatsData) {
         // Enhance topActiveUsers with user data from guild members
         topActiveUsers = (messageStatsData.topUsers || []).slice(0, 5).map((messageUser) => {
-          const member = guildMembers?.find(m => m?.id?.toString() === messageUser.userId);
+          const member = guildMembers?.find(gm => gm?.id?.toString() === messageUser.userId);
           return {
             ...messageUser,
-            username: member?.username || 'Unknown User',
+            username: member?.username || m.common.unknownUser(),
             discriminator: '0000', // Discord no longer uses discriminators for most users
             avatarUrl: member?.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`
           };
@@ -201,7 +202,7 @@
             <i class="fa-utility-duo fa-regular fa-star text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
-          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">XP Leaderboard</h2>
+          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.xpLeaderboard()}</h2>
         </div>
 
       <div class="space-y-2">
@@ -224,9 +225,9 @@
           <div class="text-center py-6">
             <i class="fa-utility-duo fa-regular fa-star text-4xl mx-auto mb-3 block"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; --fa-primary-opacity: 0.5; --fa-secondary-opacity: 0.3;"></i>
-            <h3 class="text-base font-semibold mb-1" style="color: {$colorStore.text}">No XP Data</h3>
+            <h3 class="text-base font-semibold mb-1" style="color: {$colorStore.text}">{m.dashboard.communityNoXpData()}</h3>
             <p class="text-xs" style="color: {$colorStore.muted}">
-              No members have earned XP yet. Get active in the server!
+              {m.dashboard.communityNoXpDataHint()}
             </p>
           </div>
         {:else}
@@ -250,14 +251,14 @@
                   {user.username}
                 </div>
                 <div class="text-xs" style="color: {$colorStore.muted}">
-                  Level {user.level} • {user.xp.toLocaleString()} XP
+                  {m.common.levelWithXp({ level: user.level, xp: user.xp.toLocaleString() })}
                 </div>
               </div>
 
               <!-- Level Badge -->
                 <div class="px-2 py-1 rounded-sm text-xs font-medium"
                    style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
-                Lvl {user.level}
+                {m.dashboard.communityLevelBadge({ level: user.level })}
               </div>
             </div>
           {/each}
@@ -271,7 +272,7 @@
          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
         <i class="fa-utility-duo fa-regular fa-arrow-right"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-        View Full XP Dashboard
+        {m.dashboard.communityViewFullXp()}
       </a>
     </div>
 
@@ -283,8 +284,8 @@
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
-          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Birthdays</h3>
-          <a href="/dashboard/birthday" class="text-xs" style="color: {$colorStore.primary}">View all</a>
+          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">{m.features.birthdayName()}</h3>
+          <a href="/dashboard/birthday" class="text-xs" style="color: {$colorStore.primary}">{m.dashboard.communityViewAll()}</a>
         </div>
 
         {#if todaysBirthdays.length > 0 || upcomingBirthdays.length > 0}
@@ -294,7 +295,7 @@
               <div class="flex items-center gap-2 mb-2">
                 <i class="fa-utility-duo fa-regular fa-birthday-cake text-sm"
                    style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
-                <span class="text-xs font-medium" style="color: {$colorStore.text}">Today</span>
+                <span class="text-xs font-medium" style="color: {$colorStore.text}">{m.common.today()}</span>
               </div>
               <div class="flex flex-wrap gap-1 mb-2">
                 {#each todaysBirthdays.slice(0, 3) as user (user.userId)}
@@ -318,20 +319,19 @@
             {#if upcomingBirthdays.length > 0}
               <!-- Upcoming (Ultra Compact) -->
               <div class="text-xs" style="color: {$colorStore.muted}">
-                <span class="font-medium">Coming up:</span>
+                <span class="font-medium">{m.dashboard.communityComingUp()}</span>
                 {#each upcomingBirthdays.slice(0, 2) as user, index (user.userId)}
-                  <span>{user.nickname || user.username} ({user.daysUntil}
-                    d){index < 1 && upcomingBirthdays.length > 1 ? ', ' : ''}</span>
+                  <span>{m.dashboard.communityUpcomingBirthday({ name: user.nickname || user.username, days: user.daysUntil ?? 0 })}{index < 1 && upcomingBirthdays.length > 1 ? ', ' : ''}</span>
                 {/each}
                 {#if upcomingBirthdays.length > 2}
-                  <span> +{upcomingBirthdays.length - 2} more</span>
+                  <span> {m.common.moreCount({ count: upcomingBirthdays.length - 2 })}</span>
                 {/if}
               </div>
             {/if}
           </div>
         {:else}
           <div class="p-2 rounded-lg text-center" style="background: {$colorStore.primary}08;">
-            <p class="text-xs" style="color: {$colorStore.muted}">No birthdays this week</p>
+            <p class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityNoBirthdays()}</p>
           </div>
         {/if}
         </div>
@@ -341,15 +341,15 @@
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
-          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Message Activity</h3>
+          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">{m.dashboard.communityMessageActivity()}</h3>
           {#if messageCountEnabled}
-            <a href="/dashboard/messagestats" class="text-xs" style="color: {$colorStore.primary}">Details</a>
+            <a href="/dashboard/messagestats" class="text-xs" style="color: {$colorStore.primary}">{m.common.details()}</a>
           {/if}
         </div>
         
         {#if !messageCountEnabled}
           <div class="p-2 rounded-lg text-center" style="background: {$colorStore.primary}08;">
-            <p class="text-xs" style="color: {$colorStore.muted}">Message tracking disabled</p>
+            <p class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityMessageTrackingDisabled()}</p>
           </div>
         {:else}
           <!-- Compact Stats Card -->
@@ -359,20 +359,20 @@
                 <div class="text-base font-bold" style="color: {$colorStore.primary}">
                   {dailyMessages.toLocaleString()}
                 </div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Today</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.common.today()}</div>
               </div>
               <div>
                 <div class="text-base font-bold" style="color: {$colorStore.secondary}">
                   {messageStatsData?.totalMessages ? messageStatsData.totalMessages.toLocaleString() : '0'}
                 </div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Total</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.common.total()}</div>
               </div>
             </div>
 
             {#if topActiveUsers.length > 0}
               <!-- Most Active (Ultra Compact) -->
               <div class="pt-2 border-t" style="border-color: {$colorStore.primary}15;">
-                <div class="text-xs font-medium mb-1" style="color: {$colorStore.text}">Top Active</div>
+                <div class="text-xs font-medium mb-1" style="color: {$colorStore.text}">{m.dashboard.communityTopActive()}</div>
                 <div class="flex flex-wrap gap-1">
                   {#each topActiveUsers.slice(0, 3) as user (user.userId)}
                       <div class="flex items-center gap-1 px-2 py-1 rounded-sm"
@@ -380,7 +380,7 @@
                       <img src={user.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
                            alt="" class="w-4 h-4 rounded-full" />
                       <span class="text-xs" style="color: {$colorStore.text}">
-                        {user.username?.length > 8 ? user.username.slice(0, 8) + '...' : user.username || 'Unknown User'}
+                        {user.username?.length > 8 ? user.username.slice(0, 8) + '...' : user.username || m.common.unknownUser()}
                       </span>
                     </div>
                   {/each}
@@ -396,15 +396,15 @@
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
-          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Support Tickets</h3>
+          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">{m.features.wizardTicketsName()}</h3>
           {#if ticketStats.totalTickets > 0}
-            <a href="/dashboard/tickets" class="text-xs" style="color: {$colorStore.primary}">Manage</a>
+            <a href="/dashboard/tickets" class="text-xs" style="color: {$colorStore.primary}">{m.common.manage()}</a>
           {/if}
         </div>
         
         {#if ticketStats.totalTickets === 0}
           <div class="p-2 rounded-lg text-center" style="background: {$colorStore.primary}08;">
-            <p class="text-xs" style="color: {$colorStore.muted}">No tickets yet</p>
+            <p class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityNoTickets()}</p>
           </div>
         {:else}
           <div class="p-2 rounded-lg" style="background: {$colorStore.primary}08;">
@@ -413,19 +413,19 @@
                 <div class="text-base font-bold" style="color: {$colorStore.primary}">
                   {ticketStats.openTickets}
                 </div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Open</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.common.open()}</div>
               </div>
               <div>
                 <div class="text-base font-bold" style="color: {$colorStore.secondary}">
                   {ticketStats.closedToday}
                 </div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Closed today</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityClosedToday()}</div>
               </div>
               <div>
                 <div class="text-base font-bold" style="color: {$colorStore.text}">
                   {ticketStats.activeStaff}
                 </div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Active staff</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityActiveStaff()}</div>
               </div>
             </div>
           </div>
@@ -437,15 +437,15 @@
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
-          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Starboard</h3>
+          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">{m.features.starboardName()}</h3>
           {#if starboardHighlights.length > 0}
-            <a href="/dashboard/starboard" class="text-xs" style="color: {$colorStore.primary}">View all</a>
+            <a href="/dashboard/starboard" class="text-xs" style="color: {$colorStore.primary}">{m.dashboard.communityViewAll()}</a>
           {/if}
         </div>
         
         {#if starboardHighlights.length === 0}
           <div class="p-2 rounded-lg text-center" style="background: {$colorStore.primary}08;">
-            <p class="text-xs" style="color: {$colorStore.muted}">No starred messages yet</p>
+            <p class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityNoStarred()}</p>
           </div>
         {:else}
           <div class="space-y-2">
@@ -476,13 +476,13 @@
              style="background: {$colorStore.primary}05;
                   border-color: {$colorStore.primary}15;">
           <div class="flex items-center justify-between mb-2">
-            <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Forms</h3>
-            <a class="text-xs" href="/dashboard/forms" style="color: {$colorStore.primary}">Manage</a>
+            <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">{m.features.formsName()}</h3>
+            <a class="text-xs" href="/dashboard/forms" style="color: {$colorStore.primary}">{m.common.manage()}</a>
           </div>
 
           {#if forms.length === 0}
             <div class="p-2 rounded-lg text-center" style="background: {$colorStore.primary}08;">
-              <p class="text-xs" style="color: {$colorStore.muted}">No forms created yet</p>
+              <p class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityNoForms()}</p>
             </div>
           {:else}
             <div class="space-y-2">
@@ -491,24 +491,24 @@
                   <div class="text-lg font-bold" style="color: {$colorStore.primary}">
                     {forms.length}
                   </div>
-                  <div class="text-xs" style="color: {$colorStore.muted}">Active Forms</div>
+                  <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityActiveForms()}</div>
                 </div>
                 <div class="p-2 rounded-lg text-center" style="background: {$colorStore.secondary}08;">
                   <div class="text-lg font-bold" style="color: {$colorStore.secondary}">
                     {totalFormResponses}
                   </div>
-                  <div class="text-xs" style="color: {$colorStore.muted}">Responses</div>
+                  <div class="text-xs" style="color: {$colorStore.muted}">{m.common.responses()}</div>
                 </div>
               </div>
 
               {#if forms.length > 0}
                 <div class="pt-2 border-t" style="border-color: {$colorStore.primary}15;">
                   <div class="text-xs" style="color: {$colorStore.muted}">
-                    Most recent: <span style="color: {$colorStore.text}">{forms[0].name}</span>
+                    {m.dashboard.communityMostRecent()} <span style="color: {$colorStore.text}">{forms[0].name}</span>
                   </div>
                   {#if forms[0].responseCount && forms[0].responseCount > 0}
                     <div class="text-xs mt-1" style="color: {$colorStore.muted}">
-                      {forms[0].responseCount} response{forms[0].responseCount !== 1 ? 's' : ''}
+                      {forms[0].responseCount === 1 ? m.common.responsesOne({ count: forms[0].responseCount }) : m.common.responsesOther({ count: forms[0].responseCount })}
                     </div>
                   {/if}
                 </div>
@@ -522,19 +522,19 @@
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
-          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Counting Games</h3>
+          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">{m.common.countingGames()}</h3>
           {#if countingChannels.length > 0}
-            <a href="/dashboard/counting" class="text-xs" style="color: {$colorStore.primary}">Manage</a>
+            <a href="/dashboard/counting" class="text-xs" style="color: {$colorStore.primary}">{m.common.manage()}</a>
           {/if}
         </div>
 
         {#if countingChannels.length === 0}
           <div class="p-2 rounded-lg text-center" style="background: {$colorStore.primary}08;">
-            <p class="text-xs" style="color: {$colorStore.muted}">No counting channels setup</p>
+            <p class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityNoCountingChannels()}</p>
           </div>
         {:else if !topCountingChannel}
           <div class="p-2 rounded-lg text-center" style="background: {$colorStore.primary}08;">
-            <p class="text-xs" style="color: {$colorStore.muted}">No active counting channels</p>
+            <p class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityNoActiveCounting()}</p>
           </div>
         {:else}
           <div class="p-2 rounded-lg" style="background: {$colorStore.primary}08;">
@@ -546,7 +546,7 @@
               </span>
               {#if topCountingChannel.isActive}
                 <span class="px-2 py-1 rounded-full text-xs" style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};">
-                  Active
+                  {m.common.active()}
                 </span>
               {/if}
             </div>
@@ -556,25 +556,25 @@
                 <div class="text-base font-bold" style="color: {$colorStore.primary}">
                   {topCountingChannel.currentNumber?.toLocaleString() || 0}
                 </div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Current</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.common.current()}</div>
               </div>
               <div>
                 <div class="text-base font-bold" style="color: {$colorStore.secondary}">
                   {topCountingChannel.highestNumber?.toLocaleString() || 0}
                 </div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Record</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityRecord()}</div>
               </div>
             </div>
 
             {#if topCountingChannel.lastUsername}
               <div class="pt-2 border-t text-xs" style="border-color: {$colorStore.primary}15; color: {$colorStore.muted}">
-                Last count by <span style="color: {$colorStore.text}">{topCountingChannel.lastUsername}</span>
+                {m.dashboard.communityLastCountBy()} <span style="color: {$colorStore.text}">{topCountingChannel.lastUsername}</span>
               </div>
             {/if}
 
             {#if countingChannels.length > 1}
               <div class="text-xs mt-1" style="color: {$colorStore.muted}">
-                +{countingChannels.length - 1} other channel{countingChannels.length > 2 ? 's' : ''}
+                {countingChannels.length > 2 ? m.dashboard.communityOtherChannelsOther({ count: countingChannels.length - 1 }) : m.dashboard.communityOtherChannelsOne({ count: countingChannels.length - 1 })}
               </div>
             {/if}
           </div>
@@ -601,16 +601,16 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">{activeMembers}</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Active Members</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.dashboard.communityActiveMembers()}</span>
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">
-                {memberStats?.totalMembers > 0 ? `${Math.round((activeMembers / memberStats.totalMembers) * 100)}% rate` : "No data"}
+                {memberStats?.totalMembers > 0 ? m.dashboard.communityActiveRate({ percent: Math.round((activeMembers / memberStats.totalMembers) * 100) }) : m.common.noData()}
               </div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/xp"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-              Manage
+              {m.common.manage()}
             </a>
           </div>
         </div>
@@ -631,11 +631,11 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">
-                  {$inviteStore.stats?.totalInvites ? new Intl.NumberFormat().format($inviteStore.stats.totalInvites) : "N/A"}
+                  {$inviteStore.stats?.totalInvites ? new Intl.NumberFormat().format($inviteStore.stats.totalInvites) : m.common.notAvailable()}
                 </span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Total Invites</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.common.totalInvites()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">All time</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.common.allTime()}</div>
             </div>
           </div>
         </div>
@@ -654,11 +654,11 @@
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
                 <span class="text-lg font-bold" style="color: {$colorStore.text}">
-                  {$inviteStore.stats?.averageJoins || "N/A"}
+                  {$inviteStore.stats?.averageJoins || m.common.notAvailable()}
                 </span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Average Joins</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.common.averageJoins()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Per day</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityPerDay()}</div>
             </div>
           </div>
         </div>
@@ -680,15 +680,15 @@
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
-                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Reputation</span>
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.active()}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.features.reputationName()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">User reputation system</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.features.reputationDescription()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/reputation"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
-              Manage
+              {m.common.manage()}
             </a>
           </div>
         </div>
@@ -706,15 +706,15 @@
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
-                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Confessions</span>
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.active()}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.features.confessionsName()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Anonymous confessions</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.features.wizardConfessionsName()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/confessions"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-              Manage
+              {m.common.manage()}
             </a>
           </div>
         </div>
@@ -732,15 +732,15 @@
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
-                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Highlights</span>
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.active()}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.features.highlightsName()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Keyword notifications</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityHighlightsDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/highlights"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
-              Manage
+              {m.common.manage()}
             </a>
           </div>
         </div>
@@ -758,15 +758,15 @@
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
-                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
-                <span class="text-sm font-medium" style="color: {$colorStore.text}">Streams</span>
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.active()}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.common.streams()}</span>
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted}">Twitch/YouTube alerts</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityStreamsDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/streams"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
-              Manage
+              {m.common.manage()}
             </a>
           </div>
         </div>
@@ -788,14 +788,14 @@
               <div class="flex-1">
                 <div class="flex items-baseline gap-3">
                   <span class="text-lg font-bold" style="color: {$colorStore.text}">{patreonSupporters}</span>
-                  <span class="text-sm font-medium" style="color: {$colorStore.text}">Patreon Supporters</span>
+                  <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.dashboard.communityPatreonSupporters()}</span>
                 </div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Active patrons</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityActivePatrons()}</div>
               </div>
                 <a href="/dashboard/patreon"
                    class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
-                Manage
+                {m.common.manage()}
               </a>
             </div>
           </div>
@@ -812,15 +812,15 @@
               </div>
               <div class="flex-1">
                 <div class="flex items-baseline gap-3">
-                  <span class="text-lg font-bold" style="color: {$colorStore.text}">N/A</span>
-                  <span class="text-sm font-medium" style="color: {$colorStore.text}">Patreon Support</span>
+                  <span class="text-lg font-bold" style="color: {$colorStore.text}">{m.common.notAvailable()}</span>
+                  <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.dashboard.communityPatreonSupport()}</span>
                 </div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Not connected</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.common.notConnected()}</div>
               </div>
                 <a href="/dashboard/patreon"
                    class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
-                Setup
+                {m.common.setup()}
               </a>
             </div>
           </div>

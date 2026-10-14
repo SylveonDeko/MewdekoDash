@@ -3,6 +3,7 @@
 
   import { onDestroy, onMount } from "svelte";
   import { fly, slide } from "svelte/transition";
+  import { m } from "$lib/i18n";
   import type { MusicStatus, SeekRequest } from "$lib/api/music/models";
   import { musicApi } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -325,8 +326,8 @@
 
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: musicStatus.CurrentTrack?.Track.Title || "Unknown Title",
-        artist: musicStatus.CurrentTrack?.Track.Author || "Unknown Artist",
+        title: musicStatus.CurrentTrack?.Track.Title || m.music.playerUnknownTitle(),
+        artist: musicStatus.CurrentTrack?.Track.Author || m.music.playerUnknownArtist(),
         album: musicStatus.CurrentTrack?.Track.Provider || "",
         artwork: [{
           src: musicStatus.CurrentTrack?.Track.ArtworkUri || "/default-album.png",
@@ -451,7 +452,7 @@
             {#if currentTrack?.Track?.ArtworkUri}
               <img
                 src={currentTrack.Track.ArtworkUri}
-                alt="Album artwork"
+                alt={m.music.playerAlbumArtwork()}
                 class="w-full h-full object-cover"
               >
             {:else}
@@ -510,7 +511,7 @@
           <div class="flex items-center gap-1 md:gap-2">
 
             <!-- Previous Button -->
-            <button aria-label="Button action"
+            <button aria-label={m.common.previous()}
               class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
               style="background: {colors.foreground}20; color: {colors.foreground};"
               onclick={previousTrack}
@@ -525,7 +526,7 @@
               class="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-lg"
               style="background: {colors.controlsHighlight}; color: {colors.text};"
               onclick={togglePlayPause}
-              aria-label={isPlaying ? "Pause" : "Play"}
+              aria-label={isPlaying ? m.common.pause() : m.music.playerPlay()}
             >
               {#if isPlaying}
                 <i class="fa-utility-duo fa-regular fa-pause text-base md:text-lg"
@@ -537,7 +538,7 @@
             </button>
 
             <!-- Skip Button -->
-            <button aria-label="Button action"
+            <button aria-label={m.common.next()}
               class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
               style="background: {colors.foreground}20; color: {colors.foreground};"
               onclick={skipTrack}
@@ -552,7 +553,7 @@
               class="hidden md:flex w-10 h-10 rounded-full items-center justify-center transition-all hover:scale-110 active:scale-95 ml-2"
               style="background: {colors.accent}20; color: {colors.accent};"
               onclick={toggleExpanded}
-              aria-label={isExpanded ? "Collapse" : "Expand"}
+              aria-label={isExpanded ? m.common.collapse() : m.music.playerExpand()}
             >
               {#if isExpanded}
                 <i class="fa-utility-duo fa-regular fa-angle-up"
@@ -564,7 +565,7 @@
             </button>
 
             <!-- Open Full Player Button -->
-            <button aria-label="Button action"
+            <button aria-label={m.common.openMusicDashboard()}
               class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
               style="background: {colors.accent}20; color: {colors.accent};"
               onclick={openMusicDashboard}
@@ -594,19 +595,19 @@
                             class="font-semibold text-base md:text-lg truncate"
                             style="color: {colors.text};"
                     >
-                        Ready to play
+                        {m.music.playerReady()}
                     </div>
                     <div
                             class="text-sm truncate opacity-80"
                             style="color: {colors.text}80;"
                     >
-                        Connected to {channelName || "voice channel"}
+                        {channelName ? m.music.playerConnectedTo({ channel: channelName }) : m.music.playerConnectedToVoice()}
                     </div>
                 </div>
 
                 <!-- Open Full Player Button -->
                 <div class="flex items-center gap-2 shrink-0">
-                  <button aria-label="Button action"
+                  <button aria-label={m.common.openMusicDashboard()}
                             class="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
                             style="background: {colors.accent}20; color: {colors.accent};"
                             onclick={openMusicDashboard}
@@ -648,7 +649,7 @@
         {#if musicStatus?.Queue && musicStatus.Queue.length > 0}
           <div class="mt-4">
             <h4 class="text-sm font-medium mb-2" style="color: {colors.text};">
-              Up Next ({musicStatus.Queue.length} tracks)
+              {musicStatus.Queue.length === 1 ? m.music.playerUpNextOne({ count: 1 }) : m.music.playerUpNextOther({ count: musicStatus.Queue.length })}
             </h4>
             <div class="space-y-2 max-h-32 overflow-y-auto">
               {#each musicStatus.Queue.slice(0, 3) as track, index}
@@ -658,10 +659,10 @@
                   </div>
                   <div class="flex-1 min-w-0">
                     <div class="text-sm truncate" style="color: {colors.text};">
-                      {track.Track?.Title || "Unknown Track"}
+                      {track.Track?.Title || m.music.playerUnknownTrack()}
                     </div>
                     <div class="text-xs truncate" style="color: {colors.text}60;">
-                      {track.Track?.Author || "Unknown Artist"}
+                      {track.Track?.Author || m.music.playerUnknownArtist()}
                     </div>
                   </div>
                   <div class="text-xs" style="color: {colors.text}60;">
@@ -672,7 +673,7 @@
               {#if musicStatus.Queue.length > 3}
                 <div class="text-center py-2">
                   <span class="text-xs" style="color: {colors.text}60;">
-                    +{musicStatus.Queue.length - 3} more tracks
+                    {musicStatus.Queue.length - 3 === 1 ? m.music.playerMoreTracksOne({ count: 1 }) : m.common.moreTracksCount({ count: musicStatus.Queue.length - 3 })}
                   </span>
                 </div>
               {/if}
@@ -711,17 +712,17 @@
     <i class="fa-utility-duo fa-regular fa-music text-5xl mx-auto mb-4 block"
        style="--fa-primary-color: {colors.foreground}; --fa-secondary-color: {colors.foreground}; --fa-primary-opacity: 0.5; --fa-secondary-opacity: 0.3;"></i>
     <h3 class="text-xl font-semibold" style="color: {colors.text};">
-        Bot is not in a voice channel
+        {m.music.playerNotInVoice()}
     </h3>
     <p class="mt-2" style="color: {colors.text}80;">
-        Use bot commands to join a voice channel and play music
+        {m.music.playerNotInVoiceHint()}
     </p>
     <button
       class="mt-4 px-4 py-2 rounded-lg transition-all hover:scale-[1.02]"
       style="background: {colors.foreground}20; color: {colors.foreground}; border: 1px solid {colors.foreground}30;"
       onclick={openMusicDashboard}
     >
-      Open Music Dashboard
+      {m.common.openMusicDashboard()}
     </button>
   </div>
 {/if}

@@ -1,5 +1,6 @@
 <!-- TemplateGallery.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
 
   interface Props {
@@ -28,25 +29,25 @@
     embed: any;
   }
 
-  const templates: EmbedTemplate[] = [
+  const templates: EmbedTemplate[] = $derived([
     // Welcome Templates
     {
       id: 'welcome-basic',
-      name: 'Basic Welcome',
-      description: 'Simple welcome message for new members',
+      name: m.embedbuilder.templatesWelcomeBasicName(),
+      description: m.embedbuilder.templatesWelcomeBasicDescription(),
       category: 'welcome',
       icon: "fa-users",
       preview: {
-        title: 'Welcome to the Server! 👋',
-        description: 'Hey %user.mention%, welcome to **%server.name%**!\n\nWe\'re glad to have you here. Make sure to read our rules and introduce yourself!',
+        title: m.embedbuilder.templatesWelcomeBasicTitle(),
+        description: m.embedbuilder.templatesWelcomeBasicBody(),
         color: '#5865F2',
-        footer: { text: 'Member #%server.membercount%' }
+        footer: { text: m.embedbuilder.templatesWelcomeBasicFooter() }
       },
       embed: {
-        title: 'Welcome to the Server! 👋',
-        description: 'Hey %user.mention%, welcome to **%server.name%**!\n\nWe\'re glad to have you here. Make sure to read our rules and introduce yourself!',
+        title: m.embedbuilder.templatesWelcomeBasicTitle(),
+        description: m.embedbuilder.templatesWelcomeBasicBody(),
         color: '#5865F2',
-        footer: { text: 'Member #%server.membercount%', icon_url: '' },
+        footer: { text: m.embedbuilder.templatesWelcomeBasicFooter(), icon_url: '' },
         author: { name: '', url: '', icon_url: '' },
         thumbnail: { url: '' },
         image: { url: '' },
@@ -55,57 +56,57 @@
     },
     {
       id: 'welcome-detailed',
-      name: 'Detailed Welcome',
-      description: 'Comprehensive welcome with server info',
+      name: m.embedbuilder.templatesWelcomeDetailedName(),
+      description: m.embedbuilder.templatesWelcomeDetailedDescription(),
       category: 'welcome',
       icon: "fa-crown",
       preview: {
-        title: 'Welcome to %server.name%! ✨',
-        description: 'Hello %user.mention%! We\'re excited to have you join our community.',
+        title: m.embedbuilder.templatesWelcomeDetailedTitle(),
+        description: m.embedbuilder.templatesWelcomeDetailedBody(),
         color: '#00D166',
         author: { name: '%user.name%', icon_url: '%user.avatar%' },
         thumbnail: { url: '%server.icon%' },
         fields: [
-          { name: '📋 Read the Rules', value: 'Make sure to check out <#rules-channel> first!', inline: true },
-          { name: '💬 Get Started', value: 'Introduce yourself in <#introductions>!', inline: true },
-          { name: '🎯 Have Fun', value: 'Enjoy your stay and make new friends!', inline: true }
+          { name: m.embedbuilder.templatesWelcomeDetailedFieldRulesName(), value: m.embedbuilder.templatesWelcomeDetailedFieldRulesValue(), inline: true },
+          { name: m.embedbuilder.templatesWelcomeDetailedFieldStartName(), value: m.embedbuilder.templatesWelcomeDetailedFieldStartValue(), inline: true },
+          { name: m.embedbuilder.templatesWelcomeDetailedFieldFunName(), value: m.embedbuilder.templatesWelcomeDetailedFieldFunValue(), inline: true }
         ],
-        footer: { text: 'You are member #%server.membercount%' }
+        footer: { text: m.embedbuilder.templatesWelcomeDetailedFooter() }
       },
       embed: {
-        title: 'Welcome to %server.name%! ✨',
-        description: 'Hello %user.mention%! We\'re excited to have you join our community.',
+        title: m.embedbuilder.templatesWelcomeDetailedTitle(),
+        description: m.embedbuilder.templatesWelcomeDetailedBody(),
         color: '#00D166',
         author: { name: '%user.name%', url: '', icon_url: '%user.avatar%' },
         thumbnail: { url: '%server.icon%' },
         image: { url: '' },
         fields: [
-          { name: '📋 Read the Rules', value: 'Make sure to check out <#rules-channel> first!', inline: true, id: 1 },
-          { name: '💬 Get Started', value: 'Introduce yourself in <#introductions>!', inline: true, id: 2 },
-          { name: '🎯 Have Fun', value: 'Enjoy your stay and make new friends!', inline: true, id: 3 }
+          { name: m.embedbuilder.templatesWelcomeDetailedFieldRulesName(), value: m.embedbuilder.templatesWelcomeDetailedFieldRulesValue(), inline: true, id: 1 },
+          { name: m.embedbuilder.templatesWelcomeDetailedFieldStartName(), value: m.embedbuilder.templatesWelcomeDetailedFieldStartValue(), inline: true, id: 2 },
+          { name: m.embedbuilder.templatesWelcomeDetailedFieldFunName(), value: m.embedbuilder.templatesWelcomeDetailedFieldFunValue(), inline: true, id: 3 }
         ],
-        footer: { text: 'You are member #%server.membercount%', icon_url: '' }
+        footer: { text: m.embedbuilder.templatesWelcomeDetailedFooter(), icon_url: '' }
       }
     },
 
     // Announcement Templates
     {
       id: 'announcement-basic',
-      name: 'Basic Announcement',
-      description: 'Simple server announcement',
+      name: m.embedbuilder.templatesAnnouncementBasicName(),
+      description: m.embedbuilder.templatesAnnouncementBasicDescription(),
       category: 'announcements',
       icon: "fa-bell",
       preview: {
-        title: '📢 Server Announcement',
-        description: 'Important information for all members of %server.name%.',
+        title: m.embedbuilder.templatesAnnouncementBasicTitle(),
+        description: m.embedbuilder.templatesAnnouncementBasicBody(),
         color: '#FEE75C',
-        footer: { text: 'Posted by %user.name%' }
+        footer: { text: m.embedbuilder.templatesAnnouncementBasicFooter() }
       },
       embed: {
-        title: '📢 Server Announcement',
-        description: 'Important information for all members of %server.name%.',
+        title: m.embedbuilder.templatesAnnouncementBasicTitle(),
+        description: m.embedbuilder.templatesAnnouncementBasicBody(),
         color: '#FEE75C',
-        footer: { text: 'Posted by %user.name%', icon_url: '' },
+        footer: { text: m.embedbuilder.templatesAnnouncementBasicFooter(), icon_url: '' },
         author: { name: '', url: '', icon_url: '' },
         thumbnail: { url: '' },
         image: { url: '' },
@@ -114,31 +115,31 @@
     },
     {
       id: 'announcement-event',
-      name: 'Event Announcement',
-      description: 'Announce upcoming events',
+      name: m.embedbuilder.templatesAnnouncementEventName(),
+      description: m.embedbuilder.templatesAnnouncementEventDescription(),
       category: 'announcements',
       icon: "fa-calendar",
       preview: {
-        title: '🎉 Upcoming Event!',
-        description: 'Join us for an exciting community event!',
+        title: m.embedbuilder.templatesAnnouncementEventTitle(),
+        description: m.embedbuilder.templatesAnnouncementEventBody(),
         color: '#ED4245',
         fields: [
-          { name: '📅 Date & Time', value: 'Saturday, Dec 25th at 3:00 PM EST', inline: false },
-          { name: '📍 Location', value: 'Voice Channel: Community Events', inline: true },
-          { name: '🎁 Prizes', value: 'Special roles and Discord Nitro!', inline: true }
+          { name: m.embedbuilder.templatesAnnouncementEventFieldDateName(), value: m.embedbuilder.templatesAnnouncementEventFieldDateValue(), inline: false },
+          { name: m.embedbuilder.templatesAnnouncementEventFieldLocationName(), value: m.embedbuilder.templatesAnnouncementEventFieldLocationValue(), inline: true },
+          { name: m.embedbuilder.templatesAnnouncementEventFieldPrizesName(), value: m.embedbuilder.templatesAnnouncementEventFieldPrizesValue(), inline: true }
         ],
-        footer: { text: 'React with 🎉 to get notified!' }
+        footer: { text: m.embedbuilder.templatesAnnouncementEventFooter() }
       },
       embed: {
-        title: '🎉 Upcoming Event!',
-        description: 'Join us for an exciting community event!',
+        title: m.embedbuilder.templatesAnnouncementEventTitle(),
+        description: m.embedbuilder.templatesAnnouncementEventBody(),
         color: '#ED4245',
         fields: [
-          { name: '📅 Date & Time', value: 'Saturday, Dec 25th at 3:00 PM EST', inline: false, id: 1 },
-          { name: '📍 Location', value: 'Voice Channel: Community Events', inline: true, id: 2 },
-          { name: '🎁 Prizes', value: 'Special roles and Discord Nitro!', inline: true, id: 3 }
+          { name: m.embedbuilder.templatesAnnouncementEventFieldDateName(), value: m.embedbuilder.templatesAnnouncementEventFieldDateValue(), inline: false, id: 1 },
+          { name: m.embedbuilder.templatesAnnouncementEventFieldLocationName(), value: m.embedbuilder.templatesAnnouncementEventFieldLocationValue(), inline: true, id: 2 },
+          { name: m.embedbuilder.templatesAnnouncementEventFieldPrizesName(), value: m.embedbuilder.templatesAnnouncementEventFieldPrizesValue(), inline: true, id: 3 }
         ],
-        footer: { text: 'React with 🎉 to get notified!', icon_url: '' },
+        footer: { text: m.embedbuilder.templatesAnnouncementEventFooter(), icon_url: '' },
         author: { name: '', url: '', icon_url: '' },
         thumbnail: { url: '' },
         image: { url: '' }
@@ -148,30 +149,30 @@
     // Rules Templates
     {
       id: 'rules-basic',
-      name: 'Server Rules',
-      description: 'Basic server rules layout',
+      name: m.embedbuilder.templatesRulesBasicName(),
+      description: m.embedbuilder.templatesRulesBasicDescription(),
       category: 'rules',
       icon: "fa-shield",
       preview: {
-        title: '📜 Server Rules',
-        description: 'Please follow these rules to keep our community safe and fun for everyone.',
+        title: m.embedbuilder.templatesRulesBasicTitle(),
+        description: m.embedbuilder.templatesRulesBasicBody(),
         color: '#57F287',
         fields: [
-          { name: '1️⃣ Be Respectful', value: 'Treat all members with kindness and respect.', inline: false },
-          { name: '2️⃣ No Spam', value: 'Keep messages relevant and avoid excessive posting.', inline: false },
-          { name: '3️⃣ Keep it Clean', value: 'No inappropriate content or language.', inline: false }
+          { name: m.embedbuilder.templatesRulesBasicFieldRespectName(), value: m.embedbuilder.templatesRulesBasicFieldRespectValue(), inline: false },
+          { name: m.embedbuilder.templatesRulesBasicFieldSpamName(), value: m.embedbuilder.templatesRulesBasicFieldSpamValue(), inline: false },
+          { name: m.embedbuilder.templatesRulesBasicFieldCleanName(), value: m.embedbuilder.templatesRulesBasicFieldCleanValue(), inline: false }
         ]
       },
       embed: {
-        title: '📜 Server Rules',
-        description: 'Please follow these rules to keep our community safe and fun for everyone.',
+        title: m.embedbuilder.templatesRulesBasicTitle(),
+        description: m.embedbuilder.templatesRulesBasicBody(),
         color: '#57F287',
         fields: [
-          { name: '1️⃣ Be Respectful', value: 'Treat all members with kindness and respect.', inline: false, id: 1 },
-          { name: '2️⃣ No Spam', value: 'Keep messages relevant and avoid excessive posting.', inline: false, id: 2 },
-          { name: '3️⃣ Keep it Clean', value: 'No inappropriate content or language.', inline: false, id: 3 }
+          { name: m.embedbuilder.templatesRulesBasicFieldRespectName(), value: m.embedbuilder.templatesRulesBasicFieldRespectValue(), inline: false, id: 1 },
+          { name: m.embedbuilder.templatesRulesBasicFieldSpamName(), value: m.embedbuilder.templatesRulesBasicFieldSpamValue(), inline: false, id: 2 },
+          { name: m.embedbuilder.templatesRulesBasicFieldCleanName(), value: m.embedbuilder.templatesRulesBasicFieldCleanValue(), inline: false, id: 3 }
         ],
-        footer: { text: 'Breaking rules may result in warnings or bans', icon_url: '' },
+        footer: { text: m.embedbuilder.templatesRulesBasicFooter(), icon_url: '' },
         author: { name: '', url: '', icon_url: '' },
         thumbnail: { url: '' },
         image: { url: '' }
@@ -181,21 +182,21 @@
     // Info Templates
     {
       id: 'info-basic',
-      name: 'Information Card',
-      description: 'General information layout',
+      name: m.embedbuilder.templatesInfoBasicName(),
+      description: m.embedbuilder.templatesInfoBasicDescription(),
       category: 'info',
       icon: "fa-circle-info",
       preview: {
-        title: 'ℹ️ Information',
-        description: 'Here\'s some important information you should know.',
+        title: m.embedbuilder.templatesInfoBasicTitle(),
+        description: m.embedbuilder.templatesInfoBasicBody(),
         color: '#3498DB',
-        footer: { text: 'Last updated: %date%' }
+        footer: { text: m.embedbuilder.templatesInfoBasicFooter() }
       },
       embed: {
-        title: 'ℹ️ Information',
-        description: 'Here\'s some important information you should know.',
+        title: m.embedbuilder.templatesInfoBasicTitle(),
+        description: m.embedbuilder.templatesInfoBasicBody(),
         color: '#3498DB',
-        footer: { text: 'Last updated: %date%', icon_url: '' },
+        footer: { text: m.embedbuilder.templatesInfoBasicFooter(), icon_url: '' },
         author: { name: '', url: '', icon_url: '' },
         thumbnail: { url: '' },
         image: { url: '' },
@@ -206,29 +207,29 @@
     // Interactive Templates
     {
       id: 'interactive-poll',
-      name: 'Poll Template',
-      description: 'Interactive poll with reactions',
+      name: m.embedbuilder.templatesInteractivePollName(),
+      description: m.embedbuilder.templatesInteractivePollDescription(),
       category: 'interactive',
       icon: "fa-bolt",
       preview: {
-        title: '📊 Community Poll',
-        description: 'Vote on this important community decision!',
+        title: m.embedbuilder.templatesInteractivePollTitle(),
+        description: m.embedbuilder.templatesInteractivePollBody(),
         color: '#9C59B6',
         fields: [
-          { name: '✅ Option A', value: 'React with ✅ for this choice', inline: true },
-          { name: '❌ Option B', value: 'React with ❌ for this choice', inline: true }
+          { name: m.embedbuilder.templatesInteractivePollFieldAName(), value: m.embedbuilder.templatesInteractivePollFieldAValue(), inline: true },
+          { name: m.embedbuilder.templatesInteractivePollFieldBName(), value: m.embedbuilder.templatesInteractivePollFieldBValue(), inline: true }
         ],
-        footer: { text: 'Poll ends in 24 hours' }
+        footer: { text: m.embedbuilder.templatesInteractivePollFooter() }
       },
       embed: {
-        title: '📊 Community Poll',
-        description: 'Vote on this important community decision!',
+        title: m.embedbuilder.templatesInteractivePollTitle(),
+        description: m.embedbuilder.templatesInteractivePollBody(),
         color: '#9C59B6',
         fields: [
-          { name: '✅ Option A', value: 'React with ✅ for this choice', inline: true, id: 1 },
-          { name: '❌ Option B', value: 'React with ❌ for this choice', inline: true, id: 2 }
+          { name: m.embedbuilder.templatesInteractivePollFieldAName(), value: m.embedbuilder.templatesInteractivePollFieldAValue(), inline: true, id: 1 },
+          { name: m.embedbuilder.templatesInteractivePollFieldBName(), value: m.embedbuilder.templatesInteractivePollFieldBValue(), inline: true, id: 2 }
         ],
-        footer: { text: 'Poll ends in 24 hours', icon_url: '' },
+        footer: { text: m.embedbuilder.templatesInteractivePollFooter(), icon_url: '' },
         author: { name: '', url: '', icon_url: '' },
         thumbnail: { url: '' },
         image: { url: '' }
@@ -238,39 +239,39 @@
     // Fun Templates
     {
       id: 'fun-celebration',
-      name: 'Celebration',
-      description: 'Celebrate achievements and milestones',
+      name: m.embedbuilder.templatesFunCelebrationName(),
+      description: m.embedbuilder.templatesFunCelebrationDescription(),
       category: 'fun',
       icon: "fa-trophy",
       preview: {
-        title: '🎉 Congratulations!',
-        description: 'Let\'s celebrate this amazing achievement!',
+        title: m.embedbuilder.templatesFunCelebrationTitle(),
+        description: m.embedbuilder.templatesFunCelebrationBody(),
         color: '#F1C40F',
-        author: { name: 'Achievement Unlocked!' },
+        author: { name: m.embedbuilder.templatesFunCelebrationAuthor() },
         thumbnail: { url: '🏆' }
       },
       embed: {
-        title: '🎉 Congratulations!',
-        description: 'Let\'s celebrate this amazing achievement!',
+        title: m.embedbuilder.templatesFunCelebrationTitle(),
+        description: m.embedbuilder.templatesFunCelebrationBody(),
         color: '#F1C40F',
-        author: { name: 'Achievement Unlocked!', url: '', icon_url: '' },
+        author: { name: m.embedbuilder.templatesFunCelebrationAuthor(), url: '', icon_url: '' },
         thumbnail: { url: '🏆' },
         image: { url: '' },
         fields: [],
         footer: { text: '', icon_url: '' }
       }
     }
-  ];
+  ]);
 
-  const categories = [
-    { id: 'all', name: 'All Templates', icon: "fa-sparkles" },
-    { id: 'welcome', name: 'Welcome', icon: "fa-users" },
-    { id: 'announcements', name: 'Announcements', icon: "fa-bell" },
-    { id: 'rules', name: 'Rules', icon: "fa-shield" },
-    { id: 'info', name: 'Information', icon: "fa-circle-info" },
-    { id: 'interactive', name: 'Interactive', icon: "fa-bolt" },
-    { id: 'fun', name: 'Fun', icon: "fa-trophy" }
-  ];
+  const categories = $derived([
+    { id: 'all', name: m.embedbuilder.templatesCategoryAll(), icon: "fa-sparkles" },
+    { id: 'welcome', name: m.common.welcome(), icon: "fa-users" },
+    { id: 'announcements', name: m.common.announcements(), icon: "fa-bell" },
+    { id: 'rules', name: m.common.rules(), icon: "fa-shield" },
+    { id: 'info', name: m.embedbuilder.templatesCategoryInfo(), icon: "fa-circle-info" },
+    { id: 'interactive', name: m.embedbuilder.templatesCategoryInteractive(), icon: "fa-bolt" },
+    { id: 'fun', name: m.embedbuilder.templatesCategoryFun(), icon: "fa-trophy" }
+  ]);
 
   let filteredTemplates = $derived(selectedCategory === 'all' 
     ? templates 
@@ -318,7 +319,7 @@
         onkeydown={(e) => handleKeydown(e, template)}
         role="button"
         tabindex="0"
-        aria-label="Select {template.name} template"
+        aria-label={m.embedbuilder.templatesSelectAria({ name: template.name })}
       >
         <!-- Template Header -->
         <div class="p-3 border-b" style="border-color: {$colorStore.primary}15;">
@@ -355,7 +356,7 @@
                 <!-- Fields indicator -->
                 {#if template.preview.fields && template.preview.fields.length > 0}
                   <div class="text-gray-400 text-xs">
-                    {template.preview.fields.length} field{template.preview.fields.length !== 1 ? 's' : ''}
+                    {template.preview.fields.length === 1 ? m.embedbuilder.templatesFieldCountOne({ count: 1 }) : m.embedbuilder.templatesFieldCountOther({ count: template.preview.fields.length })}
                   </div>
                 {/if}
               </div>
@@ -372,8 +373,8 @@
            style="background: {$colorStore.primary}10;">
         <i class="fa-utility-duo fa-regular fa-sparkles" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 32px;"></i>
       </div>
-      <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text};">No templates found</h3>
-      <p class="text-sm" style="color: {$colorStore.muted};">Try selecting a different category</p>
+      <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text};">{m.embedbuilder.templatesEmptyTitle()}</h3>
+      <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.templatesEmptyHint()}</p>
     </div>
   {/if}
 </div>

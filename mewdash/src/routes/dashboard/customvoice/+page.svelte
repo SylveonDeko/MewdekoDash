@@ -1,5 +1,6 @@
 <!-- routes/dashboard/customvoice/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import { onMount } from "svelte";
@@ -85,7 +86,7 @@
   const missingChannels = $derived(!hubChannelId || !categoryId);
 
   const autoSave = createAutoSave({
-    onError: () => showNotificationMessage("Couldn't save custom voice settings.", "error")
+    onError: () => showNotificationMessage(m.customvoice.notifySaveFailed(), "error")
   });
 
   // Helper Functions
@@ -98,13 +99,13 @@
 
   function getChannelName(channelId: bigint): string {
     const channel = voiceChannels.find(ch => ch.id === channelId.toString());
-    return channel?.name || `Channel ${channelId}`;
+    return channel?.name || m.common.channelFallback({ id: channelId.toString() });
   }
 
   function formatChannelStatus(channel: CustomVoiceChannelResponse): string {
-    if (channel.isLocked) return "🔒 Private";
-    if (channel.keepAlive) return "📌 Persistent";
-    return "🔓 Public";
+    if (channel.isLocked) return m.customvoice.statusPrivate();
+    if (channel.keepAlive) return m.customvoice.statusPersistent();
+    return m.customvoice.statusPublic();
   }
 
   function getTimeAgo(dateString: string): string {
@@ -113,10 +114,10 @@
     const diffMs = now.getTime() - past.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
-    return `${Math.floor(diffMins / 1440)}d ago`;
+    if (diffMins < 1) return m.common.justNow();
+    if (diffMins < 60) return m.common.agoMinutes({ count: diffMins });
+    if (diffMins < 1440) return m.common.agoHours({ count: Math.floor(diffMins / 60) });
+    return m.common.agoDays({ count: Math.floor(diffMins / 1440) });
   }
 
   // API Functions
@@ -187,8 +188,8 @@
 
     } catch (err) {
       logger.error("Failed to load custom voice data:", err);
-      error = err instanceof Error ? err.message : "Failed to load custom voice data";
-      showNotificationMessage("Failed to load custom voice data", "error");
+      error = err instanceof Error ? err.message : m.customvoice.notifyLoadFailed();
+      showNotificationMessage(m.customvoice.notifyLoadFailed(), "error");
 
       logger.debug(activeChannels)
     } finally {
@@ -328,19 +329,22 @@
   async function cleanupInactive() {
     if (!$currentGuild) return;
     if (!(await requestConfirmation({
-      message: `Delete every custom voice channel that has been inactive for ${cleanupHours} hours or more?`,
-      confirmText: "Clean up",
+      message: m.customvoice.cleanupConfirmMessage({ hours: cleanupHours }),
+      confirmText: m.customvoice.cleanupConfirm(),
       variant: "warning"
     }))) return;
     maintenanceBusy = true;
     try {
       const result = await customVoiceApi.cleanupInactiveChannels($currentGuild.id, cleanupHours);
-      showNotificationMessage(`Removed ${result.deletedChannels} inactive channel${result.deletedChannels === 1 ? "" : "s"}`, "success");
+      showNotificationMessage(
+        (result.deletedChannels === 1 ? m.customvoice.notifyCleanupDoneOne : m.customvoice.notifyCleanupDoneOther)({ count: result.deletedChannels }),
+        "success"
+      );
       await loadData();
       await loadStats();
     } catch (err) {
       logger.error("Failed to clean up channels:", err);
-      showNotificationMessage("Failed to clean up channels", "error");
+      showNotificationMessage(m.customvoice.notifyCleanupFailed(), "error");
     } finally {
       maintenanceBusy = false;
     }
@@ -349,9 +353,9 @@
   async function disableCustomVoice() {
     if (!$currentGuild) return;
     if (!(await requestConfirmation({
-      title: "Disable custom voice?",
-      message: "The hub channel stops creating channels and the configuration is removed. Existing channels are left alone.",
-      confirmText: "Disable"
+      title: m.customvoice.disableTitle(),
+      message: m.customvoice.disableMessage(),
+      confirmText: m.common.disable()
     }))) return;
     maintenanceBusy = true;
     try {
@@ -360,7 +364,7 @@
       await loadStats();
     } catch (err) {
       logger.error("Failed to disable custom voice:", err);
-      showNotificationMessage("Failed to disable custom voice", "error");
+      showNotificationMessage(m.customvoice.notifyDisableFailed(), "error");
     } finally {
       maintenanceBusy = false;
     }
@@ -372,7 +376,7 @@
     prefError = "";
     userPrefs = null;
     if (!/^\d{15,22}$/.test(prefUserId.trim())) {
-      prefError = "Enter a valid Discord user ID.";
+      prefError = m.common.invalidUserId();
       return;
     }
     prefLoading = true;
@@ -385,7 +389,7 @@
       };
     } catch (err) {
       logger.error("Failed to load user preferences:", err);
-      prefError = "No preferences found for that user, or the lookup failed.";
+      prefError = m.customvoice.prefErrorNotFound();
     } finally {
       prefLoading = false;
     }
@@ -396,12 +400,12 @@
     if (!$currentGuild || !userPrefs) return;
     const { defaultUserLimit: limit, defaultBitrate: bitrate } = prefForm;
     if (limit != null && !isIntInRange(limit, 0, 99)) {
-      prefError = "User limit must be a whole number from 0 to 99.";
+      prefError = m.customvoice.prefErrorLimit();
       autoSave.cancel("prefs");
       return;
     }
     if (bitrate != null && !isIntInRange(bitrate, 8, 384)) {
-      prefError = "Bitrate must be a whole number from 8 to 384.";
+      prefError = m.customvoice.prefErrorBitrate();
       autoSave.cancel("prefs");
       return;
     }
@@ -425,13 +429,13 @@
     
     try {
       await customVoiceApi.deleteCustomVoiceChannel($currentGuild.id, channelId);
-      showNotificationMessage("Channel deleted successfully!", "success");
+      showNotificationMessage(m.customvoice.notifyDeleted(), "success");
       
       // Remove from local array
       activeChannels = activeChannels.filter(ch => ch.channelId !== channelId);
     } catch (err) {
       logger.error("Failed to delete channel:", err);
-      showNotificationMessage("Failed to delete channel", "error");
+      showNotificationMessage(m.customvoice.notifyDeleteFailed(), "error");
     }
   }
 
@@ -440,7 +444,7 @@
 
     try {
       await customVoiceApi.updateCustomVoiceChannel($currentGuild.id, channelId, { isLocked: lock });
-      showNotificationMessage(`Channel ${lock ? 'locked' : 'unlocked'} successfully!`, "success");
+      showNotificationMessage(lock ? m.customvoice.notifyLocked() : m.customvoice.notifyUnlocked(), "success");
 
       // Update local array
       activeChannels = activeChannels.map(ch =>
@@ -448,7 +452,7 @@
       );
     } catch (err) {
       logger.error("Failed to update channel:", err);
-      showNotificationMessage("Failed to update channel", "error");
+      showNotificationMessage(m.customvoice.notifyUpdateFailed(), "error");
     }
   }
 
@@ -471,7 +475,7 @@
 </script>
 
 <svelte:head>
-  <title>Custom Voice Channels - Dashboard</title>
+  <title>{m.customvoice.pageHeadTitle()}</title>
 </svelte:head>
 
 {#snippet statusMessageContent()}
@@ -485,30 +489,30 @@
     <div class="mb-6 flex items-center gap-2 p-4 rounded-lg"
          style="background: #22c55e15; border: 1px solid #22c55e30;">
       <i class="fa-solid fa-circle-check" style="color: #22c55e; font-size: 16px;"></i>
-      <span class="text-sm" style="color: #22c55e">Custom Voice is enabled</span>
+      <span class="text-sm" style="color: #22c55e">{m.customvoice.statusEnabled()}</span>
     </div>
   {:else}
     <div class="mb-6 flex items-center gap-2 p-4 rounded-lg"
          style="background: #f59e0b15; border: 1px solid #f59e0b30;">
       <i class="fa-solid fa-circle-exclamation" style="color: #f59e0b; font-size: 16px;"></i>
-      <span class="text-sm" style="color: #f59e0b">Custom Voice is not configured</span>
+      <span class="text-sm" style="color: #f59e0b">{m.customvoice.statusNotConfigured()}</span>
     </div>
   {/if}
 {/snippet}
 
 <DashboardPageLayout
   statusMessages={statusMessageContent}
-  subtitle="Create and manage temporary voice channels"
+  subtitle={m.customvoice.pageSubtitle()}
   icon="fa-microphone"
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   tabs={[
-    { id: "config", label: "Configuration", icon: "fa-gear" },
-    { id: "channels", label: `Active Channels (${activeChannels.length || 0})`, icon: "fa-microphone" },
-    { id: "preferences", label: "User Preferences", icon: "fa-user" }
+    { id: "config", label: m.common.configuration(), icon: "fa-gear" },
+    { id: "channels", label: m.common.activeChannelsCount({ count: activeChannels.length || 0 }), icon: "fa-microphone" },
+    { id: "preferences", label: m.customvoice.prefsTitle(), icon: "fa-user" }
   ]}
   bind:activeTab
   {autoSave}
-  title="Custom Voice Channels"
+  title={m.features.customvoiceDescription()}
 >
   <!-- Content -->
     {#if loading}
@@ -525,13 +529,13 @@
         <!-- Basic Configuration -->
         <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-          <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Basic Configuration</h3>
+          <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.customvoice.basicTitle()}</h3>
 
           {#if missingChannels}
             <div class="mb-4 p-3 rounded-lg flex items-center gap-2 text-sm"
                  style="background: #f59e0b15; border: 1px solid #f59e0b30; color: #f59e0b;">
               <i class="fa-solid fa-circle-info"></i>
-              <span>Pick a hub channel and a category. Changes on this page save once both are set.</span>
+              <span>{m.customvoice.basicMissing()}</span>
             </div>
           {/if}
           
@@ -539,34 +543,34 @@
             <div>
               <span id="hub-voice-channel-span-stylecolor-ef4444span-label" class="block mb-2"
                     style="color: {$colorStore.text}">
-                Hub Voice Channel <span style="color: #ef4444">*</span>
+                {m.common.hubVoiceChannel()} <span style="color: #ef4444">*</span>
               </span>
               <DiscordSelector
                 type="custom"
                 customIcon="fa-microphone"
                 options={voiceChannels}
                 bind:selected={hubChannelId}
-                placeholder="Select voice channel..."
+                placeholder={m.common.selectVoiceChannelPlaceholder()}
                 onchange={handleHubChange} />
               <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-                Channel users join to create their own temporary voice channel
+                {m.customvoice.hubHint()}
               </p>
             </div>
 
             <div>
               <span id="channel-category-span-stylecolor-ef4444span-label" class="block mb-2"
                     style="color: {$colorStore.text}">
-                Channel Category <span style="color: #ef4444">*</span>
+                {m.customvoice.categoryLabel()} <span style="color: #ef4444">*</span>
               </span>
               <DiscordSelector
                 type="custom"
                 customIcon="fa-folder"
                 options={categories}
                 bind:selected={categoryId}
-                placeholder="Select category..."
+                placeholder={m.common.selectCategoryPlaceholder()}
                 onchange={handleCategoryChange} />
               <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-                Category where temporary channels will be created
+                {m.customvoice.categoryHint()}
               </p>
             </div>
           </div>
@@ -575,11 +579,11 @@
         <!-- Channel Defaults -->
         <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-          <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Channel Defaults</h3>
+          <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.customvoice.defaultsTitle()}</h3>
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
-              <label for="input-6869" class="block mb-2" style="color: {$colorStore.text}">Default Name Format</label>
+              <label for="input-6869" class="block mb-2" style="color: {$colorStore.text}">{m.customvoice.nameFormatLabel()}</label>
               <input id="input-6869"
                 type="text"
                 bind:value={defaultNameFormat}
@@ -587,15 +591,15 @@
                 onblur={() => handleBlur("defaultNameFormat")}
                 class="w-full p-3 rounded-lg border"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                placeholder="&#123;username&#125;'s Channel"
+                placeholder={m.customvoice.nameFormatPlaceholder({ token: "{username}" })}
               >
               <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-                Use &#123;username&#125; for the user's name
+                {m.customvoice.nameFormatHint({ token: "{username}" })}
               </p>
             </div>
 
             <div>
-              <label for="input-7323" class="block mb-2" style="color: {$colorStore.text}">Default User Limit</label>
+              <label for="input-7323" class="block mb-2" style="color: {$colorStore.text}">{m.common.defaultUserLimit()}</label>
               <input id="input-7323"
                 type="number"
                 bind:value={defaultUserLimit}
@@ -607,13 +611,13 @@
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               >
               <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-                0 = unlimited
+                {m.common.zeroMeansUnlimited()}
               </p>
             </div>
 
             <div>
               <span id="default-bitrate-label" class="block mb-2"
-                    style="color: {$colorStore.text}">Default Bitrate</span>
+                    style="color: {$colorStore.text}">{m.customvoice.bitrateLabel()}</span>
               <DiscordSelector
                 type="custom"
                 customIcon="fa-volume"
@@ -625,7 +629,7 @@
                   { id: "384", name: "384kbps", label: "384kbps" }
                 ]}
                 selected={defaultBitrate.toString()}
-                placeholder="Select bitrate..."
+                placeholder={m.customvoice.bitratePlaceholder()}
                 searchable={false}
                 onchange={handleBitrateChange}
               />
@@ -636,7 +640,7 @@
         <!-- Channel Management -->
         <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-          <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Channel Management</h3>
+          <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.customvoice.managementTitle()}</h3>
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-4">
@@ -647,13 +651,12 @@
                   onchange={() => handleToggle("deleteWhenEmpty")}
                   class="w-4 h-4"
                 >
-                <span style="color: {$colorStore.text}">Delete channels when empty</span>
+                <span style="color: {$colorStore.text}">{m.common.deleteChannelsWhenEmpty()}</span>
               </label>
 
               {#if toggles.deleteWhenEmpty}
                 <div class="ml-7">
-                  <label for="input-5476" class="block mb-2" style="color: {$colorStore.text}">Empty timeout
-                    (seconds)</label>
+                  <label for="input-5476" class="block mb-2" style="color: {$colorStore.text}">{m.customvoice.emptyTimeout()}</label>
                   <input id="input-5476"
                     type="number"
                     bind:value={emptyChannelTimeout}
@@ -674,7 +677,7 @@
                   onchange={() => handleToggle("allowMultipleChannels")}
                   class="w-4 h-4"
                 >
-                <span style="color: {$colorStore.text}">Allow multiple channels per user</span>
+                <span style="color: {$colorStore.text}">{m.customvoice.toggleMultiple()}</span>
               </label>
 
               <label class="flex items-center gap-3">
@@ -684,7 +687,7 @@
                   onchange={() => handleToggle("persistUserPreferences")}
                   class="w-4 h-4"
                 >
-                <span style="color: {$colorStore.text}">Remember user preferences</span>
+                <span style="color: {$colorStore.text}">{m.customvoice.toggleRemember()}</span>
               </label>
 
               <label class="flex items-center gap-3">
@@ -694,7 +697,7 @@
                   onchange={() => handleToggle("autoPermission")}
                   class="w-4 h-4"
                 >
-                <span style="color: {$colorStore.text}">Auto-manage channel permissions</span>
+                <span style="color: {$colorStore.text}">{m.customvoice.toggleAutoPermission()}</span>
               </label>
             </div>
 
@@ -706,7 +709,7 @@
                   onchange={() => handleToggle("allowNameCustomization")}
                   class="w-4 h-4"
                 >
-                <span style="color: {$colorStore.text}">Allow name customization</span>
+                <span style="color: {$colorStore.text}">{m.customvoice.toggleName()}</span>
               </label>
 
               <label class="flex items-center gap-3">
@@ -716,7 +719,7 @@
                   onchange={() => handleToggle("allowUserLimitCustomization")}
                   class="w-4 h-4"
                 >
-                <span style="color: {$colorStore.text}">Allow user limit customization</span>
+                <span style="color: {$colorStore.text}">{m.customvoice.toggleUserLimit()}</span>
               </label>
 
               <label class="flex items-center gap-3">
@@ -726,7 +729,7 @@
                   onchange={() => handleToggle("allowBitrateCustomization")}
                   class="w-4 h-4"
                 >
-                <span style="color: {$colorStore.text}">Allow bitrate customization</span>
+                <span style="color: {$colorStore.text}">{m.customvoice.toggleBitrate()}</span>
               </label>
 
               <label class="flex items-center gap-3">
@@ -736,7 +739,7 @@
                   onchange={() => handleToggle("allowLocking")}
                   class="w-4 h-4"
                 >
-                <span style="color: {$colorStore.text}">Allow channel locking</span>
+                <span style="color: {$colorStore.text}">{m.customvoice.toggleLocking()}</span>
               </label>
 
               <label class="flex items-center gap-3">
@@ -746,7 +749,7 @@
                   onchange={() => handleToggle("allowUserManagement")}
                   class="w-4 h-4"
                 >
-                <span style="color: {$colorStore.text}">Allow user management</span>
+                <span style="color: {$colorStore.text}">{m.customvoice.toggleUserManagement()}</span>
               </label>
             </div>
           </div>
@@ -759,10 +762,10 @@
         {#if stats?.enabled}
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             {#each [
-              { label: "Total created", value: stats.totalChannels ?? 0, icon: "fa-microphone" },
-              { label: "Active last hour", value: stats.activeChannels ?? 0, icon: "fa-bolt" },
-              { label: "Locked", value: stats.lockedChannels ?? 0, icon: "fa-lock" },
-              { label: "Kept alive", value: stats.keepAliveChannels ?? 0, icon: "fa-thumbtack" }
+              { label: m.customvoice.statTotal(), value: stats.totalChannels ?? 0, icon: "fa-microphone" },
+              { label: m.customvoice.statActive(), value: stats.activeChannels ?? 0, icon: "fa-bolt" },
+              { label: m.common.locked(), value: stats.lockedChannels ?? 0, icon: "fa-lock" },
+              { label: m.customvoice.statKeptAlive(), value: stats.keepAliveChannels ?? 0, icon: "fa-thumbtack" }
             ] as stat}
               <div class="rounded-xl border p-4" style="border-color: {$colorStore.primary}20; background: {$colorStore.primary}05;">
                 <div class="flex items-center gap-2 mb-1">
@@ -777,18 +780,18 @@
 
         <div class="flex flex-wrap items-center gap-3">
           <div class="flex items-center gap-2">
-            <label for="cleanup-hours" class="text-sm" style="color: {$colorStore.muted}">Inactive for</label>
+            <label for="cleanup-hours" class="text-sm" style="color: {$colorStore.muted}">{m.customvoice.cleanupInactiveFor()}</label>
             <input id="cleanup-hours" type="number" min="1" max="720" bind:value={cleanupHours}
                    class="w-20 p-2 rounded-lg border min-h-[40px] text-sm"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-            <span class="text-sm" style="color: {$colorStore.muted}">hours</span>
+            <span class="text-sm" style="color: {$colorStore.muted}">{m.customvoice.cleanupHours()}</span>
           </div>
           <button disabled={maintenanceBusy}
                   class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[40px] disabled:opacity-50"
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                   onclick={cleanupInactive}>
             <i class="fa-solid fa-broom"></i>
-            Clean up inactive channels
+            {m.customvoice.cleanupButton()}
           </button>
           {#if config?.enabled}
             <button disabled={maintenanceBusy}
@@ -796,7 +799,7 @@
                     style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
                     onclick={disableCustomVoice}>
               <i class="fa-solid fa-power-off"></i>
-              Disable custom voice
+              {m.customvoice.disableButton()}
             </button>
           {/if}
         </div>
@@ -804,8 +807,8 @@
         {#if activeChannels === undefined || !activeChannels || activeChannels.length === 0}
           <div class="text-center py-12">
             <i class="fa-utility-duo fa-regular fa-microphone" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-            <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">No active channels</h3>
-            <p style="color: {$colorStore.muted}">Custom voice channels will appear here when users create them</p>
+            <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">{m.customvoice.emptyTitle()}</h3>
+            <p style="color: {$colorStore.muted}">{m.customvoice.emptyText()}</p>
           </div>
         {:else}
           <div class="grid gap-4">
@@ -828,7 +831,7 @@
                   </div>
 
                   <div class="flex items-center gap-4 text-sm" style="color: {$colorStore.muted}">
-                    <span>Owner: {channel.ownerId}</span>
+                    <span>{m.customvoice.channelOwner({ id: channel.ownerId.toString() })}</span>
                     <span>{formatChannelStatus(channel)}</span>
                     <span>{getTimeAgo(channel.createdAt)}</span>
                   </div>
@@ -839,7 +842,7 @@
                     class="p-2 rounded-lg transition-colors"
                     style="color: {$colorStore.muted}; hover:background: {$colorStore.primary}20;"
                     onclick={() => lockChannel(channel.channelId, !channel.isLocked)}
-                    title={channel.isLocked ? "Unlock channel" : "Lock channel"}
+                    title={channel.isLocked ? m.customvoice.channelUnlock() : m.customvoice.channelLock()}
                   >
                     {#if channel.isLocked}
                       <i class="fa-solid fa-unlock" style="font-size: 16px;"></i>
@@ -848,10 +851,10 @@
                     {/if}
                   </button>
 
-                  <button aria-label="Delete channel"
+                  <button aria-label={m.customvoice.channelDelete()}
                     class="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/20"
                           onclick={() => deleteChannel(channel.channelId)}
-                    title="Delete channel"
+                    title={m.customvoice.channelDelete()}
                   >
                     <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
                   </button>
@@ -868,19 +871,19 @@
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <div class="flex items-center gap-3 mb-2">
             <i class="fa-utility-duo fa-regular fa-user" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h3 class="text-xl font-bold" style="color: {$colorStore.text}">User Preferences</h3>
+            <h3 class="text-xl font-bold" style="color: {$colorStore.text}">{m.customvoice.prefsTitle()}</h3>
           </div>
-          <p class="text-sm mb-4" style="color: {$colorStore.muted}">Look up a member to view or change the defaults applied when they create a channel.</p>
+          <p class="text-sm mb-4" style="color: {$colorStore.muted}">{m.customvoice.prefsText()}</p>
 
           <form class="flex flex-col sm:flex-row gap-3" onsubmit={(e) => { e.preventDefault(); loadUserPreferences(); }}>
-            <input type="text" inputmode="numeric" bind:value={prefUserId} placeholder="Discord user ID" aria-label="User ID"
+            <input type="text" inputmode="numeric" bind:value={prefUserId} placeholder={m.customvoice.prefsUserIdPlaceholder()} aria-label={m.common.userId()}
                    class="flex-1 p-3 rounded-lg border min-h-[44px]"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             <button type="submit" disabled={prefLoading || !prefUserId.trim()}
                     class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
               {#if prefLoading}<i class="fa-solid fa-spinner fa-spin"></i>{:else}<i class="fa-solid fa-magnifying-glass"></i>{/if}
-              Load
+              {m.common.load()}
             </button>
           </form>
 
@@ -895,23 +898,23 @@
           {#if userPrefs}
             <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4" transition:slide>
               <div>
-                <label for="pref-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Default channel name</label>
+                <label for="pref-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.customvoice.prefsName()}</label>
                 <input id="pref-name" type="text" bind:value={prefForm.defaultName}
-                       oninput={scheduleUserPreferencesSave} onblur={() => autoSave.flush("prefs")} placeholder="Use server default"
+                       oninput={scheduleUserPreferencesSave} onblur={() => autoSave.flush("prefs")} placeholder={m.common.useServerDefault()}
                        class="w-full p-3 rounded-lg border min-h-[44px]"
                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
               </div>
               <div>
-                <label for="pref-limit" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Default user limit</label>
+                <label for="pref-limit" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.defaultUserLimit()}</label>
                 <input id="pref-limit" type="number" min="0" max="99" bind:value={prefForm.defaultUserLimit}
-                       oninput={scheduleUserPreferencesSave} onblur={() => autoSave.flush("prefs")} placeholder="Server default"
+                       oninput={scheduleUserPreferencesSave} onblur={() => autoSave.flush("prefs")} placeholder={m.common.serverDefault()}
                        class="w-full p-3 rounded-lg border min-h-[44px]"
                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
               </div>
               <div>
-                <label for="pref-bitrate" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Default bitrate (kbps)</label>
+                <label for="pref-bitrate" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.customvoice.prefsBitrate()}</label>
                 <input id="pref-bitrate" type="number" min="8" max="384" bind:value={prefForm.defaultBitrate}
-                       oninput={scheduleUserPreferencesSave} onblur={() => autoSave.flush("prefs")} placeholder="Server default"
+                       oninput={scheduleUserPreferencesSave} onblur={() => autoSave.flush("prefs")} placeholder={m.common.serverDefault()}
                        class="w-full p-3 rounded-lg border min-h-[44px]"
                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
               </div>

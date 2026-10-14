@@ -1,5 +1,6 @@
 <!-- lib/components/specialized/TriggerAdvancedSettings.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { slide } from "svelte/transition";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
@@ -8,59 +9,59 @@
   /**
    * How a trigger picks between multiple responses.
    */
-  const responseModes = [
-    { id: "0", name: "Always the first response", icon: "fa-1" },
-    { id: "1", name: "Random response", icon: "fa-shuffle" },
-    { id: "2", name: "In order, one per use", icon: "fa-arrow-right-arrow-left" },
-    { id: "3", name: "Send all of them", icon: "fa-layer-group" }
-  ];
+  const responseModes = $derived([
+    { id: "0", name: m.chatTriggers.advancedModeFirst(), icon: "fa-1" },
+    { id: "1", name: m.chatTriggers.advancedModeRandom(), icon: "fa-shuffle" },
+    { id: "2", name: m.chatTriggers.advancedModeInOrder(), icon: "fa-arrow-right-arrow-left" },
+    { id: "3", name: m.chatTriggers.advancedModeAll(), icon: "fa-layer-group" }
+  ]);
 
   /**
    * Who a trigger's cooldown applies to.
    */
-  const cooldownScopes = [
-    { id: "0", name: "Each member separately", icon: "fa-user" },
-    { id: "1", name: "Everyone in the channel", icon: "fa-hashtag" },
-    { id: "2", name: "The whole server", icon: "fa-server" }
-  ];
+  const cooldownScopes = $derived([
+    { id: "0", name: m.chatTriggers.advancedScopeMember(), icon: "fa-user" },
+    { id: "1", name: m.chatTriggers.advancedScopeChannel(), icon: "fa-hashtag" },
+    { id: "2", name: m.chatTriggers.advancedScopeServer(), icon: "fa-server" }
+  ]);
 
   /**
    * Bot events a trigger can respond to instead of a message.
    */
-  const eventTypes = [
-    { id: "0", name: "Not an event trigger", icon: "fa-ban" },
-    { id: "1", name: "Member levels up", icon: "fa-arrow-up" },
-    { id: "2", name: "Member levels down", icon: "fa-arrow-down" },
-    { id: "3", name: "Member joins the server", icon: "fa-door-open" },
-    { id: "4", name: "Member leaves the server", icon: "fa-door-closed" },
-    { id: "5", name: "Member joins a voice channel", icon: "fa-microphone" },
-    { id: "6", name: "Member leaves a voice channel", icon: "fa-microphone-slash" },
-    { id: "7", name: "Member starts boosting", icon: "fa-gem" },
-    { id: "8", name: "Member stops boosting", icon: "fa-gem" },
-    { id: "9", name: "Ticket opened", icon: "fa-ticket" },
-    { id: "10", name: "Ticket closed", icon: "fa-ticket" },
-    { id: "11", name: "Giveaway won", icon: "fa-gift" }
-  ];
+  const eventTypes = $derived([
+    { id: "0", name: m.chatTriggers.advancedEventNone(), icon: "fa-ban" },
+    { id: "1", name: m.chatTriggers.advancedEventLevelUp(), icon: "fa-arrow-up" },
+    { id: "2", name: m.chatTriggers.advancedEventLevelDown(), icon: "fa-arrow-down" },
+    { id: "3", name: m.chatTriggers.advancedEventJoin(), icon: "fa-door-open" },
+    { id: "4", name: m.chatTriggers.advancedEventLeave(), icon: "fa-door-closed" },
+    { id: "5", name: m.chatTriggers.advancedEventVoiceJoin(), icon: "fa-microphone" },
+    { id: "6", name: m.chatTriggers.advancedEventVoiceLeave(), icon: "fa-microphone-slash" },
+    { id: "7", name: m.chatTriggers.advancedEventBoostStart(), icon: "fa-gem" },
+    { id: "8", name: m.chatTriggers.advancedEventBoostStop(), icon: "fa-gem" },
+    { id: "9", name: m.chatTriggers.advancedEventTicketOpen(), icon: "fa-ticket" },
+    { id: "10", name: m.chatTriggers.advancedEventTicketClose(), icon: "fa-ticket" },
+    { id: "11", name: m.chatTriggers.advancedEventGiveawayWon(), icon: "fa-gift" }
+  ]);
 
   /**
    * How a trigger's prefix requirement is resolved. Mirrors RequirePrefixType in the bot.
    */
-  const prefixTypes = [
-    { id: "0", name: "No prefix needed", icon: "fa-ban" },
-    { id: "1", name: "Global prefix", icon: "fa-globe" },
-    { id: "2", name: "Server prefix, or global", icon: "fa-server" },
-    { id: "3", name: "Server prefix if one is set", icon: "fa-server" },
-    { id: "4", name: "A custom prefix", icon: "fa-pen" }
-  ];
+  const prefixTypes = $derived([
+    { id: "0", name: m.chatTriggers.advancedPrefixNone(), icon: "fa-ban" },
+    { id: "1", name: m.chatTriggers.advancedPrefixGlobal(), icon: "fa-globe" },
+    { id: "2", name: m.chatTriggers.advancedPrefixServerOrGlobal(), icon: "fa-server" },
+    { id: "3", name: m.chatTriggers.advancedPrefixServerIfSet(), icon: "fa-server" },
+    { id: "4", name: m.chatTriggers.advancedPrefixCustom(), icon: "fa-pen" }
+  ]);
 
   /**
    * Who receives the roles a trigger grants or removes.
    */
-  const roleGrantTypes = [
-    { id: "0", name: "Whoever used it", icon: "fa-user" },
-    { id: "1", name: "People they mentioned", icon: "fa-at" },
-    { id: "2", name: "Both", icon: "fa-users" }
-  ];
+  const roleGrantTypes = $derived([
+    { id: "0", name: m.chatTriggers.advancedGrantUser(), icon: "fa-user" },
+    { id: "1", name: m.chatTriggers.advancedGrantMentioned(), icon: "fa-at" },
+    { id: "2", name: m.common.both(), icon: "fa-users" }
+  ]);
 
   interface Props {
     trigger: ChatTrigger;
@@ -137,18 +138,18 @@
     }
   }
 
-  const sections = [
-    { key: "matching", title: "When it matches", icon: "fa-crosshairs", hint: "Prefix, position and who may use it" },
-    { key: "delivery", title: "How it responds", icon: "fa-paper-plane", hint: "Replies, DMs and clean-up" },
-    { key: "roles", title: "Roles", icon: "fa-user-tag", hint: "Roles to grant or remove" },
-    { key: "limits", title: "Limits", icon: "fa-gauge-high", hint: "Cooldowns, expiry and who may use it" },
-    { key: "economy", title: "Costs and rewards", icon: "fa-coins", hint: "Currency and XP" },
-    { key: "counter", title: "Counter requirement", icon: "fa-hashtag", hint: "Only fire within a counter range" },
-    { key: "event", title: "Fire on an event", icon: "fa-bolt", hint: "Respond to level ups, joins and more" },
-    { key: "organise", title: "Organisation", icon: "fa-folder-tree", hint: "Category, chaining and bots" }
-  ];
+  const sections = $derived([
+    { key: "matching", title: m.chatTriggers.advancedSectionMatchingTitle(), icon: "fa-crosshairs", hint: m.chatTriggers.advancedSectionMatchingHint() },
+    { key: "delivery", title: m.chatTriggers.advancedSectionDeliveryTitle(), icon: "fa-paper-plane", hint: m.chatTriggers.advancedSectionDeliveryHint() },
+    { key: "roles", title: m.common.roles(), icon: "fa-user-tag", hint: m.chatTriggers.advancedSectionRolesHint() },
+    { key: "limits", title: m.chatTriggers.advancedSectionLimitsTitle(), icon: "fa-gauge-high", hint: m.chatTriggers.advancedSectionLimitsHint() },
+    { key: "economy", title: m.chatTriggers.advancedSectionEconomyTitle(), icon: "fa-coins", hint: m.chatTriggers.advancedSectionEconomyHint() },
+    { key: "counter", title: m.chatTriggers.advancedSectionCounterTitle(), icon: "fa-hashtag", hint: m.chatTriggers.advancedSectionCounterHint() },
+    { key: "event", title: m.chatTriggers.advancedSectionEventTitle(), icon: "fa-bolt", hint: m.chatTriggers.advancedSectionEventHint() },
+    { key: "organise", title: m.chatTriggers.advancedSectionOrganiseTitle(), icon: "fa-folder-tree", hint: m.chatTriggers.advancedSectionOrganiseHint() }
+  ]);
 
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayNames = $derived([m.chatTriggers.advancedDaySun(), m.chatTriggers.advancedDayMon(), m.chatTriggers.advancedDayTue(), m.chatTriggers.advancedDayWed(), m.chatTriggers.advancedDayThu(), m.chatTriggers.advancedDayFri(), m.chatTriggers.advancedDaySat()]);
 
   /**
    * The extra responses as one per line, converted from the "@@@" separated form the bot stores.
@@ -273,7 +274,7 @@
         {#if count > 0}
           <span class="text-xs px-2 py-0.5 rounded-full font-medium"
                 style="background: {colors.primary}25; color: {colors.primary};">
-            {count} set
+            {m.common.setCount({ count })}
           </span>
         {/if}
         <i class="fa-solid {openSection === section.key ? 'fa-chevron-up' : 'fa-chevron-down'}"
@@ -286,12 +287,12 @@
 
           {#if section.key === "matching"}
             <div>
-              <span class="block text-sm mb-1" style="color: {colors.text}">Prefix requirement</span>
+              <span class="block text-sm mb-1" style="color: {colors.text}">{m.chatTriggers.pageLabelPrefixType()}</span>
               <DiscordSelector
                 type="custom"
                 options={prefixTypes}
                 selected={String(trigger.prefixType ?? 0)}
-                placeholder="No prefix needed"
+                placeholder={m.chatTriggers.advancedPrefixNone()}
                 onchange={(d) => { trigger.prefixType = Number(d.selected); onchange?.(); }}
               />
             </div>
@@ -299,7 +300,7 @@
             {#if trigger.prefixType === 4}
               <div>
                 <label for="custom-prefix-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                  Custom prefix
+                  {m.chatTriggers.advancedCustomPrefix()}
                 </label>
                 <input id="custom-prefix-{trigger.id}" type="text"
                        bind:value={trigger.customPrefix} onchange={() => onchange?.()}
@@ -311,36 +312,36 @@
             <ToggleRow
               {colors}
               checked={trigger.containsAnywhere}
-              title="Match anywhere in the message"
-              subtitle="Off means the whole message has to be the trigger."
+              title={m.chatTriggers.advancedMatchAnywhere()}
+              subtitle={m.chatTriggers.advancedMatchAnywhereHint()}
               onchange={(v) => { trigger.containsAnywhere = v; onchange?.(); }}
             />
 
             <ToggleRow
               {colors}
               checked={trigger.allowTarget}
-              title="Allow targeting someone"
-              subtitle="Lets people add a name after the trigger, used by %target%."
+              title={m.chatTriggers.advancedAllowTarget()}
+              subtitle={m.chatTriggers.advancedAllowTargetHint()}
               onchange={(v) => { trigger.allowTarget = v; onchange?.(); }}
             />
 
             <ToggleRow
               {colors}
               checked={trigger.ownerOnly}
-              title="Bot owner only"
-              subtitle="Nobody else can use it, including server administrators."
+              title={m.chatTriggers.advancedOwnerOnly()}
+              subtitle={m.chatTriggers.advancedOwnerOnlyHint()}
               onchange={(v) => { trigger.ownerOnly = v; onchange?.(); }}
             />
 
           {:else if section.key === "roles"}
             <div>
-              <span class="block text-sm mb-1" style="color: {colors.text}">Roles to grant</span>
+              <span class="block text-sm mb-1" style="color: {colors.text}">{m.common.rolesToGrant()}</span>
               <DiscordSelector
                 type="role"
                 options={roleOptions}
                 multiple={true}
                 selected={roleSelection(trigger.grantedRoles)}
-                placeholder="No roles granted"
+                placeholder={m.chatTriggers.advancedRolesNoneGranted()}
                 onchange={(d) => {
                   const ids = (d.selected as string[]) ?? [];
                   trigger.grantedRoles = ids.length > 0 ? ids.join("@@@") : null;
@@ -350,13 +351,13 @@
             </div>
 
             <div>
-              <span class="block text-sm mb-1" style="color: {colors.text}">Roles to remove</span>
+              <span class="block text-sm mb-1" style="color: {colors.text}">{m.chatTriggers.advancedRolesToRemove()}</span>
               <DiscordSelector
                 type="role"
                 options={roleOptions}
                 multiple={true}
                 selected={roleSelection(trigger.removedRoles)}
-                placeholder="No roles removed"
+                placeholder={m.chatTriggers.advancedRolesNoneRemoved()}
                 onchange={(d) => {
                   const ids = (d.selected as string[]) ?? [];
                   trigger.removedRoles = ids.length > 0 ? ids.join("@@@") : null;
@@ -367,12 +368,12 @@
 
             {#if trigger.grantedRoles || trigger.removedRoles}
               <div>
-                <span class="block text-sm mb-1" style="color: {colors.text}">Apply those roles to</span>
+                <span class="block text-sm mb-1" style="color: {colors.text}">{m.chatTriggers.advancedRolesApplyTo()}</span>
                 <DiscordSelector
                   type="custom"
                   options={roleGrantTypes}
                   selected={String(trigger.roleGrantType ?? 0)}
-                  placeholder="Whoever used it"
+                  placeholder={m.chatTriggers.advancedGrantUser()}
                   onchange={(d) => { trigger.roleGrantType = Number(d.selected); onchange?.(); }}
                 />
               </div>
@@ -382,16 +383,16 @@
             <ToggleRow
               {colors}
               checked={trigger.replyToTrigger}
-              title="Reply to the message"
-              subtitle="Shows the response as a reply so it is clear what it answered."
+              title={m.chatTriggers.advancedReplyToMessage()}
+              subtitle={m.chatTriggers.advancedReplyToMessageHint()}
               onchange={(v) => { trigger.replyToTrigger = v; onchange?.(); }}
             />
 
             <ToggleRow
               {colors}
               checked={trigger.dmResponse}
-              title="Send the response as a DM"
-              subtitle="Replies privately instead of in the channel."
+              title={m.chatTriggers.advancedSendAsDm()}
+              subtitle={m.chatTriggers.advancedSendAsDmHint()}
               onchange={(v) => { trigger.dmResponse = v; onchange?.(); }}
             />
 
@@ -399,10 +400,10 @@
               {colors}
               checked={trigger.autoDeleteTrigger}
               disabled={trigger.reactToTrigger}
-              title="Delete the triggering message"
+              title={m.chatTriggers.advancedDeleteTrigger()}
               subtitle={trigger.reactToTrigger
-                ? "Unavailable while reacting to the message, since there would be nothing left to react to."
-                : "Removes what the person typed once the trigger fires."}
+                ? m.chatTriggers.advancedDeleteTriggerHintBlocked()
+                : m.chatTriggers.advancedDeleteTriggerHint()}
               onchange={(v) => { trigger.autoDeleteTrigger = v; onchange?.(); }}
             />
 
@@ -410,24 +411,24 @@
               {colors}
               checked={trigger.reactToTrigger}
               disabled={trigger.autoDeleteTrigger}
-              title="React to the message instead"
+              title={m.chatTriggers.advancedReactInstead()}
               subtitle={trigger.autoDeleteTrigger
-                ? "Unavailable while deleting the triggering message."
-                : "Puts the trigger's emoji on their message rather than on the reply."}
+                ? m.chatTriggers.advancedReactInsteadHintBlocked()
+                : m.chatTriggers.advancedReactInsteadHint()}
               onchange={(v) => { trigger.reactToTrigger = v; onchange?.(); }}
             />
 
             <ToggleRow
               {colors}
               checked={trigger.noRespond}
-              title="Send no message at all"
-              subtitle="Useful when the trigger only exists to hand out roles or run another trigger."
+              title={m.chatTriggers.advancedNoMessage()}
+              subtitle={m.chatTriggers.advancedNoMessageHint()}
               onchange={(v) => { trigger.noRespond = v; onchange?.(); }}
             />
 
             <div>
               <label for="reactions-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                Emoji to react with
+                {m.common.emojiToReactWith()}
               </label>
               <input id="reactions-{trigger.id}" type="text"
                      value={(trigger.reactions ?? "").split("@@@").join(" ")}
@@ -441,49 +442,49 @@
                      class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                      style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               <p class="text-xs mt-1" style="color: {colors.muted}">
-                Separate with spaces. Up to six, added one per second.
+                {m.chatTriggers.advancedReactEmojiHint()}
               </p>
             </div>
 
             <div>
               <label for="del-after-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                Delete the response after
+                {m.chatTriggers.advancedDeleteResponseAfter()}
               </label>
               <div class="flex items-center gap-2">
                 <input id="del-after-{trigger.id}" type="number" min="0" max="86400"
                        bind:value={trigger.deleteResponseAfter} onchange={() => onchange?.()}
                        class="w-28 min-h-[44px] px-3 rounded-lg border text-base"
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
-                <span class="text-sm" style="color: {colors.muted}">seconds (0 keeps it)</span>
+                <span class="text-sm" style="color: {colors.muted}">{m.chatTriggers.advancedDeleteResponseSeconds()}</span>
               </div>
             </div>
 
             <div>
               <label for="extra-responses-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                Extra responses
+                {m.chatTriggers.advancedExtraResponses()}
               </label>
               <textarea
                 id="extra-responses-{trigger.id}"
                 rows="3"
                 value={extraResponsesText}
                 onchange={(e) => setExtraResponses((e.target as HTMLTextAreaElement).value)}
-                placeholder="One response per line"
+                placeholder={m.chatTriggers.advancedExtraResponsesPlaceholder()}
                 class="w-full p-3 rounded-lg border font-mono text-base"
                 style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
               ></textarea>
               <p class="text-xs mt-1" style="color: {colors.muted}">
-                One per line. Repeat a line to make it more likely to be picked.
+                {m.chatTriggers.advancedExtraResponsesHint()}
               </p>
             </div>
 
             {#if (trigger.additionalResponses ?? "").trim().length > 0}
               <div>
-                <span class="block text-sm mb-1" style="color: {colors.text}">When there are several responses</span>
+                <span class="block text-sm mb-1" style="color: {colors.text}">{m.chatTriggers.advancedResponseMode()}</span>
                 <DiscordSelector
                   type="custom"
                   options={responseModes}
                   selected={String(trigger.responseMode ?? 0)}
-                  placeholder="Pick a response mode"
+                  placeholder={m.chatTriggers.advancedResponseModePlaceholder()}
                   onchange={(d) => { trigger.responseMode = Number(d.selected); onchange?.(); }}
                 />
               </div>
@@ -493,7 +494,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label for="cd-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                  Cooldown (seconds)
+                  {m.common.cooldownSeconds()}
                 </label>
                 <input id="cd-{trigger.id}" type="number" min="0"
                        bind:value={trigger.cooldownSeconds} onchange={() => onchange?.()}
@@ -501,12 +502,12 @@
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               </div>
               <div>
-                <span class="block text-sm mb-1" style="color: {colors.text}">Cooldown applies to</span>
+                <span class="block text-sm mb-1" style="color: {colors.text}">{m.chatTriggers.advancedCooldownAppliesTo()}</span>
                 <DiscordSelector
                   type="custom"
                   options={cooldownScopes}
                   selected={String(trigger.cooldownScope ?? 0)}
-                  placeholder="Each member separately"
+                  placeholder={m.chatTriggers.advancedScopeMember()}
                   onchange={(d) => { trigger.cooldownScope = Number(d.selected); onchange?.(); }}
                 />
               </div>
@@ -515,7 +516,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label for="max-uses-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                  Stop after this many uses
+                  {m.chatTriggers.advancedMaxUses()}
                 </label>
                 <input id="max-uses-{trigger.id}" type="number" min="0"
                        value={trigger.maxUses ?? 0}
@@ -527,12 +528,12 @@
                        class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
                 <p class="text-xs mt-1" style="color: {colors.muted}">
-                  Used {trigger.useCount ?? 0} times so far. 0 means no limit.
+                  {Number(trigger.useCount ?? 0) === 1 ? m.chatTriggers.advancedMaxUsesHintOne({ count: 1 }) : m.chatTriggers.advancedMaxUsesHintOther({ count: Number(trigger.useCount ?? 0) })}
                 </p>
               </div>
               <div>
                 <label for="expiry-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                  Stop firing after
+                  {m.chatTriggers.advancedExpiry()}
                 </label>
                 <input id="expiry-{trigger.id}" type="datetime-local"
                        value={expiryInputValue()}
@@ -545,7 +546,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label for="acct-age-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                  Minimum account age (minutes)
+                  {m.common.minimumAccountAgeMinutes()}
                 </label>
                 <input id="acct-age-{trigger.id}" type="number" min="0"
                        bind:value={trigger.minAccountAgeMinutes} onchange={() => onchange?.()}
@@ -554,7 +555,7 @@
               </div>
               <div>
                 <label for="member-age-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                  Minimum time in server (minutes)
+                  {m.chatTriggers.advancedMinMembership()}
                 </label>
                 <input id="member-age-{trigger.id}" type="number" min="0"
                        bind:value={trigger.minServerMembershipMinutes} onchange={() => onchange?.()}
@@ -563,7 +564,7 @@
               </div>
             </div>
             <p class="text-xs" style="color: {colors.muted}">
-              These keep brand new accounts from using a trigger. Leave at 0 for no restriction.
+              {m.chatTriggers.advancedMinAgeHint()}
             </p>
 
             <div class="pt-2 border-t" style="border-color: {colors.primary}20;">
@@ -571,8 +572,8 @@
                 <ToggleRow
                   {colors}
                   checked={activeHoursEnabled}
-                  title="Only active at certain hours"
-                  subtitle="Uses the server's timezone. An end time before the start time runs overnight."
+                  title={m.chatTriggers.advancedActiveHours()}
+                  subtitle={m.chatTriggers.advancedActiveHoursHint()}
                   onchange={(v) => toggleActiveHours(v)}
                 />
               </div>
@@ -581,7 +582,7 @@
                 <div class="grid grid-cols-2 gap-4 mb-3">
                   <div>
                     <label for="hours-start-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                      From
+                      {m.common.from()}
                     </label>
                     <input id="hours-start-{trigger.id}" type="time" value={activeHours.start}
                            onchange={(e) => setActiveHours((e.target as HTMLInputElement).value, activeHours.end, activeHours.days)}
@@ -590,7 +591,7 @@
                   </div>
                   <div>
                     <label for="hours-end-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                      Until
+                      {m.chatTriggers.advancedHoursUntil()}
                     </label>
                     <input id="hours-end-{trigger.id}" type="time" value={activeHours.end}
                            onchange={(e) => setActiveHours(activeHours.start, (e.target as HTMLInputElement).value, activeHours.days)}
@@ -599,7 +600,7 @@
                   </div>
                 </div>
 
-                <span class="block text-sm mb-2" style="color: {colors.text}">On these days</span>
+                <span class="block text-sm mb-2" style="color: {colors.text}">{m.chatTriggers.advancedHoursDays()}</span>
                 <div class="flex flex-wrap gap-2">
                   {#each dayNames as day, index (day)}
                     <button
@@ -615,7 +616,7 @@
                   {/each}
                 </div>
                 <p class="text-xs mt-2" style="color: {colors.muted}">
-                  No days selected means every day.
+                  {m.chatTriggers.advancedHoursDaysHint()}
                 </p>
               {/if}
             </div>
@@ -624,7 +625,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label for="cost-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                  Costs the user
+                  {m.chatTriggers.advancedCost()}
                 </label>
                 <input id="cost-{trigger.id}" type="number" min="0"
                        bind:value={trigger.currencyCost} onchange={() => onchange?.()}
@@ -633,7 +634,7 @@
               </div>
               <div>
                 <label for="reward-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                  Pays the user
+                  {m.chatTriggers.advancedReward()}
                 </label>
                 <input id="reward-{trigger.id}" type="number" min="0"
                        bind:value={trigger.currencyReward} onchange={() => onchange?.()}
@@ -642,7 +643,7 @@
               </div>
               <div>
                 <label for="xp-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                  Grants XP
+                  {m.chatTriggers.advancedXpReward()}
                 </label>
                 <input id="xp-{trigger.id}" type="number" min="0"
                        bind:value={trigger.xpReward} onchange={() => onchange?.()}
@@ -651,7 +652,7 @@
               </div>
               <div>
                 <label for="req-lvl-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                  Requires level
+                  {m.chatTriggers.advancedRequiredLevel()}
                 </label>
                 <input id="req-lvl-{trigger.id}" type="number" min="0"
                        bind:value={trigger.requiredXpLevel} onchange={() => onchange?.()}
@@ -662,33 +663,33 @@
 
             <div>
               <label for="fail-msg-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                Message when they cannot use it
+                {m.chatTriggers.advancedFailMessage()}
               </label>
               <input id="fail-msg-{trigger.id}" type="text"
                      bind:value={trigger.requirementFailMessage} onchange={() => onchange?.()}
-                     placeholder="Leave empty to say nothing"
+                     placeholder={m.chatTriggers.advancedFailMessagePlaceholder()}
                      class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                      style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               <p class="text-xs mt-1" style="color: {colors.muted}">
-                Shown when someone cannot afford the cost or is below the required level.
+                {m.chatTriggers.advancedFailMessageHint()}
               </p>
             </div>
 
           {:else if section.key === "counter"}
             <div>
               <label for="counter-name-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                Counter name
+                {m.chatTriggers.advancedCounterName()}
               </label>
               <input id="counter-name-{trigger.id}" type="text"
                      bind:value={trigger.counterName} onchange={() => onchange?.()}
-                     placeholder="Leave empty for no requirement"
+                     placeholder={m.chatTriggers.advancedCounterNamePlaceholder()}
                      class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                      style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label for="counter-min-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                  At least
+                  {m.chatTriggers.advancedCounterMin()}
                 </label>
                 <input id="counter-min-{trigger.id}" type="number"
                        value={trigger.counterMin ?? ""}
@@ -702,7 +703,7 @@
               </div>
               <div>
                 <label for="counter-max-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                  At most
+                  {m.chatTriggers.advancedCounterMax()}
                 </label>
                 <input id="counter-max-{trigger.id}" type="number"
                        value={trigger.counterMax ?? ""}
@@ -716,42 +717,41 @@
               </div>
             </div>
             <p class="text-xs" style="color: {colors.muted}">
-              Counters are shared across the server. Read or change one from a response with
-              <code>%counter:name%</code>, or <code>%counter:name+%</code> to add one.
+              {@html m.chatTriggers.advancedCounterHint({ read: "<code>%counter:name%</code>", add: "<code>%counter:name+%</code>" })}
             </p>
 
           {:else if section.key === "event"}
             <div>
-              <span class="block text-sm mb-1" style="color: {colors.text}">Fire when</span>
+              <span class="block text-sm mb-1" style="color: {colors.text}">{m.chatTriggers.advancedEventFireWhen()}</span>
               <DiscordSelector
                 type="custom"
                 options={eventTypes}
                 selected={String(trigger.eventType ?? 0)}
-                placeholder="Not an event trigger"
+                placeholder={m.chatTriggers.advancedEventNone()}
                 onchange={(d) => { trigger.eventType = Number(d.selected); onchange?.(); }}
               />
               <p class="text-xs mt-1" style="color: {colors.muted}">
-                Lets this trigger format another feature's announcement, with all the same options.
+                {m.chatTriggers.advancedEventHint()}
               </p>
             </div>
 
             {#if trigger.eventType > 0}
               <div>
-                <span class="block text-sm mb-1" style="color: {colors.text}">Respond in</span>
+                <span class="block text-sm mb-1" style="color: {colors.text}">{m.chatTriggers.advancedEventRespondIn()}</span>
                 <DiscordSelector
                   type="channel"
                   options={channelOptions}
                   selected={trigger.eventChannelId && String(trigger.eventChannelId) !== "0"
                     ? String(trigger.eventChannelId)
                     : null}
-                  placeholder="Where the event happened"
+                  placeholder={m.chatTriggers.advancedEventChannelPlaceholder()}
                   onchange={(d) => {
                     trigger.eventChannelId = (d.selected ? BigInt(d.selected as string) : 0n) as any;
                     onchange?.();
                   }}
                 />
                 <p class="text-xs mt-1" style="color: {colors.muted}">
-                  Joins and boosts have no channel of their own, so pick one here or they will not respond.
+                  {m.chatTriggers.advancedEventChannelHint()}
                 </p>
               </div>
             {/if}
@@ -759,11 +759,11 @@
           {:else if section.key === "organise"}
             <div>
               <label for="category-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                Category
+                {m.common.category()}
               </label>
               <input id="category-{trigger.id}" type="text" list="ct-categories-{trigger.id}"
                      bind:value={trigger.category} onchange={() => onchange?.()}
-                     placeholder="Ungrouped"
+                     placeholder={m.common.ungrouped()}
                      class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                      style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               <datalist id="ct-categories-{trigger.id}">
@@ -772,13 +772,13 @@
                 {/each}
               </datalist>
               <p class="text-xs mt-1" style="color: {colors.muted}">
-                Group related triggers so you can turn them all on or off at once.
+                {m.chatTriggers.advancedCategoryHint()}
               </p>
             </div>
 
             <div>
               <label for="chain-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
-                Then run trigger
+                {m.chatTriggers.advancedChain()}
               </label>
               <input id="chain-{trigger.id}" type="number" min="0"
                      value={trigger.nextTriggerId ?? 0}
@@ -790,15 +790,15 @@
                      class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                      style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               <p class="text-xs mt-1" style="color: {colors.muted}">
-                Runs a second trigger by ID after this one. It still checks its own rules. 0 for none.
+                {m.chatTriggers.advancedChainHint()}
               </p>
             </div>
 
             <ToggleRow
               {colors}
               checked={trigger.allowBots}
-              title="Respond to bots instead of people"
-              subtitle="Only matches messages from other bots and webhooks. Never its own."
+              title={m.chatTriggers.advancedAllowBots()}
+              subtitle={m.chatTriggers.advancedAllowBotsHint()}
               onchange={(v) => { trigger.allowBots = v; onchange?.(); }}
             />
           {/if}

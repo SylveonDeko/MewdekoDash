@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/tabs/EventsTab.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { logger } from "$lib/logger";
   import { analyticsApi } from "$lib/api/analytics/analytics";
   import type { EventCountRow } from "$lib/api/analytics/models";
@@ -15,10 +16,10 @@
   let loading = $state(true);
   let seq = 0;
 
-  const columns: Column<EventCountRow>[] = [
-    { key: "type", label: "Type", mono: true },
-    { key: "count", label: "Count", num: true, format: (r) => compact(r.count) },
-  ];
+  const columns: Column<EventCountRow>[] = $derived([
+    { key: "type", label: m.common.type(), mono: true },
+    { key: "count", label: m.common.count(), num: true, format: (r) => compact(r.count) },
+  ]);
 
   async function load() {
     const my = ++seq;
@@ -44,11 +45,11 @@
 
 <div class="space-y-4">
   <div class="grid grid-cols-1 xl:grid-cols-4 gap-4">
-    <Card title="Gateway events by type" note="top types, rest folded" class="xl:col-span-3">
+    <Card title={m.analytics.tabEventsCardByType()} note={m.analytics.tabEventsByTypeNote()} class="xl:col-span-3">
       <AnalyticsChart metric="ev.count" agg="rate" groupBy="type" max={12} filters={["bot", "shard"]} type="area" unit="/ s" zoom totalToggle height={320} />
     </Card>
     <div class="space-y-3">
-      <AnalyticsTile label="Count in range" metric="ev.count" agg="sum" format="compact" filters={["bot", "shard"]} spark={false} />
+      <AnalyticsTile label={m.analytics.tabEventsTileCount()} metric="ev.count" agg="sum" format="compact" filters={["bot", "shard"]} spark={false} />
       <Card>
         <AnalyticsTable {columns} rows={counts} {loading} sortKey="count" pageSize={14} />
       </Card>
@@ -56,19 +57,19 @@
   </div>
 
   <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-    <Card title="Events per shard">
+    <Card title={m.analytics.tabEventsCardPerShard()}>
       <BreakdownPanel metric="ev.count" label="shard" filters={["bot"]} max={24} />
     </Card>
-    <Card title="Event handler p95 by type" note="subscriber execution">
+    <Card title={m.analytics.tabEventsCardHandlerP95()} note={m.analytics.tabEventsHandlerNote()}>
       <AnalyticsChart metric="ev.duration" agg="p95" groupBy="type" max={8} filters={["bot"]} unit="ms" noCompare />
     </Card>
   </div>
 
   <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-    <Card title="Handler errors by module">
-      <AnalyticsChart metric="ev.errors" agg="sum" groupBy="module" max={8} filters={["bot"]} type="bar" stack unit="errors" />
+    <Card title={m.analytics.tabEventsCardErrorsModule()}>
+      <AnalyticsChart metric="ev.errors" agg="sum" groupBy="module" max={8} filters={["bot"]} type="bar" stack unit={m.analytics.unitErrors()} />
     </Card>
-    <Card title="Handler errors by type">
+    <Card title={m.analytics.tabEventsCardErrorsType()}>
       <BreakdownPanel metric="ev.errors" label="type" filters={["bot"]} max={12} color="#f87171" />
     </Card>
   </div>

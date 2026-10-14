@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -40,11 +41,11 @@
   let working = $state(false);
   let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  const sortOptions = [
-    { id: "0", name: "Most points" },
-    { id: "1", name: "Most unlocked" },
-    { id: "2", name: "Latest unlock" }
-  ];
+  const sortOptions = $derived([
+    { id: "0", name: m.achievements.librarySortPoints() },
+    { id: "1", name: m.achievements.librarySortPopular() },
+    { id: "2", name: m.achievements.membersSortLatest() }
+  ]);
 
   let pages = $derived(Math.max(1, Math.ceil(total / PAGE_SIZE)));
   let byKey = $derived(new Map(catalog.achievements.map((a) => [a.key, a])));
@@ -75,7 +76,7 @@
       total = result.total;
     } catch (err: any) {
       logger.error("Failed to load achievement members:", err);
-      onerror(err?.message || "Couldn't load members.");
+      onerror(err?.message || m.achievements.membersErrorLoad());
     } finally {
       loading = false;
     }
@@ -102,7 +103,7 @@
       detail = await achievementsApi.member($currentGuild.id, member.userId);
     } catch (err: any) {
       logger.error("Failed to load a member's achievements:", err);
-      onerror(err?.message || "Couldn't load that member.");
+      onerror(err?.message || m.achievements.membersErrorLoadMember());
     } finally {
       detailLoading = false;
     }
@@ -119,7 +120,7 @@
       load();
     } catch (err: any) {
       logger.error("Failed to grant an achievement:", err);
-      onerror(err?.message || "Couldn't give that achievement.");
+      onerror(err?.message || m.achievements.membersErrorGrant());
     } finally {
       working = false;
     }
@@ -133,9 +134,9 @@
     if (!$currentGuild?.id || !detail || working) return;
     const name = byKey.get(key)?.name ?? key;
     const ok = await requestConfirmation({
-      title: `Take away ${name}?`,
-      message: "They lose its points. If it unlocks from activity they still qualify for, it comes back quietly later.",
-      confirmText: "Take away",
+      title: m.achievements.membersRevokeTitle({ name }),
+      message: m.achievements.membersRevokeMessage(),
+      confirmText: m.achievements.membersRevokeConfirm(),
       variant: "danger"
     });
     if (!ok) return;
@@ -146,7 +147,7 @@
       load();
     } catch (err: any) {
       logger.error("Failed to revoke an achievement:", err);
-      onerror(err?.message || "Couldn't take that achievement away.");
+      onerror(err?.message || m.achievements.membersErrorRevoke());
     } finally {
       working = false;
     }
@@ -156,9 +157,9 @@
   async function resetMember() {
     if (!$currentGuild?.id || !detail || working) return;
     const ok = await requestConfirmation({
-      title: `Reset ${detail.member.displayName}?`,
-      message: "Every achievement they have here is cleared. Their tracked activity stays, so anything they still qualify for comes back quietly.",
-      confirmText: "Reset member",
+      title: m.achievements.membersResetTitle({ name: detail.member.displayName }),
+      message: m.achievements.membersResetMessage(),
+      confirmText: m.achievements.membersResetConfirm(),
       variant: "danger"
     });
     if (!ok) return;
@@ -170,7 +171,7 @@
       load();
     } catch (err: any) {
       logger.error("Failed to reset a member:", err);
-      onerror(err?.message || "Couldn't reset that member.");
+      onerror(err?.message || m.achievements.membersErrorReset());
     } finally {
       working = false;
     }
@@ -196,13 +197,13 @@
         <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none" aria-hidden="true">
           <DuoIcon icon="fa-magnifying-glass" color={$colorStore.muted} />
         </span>
-        <input type="search" bind:value={search} oninput={onSearch} placeholder="Find a member"
-               aria-label="Find a member"
+        <input type="search" bind:value={search} oninput={onSearch} placeholder={m.achievements.membersFind()}
+               aria-label={m.achievements.membersFind()}
                class="w-full pl-10 pr-3 h-[44px] rounded-xl border text-sm"
                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
       </div>
       <div class="sm:w-48">
-        <DiscordSelector type="custom" options={sortOptions} selected={sort} searchable={false} ariaLabel="Sort members"
+        <DiscordSelector type="custom" options={sortOptions} selected={sort} searchable={false} ariaLabel={m.achievements.membersSortLabel()}
                          onchange={(d) => { if (typeof d.selected === "string") { sort = d.selected; page = 0; load(); } }} />
       </div>
     </div>
@@ -214,33 +215,33 @@
         <div class="p-10 text-center" style="color: {$colorStore.muted}"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i></div>
       {:else if members.length === 0}
         <div class="p-10 text-center text-sm" style="color: {$colorStore.muted}">
-          {search ? "No members match." : "Nobody has unlocked anything yet."}
+          {search ? m.achievements.membersNoneMatch() : m.achievements.membersNoneUnlocked()}
         </div>
       {:else}
         <ul>
-          {#each members as m (m.userId.toString())}
-            {@const active = detail?.member.userId.toString() === m.userId.toString()}
+          {#each members as member (member.userId.toString())}
+            {@const active = detail?.member.userId.toString() === member.userId.toString()}
             <li>
               <button type="button"
                       class="w-full flex items-center gap-3 p-3 text-left min-h-[60px] border-b transition-all"
                       style="border-color: {$colorStore.primary}15; background: {active ? $colorStore.primary + '20' : 'transparent'};"
-                      onclick={() => open(m)}>
-                <span class="w-8 text-center text-sm font-bold shrink-0" style="color: {$colorStore.muted}">{m.rank > 0 ? `#${m.rank}` : ""}</span>
-                {#if m.avatarUrl}
-                  <img src={m.avatarUrl} alt="" class="w-9 h-9 rounded-full shrink-0" />
+                      onclick={() => open(member)}>
+                <span class="w-8 text-center text-sm font-bold shrink-0" style="color: {$colorStore.muted}">{member.rank > 0 ? `#${member.rank}` : ""}</span>
+                {#if member.avatarUrl}
+                  <img src={member.avatarUrl} alt="" class="w-9 h-9 rounded-full shrink-0" />
                 {:else}
                   <span class="w-9 h-9 rounded-full shrink-0" style="background: {$colorStore.primary}20;"></span>
                 {/if}
                 <span class="flex-1 min-w-0">
                   <span class="block text-sm font-semibold truncate" style="color: {$colorStore.text}">
-                    {m.displayName}{#if !m.inServer}<span class="font-normal" style="color: {$colorStore.muted}"> (left)</span>{/if}
+                    {member.displayName}{#if !member.inServer}<span class="font-normal" style="color: {$colorStore.muted}"> {m.achievements.membersLeft()}</span>{/if}
                   </span>
-                  <span class="block text-xs truncate" style="color: {$colorStore.muted}">@{m.username}</span>
-                  <span class="block text-xs" style="color: {$colorStore.muted}">{m.unlocked} unlocked · {timeAgo(m.lastUnlockAt)}</span>
+                  <span class="block text-xs truncate" style="color: {$colorStore.muted}">@{member.username}</span>
+                  <span class="block text-xs" style="color: {$colorStore.muted}">{m.achievements.membersUnlockedLine({ count: member.unlocked, when: timeAgo(member.lastUnlockAt) })}</span>
                 </span>
                 <span class="text-right shrink-0">
-                  <span class="block text-sm font-bold" style="color: {$colorStore.primary}">{m.points.toLocaleString()}</span>
-                  <span class="text-xs px-2 py-0.5 rounded-md" style="background: {tierColor(m.tierGrade)}20; color: {tierColor(m.tierGrade)}">{m.tier}</span>
+                  <span class="block text-sm font-bold" style="color: {$colorStore.primary}">{member.points.toLocaleString()}</span>
+                  <span class="text-xs px-2 py-0.5 rounded-md" style="background: {tierColor(member.tierGrade)}20; color: {tierColor(member.tierGrade)}">{member.tier}</span>
                 </span>
               </button>
             </li>
@@ -253,11 +254,11 @@
       <div class="flex items-center justify-between gap-3">
         <button type="button" class="px-4 py-2 rounded-xl min-h-[44px] disabled:opacity-40"
                 style="background: {$colorStore.primary}08; color: {$colorStore.text};"
-                disabled={page === 0 || loading} onclick={() => { page -= 1; load(); }}>Previous</button>
-        <span class="text-sm" style="color: {$colorStore.muted}">Page {page + 1} of {pages}</span>
+                disabled={page === 0 || loading} onclick={() => { page -= 1; load(); }}>{m.common.previous()}</button>
+        <span class="text-sm" style="color: {$colorStore.muted}">{m.common.pageOfTotal({ page: page + 1, total: pages })}</span>
         <button type="button" class="px-4 py-2 rounded-xl min-h-[44px] disabled:opacity-40"
                 style="background: {$colorStore.primary}08; color: {$colorStore.text};"
-                disabled={page >= pages - 1 || loading} onclick={() => { page += 1; load(); }}>Next</button>
+                disabled={page >= pages - 1 || loading} onclick={() => { page += 1; load(); }}>{m.common.next()}</button>
       </div>
     {/if}
   </div>
@@ -270,7 +271,7 @@
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                   border-color: {$colorStore.primary}30;">
         <DuoIcon icon="fa-user" size={36} />
-        <p class="text-sm mt-4" style="color: {$colorStore.muted}">Pick a member to see their progress, give achievements, or take them away.</p>
+        <p class="text-sm mt-4" style="color: {$colorStore.muted}">{m.achievements.membersPickPrompt()}</p>
       </div>
     {:else}
       <div class="relative rounded-2xl border p-5 md:p-6 shadow-2xl space-y-5" style="z-index: 10;
@@ -289,11 +290,11 @@
             </p>
             <div class="flex flex-wrap items-center gap-2 text-sm mt-1">
               <span class="px-2 py-0.5 rounded-md text-xs font-medium" style="background: {tierColor(detail.member.tierGrade)}20; color: {tierColor(detail.member.tierGrade)}">{detail.member.tier}</span>
-              <span style="color: {$colorStore.primary}">{detail.member.points.toLocaleString()} points</span>
-              <span style="color: {$colorStore.muted}">{detail.member.unlocked} of {detail.total} · {detail.member.rank > 0 ? `#${detail.member.rank}` : "unranked"}</span>
+              <span style="color: {$colorStore.primary}">{m.achievements.membersPoints({ points: detail.member.points.toLocaleString() })}</span>
+              <span style="color: {$colorStore.muted}">{m.achievements.membersProgressLine({ unlocked: detail.member.unlocked, total: detail.total, rank: detail.member.rank > 0 ? `#${detail.member.rank}` : m.achievements.membersUnranked() })}</span>
             </div>
           </div>
-          <button type="button" class="w-11 h-11 rounded-xl shrink-0" aria-label="Close"
+          <button type="button" class="w-11 h-11 rounded-xl shrink-0" aria-label={m.common.close()}
                   style="background: {$colorStore.primary}08; color: {$colorStore.text};"
                   onclick={() => { detail = null; }}>
             <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -316,13 +317,13 @@
         {#if detail.member.inServer}
           <div class="flex flex-col sm:flex-row sm:items-center gap-3">
             <div class="flex-1 min-w-0">
-              <DiscordSelector type="custom" options={grantOptions} selected={grantKey} placeholder="Give an achievement"
-                               ariaLabel="Achievement to give"
+              <DiscordSelector type="custom" options={grantOptions} selected={grantKey} placeholder={m.achievements.membersGrantPlaceholder()}
+                               ariaLabel={m.achievements.membersGrantLabel()}
                                onchange={(d) => { grantKey = typeof d.selected === "string" ? d.selected : null; }} />
             </div>
             <button type="button" class="px-5 h-[44px] rounded-xl font-medium disabled:opacity-50"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                    disabled={!grantKey || working} onclick={grant}>Give</button>
+                    disabled={!grantKey || working} onclick={grant}>{m.achievements.membersGive()}</button>
           </div>
         {/if}
 
@@ -334,7 +335,7 @@
                 <AchievementIcon icon={group.category.icon} iconUrl={group.category.iconUrl} color={$colorStore.primary}
                                  size={15} bare />
                 <span class="text-sm font-semibold" style="color: {$colorStore.text}">{group.category.name}</span>
-                <span class="text-xs" style="color: {$colorStore.muted}">{done} of {group.items.length}</span>
+                <span class="text-xs" style="color: {$colorStore.muted}">{m.achievements.membersCategoryProgress({ done, total: group.items.length })}</span>
                 <span class="flex-1 h-1.5 rounded-full overflow-hidden" style="background: {$colorStore.primary}15;">
                   <span class="block h-full rounded-full" style="width: {(done / group.items.length) * 100}%; background: {$colorStore.primary};"></span>
                 </span>
@@ -350,7 +351,7 @@
                     <span class="flex-1 min-w-0">
                       <span class="block text-sm truncate" style="color: {$colorStore.text}">{a.name}</span>
                       {#if unlocked}
-                        <span class="block text-xs" style="color: {$colorStore.muted}">Unlocked {timeAgo(item.progress.unlockedAt)}</span>
+                        <span class="block text-xs" style="color: {$colorStore.muted}">{m.achievements.membersUnlockedWhen({ when: timeAgo(item.progress.unlockedAt) })}</span>
                       {:else if item.progress.current != null && a.threshold > 0}
                         <span class="flex items-center gap-2 text-xs" style="color: {$colorStore.muted}">
                           <span class="flex-1 h-1 rounded-full overflow-hidden" style="background: {$colorStore.primary}15;">
@@ -361,7 +362,7 @@
                       {/if}
                     </span>
                     {#if unlocked}
-                      <button type="button" class="w-9 h-9 rounded-lg shrink-0 disabled:opacity-50" aria-label="Take away {a.name}"
+                      <button type="button" class="w-9 h-9 rounded-lg shrink-0 disabled:opacity-50" aria-label={m.achievements.membersRevokeLabel({ name: a.name })}
                               style="background: #ef444415; color: #ef4444;"
                               disabled={working} onclick={() => revoke(a.key)}>
                         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -377,7 +378,7 @@
         <button type="button" class="w-full sm:w-auto px-4 py-2.5 rounded-xl min-h-[44px] font-medium disabled:opacity-50"
                 style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
                 disabled={working || detail.member.unlocked === 0} onclick={resetMember}>
-          <i class="fa-solid fa-rotate-left mr-2" aria-hidden="true"></i>Reset member
+          <i class="fa-solid fa-rotate-left mr-2" aria-hidden="true"></i>{m.achievements.membersResetConfirm()}
         </button>
       </div>
     {/if}

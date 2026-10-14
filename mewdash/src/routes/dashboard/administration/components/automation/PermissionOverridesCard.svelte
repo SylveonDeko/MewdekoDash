@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -31,7 +32,7 @@
         <i class="fa-utility-duo fa-regular fa-key"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
-      <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Permission Overrides</h2>
+      <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.automationPermissionOverridesTitle()}</h2>
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
@@ -45,17 +46,17 @@
         {:else}
           <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
         {/if}
-        {expandedRoleCard === 'permissionOverride' ? 'Collapse' : 'Add Override'}
+        {expandedRoleCard === 'permissionOverride' ? m.common.collapse() : m.administration.automationPermissionOverridesAdd()}
       </button>
 
       {#if selectedPermissionOverrides.length > 0}
         <button
           class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-          onclick={() => showConfirm("Delete Selected Overrides", `Delete ${selectedPermissionOverrides.length} selected permission override${selectedPermissionOverrides.length > 1 ? 's' : ''}?`, deleteSelectedPermissionOverrides)}
+          onclick={() => showConfirm(m.administration.automationPermissionOverridesDeleteSelectedTitle(), selectedPermissionOverrides.length > 1 ? m.administration.automationPermissionOverridesDeleteSelectedConfirmOther({ count: selectedPermissionOverrides.length }) : m.administration.automationPermissionOverridesDeleteSelectedConfirmOne({ count: selectedPermissionOverrides.length }), deleteSelectedPermissionOverrides)}
         >
           <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
-          Delete Selected ({selectedPermissionOverrides.length})
+          {m.administration.automationPermissionOverridesDeleteSelected({ count: selectedPermissionOverrides.length })}
         </button>
       {/if}
 
@@ -63,10 +64,10 @@
         <button
           class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-          onclick={() => showConfirm("Clear All Overrides", "Are you sure you want to clear all permission overrides?", resetPermissionOverrides)}
+          onclick={() => showConfirm(m.administration.automationPermissionOverridesClearAllTitle(), m.administration.automationPermissionOverridesClearAllConfirm(), resetPermissionOverrides)}
         >
           <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
-          Clear All
+          {m.common.clearAll()}
         </button>
       {/if}
     </div>
@@ -74,17 +75,15 @@
 
   <div class="space-y-4">
     <p class="text-sm" style="color: {$colorStore.muted}">
-      Override Discord permissions required for specific bot commands. Select from {availableCommands.length} available
-      commands.
+      {m.administration.automationPermissionOverridesDescription({ count: availableCommands.length })}
     </p>
 
     {#if permissionOverrides.length === 0}
       <div class="text-center py-8">
         <i class="fa-utility-duo fa-regular fa-key"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-        <p class="text-lg font-medium" style="color: {$colorStore.text}">No permission overrides configured</p>
-        <p class="text-sm" style="color: {$colorStore.muted}">Add command permission overrides using actual bot
-          commands</p>
+        <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.administration.automationPermissionOverridesEmptyTitle()}</p>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.automationPermissionOverridesEmptyHint()}</p>
       </div>
     {:else}
       <div class="space-y-3">
@@ -93,14 +92,14 @@
                style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
             <div>
               <p class="font-medium" style="color: {$colorStore.text}">{override.command}</p>
-              <p class="text-sm" style="color: {$colorStore.muted}">Requires: {override.permission}</p>
+              <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.automationPermissionOverridesRequires({ permission: override.permission })}</p>
             </div>
             <button
               class="px-3 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02]"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
               onclick={() => removePermissionOverride(override.command, override.permission)}
             >
-              Remove
+              {m.common.remove()}
             </button>
           </div>
         {/each}
@@ -113,19 +112,19 @@
            style="border-color: {$colorStore.primary}20;">
         <div class="p-4 rounded-xl border-2 border-dashed"
              style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
-          <h5 class="font-medium mb-3" style="color: {$colorStore.text}">Add Permission Override</h5>
+          <h5 class="font-medium mb-3" style="color: {$colorStore.text}">{m.administration.automationPermissionOverridesFormTitle()}</h5>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <span id="bot-command-label"
                     class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                Bot Command ({availableCommands.length} available)
+                {m.administration.automationPermissionOverridesBotCommand({ count: availableCommands.length })}
               </span>
               <DiscordSelector
                 type="custom"
                 options={availableCommands}
                 bind:selected={newPermissionOverride.command}
-                placeholder="Select a bot command..."
+                placeholder={m.administration.automationPermissionOverridesCommandPlaceholder()}
                 searchable={true}
                 multiple={false}
               />
@@ -133,12 +132,12 @@
 
             <div>
               <span id="required-permission-label" class="block text-sm font-medium mb-2"
-                    style="color: {$colorStore.text}">Required Discord Permission</span>
+                    style="color: {$colorStore.text}">{m.administration.automationPermissionOverridesRequiredPermission()}</span>
               <DiscordSelector
                 type="custom"
                 options={availablePermissions}
                 bind:selected={newPermissionOverride.permission}
-                placeholder="Select required permission..."
+                placeholder={m.common.selectRequiredPermissionPlaceholder()}
                 searchable={true}
                 multiple={false}
               />
@@ -151,7 +150,7 @@
               style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
               onclick={() => { expandedRoleCard = null; newPermissionOverride = { command: "", permission: "Administrator" }; }}
             >
-              Cancel
+              {m.common.cancel()}
             </button>
             <button
               class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
@@ -164,7 +163,7 @@
               {:else}
                 <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
               {/if}
-              Add Override
+              {m.administration.automationPermissionOverridesAdd()}
             </button>
           </div>
         </div>

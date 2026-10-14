@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   /**
    * The defaults every form in this server falls back to.
    */
@@ -39,7 +40,7 @@
       approveEmote = defaults?.approveEmote ?? null;
       rejectEmote = defaults?.rejectEmote ?? null;
     } catch (err) {
-      onShowNotification("Failed to load form settings", "error");
+      onShowNotification(m.forms.settingsGuildLoadFailed(), "error");
     } finally {
       loading = false;
     }
@@ -56,9 +57,9 @@
         rejectEmote: rejectEmote || null
       });
 
-      onShowNotification("Review button emotes saved", "success");
+      onShowNotification(m.forms.settingsGuildSaved(), "success");
     } catch (err: any) {
-      onShowNotification(err?.message || "Failed to save form settings", "error");
+      onShowNotification(err?.message || m.forms.settingsGuildSaveFailed(), "error");
     } finally {
       saving = false;
     }
@@ -77,16 +78,16 @@
     class="rounded-xl border p-5"
     style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}25;"
   >
-    <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text};">Server defaults</h2>
+    <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text};">{m.common.serverDefaults()}</h2>
     <p class="text-sm" style="color: {$colorStore.muted};">
-      Applied to every form here unless a form sets its own.
+      {m.forms.settingsGuildSubtitle()}
     </p>
   </div>
 
   {#if loading}
     <div class="p-10 text-center" style="color: {$colorStore.muted};">
       <i class="fa-solid fa-spinner fa-spin text-2xl mb-3"></i>
-      <div>Loading settings</div>
+      <div>{m.forms.settingsGuildLoading()}</div>
     </div>
   {:else}
     <div
@@ -97,18 +98,17 @@
       <div>
         <h3 class="font-semibold mb-1" style="color: {$colorStore.text};">
           <i class="fa-solid fa-gavel mr-2" style="color: {$colorStore.primary};"></i>
-          Review buttons
+          {m.forms.settingsGuildReviewButtons()}
         </h3>
         <p class="text-sm" style="color: {$colorStore.muted};">
-          The emotes on the approve and reject buttons posted with each submission. Leave either
-          empty for a plain tick or cross.
+          {m.forms.settingsGuildReviewButtonsHint()}
         </p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label for="guild-approve-emote" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-            Approve
+            {m.common.approve()}
           </label>
           <EmojiPicker
             id="guild-approve-emote"
@@ -123,7 +123,7 @@
 
         <div>
           <label for="guild-reject-emote" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-            Reject
+            {m.forms.queueReject()}
           </label>
           <EmojiPicker
             id="guild-reject-emote"
@@ -147,10 +147,10 @@
         >
           {#if saving}
             <i class="fa-solid fa-spinner fa-spin mr-2"></i>
-            Saving
+            {m.common.saving()}
           {:else}
             <i class="fa-solid fa-check mr-2"></i>
-            Save
+            {m.common.save()}
           {/if}
         </button>
 
@@ -161,7 +161,7 @@
           class="px-4 py-2.5 rounded-lg font-medium transition-all disabled:opacity-40"
           style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}25;"
         >
-          Use the built-in pair
+          {m.forms.settingsGuildUseBuiltin()}
         </button>
       </div>
     </div>

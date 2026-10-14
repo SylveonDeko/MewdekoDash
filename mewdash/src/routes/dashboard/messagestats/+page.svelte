@@ -1,6 +1,7 @@
 <!-- routes/dashboard/messagestats/+page.svelte -->
 <script lang="ts">
 
+  import { m } from "$lib/i18n";
 
   import { browser } from "$app/environment";
   import { untrack } from "svelte";
@@ -213,11 +214,11 @@
       
       // Enhance topUsers with user data from guild members
       topUsers = (statsData?.topUsers || []).map((messageUser, index) => {
-        const member = guildMembers?.find(m => m?.id?.toString() === messageUser.userId);
+        const member = guildMembers?.find(member0 => member0?.id?.toString() === messageUser.userId);
         return {
           ...messageUser,
           rank: index + 1,
-          username: member?.username || 'Unknown User',
+          username: member?.username || m.common.unknownUser(),
           discriminator: '0000', // Discord no longer uses discriminators for most users
           avatarUrl: member?.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`,
           messageCount: messageUser.totalMessages,
@@ -228,10 +229,10 @@
       
       topChannels = statsData?.topChannels || [];
       if (statsData?.leastActiveUser) {
-        const member = guildMembers?.find(m => m?.id?.toString() === statsData.leastActiveUser?.userId);
+        const member = guildMembers?.find(member0 => member0?.id?.toString() === statsData.leastActiveUser?.userId);
         leastActiveUser = {
           ...statsData.leastActiveUser,
-          username: member?.username || 'Unknown User'
+          username: member?.username || m.common.unknownUser()
         };
       } else {
         leastActiveUser = null;
@@ -254,8 +255,8 @@
 
     } catch (err) {
       if (requestId !== loadRequestId || activeLoadKey !== loadKey) return;
-      error = err instanceof Error ? err.message : "Failed to load message stats";
-      showNotificationMessage("Failed to load message stats", "error");
+      error = err instanceof Error ? err.message : m.messagestats.errorLoad();
+      showNotificationMessage(m.messagestats.errorLoad(), "error");
     } finally {
       if (requestId === loadRequestId && activeLoadKey === loadKey) {
         loading = false;
@@ -322,9 +323,9 @@
         );
       }
 
-      showNotificationMessage("Message stats exported", "success");
+      showNotificationMessage(m.messagestats.notifyExported(), "success");
     } catch (err) {
-      showNotificationMessage("Failed to export stats", "error");
+      showNotificationMessage(m.messagestats.errorExport(), "error");
     } finally {
       isExporting = false;
     }
@@ -340,7 +341,7 @@
       const guildConfig = await guildApi.getGuildConfig($currentGuild.id);
       minMessageLength = guildConfig?.minMessageLength || 0;
     } catch (err) {
-      showNotificationMessage("Failed to load settings", "error");
+      showNotificationMessage(m.common.notifyLoadSettingsFailed(), "error");
     } finally {
       settingsLoading = false;
     }
@@ -354,10 +355,10 @@
       const result = await messageCountApi.toggleMessageCount($currentGuild.id);
       messageCountEnabled = result.enabled;
       messageStats = messageStats ? { ...messageStats, enabled: result.enabled } : messageStats;
-      showNotificationMessage(result.message || "Message count setting updated", "success");
+      showNotificationMessage(result.message || m.messagestats.notifyCountUpdated(), "success");
       await loadData(true);
     } catch (err) {
-      showNotificationMessage("Failed to update setting", "error");
+      showNotificationMessage(m.common.notifyUpdateFailed(), "error");
     } finally {
       settingsLoading = false;
     }
@@ -371,24 +372,24 @@
       const guildConfig = await guildApi.getGuildConfig($currentGuild.id);
       guildConfig.minMessageLength = minMessageLength;
       await guildApi.updateGuildConfig($currentGuild.id, guildConfig);
-      showNotificationMessage("Minimum message length updated", "success");
+      showNotificationMessage(m.messagestats.notifyMinLengthUpdated(), "success");
     } catch (err) {
-      showNotificationMessage("Failed to update setting", "error");
+      showNotificationMessage(m.common.notifyUpdateFailed(), "error");
     } finally {
       settingsLoading = false;
     }
   }
 
   async function resetMessageCounts(type: "all" | "user" | "channel") {
-    if (!$currentGuild || !(await requestConfirmation({ message: `Are you sure you want to reset ${type} message counts? This cannot be undone.`, confirmText: "Reset" }))) return;
+    if (!$currentGuild || !(await requestConfirmation({ message: m.messagestats.confirmReset(), confirmText: m.common.reset() }))) return;
 
     resetLoading = true;
     try {
       const result = await messageCountApi.resetMessageCounts($currentGuild.id);
-      showNotificationMessage(result.message || "Message counts reset", "success");
+      showNotificationMessage(result.message || m.messagestats.notifyReset(), "success");
       await loadData(true);
     } catch (err) {
-      showNotificationMessage("Failed to reset counts", "error");
+      showNotificationMessage(m.messagestats.errorReset(), "error");
     } finally {
       resetLoading = false;
     }
@@ -409,26 +410,26 @@
   });
 
   // Tab configuration
-  const tabs = [
-    { id: "stats", label: "Statistics", icon: "fa-chart-column" },
-    { id: "manage", label: "Management", icon: "fa-bullseye" }
-  ];
+  const tabs = $derived([
+    { id: "stats", label: m.common.statistics(), icon: "fa-chart-column" },
+    { id: "manage", label: m.common.management(), icon: "fa-bullseye" }
+  ]);
 
-  const subTabs = [
+  const subTabs = $derived([
     // Statistics subtabs
-    { id: "overview", label: "Overview", icon: "fa-message", parentTab: "stats" },
-    { id: "users", label: "Top Users", icon: "fa-users", parentTab: "stats" },
-    { id: "channels", label: "Top Channels", icon: "fa-hashtag", parentTab: "stats" },
+    { id: "overview", label: m.common.overview(), icon: "fa-message", parentTab: "stats" },
+    { id: "users", label: m.messagestats.subtabUsers(), icon: "fa-users", parentTab: "stats" },
+    { id: "channels", label: m.common.topChannels(), icon: "fa-hashtag", parentTab: "stats" },
     
     // Management subtabs
-    { id: "settings", label: "Settings", icon: "fa-circle-check", parentTab: "manage" },
-    { id: "export", label: "Export Data", icon: "fa-download", parentTab: "manage" }
-  ];
+    { id: "settings", label: m.common.settings(), icon: "fa-circle-check", parentTab: "manage" },
+    { id: "export", label: m.messagestats.exportButton(), icon: "fa-download", parentTab: "manage" }
+  ]);
 
   // Action buttons configuration
     let actionButtons = $derived([
     {
-      label: "Refresh",
+      label: m.common.refresh(),
       icon: "fa-arrows-rotate",
       action: () => loadData(true),
       loading: loading
@@ -450,8 +451,8 @@
 
 
 <DashboardPageLayout 
-  title="Message Statistics"
-  subtitle="Analyze server message activity and user engagement"
+  title={m.messagestats.pageTitle()}
+  subtitle={m.messagestats.pageSubtitle()}
   icon="fa-chart-simple"
   {tabs}
   {subTabs}
@@ -484,43 +485,43 @@
         {#if messageStats}
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              label="Daily Messages"
+              label={m.messagestats.statDaily()}
               value={formatNumber(messageStats.dailyMessages)}
               icon="fa-envelope"
               iconColor="primary"
             />
             <StatCard
-              label="Total Messages"
+              label={m.messagestats.statTotal()}
               value={formatNumber(messageStats.totalMessages)}
               icon="fa-envelope"
               iconColor="secondary"
             />
             <StatCard
-              label="Last Updated"
+              label={m.messagestats.statLastUpdated()}
               value={new Date(messageStats.lastUpdated).toLocaleDateString()}
               icon="fa-clock"
               iconColor="accent"
             />
             <StatCard
-              label="Status"
-              value={messageStats.enabled ? "Enabled" : "Disabled"}
+              label={m.common.status()}
+              value={messageStats.enabled ? m.common.enabled() : m.common.disabled()}
               icon="fa-circle"
               iconColor={messageStats.enabled ? "primary" : "secondary"}
             />
             {#if leastActiveUser}
               <StatCard
-                label="Least Active User"
+                label={m.messagestats.statLeastActiveUser()}
                 value={leastActiveUser.username}
-                subtitle={`${formatNumber(leastActiveUser.totalMessages)} messages`}
+                subtitle={m.common.messagesCount({ count: formatNumber(leastActiveUser.totalMessages) })}
                 icon="fa-clock"
                 iconColor="secondary"
               />
             {/if}
             {#if leastActiveChannel}
               <StatCard
-                label="Least Active Channel"
+                label={m.messagestats.statLeastActiveChannel()}
                 value={`#${leastActiveChannel.channelName}`}
-                subtitle={`${formatNumber(leastActiveChannel.totalMessages)} messages`}
+                subtitle={m.common.messagesCount({ count: formatNumber(leastActiveChannel.totalMessages) })}
                 icon="fa-square"
                 iconColor="secondary"
               />
@@ -534,13 +535,13 @@
           {#if chartData}
             <div class=" rounded-xl border p-6 transition-all"
                    style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-              <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">24-Hour Activity</h3>
+              <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.messagestats.chartHourlyTitle()}</h3>
               <StatsGraph
                 data={chartData}
-                totalLabel="Total Messages"
-                averageLabel="Average per Hour"
-                peakLabel="Peak Hour"
-                valueLabel="Messages"
+                totalLabel={m.messagestats.statTotal()}
+                averageLabel={m.messagestats.chartAverageHour()}
+                peakLabel={m.common.peakHour()}
+                valueLabel={m.common.messages()}
                 formatLabelsAsDates={false}
               />
             </div>
@@ -550,13 +551,13 @@
           {#if weeklyChartData}
             <div class=" rounded-xl border p-6 transition-all"
                    style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-              <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Weekly Trend</h3>
+              <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.messagestats.chartWeeklyTitle()}</h3>
               <StatsGraph
                 data={weeklyChartData}
-                totalLabel="Total Messages"
-                averageLabel="Average per Day"
-                peakLabel="Peak Day"
-                valueLabel="Messages"
+                totalLabel={m.messagestats.statTotal()}
+                averageLabel={m.common.averagePerDay()}
+                peakLabel={m.common.peakDay()}
+                valueLabel={m.common.messages()}
                 formatLabelsAsDates={false}
               />
             </div>
@@ -568,7 +569,7 @@
       <div class="space-y-6" transition:fade>
         <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-          <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Top Message Senders</h3>
+          <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.messagestats.usersHeading()}</h3>
           
           <div class="space-y-4">
             {#each topUsers as user (user.userId)}
@@ -597,7 +598,7 @@
                       {user.username}
                     </div>
                     <div class="text-sm sm:hidden" style="color: {$colorStore.muted}">
-                      {formatNumber(user.totalMessages)} messages • {user.percentage ?? 0}% • Daily: {formatNumber(user.dailyMessages)}
+                      {m.messagestats.rowSummary({ count: formatNumber(user.totalMessages), percent: user.percentage ?? 0, daily: formatNumber(user.dailyMessages) })}
                     </div>
                   </div>
                 </div>
@@ -605,10 +606,10 @@
                 <!-- Desktop: Right-aligned stats -->
                 <div class="hidden sm:block text-right">
                   <div class="font-bold" style="color: {$colorStore.text}">
-                    {formatNumber(user.totalMessages)} messages
+                    {m.common.messagesCount({ count: formatNumber(user.totalMessages) })}
                   </div>
                   <div class="text-sm" style="color: {$colorStore.muted}">
-                    {user.percentage ?? 0}% of total • Daily: {formatNumber(user.dailyMessages)}
+                    {m.messagestats.rowShare({ percent: user.percentage ?? 0, daily: formatNumber(user.dailyMessages) })}
                   </div>
                 </div>
               </div>
@@ -621,7 +622,7 @@
       <div class="space-y-6" transition:fade>
         <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-          <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Most Active Channels</h3>
+          <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.messagestats.channelsHeading()}</h3>
           
           <div class="space-y-4">
             {#each topChannels as channel (channel.channelId)}
@@ -641,7 +642,7 @@
                       #{channel.channelName}
                     </div>
                     <div class="text-sm sm:hidden" style="color: {$colorStore.muted}">
-                      {formatNumber(channel.totalMessages)} messages • {channel.percentage ?? 0}% • Daily: {formatNumber(channel.dailyMessages)}
+                      {m.messagestats.rowSummary({ count: formatNumber(channel.totalMessages), percent: channel.percentage ?? 0, daily: formatNumber(channel.dailyMessages) })}
                     </div>
                   </div>
                 </div>
@@ -649,10 +650,10 @@
                 <!-- Desktop: Right-aligned stats -->
                 <div class="hidden sm:block text-right">
                   <div class="font-bold" style="color: {$colorStore.text}">
-                    {formatNumber(channel.totalMessages)} messages
+                    {m.common.messagesCount({ count: formatNumber(channel.totalMessages) })}
                   </div>
                   <div class="text-sm" style="color: {$colorStore.muted}">
-                    {channel.percentage ?? 0}% of total • Daily: {formatNumber(channel.dailyMessages)}
+                    {m.messagestats.rowShare({ percent: channel.percentage ?? 0, daily: formatNumber(channel.dailyMessages) })}
                   </div>
                 </div>
               </div>
@@ -665,11 +666,11 @@
       <div class="space-y-6" transition:fade>
         <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-          <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Export Message Data</h3>
+          <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.messagestats.exportHeading()}</h3>
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label for="input-3605" class="block mb-2" style="color: {$colorStore.text}">Start Date</label>
+              <label for="input-3605" class="block mb-2" style="color: {$colorStore.text}">{m.messagestats.exportStart()}</label>
               <input id="input-3605"
                 type="date"
                 bind:value={exportStartDate}
@@ -679,7 +680,7 @@
             </div>
             
             <div>
-              <span id="end-date-label" class="block mb-2" style="color: {$colorStore.text}">End Date</span>
+              <span id="end-date-label" class="block mb-2" style="color: {$colorStore.text}">{m.messagestats.exportEnd()}</span>
               <input
                 type="date"
                 bind:value={exportEndDate}
@@ -689,7 +690,7 @@
             </div>
             
             <div>
-              <label for="message-limit" class="block mb-2" style="color: {$colorStore.text}">Format</label>
+              <label for="message-limit" class="block mb-2" style="color: {$colorStore.text}">{m.messagestats.exportFormat()}</label>
               <DiscordSelector
                 type="custom"
                 selected={exportFormat}
@@ -698,24 +699,24 @@
                   { id: "csv", name: "CSV" },
                   { id: "json", name: "JSON" }
                 ]}
-                placeholder="Select export format" />
+                placeholder={m.messagestats.exportFormatPlaceholder()} />
             </div>
           </div>
           
           <div class="mt-6 space-y-3">
             <label class="flex items-center gap-3">
               <input type="checkbox" bind:checked={includeUsers} class="w-4 h-4">
-              <span style="color: {$colorStore.text}">Include user statistics</span>
+              <span style="color: {$colorStore.text}">{m.messagestats.exportIncludeUsers()}</span>
             </label>
             
             <label class="flex items-center gap-3">
               <input type="checkbox" bind:checked={includeChannels} class="w-4 h-4">
-              <span style="color: {$colorStore.text}">Include channel statistics</span>
+              <span style="color: {$colorStore.text}">{m.messagestats.exportIncludeChannels()}</span>
             </label>
             
             <label class="flex items-center gap-3">
               <input type="checkbox" bind:checked={includeHourly} class="w-4 h-4">
-              <span style="color: {$colorStore.text}">Include hourly breakdown</span>
+              <span style="color: {$colorStore.text}">{m.messagestats.exportIncludeHourly()}</span>
             </label>
           </div>
           
@@ -728,10 +729,10 @@
             >
               {#if isExporting}
                 <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                Exporting...
+                {m.messagestats.exporting()}
               {:else}
                 <i class="fa-solid fa-download" style="font-size: 16px;"></i>
-                Export Data
+                {m.messagestats.exportButton()}
               {/if}
             </button>
           </div>
@@ -742,7 +743,7 @@
       <div class="space-y-6" transition:fade>
         <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-          <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Message Count Settings</h3>
+          <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.messagestats.settingsHeading()}</h3>
           
           {#if settingsLoading}
             <SkeletonLoader />
@@ -751,10 +752,10 @@
               <!-- Enable/Disable Toggle -->
               <div class="flex items-center justify-between p-4 rounded-lg" style="background: {$colorStore.primary}10;">
                 <div>
-                  <h4 class="font-semibold" style="color: {$colorStore.text}">Enable Message Counting</h4>
-                  <p class="text-sm mt-1" style="color: {$colorStore.muted}">Track message statistics for this server</p>
+                  <h4 class="font-semibold" style="color: {$colorStore.text}">{m.messagestats.enableLabel()}</h4>
+                  <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.messagestats.enableHint()}</p>
                 </div>
-                <button aria-label="Reset stats"
+                <button aria-label={m.messagestats.enableAria()}
                         class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                   style="background: {messageCountEnabled ? $colorStore.primary : $colorStore.muted}40; focus:ring-color: {$colorStore.primary};"
                   onclick={toggleMessageCount}
@@ -767,11 +768,8 @@
               <!-- Minimum Message Length -->
               <div class="p-4 rounded-lg" style="background: {$colorStore.primary}10;">
                 <div class="block mb-3">
-                  <label for="include-channels" class="font-semibold" style="color: {$colorStore.text}">Minimum Message
-                    Length</label>
-                  <div class="text-sm mt-1" style="color: {$colorStore.muted}">Only count messages with at least this
-                    many characters (0-4098)
-                  </div>
+                  <label for="include-channels" class="font-semibold" style="color: {$colorStore.text}">{m.messagestats.minLengthLabel()}</label>
+                  <div class="text-sm mt-1" style="color: {$colorStore.muted}">{m.messagestats.minLengthHint()}</div>
                 </div>
                 <div class="flex items-center gap-4">
                   <input id="include-channels"
@@ -794,8 +792,8 @@
 
               <!-- Reset Options -->
               <div class="p-4 rounded-lg border" style="border-color: #ef4444; background: #ef444410;">
-                <h4 class="font-semibold mb-3" style="color: #ef4444">Reset Message Counts</h4>
-                <p class="text-sm mb-4" style="color: {$colorStore.muted}">Permanently delete message count data. This action cannot be undone.</p>
+                <h4 class="font-semibold mb-3" style="color: #ef4444">{m.messagestats.resetHeading()}</h4>
+                <p class="text-sm mb-4" style="color: {$colorStore.muted}">{m.messagestats.resetHint()}</p>
                 
                 <div class="space-y-3">
                   <button
@@ -809,7 +807,7 @@
                     {:else}
                       <i class="fa-solid fa-triangle-exclamation" style="font-size: 16px;"></i>
                     {/if}
-                    Reset All Server Counts
+                    {m.messagestats.resetAll()}
                   </button>
                 </div>
               </div>

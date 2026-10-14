@@ -3,6 +3,7 @@
 Wizard progress indicator showing current step and completion status
 -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
 
   interface Props {
@@ -20,13 +21,13 @@ Wizard progress indicator showing current step and completion status
   }: Props = $props();
 
   // Default step titles if not provided
-  const defaultStepTitles = [
-    "Welcome",
-    "Permissions",
-    "Features",
-    "Configuration",
-    "Complete"
-  ];
+  const defaultStepTitles = $derived([
+    m.common.welcome(),
+    m.common.permissions(),
+    m.common.features(),
+    m.common.configuration(),
+    m.common.complete()
+  ]);
 
   let displayTitles = $derived(stepTitles.length > 0 ? stepTitles : defaultStepTitles.slice(0, totalSteps));
   let progressPercent = $derived((currentStep / totalSteps) * 100);
@@ -36,10 +37,10 @@ Wizard progress indicator showing current step and completion status
   <!-- Simple progress bar with step info -->
   <div class="flex items-center justify-between mb-3">
     <span class="text-sm font-medium" style="color: {$colorStore.muted};">
-      Step {currentStep} of {totalSteps}
+      {m.common.stepCurrentOfTotal({ current: currentStep, total: totalSteps })}
     </span>
     <span class="text-sm font-medium" style="color: {$colorStore.primary};">
-      {Math.round(progressPercent)}% Complete
+      {m.wizard.progressPercentComplete({ percent: Math.round(progressPercent) })}
     </span>
   </div>
   

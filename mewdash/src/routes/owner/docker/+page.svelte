@@ -1,5 +1,6 @@
 <!-- routes/owner/docker/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount, tick } from "svelte";
   import { goto } from "$app/navigation";
   import { slide } from "svelte/transition";
@@ -168,7 +169,7 @@
   }
 
   function jobLabel(job: DockerJob): string {
-    return job.status === DockerJobStatus.Succeeded ? "succeeded" : job.status === DockerJobStatus.Failed ? "failed" : "running";
+    return job.status === DockerJobStatus.Succeeded ? m.owner.dockerJobSucceeded() : job.status === DockerJobStatus.Failed ? m.owner.dockerJobFailed() : m.owner.dockerJobRunning();
   }
 
   function shortId(id: string): string {
@@ -176,7 +177,7 @@
   }
 
   function describeError(err: unknown, fallback: string): string {
-    if (err instanceof ApiError && err.status === 403) return "Only bot owners can manage Docker";
+    if (err instanceof ApiError && err.status === 403) return m.owner.dockerErrorOwnersOnly();
     return err instanceof Error && err.message ? err.message : fallback;
   }
 
@@ -226,7 +227,7 @@
       void refreshStats();
     } catch (err) {
       logger.error("Failed to load the Docker overview:", err);
-      overviewError = describeError(err, "Failed to reach the bot for the Docker overview");
+      overviewError = describeError(err, m.owner.dockerErrorOverview());
     } finally {
       overviewLoading = false;
     }
@@ -273,14 +274,18 @@
     if (busyContainers[container.id]) return;
 
     if (action !== "start") {
-      const verb = action === "stop" ? "Stop" : "Restart";
+      const stopping = action === "stop";
+      const target = { name: container.name, project: container.composeProject ?? "" };
+      const baseMessage = container.composeProject
+        ? stopping ? m.owner.dockerStopMessageProject(target) : m.owner.dockerRestartMessageProject(target)
+        : stopping ? m.owner.dockerStopMessage(target) : m.owner.dockerRestartMessage(target);
       const selfWarning = container.isSelf
-        ? ` This is the container the selected bot instance runs in, so the dashboard will lose contact with it${action === "stop" ? " until it is started again from elsewhere" : " until it comes back"}.`
+        ? stopping ? m.owner.dockerSelfWarningStop() : m.owner.dockerSelfWarningRestart()
         : "";
       const confirmed = await requestConfirmation({
-        title: `${verb} ${container.name}?`,
-        message: `${verb} the ${container.name} container${container.composeProject ? ` in ${container.composeProject}` : ""}.${selfWarning}`,
-        confirmText: verb,
+        title: stopping ? m.owner.dockerStopTitle(target) : m.owner.dockerRestartTitle(target),
+        message: selfWarning ? `${baseMessage} ${selfWarning}` : baseMessage,
+        confirmText: stopping ? m.common.stop() : m.owner.dockerRestart(),
         variant: container.isSelf ? "danger" : "warning",
       });
       if (!confirmed) return;
@@ -289,10 +294,10 @@
     busyContainers = { ...busyContainers, [container.id]: action };
     try {
       const result = await dockerApi.runAction(container.id, action);
-      actionNotice = { text: `${container.name}: ${result.message ?? `${action} accepted`}`, ok: result.success };
+      actionNotice = { text: m.owner.dockerNoticeContainer({ name: container.name, message: result.message ?? m.owner.dockerActionAccepted({ action }) }), ok: result.success };
     } catch (err) {
       logger.error(`Docker ${action} failed:`, err);
-      actionNotice = { text: `${container.name}: ${describeError(err, `${action} failed`)}`, ok: false };
+      actionNotice = { text: m.owner.dockerNoticeContainer({ name: container.name, message: describeError(err, m.owner.dockerActionFailed({ action })) }), ok: false };
     } finally {
       const { [container.id]: _, ...rest } = busyContainers;
       busyContainers = rest;
@@ -326,14 +331,14 @@
             fleet = fleet.map((e) => (e.instance.port === entry.instance.port ? { ...e, info, error: null, loading: false } : e));
           } catch (err) {
             logger.debug("Fleet probe failed for", entry.instance.botName, err);
-            const error = describeError(err, "Did not answer");
+            const error = describeError(err, m.owner.dockerErrorNoAnswer());
             fleet = fleet.map((e) => (e.instance.port === entry.instance.port ? { ...e, error, loading: false } : e));
           }
         }),
       );
     } catch (err) {
       logger.error("Failed to load the instance list:", err);
-      fleetError = describeError(err, "Failed to load the instance list");
+      fleetError = describeError(err, m.owner.dockerErrorInstanceList());
     } finally {
       fleetLoading = false;
       fleetChecking = false;
@@ -351,20 +356,20 @@
   }
 
   function updateLabel(info: DockerSelfInfo): string {
-    if (info.updateAvailable === true) return `update to ${info.published?.gitSha ?? "newer"}`;
-    if (info.updateAvailable === false) return "up to date";
-    if (info.published?.error) return "registry unreachable";
-    return "unknown";
+    if (info.updateAvailable === true) return m.owner.dockerUpdateTo({ version: info.published?.gitSha ?? m.owner.dockerUpdateNewer() });
+    if (info.updateAvailable === false) return m.owner.dockerUpToDate();
+    if (info.published?.error) return m.owner.dockerRegistryUnreachable();
+    return m.common.unknownLower();
   }
 
   async function updateBot(entry: FleetEntry) {
     if (updatingPorts[entry.instance.port] || jobRunning) return;
     const name = entry.instance.botName;
-    const target = entry.info?.published?.gitSha ?? "the newest image";
+    const target = entry.info?.published?.gitSha ?? m.owner.dockerNewestImage();
     const confirmed = await requestConfirmation({
-      title: `Update ${name}?`,
-      message: `Pull ${target} and recreate ${name}'s container. The bot goes offline for the restart, usually a minute or two.`,
-      confirmText: "Update",
+      title: m.owner.dockerUpdateBotTitle({ name }),
+      message: m.owner.dockerUpdateBotMessage({ target, name }),
+      confirmText: m.common.update(),
       variant: "warning",
     });
     if (!confirmed) return;
@@ -374,10 +379,10 @@
       const job = await dockerApi.updateSelf(entry.instance.port);
       activeJob = job;
       jobs = [job, ...jobs.filter((j) => j.id !== job.id)];
-      actionNotice = { text: `${name}: update started`, ok: true };
+      actionNotice = { text: m.owner.dockerUpdateStarted({ name }), ok: true };
     } catch (err) {
       logger.error("Failed to start update:", err);
-      actionNotice = { text: `${name}: ${describeError(err, "Could not start the update")}`, ok: false };
+      actionNotice = { text: m.owner.dockerNoticeContainer({ name, message: describeError(err, m.owner.dockerErrorStartUpdate()) }), ok: false };
     } finally {
       const { [entry.instance.port]: _, ...rest } = updatingPorts;
       updatingPorts = rest;
@@ -388,9 +393,9 @@
     if (updatingAll || jobRunning) return;
     const names = fleet.filter((e) => e.info?.canUpdate).map((e) => e.instance.botName);
     const confirmed = await requestConfirmation({
-      title: "Update every bot?",
-      message: `Pull the newest image once and recreate every container in the fleet whose image changed${names.length ? ` (${names.join(", ")})` : ""}. Each bot restarts in turn, including the one you are looking at, so this page loses contact for a moment.`,
-      confirmText: "Update all",
+      title: m.owner.dockerUpdateAllTitle(),
+      message: names.length ? m.owner.dockerUpdateAllMessageNames({ names: names.join(", ") }) : m.owner.dockerUpdateAllMessage(),
+      confirmText: m.owner.dockerUpdateAll(),
       variant: "danger",
     });
     if (!confirmed) return;
@@ -400,10 +405,10 @@
       const job = await dockerApi.updateAll();
       activeJob = job;
       jobs = [job, ...jobs.filter((j) => j.id !== job.id)];
-      actionNotice = { text: "Fleet update started", ok: true };
+      actionNotice = { text: m.owner.dockerFleetUpdateStarted(), ok: true };
     } catch (err) {
       logger.error("Failed to start fleet update:", err);
-      actionNotice = { text: describeError(err, "Could not start the fleet update"), ok: false };
+      actionNotice = { text: describeError(err, m.owner.dockerErrorFleetUpdate()), ok: false };
     } finally {
       updatingAll = false;
     }
@@ -414,7 +419,7 @@
     const id = entry.info?.container?.id;
     const container = id ? overview?.containers.find((c) => c.id === id) : null;
     if (!container) {
-      actionNotice = { text: `${entry.instance.botName} runs on another host; select that instance to read its logs`, ok: false };
+      actionNotice = { text: m.owner.dockerOtherHost({ name: entry.instance.botName }), ok: false };
       return;
     }
     await selectContainer(container);
@@ -424,14 +429,14 @@
     if (startingJob) return;
 
     const descriptions: Record<DockerComposeOperation, string> = {
-      pull: `Fetch the latest images for ${project.name} and rebuild anything built locally. Nothing restarts until you run Up.`,
-      up: `Bring ${project.name} up. Containers whose image or config changed are recreated; the rest are left alone.`,
-      update: `Fetch the latest images for ${project.name}, then bring it up so changed containers are recreated.`,
+      pull: m.owner.dockerComposePullDescription({ project: project.name }),
+      up: m.owner.dockerComposeUpDescription({ project: project.name }),
+      update: m.owner.dockerComposeUpdateDescription({ project: project.name }),
     };
     const confirmed = await requestConfirmation({
-      title: `Compose ${operation} on ${project.name}?`,
+      title: m.owner.dockerComposeTitle({ operation, project: project.name }),
       message: descriptions[operation],
-      confirmText: `Run ${operation}`,
+      confirmText: m.owner.dockerComposeRun({ operation }),
       variant: operation === "pull" ? "info" : "warning",
     });
     if (!confirmed) return;
@@ -443,7 +448,7 @@
       jobs = [job, ...jobs.filter((j) => j.id !== job.id)];
     } catch (err) {
       logger.error("Failed to start compose job:", err);
-      actionNotice = { text: `${project.name}: ${describeError(err, `Could not start ${operation}`)}`, ok: false };
+      actionNotice = { text: m.owner.dockerNoticeContainer({ name: project.name, message: describeError(err, m.owner.dockerErrorStartOperation({ operation })) }), ok: false };
     } finally {
       startingJob = null;
     }
@@ -492,7 +497,7 @@
       await scrollToBottom();
     } catch (err) {
       logger.error("Failed to load container log:", err);
-      logError = describeError(err, "Failed to read the log");
+      logError = describeError(err, m.owner.logsErrorReadLog());
       lines = [];
       cursor = null;
     } finally {
@@ -524,7 +529,7 @@
       logError = null;
     } catch (err) {
       logger.error("Failed to poll container log:", err);
-      logError = describeError(err, "Lost contact with the log; retrying");
+      logError = describeError(err, m.owner.logsErrorLogLost());
     } finally {
       polling = false;
     }
@@ -553,7 +558,7 @@
       setTimeout(() => (copied = false), 1500);
     } catch (err) {
       logger.error("Failed to copy log lines:", err);
-      logError = "The browser refused clipboard access";
+      logError = m.owner.logsErrorClipboard();
     }
   }
 
@@ -618,7 +623,7 @@
         }
       },
       "critical",
-      "Checking permissions...",
+      m.common.checkingPermissions(),
     );
 
     if (!isOwner) {
@@ -633,15 +638,15 @@
 
 <DashboardPageLayout
   category="Analytics"
-  guildName="Bot Owner Tools"
+  guildName={m.common.botOwnerTools()}
   icon="fa-box"
-  subtitle="Containers and compose projects on the selected instance's host"
-  title="Docker"
+  subtitle={m.owner.dockerContainersAndComposeProjectsOnThe()}
+  title={m.features.dockerName()}
   basePath="/owner/docker"
 >
   {#if allowed}
     <section class="mb-6">
-      <SectionHeader icon="fa-box" title="Daemon" subtitle={overview?.endpoint ?? "Looking for a Docker socket on the host"}>
+      <SectionHeader icon="fa-box" title={m.owner.dockerDaemon()} subtitle={overview?.endpoint ?? m.owner.dockerLookingForSocket()}>
         {#snippet actions()}
           <button
             type="button"
@@ -650,7 +655,7 @@
             onclick={() => loadOverview()}
           >
             <i class="fa-solid fa-rotate" aria-hidden="true"></i>
-            Refresh
+            {m.common.refresh()}
           </button>
         {/snippet}
       </SectionHeader>
@@ -661,7 +666,7 @@
             <i class="fa-solid fa-triangle-exclamation mt-0.5" aria-hidden="true"></i>
             <div>
               <div class="font-semibold">
-                {overview.availability === DockerAvailability.NotConfigured ? "Docker is not configured on this host" : "The Docker daemon could not be reached"}
+                {overview.availability === DockerAvailability.NotConfigured ? m.owner.dockerNotConfigured() : m.owner.dockerUnreachable()}
               </div>
               <div class="mt-1" style="color: {$colorStore.text};">{overview.message}</div>
             </div>
@@ -669,10 +674,10 @@
         {:else if overview}
           <div class="grid gap-3 grid-cols-2 lg:grid-cols-4">
             {#each [
-              { label: "Engine", value: overview.serverVersion ?? "-", hint: [overview.operatingSystem, overview.architecture].filter(Boolean).join(" · ") },
-              { label: "Running", value: formatNumber(overview.running), hint: `${formatNumber(overview.containers.length)} containers` },
-              { label: "Stopped", value: formatNumber(overview.stopped), hint: overview.stopped > 0 ? "not running" : "all up" },
-              { label: "Images", value: formatNumber(overview.images), hint: overview.composeAvailable ? "compose available" : "compose unavailable" },
+              { label: m.owner.dockerTileEngine(), value: overview.serverVersion ?? "-", hint: [overview.operatingSystem, overview.architecture].filter(Boolean).join(" · ") },
+              { label: m.owner.dockerTileRunning(), value: formatNumber(overview.running), hint: m.owner.dockerTileContainersHint({ count: formatNumber(overview.containers.length) }) },
+              { label: m.owner.dockerTileStopped(), value: formatNumber(overview.stopped), hint: overview.stopped > 0 ? m.owner.dockerTileNotRunning() : m.owner.dockerTileAllUp() },
+              { label: m.owner.dockerTileImages(), value: formatNumber(overview.images), hint: overview.composeAvailable ? m.owner.dockerTileComposeAvailable() : m.owner.dockerTileComposeUnavailable() },
             ] as tile (tile.label)}
               <div class="rounded-xl border p-4" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
                 <div class="text-xs uppercase tracking-wider" style="color: {$colorStore.muted};">{tile.label}</div>
@@ -694,7 +699,7 @@
       >
         <i class="fa-solid {actionNotice.ok ? 'fa-check' : 'fa-circle-exclamation'}" aria-hidden="true"></i>
         <span class="flex-1">{actionNotice.text}</span>
-        <button type="button" class="min-h-[32px] px-2" aria-label="Dismiss" onclick={() => (actionNotice = null)}>
+        <button type="button" class="min-h-[32px] px-2" aria-label={m.common.dismiss()} onclick={() => (actionNotice = null)}>
           <i class="fa-solid fa-xmark" aria-hidden="true"></i>
         </button>
       </div>
@@ -703,10 +708,10 @@
     <section class="mb-6">
       <SectionHeader
         icon="fa-layer-group"
-        title="Bots"
+        title={m.common.bots()}
         subtitle={fleetUpdatesAvailable > 0
-          ? `${formatNumber(fleetUpdatesAvailable)} of ${formatNumber(fleet.length)} instances have a newer build published`
-          : "Every registered instance, the commit it runs, and whether a newer image is published"}
+          ? m.owner.dockerFleetUpdatesAvailable({ count: formatNumber(fleetUpdatesAvailable), total: formatNumber(fleet.length) })
+          : m.owner.dockerFleetSubtitle()}
       >
         {#snippet actions()}
           <button
@@ -717,23 +722,23 @@
             onclick={() => loadFleet(true)}
           >
             <i class="fa-solid {fleetChecking ? 'fa-spinner fa-spin' : 'fa-rotate'}" aria-hidden="true"></i>
-            Check for updates
+            {m.owner.dockerCheckForUpdates()}
           </button>
           <button
             type="button"
             class="px-3 min-h-[36px] rounded-lg text-sm font-medium flex items-center gap-2"
             style="background: {fleetUpdatesAvailable > 0 ? '#fdac41' : `${$colorStore.secondary}20`}; color: {fleetUpdatesAvailable > 0 ? '#1a1a1a' : $colorStore.text};"
             disabled={!fleetCanUpdateAll || updatingAll || jobRunning}
-            title={fleetCanUpdateAll ? "Pull the newest image and recreate every changed container in the fleet" : "The selected instance is not part of a compose fleet"}
+            title={fleetCanUpdateAll ? m.owner.dockerUpdateAllHint() : m.owner.dockerUpdateAllDisabled()}
             onclick={updateEverything}
           >
             <i class="fa-solid {updatingAll ? 'fa-spinner fa-spin' : 'fa-arrows-rotate'}" aria-hidden="true"></i>
-            Update all
+            {m.owner.dockerUpdateAll()}
           </button>
         {/snippet}
       </SectionHeader>
 
-      <AsyncState loading={fleetLoading} error={fleetError} empty={fleet.length === 0} emptyMessage="No instances are registered" emptyIcon="fa-layer-group">
+      <AsyncState loading={fleetLoading} error={fleetError} empty={fleet.length === 0} emptyMessage={m.owner.dockerNoInstancesAreRegistered()} emptyIcon="fa-layer-group">
         <div class="rounded-xl border overflow-hidden" style="border-color: {$colorStore.primary}20; background: {$colorStore.primary}05;">
           {#each fleet as entry (entry.instance.port)}
             {@const info = entry.info}
@@ -750,10 +755,10 @@
                   <span class="font-medium" style="color: {$colorStore.text};">{entry.instance.botName}</span>
                   <span class="text-xs font-mono" style="color: {$colorStore.muted};">:{entry.instance.port}</span>
                   {#if isCurrent}
-                    <Pill tone="ok" text="selected" icon="fa-star" />
+                    <Pill tone="ok" text={m.owner.pillSelected()} icon="fa-star" />
                   {/if}
                   {#if entry.loading}
-                    <Pill tone="muted" text="asking..." />
+                    <Pill tone="muted" text={m.owner.dockerPillAsking()} />
                   {:else if entry.error}
                     <Pill tone="crit" text={entry.error} icon="fa-circle-exclamation" />
                   {:else if info}
@@ -762,17 +767,17 @@
                 </div>
                 {#if info}
                   <div class="text-xs mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5" style="color: {$colorStore.muted};">
-                    <span class="font-mono" title={info.gitSha ?? "commit unknown"}>{versionLabel(info)}</span>
-                    {#if info.buildDate}<span>built {formatAgo(info.buildDate)}</span>{/if}
-                    <span>up {formatAgo(info.startedAt)}</span>
+                    <span class="font-mono" title={info.gitSha ?? m.owner.dockerCommitUnknown()}>{versionLabel(info)}</span>
+                    {#if info.buildDate}<span>{m.owner.dockerBuiltAgo({ ago: formatAgo(info.buildDate) })}</span>{/if}
+                    <span>{m.owner.dockerUpAgo({ ago: formatAgo(info.startedAt) })}</span>
                     {#if info.container}
                       <span class="font-mono">{info.container.name}</span>
                       <span>{info.container.status}</span>
                     {:else}
-                      <span>not in a container</span>
+                      <span>{m.owner.dockerNotInAContainer()}</span>
                     {/if}
                     {#if info.published?.gitSha && info.updateAvailable}
-                      <span>newest {info.published.gitSha}{#if info.published.publishedAt} pushed {formatAgo(info.published.publishedAt)}{/if}</span>
+                      <span>{info.published.publishedAt ? m.owner.dockerNewestPushed({ version: info.published.gitSha, ago: formatAgo(info.published.publishedAt) }) : m.owner.dockerNewest({ version: info.published.gitSha })}</span>
                     {/if}
                   </div>
                 {/if}
@@ -784,22 +789,22 @@
                   class="px-2.5 min-h-[36px] rounded-lg text-xs font-medium flex items-center gap-1.5"
                   style="background: {$colorStore.primary}15; color: {$colorStore.text};"
                   disabled={!info?.container}
-                  title={info?.container ? "Open this bot's container log" : "This bot is not running in a container"}
+                  title={info?.container ? m.owner.dockerOpenBotLog() : m.owner.dockerBotNotInContainer()}
                   onclick={() => showFleetLogs(entry)}
                 >
                   <i class="fa-solid fa-rectangle-list" aria-hidden="true"></i>
-                  Logs
+                  {m.owner.logsTitle()}
                 </button>
                 <button
                   type="button"
                   class="px-2.5 min-h-[36px] rounded-lg text-xs font-medium flex items-center gap-1.5"
                   style="background: {info?.updateAvailable ? '#fdac4125' : `${$colorStore.secondary}20`}; color: {info?.updateAvailable ? '#fdac41' : $colorStore.text};"
                   disabled={!info?.canUpdate || busy || jobRunning}
-                  title={info?.canUpdate ? "Pull the newest image and recreate this bot's container" : info?.updateBlockedReason ?? "Waiting for the bot to answer"}
+                  title={info?.canUpdate ? m.owner.dockerUpdateBotHint() : info?.updateBlockedReason ?? m.owner.dockerWaitingForBot()}
                   onclick={() => updateBot(entry)}
                 >
                   <i class="fa-solid {busy ? 'fa-spinner fa-spin' : 'fa-cloud-arrow-down'}" aria-hidden="true"></i>
-                  Update
+                  {m.common.update()}
                 </button>
               </div>
             </div>
@@ -810,7 +815,7 @@
 
     {#if available && overview}
       <section class="mb-6">
-        <SectionHeader icon="fa-server" title="Containers" subtitle="Grouped by compose project. Expand a project to sample its resource use." />
+        <SectionHeader icon="fa-server" title={m.owner.dockerContainers()} subtitle={m.owner.dockerGroupedByComposeProjectExpandA()} />
 
         <div class="space-y-3">
           {#each groups as group (group.key)}
@@ -830,11 +835,11 @@
                   <div class="min-w-0">
                     <div class="flex items-center gap-2 min-w-0">
                       <span class="font-semibold truncate" style="color: {$colorStore.text};">
-                        {group.project ? group.project.name : "Standalone containers"}
+                        {group.project ? group.project.name : m.owner.dockerStandalone()}
                       </span>
-                      <Pill tone={running === group.containers.length ? "ok" : running === 0 ? "crit" : "warn"} text="{running}/{group.containers.length} up" />
+                      <Pill tone={running === group.containers.length ? "ok" : running === 0 ? "crit" : "warn"} text={m.owner.dockerGroupUp({ running, total: group.containers.length })} />
                       {#if group.containers.some((c) => c.isSelf)}
-                        <Pill tone="ok" text="this bot" icon="fa-star" />
+                        <Pill tone="ok" text={m.owner.logsThisBot()} icon="fa-star" />
                       {/if}
                     </div>
                     {#if group.project?.workingDir}
@@ -847,16 +852,16 @@
                   <div class="flex flex-wrap items-center gap-1.5">
                     {#if group.project.operable}
                       {#each [
-                        { op: "pull", icon: "fa-cloud-arrow-down", label: "Pull" },
-                        { op: "up", icon: "fa-arrow-up", label: "Up" },
-                        { op: "update", icon: "fa-arrows-rotate", label: "Update" },
+                        { op: "pull", icon: "fa-cloud-arrow-down", label: m.owner.dockerOpPull() },
+                        { op: "up", icon: "fa-arrow-up", label: m.common.up() },
+                        { op: "update", icon: "fa-arrows-rotate", label: m.common.update() },
                       ] as button (button.op)}
                         <button
                           type="button"
                           class="px-2.5 min-h-[36px] rounded-lg text-xs font-medium flex items-center gap-1.5"
                           style="background: {$colorStore.secondary}20; color: {$colorStore.text};"
                           disabled={startingJob !== null || jobRunning}
-                          title="docker compose {button.op}"
+                          title={m.owner.dockerComposeCommand({ operation: button.op })}
                           onclick={() => startCompose(group.project!, button.op as DockerComposeOperation)}
                         >
                           <i class="fa-solid {button.icon}" aria-hidden="true"></i>
@@ -864,8 +869,8 @@
                         </button>
                       {/each}
                     {:else}
-                      <span class="text-xs px-2" style="color: {$colorStore.muted};" title="The compose files are not visible from the bot's filesystem">
-                        <i class="fa-solid fa-eye-slash mr-1" aria-hidden="true"></i>compose files not visible
+                      <span class="text-xs px-2" style="color: {$colorStore.muted};" title={m.owner.dockerTheComposeFilesAreNotVisible()}>
+                        <i class="fa-solid fa-eye-slash mr-1" aria-hidden="true"></i>{m.owner.dockerComposeFilesNotVisible()}
                       </span>
                     {/if}
                   </div>
@@ -887,7 +892,7 @@
                           <span class="font-medium" style="color: {$colorStore.text};">{container.name}</span>
                           <Pill tone={stateTone(container)} text={stateLabel(container)} />
                           {#if container.isSelf}
-                            <Pill tone="ok" text="this bot" icon="fa-star" />
+                            <Pill tone="ok" text={m.owner.logsThisBot()} icon="fa-star" />
                           {/if}
                         </div>
                         <div class="text-xs mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5" style="color: {$colorStore.muted};">
@@ -903,16 +908,16 @@
                       <div class="text-xs min-w-[140px]" style="color: {$colorStore.text};">
                         {#if container.state === "running"}
                           {#if sample}
-                            <div>{sample.cpuPercent.toFixed(1)}% cpu</div>
+                            <div>{m.owner.processLogsCpu({ percent: sample.cpuPercent.toFixed(1) })}</div>
                             <div style="color: {$colorStore.muted};">
                               {formatBytes(sample.memoryBytes)}{#if sample.memoryLimitBytes > 0} / {formatBytes(sample.memoryLimitBytes)}{/if}
                             </div>
-                            <div style="color: {$colorStore.muted};">{formatNumber(sample.pids)} pids · rx {formatBytes(sample.networkRxBytes)}</div>
+                            <div style="color: {$colorStore.muted};">{m.owner.dockerSamplePidsRx({ pids: formatNumber(sample.pids), rx: formatBytes(sample.networkRxBytes) })}</div>
                           {:else}
-                            <span style="color: {$colorStore.muted};">sampling...</span>
+                            <span style="color: {$colorStore.muted};">{m.owner.dockerSampling()}</span>
                           {/if}
                         {:else}
-                          <span style="color: {$colorStore.muted};">created {formatAgo(container.createdAt)}</span>
+                          <span style="color: {$colorStore.muted};">{m.owner.dockerCreatedAgo({ ago: formatAgo(container.createdAt) })}</span>
                         {/if}
                       </div>
 
@@ -925,7 +930,7 @@
                           onclick={() => selectContainer(container)}
                         >
                           <i class="fa-solid fa-rectangle-list" aria-hidden="true"></i>
-                          Logs
+                          {m.owner.logsTitle()}
                         </button>
                         {#if container.state === "running"}
                           <button
@@ -936,7 +941,7 @@
                             onclick={() => runAction(container, "restart")}
                           >
                             <i class="fa-solid {busy === 'restart' ? 'fa-spinner fa-spin' : 'fa-rotate-right'}" aria-hidden="true"></i>
-                            Restart
+                            {m.owner.dockerRestart()}
                           </button>
                           <button
                             type="button"
@@ -946,7 +951,7 @@
                             onclick={() => runAction(container, "stop")}
                           >
                             <i class="fa-solid {busy === 'stop' ? 'fa-spinner fa-spin' : 'fa-stop'}" aria-hidden="true"></i>
-                            Stop
+                            {m.common.stop()}
                           </button>
                         {:else}
                           <button
@@ -957,7 +962,7 @@
                             onclick={() => runAction(container, "start")}
                           >
                             <i class="fa-solid {busy === 'start' ? 'fa-spinner fa-spin' : 'fa-play'}" aria-hidden="true"></i>
-                            Start
+                            {m.common.start()}
                           </button>
                         {/if}
                       </div>
@@ -968,7 +973,7 @@
             </div>
           {:else}
             <div class="rounded-xl p-6 text-center text-sm" style="background: {$colorStore.primary}08; color: {$colorStore.muted};">
-              The daemon has no containers
+              {m.owner.dockerTheDaemonHasNoContainers()}
             </div>
           {/each}
         </div>
@@ -976,7 +981,7 @@
 
       {#if activeJob || jobs.length > 0}
         <section class="mb-6">
-          <SectionHeader icon="fa-clipboard-check" title="Compose jobs" subtitle="Pull, up and build runs started from here, with their output">
+          <SectionHeader icon="fa-clipboard-check" title={m.owner.dockerComposeJobs()} subtitle={m.owner.dockerPullUpAndBuildRunsStarted()}>
             {#snippet actions()}
               {#if jobs.length > 1}
                 <div class="flex flex-wrap gap-1.5">
@@ -1006,14 +1011,14 @@
                   <span>{activeJob.operation}{#if activeJob.services.length} ({activeJob.services.join(", ")}){/if}</span>
                   <Pill tone={jobTone(activeJob)} text={jobLabel(activeJob)} />
                   {#if activeJob.exitCode !== undefined && activeJob.exitCode !== null}
-                    <span>exit {activeJob.exitCode}</span>
+                    <span>{m.owner.dockerExitCode({ code: activeJob.exitCode })}</span>
                   {/if}
                 </div>
-                <span>started {formatAgo(activeJob.startedAt)}</span>
+                <span>{m.owner.dockerStartedAgo({ ago: formatAgo(activeJob.startedAt) })}</span>
               </div>
               <div bind:this={jobPanel} class="job-panel overflow-auto font-mono text-[12px] leading-[1.55] p-3" role="log" aria-live="off">
                 {#if activeJob.output.length === 0}
-                  <span style="color: {$colorStore.muted};">Waiting for output...</span>
+                  <span style="color: {$colorStore.muted};">{m.owner.dockerWaitingForOutput()}</span>
                 {:else}
                   {#each activeJob.output as line, index (index)}
                     <div><AnsiLine text={line} /></div>
@@ -1029,7 +1034,7 @@
         <section id="container-log">
           <SectionHeader icon="fa-rectangle-code" title={selected.name} subtitle="{selected.image} · {shortId(selected.id)}">
             {#snippet actions()}
-              <WindowPicker value={lineCount} options={lineOptions} ariaLabel="Lines to load" onchange={changeLineCount} />
+              <WindowPicker value={lineCount} options={lineOptions} ariaLabel={m.owner.logsLinesToLoad()} onchange={changeLineCount} />
             {/snippet}
           </SectionHeader>
 
@@ -1039,8 +1044,8 @@
               <input
                 type="search"
                 bind:value={search}
-                placeholder="Filter lines"
-                aria-label="Filter lines"
+                placeholder={m.owner.logsFilterLines()}
+                aria-label={m.owner.logsFilterLines()}
                 class="w-full rounded-lg pl-8 pr-3 min-h-[40px] text-sm outline-none"
                 style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
               />
@@ -1054,7 +1059,7 @@
               onclick={() => (follow = !follow)}
             >
               <i class="fa-solid {follow ? 'fa-pause' : 'fa-play'}" aria-hidden="true"></i>
-              {follow ? "Following" : "Follow"}
+              {follow ? m.owner.logsFollowing() : m.owner.logsFollow()}
             </button>
 
             <button
@@ -1065,7 +1070,7 @@
               onclick={() => (wrap = !wrap)}
             >
               <i class="fa-solid fa-text-width" aria-hidden="true"></i>
-              Wrap
+              {m.owner.logsWrap()}
             </button>
 
             <button
@@ -1076,7 +1081,7 @@
               onclick={copyVisible}
             >
               <i class="fa-solid {copied ? 'fa-check' : 'fa-copy'}" aria-hidden="true"></i>
-              {copied ? "Copied" : "Copy"}
+              {copied ? m.common.copied() : m.owner.logsCopy()}
             </button>
 
             <button
@@ -1086,11 +1091,11 @@
               onclick={loadTail}
             >
               <i class="fa-solid fa-rotate" aria-hidden="true"></i>
-              Reload
+              {m.owner.logsReload()}
             </button>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2 mb-3" role="group" aria-label="Stream filters">
+          <div class="flex flex-wrap items-center gap-2 mb-3" role="group" aria-label={m.owner.dockerStreamFilters()}>
             <button
               type="button"
               class="px-2.5 min-h-[32px] rounded-full text-xs font-mono font-semibold flex items-center gap-1.5"
@@ -1117,17 +1122,17 @@
               style="border-color: {$colorStore.primary}20; color: {$colorStore.muted}; background: {$colorStore.primary}08;"
             >
               <span>
-                {formatNumber(visibleLines.length)} lines{#if hiddenCount > 0}, {formatNumber(hiddenCount)} hidden by filters{/if}
+                {hiddenCount > 0 ? m.owner.logsLinesHidden({ count: formatNumber(visibleLines.length), hidden: formatNumber(hiddenCount) }) : m.owner.logsLines({ count: formatNumber(visibleLines.length) })}
               </span>
               <div class="flex items-center gap-3">
                 {#if follow}
                   <span class="flex items-center gap-1.5">
                     <span class="inline-block w-2 h-2 rounded-full animate-pulse" style="background: #4ade80;"></span>
-                    live
+                    {m.common.live()}
                   </span>
                 {/if}
                 {#if lastUpdated}
-                  <span>updated {lastUpdated.toLocaleTimeString()}</span>
+                  <span>{m.owner.logsUpdatedAt({ time: lastUpdated.toLocaleTimeString() })}</span>
                 {/if}
               </div>
             </div>
@@ -1146,17 +1151,17 @@
                 onscroll={updateScrollState}
                 role="log"
                 aria-live="off"
-                aria-label="Container log output"
+                aria-label={m.owner.dockerContainerLogOutput()}
               >
                 {#if logLoading && lines.length === 0}
                   <div class="flex justify-center items-center min-h-[200px]">
                     <div class="w-8 h-8 border-4 rounded-full animate-spin"
                          style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"
-                         aria-label="Loading"></div>
+                         aria-label={m.common.loading()}></div>
                   </div>
                 {:else if visibleLines.length === 0}
                   <div class="px-4 py-12 text-center text-sm" style="color: {$colorStore.muted}">
-                    {lines.length === 0 ? "The log is empty" : "No lines match the current filters"}
+                    {lines.length === 0 ? m.owner.logsLogEmpty() : m.owner.logsLogNoMatch()}
                   </div>
                 {:else}
                   {#each visibleLines as line (line.id)}
@@ -1175,7 +1180,7 @@
                   onclick={scrollToBottom}
                 >
                   <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
-                  {pendingNew > 0 ? `${formatNumber(pendingNew)} new` : "Bottom"}
+                  {pendingNew > 0 ? m.owner.logsNewLines({ count: formatNumber(pendingNew) }) : m.owner.logsBottom()}
                 </button>
               {/if}
             </div>

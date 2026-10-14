@@ -1,5 +1,6 @@
 <!-- routes/dashboard/streams/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import type { PageData } from "./$types";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
@@ -85,19 +86,19 @@
   };
 
   // Stream-specific placeholders (from backend CreateStreamReplacer)
-  const streamPlaceholders = [
-    { category: "Stream", name: "%stream.name%", description: "Display name of the streamer" },
-    { category: "Stream", name: "%stream.username%", description: "Login name/username" },
-    { category: "Stream", name: "%stream.url%", description: "Direct URL to the stream" },
-    { category: "Stream", name: "%stream.title%", description: "Current stream title" },
-    { category: "Stream", name: "%stream.game%", description: "Game/category being streamed" },
-    { category: "Stream", name: "%stream.viewers%", description: "Current viewer count (- if offline)" },
-    { category: "Stream", name: "%stream.platform%", description: "Platform name (Twitch, YouTube, etc.)" },
-    { category: "Stream", name: "%stream.avatar%", description: "URL to streamer's avatar" },
-    { category: "Stream", name: "%stream.preview%", description: "URL to stream preview/thumbnail" },
-    { category: "Stream", name: "%stream.status%", description: "🟢 Online or 🔴 Offline" },
-    { category: "Stream", name: "%stream.channelid%", description: "Platform-specific channel ID" }
-  ];
+  const streamPlaceholders = $derived([
+    { category: m.placeholders.categoryStream(), name: "%stream.name%", description: m.streams.phName() },
+    { category: m.placeholders.categoryStream(), name: "%stream.username%", description: m.streams.phUsername() },
+    { category: m.placeholders.categoryStream(), name: "%stream.url%", description: m.common.streamUrlHint() },
+    { category: m.placeholders.categoryStream(), name: "%stream.title%", description: m.common.currentStreamTitle() },
+    { category: m.placeholders.categoryStream(), name: "%stream.game%", description: m.common.streamGameHint() },
+    { category: m.placeholders.categoryStream(), name: "%stream.viewers%", description: m.streams.phViewers() },
+    { category: m.placeholders.categoryStream(), name: "%stream.platform%", description: m.streams.phPlatform() },
+    { category: m.placeholders.categoryStream(), name: "%stream.avatar%", description: m.streams.phAvatar() },
+    { category: m.placeholders.categoryStream(), name: "%stream.preview%", description: m.streams.phPreview() },
+    { category: m.placeholders.categoryStream(), name: "%stream.status%", description: m.streams.phStatus() },
+    { category: m.placeholders.categoryStream(), name: "%stream.channelid%", description: m.streams.phChannelid() }
+  ]);
 
   // Load all stream data
   async function loadAllStreamData() {
@@ -134,7 +135,7 @@
       }));
     } catch (err) {
       logger.error("Failed to load stream data:", err);
-      showMessage("Failed to load stream data", "error");
+      showMessage(m.streams.errorLoad(), "error");
     } finally {
       loading = false;
     }
@@ -150,12 +151,12 @@
         channelId: BigInt(newStream.channelId),
         url: newStream.url
       });
-      showMessage(`Now following stream!`, "success");
+      showMessage(m.streams.notifyFollowed(), "success");
       newStream = { channelId: null, url: "" };
       await loadAllStreamData();
     } catch (err) {
       logger.error("Failed to follow stream:", err);
-      showMessage("Failed to follow stream", "error");
+      showMessage(m.streams.errorFollow(), "error");
     } finally {
       saving = false;
     }
@@ -164,16 +165,16 @@
   // Unfollow stream
   async function unfollowStream(id: number) {
     if (!$currentGuild?.id) return;
-    if (!(await requestConfirmation({ message: "Are you sure you want to stop following this stream?", confirmText: "Unfollow" }))) return;
+    if (!(await requestConfirmation({ message: m.streams.confirmUnfollow(), confirmText: m.streams.confirmUnfollowButton() }))) return;
 
     saving = true;
     try {
       await streamNotificationsApi.unfollowStream($currentGuild.id, id);
-      showMessage("Stream unfollowed successfully!", "success");
+      showMessage(m.streams.notifyUnfollowed(), "success");
       await loadAllStreamData();
     } catch (err) {
       logger.error("Failed to unfollow stream:", err);
-      showMessage("Failed to unfollow stream", "error");
+      showMessage(m.streams.errorUnfollow(), "error");
     } finally {
       saving = false;
     }
@@ -182,16 +183,16 @@
   // Clear all streams
   async function clearAllStreams() {
     if (!$currentGuild?.id) return;
-    if (!(await requestConfirmation({ message: "Are you sure you want to unfollow all streams? This cannot be undone.", confirmText: "Unfollow all" }))) return;
+    if (!(await requestConfirmation({ message: m.streams.confirmUnfollowAll(), confirmText: m.streams.confirmUnfollowAllButton() }))) return;
 
     saving = true;
     try {
       const result = await streamNotificationsApi.clearAllStreams($currentGuild.id);
-      showMessage(`Removed ${result.removedCount} stream(s)!`, "success");
+      showMessage(m.streams.notifyRemoved({ count: result.removedCount }), "success");
       await loadAllStreamData();
     } catch (err) {
       logger.error("Failed to clear streams:", err);
-      showMessage("Failed to clear streams", "error");
+      showMessage(m.streams.errorClear(), "error");
     } finally {
       saving = false;
     }
@@ -207,17 +208,17 @@
       if (type === "online") {
         const messageToSend = serializeMessage(streamOnlineMessage) || null;
         await streamNotificationsApi.setStreamOnlineMessage($currentGuild.id, id, messageToSend);
-        showMessage("Online message saved!", "success");
+        showMessage(m.streams.notifyOnlineSaved(), "success");
       } else {
         const messageToSend = serializeMessage(streamOfflineMessage) || null;
         await streamNotificationsApi.setStreamOfflineMessage($currentGuild.id, id, messageToSend);
-        showMessage("Offline message saved!", "success");
+        showMessage(m.streams.notifyOfflineSaved(), "success");
       }
 
       await loadAllStreamData();
     } catch (err) {
       logger.error("Failed to update stream message:", err);
-      showMessage("Failed to save message", "error");
+      showMessage(m.common.failedToSaveMessage(), "error");
     } finally {
       saving = false;
     }
@@ -231,10 +232,10 @@
     try {
       const messageToSend = serializeMessage(globalMessage) || null;
       await streamNotificationsApi.setCustomStreamMessage($currentGuild.id, messageToSend);
-      showMessage("Custom message saved!", "success");
+      showMessage(m.streams.notifyCustomSaved(), "success");
     } catch (err) {
       logger.error("Failed to save custom message:", err);
-      showMessage("Failed to save message", "error");
+      showMessage(m.common.failedToSaveMessage(), "error");
     } finally {
       saving = false;
     }
@@ -250,7 +251,7 @@
       await loadAllStreamData();
     } catch (err) {
       logger.error("Failed to toggle offline notifications:", err);
-      showMessage("Failed to toggle notifications", "error");
+      showMessage(m.streams.errorToggleNotifications(), "error");
     } finally {
       saving = false;
     }
@@ -275,7 +276,7 @@
   }
 
   function formatDate(dateString: string | null): string {
-    if (!dateString) return "Unknown";
+    if (!dateString) return m.common.unknown();
     return new Date(dateString).toLocaleDateString();
   }
 
@@ -286,7 +287,7 @@
   function getPlatformInfo(type: StreamType, typeName?: string | null) {
     const byName = typeName ? platformTypesByName[typeName.toLowerCase()] : undefined;
     return byName || platformTypes[type] || {
-      name: typeName || "Unknown",
+      name: typeName || m.common.unknown(),
       color: $colorStore.muted,
       faIcon: "fa-circle-question",
       faClass: "fa-solid"
@@ -295,7 +296,7 @@
 
   function getChannelName(channelId: bigint): string {
     const channel = guildChannels.find(c => c.id === channelId.toString());
-    return channel ? channel.name : "Unknown Channel";
+    return channel ? channel.name : m.common.unknownChannel();
   }
 
   function handleNewStreamChannelChange(detail: any) {
@@ -325,17 +326,17 @@
   });
 
   // Tabs configuration
-  const tabs = [
-    { id: "list", label: "Streams", icon: "fa-radio" },
-    { id: "add", label: "Follow Stream", icon: "fa-plus" },
-    { id: "config", label: "Settings", icon: "fa-gear" },
-    { id: "stats", label: "Statistics", icon: "fa-chart-column" }
-  ];
+  const tabs = $derived([
+    { id: "list", label: m.common.streams(), icon: "fa-radio" },
+    { id: "add", label: m.streams.tabAdd(), icon: "fa-plus" },
+    { id: "config", label: m.common.settings(), icon: "fa-gear" },
+    { id: "stats", label: m.common.statistics(), icon: "fa-chart-column" }
+  ]);
 
   // Action buttons configuration
   let actionButtons = $derived([
     {
-      label: "Refresh",
+      label: m.common.refresh(),
       icon: "fa-arrows-rotate",
       action: loadAllStreamData,
       loading: loading
@@ -372,9 +373,9 @@
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-radio"
   statusMessages={statusMessages}
-  subtitle="Track Twitch, YouTube, Kick, Trovo & Picarto streams"
+  subtitle={m.streams.pageSubtitle()}
   {tabs}
-  title="Stream Notifications"
+  title={m.features.wizardStreamsName()}
 >
 
   {#if activeTab === 'list'}
@@ -386,7 +387,7 @@
           <div class="flex items-center gap-3">
             <i class="fa-utility-duo fa-regular fa-radio"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Followed Streams ({streams.length})</h2>
+            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.streams.followedHeading({ count: streams.length })}</h2>
           </div>
           {#if streams.length > 0}
             <button
@@ -395,7 +396,7 @@
               onclick={clearAllStreams}
             >
               <i class="fa-solid fa-trash inline mr-1" style="font-size: 12px sm:14px;"></i>
-              Clear All
+              {m.common.clearAll()}
             </button>
           {/if}
         </div>
@@ -405,9 +406,9 @@
             <div class="text-center py-8">
               <i class="fa-utility-duo fa-regular fa-radio"
                  style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-              <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Streams Followed</h3>
+              <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.streams.emptyTitle()}</h3>
               <p class="text-sm" style="color: {$colorStore.muted}">
-                Start following streamers to get notifications when they go live!
+                {m.streams.emptyHint()}
               </p>
             </div>
           {:else}
@@ -430,11 +431,11 @@
                         {platform.name}
                       </div>
                       <div class="text-xs mb-2" style="color: {$colorStore.muted}">
-                        #{getChannelName(stream.channelId)} • Added {formatDate(stream.dateAdded)}
+                        {m.streams.streamMeta({ channel: getChannelName(stream.channelId), date: formatDate(stream.dateAdded) })}
                       </div>
                     </div>
                   </div>
-                  <button aria-label="Delete"
+                  <button aria-label={m.common.delete()}
                           class="p-1.5 sm:p-2 rounded-lg transition-all hover:scale-110"
                           style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                           onclick={() => unfollowStream(stream.index)}
@@ -454,8 +455,8 @@
                       >
                         <i class="fa-solid fa-circle-check inline mr-1"
                            style="color: #57F287; font-size: 10px;"></i>
-                        <span class="hidden sm:inline">Online</span>
-                        <span class="sm:hidden">On</span>
+                        <span class="hidden sm:inline">{m.common.online()}</span>
+                        <span class="sm:hidden">{m.common.on()}</span>
                       </button>
                       <button
                         class="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium"
@@ -464,8 +465,8 @@
                       >
                         <i class="fa-solid fa-circle-xmark inline mr-1"
                            style="color: #ED4245; font-size: 10px;"></i>
-                        <span class="hidden sm:inline">Offline</span>
-                        <span class="sm:hidden">Off</span>
+                        <span class="hidden sm:inline">{m.common.offline()}</span>
+                        <span class="sm:hidden">{m.common.off()}</span>
                       </button>
                     </div>
 
@@ -473,8 +474,8 @@
                     {#if editingMessageType === 'online'}
                       <FullscreenEmbedBuilder
                         bind:value={streamOnlineMessage}
-                        previewTitle="Online Message"
-                        previewDescription="Message sent when stream goes online"
+                        previewTitle={m.streams.onlineMessageTitle()}
+                        previewDescription={m.streams.onlineMessageDescription()}
                         icon="fa-circle-check"
                         allowContent={true}
                         allowMultipleEmbeds={true}
@@ -490,8 +491,8 @@
                     {#if editingMessageType === 'offline'}
                       <FullscreenEmbedBuilder
                         bind:value={streamOfflineMessage}
-                        previewTitle="Offline Message"
-                        previewDescription="Message sent when stream goes offline"
+                        previewTitle={m.streams.offlineMessageTitle()}
+                        previewDescription={m.streams.offlineMessageDescription()}
                         icon="fa-circle-exclamation"
                         allowContent={true}
                         allowMultipleEmbeds={true}
@@ -512,7 +513,7 @@
                         disabled={saving}
                       >
                         <i class="fa-solid fa-floppy-disk inline mr-1" style="font-size: 10px;"></i>
-                        Save
+                        {m.common.save()}
                       </button>
                       <button
                         class="flex-1 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium"
@@ -520,7 +521,7 @@
                         onclick={() => editingStream = null}
                       >
                         <i class="fa-solid fa-xmark inline mr-1" style="font-size: 10px;"></i>
-                        Cancel
+                        {m.common.cancel()}
                       </button>
                     </div>
                   </div>
@@ -566,7 +567,7 @@
                     onclick={() => startEditing(stream)}
                   >
                     <i class="fa-solid fa-pen-to-square inline mr-1" style="font-size: 10px;"></i>
-                    Customize Messages
+                    {m.streams.customizeMessages()}
                   </button>
                 {/if}
               </div>
@@ -584,7 +585,7 @@
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-circle-plus"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Follow Stream</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.streams.tabAdd()}</h2>
         </div>
 
         <div class="space-y-4">
@@ -592,30 +593,30 @@
                         <span class="block text-sm font-medium mb-2"
                               style="color: {$colorStore.text}">
                             <i class="fa-solid fa-hashtag inline mr-1" style="font-size: 14px;"></i>
-                            Notification Channel
+                            {m.common.notificationChannel()}
                         </span>
             <DiscordSelector
               type="channel"
               options={guildChannels}
               selected={newStream.channelId}
-              placeholder="Select channel"
+              placeholder={m.common.selectChannelPlaceholder()}
               onchange={handleNewStreamChannelChange} />
           </div>
 
           <div>
             <label for="stream-url" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               <i class="fa-solid fa-globe inline mr-1" style="font-size: 14px;"></i>
-              Stream URL
+              {m.streams.streamUrl()}
             </label>
             <input id="stream-url"
                    type="url"
                    bind:value={newStream.url}
-                   placeholder="https://twitch.tv/username or https://youtube.com/@username"
+                   placeholder={m.streams.streamUrlPlaceholder()}
                    class="w-full p-3 rounded-xl border transition-all"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             >
             <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-              Supports: Twitch, YouTube, Kick, Trovo, and Picarto
+              {m.streams.supportedPlatforms()}
             </p>
           </div>
 
@@ -626,7 +627,7 @@
             disabled={saving || !newStream.channelId || !newStream.url.trim()}
           >
             <i class="fa-solid fa-plus" style="font-size: 16px sm:20px;"></i>
-            {saving ? "Following..." : "Follow Stream"}
+            {saving ? m.streams.following() : m.streams.tabAdd()}
           </button>
         </div>
       </div>
@@ -640,7 +641,7 @@
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-gear"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Global Settings</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.streams.globalSettings()}</h2>
         </div>
 
         <div class="space-y-6">
@@ -648,13 +649,13 @@
             <label for="f-+page-global-stream-message-603" class="block text-sm font-medium mb-3"
                    style="color: {$colorStore.text}">
               <i class="fa-solid fa-message inline mr-1" style="font-size: 14px;"></i>
-              Global Stream Message
+              {m.streams.globalMessageLabel()}
             </label>
 
             <FullscreenEmbedBuilder id="f-+page-global-stream-message-603"
               bind:value={globalMessage}
-              previewTitle="Global Stream Message"
-              previewDescription="Default message for all stream notifications"
+              previewTitle={m.streams.globalMessageLabel()}
+              previewDescription={m.streams.globalMessageDescription()}
               icon="fa-comment"
               allowContent={true}
               allowMultipleEmbeds={true}
@@ -672,7 +673,7 @@
               disabled={saving}
             >
               <i class="fa-solid fa-floppy-disk inline mr-1" style="font-size: 12px sm:14px;"></i>
-              Save Message
+              {m.common.saveMessage()}
             </button>
           </div>
 
@@ -680,13 +681,13 @@
                style="background: {$colorStore.primary}08;">
             <div>
               <div class="font-medium mb-1" style="color: {$colorStore.text}">
-                Offline Notifications
+                {m.streams.offlineNotifications()}
               </div>
               <div class="text-sm" style="color: {$colorStore.muted}">
-                Send notifications when streams go offline
+                {m.streams.offlineNotificationsHint()}
               </div>
             </div>
-            <button aria-label="Toggle offline notifications"
+            <button aria-label={m.streams.offlineNotificationsAria()}
                     onclick={toggleOfflineNotifications}
                     class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
                     style="background: {offlineNotifications ? $colorStore.primary : $colorStore.muted};"
@@ -705,36 +706,36 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <StatCard
             icon="fa-radio"
-            label="Total Streams"
+            label={m.streams.statTotalStreams()}
             value={stats.totalStreams}
-            subtitle="being tracked"
+            subtitle={m.streams.statTotalStreamsSubtitle()}
             iconColor="primary"
             animationDelay={0}
           />
 
           <StatCard
             icon="fa-video"
-            label="Unique Streamers"
+            label={m.streams.statUniqueStreamers()}
             value={streamers.length}
-            subtitle="followed"
+            subtitle={m.streams.statUniqueStreamersSubtitle()}
             iconColor="secondary"
             animationDelay={100}
           />
 
           <StatCard
             icon="fa-square"
-            label="Channels"
+            label={m.common.channels()}
             value={(stats.streamsByChannel || []).length}
-            subtitle="with notifications"
+            subtitle={m.streams.statChannelsSubtitle()}
             iconColor="accent"
             animationDelay={200}
           />
 
           <StatCard
             icon="fa-globe"
-            label="Platforms"
+            label={m.streams.statPlatforms()}
             value={(stats.streamsByType || []).length}
-            subtitle="in use"
+            subtitle={m.streams.statPlatformsSubtitle()}
             iconColor="primary"
             animationDelay={300}
           />
@@ -747,7 +748,7 @@
             <div class="flex items-center gap-3 mb-6">
               <i class="fa-utility-duo fa-regular fa-chart-simple"
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-              <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Streams by Platform</h2>
+              <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.streams.byPlatformHeading()}</h2>
             </div>
 
             <div class="space-y-2">
@@ -761,7 +762,7 @@
                     <span style="color: {$colorStore.text}">{platform.name}</span>
                   </div>
                   <span class="font-semibold" style="color: {platform.color}">
-                                        {entry.count} stream{entry.count !== 1 ? 's' : ''}
+                                        {entry.count === 1 ? m.streams.streamCountOne({ count: entry.count }) : m.streams.streamCountOther({ count: entry.count })}
                                     </span>
                 </div>
               {/each}
@@ -772,9 +773,9 @@
         <div class="text-center py-12">
           <i class="fa-utility-duo fa-regular fa-chart-simple"
              style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-          <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">No Statistics Available</h3>
+          <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">{m.common.noStatisticsAvailable()}</h3>
           <p style="color: {$colorStore.muted}">
-            Stream statistics will appear here once you follow streamers.
+            {m.streams.statsEmptyHint()}
           </p>
         </div>
       {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { page } from "$app/stores";
   import ResponseStatusChecker from "$lib/components/forms/ResponseStatusChecker.svelte";
 
@@ -6,8 +7,8 @@
 </script>
 
 <svelte:head>
-  <title>Response Status - Mewdeko</title>
-  <meta content="Check your form submission status" name="description" />
+  <title>{m.forms.statusTitle()}</title>
+  <meta content={m.forms.statusDescription()} name="description" />
 </svelte:head>
 
 <ResponseStatusChecker {token} />

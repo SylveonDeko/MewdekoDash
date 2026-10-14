@@ -1,5 +1,6 @@
 <!-- routes/dashboard/serverstats/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount, untrack } from "svelte";
   import { goto } from "$app/navigation";
   import {
@@ -60,12 +61,12 @@
 
   let { data }: Props = $props();
 
-  const tabs = [
-    { id: "overview", label: "Overview", icon: "fa-chart-line" },
-    { id: "top", label: "Rankings", icon: "fa-trophy" },
-    { id: "lookup", label: "Member & Channel", icon: "fa-user" },
-    { id: "settings", label: "Settings", icon: "fa-gear" },
-  ];
+  const tabs = $derived([
+    { id: "overview", label: m.common.overview(), icon: "fa-chart-line" },
+    { id: "top", label: m.serverstats.rankTitle(), icon: "fa-trophy" },
+    { id: "lookup", label: m.serverstats.tabLookup(), icon: "fa-user" },
+    { id: "settings", label: m.common.settings(), icon: "fa-gear" },
+  ]);
 
   let activeTab = $state("overview");
   let notificationMessage = $state("");
@@ -78,7 +79,7 @@
   }
 
   const autoSave = createAutoSave({
-    onError: () => notify("Couldn't save activity stats settings. Toggles were put back; use Retry for number fields.", "error"),
+    onError: () => notify(m.serverstats.notifySaveFailed(), "error"),
   });
 
   function fail(err: unknown, fallback: string) {
@@ -99,7 +100,7 @@
       clientApi.getRoles(guildId).catch(() => []),
       clientApi.getChannels(guildId).catch(() => []),
     ]);
-    members = memberList.map((m: any) => ({ id: m.id.toString(), name: m.username, avatarUrl: m.avatarUrl }));
+    members = memberList.map((mem: any) => ({ id: mem.id.toString(), name: mem.username, avatarUrl: mem.avatarUrl }));
     roles = roleList.map((r: any) => ({ id: r.id.toString(), name: r.name, color: r.color }));
     channels = channelList.map((c: any) => ({ id: c.id.toString(), name: c.name }));
   }
@@ -116,7 +117,7 @@
 
   function memberName(id: bigint | string): string {
     const key = id.toString();
-    return members.find((m) => m.id === key)?.name ?? key;
+    return members.find((mem) => mem.id === key)?.name ?? key;
   }
 
   /** Shared window */
@@ -154,7 +155,7 @@
       snapshots = snaps;
       joinLeave = jl;
     } catch (err) {
-      overviewError = err instanceof Error ? err.message : "Failed to load activity";
+      overviewError = err instanceof Error ? err.message : m.serverstats.errorLoadActivity();
       logger.error("Failed to load server stats overview", err);
     } finally {
       overviewLoading = false;
@@ -203,7 +204,7 @@
       topChannels = chans;
       topActivities = games;
     } catch (err) {
-      topError = err instanceof Error ? err.message : "Failed to load rankings";
+      topError = err instanceof Error ? err.message : m.serverstats.errorLoadRankings();
       logger.error("Failed to load rankings", err);
     } finally {
       topLoading = false;
@@ -239,7 +240,7 @@
       id: `${g.type}|${g.name}`,
       name: g.name,
       value: formatDuration(g.seconds),
-      detail: `${g.players} ${g.players === 1 ? "player" : "players"} · ${g.activeNow} now · ${g.type}`,
+      detail: (g.players === 1 ? m.serverstats.gameDetailOne : m.serverstats.gameDetailOther)({ players: g.players, active: g.activeNow, type: g.type }),
     })),
   );
 
@@ -249,7 +250,7 @@
       const blob = await serverStatsApi.exportCsv($currentGuild.id, topKind as StatKindValue, lookback);
       saveBlob(blob, `activity-${topKind === StatKind.Messages ? "messages" : topKind === StatKind.Voice ? "voice" : "games"}-${lookback}d.csv`);
     } catch (err) {
-      fail(err, "Failed to export the ranking");
+      fail(err, m.serverstats.errorExport());
     }
   }
 
@@ -275,7 +276,7 @@
       userActivity = a;
       userGames = games;
     } catch (err) {
-      fail(err, "Failed to load the member's activity");
+      fail(err, m.serverstats.errorLoadMember());
     } finally {
       lookupLoading = false;
     }
@@ -287,7 +288,7 @@
     try {
       channelActivity = await serverStatsApi.getChannel($currentGuild.id, BigInt(lookupChannelId), lookback);
     } catch (err) {
-      fail(err, "Failed to load the channel's activity");
+      fail(err, m.serverstats.errorLoadChannel());
     } finally {
       lookupLoading = false;
     }
@@ -301,7 +302,7 @@
     try {
       gameDetail = await serverStatsApi.getActivity($currentGuild.id, lookupGame.trim(), lookback);
     } catch (err) {
-      fail(err, "Failed to load who plays that");
+      fail(err, m.serverstats.errorLoadGame());
     } finally {
       lookupLoading = false;
     }
@@ -333,16 +334,16 @@
   let excludeUser = $state<string | null>(null);
   let filterNameDraft = $state("");
 
-  const voiceStateOptions: Array<{ flag: number; label: string; hint: string }> = [
-    { flag: VoiceStateFlags.SelfMuted, label: "Self muted", hint: "Time with the mic off" },
-    { flag: VoiceStateFlags.SelfDeafened, label: "Self deafened", hint: "Time with sound off" },
-    { flag: VoiceStateFlags.ServerMuted, label: "Server muted", hint: "Muted by a moderator" },
-    { flag: VoiceStateFlags.ServerDeafened, label: "Server deafened", hint: "Deafened by a moderator" },
-    { flag: VoiceStateFlags.Afk, label: "AFK channel", hint: "Time in the AFK channel" },
-    { flag: VoiceStateFlags.Alone, label: "Alone", hint: "The only human in the channel" },
-    { flag: VoiceStateFlags.Streaming, label: "Streaming", hint: "Time with a stream running" },
-    { flag: VoiceStateFlags.Video, label: "Camera on", hint: "Time with video on" },
-  ];
+  const voiceStateOptions: Array<{ flag: number; label: string; hint: string }> = $derived([
+    { flag: VoiceStateFlags.SelfMuted, label: m.serverstats.voiceSelfMuted(), hint: m.serverstats.voiceSelfMutedHint() },
+    { flag: VoiceStateFlags.SelfDeafened, label: m.serverstats.voiceSelfDeafened(), hint: m.serverstats.voiceSelfDeafenedHint() },
+    { flag: VoiceStateFlags.ServerMuted, label: m.serverstats.voiceServerMuted(), hint: m.serverstats.voiceServerMutedHint() },
+    { flag: VoiceStateFlags.ServerDeafened, label: m.serverstats.voiceServerDeafened(), hint: m.serverstats.voiceServerDeafenedHint() },
+    { flag: VoiceStateFlags.Afk, label: m.serverstats.voiceAfk(), hint: m.serverstats.voiceAfkHint() },
+    { flag: VoiceStateFlags.Alone, label: m.serverstats.voiceAlone(), hint: m.serverstats.voiceAloneHint() },
+    { flag: VoiceStateFlags.Streaming, label: m.serverstats.voiceStreaming(), hint: m.serverstats.voiceStreamingHint() },
+    { flag: VoiceStateFlags.Video, label: m.serverstats.voiceCamera(), hint: m.serverstats.voiceCameraHint() },
+  ]);
 
   async function loadSettings() {
     if (!$currentGuild?.id) return;
@@ -363,7 +364,7 @@
       cooldownDraft = s.messageCooldownSeconds;
       if (!overview) lookback = s.defaultLookbackDays;
     } catch (err) {
-      settingsError = err instanceof Error ? err.message : "Failed to load settings";
+      settingsError = err instanceof Error ? err.message : m.common.notifyLoadSettingsFailed();
       logger.error("Failed to load stats settings", err);
     } finally {
       settingsLoading = false;
@@ -434,7 +435,7 @@
       excludeRole = null;
       excludeUser = null;
     } catch (err) {
-      fail(err, "Failed to add the exclusion");
+      fail(err, m.common.failedToAddTheExclusion());
     }
   }
 
@@ -444,7 +445,7 @@
       await serverStatsApi.removeExclusion($currentGuild.id, kind, target);
       exclusions = await serverStatsApi.getExclusions($currentGuild.id);
     } catch (err) {
-      fail(err, "Failed to remove the exclusion");
+      fail(err, m.common.failedToRemoveTheExclusion());
     }
   }
 
@@ -455,7 +456,7 @@
       activityFilters = await serverStatsApi.getActivityFilters($currentGuild.id);
       filterNameDraft = "";
     } catch (err) {
-      fail(err, "Failed to update the activity filter");
+      fail(err, m.serverstats.errorUpdateFilter());
     }
   }
 
@@ -498,10 +499,10 @@
 {/snippet}
 
 <DashboardPageLayout
-  title="Activity Stats"
-  subtitle="Messages, voice time, games and member growth over any window"
+  title={m.features.serverstatsName()}
+  subtitle={m.serverstats.pageSubtitle()}
   icon="fa-chart-simple"
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   {tabs}
   bind:activeTab
   bind:notificationMessage
@@ -510,60 +511,60 @@
 >
   {#if activeTab === "overview"}
     <section>
-      <SectionHeader icon="fa-chart-simple" title="Server Activity" subtitle={windowLabel(lookback)} actions={windowActions} />
+      <SectionHeader icon="fa-chart-simple" title={m.serverstats.overviewTitle()} subtitle={windowLabel(lookback)} actions={windowActions} />
 
       <AsyncState loading={overviewLoading} error={overviewError} empty={!overview}>
         {#if overview}
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-            <StatTile label="Messages" value={formatNumber(overview.messages)} sub={`${formatNumber(overview.messageContributors)} chatters`} />
-            <StatTile label="Voice time" value={formatDuration(overview.voiceSeconds)} sub={`${formatNumber(overview.voiceContributors)} in voice`} />
-            <StatTile label="Joins" value={formatNumber(overview.joins)} />
-            <StatTile label="Leaves" value={formatNumber(overview.leaves)} />
-            <StatTile label="Net growth" value={formatSigned(overview.netGrowth)} tone={overview.netGrowth >= 0 ? "ok" : "crit"} />
-            <StatTile label="Members now" value={formatNumber(overview.now.members)} sub={`${formatNumber(overview.now.online)} online · ${formatNumber(overview.now.inVoice)} in voice`} />
+            <StatTile label={m.common.messages()} value={formatNumber(overview.messages)} sub={m.serverstats.tileChatters({ count: formatNumber(overview.messageContributors) })} />
+            <StatTile label={m.serverstats.tileVoiceTime()} value={formatDuration(overview.voiceSeconds)} sub={m.serverstats.tileInVoice({ count: formatNumber(overview.voiceContributors) })} />
+            <StatTile label={m.common.joins()} value={formatNumber(overview.joins)} />
+            <StatTile label={m.common.leaves()} value={formatNumber(overview.leaves)} />
+            <StatTile label={m.common.netGrowth()} value={formatSigned(overview.netGrowth)} tone={overview.netGrowth >= 0 ? "ok" : "crit"} />
+            <StatTile label={m.serverstats.tileMembersNow()} value={formatNumber(overview.now.members)} sub={m.serverstats.tileOnlineInVoice({ online: formatNumber(overview.now.online), voice: formatNumber(overview.now.inVoice) })} />
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
-            <StatTile label="Top chatter" value={overview.topMessageUser?.displayName || overview.topMessageUser?.name || "-"} sub={overview.topMessageUser ? `${formatNumber(overview.topMessageUser.value)} messages` : undefined} />
-            <StatTile label="Top voice" value={overview.topVoiceUser?.displayName || overview.topVoiceUser?.name || "-"} sub={overview.topVoiceUser ? formatDuration(overview.topVoiceUser.value) : undefined} />
-            <StatTile label="Busiest channel" value={overview.topMessageChannel ? `#${overview.topMessageChannel.name ?? ""}` : "-"} sub={overview.topMessageChannel ? `${formatNumber(overview.topMessageChannel.value)} messages` : undefined} />
-            <StatTile label="Most played" value={topGames[0]?.name ?? (settings?.trackActivities ? "-" : "Game tracking off")} sub={topGames[0] ? `${formatDuration(topGames[0].seconds)} · ${topGames[0].players} players` : undefined} />
+            <StatTile label={m.serverstats.tileTopChatter()} value={overview.topMessageUser?.displayName || overview.topMessageUser?.name || "-"} sub={overview.topMessageUser ? m.common.messagesCount({ count: formatNumber(overview.topMessageUser.value) }) : undefined} />
+            <StatTile label={m.serverstats.tileTopVoice()} value={overview.topVoiceUser?.displayName || overview.topVoiceUser?.name || "-"} sub={overview.topVoiceUser ? formatDuration(overview.topVoiceUser.value) : undefined} />
+            <StatTile label={m.serverstats.tileBusiestChannel()} value={overview.topMessageChannel ? `#${overview.topMessageChannel.name ?? ""}` : "-"} sub={overview.topMessageChannel ? m.common.messagesCount({ count: formatNumber(overview.topMessageChannel.value) }) : undefined} />
+            <StatTile label={m.serverstats.tileMostPlayed()} value={topGames[0]?.name ?? (settings?.trackActivities ? "-" : m.serverstats.tileTrackingOff())} sub={topGames[0] ? m.serverstats.tileMostPlayedSub({ duration: formatDuration(topGames[0].seconds), players: topGames[0].players }) : undefined} />
           </div>
 
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <Card title="Messages">
-              <SimpleLineChart labels={messageLabels} series={[{ name: "Messages", data: messageSeries.map((p) => p.value) }]} height={200} beginAtZero empty="No messages in this window" />
+            <Card title={m.common.messages()}>
+              <SimpleLineChart labels={messageLabels} series={[{ name: m.common.messages(), data: messageSeries.map((p) => p.value) }]} height={200} beginAtZero empty={m.serverstats.chartEmptyMessages()} />
             </Card>
-            <Card title="Voice hours">
-              <SimpleLineChart labels={voiceLabels} series={[{ name: "Hours", data: voiceSeries.map((p) => Math.round(p.value * 10) / 10), color: "#b67ff0" }]} height={200} beginAtZero empty="No voice time in this window" />
+            <Card title={m.serverstats.chartVoiceHours()}>
+              <SimpleLineChart labels={voiceLabels} series={[{ name: m.common.hours(), data: voiceSeries.map((p) => Math.round(p.value * 10) / 10), color: "#b67ff0" }]} height={200} beginAtZero empty={m.serverstats.chartEmptyVoice()} />
             </Card>
-            <Card title="Members">
-              <SimpleLineChart labels={snapshotLabels} series={[{ name: "Members", data: snapshots.map((s) => s.members), color: "#4ade80" }]} height={200} empty="Snapshots start an hour after tracking is enabled" />
+            <Card title={m.common.members()}>
+              <SimpleLineChart labels={snapshotLabels} series={[{ name: m.common.members(), data: snapshots.map((s) => s.members), color: "#4ade80" }]} height={200} empty={m.serverstats.chartEmptySnapshots()} />
             </Card>
-            <Card title="Member status">
+            <Card title={m.serverstats.chartMemberStatus()}>
               <SimpleLineChart
                 labels={snapshotLabels}
                 series={[
-                  { name: "Online", data: snapshots.map((s) => s.online), color: "#43b581" },
-                  { name: "Idle", data: snapshots.map((s) => s.idle), color: "#faa61a" },
-                  { name: "DND", data: snapshots.map((s) => s.dnd), color: "#f04747" },
-                  { name: "In voice", data: snapshots.map((s) => s.inVoice), color: "#b67ff0" },
+                  { name: m.common.online(), data: snapshots.map((s) => s.online), color: "#43b581" },
+                  { name: m.serverstats.chartIdle(), data: snapshots.map((s) => s.idle), color: "#faa61a" },
+                  { name: m.serverstats.chartDnd(), data: snapshots.map((s) => s.dnd), color: "#f04747" },
+                  { name: m.serverstats.chartInVoice(), data: snapshots.map((s) => s.inVoice), color: "#b67ff0" },
                 ]}
                 height={200}
                 beginAtZero
-                empty="Snapshots start an hour after tracking is enabled"
+                empty={m.serverstats.chartEmptySnapshots()}
               />
             </Card>
-            <Card title="Joins and leaves" class="xl:col-span-2">
+            <Card title={m.common.joinsAndLeaves()} class="xl:col-span-2">
               <SimpleLineChart
                 labels={joinLabels}
                 series={[
-                  { name: "Joins", data: joinLeave?.joins.map((p) => p.value) ?? [], color: "#4ade80" },
-                  { name: "Leaves", data: joinLeave?.leaves.map((p) => p.value) ?? [], color: "#f87171" },
+                  { name: m.common.joins(), data: joinLeave?.joins.map((p) => p.value) ?? [], color: "#4ade80" },
+                  { name: m.common.leaves(), data: joinLeave?.leaves.map((p) => p.value) ?? [], color: "#f87171" },
                 ]}
                 height={200}
                 beginAtZero
-                empty="No joins or leaves in this window"
+                empty={m.serverstats.chartEmptyJoins()}
               />
             </Card>
           </div>
@@ -574,38 +575,38 @@
 
   {#if activeTab === "top"}
     <section>
-      <SectionHeader icon="fa-trophy" title="Rankings" subtitle={windowLabel(lookback)}>
+      <SectionHeader icon="fa-trophy" title={m.serverstats.rankTitle()} subtitle={windowLabel(lookback)}>
         {#snippet actions()}
           <WindowPicker
             bind:value={topKind}
             options={[
-              { value: StatKind.Messages, label: "Messages" },
-              { value: StatKind.Voice, label: "Voice" },
-              ...(settings?.trackActivities ? [{ value: StatKind.Activity, label: "Games" }] : []),
+              { value: StatKind.Messages, label: m.common.messages() },
+              { value: StatKind.Voice, label: m.features.categoryVoice() },
+              ...(settings?.trackActivities ? [{ value: StatKind.Activity, label: m.common.games() }] : []),
             ]}
-            ariaLabel="Ranking kind"
+            ariaLabel={m.serverstats.rankKindLabel()}
             onchange={() => loadTop()}
           />
           <WindowPicker bind:value={lookback} options={lookbackOptions} onchange={changeWindow} />
           <button type="button" class="px-3 min-h-[36px] rounded-lg text-sm font-medium" style="background: {$colorStore.primary}20; color: {$colorStore.primary};" onclick={exportTop}>
-            <i class="fa-solid fa-download mr-1" aria-hidden="true"></i> CSV
+            <i class="fa-solid fa-download mr-1" aria-hidden="true"></i> {m.serverstats.rankCsv()}
           </button>
         {/snippet}
       </SectionHeader>
 
-      <AsyncState loading={topLoading} error={topError} empty={topUsers.length === 0 && topActivities.length === 0} emptyMessage="No activity recorded for this window">
+      <AsyncState loading={topLoading} error={topError} empty={topUsers.length === 0 && topActivities.length === 0} emptyMessage={m.serverstats.rankEmpty()}>
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <Card title={topKind === StatKind.Activity ? "Most time in games" : "Top members"}>
+          <Card title={topKind === StatKind.Activity ? m.serverstats.rankTopGamesTime() : m.common.topMembers()}>
             <RankList rows={topUserRows} onselect={(row) => openUser(row.id)} />
           </Card>
           {#if topKind === StatKind.Activity}
-            <Card title="Top games and apps">
+            <Card title={m.serverstats.rankTopGamesApps()}>
               <RankList rows={topGameRows} onselect={(row) => openGame(row.name)} />
             </Card>
           {:else}
-            <Card title="Top channels">
+            <Card title={m.common.topChannels()}>
               {#if topChannelRows.length === 0}
-                <p class="text-sm" style="color: {$colorStore.muted}">No channel activity in this window.</p>
+                <p class="text-sm" style="color: {$colorStore.muted}">{m.serverstats.rankNoChannelActivity()}</p>
               {:else}
                 <RankList rows={topChannelRows} onselect={(row) => { lookupChannelId = row.id; activeTab = "lookup"; loadChannel(); }} />
               {/if}
@@ -618,22 +619,22 @@
 
   {#if activeTab === "lookup"}
     <section>
-      <SectionHeader icon="fa-user" title="Member & Channel" subtitle={windowLabel(lookback)} actions={windowActions} />
+      <SectionHeader icon="fa-user" title={m.serverstats.tabLookup()} subtitle={windowLabel(lookback)} actions={windowActions} />
 
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <Card title="Member">
+        <Card title={m.common.member()}>
           <div class="mb-3">
-            <DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder="Pick a member" bind:selected={lookupUserId} onchange={() => loadUser()} />
+            <DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder={m.common.pickMemberPlaceholder()} bind:selected={lookupUserId} onchange={() => loadUser()} />
           </div>
           {#if userActivity}
             <div class="grid grid-cols-2 gap-2 mb-3">
-              <StatTile label="Messages" value={formatNumber(userActivity.messages)} sub={userActivity.messageRank ? `Rank #${userActivity.messageRank}` : undefined} />
-              <StatTile label="Voice" value={formatDuration(userActivity.voiceSeconds)} sub={userActivity.voiceRank ? `Rank #${userActivity.voiceRank}` : undefined} />
-              <StatTile label="Lifetime messages" value={formatNumber(userActivity.allTimeMessages)} />
-              <StatTile label="Lifetime voice" value={formatDuration(userActivity.allTimeVoiceSeconds)} />
+              <StatTile label={m.common.messages()} value={formatNumber(userActivity.messages)} sub={userActivity.messageRank ? m.common.rankNumber({ rank: userActivity.messageRank }) : undefined} />
+              <StatTile label={m.features.categoryVoice()} value={formatDuration(userActivity.voiceSeconds)} sub={userActivity.voiceRank ? m.common.rankNumber({ rank: userActivity.voiceRank }) : undefined} />
+              <StatTile label={m.serverstats.lookupLifetimeMessages()} value={formatNumber(userActivity.allTimeMessages)} />
+              <StatTile label={m.serverstats.lookupLifetimeVoice()} value={formatDuration(userActivity.allTimeVoiceSeconds)} />
             </div>
             {#if userActivity.topMessageChannels.length > 0}
-              <h4 class="text-sm font-medium mb-1" style="color: {$colorStore.text}">Chats most in</h4>
+              <h4 class="text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.serverstats.lookupChatsMost()}</h4>
               <ul class="text-sm mb-3 space-y-1" style="color: {$colorStore.muted}">
                 {#each userActivity.topMessageChannels as c (c.id.toString())}
                   <li class="flex justify-between"><span>#{c.name ?? c.id.toString()}</span><span style="color: {$colorStore.secondary}">{formatNumber(c.value)}</span></li>
@@ -641,7 +642,7 @@
               </ul>
             {/if}
             {#if userActivity.topVoiceChannels.length > 0}
-              <h4 class="text-sm font-medium mb-1" style="color: {$colorStore.text}">Voice channels</h4>
+              <h4 class="text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.serverstats.lookupVoiceChannels()}</h4>
               <ul class="text-sm mb-3 space-y-1" style="color: {$colorStore.muted}">
                 {#each userActivity.topVoiceChannels as c (c.id.toString())}
                   <li class="flex justify-between"><span>#{c.name ?? c.id.toString()}</span><span style="color: {$colorStore.secondary}">{formatDuration(c.value)}</span></li>
@@ -649,7 +650,7 @@
               </ul>
             {/if}
             {#if userGames.length > 0}
-              <h4 class="text-sm font-medium mb-1" style="color: {$colorStore.text}">Games and apps</h4>
+              <h4 class="text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.serverstats.lookupGamesApps()}</h4>
               <ul class="text-sm space-y-1" style="color: {$colorStore.muted}">
                 {#each userGames as g (g.rank)}
                   <li class="flex justify-between gap-2">
@@ -660,22 +661,22 @@
               </ul>
             {/if}
           {:else if !lookupLoading}
-            <p class="text-sm" style="color: {$colorStore.muted}">Pick a member to see their messages, voice time and games.</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.serverstats.lookupMemberEmpty()}</p>
           {/if}
         </Card>
 
-        <Card title="Channel">
+        <Card title={m.common.channel()}>
           <div class="mb-3">
-            <DiscordSelector type="channel" options={channels} placeholder="Pick a channel" bind:selected={lookupChannelId} onchange={() => loadChannel()} />
+            <DiscordSelector type="channel" options={channels} placeholder={m.common.pickChannelPlaceholder()} bind:selected={lookupChannelId} onchange={() => loadChannel()} />
           </div>
           {#if channelActivity}
             <div class="grid grid-cols-3 gap-2 mb-3">
-              <StatTile label="Messages" value={formatNumber(channelActivity.messages)} />
-              <StatTile label="Voice" value={formatDuration(channelActivity.voiceSeconds)} />
-              <StatTile label="People" value={formatNumber(channelActivity.contributors)} />
+              <StatTile label={m.common.messages()} value={formatNumber(channelActivity.messages)} />
+              <StatTile label={m.features.categoryVoice()} value={formatDuration(channelActivity.voiceSeconds)} />
+              <StatTile label={m.serverstats.lookupPeople()} value={formatNumber(channelActivity.contributors)} />
             </div>
             {#if channelActivity.topMessageUsers.length > 0}
-              <h4 class="text-sm font-medium mb-1" style="color: {$colorStore.text}">Top chatters</h4>
+              <h4 class="text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.serverstats.lookupTopChatters()}</h4>
               <ul class="text-sm mb-3 space-y-1" style="color: {$colorStore.muted}">
                 {#each channelActivity.topMessageUsers as u (u.id.toString())}
                   <li class="flex justify-between"><span>{u.displayName || u.name || u.id.toString()}</span><span style="color: {$colorStore.secondary}">{formatNumber(u.value)}</span></li>
@@ -683,7 +684,7 @@
               </ul>
             {/if}
             {#if channelActivity.topVoiceUsers.length > 0}
-              <h4 class="text-sm font-medium mb-1" style="color: {$colorStore.text}">Top voice</h4>
+              <h4 class="text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.serverstats.tileTopVoice()}</h4>
               <ul class="text-sm space-y-1" style="color: {$colorStore.muted}">
                 {#each channelActivity.topVoiceUsers as u (u.id.toString())}
                   <li class="flex justify-between"><span>{u.displayName || u.name || u.id.toString()}</span><span style="color: {$colorStore.secondary}">{formatDuration(u.value)}</span></li>
@@ -691,30 +692,30 @@
               </ul>
             {/if}
           {:else if !lookupLoading}
-            <p class="text-sm" style="color: {$colorStore.muted}">Pick a channel to see who is active in it.</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.serverstats.lookupChannelEmpty()}</p>
           {/if}
         </Card>
 
-        <Card title="Who plays">
+        <Card title={m.serverstats.lookupWhoPlays()}>
           <div class="flex gap-2 mb-3">
-            <input type="text" placeholder="Game or app name" bind:value={lookupGame} onkeydown={(e) => e.key === "Enter" && loadGame()} class="grow rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" aria-label="Game or app name" />
-            <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={() => loadGame()}>Look up</button>
+            <input type="text" placeholder={m.serverstats.lookupGamePlaceholder()} bind:value={lookupGame} onkeydown={(e) => e.key === "Enter" && loadGame()} class="grow rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" aria-label={m.serverstats.lookupGamePlaceholder()} />
+            <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={() => loadGame()}>{m.serverstats.lookupLookUp()}</button>
           </div>
           {#if !settings?.trackActivities}
-            <p class="text-sm" style="color: {$colorStore.muted}">Game tracking is off. Turn it on under Settings.</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.serverstats.lookupTrackingOff()}</p>
           {:else if gameDetail}
             <div class="grid grid-cols-3 gap-2 mb-3">
-              <StatTile label="Playing now" value={formatNumber(gameDetail.activeNow)} />
-              <StatTile label="Players" value={formatNumber(gameDetail.players)} />
-              <StatTile label="Total time" value={formatDuration(gameDetail.totalSeconds)} />
+              <StatTile label={m.serverstats.lookupPlayingNow()} value={formatNumber(gameDetail.activeNow)} />
+              <StatTile label={m.common.players()} value={formatNumber(gameDetail.players)} />
+              <StatTile label={m.common.totalTime()} value={formatDuration(gameDetail.totalSeconds)} />
             </div>
             {#if gameDetail.top.length > 0}
               <RankList rows={gameDetail.top.map((r) => ({ rank: r.rank, id: r.entry.id.toString(), name: r.entry.displayName || r.entry.name || r.entry.id.toString(), avatarUrl: r.entry.avatarUrl ?? null, value: formatDuration(r.entry.value) }))} onselect={(row) => openUser(row.id)} />
             {:else}
-              <p class="text-sm" style="color: {$colorStore.muted}">Nobody has been seen in {gameDetail.name} in this window.</p>
+              <p class="text-sm" style="color: {$colorStore.muted}">{m.serverstats.lookupNobody({ game: gameDetail.name })}</p>
             {/if}
           {:else if !lookupLoading}
-            <p class="text-sm" style="color: {$colorStore.muted}">Type a game to see who plays it and for how long.</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.serverstats.lookupGameEmpty()}</p>
           {/if}
         </Card>
       </div>
@@ -723,28 +724,28 @@
 
   {#if activeTab === "settings"}
     <section>
-      <SectionHeader icon="fa-gear" title="Tracking Settings" subtitle="What is recorded, for whom, and where" />
+      <SectionHeader icon="fa-gear" title={m.serverstats.settingsTitle()} subtitle={m.serverstats.settingsSubtitle()} />
 
       <AsyncState loading={settingsLoading} error={settingsError} empty={!settings}>
         {#if settings}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-            <SettingToggle id="track-voice" label="Track voice time" hint="Seconds spent in voice channels, per member and channel" checked={settings.trackVoice} onchange={(v) => update({ trackVoice: v })} />
-            <SettingToggle id="track-snapshots" label="Hourly snapshots" hint="Member and status counts every hour, for the member and status charts" checked={settings.trackSnapshots} onchange={(v) => update({ trackSnapshots: v })} />
-            <SettingToggle id="count-bots" label="Count bots" hint="Include bot accounts in message and voice stats" checked={settings.countBots} onchange={(v) => update({ countBots: v })} />
-            <SettingToggle id="track-activities" label="Track games and apps" hint="Time members spend playing, streaming, listening or watching. Off by default; the heaviest tracker." checked={settings.trackActivities} onchange={(v) => update({ trackActivities: v })} />
-            <SettingToggle id="verify-activities" label="Verify activities" hint="Only count activities backed by a Discord application, Spotify or a stream, which blocks spoofed presences" checked={settings.verifyActivities} onchange={(v) => update({ verifyActivities: v })} disabled={!settings.trackActivities} />
+            <SettingToggle id="track-voice" label={m.serverstats.settingTrackVoice()} hint={m.serverstats.settingTrackVoiceHint()} checked={settings.trackVoice} onchange={(v) => update({ trackVoice: v })} />
+            <SettingToggle id="track-snapshots" label={m.serverstats.settingSnapshots()} hint={m.serverstats.settingSnapshotsHint()} checked={settings.trackSnapshots} onchange={(v) => update({ trackSnapshots: v })} />
+            <SettingToggle id="count-bots" label={m.serverstats.settingCountBots()} hint={m.serverstats.settingCountBotsHint()} checked={settings.countBots} onchange={(v) => update({ countBots: v })} />
+            <SettingToggle id="track-activities" label={m.serverstats.settingTrackActivities()} hint={m.serverstats.settingTrackActivitiesHint()} checked={settings.trackActivities} onchange={(v) => update({ trackActivities: v })} />
+            <SettingToggle id="verify-activities" label={m.serverstats.settingVerify()} hint={m.serverstats.settingVerifyHint()} checked={settings.verifyActivities} onchange={(v) => update({ verifyActivities: v })} disabled={!settings.trackActivities} />
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <SettingField label="Default window (days)" hint="What stats commands and this page use when no window is picked, 1 to 90" id="lookback">
+            <SettingField label={m.serverstats.settingWindow()} hint={m.serverstats.settingWindowHint()} id="lookback">
               <input id="lookback" type="number" min="1" max="90" step="1" bind:value={lookbackDraft} oninput={saveLookback} onblur={() => autoSave.flush("defaultLookbackDays")} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
             </SettingField>
-            <SettingField label="Message cooldown (seconds)" hint="Messages from the same member count at most once per this many seconds. 0 counts every message." id="cooldown">
+            <SettingField label={m.serverstats.settingCooldown()} hint={m.serverstats.settingCooldownHint()} id="cooldown">
               <input id="cooldown" type="number" min="0" max="300" step="1" bind:value={cooldownDraft} oninput={saveCooldown} onblur={() => autoSave.flush("messageCooldownSeconds")} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
             </SettingField>
           </div>
 
-          <Card title="Voice states that do not count" note="Toggle a state to leave that time out of voice stats" class="mb-8">
+          <Card title={m.serverstats.voiceStatesTitle()} note={m.serverstats.voiceStatesNote()} class="mb-8">
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
               {#each voiceStateOptions as option (option.flag)}
                 <SettingToggle id={`vs-${option.flag}`} label={option.label} hint={option.hint} checked={voiceStateIgnored(option.flag)} onchange={(v) => toggleVoiceState(option.flag, v)} />
@@ -753,78 +754,78 @@
           </Card>
 
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <Card title="Ignored channels" note="Messages and voice here are not counted">
+            <Card title={m.common.ignoredChannels()} note={m.serverstats.ignoredChannelsNote()}>
               <div class="flex gap-2 mb-3">
-                <div class="grow"><DiscordSelector type="channel" options={channels} placeholder="Add a channel" bind:selected={excludeChannel} /></div>
-                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(StatsExclusionKind.Channel, excludeChannel)}>Add</button>
+                <div class="grow"><DiscordSelector type="channel" options={channels} placeholder={m.common.addAChannel()} bind:selected={excludeChannel} /></div>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(StatsExclusionKind.Channel, excludeChannel)}>{m.common.add()}</button>
               </div>
               <ul class="space-y-1">
                 {#each exclusions?.channels ?? [] as id (id.toString())}
                   <li class="flex items-center justify-between rounded-lg p-2" style="background: {$colorStore.primary}08; color: {$colorStore.text};">
                     <span class="truncate">#{channelName(id)}</span>
-                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(StatsExclusionKind.Channel, BigInt(id))} aria-label="Remove">✕</button>
+                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(StatsExclusionKind.Channel, BigInt(id))} aria-label={m.common.remove()}>✕</button>
                   </li>
                 {/each}
               </ul>
             </Card>
-            <Card title="Ignored roles" note="Holders are not counted">
+            <Card title={m.common.ignoredRoles()} note={m.serverstats.ignoredRolesNote()}>
               <div class="flex gap-2 mb-3">
-                <div class="grow"><DiscordSelector type="role" options={roles} placeholder="Add a role" bind:selected={excludeRole} /></div>
-                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(StatsExclusionKind.Role, excludeRole)}>Add</button>
+                <div class="grow"><DiscordSelector type="role" options={roles} placeholder={m.common.addARole()} bind:selected={excludeRole} /></div>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(StatsExclusionKind.Role, excludeRole)}>{m.common.add()}</button>
               </div>
               <ul class="space-y-1">
                 {#each exclusions?.roles ?? [] as id (id.toString())}
                   <li class="flex items-center justify-between rounded-lg p-2" style="background: {$colorStore.primary}08; color: {$colorStore.text};">
                     <span class="truncate">@{roleName(id.toString())}</span>
-                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(StatsExclusionKind.Role, BigInt(id))} aria-label="Remove">✕</button>
+                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(StatsExclusionKind.Role, BigInt(id))} aria-label={m.common.remove()}>✕</button>
                   </li>
                 {/each}
               </ul>
             </Card>
-            <Card title="Ignored members" note="Not counted in this server">
+            <Card title={m.common.ignoredMembers()} note={m.serverstats.ignoredMembersNote()}>
               <div class="flex gap-2 mb-3">
-                <div class="grow"><DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder="Add a member" bind:selected={excludeUser} /></div>
-                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(StatsExclusionKind.User, excludeUser)}>Add</button>
+                <div class="grow"><DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder={m.common.addAMember()} bind:selected={excludeUser} /></div>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(StatsExclusionKind.User, excludeUser)}>{m.common.add()}</button>
               </div>
               <ul class="space-y-1">
                 {#each exclusions?.users ?? [] as id (id.toString())}
                   <li class="flex items-center justify-between rounded-lg p-2" style="background: {$colorStore.primary}08; color: {$colorStore.text};">
                     <span class="truncate">{memberName(id)}</span>
-                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(StatsExclusionKind.User, BigInt(id))} aria-label="Remove">✕</button>
+                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(StatsExclusionKind.User, BigInt(id))} aria-label={m.common.remove()}>✕</button>
                   </li>
                 {/each}
               </ul>
             </Card>
           </div>
 
-          <Card title="Activity filter" note="Games and apps that are, or are not, tracked">
+          <Card title={m.serverstats.filterTitle()} note={m.serverstats.filterNote()}>
             <div class="flex flex-wrap items-center gap-3 mb-3">
               <WindowPicker
                 value={settings.activityFilterMode}
                 options={[
-                  { value: ActivityFilterMode.Blacklist, label: "Blacklist" },
-                  { value: ActivityFilterMode.Whitelist, label: "Whitelist" },
+                  { value: ActivityFilterMode.Blacklist, label: m.common.blacklist() },
+                  { value: ActivityFilterMode.Whitelist, label: m.common.whitelist() },
                 ]}
-                ariaLabel="Activity filter mode"
+                ariaLabel={m.serverstats.filterModeLabel()}
                 onchange={(v) => update({ activityFilterMode: v as 0 | 1 })}
               />
               <p class="text-sm" style="color: {$colorStore.muted}">
-                {settings.activityFilterMode === ActivityFilterMode.Whitelist ? "Only the listed games are tracked." : "The listed games are ignored; everything else is tracked."}
+                {settings.activityFilterMode === ActivityFilterMode.Whitelist ? m.serverstats.filterWhitelistHint() : m.serverstats.filterBlacklistHint()}
               </p>
             </div>
             <div class="flex gap-2 mb-3">
-              <input type="text" maxlength="128" placeholder="Game or app name" bind:value={filterNameDraft} onkeydown={(e) => e.key === "Enter" && toggleFilterName(filterNameDraft)} class="grow rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" aria-label="Game or app name" />
-              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={() => toggleFilterName(filterNameDraft)}>Add</button>
+              <input type="text" maxlength="128" placeholder={m.serverstats.lookupGamePlaceholder()} bind:value={filterNameDraft} onkeydown={(e) => e.key === "Enter" && toggleFilterName(filterNameDraft)} class="grow rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" aria-label={m.serverstats.lookupGamePlaceholder()} />
+              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={() => toggleFilterName(filterNameDraft)}>{m.common.add()}</button>
             </div>
             <div class="flex flex-wrap gap-2">
               {#each activityFilters?.names ?? [] as name (name)}
                 <span class="inline-flex items-center gap-2 rounded-full px-3 min-h-[36px] text-sm" style="background: {$colorStore.primary}15; color: {$colorStore.text};">
                   {name}
-                  <button type="button" style="color: {$colorStore.accent};" onclick={() => toggleFilterName(name)} aria-label={`Remove ${name}`}>✕</button>
+                  <button type="button" style="color: {$colorStore.accent};" onclick={() => toggleFilterName(name)} aria-label={m.common.ariaRemoveNamed({ name })}>✕</button>
                 </span>
               {/each}
               {#if (activityFilters?.names.length ?? 0) === 0}
-                <p class="text-sm" style="color: {$colorStore.muted}">No games listed.</p>
+                <p class="text-sm" style="color: {$colorStore.muted}">{m.serverstats.filterEmpty()}</p>
               {/if}
             </div>
           </Card>

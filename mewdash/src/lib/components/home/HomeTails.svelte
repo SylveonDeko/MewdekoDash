@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import Mascot from "$lib/components/brand/Mascot.svelte";
   import MascotTool, { TOOL_VIEWBOX } from "$lib/components/brand/MascotTool.svelte";
@@ -16,8 +17,8 @@
     tool: MascotToolName;
     /** The cat's face while this part is at the top. */
     expression: MascotExpression;
-    title: string;
-    text: string;
+    title: () => string;
+    text: () => string;
     commands: string[];
     href: string;
   }
@@ -27,144 +28,144 @@
     {
       tool: "star",
       expression: "happy",
-      title: "XP and achievements",
-      text: "Levels for chatting and voice, and achievements members can show off.",
+      title: m.home.tailsStarTitle,
+      text: m.home.tailsStarText,
       commands: [".rank", ".leaderboard", ".achievements", ".achcard", ".rep"],
       href: "/wiki/xp"
     },
     {
       tool: "chart",
       expression: "look",
-      title: "Stats and logging",
-      text: "See who is active in your server, and keep a log of what happens.",
+      title: m.home.tailsChartTitle,
+      text: m.home.tailsChartText,
       commands: [".activitystats", ".topvoice", ".growthstats", ".inviteslb", ".logevents"],
       href: "/wiki/serverstats"
     },
     {
       tool: "bubble",
       expression: "wink",
-      title: "Tickets",
-      text: "Support tickets in private channels, with claiming and transcripts.",
+      title: m.features.ticketsName,
+      text: m.home.tailsBubbleText,
       commands: [".ticketpanel", ".ticketclaim", ".ticketclose", ".ticketnote"],
       href: "/wiki/tickets"
     },
     {
       tool: "coins",
       expression: "excited",
-      title: "Economy and games",
-      text: "A server currency, with games to win it and a shop to spend it in.",
+      title: m.home.tailsCoinsTitle,
+      text: m.home.tailsCoinsText,
       commands: [".daily", ".blackjack", ".slots", ".roulette", ".shop"],
       href: "/wiki/currency"
     },
     {
       tool: "gift",
       expression: "starry",
-      title: "Giveaways",
-      text: "Timed giveaways with entry requirements and rerolls.",
+      title: m.features.giveawaysName,
+      text: m.home.tailsGiftText,
       commands: [".gstart", ".greroll", ".gend", ".giveaways"],
       href: "/wiki/giveaways"
     },
     {
       tool: "note",
       expression: "vibing",
-      title: "Music",
-      text: "Plays YouTube, Spotify and SoundCloud in voice, with a queue and saved playlists.",
+      title: m.features.musicName,
+      text: m.home.tailsNoteText,
       commands: [".play", ".queue", ".skip", ".nowplaying", ".saveplaylist"],
       href: "/wiki/music"
     },
     {
       tool: "shield",
       expression: "determined",
-      title: "Moderation",
-      text: "Warnings that lead to punishments by themselves, and protection against raids and spam.",
+      title: m.features.categoryModeration,
+      text: m.home.tailsShieldText,
       commands: [".warn", ".timeout", ".purge", ".antiraid", ".antispam", ".lockdown"],
       href: "/wiki/moderation"
     },
     {
       tool: "wrench",
       expression: "excited",
-      title: "Make it yours",
-      text: "Write your own commands and replies, and change how the bot looks in your server.",
+      title: m.home.tailsWrenchTitle,
+      text: m.home.tailsWrenchText,
       commands: [".addchattrigger", ".alias", ".prefix", ".say"],
       href: "/wiki/chat-triggers"
     },
     {
       tool: "clipboard",
       expression: "look",
-      title: "Forms",
-      text: "Applications and ban appeals that people fill in from a link and your staff approve in Discord.",
+      title: m.features.formsName,
+      text: m.home.tailsClipboardText,
       commands: [],
       href: "/wiki/forms"
     },
     {
       tool: "pin",
       expression: "starry",
-      title: "Starboard",
-      text: "Members star a message, and the ones with enough stars get reposted in their own channel.",
+      title: m.features.starboardName,
+      text: m.home.tailsPinText,
       commands: [".createstarboard", ".starboardchannel", ".liststarboards"],
       href: "/wiki/starboard"
     },
     {
       tool: "paw",
       expression: "happy",
-      title: "Welcomes",
-      text: "Greet new members in a channel or by DM.",
+      title: m.home.tailsPawTitle,
+      text: m.home.tailsPawText,
       commands: [".multigreetadd", ".multigreetlist", ".greetdm", ".rolegreetadd"],
       href: "/wiki/multigreets"
     },
     {
       tool: "tag",
       expression: "wink",
-      title: "Role menus",
-      text: "Let members pick their own roles from buttons or a dropdown.",
+      title: m.features.roleMenusName,
+      text: m.home.tailsTagText,
       commands: [".rolemenucreate", ".rolemenuadd", ".rolemenulist"],
       href: "/wiki/role-menus"
     },
     {
       tool: "cake",
       expression: "excited",
-      title: "Birthdays",
-      text: "Members set their birthday and the bot announces it on the day.",
+      title: m.features.birthdayName,
+      text: m.home.tailsCakeText,
       commands: [".setbirthday", ".birthdaychannel", ".upcomingbirthdays", ".birthdayrole"],
       href: "/wiki/birthday"
     },
     {
       tool: "bell",
       expression: "surprised",
-      title: "Stream alerts and feeds",
-      text: "Posts when a streamer goes live or a feed has something new.",
+      title: m.home.tailsBellTitle,
+      text: m.home.tailsBellText,
       commands: [".streamadd", ".streamlist", ".feedadd", ".feedlist"],
       href: "/wiki/streams"
     },
     {
       tool: "mic",
       expression: "vibing",
-      title: "Custom voice",
-      text: "Members get a temporary voice channel of their own.",
+      title: m.features.customvoiceName,
+      text: m.home.tailsMicText,
       commands: [".setupvoicehub", ".renamevoice", ".limitvoice", ".lockvoice"],
       href: "/wiki/customvoice"
     },
     {
       tool: "dice",
       expression: "wink",
-      title: "Games",
-      text: "Small games for when chat goes quiet.",
+      title: m.common.games,
+      text: m.home.tailsDiceText,
       commands: [".trivia", ".hangman", ".tictactoe", ".countingsetup", ".8ball"],
       href: "/wiki/games"
     },
     {
       tool: "clock",
       expression: "surprised",
-      title: "Reminders and repeaters",
-      text: "Personal reminders, and messages that repost on a schedule.",
+      title: m.home.tailsClockTitle,
+      text: m.home.tailsClockText,
       commands: [".remind", ".remindlist", ".repeat", ".repeatlist"],
       href: "/wiki/repeaters"
     },
     {
       tool: "bulb",
       expression: "look",
-      title: "Suggestions",
-      text: "Members post ideas and vote on each other's.",
+      title: m.features.suggestionsName,
+      text: m.home.tailsBulbText,
       commands: [".suggest", ".setsuggestchannel", ".acceptsuggest", ".denysuggest"],
       href: "/wiki/suggestions"
     }
@@ -270,9 +271,9 @@
     <svg viewBox={TOOL_VIEWBOX[feature.tool]} class="w-10 h-10 lg:w-12 lg:h-12 shrink-0" aria-hidden="true">
       <MascotTool tool={feature.tool} />
     </svg>
-    <h3 class="text-2xl lg:text-3xl font-bold" style="color: {$colorStore.text}">{feature.title}</h3>
+    <h3 class="text-2xl lg:text-3xl font-bold" style="color: {$colorStore.text}">{feature.title()}</h3>
   </div>
-  <p class="text-base leading-relaxed mt-2" style="color: {$colorStore.muted}">{feature.text}</p>
+  <p class="text-base leading-relaxed mt-2" style="color: {$colorStore.muted}">{feature.text()}</p>
   <div class="flex flex-wrap gap-2 mt-3">
     {#each feature.commands as command (command)}
       <span class="font-mono text-xs sm:text-sm px-2.5 py-1.5 rounded-lg"
@@ -280,12 +281,12 @@
         {command}
       </span>
     {:else}
-      <span class="text-sm" style="color: {$colorStore.muted}">No commands for this one. You build forms on the dashboard.</span>
+      <span class="text-sm" style="color: {$colorStore.muted}">{m.home.tailsNoCommands()}</span>
     {/each}
   </div>
   <a href={feature.href} class="inline-flex items-center gap-2 min-h-[44px] mt-1 text-sm font-semibold"
      style="color: {$colorStore.primary}">
-    Read the guide
+    {m.home.tailsReadGuide()}
     <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
   </a>
 {/snippet}
@@ -299,10 +300,10 @@
   <div class="sticky top-0 h-[100svh] flex flex-col justify-center px-4 py-3 overflow-hidden">
     <div class="text-center mb-2">
       <h2 id="tails-heading" class="text-2xl sm:text-3xl lg:text-4xl font-extrabold" style="color: {$colorStore.text}">
-        What each tail does
+        {m.home.tailsHeading()}
       </h2>
       <p class="text-sm sm:text-base mt-1" style="color: {$colorStore.muted}">
-        Every tail has more than one job.
+        {m.home.tailsSubheading()}
       </p>
     </div>
 
@@ -327,7 +328,7 @@
             <svg viewBox={TOOL_VIEWBOX[item.tool]} class="icon shrink-0" aria-hidden="true">
               <MascotTool tool={item.tool} />
             </svg>
-            <span class="label font-semibold" style="color: {$colorStore.text}">{item.title}</span>
+            <span class="label font-semibold" style="color: {$colorStore.text}">{item.title()}</span>
           </button>
         {/each}
 
@@ -358,15 +359,15 @@
         <div class="flex items-center justify-center gap-3">
           <button type="button" class="w-[44px] h-[44px] rounded-xl flex items-center justify-center"
                   style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                  aria-label="Previous part" onclick={() => go(active - 1)}>
+                  aria-label={m.home.tailsPrevious()} onclick={() => go(active - 1)}>
             <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
           </button>
           <span class="min-w-[4.5rem] text-center text-sm tabular-nums" style="color: {$colorStore.muted}">
-            {active + 1} of {features.length}
+            {m.common.currentOfTotal({ current: active + 1, total: features.length })}
           </span>
           <button type="button" class="w-[44px] h-[44px] rounded-xl flex items-center justify-center"
                   style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                  aria-label="Next part" onclick={() => go(active + 1)}>
+                  aria-label={m.home.tailsNext()} onclick={() => go(active + 1)}>
             <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
           </button>
         </div>

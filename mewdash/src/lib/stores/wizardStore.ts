@@ -369,8 +369,7 @@ export const featureHelpers = {
       const feature = DefaultWizardFeatures.find(f => f.id === id);
       if (!feature) return total;
       
-      const minutes = parseInt(feature.setupTime.replace(/\D/g, '')) || 0;
-      return total + minutes;
+      return total + feature.setupMinutes;
     }, 0);
   },
 

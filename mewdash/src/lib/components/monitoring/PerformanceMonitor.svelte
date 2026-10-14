@@ -1,5 +1,6 @@
 <!-- lib/components/PerformanceMonitor.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onDestroy, onMount } from "svelte";
   import { performanceApi } from "$lib/api/index.ts";
   import { logger } from "$lib/logger.ts";
@@ -36,7 +37,7 @@
       performanceData = Array.isArray(response) ? response : [];
     } catch (err) {
       logger.error("Error fetching performance data:", err);
-      error = "Failed to load performance data";
+      error = m.monitoring.performanceLoadFailed();
       performanceData = [];
     } finally {
       loading = false;
@@ -52,14 +53,14 @@
       await fetchPerformanceData();
     } catch (err) {
       logger.error("Error clearing performance data:", err);
-      error = "Failed to clear performance data";
+      error = m.monitoring.performanceClearFailed();
     }
   };
 
   const formatTime = (ms: number) => {
-    if (ms < 1) return `${(ms * 1000).toFixed(2)}μs`;
-    if (ms < 1000) return `${ms.toFixed(2)}ms`;
-    return `${(ms / 1000).toFixed(2)}s`;
+    if (ms < 1) return m.monitoring.performanceTimeMicroseconds({ value: (ms * 1000).toFixed(2) });
+    if (ms < 1000) return m.monitoring.performanceTimeMilliseconds({ value: ms.toFixed(2) });
+    return m.monitoring.performanceTimeSeconds({ value: (ms / 1000).toFixed(2) });
   };
 
   const formatDate = (dateStr: string) => {
@@ -104,10 +105,10 @@
           <i class="fa-utility-duo fa-regular fa-clock"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
         </div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Method Performance</h2>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.monitoring.performanceTitle()}</h2>
       </div>
       <div class="flex gap-3">
-        <button aria-label="Navigate"
+        <button aria-label={m.common.refresh()}
                 class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
           disabled={refreshInProgress}
@@ -116,7 +117,7 @@
           <div class:animate-spin={refreshInProgress}>
             <i class="fa-solid fa-arrows-rotate" style="font-size: 16px;"></i>
           </div>
-          {refreshInProgress ? 'Refreshing...' : 'Refresh'}
+          {refreshInProgress ? m.common.refreshing() : m.common.refresh()}
         </button>
         <button
           class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
@@ -125,7 +126,7 @@
           onclick={clearPerformanceData}
         >
           <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
-          Clear Data
+          {m.monitoring.performanceClearData()}
         </button>
       </div>
     </div>
@@ -146,8 +147,8 @@
       <div class="text-center p-8">
         <i class="fa-utility-duo fa-regular fa-clock"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-        <p class="font-medium mb-2" style="color: {$colorStore.text}">No performance data available yet.</p>
-        <p class="text-sm" style="color: {$colorStore.muted}">Run some commands to generate performance metrics.</p>
+        <p class="font-medium mb-2" style="color: {$colorStore.text}">{m.monitoring.performanceEmpty()}</p>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.monitoring.performanceEmptyHint()}</p>
       </div>
     {:else}
       <div class="overflow-x-auto rounded-xl" style="background: {$colorStore.primary}05;">
@@ -157,27 +158,27 @@
               <th class="px-4 py-3 text-left">
                 <button class="text-left font-bold hover:opacity-80 transition-opacity"
                         style="color: {$colorStore.text}"
-                        onclick={() => sortBy('methodName')}>Method</button>
+                        onclick={() => sortBy('methodName')}>{m.monitoring.performanceColMethod()}</button>
               </th>
               <th class="px-4 py-3 text-right">
                 <button class="text-right font-bold hover:opacity-80 transition-opacity"
                         style="color: {$colorStore.text}"
-                        onclick={() => sortBy('callCount')}>Calls</button>
+                        onclick={() => sortBy('callCount')}>{m.monitoring.performanceColCalls()}</button>
               </th>
               <th class="px-4 py-3 text-right">
                 <button class="text-right font-bold hover:opacity-80 transition-opacity"
                         style="color: {$colorStore.text}"
-                        onclick={() => sortBy('avgExecutionTime')}>Avg Time</button>
+                        onclick={() => sortBy('avgExecutionTime')}>{m.monitoring.performanceColAvgTime()}</button>
               </th>
               <th class="px-4 py-3 text-right">
                 <button class="text-right font-bold hover:opacity-80 transition-opacity"
                         style="color: {$colorStore.text}"
-                        onclick={() => sortBy('totalTime')}>Total Time</button>
+                        onclick={() => sortBy('totalTime')}>{m.common.totalTime()}</button>
               </th>
               <th class="px-4 py-3 text-right">
                 <button class="text-right font-bold hover:opacity-80 transition-opacity"
                         style="color: {$colorStore.text}"
-                        onclick={() => sortBy('lastExecuted')}>Last Executed</button>
+                        onclick={() => sortBy('lastExecuted')}>{m.monitoring.performanceColLastExecuted()}</button>
               </th>
             </tr>
           </thead>

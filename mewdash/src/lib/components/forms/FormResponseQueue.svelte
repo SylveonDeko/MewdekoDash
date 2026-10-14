@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   /**
    * A form's responses and their review, on one page.
    *
@@ -24,6 +25,7 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { loadingStore } from "$lib/stores/loadingStore";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+  import { responseStatusLabel } from "./formLabels";
 
   interface Props {
     formId: number;
@@ -70,11 +72,13 @@
 
   function statusStyle(status: ResponseStatus) {
     return (
-      RESPONSE_STATUS_LABELS[status] ?? {
-        label: status,
-        color: $colorStore.muted,
-        icon: "fa-circle"
-      }
+      RESPONSE_STATUS_LABELS[status]
+        ? { ...RESPONSE_STATUS_LABELS[status], label: responseStatusLabel(status) }
+        : {
+          label: status,
+          color: $colorStore.muted,
+          icon: "fa-circle"
+        }
     );
   }
 
@@ -105,13 +109,13 @@
             statusFilter ?? undefined
           );
         } catch (err) {
-          onShowNotification("Failed to load responses", "error");
+          onShowNotification(m.forms.queueLoadFailed(), "error");
         } finally {
           loading = false;
         }
       },
       "api",
-      "Loading responses..."
+      m.forms.queueLoadingOverlay()
     );
   }
 
@@ -161,7 +165,7 @@
     try {
       revisions[responseId] = await formsApi.getResponseRevisions(responseId);
     } catch {
-      onShowNotification("Failed to load earlier answers", "error");
+      onShowNotification(m.forms.queueRevisionsLoadFailed(), "error");
     }
   }
 
@@ -172,7 +176,7 @@
     // Rejecting without saying why leaves the submitter with nothing to act on, and the reason is
     // what gets sent to them.
     if (!approve && !reviewerNotes) {
-      onShowNotification("Add a reason before rejecting, the submitter is told what you write", "error");
+      onShowNotification(m.forms.queueReasonRequired(), "error");
       return;
     }
 
@@ -182,19 +186,19 @@
       if (approve) {
         const result = await formsApi.approveResponse(responseId, userId, reviewerNotes);
         onShowNotification(
-          result.inviteCode ? `Approved, invite ${result.inviteCode} created` : "Response approved",
+          result.inviteCode ? m.forms.queueApprovedWithInvite({ code: result.inviteCode }) : m.forms.queueApproved(),
           "success"
         );
       } else {
         await formsApi.rejectResponse(responseId, userId, reviewerNotes!);
-        onShowNotification("Response rejected", "success");
+        onShowNotification(m.forms.queueRejected(), "success");
       }
 
       delete notes[responseId];
       await load();
     } catch (err) {
       onShowNotification(
-        err instanceof Error ? err.message : `Failed to ${approve ? "approve" : "reject"} response`,
+        err instanceof Error ? err.message : (approve ? m.forms.queueApproveFailed() : m.forms.queueRejectFailed()),
         "error"
       );
     } finally {
@@ -210,10 +214,10 @@
 
     try {
       await formsApi.deleteResponse(responseId);
-      onShowNotification("Response deleted", "success");
+      onShowNotification(m.forms.queueDeleted(), "success");
       await load();
     } catch {
-      onShowNotification("Failed to delete response", "error");
+      onShowNotification(m.forms.queueDeleteFailed(), "error");
     }
   }
 
@@ -229,7 +233,7 @@
 
       URL.revokeObjectURL(url);
     } catch {
-      onShowNotification("Failed to export responses", "error");
+      onShowNotification(m.forms.pageErrorExport(), "error");
     }
   }
 
@@ -249,12 +253,18 @@
   >
     <div class="min-w-0">
       <h2 class="text-xl font-bold truncate" style="color: {$colorStore.text};">
-        {form?.name ?? "Responses"}
+        {form?.name ?? m.common.responses()}
       </h2>
       <p class="text-sm" style="color: {$colorStore.muted};">
-        {data?.totalCount ?? 0}
-        {statusFilter ? statusStyle(statusFilter).label.toLowerCase() : ""}
-        response{(data?.totalCount ?? 0) === 1 ? "" : "s"}
+        {#if statusFilter}
+          {(data?.totalCount ?? 0) === 1
+            ? m.forms.queueSummaryStatusOne({ count: 1, status: statusStyle(statusFilter).label.toLowerCase() })
+            : m.forms.queueSummaryStatusOther({ count: data?.totalCount ?? 0, status: statusStyle(statusFilter).label.toLowerCase() })}
+        {:else}
+          {(data?.totalCount ?? 0) === 1
+            ? m.common.responsesOne({ count: 1 })
+            : m.common.responsesOther({ count: data?.totalCount ?? 0 })}
+        {/if}
       </p>
     </div>
 
@@ -265,7 +275,7 @@
       style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
     >
       <i class="fa-solid fa-file-csv mr-2"></i>
-      Export CSV
+      {m.forms.queueExportCsv()}
     </button>
   </div>
 
@@ -280,7 +290,7 @@
                color: {statusFilter === null ? $colorStore.text : $colorStore.muted};
                border: 1px solid {$colorStore.primary}25;"
       >
-        All
+        {m.common.all()}
       </button>
 
       {#each STATUSES as status}
@@ -295,7 +305,7 @@
                  border: 1px solid {statusFilter === status ? style.color + '50' : $colorStore.primary + '25'};"
         >
           <i class="fa-solid {style.icon} mr-1"></i>
-          {style.label} ({count})
+          {m.forms.queueStatusCount({ label: style.label, count })}
         </button>
       {/each}
     </div>
@@ -304,7 +314,7 @@
   {#if loading && !data}
     <div class="p-10 text-center" style="color: {$colorStore.muted};">
       <i class="fa-solid fa-spinner fa-spin text-2xl mb-3"></i>
-      <div>Loading responses</div>
+      <div>{m.forms.queueLoading()}</div>
     </div>
   {:else if !data || data.responses.length === 0}
     <div
@@ -313,12 +323,10 @@
     >
       <i class="fa-solid fa-inbox text-3xl mb-3" style="color: {$colorStore.muted};"></i>
       <div class="font-semibold mb-1" style="color: {$colorStore.text};">
-        {statusFilter ? `Nothing ${statusStyle(statusFilter).label.toLowerCase()}` : "No responses yet"}
+        {statusFilter ? m.forms.queueEmptyStatus({ status: statusStyle(statusFilter).label.toLowerCase() }) : m.forms.queueEmpty()}
       </div>
       <div style="color: {$colorStore.muted};">
-        {statusFilter
-          ? "Try a different filter."
-          : "Responses will show up here as people submit them."}
+        {statusFilter ? m.forms.queueEmptyStatusHint() : m.forms.queueEmptyHint()}
       </div>
     </div>
   {:else}
@@ -338,7 +346,7 @@
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="font-medium truncate" style="color: {$colorStore.text};">
-                  {item.response.username ?? "Anonymous"}
+                  {item.response.username ?? m.common.anonymous()}
                 </span>
 
                 {#if isReviewed}
@@ -365,13 +373,13 @@
                     style="background: #f59e0b20; color: #f59e0b;"
                     title={new Date(item.response.editedAt).toLocaleString()}
                   >
-                    <i class="fa-solid fa-pen mr-1"></i>Edited
+                    <i class="fa-solid fa-pen mr-1"></i>{m.forms.queueEdited()}
                   </span>
                 {/if}
 
                 {#if item.workflow?.dmFailed}
                   <span class="px-1.5 py-0.5 rounded" style="background: #ef444420; color: #ef4444;">
-                    <i class="fa-solid fa-comment-slash mr-1"></i>Not delivered
+                    <i class="fa-solid fa-comment-slash mr-1"></i>{m.forms.queueNotDelivered()}
                   </span>
                 {/if}
               </div>
@@ -385,13 +393,13 @@
                 style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
               >
                 <i class="fa-solid {isOpen ? 'fa-eye-slash' : 'fa-eye'} mr-2"></i>
-                {isOpen ? "Hide" : "View"}
+                {isOpen ? m.common.hide() : m.common.view()}
               </button>
 
               <button
                 type="button"
                 onclick={() => (pendingDelete = item)}
-                aria-label="Delete response"
+                aria-label={m.forms.queueDeleteResponse()}
                 class="px-3 py-2.5 rounded-lg text-sm transition-all"
                 style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
               >
@@ -409,7 +417,7 @@
             >
               {#if item.answers.length === 0}
                 <p class="text-sm" style="color: {$colorStore.muted};">
-                  This response has no answers stored.
+                  {m.forms.queueNoAnswers()}
                 </p>
               {/if}
 
@@ -417,13 +425,13 @@
                 {@const question = questionFor(answer.questionId)}
                 <div>
                   <div class="text-xs mb-1 flex items-center gap-2 flex-wrap" style="color: {$colorStore.muted};">
-                    <span>{answer.questionText ?? question?.questionText ?? "Question"}</span>
+                    <span>{answer.questionText ?? question?.questionText ?? m.common.question()}</span>
                     {#if !question}
                       <span
                         class="px-1.5 py-0.5 rounded"
                         style="background: {$colorStore.primary}15;"
                       >
-                        no longer on the form
+                        {m.forms.queueQuestionRemoved()}
                       </span>
                     {/if}
                   </div>
@@ -436,7 +444,7 @@
                     </ul>
                   {:else}
                     <div class="text-sm whitespace-pre-wrap break-words" style="color: {$colorStore.text};">
-                      {answer.answerDisplay || answer.answerText || "(No answer)"}
+                      {answer.answerDisplay || answer.answerText || m.forms.queueNoAnswer()}
                     </div>
                   {/if}
                 </div>
@@ -452,9 +460,11 @@
                     style="color: {$colorStore.primary};"
                   >
                     <i class="fa-solid fa-clock-rotate-left mr-2"></i>
-                    {openRevisions.has(item.response.id) ? "Hide" : "Show"}
-                    {item.revisionCount} earlier
-                    version{item.revisionCount === 1 ? "" : "s"}
+                    {#if openRevisions.has(item.response.id)}
+                      {item.revisionCount === 1 ? m.forms.queueRevisionsHideOne({ count: 1 }) : m.forms.queueRevisionsHideOther({ count: item.revisionCount })}
+                    {:else}
+                      {item.revisionCount === 1 ? m.forms.queueRevisionsShowOne({ count: 1 }) : m.forms.queueRevisionsShowOther({ count: item.revisionCount })}
+                    {/if}
                   </button>
 
                   {#if openRevisions.has(item.response.id)}
@@ -465,15 +475,15 @@
                           style="background: {$colorStore.primary}05; border: 1px dashed {$colorStore.primary}30;"
                         >
                           <div class="text-xs mb-2" style="color: {$colorStore.muted};">
-                            As it stood on {new Date(revision.createdAt).toLocaleString()}
+                            {m.forms.queueRevisionAsOf({ date: new Date(revision.createdAt).toLocaleString() })}
                           </div>
                           {#each revision.answers as previous}
                             <div class="text-sm mb-2">
                               <div style="color: {$colorStore.muted};">
-                                {previous.questionText ?? "Question"}
+                                {previous.questionText ?? m.common.question()}
                               </div>
                               <div class="whitespace-pre-wrap break-words" style="color: {$colorStore.text};">
-                                {previous.answerDisplay || previous.answerText || "(No answer)"}
+                                {previous.answerDisplay || previous.answerText || m.forms.queueNoAnswer()}
                               </div>
                             </div>
                           {/each}
@@ -487,7 +497,7 @@
               <!-- What was decided, or the means to decide -->
               {#if item.workflow?.reviewNotes}
                 <div class="pt-3 border-t" style="border-color: {$colorStore.primary}20;">
-                  <div class="text-xs mb-1" style="color: {$colorStore.muted};">Reviewer notes</div>
+                  <div class="text-xs mb-1" style="color: {$colorStore.muted};">{m.forms.queueReviewerNotes()}</div>
                   <div class="text-sm whitespace-pre-wrap break-words" style="color: {$colorStore.text};">
                     {item.workflow.reviewNotes}
                   </div>
@@ -496,7 +506,7 @@
 
               {#if item.workflow?.inviteCode}
                 <div class="pt-3 border-t" style="border-color: {$colorStore.primary}20;">
-                  <div class="text-xs mb-1" style="color: {$colorStore.muted};">Invite created</div>
+                  <div class="text-xs mb-1" style="color: {$colorStore.muted};">{m.features.wizardInviteCreatedName()}</div>
                   <code class="text-sm" style="color: {$colorStore.text};">
                     discord.gg/{item.workflow.inviteCode}
                   </code>
@@ -510,14 +520,14 @@
                     class="block text-xs"
                     style="color: {$colorStore.muted};"
                   >
-                    Notes for the submitter
+                    {m.forms.queueNotesLabel()}
                   </label>
                   <textarea
                     id="notes-{item.response.id}"
                     bind:value={notes[item.response.id]}
                     rows="2"
                     maxlength="1000"
-                    placeholder="Sent to them with the decision. Required when rejecting."
+                    placeholder={m.forms.queueNotesPlaceholder()}
                     class="w-full p-3 rounded-lg text-sm resize-none"
                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
                   ></textarea>
@@ -531,7 +541,7 @@
                       style="background: #10B98120; color: #10B981; border: 1px solid #10B98140;"
                     >
                       <i class="fa-solid fa-check mr-2"></i>
-                      Approve
+                      {m.common.approve()}
                     </button>
                     <button
                       type="button"
@@ -541,7 +551,7 @@
                       style="background: #ef444420; color: #ef4444; border: 1px solid #ef444440;"
                     >
                       <i class="fa-solid fa-xmark mr-2"></i>
-                      Reject
+                      {m.forms.queueReject()}
                     </button>
                   </div>
                 </div>
@@ -559,7 +569,7 @@
           type="button"
           onclick={() => setQuery({ page: currentPage - 1 })}
           disabled={currentPage <= 1}
-          aria-label="Previous page"
+          aria-label={m.common.previousPage()}
           class="px-4 py-2.5 rounded-lg text-sm transition-all disabled:opacity-40"
           style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
         >
@@ -567,14 +577,14 @@
         </button>
 
         <span class="text-sm" style="color: {$colorStore.muted};">
-          Page {data.page} of {data.totalPages}
+          {m.common.pageOfTotal({ page: data.page, total: data.totalPages })}
         </span>
 
         <button
           type="button"
           onclick={() => setQuery({ page: currentPage + 1 })}
           disabled={currentPage >= data.totalPages}
-          aria-label="Next page"
+          aria-label={m.common.nextPage()}
           class="px-4 py-2.5 rounded-lg text-sm transition-all disabled:opacity-40"
           style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
         >
@@ -587,11 +597,11 @@
 
 <ConfirmationModal
   isOpen={pendingDelete !== null}
-  title="Delete this response?"
+  title={m.forms.queueDeleteTitle()}
   message={pendingDelete
-    ? `This permanently deletes response #${pendingDelete.response.id} from ${pendingDelete.response.username ?? "an anonymous submitter"}, along with its answers and review history.`
+    ? m.forms.queueDeleteMessage({ id: pendingDelete.response.id, user: pendingDelete.response.username ?? m.forms.queueDeleteAnonymousUser() })
     : ""}
-  confirmText="Delete"
+  confirmText={m.common.delete()}
   variant="danger"
   onconfirm={deleteResponse}
   oncancel={() => (pendingDelete = null)}

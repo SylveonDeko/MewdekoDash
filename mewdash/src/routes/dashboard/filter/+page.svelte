@@ -1,5 +1,6 @@
 <!-- routes/dashboard/filter/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -27,18 +28,18 @@
   let wordSearch = $state("");
   let channelPick = $state<Record<FilterKind, string | null>>({ word: null, invite: null, link: null });
 
-  const tabs = [
-    { id: "filters", label: "Filters", icon: "fa-filter" },
-    { id: "words", label: "Filtered Words", icon: "fa-comment-slash" },
-    { id: "autoban", label: "Auto-ban Words", icon: "fa-ban" },
-    { id: "channels", label: "Channel Overrides", icon: "fa-hashtag" }
-  ];
+  const tabs = $derived([
+    { id: "filters", label: m.common.filters(), icon: "fa-filter" },
+    { id: "words", label: m.filter.tabWords(), icon: "fa-comment-slash" },
+    { id: "autoban", label: m.filter.tabAutoban(), icon: "fa-ban" },
+    { id: "channels", label: m.common.channelOverrides(), icon: "fa-hashtag" }
+  ]);
 
-  const filterMeta: Record<FilterKind, { title: string; hint: string; icon: string; serverKey: "filterWords" | "filterInvites" | "filterLinks"; listKey: "wordFilterChannels" | "inviteFilterChannels" | "linkFilterChannels" }> = {
-    word: { title: "Word filter", hint: "Delete messages containing any filtered word", icon: "fa-comment-slash", serverKey: "filterWords", listKey: "wordFilterChannels" },
-    invite: { title: "Invite filter", hint: "Delete Discord invite links posted by members", icon: "fa-paper-plane", serverKey: "filterInvites", listKey: "inviteFilterChannels" },
-    link: { title: "Link filter", hint: "Delete any message containing a URL", icon: "fa-globe", serverKey: "filterLinks", listKey: "linkFilterChannels" }
-  };
+  const filterMeta: Record<FilterKind, { title: string; hint: string; channelsTitle: string; serverWide: string; onlyHere: string; icon: string; serverKey: "filterWords" | "filterInvites" | "filterLinks"; listKey: "wordFilterChannels" | "inviteFilterChannels" | "linkFilterChannels" }> = $derived({
+    word: { title: m.common.wordFilter(), hint: m.filter.wordHint(), channelsTitle: m.filter.wordChannelsTitle(), serverWide: m.filter.wordServerWide(), onlyHere: m.filter.wordOnlyHere(), icon: "fa-comment-slash", serverKey: "filterWords", listKey: "wordFilterChannels" },
+    invite: { title: m.filter.inviteTitle(), hint: m.filter.inviteHint(), channelsTitle: m.filter.inviteChannelsTitle(), serverWide: m.filter.inviteServerWide(), onlyHere: m.filter.inviteOnlyHere(), icon: "fa-paper-plane", serverKey: "filterInvites", listKey: "inviteFilterChannels" },
+    link: { title: m.filter.linkTitle(), hint: m.filter.linkHint(), channelsTitle: m.filter.linkChannelsTitle(), serverWide: m.filter.linkServerWide(), onlyHere: m.filter.linkOnlyHere(), icon: "fa-globe", serverKey: "filterLinks", listKey: "linkFilterChannels" }
+  });
 
   let filteredWordList = $derived.by(() => {
     const term = wordSearch.trim().toLowerCase();
@@ -64,7 +65,7 @@
       textChannels = (channels as any[]).map(c => ({ id: c.id.toString(), name: c.name }));
     } catch (err) {
       logger.error("Failed to load filter settings:", err);
-      showMessage("Failed to load filter settings", "error");
+      showMessage(m.filter.errorLoad(), "error");
     } finally {
       loading = false;
     }
@@ -85,7 +86,7 @@
       settings.serverSettings = { ...settings.serverSettings, ...next };
     } catch (err) {
       logger.error("Failed to update filter:", err);
-      showMessage("Failed to update filter", "error");
+      showMessage(m.filter.errorUpdateFilter(), "error");
     } finally {
       saving = false;
     }
@@ -100,7 +101,7 @@
       settings.serverSettings = { ...settings.serverSettings, [kind]: value };
     } catch (err) {
       logger.error("Failed to update warning setting:", err);
-      showMessage("Failed to update warning setting", "error");
+      showMessage(m.filter.errorUpdateWarning(), "error");
     } finally {
       saving = false;
     }
@@ -121,7 +122,7 @@
       if (autoBan) newAutoBanWord = ""; else newWord = "";
     } catch (err) {
       logger.error("Failed to toggle word:", err);
-      showMessage("Failed to update word list", "error");
+      showMessage(m.filter.errorUpdateWords(), "error");
     } finally {
       saving = false;
     }
@@ -130,9 +131,9 @@
   async function clearWords() {
     if (!$currentGuild?.id || !settings) return;
     if (!(await requestConfirmation({
-      title: "Clear filtered words?",
-      message: `All ${settings.filteredWords.length} filtered words are removed.`,
-      confirmText: "Clear all"
+      title: m.filter.confirmClearTitle(),
+      message: m.filter.confirmClearMessage({ count: settings.filteredWords.length }),
+      confirmText: m.common.clearAll()
     }))) return;
     saving = true;
     try {
@@ -140,7 +141,7 @@
       settings.filteredWords = [];
     } catch (err) {
       logger.error("Failed to clear words:", err);
-      showMessage("Failed to clear words", "error");
+      showMessage(m.filter.errorClearWords(), "error");
     } finally {
       saving = false;
     }
@@ -159,7 +160,7 @@
       channelPick[kind] = null;
     } catch (err) {
       logger.error("Failed to toggle channel filter:", err);
-      showMessage("Failed to update channel filter", "error");
+      showMessage(m.filter.errorUpdateChannel(), "error");
     } finally {
       saving = false;
     }
@@ -176,7 +177,7 @@
   });
 
   let actionButtons = $derived([
-    { label: "Refresh", icon: "fa-arrows-rotate", action: () => loadAll(), loading }
+    { label: m.common.refresh(), icon: "fa-arrows-rotate", action: () => loadAll(), loading }
   ]);
 </script>
 
@@ -199,32 +200,32 @@
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-filter"
   statusMessages={statusMessageContent}
-  subtitle="Block words, invites, and links before they reach your members"
+  subtitle={m.filter.pageSubtitle()}
   {tabs}
-  title="Message Filters"
+  title={m.features.filterName()}
 >
   {#if loading && !settings}
     <div class="flex justify-center items-center min-h-[200px]">
       <div class="w-12 h-12 border-4 rounded-full animate-spin"
            style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"
-           aria-label="Loading"></div>
+           aria-label={m.common.loading()}></div>
     </div>
   {:else if settings}
     {#if activeTab === 'filters'}
       <div class="space-y-6" in:fade={{ duration: 200 }}>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <StatCard icon="fa-comment-slash" label="Filtered words" value={settings.filteredWords.length} subtitle="deleted on sight" iconColor="primary" animationDelay={0} />
-          <StatCard icon="fa-xmark" label="Auto-ban words" value={settings.autoBanWords.length} subtitle="ban immediately" iconColor="accent" animationDelay={100} />
-          <StatCard icon="fa-list-ul" label="Channel overrides" value={settings.channelSettings.wordFilterChannels.length + settings.channelSettings.inviteFilterChannels.length + settings.channelSettings.linkFilterChannels.length} subtitle="per-channel filters" iconColor="secondary" animationDelay={200} />
+          <StatCard icon="fa-comment-slash" label={m.filter.tabWords()} value={settings.filteredWords.length} subtitle={m.filter.statFilteredWordsSubtitle()} iconColor="primary" animationDelay={0} />
+          <StatCard icon="fa-xmark" label={m.filter.tabAutoban()} value={settings.autoBanWords.length} subtitle={m.filter.statAutobanWordsSubtitle()} iconColor="accent" animationDelay={100} />
+          <StatCard icon="fa-list-ul" label={m.common.channelOverrides()} value={settings.channelSettings.wordFilterChannels.length + settings.channelSettings.inviteFilterChannels.length + settings.channelSettings.linkFilterChannels.length} subtitle={m.filter.statChannelOverridesSubtitle()} iconColor="secondary" animationDelay={200} />
         </div>
 
         <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
           <div class="flex items-center gap-3 mb-2">
             <i class="fa-utility-duo fa-regular fa-filter" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Server-wide filters</h2>
+            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.filter.serverWideTitle()}</h2>
           </div>
-          <p class="text-sm mb-6" style="color: {$colorStore.muted}">These apply in every channel. Use channel overrides to enable a filter only in specific places.</p>
+          <p class="text-sm mb-6" style="color: {$colorStore.muted}">{m.filter.serverWideHint()}</p>
 
           <div class="space-y-3">
             {#each (["word", "invite", "link"] as FilterKind[]) as kind}
@@ -257,11 +258,11 @@
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
           <div class="flex items-center gap-3 mb-2">
             <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Warnings</h2>
+            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.warnings()}</h2>
           </div>
-          <p class="text-sm mb-6" style="color: {$colorStore.muted}">Give the member a warning in addition to deleting the message. Warning punishments on the Moderation page still apply.</p>
+          <p class="text-sm mb-6" style="color: {$colorStore.muted}">{m.filter.warningsHint()}</p>
           <div class="space-y-3">
-            {#each [{ key: "warnOnFilteredWord", title: "Warn on filtered word" }, { key: "warnOnInvite", title: "Warn on invite link" }] as item}
+            {#each [{ key: "warnOnFilteredWord", title: m.filter.warnFilteredWord() }, { key: "warnOnInvite", title: m.filter.warnInvite() }] as item}
               {@const enabled = settings.serverSettings[item.key as "warnOnFilteredWord" | "warnOnInvite"]}
               <div class="flex items-center justify-between gap-4 p-4 rounded-xl border"
                    style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
@@ -288,32 +289,32 @@
           <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
             <div class="flex items-center gap-3">
               <i class="fa-utility-duo fa-regular {autoBan ? 'fa-xmark' : 'fa-comment-slash'}" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-              <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{autoBan ? "Auto-ban words" : "Filtered words"} ({list.length})</h2>
+              <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{autoBan ? m.filter.listAutobanHeading({ count: list.length }) : m.filter.listFilteredHeading({ count: list.length })}</h2>
             </div>
             {#if !autoBan && settings.filteredWords.length > 0}
               <button class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
                       style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
                       disabled={saving} onclick={clearWords}>
-                <i class="fa-solid fa-trash mr-1"></i>Clear all
+                <i class="fa-solid fa-trash mr-1"></i>{m.common.clearAll()}
               </button>
             {/if}
           </div>
           <p class="text-sm mb-6" style="color: {$colorStore.muted}">
             {#if autoBan}
-              Members who post any of these words are banned immediately. Use with care.
+              {m.filter.autobanHint()}
             {:else}
-              Messages containing these words are deleted when the word filter is enabled server-wide or in a channel.
+              {m.filter.filteredHint()}
             {/if}
           </p>
 
           <form class="flex flex-col sm:flex-row gap-3 mb-6"
                 onsubmit={(e) => { e.preventDefault(); toggleWord(autoBan ? newAutoBanWord : newWord, autoBan); }}>
             {#if autoBan}
-              <input type="text" bind:value={newAutoBanWord} placeholder="Add a word or phrase" aria-label="New auto-ban word"
+              <input type="text" bind:value={newAutoBanWord} placeholder={m.filter.wordPlaceholder()} aria-label={m.filter.autobanWordAria()}
                      class="flex-1 p-3 rounded-xl border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             {:else}
-              <input type="text" bind:value={newWord} placeholder="Add a word or phrase" aria-label="New filtered word"
+              <input type="text" bind:value={newWord} placeholder={m.filter.wordPlaceholder()} aria-label={m.filter.filteredWordAria()}
                      class="flex-1 p-3 rounded-xl border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             {/if}
@@ -321,12 +322,12 @@
                     class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
               <i class="fa-solid fa-plus"></i>
-              Add
+              {m.common.add()}
             </button>
           </form>
 
           {#if !autoBan && settings.filteredWords.length > 10}
-            <input type="text" bind:value={wordSearch} placeholder="Search words" aria-label="Search filtered words"
+            <input type="text" bind:value={wordSearch} placeholder={m.filter.searchWordsPlaceholder()} aria-label={m.filter.searchWordsAria()}
                    class="w-full p-3 rounded-xl border min-h-[44px] mb-4"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           {/if}
@@ -334,7 +335,7 @@
           {#if list.length === 0}
             <div class="text-center py-8">
               <i class="fa-utility-duo fa-regular {autoBan ? 'fa-xmark' : 'fa-comment-slash'}" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 40px; opacity: 0.5; display: block; margin: 0 auto 12px;"></i>
-              <p style="color: {$colorStore.muted}">{wordSearch ? "No words match your search." : "No words added yet."}</p>
+              <p style="color: {$colorStore.muted}">{wordSearch ? m.filter.noSearchMatch() : m.filter.noWords()}</p>
             </div>
           {:else}
             <div class="flex flex-wrap gap-2">
@@ -342,7 +343,7 @@
                 <span class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium"
                       style="background: {autoBan ? '#ef444415' : $colorStore.primary + '15'}; color: {$colorStore.text};" transition:fade>
                   {word}
-                  <button class="rounded-sm hover:opacity-80 min-h-[24px] min-w-[24px] disabled:opacity-30" aria-label={`Remove ${word}`}
+                  <button class="rounded-sm hover:opacity-80 min-h-[24px] min-w-[24px] disabled:opacity-30" aria-label={m.common.ariaRemoveWord({ word })}
                           disabled={saving} onclick={() => toggleWord(word, autoBan)}>
                     <i class="fa-solid fa-xmark" style="color: {$colorStore.muted}; font-size: 12px;"></i>
                   </button>
@@ -362,32 +363,32 @@
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
             <div class="flex items-center gap-3 mb-2">
               <i class="fa-utility-duo fa-regular {meta.icon}" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-              <h2 id="channel-filter-{kind}" class="text-xl font-bold" style="color: {$colorStore.text}">{meta.title} channels</h2>
+              <h2 id="channel-filter-{kind}" class="text-xl font-bold" style="color: {$colorStore.text}">{meta.channelsTitle}</h2>
             </div>
             <p class="text-sm mb-4" style="color: {$colorStore.muted}">
               {#if settings.serverSettings[meta.serverKey]}
-                The {meta.title.toLowerCase()} is on server-wide, so these channel entries have no extra effect.
+                {meta.serverWide}
               {:else}
-                Enable the {meta.title.toLowerCase()} only in these channels.
+                {meta.onlyHere}
               {/if}
             </p>
             <div class="flex flex-col sm:flex-row gap-3 mb-4">
               <div class="flex-1">
                 <DiscordSelector type="channel" options={textChannels.filter(c => !channels.some(id => id.toString() === c.id))}
-                                 selected={channelPick[kind]} placeholder="Add a channel"
+                                 selected={channelPick[kind]} placeholder={m.common.addAChannel()}
                                  ariaLabelledby="channel-filter-{kind}" disabled={saving}
                                  onchange={(e) => toggleChannel(kind, typeof e.selected === "string" ? e.selected : null)} />
               </div>
             </div>
             {#if channels.length === 0}
-              <p class="text-sm" style="color: {$colorStore.muted}">No channel overrides.</p>
+              <p class="text-sm" style="color: {$colorStore.muted}">{m.filter.noOverrides()}</p>
             {:else}
               <div class="flex flex-wrap gap-2">
                 {#each channels as id (id.toString())}
                   <span class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium"
                         style="background: {$colorStore.primary}15; color: {$colorStore.text};" transition:slide>
                     #{channelName(id)}
-                    <button class="rounded-sm hover:opacity-80 min-h-[24px] min-w-[24px] disabled:opacity-30" aria-label={`Remove #${channelName(id)}`}
+                    <button class="rounded-sm hover:opacity-80 min-h-[24px] min-w-[24px] disabled:opacity-30" aria-label={m.filter.removeChannelAria({ channel: channelName(id) })}
                             disabled={saving} onclick={() => toggleChannel(kind, id.toString())}>
                       <i class="fa-solid fa-xmark" style="color: {$colorStore.muted}; font-size: 12px;"></i>
                     </button>

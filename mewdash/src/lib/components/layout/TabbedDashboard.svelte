@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onDestroy, onMount } from "svelte";
   import { browser } from "$app/environment";
   import {pushState, replaceState} from "$app/navigation";
@@ -49,50 +50,50 @@
     showMusicPlayer = false
   }: Props = $props();
 
-  const tabs = [
+  const tabs = $derived([
     {
       id: "overview",
-      label: "Overview",
+      label: m.common.overview(),
       icon: "fa-utility-duo fa-regular fa-home",
       component: OverviewTab,
-      description: "Server stats and bot status"
+      description: m.layout.tabbedOverviewDescription()
     },
     {
       id: "community",
-      label: "Community",
+      label: m.features.categoryCommunity(),
       icon: "fa-utility-duo fa-regular fa-users",
       component: CommunityTab,
-      description: "XP, suggestions, tickets"
+      description: m.layout.tabbedCommunityDescription()
     },
     {
       id: "entertainment",
-      label: "Entertainment",
+      label: m.features.categoryEntertainment(),
       icon: "fa-utility-duo fa-regular fa-music",
       component: EntertainmentTab,
-      description: "Music, voice, giveaways"
+      description: m.layout.tabbedEntertainmentDescription()
     },
     {
       id: "actions",
-      label: "Actions",
+      label: m.features.categoryActions(),
       icon: "fa-utility-duo fa-regular fa-bolt",
       component: ActionsTab,
-      description: "Greets, triggers, embeds"
+      description: m.layout.tabbedActionsDescription()
     },
     {
       id: "security",
-      label: "Security",
+      label: m.features.categorySecurity(),
       icon: "fa-utility-duo fa-regular fa-shield",
       component: SecurityTab,
-      description: "Moderation and protection"
+      description: m.layout.tabbedSecurityDescription()
     },
     {
       id: "settings",
-      label: "Settings",
+      label: m.common.settings(),
       icon: "fa-utility-duo fa-regular fa-cog",
       component: SettingsTab,
-      description: "Bot config and roles"
+      description: m.layout.tabbedSettingsDescription()
     }
-  ];
+  ]);
 
   let isChangingTab = $state(false);
   let tabContainerElement: HTMLElement | undefined = $state();

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { embedsApi } from "$lib/api/index.ts";
@@ -101,13 +102,13 @@
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      notify("The avatar must be an image", "error");
+      notify(m.embedbuilder.personaAvatarMustBeImage(), "error");
       input.value = "";
       return;
     }
 
     if (file.size > 8 * 1024 * 1024) {
-      notify("The avatar must be 8MB or smaller", "error");
+      notify(m.embedbuilder.personaAvatarTooLarge(), "error");
       input.value = "";
       return;
     }
@@ -117,7 +118,7 @@
       avatarData = typeof reader.result === "string" ? reader.result : "";
       avatarFileName = file.name;
     };
-    reader.onerror = () => notify("Could not read that image", "error");
+    reader.onerror = () => notify(m.embedbuilder.personaReadFailed(), "error");
     reader.readAsDataURL(file);
   }
 
@@ -127,18 +128,18 @@
    */
   async function save() {
     if (!userId) {
-      notify("You must be logged in to save personas", "error");
+      notify(m.embedbuilder.personaLoginRequired(), "error");
       return;
     }
 
     const trimmed = name.trim();
     if (!trimmed) {
-      notify("Give the persona a name", "error");
+      notify(m.embedbuilder.personaNameRequired(), "error");
       return;
     }
 
     if (shared && !guildId) {
-      notify("Select a server to share a persona", "error");
+      notify(m.embedbuilder.personaShareNeedsServer(), "error");
       return;
     }
 
@@ -149,7 +150,7 @@
     try {
       if (editingId !== null) {
         await embedsApi.updatePersona(editingId, { userId, name: trimmed, avatarUrl: url, avatarData: data });
-        notify(`Updated "${trimmed}"`);
+        notify(m.embedbuilder.personaUpdated({ name: trimmed }));
       } else {
         await embedsApi.createPersona({
           userId,
@@ -159,14 +160,14 @@
           avatarData: data,
           isGuildShared: shared
         });
-        notify(`Created "${trimmed}"`);
+        notify(m.embedbuilder.personaCreated({ name: trimmed }));
       }
 
       onchanged?.();
       backToList();
     } catch (error: any) {
       logger.error("Failed to save persona:", error);
-      notify(error?.message || "Failed to save persona", "error");
+      notify(error?.message || m.embedbuilder.personaSaveFailed(), "error");
     } finally {
       saving = false;
     }
@@ -184,12 +185,12 @@
 
     try {
       await embedsApi.deletePersona(persona.id, userId);
-      notify(`Deleted "${persona.name}"`);
+      notify(m.embedbuilder.personaDeleted({ name: persona.name }));
       if (editingId === persona.id) backToList();
       onchanged?.();
     } catch (error) {
       logger.error("Failed to delete persona:", error);
-      notify("Failed to delete persona", "error");
+      notify(m.embedbuilder.personaDeleteFailed(), "error");
     }
   }
 
@@ -213,7 +214,7 @@
     >
       <!-- Clicking the backdrop closes, but only the backdrop itself -->
       <button
-        aria-label="Close"
+        aria-label={m.common.close()}
         class="absolute inset-0 w-full h-full cursor-default"
         onclick={close}
         tabindex="-1"
@@ -232,7 +233,7 @@
         >
           {#if view === "form"}
             <button
-              aria-label="Back to the persona list"
+              aria-label={m.embedbuilder.personaBackAria()}
               class="p-2 rounded-lg transition-all min-h-[44px] min-w-[44px]"
               style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
               onclick={backToList}
@@ -242,11 +243,11 @@
           {/if}
 
           <h2 class="flex-1 text-lg font-semibold" id="persona-modal-title" style="color: {$colorStore.text};">
-            {view === "list" ? "Send as personas" : editingId === null ? "New persona" : "Edit persona"}
+            {view === "list" ? m.embedbuilder.personaTitleList() : editingId === null ? m.embedbuilder.personaNew() : m.embedbuilder.personaTitleEdit()}
           </h2>
 
           <button
-            aria-label="Close"
+            aria-label={m.common.close()}
             class="p-2 rounded-lg transition-all min-h-[44px] min-w-[44px]"
             style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
             onclick={close}
@@ -259,22 +260,22 @@
           {#if view === "list"}
             <div class="space-y-3">
               <p class="text-xs" style="color: {$colorStore.muted};">
-                A persona is a saved name and avatar your messages can be sent under.
+                {m.embedbuilder.personaIntro()}
               </p>
 
               <button
-                aria-label="Create a new persona"
+                aria-label={m.embedbuilder.personaCreateAria()}
                 class="w-full px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.01] flex items-center justify-center gap-2 min-h-[44px]"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 onclick={startCreate}
               >
                 <i class="fa-solid fa-plus" style="font-size: 14px;"></i>
-                New persona
+                {m.embedbuilder.personaNew()}
               </button>
 
               {#if personas.length === 0}
                 <p class="text-sm text-center py-6" style="color: {$colorStore.muted};">
-                  No personas yet. Create one to send messages under a custom name and avatar.
+                  {m.embedbuilder.personaEmpty()}
                 </p>
               {:else}
                 {#each personas as persona (persona.id)}
@@ -305,12 +306,12 @@
                         {persona.name}
                       </p>
                       <p class="text-xs" style="color: {$colorStore.muted};">
-                        {persona.isGuildShared ? `Shared with ${guildName ?? "this server"}` : "Personal"}
+                        {persona.isGuildShared ? m.embedbuilder.personaSharedWith({ server: guildName ?? m.common.thisServer() }) : m.embedbuilder.personaPersonal()}
                       </p>
                     </div>
 
                     <button
-                      aria-label="Edit {persona.name}"
+                      aria-label={m.common.editName({ name: persona.name })}
                       class="p-2 rounded-lg transition-all shrink-0 min-h-[44px] min-w-[44px]"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                       onclick={() => startEdit(persona)}
@@ -318,7 +319,7 @@
                       <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
                     </button>
                     <button
-                      aria-label="Delete {persona.name}"
+                      aria-label={m.common.ariaDeleteNamed({ name: persona.name })}
                       class="p-2 rounded-lg transition-all shrink-0 min-h-[44px] min-w-[44px]"
                       style="background: #ED424520; color: #ED4245;"
                       onclick={() => requestDelete(persona)}
@@ -348,49 +349,49 @@
                 {/if}
                 <div class="min-w-0">
                   <p class="text-sm font-medium truncate" style="color: {$colorStore.text};">
-                    {name.trim() || "Unnamed persona"}
+                    {name.trim() || m.embedbuilder.personaUnnamed()}
                   </p>
-                  <p class="text-xs" style="color: {$colorStore.muted};">How messages will appear</p>
+                  <p class="text-xs" style="color: {$colorStore.muted};">{m.embedbuilder.personaPreviewHint()}</p>
                 </div>
               </div>
 
               <div class="space-y-1">
                 <label class="block text-sm font-medium" for="persona-name" style="color: {$colorStore.text};">
-                  Name
+                  {m.common.name()}
                 </label>
                 <input
                   id="persona-name"
                   type="text"
                   class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
                   style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                  placeholder="Announcements"
+                  placeholder={m.common.announcements()}
                   maxlength="80"
                   bind:value={name}
                 />
               </div>
 
               <div class="space-y-2">
-                <span class="block text-sm font-medium" style="color: {$colorStore.text};">Avatar</span>
+                <span class="block text-sm font-medium" style="color: {$colorStore.text};">{m.common.avatar()}</span>
                 <div class="flex gap-2">
                   <button
-                    aria-label="Use an image URL"
+                    aria-label={m.embedbuilder.personaAvatarUseUrlAria()}
                     class="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px]"
                     style="background: {$colorStore.primary}{avatarMode === 'url' ? '30' : '10'};
                            color: {$colorStore.primary};
                            border: 1px solid {$colorStore.primary}30;"
                     onclick={() => (avatarMode = "url")}
                   >
-                    Link
+                    {m.embedbuilder.personaAvatarLink()}
                   </button>
                   <button
-                    aria-label="Upload an image"
+                    aria-label={m.embedbuilder.personaAvatarUploadAria()}
                     class="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px]"
                     style="background: {$colorStore.primary}{avatarMode === 'upload' ? '30' : '10'};
                            color: {$colorStore.primary};
                            border: 1px solid {$colorStore.primary}30;"
                     onclick={() => (avatarMode = "upload")}
                   >
-                    Upload
+                    {m.common.upload()}
                   </button>
                 </div>
 
@@ -412,24 +413,23 @@
                     onchange={handleUpload}
                   />
                   <button
-                    aria-label="Choose an image file"
+                    aria-label={m.embedbuilder.personaChooseFileAria()}
                     class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.01] flex items-center justify-center gap-2 min-h-[44px]"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                     onclick={() => fileInput?.click()}
                   >
                     <i class="fa-solid fa-arrow-up-from-bracket" style="font-size: 14px;"></i>
-                    {avatarFileName || hasStoredUpload ? "Choose a different image" : "Choose an image"}
+                    {avatarFileName || hasStoredUpload ? m.embedbuilder.personaChooseDifferent() : m.embedbuilder.personaChooseImage()}
                   </button>
                   {#if avatarFileName}
                     <p class="text-xs truncate" style="color: {$colorStore.muted};">{avatarFileName}</p>
                   {:else if hasStoredUpload}
                     <p class="text-xs" style="color: {$colorStore.muted};">
-                      An uploaded image is already saved.
+                      {m.embedbuilder.personaUploadSaved()}
                     </p>
                   {/if}
                   <p class="text-xs" style="color: {$colorStore.muted};">
-                    PNG, JPG, or GIF up to 8MB. Uploaded avatars use one webhook per channel this
-                    persona posts in; a link does not.
+                    {m.embedbuilder.personaUploadHint()}
                   </p>
                 {/if}
               </div>
@@ -437,7 +437,7 @@
               {#if guildId && editingId === null}
                 <label class="flex items-center gap-2 text-sm min-h-[44px]" style="color: {$colorStore.text};">
                   <input type="checkbox" bind:checked={shared} />
-                  Share with everyone in {guildName ?? "this server"}
+                  {m.embedbuilder.personaShareWithEveryone({ server: guildName ?? m.common.thisServer() })}
                 </label>
               {/if}
             </div>
@@ -447,21 +447,21 @@
         {#if view === "form"}
           <div class="flex gap-2 p-4 border-t shrink-0" style="border-color: {$colorStore.primary}20;">
             <button
-              aria-label="Cancel"
+              aria-label={m.common.cancel()}
               class="px-4 py-2 rounded-lg font-medium transition-all min-h-[44px]"
               style="background: {$colorStore.primary}10; color: {$colorStore.muted}; border: 1px solid {$colorStore.primary}20;"
               onclick={backToList}
             >
-              Cancel
+              {m.common.cancel()}
             </button>
             <button
-              aria-label="Save persona"
+              aria-label={m.embedbuilder.personaSaveAria()}
               class="flex-1 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.01] disabled:opacity-50 min-h-[44px]"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               disabled={!canSave}
               onclick={save}
             >
-              {saving ? "Saving..." : editingId === null ? "Create persona" : "Save changes"}
+              {saving ? m.common.saving() : editingId === null ? m.embedbuilder.personaCreate() : m.common.saveChanges()}
             </button>
           </div>
         {/if}
@@ -472,9 +472,9 @@
 
 <ConfirmationModal
   bind:isOpen={showDeleteConfirm}
-  title="Delete Persona"
-  message={`Delete the persona "${pendingDelete?.name ?? "this persona"}"? Messages already sent as it are unaffected.`}
-  confirmText="Delete"
+  title={m.embedbuilder.personaDeleteTitle()}
+  message={m.embedbuilder.personaDeleteMessage({ name: pendingDelete?.name ?? m.embedbuilder.personaDeleteThis() })}
+  confirmText={m.common.delete()}
   variant="danger"
   oncancel={() => pendingDelete = null}
   onconfirm={confirmDelete}

@@ -1,67 +1,34 @@
 <!-- lib/components/KeyboardShortcuts.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {onDestroy, onMount} from "svelte";
     import {browser} from "$app/environment";
 
     // Keyboard shortcuts
-  const shortcuts = [
-    {
-      key: "?",
-      description: "Show/hide keyboard shortcuts",
-      context: "Global"
-    },
-    {
-      key: "⌘K",
-      description: "Quick server switch",
-      context: "Global"
-    },
-    {
-      key: "⌘/",
-      description: "Focus search",
-      context: "Global"
-    },
-    {
-      key: "Esc",
-      description: "Close popups/dialogs",
-      context: "Global"
-    },
-    {
-      key: "R",
-      description: "Refresh current data",
-      context: "Dashboard"
-    },
-    {
-      key: "M",
-      description: "Go to music player",
-      context: "Dashboard"
-    },
-    {
-      key: "H",
-      description: "Go to dashboard home",
-      context: "Dashboard"
-    },
-    {
-      key: "S",
-      description: "Go to settings",
-      context: "Dashboard"
-    },
-    {
-      key: "Space",
-      description: "Play/pause music",
-      context: "Music"
-    },
-    {
-      key: "←/→",
-      description: "Skip backward/forward",
-      context: "Music"
-    }
-  ];
+  const shortcuts = $derived([
+    { key: "?", description: m.shortcuts.shortcutsToggle(), context: "global" },
+    { key: "⌘K", description: m.shortcuts.shortcutsQuickSwitch(), context: "global" },
+    { key: "⌘/", description: m.shortcuts.shortcutsFocusSearch(), context: "global" },
+    { key: "Esc", description: m.shortcuts.shortcutsClosePopups(), context: "global" },
+    { key: "R", description: m.shortcuts.shortcutsRefresh(), context: "dashboard" },
+    { key: "M", description: m.shortcuts.shortcutsGoMusic(), context: "dashboard" },
+    { key: "H", description: m.shortcuts.shortcutsGoHome(), context: "dashboard" },
+    { key: "S", description: m.shortcuts.shortcutsGoSettings(), context: "dashboard" },
+    { key: "Space", description: m.shortcuts.shortcutsPlayPause(), context: "music" },
+    { key: "←/→", description: m.shortcuts.shortcutsSkip(), context: "music" }
+  ]);
+
+  const contextLabels: Record<string, () => string> = {
+    global: m.shortcuts.shortcutsContextGlobal,
+    dashboard: m.common.dashboard,
+    music: m.features.musicName
+  };
 
   // State
   let { isVisible = $bindable(false) }: { isVisible?: boolean } = $props();
-  let activeContext = $state("Global");
+  let activeContext = $state("global");
 
   // Contexts extracted from shortcuts
   let contexts = $derived([...new Set(shortcuts.map(s => s.context))]);
@@ -119,7 +86,7 @@
     onkeydown={(e) => e.key === 'Escape' && closeDialog()}
     role="button"
     tabindex="0"
-    aria-label="Close keyboard shortcuts dialog"
+    aria-label={m.shortcuts.shortcutsCloseDialog()}
     transition:fade={{ duration: 200 }}
   >
     <!-- Dialog -->
@@ -137,10 +104,10 @@
           class="text-xl font-semibold"
           style="color: {$colorStore.text}"
         >
-          Keyboard Shortcuts
+          {m.common.keyboardShortcuts()}
         </h2>
 
-        <button aria-label="Button action"
+        <button aria-label={m.common.close()}
           class="p-2 rounded-full hover:bg-gray-800 transition-colors"
           onclick={closeDialog}
 
@@ -155,7 +122,7 @@
           onclick={() => setContext('All')}
           style="color: {activeContext === 'All' ? $colorStore.primary : $colorStore.muted}"
         >
-          All
+          {m.common.all()}
         </button>
 
         {#each contexts as context}
@@ -165,7 +132,7 @@
             onclick={() => setContext(context)}
             style="color: {activeContext === context ? $colorStore.primary : $colorStore.muted}"
           >
-            {context}
+            {contextLabels[context]()}
           </button>
         {/each}
       </div>
@@ -176,14 +143,14 @@
           {#each filteredShortcuts as shortcut}
             <div
                     class="flex items-center justify-between p-2 rounded-sm hover:bg-gray-800/50 transition-colors"
-              class:opacity-70={activeContext === 'All' && shortcut.context !== 'Global'}
+              class:opacity-70={activeContext === 'All' && shortcut.context !== 'global'}
             >
               <div style="color: {$colorStore.text}">
                 {shortcut.description}
                 {#if activeContext === 'All'}
                   <span class="text-xs ml-2 px-2 py-0.5 rounded-full bg-gray-800"
                         style="color: {$colorStore.muted}">
-                    {shortcut.context}
+                    {contextLabels[shortcut.context]()}
                   </span>
                 {/if}
               </div>
@@ -204,8 +171,7 @@
       <!-- Footer -->
       <div class="p-4 border-t border-gray-800 text-sm text-center">
         <span style="color: {$colorStore.muted}">
-          Press <kbd class="px-1 bg-gray-800 rounded-sm" style="color: {$colorStore.text}">?</kbd>
-          at any time to show this dialog
+          {@html m.shortcuts.shortcutsFooter({ key: `<kbd class="px-1 bg-gray-800 rounded-sm" style="color: ${$colorStore.text}">?</kbd>` })}
         </span>
       </div>
     </div>

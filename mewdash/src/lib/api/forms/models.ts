@@ -1,4 +1,19 @@
 // lib/api/forms/models.ts
+import {
+  conditionalOperatorLabel,
+  conditionalTypeDescription,
+  conditionalTypeLabel,
+  formTypeDescription,
+  formTypeLabel,
+  permissionLabel,
+  questionTypeDescription,
+  questionTypeLabel,
+  responseStatusLabel,
+  roleActionDescription,
+  roleActionLabel,
+  roleLogicDescription,
+  roleLogicLabel
+} from "$lib/components/forms/formLabels";
 
 export type QuestionType =
   | "short_text"
@@ -477,73 +492,73 @@ export interface QuestionTypeMetadata {
 export const QUESTION_TYPES: QuestionTypeMetadata[] = [
   {
     type: "short_text",
-    label: "Short Text",
+    get label() { return questionTypeLabel("short_text"); },
     icon: "fa-text",
-    description: "Single line text input",
+    get description() { return questionTypeDescription("short_text"); },
     supportsOptions: false,
     supportsValidation: true,
   },
   {
     type: "long_text",
-    label: "Long Text",
+    get label() { return questionTypeLabel("long_text"); },
     icon: "fa-align-left",
-    description: "Multi-line text area",
+    get description() { return questionTypeDescription("long_text"); },
     supportsOptions: false,
     supportsValidation: true,
   },
   {
     type: "multiple_choice",
-    label: "Multiple Choice",
+    get label() { return questionTypeLabel("multiple_choice"); },
     icon: "fa-circle-dot",
-    description: "Single selection from options",
+    get description() { return questionTypeDescription("multiple_choice"); },
     supportsOptions: true,
     supportsValidation: false,
   },
   {
     type: "checkboxes",
-    label: "Checkboxes",
+    get label() { return questionTypeLabel("checkboxes"); },
     icon: "fa-square-check",
-    description: "Multiple selections",
+    get description() { return questionTypeDescription("checkboxes"); },
     supportsOptions: true,
     supportsValidation: true,
   },
   {
     type: "dropdown",
-    label: "Dropdown",
+    get label() { return questionTypeLabel("dropdown"); },
     icon: "fa-caret-down",
-    description: "Single selection from dropdown",
+    get description() { return questionTypeDescription("dropdown"); },
     supportsOptions: true,
     supportsValidation: false,
   },
   {
     type: "number",
-    label: "Number",
+    get label() { return questionTypeLabel("number"); },
     icon: "fa-hashtag",
-    description: "Numeric input",
+    get description() { return questionTypeDescription("number"); },
     supportsOptions: false,
     supportsValidation: true,
   },
   {
     type: "email",
-    label: "Email",
+    get label() { return questionTypeLabel("email"); },
     icon: "fa-envelope",
-    description: "Email address",
+    get description() { return questionTypeDescription("email"); },
     supportsOptions: false,
     supportsValidation: false,
   },
   {
     type: "url",
-    label: "URL",
+    get label() { return questionTypeLabel("url"); },
     icon: "fa-link",
-    description: "Website URL",
+    get description() { return questionTypeDescription("url"); },
     supportsOptions: false,
     supportsValidation: false,
   },
   {
     type: "section_break",
-    label: "Section Break",
+    get label() { return questionTypeLabel("section_break"); },
     icon: "fa-grip-lines",
-    description: "Splits the form into pages, answering nothing itself",
+    get description() { return questionTypeDescription("section_break"); },
     supportsOptions: false,
     supportsValidation: false,
   },
@@ -613,11 +628,11 @@ export const CONDITIONAL_OPERATORS: Array<{
   value: ConditionalOperator;
   label: string;
 }> = [
-  { value: "equals", label: "Equals" },
-  { value: "not_equals", label: "Does not equal" },
-  { value: "contains", label: "Contains" },
-  { value: "greater_than", label: "Greater than" },
-  { value: "less_than", label: "Less than" },
+  { value: "equals", get label() { return conditionalOperatorLabel("equals"); } },
+  { value: "not_equals", get label() { return conditionalOperatorLabel("not_equals"); } },
+  { value: "contains", get label() { return conditionalOperatorLabel("contains"); } },
+  { value: "greater_than", get label() { return conditionalOperatorLabel("greater_than"); } },
+  { value: "less_than", get label() { return conditionalOperatorLabel("less_than"); } },
 ];
 
 export const ROLE_ACTION_TYPES: Array<{
@@ -625,9 +640,9 @@ export const ROLE_ACTION_TYPES: Array<{
   label: string;
   description: string;
 }> = [
-  { value: 0, label: "None", description: "No role action" },
-  { value: 1, label: "Add Roles", description: "Add roles to user" },
-  { value: 2, label: "Remove Roles", description: "Remove roles from user" },
+  { value: 0, get label() { return roleActionLabel("0"); }, get description() { return roleActionDescription("0"); } },
+  { value: 1, get label() { return roleActionLabel("1"); }, get description() { return roleActionDescription("1"); } },
+  { value: 2, get label() { return roleActionLabel("2"); }, get description() { return roleActionDescription("2"); } },
 ];
 
 export const CONDITIONAL_TYPES: Array<{
@@ -641,49 +656,49 @@ export const CONDITIONAL_TYPES: Array<{
   {
     value: 0,
     type: "QuestionBased",
-    label: "Answer-Based",
+    get label() { return conditionalTypeLabel("0"); },
     icon: "fa-question-circle",
-    description: "Show based on previous answers",
+    get description() { return conditionalTypeDescription("0"); },
     requiresDiscord: false,
   },
   {
     value: 1,
     type: "DiscordRole",
-    label: "Role-Based",
+    get label() { return conditionalTypeLabel("1"); },
     icon: "fa-crown",
-    description: "Show based on user's roles",
+    get description() { return conditionalTypeDescription("1"); },
     requiresDiscord: true,
   },
   {
     value: 2,
     type: "ServerTenure",
-    label: "Server Tenure",
+    get label() { return conditionalTypeLabel("2"); },
     icon: "fa-calendar-days",
-    description: "Show based on time in server",
+    get description() { return conditionalTypeDescription("2"); },
     requiresDiscord: true,
   },
   {
     value: 3,
     type: "BoostStatus",
-    label: "Boost/Nitro",
+    get label() { return conditionalTypeLabel("3"); },
     icon: "fa-gem",
-    description: "Show based on boost/Nitro status",
+    get description() { return conditionalTypeDescription("3"); },
     requiresDiscord: true,
   },
   {
     value: 4,
     type: "Permission",
-    label: "Permission-Based",
+    get label() { return conditionalTypeLabel("4"); },
     icon: "fa-shield-halved",
-    description: "Show based on user permissions",
+    get description() { return conditionalTypeDescription("4"); },
     requiresDiscord: true,
   },
   {
     value: 5,
     type: "MultipleConditions",
-    label: "Multiple Conditions",
+    get label() { return conditionalTypeLabel("5"); },
     icon: "fa-code-branch",
-    description: "Combine multiple conditions with AND/OR",
+    get description() { return conditionalTypeDescription("5"); },
     requiresDiscord: false,
   },
 ];
@@ -695,14 +710,14 @@ export const ROLE_LOGIC_TYPES: Array<{
 }> = [
   {
     value: "any",
-    label: "Any Of",
-    description: "User has at least one of these roles",
+    get label() { return roleLogicLabel("any"); },
+    get description() { return roleLogicDescription("any"); },
   },
-  { value: "all", label: "All Of", description: "User has all of these roles" },
+  { value: "all", get label() { return roleLogicLabel("all"); }, get description() { return roleLogicDescription("all"); } },
   {
     value: "none",
-    label: "None Of",
-    description: "User has none of these roles",
+    get label() { return roleLogicLabel("none"); },
+    get description() { return roleLogicDescription("none"); },
   },
 ];
 
@@ -711,17 +726,17 @@ export const COMMON_PERMISSIONS: Array<{
   label: string;
   flag: string;
 }> = [
-  { value: 0x0000000008, label: "Administrator", flag: "Administrator" },
-  { value: 0x0000000010, label: "Manage Channels", flag: "ManageChannels" },
-  { value: 0x0000000020, label: "Manage Guild", flag: "ManageGuild" },
-  { value: 0x0000002000, label: "Manage Messages", flag: "ManageMessages" },
-  { value: 0x0000004000, label: "Manage Nicknames", flag: "ManageNicknames" },
-  { value: 0x0000010000, label: "Manage Roles", flag: "ManageRoles" },
-  { value: 0x0000020000, label: "Manage Webhooks", flag: "ManageWebhooks" },
-  { value: 0x0000000004, label: "Ban Members", flag: "BanMembers" },
-  { value: 0x0000000002, label: "Kick Members", flag: "KickMembers" },
-  { value: 0x0010000000, label: "Moderate Members", flag: "ModerateMembers" },
-  { value: 0x0000000400, label: "View Audit Log", flag: "ViewAuditLog" },
+  { value: 0x0000000008, get label() { return permissionLabel("Administrator"); }, flag: "Administrator" },
+  { value: 0x0000000010, get label() { return permissionLabel("ManageChannels"); }, flag: "ManageChannels" },
+  { value: 0x0000000020, get label() { return permissionLabel("ManageGuild"); }, flag: "ManageGuild" },
+  { value: 0x0000002000, get label() { return permissionLabel("ManageMessages"); }, flag: "ManageMessages" },
+  { value: 0x0000004000, get label() { return permissionLabel("ManageNicknames"); }, flag: "ManageNicknames" },
+  { value: 0x0000010000, get label() { return permissionLabel("ManageRoles"); }, flag: "ManageRoles" },
+  { value: 0x0000020000, get label() { return permissionLabel("ManageWebhooks"); }, flag: "ManageWebhooks" },
+  { value: 0x0000000004, get label() { return permissionLabel("BanMembers"); }, flag: "BanMembers" },
+  { value: 0x0000000002, get label() { return permissionLabel("KickMembers"); }, flag: "KickMembers" },
+  { value: 0x0010000000, get label() { return permissionLabel("ModerateMembers"); }, flag: "ModerateMembers" },
+  { value: 0x0000000400, get label() { return permissionLabel("ViewAuditLog"); }, flag: "ViewAuditLog" },
 ];
 
 export interface FormTypeMetadata {
@@ -736,25 +751,25 @@ export interface FormTypeMetadata {
 export const FORM_TYPES: FormTypeMetadata[] = [
   {
     type: "Regular",
-    label: "Regular Form",
+    get label() { return formTypeLabel("Regular"); },
     icon: "fa-clipboard-list",
-    description: "Standard form for guild members",
+    get description() { return formTypeDescription("Regular"); },
     requiresWorkflow: false,
     allowsExternalUsers: false,
   },
   {
     type: "BanAppeal",
-    label: "Ban Appeal",
+    get label() { return formTypeLabel("BanAppeal"); },
     icon: "fa-gavel",
-    description: "Allow banned users to appeal",
+    get description() { return formTypeDescription("BanAppeal"); },
     requiresWorkflow: true,
     allowsExternalUsers: true,
   },
   {
     type: "JoinApplication",
-    label: "Join Application",
+    get label() { return formTypeLabel("JoinApplication"); },
     icon: "fa-user-plus",
-    description: "External users apply to join",
+    get description() { return formTypeDescription("JoinApplication"); },
     requiresWorkflow: true,
     allowsExternalUsers: true,
   },
@@ -764,10 +779,10 @@ export const RESPONSE_STATUS_LABELS: Record<
   ResponseStatus,
   { label: string; color: string; icon: string }
 > = {
-  Pending: { label: "Pending Review", color: "#f59e0b", icon: "fa-clock" },
-  UnderReview: { label: "Under Review", color: "#3b82f6", icon: "fa-search" },
-  Approved: { label: "Approved", color: "#10B981", icon: "fa-check-circle" },
-  Rejected: { label: "Rejected", color: "#ef4444", icon: "fa-times-circle" },
+  Pending: { get label() { return responseStatusLabel("Pending"); }, color: "#f59e0b", icon: "fa-clock" },
+  UnderReview: { get label() { return responseStatusLabel("UnderReview"); }, color: "#3b82f6", icon: "fa-search" },
+  Approved: { get label() { return responseStatusLabel("Approved"); }, color: "#10B981", icon: "fa-check-circle" },
+  Rejected: { get label() { return responseStatusLabel("Rejected"); }, color: "#ef4444", icon: "fa-times-circle" },
 };
 
 // Helper to convert FormType to integer for backend

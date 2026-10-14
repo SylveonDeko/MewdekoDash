@@ -1,5 +1,6 @@
 <!-- routes/dashboard/polls/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -37,29 +38,29 @@
   let expandedPoll = $state<number | null>(null);
   let pollDetails = $state<Record<number, PollResponse>>({});
 
-  const tabs = [
-    { id: "active", label: "Polls", icon: "fa-chart-simple" },
-    { id: "create", label: "Create", icon: "fa-plus" },
-    { id: "scheduled", label: "Scheduled", icon: "fa-calendar" },
-    { id: "templates", label: "Templates", icon: "fa-copy" },
-    { id: "analytics", label: "Analytics", icon: "fa-chart-simple" }
-  ];
+  const tabs = $derived([
+    { id: "active", label: m.features.pollsName(), icon: "fa-chart-simple" },
+    { id: "create", label: m.common.create(), icon: "fa-plus" },
+    { id: "scheduled", label: m.common.scheduled(), icon: "fa-calendar" },
+    { id: "templates", label: m.common.templates(), icon: "fa-copy" },
+    { id: "analytics", label: m.features.analyticsName(), icon: "fa-chart-simple" }
+  ]);
 
-  const typeOptions = [
-    { id: PollType.SingleChoice.toString(), name: "Single choice" },
-    { id: PollType.MultiChoice.toString(), name: "Multiple choice" },
-    { id: PollType.YesNo.toString(), name: "Yes / No" },
-    { id: PollType.Anonymous.toString(), name: "Anonymous" },
-    { id: PollType.RoleRestricted.toString(), name: "Role restricted" }
-  ];
+  const typeOptions = $derived([
+    { id: PollType.SingleChoice.toString(), name: m.polls.typeSingle() },
+    { id: PollType.MultiChoice.toString(), name: m.common.multipleChoice() },
+    { id: PollType.YesNo.toString(), name: m.polls.typeYesNo() },
+    { id: PollType.Anonymous.toString(), name: m.common.anonymous() },
+    { id: PollType.RoleRestricted.toString(), name: m.polls.typeRoleRestricted() }
+  ]);
 
-  const typeLabels: Record<number, string> = {
-    [PollType.YesNo]: "Yes / No",
-    [PollType.SingleChoice]: "Single choice",
-    [PollType.MultiChoice]: "Multiple choice",
-    [PollType.Anonymous]: "Anonymous",
-    [PollType.RoleRestricted]: "Role restricted"
-  };
+  const typeLabels: Record<number, string> = $derived({
+    [PollType.YesNo]: m.polls.typeYesNo(),
+    [PollType.SingleChoice]: m.polls.typeSingle(),
+    [PollType.MultiChoice]: m.common.multipleChoice(),
+    [PollType.Anonymous]: m.common.anonymous(),
+    [PollType.RoleRestricted]: m.polls.typeRoleRestricted()
+  });
 
   /** Draft used by the create tab, also seeded from templates */
   let draft = $state({
@@ -109,7 +110,7 @@
       roles = (roleData as any[]).map(r => ({ id: r.id.toString(), name: r.name, color: r.color }));
     } catch (err) {
       logger.error("Failed to load polls:", err);
-      showMessage("Failed to load polls", "error");
+      showMessage(m.polls.notifyLoadFailed(), "error");
     } finally {
       loading = false;
     }
@@ -142,14 +143,14 @@
   async function closePoll(poll: PollResponse) {
     const uid = userId();
     if (!$currentGuild?.id || !uid) return;
-    if (!(await requestConfirmation({ message: `Close "${poll.question}"? Voting stops and final results are posted.`, confirmText: "Close poll", variant: "warning" }))) return;
+    if (!(await requestConfirmation({ message: m.polls.closeConfirm({ question: poll.question }), confirmText: m.polls.closeConfirmButton(), variant: "warning" }))) return;
     saving = true;
     try {
       await pollApi.closePoll($currentGuild.id, poll.id, { userId: uid, notifyVoters: false });
       await loadAll();
     } catch (err) {
       logger.error("Failed to close poll:", err);
-      showMessage("Failed to close poll", "error");
+      showMessage(m.polls.notifyCloseFailed(), "error");
     } finally {
       saving = false;
     }
@@ -158,14 +159,14 @@
   async function deletePoll(poll: PollResponse) {
     const uid = userId();
     if (!$currentGuild?.id || !uid) return;
-    if (!(await requestConfirmation({ message: `Delete "${poll.question}" and all of its votes?`, confirmText: "Delete" }))) return;
+    if (!(await requestConfirmation({ message: m.polls.deleteConfirm({ question: poll.question }), confirmText: m.common.delete() }))) return;
     saving = true;
     try {
       await pollApi.deletePoll($currentGuild.id, poll.id, uid);
       await loadAll();
     } catch (err) {
       logger.error("Failed to delete poll:", err);
-      showMessage("Failed to delete poll", "error");
+      showMessage(m.polls.notifyDeleteFailed(), "error");
     } finally {
       saving = false;
     }
@@ -174,26 +175,26 @@
   function buildRequest(uid: bigint): CreatePollRequest | null {
     draftError = "";
     if (!draft.question.trim()) {
-      draftError = "Ask a question.";
+      draftError = m.polls.errorQuestion();
       return null;
     }
     if (!draft.channelId) {
-      draftError = "Pick the channel the poll is posted in.";
+      draftError = m.polls.errorChannel();
       return null;
     }
     const options = isYesNo
-      ? [{ text: "Yes" }, { text: "No" }]
+      ? [{ text: m.common.yes() }, { text: m.common.no() }]
       : draft.options.map(o => o.trim()).filter(Boolean).map(text => ({ text }));
     if (!isYesNo && options.length < 2) {
-      draftError = "Add at least two options.";
+      draftError = m.polls.errorOptionsMin();
       return null;
     }
     if (options.length > 25) {
-      draftError = "Discord polls support at most 25 options.";
+      draftError = m.polls.errorOptionsMax();
       return null;
     }
     if (isRoleRestricted && draft.allowedRoles.length === 0) {
-      draftError = "Choose which roles may vote.";
+      draftError = m.polls.errorRoles();
       return null;
     }
     const type = parseInt(draft.type) as PollType;
@@ -223,14 +224,14 @@
       if (draft.scheduleFor) {
         const when = new Date(draft.scheduleFor);
         if (Number.isNaN(when.getTime()) || when.getTime() <= Date.now()) {
-          draftError = "Scheduled time must be in the future.";
+          draftError = m.polls.errorSchedulePast();
           return;
         }
         await pollApi.schedulePoll($currentGuild.id, { ...request, scheduledFor: when.toISOString() });
-        showMessage("Poll scheduled", "success");
+        showMessage(m.polls.notifyScheduled(), "success");
       } else {
         await pollApi.createPoll($currentGuild.id, request);
-        showMessage("Poll posted", "success");
+        showMessage(m.polls.notifyPosted(), "success");
       }
       if (draft.saveAsTemplate && draft.templateName.trim()) {
         await pollApi.createTemplate($currentGuild.id, {
@@ -250,7 +251,7 @@
       activeTab = draft.scheduleFor ? "scheduled" : "active";
     } catch (err: any) {
       logger.error("Failed to create poll:", err);
-      draftError = err?.message || "Failed to create poll.";
+      draftError = err?.message || m.polls.errorCreateFailed();
     } finally {
       saving = false;
     }
@@ -294,26 +295,26 @@
   async function deleteTemplate(template: PollTemplateResponse) {
     const uid = userId();
     if (!$currentGuild?.id || !uid) return;
-    if (!(await requestConfirmation({ message: `Delete template "${template.name}"?`, confirmText: "Delete" }))) return;
+    if (!(await requestConfirmation({ message: m.polls.templateDeleteConfirm({ name: template.name }), confirmText: m.common.delete() }))) return;
     try {
       await pollApi.deleteTemplate($currentGuild.id, template.id, uid);
       templates = templates.filter(t => t.id !== template.id);
     } catch (err) {
       logger.error("Failed to delete template:", err);
-      showMessage("Failed to delete template", "error");
+      showMessage(m.polls.notifyTemplateDeleteFailed(), "error");
     }
   }
 
   async function cancelScheduled(item: ScheduledPollResponse) {
     const uid = userId();
     if (!$currentGuild?.id || !uid) return;
-    if (!(await requestConfirmation({ message: `Cancel the scheduled poll "${item.question}"?`, confirmText: "Cancel poll", variant: "warning" }))) return;
+    if (!(await requestConfirmation({ message: m.polls.scheduledCancelConfirm({ question: item.question }), confirmText: m.polls.scheduledCancelButton(), variant: "warning" }))) return;
     try {
       await pollApi.cancelScheduledPoll($currentGuild.id, item.id, uid);
       await loadAll();
     } catch (err) {
       logger.error("Failed to cancel scheduled poll:", err);
-      showMessage("Failed to cancel scheduled poll", "error");
+      showMessage(m.polls.notifyCancelFailed(), "error");
     }
   }
 
@@ -326,14 +327,14 @@
   }
 
   function timeLeft(expiresAt: string | null): string {
-    if (!expiresAt) return "No end time";
+    if (!expiresAt) return m.polls.timeNoEnd();
     const ms = new Date(expiresAt).getTime() - Date.now();
-    if (ms <= 0) return "Ended";
+    if (ms <= 0) return m.common.ended();
     const mins = Math.round(ms / 60000);
-    if (mins < 60) return `${mins}m left`;
+    if (mins < 60) return m.polls.timeMinutesLeft({ count: mins });
     const hours = Math.round(mins / 60);
-    if (hours < 48) return `${hours}h left`;
-    return `${Math.round(hours / 24)}d left`;
+    if (hours < 48) return m.polls.timeHoursLeft({ count: hours });
+    return m.polls.timeDaysLeft({ count: Math.round(hours / 24) });
   }
 
   onMount(loadAll);
@@ -347,8 +348,8 @@
   });
 
   let actionButtons = $derived([
-    { label: "New poll", icon: "fa-plus", action: () => { activeTab = "create"; } },
-    { label: "Refresh", icon: "fa-arrows-rotate", action: () => loadAll(), loading }
+    { label: m.polls.actionNew(), icon: "fa-plus", action: () => { activeTab = "create"; } },
+    { label: m.common.refresh(), icon: "fa-arrows-rotate", action: () => loadAll(), loading }
   ]);
 </script>
 
@@ -368,12 +369,12 @@
 <DashboardPageLayout
   {actionButtons}
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-chart-simple"
   statusMessages={statusMessageContent}
-  subtitle="Create, schedule, and review polls"
+  subtitle={m.features.pollsDescription()}
   {tabs}
-  title="Polls"
+  title={m.features.pollsName()}
 >
   {#if activeTab === 'active'}
     <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
@@ -382,24 +383,24 @@
         <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div class="flex items-center gap-3">
             <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Polls ({polls.length})</h2>
+            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.polls.listTitle({ count: polls.length })}</h2>
           </div>
           <label class="flex items-center gap-2 px-3 rounded-lg cursor-pointer min-h-[44px] text-sm"
                  style="background: {$colorStore.primary}08; color: {$colorStore.text};">
             <input type="checkbox" bind:checked={includeInactive} onchange={loadAll} class="w-4 h-4 rounded" style="accent-color: {$colorStore.primary};">
-            Include closed polls
+            {m.polls.listIncludeClosed()}
           </label>
         </div>
 
         {#if loading && polls.length === 0}
           <div class="flex justify-center py-12">
-            <div class="w-12 h-12 border-4 rounded-full animate-spin" style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};" aria-label="Loading"></div>
+            <div class="w-12 h-12 border-4 rounded-full animate-spin" style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};" aria-label={m.common.loading()}></div>
           </div>
         {:else if polls.length === 0}
           <div class="text-center py-8">
             <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No polls yet</h3>
-            <p class="text-sm" style="color: {$colorStore.muted}">Create one from the Create tab.</p>
+            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.polls.listEmptyTitle()}</h3>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.polls.listEmptyHint()}</p>
           </div>
         {:else}
           <div class="space-y-3">
@@ -416,10 +417,10 @@
                     <div class="font-semibold break-words" style="color: {$colorStore.text}">{poll.question}</div>
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs mt-1" style="color: {$colorStore.muted}">
                       <span>#{poll.channelName ?? channelName(poll.channelId)}</span>
-                      <span>{typeLabels[poll.type] ?? "Poll"}</span>
-                      <span>{total} vote{total === 1 ? "" : "s"}</span>
-                      <span>{poll.isActive ? timeLeft(poll.expiresAt) : `Closed ${formatDate(poll.closedAt)}`}</span>
-                      {#if poll.creatorName}<span>by {poll.creatorName}</span>{/if}
+                      <span>{typeLabels[poll.type] ?? m.common.poll()}</span>
+                      <span>{total === 1 ? m.common.votesOne({ count: total }) : m.common.votesOther({ count: total })}</span>
+                      <span>{poll.isActive ? timeLeft(poll.expiresAt) : m.common.closedDate({ date: formatDate(poll.closedAt) })}</span>
+                      {#if poll.creatorName}<span>{m.common.byName({ name: poll.creatorName })}</span>{/if}
                     </div>
                   </div>
                   <i class="fa-solid fa-chevron-{expandedPoll === poll.id ? 'up' : 'down'} shrink-0 mt-1" style="color: {$colorStore.muted}; font-size: 12px;"></i>
@@ -444,19 +445,19 @@
                     {#if detail.stats}
                       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                         <div class="p-3 rounded-lg" style="background: {$colorStore.primary}08;">
-                          <div class="text-xs" style="color: {$colorStore.muted}">Unique voters</div>
+                          <div class="text-xs" style="color: {$colorStore.muted}">{m.polls.detailUnique()}</div>
                           <div class="font-bold" style="color: {$colorStore.text}">{detail.stats.uniqueVoters}</div>
                         </div>
                         <div class="p-3 rounded-lg" style="background: {$colorStore.primary}08;">
-                          <div class="text-xs" style="color: {$colorStore.muted}">Participation</div>
+                          <div class="text-xs" style="color: {$colorStore.muted}">{m.polls.detailParticipation()}</div>
                           <div class="font-bold" style="color: {$colorStore.text}">{Math.round(detail.stats.participationRate * 100) / 100}%</div>
                         </div>
                         <div class="p-3 rounded-lg" style="background: {$colorStore.primary}08;">
-                          <div class="text-xs" style="color: {$colorStore.muted}">Peak hour</div>
-                          <div class="font-bold" style="color: {$colorStore.text}">{detail.stats.peakVotingHour}:00 UTC</div>
+                          <div class="text-xs" style="color: {$colorStore.muted}">{m.common.peakHour()}</div>
+                          <div class="font-bold" style="color: {$colorStore.text}">{m.polls.detailPeakValue({ hour: detail.stats.peakVotingHour })}</div>
                         </div>
                         <div class="p-3 rounded-lg" style="background: {$colorStore.primary}08;">
-                          <div class="text-xs" style="color: {$colorStore.muted}">Created</div>
+                          <div class="text-xs" style="color: {$colorStore.muted}">{m.common.created()}</div>
                           <div class="font-bold" style="color: {$colorStore.text}">{new Date(poll.createdAt).toLocaleDateString()}</div>
                         </div>
                       </div>
@@ -466,13 +467,13 @@
                         <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px] disabled:opacity-50"
                                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                                 disabled={saving} onclick={() => closePoll(poll)}>
-                          <i class="fa-solid fa-lock mr-1"></i>Close poll
+                          <i class="fa-solid fa-lock mr-1"></i>{m.polls.closeConfirmButton()}
                         </button>
                       {/if}
                       <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px] disabled:opacity-50"
                               style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
                               disabled={saving} onclick={() => deletePoll(poll)}>
-                        <i class="fa-solid fa-trash mr-1"></i>Delete
+                        <i class="fa-solid fa-trash mr-1"></i>{m.common.delete()}
                       </button>
                     </div>
                   </div>
@@ -491,39 +492,39 @@
             onsubmit={(e) => { e.preventDefault(); submitDraft(); }}>
         <div class="flex items-center gap-3">
           <i class="fa-utility-duo fa-regular fa-circle-plus" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">New poll</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.polls.actionNew()}</h2>
         </div>
 
         <div>
-          <label for="poll-question" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Question</label>
-          <input id="poll-question" type="text" bind:value={draft.question} maxlength="300" placeholder="What should we do next?"
+          <label for="poll-question" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.question()}</label>
+          <input id="poll-question" type="text" bind:value={draft.question} maxlength="300" placeholder={m.polls.createQuestionPlaceholder()}
                  class="w-full p-3 rounded-xl border min-h-[44px]"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <span id="poll-type-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Poll type</span>
+            <span id="poll-type-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.polls.createType()}</span>
             <DiscordSelector type="custom" options={typeOptions} selected={draft.type} searchable={false} ariaLabelledby="poll-type-label"
                              onchange={(e) => { if (typeof e.selected === "string") draft.type = e.selected; }} />
           </div>
           <div>
-            <span id="poll-channel-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel</span>
-            <DiscordSelector type="channel" options={textChannels} selected={draft.channelId} placeholder="Select channel" ariaLabelledby="poll-channel-label"
+            <span id="poll-channel-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.channel()}</span>
+            <DiscordSelector type="channel" options={textChannels} selected={draft.channelId} placeholder={m.common.selectChannelPlaceholder()} ariaLabelledby="poll-channel-label"
                              onchange={(e) => { draft.channelId = typeof e.selected === "string" ? e.selected : null; }} />
           </div>
         </div>
 
         {#if !isYesNo}
           <div>
-            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Options</span>
+            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.options()}</span>
             <div class="space-y-2">
               {#each draft.options as _, i}
                 <div class="flex gap-2" transition:slide>
-                  <input type="text" bind:value={draft.options[i]} maxlength="100" placeholder={`Option ${i + 1}`} aria-label={`Option ${i + 1}`}
+                  <input type="text" bind:value={draft.options[i]} maxlength="100" placeholder={m.common.optionNumber({ number: i + 1 })} aria-label={m.common.optionNumber({ number: i + 1 })}
                          class="flex-1 p-3 rounded-xl border min-h-[44px]"
                          style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-                  <button type="button" class="px-3 rounded-xl min-h-[44px] min-w-[44px] disabled:opacity-30" aria-label="Remove option"
+                  <button type="button" class="px-3 rounded-xl min-h-[44px] min-w-[44px] disabled:opacity-30" aria-label={m.common.removeOption()}
                           style="background: {$colorStore.muted}15; color: {$colorStore.muted};"
                           disabled={draft.options.length <= 2}
                           onclick={() => { draft.options = draft.options.filter((_, idx) => idx !== i); }}>
@@ -536,7 +537,7 @@
               <button type="button" class="mt-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px]"
                       style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                       onclick={() => { draft.options = [...draft.options, ""]; }}>
-                <i class="fa-solid fa-plus mr-1"></i>Add option
+                <i class="fa-solid fa-plus mr-1"></i>{m.common.addOption()}
               </button>
             {/if}
           </div>
@@ -544,21 +545,21 @@
 
         {#if isRoleRestricted}
           <div>
-            <span id="poll-roles-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Roles allowed to vote</span>
-            <DiscordSelector type="role" options={roles} selected={draft.allowedRoles} multiple={true} placeholder="Select roles" ariaLabelledby="poll-roles-label"
+            <span id="poll-roles-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.polls.createRoles()}</span>
+            <DiscordSelector type="role" options={roles} selected={draft.allowedRoles} multiple={true} placeholder={m.common.selectRolesPlaceholder()} ariaLabelledby="poll-roles-label"
                              onchange={(e) => { draft.allowedRoles = Array.isArray(e.selected) ? e.selected : []; }} />
           </div>
         {/if}
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label for="poll-duration" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Duration (minutes)</label>
-            <input id="poll-duration" type="number" min="1" max="20160" bind:value={draft.durationMinutes} placeholder="Open until closed"
+            <label for="poll-duration" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.durationMinutes()}</label>
+            <input id="poll-duration" type="number" min="1" max="20160" bind:value={draft.durationMinutes} placeholder={m.polls.createDurationPlaceholder()}
                    class="w-full p-3 rounded-xl border min-h-[44px]"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           </div>
           <div>
-            <label for="poll-schedule" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Schedule for later</label>
+            <label for="poll-schedule" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.polls.createSchedule()}</label>
             <input id="poll-schedule" type="datetime-local" bind:value={draft.scheduleFor}
                    class="w-full p-3 rounded-xl border min-h-[44px]"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
@@ -567,9 +568,9 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {#each [
-            { key: "allowVoteChanges", label: "Allow changing votes" },
-            { key: "showResults", label: "Show live results" },
-            { key: "showProgressBars", label: "Show progress bars" }
+            { key: "allowVoteChanges", label: m.polls.createAllowChanges() },
+            { key: "showResults", label: m.polls.createShowResults() },
+            { key: "showProgressBars", label: m.polls.createShowBars() }
           ] as opt}
             <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer min-h-[44px]" style="background: {$colorStore.primary}08; color: {$colorStore.text};">
               <input type="checkbox" bind:checked={draft[opt.key as "allowVoteChanges" | "showResults" | "showProgressBars"]} class="w-4 h-4 rounded" style="accent-color: {$colorStore.primary};">
@@ -581,10 +582,10 @@
         <div class="p-4 rounded-xl border space-y-3" style="background: {$colorStore.secondary}05; border-color: {$colorStore.secondary}20;">
           <label class="flex items-center gap-3 cursor-pointer min-h-[32px]" style="color: {$colorStore.text};">
             <input type="checkbox" bind:checked={draft.saveAsTemplate} class="w-4 h-4 rounded" style="accent-color: {$colorStore.secondary};">
-            <span class="text-sm font-medium">Also save as a template</span>
+            <span class="text-sm font-medium">{m.polls.createSaveTemplate()}</span>
           </label>
           {#if draft.saveAsTemplate}
-            <input type="text" bind:value={draft.templateName} maxlength="100" placeholder="Template name" aria-label="Template name"
+            <input type="text" bind:value={draft.templateName} maxlength="100" placeholder={m.polls.createTemplateName()} aria-label={m.polls.createTemplateName()}
                    class="w-full p-3 rounded-xl border min-h-[44px]" transition:slide
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           {/if}
@@ -602,13 +603,13 @@
           <button type="button" onclick={resetDraft}
                   class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                   style="background: {$colorStore.muted}20; color: {$colorStore.muted};">
-            Reset
+            {m.common.reset()}
           </button>
           <button type="submit" disabled={saving}
                   class="flex-1 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] flex items-center justify-center gap-2 disabled:opacity-50"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
             {#if saving}<i class="fa-solid fa-spinner fa-spin"></i>{:else}<i class="fa-solid {draft.scheduleFor ? 'fa-calendar-check' : 'fa-paper-plane'}"></i>{/if}
-            {draft.scheduleFor ? "Schedule poll" : "Post poll"}
+            {draft.scheduleFor ? m.polls.createSubmitSchedule() : m.polls.createSubmitPost()}
           </button>
         </div>
       </form>
@@ -620,12 +621,12 @@
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-calendar" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Scheduled polls</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.polls.scheduledTitle()}</h2>
         </div>
         {#if scheduled.filter(s => !s.isExecuted && !s.isCancelled).length === 0}
           <div class="text-center py-8">
             <i class="fa-utility-duo fa-regular fa-calendar" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-            <p class="text-sm" style="color: {$colorStore.muted}">Nothing scheduled. Set a time on the Create tab to queue a poll.</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.polls.scheduledEmpty()}</p>
           </div>
         {:else}
           <div class="space-y-3">
@@ -634,13 +635,13 @@
                 <div class="flex-1 min-w-0">
                   <div class="font-semibold break-words" style="color: {$colorStore.text}">{item.question}</div>
                   <div class="text-xs mt-1" style="color: {$colorStore.muted}">
-                    #{channelName(item.channelId)} · {typeLabels[item.type] ?? "Poll"} · posts {formatDate(item.scheduledFor)}
+                    #{channelName(item.channelId)} · {typeLabels[item.type] ?? m.common.poll()} · {m.polls.scheduledPosts({ date: formatDate(item.scheduledFor) })}
                   </div>
                 </div>
                 <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px]"
                         style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
                         onclick={() => cancelScheduled(item)}>
-                  Cancel
+                  {m.common.cancel()}
                 </button>
               </div>
             {/each}
@@ -655,12 +656,12 @@
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-copy" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Templates ({templates.length})</h2>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.polls.templatesTitle({ count: templates.length })}</h2>
         </div>
         {#if templates.length === 0}
           <div class="text-center py-8">
             <i class="fa-utility-duo fa-regular fa-copy" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-            <p class="text-sm" style="color: {$colorStore.muted}">Tick "save as a template" when creating a poll to reuse it later.</p>
+            <p class="text-sm" style="color: {$colorStore.muted}">{m.polls.templatesEmpty()}</p>
           </div>
         {:else}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -674,11 +675,11 @@
                   <button class="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px]"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                           onclick={() => useTemplate(template)}>
-                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Use
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>{m.common.use()}
                   </button>
                   <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px]"
                           style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
-                          aria-label={`Delete template ${template.name}`}
+                          aria-label={m.polls.templatesDeleteAria({ name: template.name })}
                           onclick={() => deleteTemplate(template)}>
                     <i class="fa-solid fa-trash"></i>
                   </button>
@@ -694,18 +695,18 @@
     <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
       {#if analytics}
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
-          <StatCard icon="fa-chart-simple" label="Polls this month" value={analytics.totalPolls} subtitle={`${analytics.activePolls} active`} iconColor="primary" animationDelay={0} />
-          <StatCard icon="fa-circle-check" label="Votes cast" value={analytics.totalVotes} subtitle="last 30 days" iconColor="secondary" animationDelay={100} />
-          <StatCard icon="fa-chart-pie" label="Avg votes per poll" value={analytics.averageVotesPerPoll} subtitle="engagement" iconColor="accent" animationDelay={200} />
-          <StatCard icon="fa-star" label="Favourite type" value={typeLabels[analytics.mostPopularPollType] ?? "n/a"} subtitle="most created" iconColor="primary" animationDelay={300} />
+          <StatCard icon="fa-chart-simple" label={m.polls.analyticsPolls()} value={analytics.totalPolls} subtitle={m.common.activeCount({ count: analytics.activePolls })} iconColor="primary" animationDelay={0} />
+          <StatCard icon="fa-circle-check" label={m.polls.analyticsVotes()} value={analytics.totalVotes} subtitle={m.polls.analyticsVotesSubtitle()} iconColor="secondary" animationDelay={100} />
+          <StatCard icon="fa-chart-pie" label={m.polls.analyticsAvg()} value={analytics.averageVotesPerPoll} subtitle={m.polls.analyticsAvgSubtitle()} iconColor="accent" animationDelay={200} />
+          <StatCard icon="fa-star" label={m.polls.analyticsFavourite()} value={typeLabels[analytics.mostPopularPollType] ?? m.polls.analyticsNa()} subtitle={m.polls.analyticsFavouriteSubtitle()} iconColor="primary" animationDelay={300} />
         </div>
         {#if Object.keys(analytics.pollsCreatedByDay).length > 0}
           {@const entries = Object.entries(analytics.pollsCreatedByDay).sort(([a], [b]) => a.localeCompare(b))}
           {@const max = Math.max(1, ...entries.map(([, v]) => v))}
           <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
-            <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Polls created per day</h2>
-            <div class="flex items-end gap-1 h-40 overflow-x-auto" role="img" aria-label="Polls created per day">
+            <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.polls.analyticsPerDay()}</h2>
+            <div class="flex items-end gap-1 h-40 overflow-x-auto" role="img" aria-label={m.polls.analyticsPerDay()}>
               {#each entries as [day, count]}
                 <div class="flex-1 min-w-[8px] rounded-t-sm" title={`${new Date(day).toLocaleDateString()}: ${count}`}
                      style="height: {Math.max(4, (count / max) * 100)}%; background: {$colorStore.primary};"></div>
@@ -716,7 +717,7 @@
       {:else}
         <div class="text-center py-12">
           <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-          <p style="color: {$colorStore.muted}">Analytics appear once polls have been created.</p>
+          <p style="color: {$colorStore.muted}">{m.polls.analyticsEmpty()}</p>
         </div>
       {/if}
     </div>

@@ -4,6 +4,7 @@ Multi-step progressive configuration for a single feature
 Each feature gets multiple screens for deeper configuration
 -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import ChannelBulkSelector from "./ChannelBulkSelector.svelte";
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
@@ -124,8 +125,8 @@ Each feature gets multiple screens for deeper configuration
             {channels}
             {categories}
             bind:selected={config.channelId}
-            label="Select Channel"
-            placeholder="Choose where to send messages..."
+            label={m.common.selectChannelPlaceholder()}
+            placeholder={m.wizard.progressiveChannelPlaceholder()}
           />
         {:else if currentStepData.component === 'message'}
           <FullscreenEmbedBuilder
@@ -140,11 +141,10 @@ Each feature gets multiple screens for deeper configuration
             {placeholders}
             {guildId}
             {user}
-            placeholder="Click to write your message, add embeds or buttons"
+            placeholder={m.wizard.progressiveMessagePlaceholder()}
           />
           <p class="text-xs" style="color: {$colorStore.muted};">
-            Plain text works fine on its own. Placeholders like %user.mention% and %server.name% are
-            filled in when the message is sent.
+            {m.wizard.progressiveMessageHint()}
           </p>
         {:else if currentStepData.component === 'custom' && children}
           {@render children({ step: currentStepData, config })}
@@ -163,12 +163,12 @@ Each feature gets multiple screens for deeper configuration
         style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
       >
         <i class="fa-solid fa-arrow-left" style="font-size: 16px;"></i>
-        Back
+        {m.common.back()}
       </button>
 
       <div class="hidden sm:flex items-center gap-4">
         <span class="text-sm whitespace-nowrap" style="color: {$colorStore.muted};">
-          Step {currentStep + 1} of {steps.length}
+          {m.common.stepCurrentOfTotal({ current: currentStep + 1, total: steps.length })}
         </span>
         {#if onskip}
           <button
@@ -178,7 +178,7 @@ Each feature gets multiple screens for deeper configuration
             disabled={busy}
           >
             <i class="fa-solid fa-forward" style="font-size: 13px;"></i>
-            Skip {featureName}
+            {m.wizard.progressiveSkip({ feature: featureName })}
           </button>
         {/if}
       </div>
@@ -189,7 +189,7 @@ Each feature gets multiple screens for deeper configuration
         disabled={busy}
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
       >
-        {busy ? 'Saving...' : isLastStep ? 'Complete' : 'Next'}
+        {busy ? m.common.saving() : isLastStep ? m.common.complete() : m.common.next()}
         <i
           class="fa-solid {busy ? 'fa-arrows-rotate fa-spin' : isLastStep ? 'fa-check' : 'fa-arrow-right'}"
           style="font-size: 16px;"
@@ -199,7 +199,7 @@ Each feature gets multiple screens for deeper configuration
 
     <div class="sm:hidden flex flex-col items-center gap-2 mt-3">
       <p class="text-xs" style="color: {$colorStore.muted};">
-        Step {currentStep + 1} of {steps.length}
+        {m.common.stepCurrentOfTotal({ current: currentStep + 1, total: steps.length })}
       </p>
       {#if onskip}
         <button
@@ -208,7 +208,7 @@ Each feature gets multiple screens for deeper configuration
           onclick={onskip}
         >
           <i class="fa-solid fa-forward" style="font-size: 13px;"></i>
-          Skip {featureName}
+          {m.wizard.progressiveSkip({ feature: featureName })}
         </button>
       {/if}
     </div>

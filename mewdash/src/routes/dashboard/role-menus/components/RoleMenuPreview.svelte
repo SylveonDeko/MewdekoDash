@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
   import type { DiscordUser } from "$lib/types/discord";
@@ -53,12 +54,12 @@
     componentRows={rows}
     {user}
     {guildId}
-    emptyMessage="Add an option to see the menu"
+    emptyMessage={m.roleMenus.previewEmpty()}
   />
 </div>
 
 {#if paused}
   <p class="text-xs mt-3" style="color: {$colorStore.muted}">
-    Paused: the dropdown or buttons are greyed out in Discord.
+    {m.roleMenus.previewPaused()}
   </p>
 {/if}

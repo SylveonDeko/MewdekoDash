@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onDestroy, onMount, untrack } from "svelte";
   import { afterNavigate } from "$app/navigation";
   import { currentInstance } from "$lib/stores/instanceStore";
@@ -352,8 +353,8 @@
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
           >
-            <h1 class="text-xl md:text-2xl font-bold mb-1" style="color: {$colorStore.text}">Select a Server</h1>
-            <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">Choose a server to manage from the dashboard</p>
+            <h1 class="text-xl md:text-2xl font-bold mb-1" style="color: {$colorStore.text}">{m.dashboard.layoutSelectServerTitle()}</h1>
+            <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">{m.dashboard.layoutSelectServerSubtitle()}</p>
           </div>
 
           <div class="relative shrink-0">
@@ -361,7 +362,7 @@
                style="color: {$colorStore.muted};"></i>
             <input
               type="text"
-              placeholder="Search servers..."
+              placeholder={m.common.searchServersPlaceholder()}
               bind:value={guildSearchTerm}
               class="w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm transition-all duration-200"
               style="border-color: {$colorStore.primary}20;
@@ -387,7 +388,7 @@
                   <div class="min-w-0 flex-1">
                     <p class="text-sm font-medium truncate" style="color: {$colorStore.text}">{guild.name}</p>
                     <p class="text-xs truncate" style="color: {$colorStore.muted}">
-                      {guild.owner ? 'Owner' : 'Admin'}
+                      {guild.owner ? m.common.owner() : m.common.admin()}
                     </p>
                   </div>
                 </button>
@@ -395,16 +396,16 @@
                 <div class="col-span-full text-center py-12">
                   <p class="text-sm" style="color: {$colorStore.text}">
                     {#if guildSearchTerm}
-                      No servers match "{guildSearchTerm}"
+                      {m.dashboard.layoutNoMatch({ term: guildSearchTerm })}
                     {:else}
-                      No servers available
+                      {m.common.noServersAvailable()}
                     {/if}
                   </p>
                   <p class="text-xs mt-1" style="color: {$colorStore.muted}">
                     {#if guildSearchTerm}
-                      Try a different search term
+                      {m.dashboard.layoutNoMatchHint()}
                     {:else}
-                      Make sure the bot is in a server where you have admin permissions
+                      {m.dashboard.layoutNoServersHint()}
                     {/if}
                   </p>
                 </div>
@@ -414,7 +415,7 @@
         </div>
       </div>
     {:else}
-      <ErrorBoundary fallback="Dashboard component failed to load. Please refresh or try a different page."
+      <ErrorBoundary fallback={m.dashboard.layoutErrorBoundary()}
                      showDetails={true}>
         {#if $updatesDialog.open}
           <ProductUpdateModal

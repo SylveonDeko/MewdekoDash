@@ -1,5 +1,6 @@
 <!-- routes/owner/+layout.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
@@ -112,7 +113,7 @@
         <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.muted};">
           <div class="animate-spin h-4 w-4 border-2 rounded-full"
                style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
-          Checking owner access...
+          {m.owner.layoutCheckingAccess()}
         </div>
       </div>
     {/if}

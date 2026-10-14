@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
@@ -64,7 +65,7 @@
        class="fa-utility-duo fa-regular fa-star"
        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
   </div>
-  <h2 class="text-xl font-bold" style="color: {$colorStore.text}">XP Rewards</h2>
+  <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.xp.rewardsTitle()}</h2>
 </div>
 
 {#if loading}
@@ -73,7 +74,7 @@
       class="w-12 h-12 border-4 rounded-full animate-spin"
       style="border-color: {$colorStore.primary}20;
              border-top-color: {$colorStore.primary};"
-      aria-label="Loading"
+      aria-label={m.common.loading()}
     >
     </div>
   </div>
@@ -95,15 +96,15 @@
       class="rounded-xl p-4"
       style="background: {$colorStore.primary}10;"
     >
-      <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">Role Rewards</h3>
+      <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">{m.features.wizardXpStepRewardsTitle()}</h3>
 
       <!-- Add Role Reward Form -->
       <div class="mb-6 p-4 rounded-lg" style="background: {$colorStore.primary}15;">
-        <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.muted}">Add Role Reward</h4>
+        <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.muted}">{m.common.addRoleReward()}</h4>
         <div class="grid grid-cols-1 gap-3 mb-3">
           <div>
             <label class="block text-xs mb-1" for="role-reward-level"
-                   style="color: {$colorStore.muted}">Level</label>
+                   style="color: {$colorStore.muted}">{m.common.level()}</label>
             <input
               id="role-reward-level"
               bind:value={newRoleReward.level}
@@ -112,17 +113,17 @@
                      color: {$colorStore.text};"
               type="number"
               min="1"
-              aria-label="Level required for role reward"
+              aria-label={m.xp.rewardsRoleLevelAria()}
             >
           </div>
           <div>
             <label class="block text-xs mb-1" for="role-reward-role"
-                   style="color: {$colorStore.muted}">Role</label>
+                   style="color: {$colorStore.muted}">{m.common.role()}</label>
             <DiscordSelector
               type="role"
               options={roleOptions}
               selected={newRoleReward.roleId}
-              placeholder="Select Role"
+              placeholder={m.common.selectRolePlaceholder()}
               onchange={(detail) => {
                 if (detail.selected && typeof detail.selected === 'string') {
                   newRoleReward.roleId = detail.selected;
@@ -136,16 +137,16 @@
           style="background: {$colorStore.primary}20;
                  color: {$colorStore.text};"
           onclick={handleAddRoleReward}
-          aria-label="Add role reward"
+          aria-label={m.common.addRoleReward()}
         >
-          Add Role Reward
+          {m.common.addRoleReward()}
         </button>
       </div>
 
       <!-- Role Rewards List -->
       {#if roleRewards.length === 0}
         <div class="text-center py-4" style="color: {$colorStore.muted}">
-          No role rewards configured
+          {m.xp.rewardsNoRole()}
         </div>
       {:else}
         <ul class="space-y-2">
@@ -162,14 +163,14 @@
                 >
                   {reward.level}
                 </div>
-                <span class="truncate" style="color: {$colorStore.text}">{reward.roleName || `Role ID: ${reward.roleId}`}</span>
+                <span class="truncate" style="color: {$colorStore.text}">{reward.roleName || m.common.roleIdLabel({ id: reward.roleId })}</span>
               </div>
               <button
                       class="flex items-center justify-center p-2 rounded-full transition-all duration-200 shrink-0 min-w-[44px] min-h-[44px]"
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.accent};"
                 onclick={() => onRemoveRoleReward(reward.level)}
-                aria-label={`Remove role reward for level ${reward.level}`}
+                aria-label={m.xp.rewardsRemoveRoleAria({ level: reward.level })}
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2}
@@ -187,14 +188,14 @@
       class="rounded-xl p-4"
       style="background: {$colorStore.secondary}10;"
     >
-      <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">Currency Rewards</h3>
+      <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">{m.xp.rewardsCurrencyTitle()}</h3>
 
       <!-- Add Currency Reward Form -->
       <div class="mb-6 p-4 rounded-lg" style="background: {$colorStore.secondary}15;">
-        <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.muted}">Add Currency Reward</h4>
+        <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.muted}">{m.xp.rewardsAddCurrency()}</h4>
         <div class="grid grid-cols-1 gap-3 mb-3">
           <div>
-            <label class="block text-xs mb-1" for="currency-reward-level" style="color: {$colorStore.muted}">Level</label>
+            <label class="block text-xs mb-1" for="currency-reward-level" style="color: {$colorStore.muted}">{m.common.level()}</label>
             <input
               id="currency-reward-level"
               bind:value={newCurrencyReward.level}
@@ -203,11 +204,11 @@
                      color: {$colorStore.text};"
               type="number"
               min="1"
-              aria-label="Level required for currency reward"
+              aria-label={m.xp.rewardsCurrencyLevelAria()}
             >
           </div>
           <div>
-            <label class="block text-xs mb-1" for="currency-reward-amount" style="color: {$colorStore.muted}">Amount</label>
+            <label class="block text-xs mb-1" for="currency-reward-amount" style="color: {$colorStore.muted}">{m.common.amount()}</label>
             <input
               id="currency-reward-amount"
               bind:value={newCurrencyReward.amount}
@@ -216,7 +217,7 @@
                      color: {$colorStore.text};"
               type="number"
               min="1"
-              aria-label="Currency amount to award"
+              aria-label={m.xp.rewardsCurrencyAmountAria()}
             >
           </div>
         </div>
@@ -225,16 +226,16 @@
           style="background: {$colorStore.secondary}20;
                  color: {$colorStore.text};"
           onclick={handleAddCurrencyReward}
-          aria-label="Add currency reward"
+          aria-label={m.xp.rewardsAddCurrency()}
         >
-          Add Currency Reward
+          {m.xp.rewardsAddCurrency()}
         </button>
       </div>
 
       <!-- Currency Rewards List -->
       {#if currencyRewards.length === 0}
         <div class="text-center py-4" style="color: {$colorStore.muted}">
-          No currency rewards configured
+          {m.xp.rewardsNoCurrency()}
         </div>
       {:else}
         <ul class="space-y-2">
@@ -251,14 +252,14 @@
                 >
                   {reward.level}
                 </div>
-                <span class="truncate" style="color: {$colorStore.text}">{formatNumber(reward.amount)} currency</span>
+                <span class="truncate" style="color: {$colorStore.text}">{m.common.amountCurrency({ amount: formatNumber(reward.amount) })}</span>
               </div>
               <button
                       class="flex items-center justify-center p-2 rounded-full transition-all duration-200 shrink-0 min-w-[44px] min-h-[44px]"
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.accent};"
                 onclick={() => onRemoveCurrencyReward(reward.level)}
-                aria-label={`Remove currency reward for level ${reward.level}`}
+                aria-label={m.xp.rewardsRemoveCurrencyAria({ level: reward.level })}
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2}

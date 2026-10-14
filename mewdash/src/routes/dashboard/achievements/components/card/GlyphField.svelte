@@ -1,4 +1,5 @@
 <script module lang="ts">
+  import { m } from "$lib/i18n";
   import type { AchievementGlyph } from "$lib/api/index.ts";
 
   /** The glyph list, fetched once and shared by every field on the page. */
@@ -50,7 +51,7 @@
     } catch (err: any) {
       glyphCache = null;
       logger.error("Failed to load icons:", err);
-      onerror(err?.message || "Couldn't load the icons.");
+      onerror(err?.message || m.achievements.iconErrorLoad());
     }
   }
 
@@ -72,7 +73,7 @@
     {#if value && value !== "none"}
       <DuoIcon icon="fa-{value}" size={16} />
     {/if}
-    <span class="text-sm flex-1 truncate">{value === "none" ? "None" : value || emptyLabel || "Pick an icon"}</span>
+    <span class="text-sm flex-1 truncate">{value === "none" ? m.common.none() : value || emptyLabel || m.achievements.cardGlyphPick()}</span>
     <i class="fa-solid fa-chevron-down text-xs" style="color: {$colorStore.muted}" aria-hidden="true"></i>
   </button>
 
@@ -88,10 +89,10 @@
         {#if allowNone}
           <button type="button" class="px-2 py-1 rounded-lg text-xs min-h-[32px]"
                   style="background: {value === 'none' ? $colorStore.primary + '30' : $colorStore.primary + '10'}; color: {$colorStore.text};"
-                  onclick={() => pick("none")}>None</button>
+                  onclick={() => pick("none")}>{m.common.none()}</button>
         {/if}
       </div>
-      <input type="search" bind:value={search} placeholder="Search icons" aria-label="Search icons"
+      <input type="search" bind:value={search} placeholder={m.achievements.cardGlyphSearch()} aria-label={m.achievements.cardGlyphSearch()}
              class="w-full px-3 py-2 rounded-lg border text-sm min-h-[40px]"
              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
       <div class="grid grid-cols-6 gap-1.5 max-h-48 overflow-y-auto">

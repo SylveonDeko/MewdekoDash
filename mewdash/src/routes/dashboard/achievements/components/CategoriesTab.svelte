@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fade, slide } from "svelte/transition";
   import { flip } from "svelte/animate";
   import { dragHandle, dragHandleZone } from "svelte-dnd-action";
@@ -74,7 +75,7 @@
       await onchanged();
     } catch (err: any) {
       logger.error("Failed to save the category layout:", err);
-      onerror(err?.message || "Couldn't save the categories.");
+      onerror(err?.message || m.achievements.categoriesErrorSaveLayout());
     } finally {
       saving = false;
     }
@@ -115,7 +116,7 @@
       await onchanged();
     } catch (err: any) {
       logger.error("Failed to make a category:", err);
-      onerror(err?.message || "Couldn't make the category.");
+      onerror(err?.message || m.achievements.categoriesErrorCreate());
     } finally {
       creating = false;
     }
@@ -143,7 +144,7 @@
       await onchanged();
     } catch (err: any) {
       logger.error("Failed to rename a category:", err);
-      onerror(err?.message || "Couldn't save the category.");
+      onerror(err?.message || m.achievements.categoriesErrorSave());
     } finally {
       saving = false;
     }
@@ -156,11 +157,13 @@
   async function remove(category: AchievementCategory) {
     if (!$currentGuild?.id || !category.id) return;
     const ok = await requestConfirmation({
-      title: `Delete ${category.name}?`,
-      message: category.achievementCount > 0
-        ? `Its ${category.achievementCount} achievements move to the Server category. Nobody loses anything.`
-        : "It has no achievements in it.",
-      confirmText: "Delete category",
+      title: m.achievements.editorDeleteTitle({ name: category.name }),
+      message: category.achievementCount === 0
+        ? m.achievements.categoriesDeleteMessageNone()
+        : category.achievementCount === 1
+          ? m.achievements.categoriesDeleteMessageOne({ count: 1 })
+          : m.achievements.categoriesDeleteMessageOther({ count: category.achievementCount }),
+      confirmText: m.achievements.categoriesDeleteConfirm(),
       variant: "danger"
     });
     if (!ok) return;
@@ -169,7 +172,7 @@
       await onchanged();
     } catch (err: any) {
       logger.error("Failed to delete a category:", err);
-      onerror(err?.message || "Couldn't delete the category.");
+      onerror(err?.message || m.achievements.categoriesErrorDelete());
     }
   }
 </script>
@@ -180,13 +183,13 @@
               border-color: {$colorStore.primary}30;">
     <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
       <DuoIcon icon="fa-layer-group" />
-      Order and visibility
+      {m.achievements.categoriesOrderTitle()}
     </h2>
     <p class="text-sm mt-1 mb-5" style="color: {$colorStore.muted}">
-      Members see categories in this order everywhere. Deactivating one stops new unlocks in it; anything already earned stays.
+      {m.achievements.categoriesOrderHint()}
     </p>
 
-    <ol class="space-y-2" aria-label="Categories"
+    <ol class="space-y-2" aria-label={m.common.categories()}
         use:dragHandleZone={{ items: dragItems, flipDurationMs: 150, dragDisabled: saving || editingId !== null,
                               dropTargetStyle: {} }}
         onconsider={(e) => { dragItems = e.detail.items; }}
@@ -198,18 +201,18 @@
             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;"
             animate:flip={{ duration: 150 }}>
           <div class="flex items-center gap-3 flex-1 min-w-0">
-            <span use:dragHandle aria-label="Drag {category.name} to reorder"
+            <span use:dragHandle aria-label={m.achievements.categoriesDragLabel({ name: category.name })}
                   class="w-6 h-[44px] flex items-center justify-center shrink-0 cursor-grab touch-none"
                   style="color: {$colorStore.muted};">
               <i class="fa-solid fa-grip-vertical" aria-hidden="true"></i>
             </span>
             <div class="flex flex-col gap-1">
-              <button type="button" class="w-8 h-7 rounded-md disabled:opacity-30" aria-label="Move {category.name} up"
+              <button type="button" class="w-8 h-7 rounded-md disabled:opacity-30" aria-label={m.common.ariaMoveNamedUp({ name: category.name })}
                       style="background: {$colorStore.primary}10; color: {$colorStore.text};"
                       disabled={saving || index === 0} onclick={() => move(index, -1)}>
                 <i class="fa-solid fa-chevron-up text-xs" aria-hidden="true"></i>
               </button>
-              <button type="button" class="w-8 h-7 rounded-md disabled:opacity-30" aria-label="Move {category.name} down"
+              <button type="button" class="w-8 h-7 rounded-md disabled:opacity-30" aria-label={m.common.ariaMoveNamedDown({ name: category.name })}
                       style="background: {$colorStore.primary}10; color: {$colorStore.text};"
                       disabled={saving || index === ordered.length - 1} onclick={() => move(index, 1)}>
                 <i class="fa-solid fa-chevron-down text-xs" aria-hidden="true"></i>
@@ -220,22 +223,22 @@
               <div class="flex flex-wrap items-center gap-2">
                 <span class="font-semibold" style="color: {$colorStore.text}">{category.name}</span>
                 {#if !category.isBuiltIn}
-                  <span class="text-xs px-2 py-0.5 rounded-md" style="background: {$colorStore.accent}20; color: {$colorStore.accent}">Made here</span>
+                  <span class="text-xs px-2 py-0.5 rounded-md" style="background: {$colorStore.accent}20; color: {$colorStore.accent}">{m.achievements.libraryMadeHere()}</span>
                 {/if}
               </div>
               <div class="text-xs line-clamp-2" style="color: {$colorStore.muted}">
-                {category.enabledCount} of {category.achievementCount} active{category.description ? ` · ${category.description}` : ""}
+                {m.achievements.categoriesActiveCount({ enabled: category.enabledCount, total: category.achievementCount })}{category.description ? ` · ${category.description}` : ""}
               </div>
             </div>
           </div>
           <div class="flex items-center gap-2 ml-auto shrink-0">
             {#if !category.isBuiltIn}
-              <button type="button" class="w-10 h-10 rounded-lg" aria-label="Edit {category.name}"
+              <button type="button" class="w-10 h-10 rounded-lg" aria-label={m.common.editName({ name: category.name })}
                       style="background: {$colorStore.primary}10; color: {$colorStore.text};"
                       onclick={() => startEdit(category)}>
                 <i class="fa-solid fa-pen" aria-hidden="true"></i>
               </button>
-              <button type="button" class="w-10 h-10 rounded-lg" aria-label="Delete {category.name}"
+              <button type="button" class="w-10 h-10 rounded-lg" aria-label={m.common.ariaDeleteNamed({ name: category.name })}
                       style="background: #ef444420; color: #ef4444;"
                       onclick={() => remove(category)}>
                 <i class="fa-solid fa-trash" aria-hidden="true"></i>
@@ -243,7 +246,7 @@
             {/if}
             {#if category.key !== "global"}
               <button type="button" role="switch" aria-checked={category.enabled}
-                      aria-label="{category.enabled ? 'Deactivate' : 'Activate'} {category.name}"
+                      aria-label={category.enabled ? m.achievements.libraryDeactivateLabel({ name: category.name }) : m.achievements.libraryActivateLabel({ name: category.name })}
                       class="w-12 h-7 rounded-full relative transition-all shrink-0 disabled:opacity-50"
                       style="background: {category.enabled ? $colorStore.primary : $colorStore.primary + '20'};"
                       disabled={saving}
@@ -255,24 +258,24 @@
           </div>
           {#if editingId !== null && editingId === category.id}
             <div class="basis-full grid grid-cols-1 gap-3 pt-2" transition:slide={{ duration: 150 }}>
-              <input type="text" bind:value={editName} maxlength={catalog.limits.nameLength} aria-label="Name"
+              <input type="text" bind:value={editName} maxlength={catalog.limits.nameLength} aria-label={m.common.name()}
                      class="px-3 h-[44px] rounded-xl border text-sm"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
               <input type="text" bind:value={editDescription} maxlength={catalog.limits.descriptionLength}
-                     aria-label="Description" placeholder="What goes in it"
+                     aria-label={m.common.description()} placeholder={m.achievements.categoriesDescriptionPlaceholder()}
                      class="px-3 h-[44px] rounded-xl border text-sm"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
-              <IconPicker value={editIcon} defaultIcon="fa:folder" defaultLabel="the folder icon"
+              <IconPicker value={editIcon} defaultIcon="fa:folder" defaultLabel={m.achievements.categoriesFolderIcon()}
                           uploads={catalog.uploads} emojis={lookups?.emojis ?? []} color={$colorStore.primary}
-                          label="Change the icon of {category.name}"
+                          label={m.achievements.categoriesChangeIcon({ name: category.name })}
                           onchange={(icon) => { editIcon = icon; }} onuploadschanged={onchanged} {onerror} />
               <div class="flex gap-2 justify-end">
                 <button type="button" class="px-4 py-2 rounded-xl min-h-[44px]"
                         style="background: {$colorStore.primary}08; color: {$colorStore.text};"
-                        onclick={() => { editingId = null; }}>Cancel</button>
+                        onclick={() => { editingId = null; }}>{m.common.cancel()}</button>
                 <button type="button" class="px-4 py-2 rounded-xl min-h-[44px] font-semibold disabled:opacity-50"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                        disabled={saving || !editName.trim()} onclick={saveEdit}>Save</button>
+                        disabled={saving || !editName.trim()} onclick={saveEdit}>{m.common.save()}</button>
               </div>
             </div>
           {/if}
@@ -286,34 +289,34 @@
               border-color: {$colorStore.primary}30;">
     <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
       <DuoIcon icon="fa-folder-plus" />
-      New category
+      {m.achievements.categoriesNewTitle()}
     </h2>
     <p class="text-sm mt-1 mb-5" style="color: {$colorStore.muted}">
-      Group your own achievements, like Events, Seasons, or Lore. {customCount} of {catalog.limits.maxCustomCategories} used.
+      {m.achievements.categoriesNewHint({ used: customCount, max: catalog.limits.maxCustomCategories })}
     </p>
     <div class="space-y-3">
-      <input type="text" bind:value={newName} maxlength={catalog.limits.nameLength} aria-label="Name" placeholder="Events"
+      <input type="text" bind:value={newName} maxlength={catalog.limits.nameLength} aria-label={m.common.name()} placeholder={m.common.events()}
              class="w-full px-3 h-[44px] rounded-xl border text-sm"
              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
-      <IconPicker value={newIcon} defaultIcon="fa:folder" defaultLabel="the folder icon"
+      <IconPicker value={newIcon} defaultIcon="fa:folder" defaultLabel={m.achievements.categoriesFolderIcon()}
                   uploads={catalog.uploads} emojis={lookups?.emojis ?? []} color={$colorStore.primary}
-                  label="Pick an icon for the new category"
+                  label={m.achievements.categoriesNewIconLabel()}
                   onchange={(icon) => { newIcon = icon; }} onuploadschanged={onchanged} {onerror} />
       <input type="text" bind:value={newDescription} maxlength={catalog.limits.descriptionLength}
-             aria-label="Description" placeholder="What goes in it"
+             aria-label={m.common.description()} placeholder={m.achievements.categoriesDescriptionPlaceholder()}
              class="w-full px-3 h-[44px] rounded-xl border text-sm"
              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
       <button type="button" class="w-full px-4 py-3 rounded-xl min-h-[44px] font-semibold disabled:opacity-50"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               disabled={creating || !newName.trim() || customCount >= catalog.limits.maxCustomCategories}
               onclick={create}>
-        <i class="fa-solid fa-plus mr-2" aria-hidden="true"></i>Make category
+        <i class="fa-solid fa-plus mr-2" aria-hidden="true"></i>{m.achievements.categoriesMake()}
       </button>
     </div>
     <div class="mt-6">
       <ToggleRow checked={!settings.disabledCategories.includes("prestige")}
-                 title="Prestige for finishing categories"
-                 subtitle="Bonus achievements for unlocking every achievement in a category."
+                 title={m.achievements.categoriesPrestigeTitle()}
+                 subtitle={m.achievements.categoriesPrestigeSubtitle()}
                  colors={$colorStore}
                  disabled={saving}
                  onchange={(on) => { const p = ordered.find((c) => c.key === "prestige"); if (p) setEnabled(p, on); }} />

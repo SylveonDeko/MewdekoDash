@@ -1,3 +1,4 @@
+import { m } from "$lib/i18n";
 // lib/components/analytics/format.ts
 
 export type ValueFormat = "int" | "compact" | "ms" | "pct" | "bytes" | "float" | "seconds";
@@ -69,7 +70,7 @@ export function utcParse(value: string | null | undefined): number {
 
 export function ago(value: string | null | undefined): string {
   const parsed = utcParse(value);
-  return Number.isNaN(parsed) ? "—" : `${duration((Date.now() - parsed) / 1000)} ago`;
+  return Number.isNaN(parsed) ? "—" : m.analytics.formatAgo({ duration: duration((Date.now() - parsed) / 1000) });
 }
 
 export function stamp(value: string | null | undefined): string {

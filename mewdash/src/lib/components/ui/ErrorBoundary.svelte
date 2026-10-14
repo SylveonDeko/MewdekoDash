@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import { browser } from "$app/environment";
@@ -11,8 +12,9 @@
     children?: import('svelte').Snippet;
   }
 
-  let { fallback = "An unexpected error occurred", showDetails = false, children }: Props = $props();
+  let { fallback = undefined, showDetails = false, children }: Props = $props();
 
+  const fallbackText = $derived(fallback ?? m.common.errorUnexpected());
   let hasError = $state(false);
   let errorDetails: any = $state(null);
   let showErrorDetails = $state(false);
@@ -87,10 +89,10 @@
       <div class="mb-4">
         <div class="text-4xl mb-2">💥</div>
         <h3 class="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
-          Something went wrong
+          {m.common.somethingWentWrong()}
         </h3>
         <p class="text-red-600 dark:text-red-300 text-sm mb-4">
-          {fallback}
+          {fallbackText}
         </p>
       </div>
 
@@ -99,13 +101,13 @@
           onclick={retry}
           class="px-4 py-2 bg-red-600 text-white rounded-sm hover:bg-red-700 transition-colors text-sm"
         >
-          Try Again
+          {m.common.tryAgain()}
         </button>
         <button
           onclick={reload}
           class="px-4 py-2 bg-gray-600 text-white rounded-sm hover:bg-gray-700 transition-colors text-sm"
         >
-          Reload Page
+          {m.layout.errorBoundaryReload()}
         </button>
       </div>
 
@@ -115,7 +117,7 @@
             onclick={() => showErrorDetails = !showErrorDetails}
             class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 text-xs transition-colors"
           >
-            {showErrorDetails ? 'Hide' : 'Show'} Error Details
+            {showErrorDetails ? m.common.hideErrorDetails() : m.common.showErrorDetails()}
           </button>
 
           {#if showErrorDetails}

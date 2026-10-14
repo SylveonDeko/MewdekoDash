@@ -1,5 +1,6 @@
 <!-- FullscreenEmbedBuilder.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import Portal from "$lib/components/ui/Portal.svelte";
   import PreviewCard from "./PreviewCard.svelte";
@@ -120,8 +121,8 @@
 
   let {
     value = $bindable({}),
-    previewTitle = "Embed Builder",
-    previewDescription = "Click to edit",
+    previewTitle = m.common.embedBuilder(),
+    previewDescription = m.embedbuilder.componentsClickToEdit(),
     allowMultipleEmbeds = true,
     maxEmbeds = 10,
     allowComponents = true,
@@ -130,7 +131,7 @@
     additionalPlaceholders = [],
     restrictedFields = [],
     restrictedComponentTypes = [],
-    placeholder = "Click to create an embed",
+    placeholder = m.embedbuilder.fullscreenDefaultPlaceholder(),
     icon = "fa-layer-group",
     guildId = null,
     user = null,
@@ -204,107 +205,107 @@
   });
 
   // Default placeholders - comprehensive list from backend ReplacementBuilder
-  const defaultPlaceholders: Placeholder[] = [
+  const defaultPlaceholders: Placeholder[] = $derived([
     // User placeholders
-    { category: "User", name: "%user%", description: "User mention" },
-    { category: "User", name: "%user.mention%", description: "Mention the user" },
-    { category: "User", name: "%user.id%", description: "User ID" },
-    { category: "User", name: "%user.name%", description: "Username" },
-    { category: "User", name: "%user.fullname%", description: "Full username" },
-    { category: "User", name: "%user.avatar%", description: "User's avatar URL" },
-    { category: "User", name: "%user.banner%", description: "User's banner URL" },
-    { category: "User", name: "%user.created_time%", description: "Account creation time (HH:mm)" },
-    { category: "User", name: "%user.created_date%", description: "Account creation date (dd.MM.yyyy)" },
-    { category: "User", name: "%user.joined_time%", description: "Server join time (HH:mm)" },
-    { category: "User", name: "%user.joined_date%", description: "Server join date (dd.MM.yyyy)" },
+    { category: "User", name: "%user%", description: m.placeholders.user() },
+    { category: "User", name: "%user.mention%", description: m.placeholders.userMention() },
+    { category: "User", name: "%user.id%", description: m.placeholders.userId() },
+    { category: "User", name: "%user.name%", description: m.placeholders.userName() },
+    { category: "User", name: "%user.fullname%", description: m.placeholders.userFullname() },
+    { category: "User", name: "%user.avatar%", description: m.placeholders.userAvatar() },
+    { category: "User", name: "%user.banner%", description: m.placeholders.userBanner() },
+    { category: "User", name: "%user.created_time%", description: m.placeholders.userCreatedTime() },
+    { category: "User", name: "%user.created_date%", description: m.placeholders.userCreatedDate() },
+    { category: "User", name: "%user.joined_time%", description: m.placeholders.userJoinedTime() },
+    { category: "User", name: "%user.joined_date%", description: m.placeholders.userJoinedDate() },
 
     // Server placeholders
-    { category: "Server", name: "%server%", description: "Server name" },
-    { category: "Server", name: "%server.name%", description: "Server name" },
-    { category: "Server", name: "%server.id%", description: "Server ID" },
-    { category: "Server", name: "%server.icon%", description: "Server icon URL" },
-    { category: "Server", name: "%server.banner%", description: "Server banner URL" },
-    { category: "Server", name: "%server.members%", description: "Total member count" },
-    { category: "Server", name: "%server.members.online%", description: "Online members count" },
-    { category: "Server", name: "%server.members.offline%", description: "Offline members count" },
-    { category: "Server", name: "%server.members.dnd%", description: "Do Not Disturb members count" },
-    { category: "Server", name: "%server.members.idle%", description: "Idle members count" },
-    { category: "Server", name: "%server.boostlevel%", description: "Server boost level" },
-    { category: "Server", name: "%server.boostcount%", description: "Server boost count" },
-    { category: "Server", name: "%server.time%", description: "Current server time with timezone" },
-    { category: "Server", name: "%server.timestamp.longdatetime%", description: "Discord long date/time timestamp" },
-    { category: "Server", name: "%server.timestamp.longtime%", description: "Discord long time timestamp" },
-    { category: "Server", name: "%server.timestamp.longdate%", description: "Discord long date timestamp" },
-    { category: "Server", name: "%server.timestamp.shortdatetime%", description: "Discord short date/time timestamp" },
+    { category: "Server", name: "%server%", description: m.placeholders.server() },
+    { category: "Server", name: "%server.name%", description: m.placeholders.serverName() },
+    { category: "Server", name: "%server.id%", description: m.placeholders.serverId() },
+    { category: "Server", name: "%server.icon%", description: m.placeholders.mcFavicon() },
+    { category: "Server", name: "%server.banner%", description: m.placeholders.serverBanner() },
+    { category: "Server", name: "%server.members%", description: m.placeholders.serverMembers() },
+    { category: "Server", name: "%server.members.online%", description: m.placeholders.serverMembersOnline() },
+    { category: "Server", name: "%server.members.offline%", description: m.placeholders.serverMembersOffline() },
+    { category: "Server", name: "%server.members.dnd%", description: m.placeholders.serverMembersDnd() },
+    { category: "Server", name: "%server.members.idle%", description: m.placeholders.serverMembersIdle() },
+    { category: "Server", name: "%server.boostlevel%", description: m.placeholders.serverBoostlevel() },
+    { category: "Server", name: "%server.boostcount%", description: m.placeholders.serverBoostcount() },
+    { category: "Server", name: "%server.time%", description: m.placeholders.serverTime() },
+    { category: "Server", name: "%server.timestamp.longdatetime%", description: m.placeholders.serverTimestampLongdatetime() },
+    { category: "Server", name: "%server.timestamp.longtime%", description: m.placeholders.serverTimestampLongtime() },
+    { category: "Server", name: "%server.timestamp.longdate%", description: m.placeholders.serverTimestampLongdate() },
+    { category: "Server", name: "%server.timestamp.shortdatetime%", description: m.placeholders.serverTimestampShortdatetime() },
 
     // Channel placeholders
-    { category: "Channel", name: "%channel%", description: "Channel mention" },
-    { category: "Channel", name: "%channel.mention%", description: "Channel mention" },
-    { category: "Channel", name: "%channel.name%", description: "Channel name" },
-    { category: "Channel", name: "%channel.id%", description: "Channel ID" },
-    { category: "Channel", name: "%channel.created%", description: "Channel creation date/time" },
-    { category: "Channel", name: "%channel.nsfw%", description: "Whether channel is NSFW" },
-    { category: "Channel", name: "%channel.topic%", description: "Channel topic" },
+    { category: "Channel", name: "%channel%", description: m.placeholders.channel() },
+    { category: "Channel", name: "%channel.mention%", description: m.placeholders.channel() },
+    { category: "Channel", name: "%channel.name%", description: m.placeholders.channelName() },
+    { category: "Channel", name: "%channel.id%", description: m.placeholders.channelId() },
+    { category: "Channel", name: "%channel.created%", description: m.placeholders.channelCreated() },
+    { category: "Channel", name: "%channel.nsfw%", description: m.placeholders.channelNsfw() },
+    { category: "Channel", name: "%channel.topic%", description: m.placeholders.channelTopic() },
 
     // Bot placeholders
-    { category: "Bot", name: "%bot.status%", description: "Bot's current status" },
-    { category: "Bot", name: "%bot.latency%", description: "Bot's latency in ms" },
-    { category: "Bot", name: "%bot.name%", description: "Bot's username" },
-    { category: "Bot", name: "%bot.fullname%", description: "Bot's full username" },
-    { category: "Bot", name: "%bot.id%", description: "Bot's user ID" },
-    { category: "Bot", name: "%bot.avatar%", description: "Bot's avatar URL" },
-    { category: "Bot", name: "%bot.time%", description: "Current time with timezone" },
+    { category: "Bot", name: "%bot.status%", description: m.placeholders.botStatus() },
+    { category: "Bot", name: "%bot.latency%", description: m.placeholders.botLatency() },
+    { category: "Bot", name: "%bot.name%", description: m.placeholders.botName() },
+    { category: "Bot", name: "%bot.fullname%", description: m.placeholders.botFullname() },
+    { category: "Bot", name: "%bot.id%", description: m.placeholders.botId() },
+    { category: "Bot", name: "%bot.avatar%", description: m.placeholders.botAvatar() },
+    { category: "Bot", name: "%bot.time%", description: m.placeholders.botTime() },
 
     // Shard/Stats placeholders
-    { category: "Stats", name: "%shard.servercount%", description: "Number of servers on this shard" },
-    { category: "Stats", name: "%shard.usercount%", description: "Number of users on this shard" },
+    { category: "Stats", name: "%shard.servercount%", description: m.placeholders.shardServercount() },
+    { category: "Stats", name: "%shard.usercount%", description: m.placeholders.shardUsercount() },
 
     // Time/Date placeholders
-    { category: "Time", name: "%time.month%", description: "Current month name" },
-    { category: "Time", name: "%time.day%", description: "Current day name" },
-    { category: "Time", name: "%time.year%", description: "Current year" },
+    { category: "Time", name: "%time.month%", description: m.placeholders.month() },
+    { category: "Time", name: "%time.day%", description: m.placeholders.timeDay() },
+    { category: "Time", name: "%time.year%", description: m.placeholders.timeYear() },
 
     // Random placeholders
-    { category: "Random", name: "%rng%", description: "Random number (0-10)" },
-    { category: "Random", name: "%rng(1,100)%", description: "Random number between specified range" },
-    { category: "Random", name: "%choose(a|b|c)%", description: "Choose randomly from pipe-separated options" },
-    { category: "Random", name: "%target%", description: "Text after the trigger" },
-    { category: "Random", name: "%img:query%", description: "Imgur search for 'query'" },
+    { category: "Random", name: "%rng%", description: m.placeholders.rng() },
+    { category: "Random", name: "%rng(1,100)%", description: m.placeholders.rngRange() },
+    { category: "Random", name: "%choose(a|b|c)%", description: m.placeholders.choose() },
+    { category: "Random", name: "%target%", description: m.placeholders.target() },
+    { category: "Random", name: "%img:query%", description: m.placeholders.img() },
 
     // GIF placeholders (nekos.best API)
-    { category: "GIFs", name: "%bakagif%", description: "Random baka reaction GIF" },
-    { category: "GIFs", name: "%bitegif%", description: "Random bite reaction GIF" },
-    { category: "GIFs", name: "%blushgif%", description: "Random blush reaction GIF" },
-    { category: "GIFs", name: "%boredgif%", description: "Random bored reaction GIF" },
-    { category: "GIFs", name: "%crygif%", description: "Random cry reaction GIF" },
-    { category: "GIFs", name: "%cuddlegif%", description: "Random cuddle reaction GIF" },
-    { category: "GIFs", name: "%dancegif%", description: "Random dance reaction GIF" },
-    { category: "GIFs", name: "%facepalmgif%", description: "Random facepalm reaction GIF" },
-    { category: "GIFs", name: "%feedgif%", description: "Random feed reaction GIF" },
-    { category: "GIFs", name: "%handholdgif%", description: "Random handhold reaction GIF" },
-    { category: "GIFs", name: "%happygif%", description: "Random happy reaction GIF" },
-    { category: "GIFs", name: "%highfivegif%", description: "Random highfive reaction GIF" },
-    { category: "GIFs", name: "%huggif%", description: "Random hug reaction GIF" },
-    { category: "GIFs", name: "%kickgif%", description: "Random kick reaction GIF" },
-    { category: "GIFs", name: "%kissgif%", description: "Random kiss reaction GIF" },
-    { category: "GIFs", name: "%laughgif%", description: "Random laugh reaction GIF" },
-    { category: "GIFs", name: "%patgif%", description: "Random pat reaction GIF" },
-    { category: "GIFs", name: "%pokegif%", description: "Random poke reaction GIF" },
-    { category: "GIFs", name: "%poutgif%", description: "Random pout reaction GIF" },
-    { category: "GIFs", name: "%punchgif%", description: "Random punch reaction GIF" },
-    { category: "GIFs", name: "%shootgif%", description: "Random shoot reaction GIF" },
-    { category: "GIFs", name: "%shruggif%", description: "Random shrug reaction GIF" },
-    { category: "GIFs", name: "%slapgif%", description: "Random slap reaction GIF" },
-    { category: "GIFs", name: "%sleepgif%", description: "Random sleep reaction GIF" },
-    { category: "GIFs", name: "%smilegif%", description: "Random smile reaction GIF" },
-    { category: "GIFs", name: "%smuggif%", description: "Random smug reaction GIF" },
-    { category: "GIFs", name: "%staregif%", description: "Random stare reaction GIF" },
-    { category: "GIFs", name: "%thinkgif%", description: "Random think reaction GIF" },
-    { category: "GIFs", name: "%thumbsupgif%", description: "Random thumbsup reaction GIF" },
-    { category: "GIFs", name: "%ticklegif%", description: "Random tickle reaction GIF" },
-    { category: "GIFs", name: "%wavegif%", description: "Random wave reaction GIF" },
-    { category: "GIFs", name: "%winkgif%", description: "Random wink reaction GIF" }
-  ];
+    { category: "GIFs", name: "%bakagif%", description: m.placeholders.gifBaka() },
+    { category: "GIFs", name: "%bitegif%", description: m.placeholders.gifBite() },
+    { category: "GIFs", name: "%blushgif%", description: m.placeholders.gifBlush() },
+    { category: "GIFs", name: "%boredgif%", description: m.placeholders.gifBored() },
+    { category: "GIFs", name: "%crygif%", description: m.placeholders.gifCry() },
+    { category: "GIFs", name: "%cuddlegif%", description: m.placeholders.gifCuddle() },
+    { category: "GIFs", name: "%dancegif%", description: m.placeholders.gifDance() },
+    { category: "GIFs", name: "%facepalmgif%", description: m.placeholders.gifFacepalm() },
+    { category: "GIFs", name: "%feedgif%", description: m.placeholders.gifFeed() },
+    { category: "GIFs", name: "%handholdgif%", description: m.placeholders.gifHandhold() },
+    { category: "GIFs", name: "%happygif%", description: m.placeholders.gifHappy() },
+    { category: "GIFs", name: "%highfivegif%", description: m.placeholders.gifHighfive() },
+    { category: "GIFs", name: "%huggif%", description: m.placeholders.gifHug() },
+    { category: "GIFs", name: "%kickgif%", description: m.placeholders.gifKick() },
+    { category: "GIFs", name: "%kissgif%", description: m.placeholders.gifKiss() },
+    { category: "GIFs", name: "%laughgif%", description: m.placeholders.gifLaugh() },
+    { category: "GIFs", name: "%patgif%", description: m.placeholders.gifPat() },
+    { category: "GIFs", name: "%pokegif%", description: m.placeholders.gifPoke() },
+    { category: "GIFs", name: "%poutgif%", description: m.placeholders.gifPout() },
+    { category: "GIFs", name: "%punchgif%", description: m.placeholders.gifPunch() },
+    { category: "GIFs", name: "%shootgif%", description: m.placeholders.gifShoot() },
+    { category: "GIFs", name: "%shruggif%", description: m.placeholders.gifShrug() },
+    { category: "GIFs", name: "%slapgif%", description: m.placeholders.gifSlap() },
+    { category: "GIFs", name: "%sleepgif%", description: m.placeholders.gifSleep() },
+    { category: "GIFs", name: "%smilegif%", description: m.placeholders.gifSmile() },
+    { category: "GIFs", name: "%smuggif%", description: m.placeholders.gifSmug() },
+    { category: "GIFs", name: "%staregif%", description: m.placeholders.gifStare() },
+    { category: "GIFs", name: "%thinkgif%", description: m.placeholders.gifThink() },
+    { category: "GIFs", name: "%thumbsupgif%", description: m.placeholders.gifThumbsup() },
+    { category: "GIFs", name: "%ticklegif%", description: m.placeholders.gifTickle() },
+    { category: "GIFs", name: "%wavegif%", description: m.placeholders.gifWave() },
+    { category: "GIFs", name: "%winkgif%", description: m.placeholders.gifWink() }
+  ]);
 
   // Combine all placeholders and filter duplicates by name
   let allPlaceholders = $derived((() => {
@@ -449,14 +450,14 @@
     validateEmbeds();
     validateComponents();
     if (validationErrors.length > 0) {
-      showNotificationMessage(`Fix ${validationErrors.length} problem${validationErrors.length === 1 ? "" : "s"} before saving`, "error");
+      showNotificationMessage(validationErrors.length === 1 ? m.embedbuilder.fullscreenNotifyFixProblemsOne({ count: 1 }) : m.embedbuilder.fullscreenNotifyFixProblemsOther({ count: validationErrors.length }), "error");
       return;
     }
 
     const outputData = cleanOutput();
     value = outputData;
     onchange?.(outputData);
-    showNotificationMessage("Saved successfully!");
+    showNotificationMessage(m.embedbuilder.fullscreenNotifySaved());
     close();
   }
 
@@ -652,8 +653,8 @@
     try {
       parsed = JSON.parse(text);
     } catch {
-      jsonParseError = "That isn't valid JSON.";
-      if (notify) showNotificationMessage("Invalid JSON", "error");
+      jsonParseError = m.embedbuilder.fullscreenJsonParseError();
+      if (notify) showNotificationMessage(m.embedbuilder.fullscreenNotifyJsonInvalid(), "error");
       return;
     }
 
@@ -763,7 +764,7 @@
     validateComponents();
     if (notify) {
       showNotificationMessage(
-        componentsSkipped ? "JSON applied (components aren't allowed here and were skipped)" : "JSON applied to builder"
+        componentsSkipped ? m.embedbuilder.fullscreenNotifyJsonAppliedSkipped() : m.embedbuilder.fullscreenNotifyJsonApplied()
       );
       activeTab = "editor";
     }
@@ -782,7 +783,7 @@
       savedGuildEmbeds = guildIdBigInt ? await embedsApi.getGuildEmbeds(guildIdBigInt) : [];
     } catch (error) {
       logger.error("Failed to load saved embeds:", error);
-      showNotificationMessage("Failed to load saved embeds", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyLoadSavedFailed(), "error");
     } finally {
       loadingSavedEmbeds = false;
     }
@@ -791,24 +792,24 @@
   // Saves the current builder state as a reusable embed template
   async function saveCurrentEmbed() {
     if (!user?.id) {
-      showNotificationMessage("You must be logged in to save embeds", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyLoginRequired(), "error");
       return;
     }
 
     const name = saveEmbedName.trim();
     if (!name) {
-      showNotificationMessage("Please enter a name for the embed", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyNameRequired(), "error");
       return;
     }
 
     const exportData = cleanOutput();
     if (!exportData || (typeof exportData === "object" && Object.keys(exportData).length === 0)) {
-      showNotificationMessage("Nothing to save yet", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyNothingToSave(), "error");
       return;
     }
 
     if (saveAsGuildShared && !guildIdBigInt) {
-      showNotificationMessage("A server must be selected to save a shared embed", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyServerRequired(), "error");
       return;
     }
 
@@ -822,12 +823,12 @@
         isGuildShared: saveAsGuildShared
       });
 
-      showNotificationMessage(`Saved "${name}"`);
+      showNotificationMessage(m.embedbuilder.fullscreenNotifySavedNamed({ name }));
       saveEmbedName = "";
       await loadSavedEmbeds();
     } catch (error) {
       logger.error("Failed to save embed:", error);
-      showNotificationMessage("Failed to save embed. The name may already be in use.", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifySaveFailed(), "error");
     } finally {
       savingEmbed = false;
     }
@@ -835,7 +836,7 @@
 
   function loadSavedEmbed(saved: SavedEmbed) {
     applyImportedJson(saved.jsonCode);
-    showNotificationMessage(`Loaded "${saved.embedName ?? "embed"}"`);
+    showNotificationMessage(m.embedbuilder.fullscreenNotifyLoadedNamed({ name: saved.embedName ?? m.embedbuilder.fullscreenSavedNameFallback() }));
   }
 
   function requestDeleteSavedEmbed(saved: SavedEmbed) {
@@ -850,11 +851,11 @@
 
     try {
       await embedsApi.deleteEmbed(saved.id, user.id);
-      showNotificationMessage(`Deleted "${saved.embedName ?? "embed"}"`);
+      showNotificationMessage(m.embedbuilder.personaDeleted({ name: saved.embedName ?? m.embedbuilder.fullscreenSavedNameFallback() }));
       await loadSavedEmbeds();
     } catch (error) {
       logger.error("Failed to delete embed:", error);
-      showNotificationMessage("Failed to delete embed", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyDeleteFailed(), "error");
     }
   }
 
@@ -875,19 +876,19 @@
     };
 
     embeds = [...embeds, newEmbed];
-    showNotificationMessage("New embed added");
+    showNotificationMessage(m.embedbuilder.fullscreenNotifyEmbedAdded());
   }
 
   function removeEmbed(index: number) {
     if (embeds.length > 1 || !allowMultipleEmbeds) {
       embeds = embeds.filter((_, i) => i !== index);
-      showNotificationMessage("Embed removed");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyEmbedRemoved());
     }
   }
 
   function clearAllEmbeds() {
     embeds = [];
-    showNotificationMessage("All embeds cleared");
+    showNotificationMessage(m.embedbuilder.fullscreenNotifyEmbedsCleared());
   }
 
   function clearAll() {
@@ -900,7 +901,7 @@
     value = "";
     onchange?.("");
 
-    showNotificationMessage("Everything cleared");
+    showNotificationMessage(m.embedbuilder.fullscreenNotifyEverythingCleared());
   }
 
   function duplicateEmbed(index: number) {
@@ -909,7 +910,7 @@
     const duplicated = JSON.parse(JSON.stringify(embeds[index]));
     embeds.splice(index + 1, 0, duplicated);
     embeds = [...embeds];
-    showNotificationMessage("Embed duplicated");
+    showNotificationMessage(m.embedbuilder.fullscreenNotifyEmbedDuplicated());
   }
 
   function handleEmbedUpdate(detail: { embed: any; index: number }) {
@@ -931,12 +932,12 @@
     };
 
     componentRows = [...componentRows, newRow];
-    showNotificationMessage("New row added");
+    showNotificationMessage(m.embedbuilder.fullscreenNotifyRowAdded());
   }
 
   function addComponentToRow(rowKey: string, type: "button" | "select") {
     if (restrictedComponentTypes.includes(type)) {
-      showNotificationMessage(`${type} components are not allowed`, "error");
+      showNotificationMessage(type === "button" ? m.embedbuilder.fullscreenNotifyButtonNotAllowed() : m.embedbuilder.fullscreenNotifySelectNotAllowed(), "error");
       return;
     }
 
@@ -946,22 +947,22 @@
     const row = componentRows[rowIndex];
 
     if (getTotalComponentCount() >= 25) {
-      showNotificationMessage("Maximum 25 components allowed", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyMaxComponents(), "error");
       return;
     }
 
     if (type === "button" && row.components.length >= 5) {
-      showNotificationMessage("Maximum 5 buttons per row", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyMaxButtons(), "error");
       return;
     }
 
     if (type === "select" && row.components.length > 0) {
-      showNotificationMessage("Select menus must be alone in a row", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifySelectAlone(), "error");
       return;
     }
 
     if (row.components.some(c => c.isSelect)) {
-      showNotificationMessage("Cannot add components to a row with a select menu", "error");
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyRowHasSelect(), "error");
       return;
     }
 
@@ -970,7 +971,7 @@
       componentKey,
       id: null,
       rowIndex,
-      displayName: type === "button" ? "New Button" : "New Select",
+      displayName: type === "button" ? m.common.newButton() : m.embedbuilder.fullscreenNewSelectLabel(),
       style: type === "button" ? 1 : 0,
       url: "",
       emoji: "",
@@ -984,7 +985,7 @@
     componentRows = [...componentRows];
     // Automatically open edit mode for the new component
     editingComponentKey = componentKey;
-    showNotificationMessage(`${type === "button" ? "Button" : "Select menu"} added`);
+    showNotificationMessage(type === "button" ? m.embedbuilder.fullscreenNotifyButtonAdded() : m.embedbuilder.fullscreenNotifySelectAdded());
   }
 
   function removeRow(rowKey: string) {
@@ -998,7 +999,7 @@
       }))
     }));
 
-    showNotificationMessage("Row removed");
+    showNotificationMessage(m.embedbuilder.fullscreenNotifyRowRemoved());
   }
 
   function handleComponentUpdate(detail: { component: NewEmbedComponent }) {
@@ -1028,7 +1029,7 @@
         if (editingComponentKey === componentKey) {
           editingComponentKey = null;
         }
-        showNotificationMessage("Component removed");
+        showNotificationMessage(m.embedbuilder.fullscreenNotifyComponentRemoved());
         return;
       }
     }
@@ -1059,7 +1060,7 @@
 
         row.components.splice(componentIndex + 1, 0, newComponent);
         componentRows = [...componentRows];
-        showNotificationMessage("Component duplicated");
+        showNotificationMessage(m.embedbuilder.fullscreenNotifyComponentDuplicated());
         return;
       }
     }
@@ -1078,7 +1079,7 @@
       if (!embed.author?.name?.trim() && (embed.author?.url?.trim() || embed.author?.icon_url?.trim())) {
         validationErrors.push({
           id: `embed-${index}-author`,
-          message: `Embed ${index + 1} author needs a name when it has an icon or link`,
+          message: m.embedbuilder.fullscreenValidationAuthorNeedsName({ number: index + 1 }),
           field: `embeds[${index}].author.name`
         });
       }
@@ -1086,7 +1087,7 @@
       if (!embed.footer?.text?.trim() && embed.footer?.icon_url?.trim()) {
         validationErrors.push({
           id: `embed-${index}-footer`,
-          message: `Embed ${index + 1} footer needs text when it has an icon`,
+          message: m.embedbuilder.fullscreenValidationFooterNeedsText({ number: index + 1 }),
           field: `embeds[${index}].footer.text`
         });
       }
@@ -1095,7 +1096,7 @@
         if (!field.name?.trim() || !field.value?.trim()) {
           validationErrors.push({
             id: `embed-${index}-field-${fieldIndex}`,
-            message: `Embed ${index + 1} field ${fieldIndex + 1} needs both a name and a value`,
+            message: m.embedbuilder.fullscreenValidationFieldIncomplete({ embed: index + 1, field: fieldIndex + 1 }),
             field: `embeds[${index}].fields[${fieldIndex}]`
           });
         }
@@ -1104,7 +1105,7 @@
       if (embed.title && embed.title.length > 256) {
         validationErrors.push({
           id: `embed-${index}-title`,
-          message: `Embed ${index + 1} title exceeds 256 characters`,
+          message: m.embedbuilder.fullscreenValidationTitleTooLong({ number: index + 1 }),
           field: `embeds[${index}].title`
         });
       }
@@ -1112,7 +1113,7 @@
       if (embed.description && embed.description.length > 4096) {
         validationErrors.push({
           id: `embed-${index}-description`,
-          message: `Embed ${index + 1} description exceeds 4096 characters`,
+          message: m.embedbuilder.fullscreenValidationDescriptionTooLong({ number: index + 1 }),
           field: `embeds[${index}].description`
         });
       }
@@ -1120,7 +1121,7 @@
       if (!hasVisibleContent(cleanEmbed(embed))) {
         validationWarnings.push({
           id: `embed-${index}-empty`,
-          message: `Embed ${index + 1} is empty and won't be sent`,
+          message: m.embedbuilder.fullscreenValidationEmbedEmpty({ number: index + 1 }),
           field: `embeds[${index}]`
         });
       }
@@ -1135,7 +1136,7 @@
         if (!component.isSelect && component.style !== 5 && !component.id) {
           validationErrors.push({
             id: `component-${component.componentKey}-trigger`,
-            message: `${component.isSelect ? "Select menu" : "Button"} "${component.displayName}" needs a trigger`,
+            message: component.isSelect ? m.embedbuilder.fullscreenValidationSelectNeedsTrigger({ name: component.displayName }) : m.embedbuilder.fullscreenValidationButtonNeedsTrigger({ name: component.displayName }),
             field: `components[${index}]`
           });
         }
@@ -1143,7 +1144,7 @@
         if (!component.isSelect && !component.displayName?.trim()) {
           validationErrors.push({
             id: `component-${component.componentKey}-label`,
-            message: "A button needs a label",
+            message: m.embedbuilder.fullscreenValidationButtonNeedsLabel(),
             field: `components[${index}]`
           });
         }
@@ -1151,7 +1152,7 @@
         if (!component.isSelect && component.style === 5 && !component.url?.trim()) {
           validationErrors.push({
             id: `component-${component.componentKey}-url`,
-            message: `Link button "${component.displayName}" needs a URL`,
+            message: m.embedbuilder.fullscreenValidationLinkNeedsUrl({ name: component.displayName }),
             field: `components[${index}].url`
           });
         }
@@ -1159,7 +1160,7 @@
         if (component.isSelect && component.options.length === 0) {
           validationErrors.push({
             id: `component-${component.componentKey}-options`,
-            message: `Select menu "${component.displayName}" needs at least one option`,
+            message: m.embedbuilder.fullscreenValidationSelectNeedsOptions({ name: component.displayName }),
             field: `components[${index}].options`
           });
         }
@@ -1169,7 +1170,7 @@
             if (!option.name?.trim()) {
               validationErrors.push({
                 id: `component-${component.componentKey}-option-${optIndex}-name`,
-                message: `Option ${optIndex + 1} of "${component.displayName}" needs a name`,
+                message: m.embedbuilder.fullscreenValidationOptionNeedsName({ number: optIndex + 1, name: component.displayName }),
                 field: `components[${index}].options[${optIndex}].name`
               });
             }
@@ -1177,7 +1178,7 @@
             if (!option.id) {
               validationErrors.push({
                 id: `component-${component.componentKey}-option-${optIndex}-trigger`,
-                message: `Option "${option.name}" needs a trigger`,
+                message: m.embedbuilder.componentsErrorOptionNeedsTrigger({ name: option.name }),
                 field: `components[${index}].options[${optIndex}]`
               });
             }
@@ -1271,7 +1272,7 @@
       <button
         type="button"
         class="absolute inset-0 bg-black/80 backdrop-blur-sm"
-        aria-label="Close editor"
+        aria-label={m.common.ariaCloseEditor()}
         onclick={cancel}
       ></button>
 
@@ -1302,10 +1303,10 @@
               onclick={undo}
               disabled={historyIndex <= 0}
               type="button"
-              title="Undo"
+              title={m.common.undo()}
             >
               <i class="fa-solid fa-rotate-left"></i>
-              <span class="hidden sm:inline ml-1">Undo</span>
+              <span class="hidden sm:inline ml-1">{m.common.undo()}</span>
             </button>
             <button
               class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] disabled:opacity-50"
@@ -1313,20 +1314,20 @@
               onclick={redo}
               disabled={historyIndex >= editHistory.length - 1}
               type="button"
-              title="Redo"
+              title={m.common.redo()}
             >
               <i class="fa-solid fa-rotate-right"></i>
-              <span class="hidden sm:inline ml-1">Redo</span>
+              <span class="hidden sm:inline ml-1">{m.common.redo()}</span>
             </button>
             <button
               class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02]"
               style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
               onclick={clearAll}
               type="button"
-              title="Clear everything"
+              title={m.embedbuilder.fullscreenClearEverything()}
             >
               <i class="fa-solid fa-eraser"></i>
-              <span class="hidden sm:inline ml-1">Clear All</span>
+              <span class="hidden sm:inline ml-1">{m.common.clearAll()}</span>
             </button>
             <button
               class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02]"
@@ -1334,7 +1335,7 @@
               onclick={cancel}
               type="button"
             >
-              Cancel
+              {m.common.cancel()}
             </button>
             <button
               class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02]"
@@ -1342,7 +1343,7 @@
               onclick={save}
               type="button"
             >
-              Save
+              {m.common.save()}
             </button>
           </div>
         </div>
@@ -1361,7 +1362,7 @@
                   type="button"
                 >
                   <i class="fa-solid fa-layer-group mr-2"></i>
-                  Embed
+                  {m.embedbuilder.fullscreenTabEmbed()}
                 </button>
               {/if}
 
@@ -1373,7 +1374,7 @@
                   type="button"
                 >
                   <i class="fa-solid fa-comment mr-2"></i>
-                  Components
+                  {m.embedbuilder.tabComponents()}
                 </button>
               {/if}
 
@@ -1384,7 +1385,7 @@
                 type="button"
               >
                 <i class="fa-solid fa-code mr-2"></i>
-                JSON
+                {m.embedbuilder.tabJson()}
               </button>
 
               {#if user?.id}
@@ -1395,7 +1396,7 @@
                   type="button"
                 >
                   <i class="fa-solid fa-floppy-disk mr-2"></i>
-                  Saved
+                  {m.common.saved()}
                 </button>
               {/if}
             </div>
@@ -1408,7 +1409,7 @@
                   <div>
                     <label for="message-content" class="block text-sm font-medium mb-2"
                            style="color: {$colorStore.text};">
-                      Message Content <span class="text-xs">(optional)</span>
+                      {m.common.messageContent()} <span class="text-xs">{m.common.optionalSuffix()}</span>
                     </label>
                     <div class="relative">
                       <textarea
@@ -1416,7 +1417,7 @@
                         rows="3"
                         class="w-full px-3 py-2 pr-10 rounded-lg border resize-y"
                         style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        placeholder="Optional message content that appears above the embed. Use % to mention the user or insert other placeholders."
+                        placeholder={m.embedbuilder.fullscreenContentPlaceholder()}
                         bind:value={content}
                         bind:this={contentTextarea}
                       ></textarea>
@@ -1424,7 +1425,7 @@
                         class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
                         style="color: {$colorStore.muted};"
                         onclick={() => { showContentPlaceholders = !showContentPlaceholders; contentPlaceholderSearch = ""; }}
-                        title="Insert placeholder"
+                        title={m.embedbuilder.editorInsertPlaceholder()}
                         type="button"
                       >
                         %
@@ -1447,7 +1448,7 @@
                 <div class="space-y-4">
                   <div class="flex justify-between items-center flex-wrap gap-2">
                     <h3 class="text-base md:text-lg font-semibold" style="color: {$colorStore.text};">
-                      Embeds ({embeds.length}/{maxEmbeds})
+                      {m.embedbuilder.fullscreenEmbedsHeading({ count: embeds.length, max: maxEmbeds })}
                     </h3>
                     <div class="flex gap-2">
                       {#if embeds.length > 1}
@@ -1458,7 +1459,7 @@
                           type="button"
                         >
                           <i class="fa-solid fa-eraser"></i>
-                          Clear All Embeds
+                          {m.embedbuilder.fullscreenClearAllEmbeds()}
                         </button>
                       {/if}
                       {#if allowMultipleEmbeds}
@@ -1470,7 +1471,7 @@
                           type="button"
                         >
                           <i class="fa-solid fa-plus"></i>
-                          Add Embed
+                          {m.embedbuilder.fullscreenAddEmbed()}
                         </button>
                       {/if}
                     </div>
@@ -1481,9 +1482,9 @@
                          style="background: {$colorStore.primary}05; border: 1px dashed {$colorStore.primary}20;">
                       <i class="fa-solid fa-layer-group"
                          style="font-size: 48px; opacity: 0.3; display: block; margin: 0 auto 16px; color: {$colorStore.muted};"></i>
-                      <h4 class="text-lg font-semibold mb-2" style="color: {$colorStore.text};">No embeds</h4>
+                      <h4 class="text-lg font-semibold mb-2" style="color: {$colorStore.text};">{m.embedbuilder.fullscreenEmbedsEmptyTitle()}</h4>
                       <p class="text-sm mb-4" style="color: {$colorStore.muted};">
-                        Click "Add Embed" to create one
+                        {m.embedbuilder.fullscreenEmbedsEmptyHint()}
                       </p>
                       <button
                         class="px-4 py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] flex items-center gap-2 mx-auto"
@@ -1492,7 +1493,7 @@
                         type="button"
                       >
                         <i class="fa-solid fa-plus"></i>
-                        Add Embed
+                        {m.embedbuilder.fullscreenAddEmbed()}
                       </button>
                     </div>
                   {:else}
@@ -1515,10 +1516,10 @@
                   <div class="flex justify-between items-center">
                     <div>
                       <h3 class="text-base md:text-lg font-semibold" style="color: {$colorStore.text};">
-                        Components <span class="text-sm font-normal">({getTotalComponentCount()}/25)</span>
+                        {m.embedbuilder.tabComponents()} <span class="text-sm font-normal">({getTotalComponentCount()}/25)</span>
                       </h3>
                       <p class="text-xs md:text-sm" style="color: {$colorStore.muted};">
-                        Rows: {componentRows.length}/5 • Max 5 buttons per row
+                        {m.embedbuilder.fullscreenComponentsLimits({ rows: componentRows.length })}
                       </p>
                     </div>
 
@@ -1530,7 +1531,7 @@
                       type="button"
                     >
                       <i class="fa-solid fa-plus"></i>
-                      Add Row
+                      {m.embedbuilder.fullscreenAddRow()}
                     </button>
                   </div>
 
@@ -1538,9 +1539,9 @@
                     <div class="text-center py-12">
                       <i class="fa-solid fa-comment"
                          style="font-size: 48px; opacity: 0.3; display: block; margin: 0 auto 16px; color: {$colorStore.muted};"></i>
-                      <h4 class="text-lg font-semibold mb-2" style="color: {$colorStore.text};">No components yet</h4>
+                      <h4 class="text-lg font-semibold mb-2" style="color: {$colorStore.text};">{m.embedbuilder.fullscreenComponentsEmptyTitle()}</h4>
                       <p class="text-sm mb-4" style="color: {$colorStore.muted};">
-                        Click "Add Row" to start adding buttons or select menus
+                        {m.embedbuilder.fullscreenComponentsEmptyHint()}
                       </p>
                     </div>
                   {:else}
@@ -1550,8 +1551,7 @@
                         <!-- Row Header -->
                         <div class="flex items-center justify-between mb-3">
                           <span class="text-sm font-medium" style="color: {$colorStore.text};">
-                            Row {rowIndex + 1} ({row.components.length}
-                            component{row.components.length !== 1 ? 's' : ''})
+                            {row.components.length === 1 ? m.embedbuilder.fullscreenRowHeaderOne({ number: rowIndex + 1, count: 1 }) : m.embedbuilder.fullscreenRowHeaderOther({ number: rowIndex + 1, count: row.components.length })}
                           </span>
                           <button
                             class="px-2 py-1 text-xs rounded-lg transition-all hover:scale-[1.02] font-medium"
@@ -1560,7 +1560,7 @@
                             type="button"
                           >
                             <i class="fa-solid fa-trash"></i>
-                            Remove Row
+                            {m.embedbuilder.pageRowRemoveAria()}
                           </button>
                         </div>
 
@@ -1568,7 +1568,7 @@
                         {#if row.components.length === 0}
                           <div class="text-center py-6">
                             <p class="text-sm mb-3" style="color: {$colorStore.muted};">
-                              This row is empty
+                              {m.embedbuilder.fullscreenRowEmpty()}
                             </p>
                             <div class="flex gap-2 justify-center flex-wrap">
                               {#if !restrictedComponentTypes.includes('button')}
@@ -1579,7 +1579,7 @@
                                   type="button"
                                 >
                                   <i class="fa-solid fa-plus"></i>
-                                  Add Button
+                                  {m.common.addButton()}
                                 </button>
                               {/if}
                               {#if !restrictedComponentTypes.includes('select')}
@@ -1590,7 +1590,7 @@
                                   type="button"
                                 >
                                   <i class="fa-solid fa-plus"></i>
-                                  Add Select
+                                  {m.embedbuilder.fullscreenAddSelect()}
                                 </button>
                               {/if}
                             </div>
@@ -1621,7 +1621,7 @@
                                 type="button"
                               >
                                 <i class="fa-solid fa-plus"></i>
-                                Add Button
+                                {m.common.addButton()}
                               </button>
                             </div>
                           {/if}
@@ -1635,9 +1635,9 @@
                 <div class="space-y-4">
                   <div class="flex justify-between items-center flex-wrap gap-2">
                     <div>
-                      <h3 class="text-base md:text-lg font-semibold" style="color: {$colorStore.text};">Raw JSON</h3>
+                      <h3 class="text-base md:text-lg font-semibold" style="color: {$colorStore.text};">{m.embedbuilder.fullscreenJsonHeading()}</h3>
                       <p class="text-xs md:text-sm" style="color: {$colorStore.muted};">
-                        View, edit, or paste embed JSON directly
+                        {m.embedbuilder.fullscreenJsonHint()}
                       </p>
                     </div>
                     <div class="flex gap-2">
@@ -1648,7 +1648,7 @@
                         type="button"
                       >
                         <i class="fa-solid fa-rotate"></i>
-                        Refresh
+                        {m.common.refresh()}
                       </button>
                       <button
                         class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
@@ -1657,7 +1657,7 @@
                         type="button"
                       >
                         <i class="fa-solid fa-check"></i>
-                        Apply
+                        {m.common.apply()}
                       </button>
                     </div>
                   </div>
@@ -1667,7 +1667,7 @@
                     spellcheck="false"
                     class="w-full px-3 py-2 rounded-lg border font-mono text-xs resize-y"
                     style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                    placeholder={'Paste embed JSON here, e.g. { "content": "...", "embeds": [...] }'}
+                    placeholder={m.embedbuilder.fullscreenJsonPlaceholder()}
                     bind:value={jsonText}
                   ></textarea>
 
@@ -1677,7 +1677,7 @@
 
                   {#if !allowComponents || restrictedComponentTypes.includes('all')}
                     <p class="text-xs" style="color: {$colorStore.muted};">
-                      Components aren't supported here: any <code>components</code> in pasted JSON are ignored.
+                      {@html m.embedbuilder.fullscreenJsonComponentsIgnored()}
                     </p>
                   {/if}
                 </div>
@@ -1689,13 +1689,13 @@
                     class="p-4 rounded-lg border space-y-3"
                     style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
                   >
-                    <h3 class="text-base font-semibold" style="color: {$colorStore.text};">Save Current Embed</h3>
+                    <h3 class="text-base font-semibold" style="color: {$colorStore.text};">{m.embedbuilder.fullscreenSaveHeading()}</h3>
                     <div class="flex flex-col sm:flex-row gap-2">
                       <input
                         type="text"
                         class="flex-1 px-3 py-2 rounded-lg border min-h-[44px]"
                         style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        placeholder="Embed name"
+                        placeholder={m.embedbuilder.fullscreenSaveNamePlaceholder()}
                         bind:value={saveEmbedName}
                       />
                       <button
@@ -1706,13 +1706,13 @@
                         type="button"
                       >
                         <i class="fa-solid fa-floppy-disk"></i>
-                        {savingEmbed ? "Saving..." : "Save"}
+                        {savingEmbed ? m.common.saving() : m.common.save()}
                       </button>
                     </div>
                     {#if guildIdBigInt}
                       <label class="flex items-center gap-2 text-sm min-h-[44px]" style="color: {$colorStore.muted};">
                         <input type="checkbox" bind:checked={saveAsGuildShared} />
-                        Share with everyone on this server
+                        {m.embedbuilder.fullscreenSaveShare()}
                       </label>
                     {/if}
                   </div>
@@ -1720,12 +1720,12 @@
                   {#if guildIdBigInt}
                     <div class="space-y-2">
                       <h3 class="text-base font-semibold" style="color: {$colorStore.text};">
-                        Shared on this server ({savedGuildEmbeds.length})
+                        {m.embedbuilder.fullscreenSharedHeading({ count: savedGuildEmbeds.length })}
                       </h3>
                       {#if loadingSavedEmbeds}
-                        <p class="text-sm" style="color: {$colorStore.muted};">Loading...</p>
+                        <p class="text-sm" style="color: {$colorStore.muted};">{m.common.loading()}</p>
                       {:else if savedGuildEmbeds.length === 0}
-                        <p class="text-sm" style="color: {$colorStore.muted};">No shared embeds yet</p>
+                        <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.fullscreenSharedEmpty()}</p>
                       {:else}
                         {#each savedGuildEmbeds as saved (saved.id)}
                           <div class="flex items-center justify-between gap-2 p-3 rounded-lg border"
@@ -1740,7 +1740,7 @@
                                 onclick={() => loadSavedEmbed(saved)}
                                 type="button"
                               >
-                                Load
+                                {m.common.load()}
                               </button>
                               <button
                                 class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
@@ -1748,7 +1748,7 @@
                                 onclick={() => requestDeleteSavedEmbed(saved)}
                                 type="button"
                               >
-                                Delete
+                                {m.common.delete()}
                               </button>
                             </div>
                           </div>
@@ -1759,12 +1759,12 @@
 
                   <div class="space-y-2">
                     <h3 class="text-base font-semibold" style="color: {$colorStore.text};">
-                      My Embeds ({savedUserEmbeds.length})
+                      {m.embedbuilder.fullscreenMineHeading({ count: savedUserEmbeds.length })}
                     </h3>
                     {#if loadingSavedEmbeds}
-                      <p class="text-sm" style="color: {$colorStore.muted};">Loading...</p>
+                      <p class="text-sm" style="color: {$colorStore.muted};">{m.common.loading()}</p>
                     {:else if savedUserEmbeds.length === 0}
-                      <p class="text-sm" style="color: {$colorStore.muted};">No saved embeds yet</p>
+                      <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.fullscreenMineEmpty()}</p>
                     {:else}
                       {#each savedUserEmbeds as saved (saved.id)}
                         <div class="flex items-center justify-between gap-2 p-3 rounded-lg border"
@@ -1779,7 +1779,7 @@
                               onclick={() => loadSavedEmbed(saved)}
                               type="button"
                             >
-                              Load
+                              {m.common.load()}
                             </button>
                             <button
                               class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
@@ -1787,7 +1787,7 @@
                               onclick={() => requestDeleteSavedEmbed(saved)}
                               type="button"
                             >
-                              Delete
+                              {m.common.delete()}
                             </button>
                           </div>
                         </div>
@@ -1804,7 +1804,7 @@
                style="background: {$colorStore.primary}03; border-color: {$colorStore.primary}30;">
             <div class="sticky top-0 p-4 border-b"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;">
-              <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Live Preview</h3>
+              <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.embedbuilder.fullscreenLivePreview()}</h3>
             </div>
 
             <div class="p-4">
@@ -1814,7 +1814,7 @@
                   <ValidationCard
                     errors={validationErrors}
                     warnings={validationWarnings}
-                    title="Issues"
+                    title={m.embedbuilder.fullscreenIssues()}
                     collapsible={true}
                     compact={true}
                   />
@@ -1828,7 +1828,7 @@
                 {componentRows}
                 {user}
                 {guildId}
-                emptyMessage="Your embed preview will appear here"
+                emptyMessage={m.embedbuilder.previewEmptyMessage()}
               />
             </div>
           </div>
@@ -1843,7 +1843,7 @@
             type="button"
           >
             <i class="fa-solid fa-eye"></i>
-            <span class="font-medium">Preview</span>
+            <span class="font-medium">{m.common.preview()}</span>
           </button>
         {/if}
       </div>
@@ -1863,7 +1863,7 @@
         <button
           type="button"
           class="absolute inset-0 bg-black/80 backdrop-blur-sm"
-          aria-label="Close preview"
+          aria-label={m.embedbuilder.fullscreenClosePreview()}
           onclick={() => showMobilePreview = false}
         ></button>
 
@@ -1877,13 +1877,13 @@
             class="flex items-center justify-between px-4 py-3 border-b"
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
           >
-            <h3 class="text-lg font-semibold" style="color: {$colorStore.primary};">Preview</h3>
+            <h3 class="text-lg font-semibold" style="color: {$colorStore.primary};">{m.common.preview()}</h3>
             <button
               class="p-2 rounded-lg transition-all hover:scale-[1.02]"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
               onclick={() => showMobilePreview = false}
               type="button"
-              aria-label="Close preview"
+              aria-label={m.embedbuilder.fullscreenClosePreview()}
             >
               <i class="fa-solid fa-xmark"></i>
             </button>
@@ -1897,7 +1897,7 @@
                 <ValidationCard
                   errors={validationErrors}
                   warnings={validationWarnings}
-                  title="Issues"
+                  title={m.embedbuilder.fullscreenIssues()}
                   collapsible={true}
                   compact={true}
                 />
@@ -1911,7 +1911,7 @@
               {componentRows}
               {user}
               {guildId}
-              emptyMessage="Your embed preview will appear here"
+              emptyMessage={m.embedbuilder.previewEmptyMessage()}
             />
           </div>
 
@@ -1927,7 +1927,7 @@
               type="button"
             >
               <i class="fa-solid fa-arrow-left mr-2"></i>
-              Back to Editor
+              {m.embedbuilder.fullscreenBackToEditor()}
             </button>
           </div>
         </div>
@@ -1939,9 +1939,9 @@
 <!-- Delete Saved Embed Confirmation -->
 <ConfirmationModal
   bind:isOpen={showDeleteSavedConfirm}
-  title="Delete Embed"
-  message={`Are you sure you want to delete "${embedPendingDelete?.embedName ?? "this embed"}"? This cannot be undone.`}
-  confirmText="Delete"
+  title={m.embedbuilder.pageSavedDeleteAria()}
+  message={m.embedbuilder.fullscreenDeleteMessage({ name: embedPendingDelete?.embedName ?? m.embedbuilder.fullscreenSavedNameFallbackThis() })}
+  confirmText={m.common.delete()}
   variant="danger"
   oncancel={() => embedPendingDelete = null}
   onconfirm={confirmDeleteSavedEmbed}

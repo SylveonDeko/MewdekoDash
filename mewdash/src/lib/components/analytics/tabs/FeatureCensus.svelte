@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/tabs/FeatureCensus.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
   import { analyticsApi } from "$lib/api/analytics/analytics";
@@ -92,19 +93,19 @@
 </script>
 
 <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-  <Card title="Settings usage" note="latest census">
+  <Card title={m.analytics.tabCensusCardSettings()} note={m.analytics.tabCensusSettingsNote()}>
     {#snippet actions()}
-      <select class="min-h-[44px] rounded-lg border px-2 text-xs font-mono" style={selectStyle} value={feature} onchange={(e) => onFeature(e.currentTarget.value)} aria-label="Feature">
+      <select class="min-h-[44px] rounded-lg border px-2 text-xs font-mono" style={selectStyle} value={feature} onchange={(e) => onFeature(e.currentTarget.value)} aria-label={m.analytics.tabCensusAriaFeature()}>
         {#if !features.includes(feature) && feature}<option value={feature}>{feature}</option>{/if}
         {#each features as f}<option value={f}>{f}</option>{/each}
       </select>
     {/snippet}
     {#if !feature}
-      <p class="text-xs py-4" style="color: {$colorStore.muted}">Pick a feature</p>
+      <p class="text-xs py-4" style="color: {$colorStore.muted}">{m.analytics.tabCensusPickFeature()}</p>
     {:else if settingsLoading && settings.length === 0}
       <div class="h-3 rounded animate-pulse" style="background: {$colorStore.primary}20"></div>
     {:else if groups.length === 0}
-      <p class="text-xs py-4" style="color: {$colorStore.muted}">No settings census for {feature}</p>
+      <p class="text-xs py-4" style="color: {$colorStore.muted}">{m.analytics.tabCensusNone({ feature })}</p>
     {:else}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {#each groups as [key, rows] (key)}
@@ -117,18 +118,18 @@
     {/if}
   </Card>
 
-  <Card title="Census" note={censusMetric || "pick a feature"}>
+  <Card title={m.analytics.tabCensusCard()} note={censusMetric || m.analytics.tabCensusPickNote()}>
     {#snippet actions()}
-      <select class="min-h-[44px] rounded-lg border px-2 text-xs" style={selectStyle} bind:value={kind} aria-label="Census kind">
-        <option value="configured">configured</option>
-        <option value="enabled">enabled</option>
+      <select class="min-h-[44px] rounded-lg border px-2 text-xs" style={selectStyle} bind:value={kind} aria-label={m.analytics.tabCensusAriaKind()}>
+        <option value="configured">{m.common.configured()}</option>
+        <option value="enabled">{m.common.enabled()}</option>
       </select>
-      <select class="min-h-[44px] rounded-lg border px-2 text-xs" style={selectStyle} bind:value={days} aria-label="Days">
+      <select class="min-h-[44px] rounded-lg border px-2 text-xs" style={selectStyle} bind:value={days} aria-label={m.common.days()}>
         <option value={90}>90d</option>
         <option value={180}>180d</option>
         <option value={365}>365d</option>
       </select>
     {/snippet}
-    <SimpleLineChart labels={censusLabels} series={censusSeries} loading={censusLoading} unit="guilds" empty="No census rows" beginAtZero height={220} />
+    <SimpleLineChart labels={censusLabels} series={censusSeries} loading={censusLoading} unit={m.analytics.unitGuilds()} empty={m.analytics.tabCensusEmpty()} beginAtZero height={220} />
   </Card>
 </div>

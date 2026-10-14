@@ -1,5 +1,6 @@
 <!-- lib/components/StatCard.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
 
 
   import { onMount } from "svelte";
@@ -185,8 +186,7 @@
       role="dialog"
       aria-labelledby="tooltip-title"
     >
-      <div id="tooltip-title" class="text-sm font-medium mb-2 text-center" style="color: {$colorStore.text}">{label}
-        Details
+      <div id="tooltip-title" class="text-sm font-medium mb-2 text-center" style="color: {$colorStore.text}">{m.monitoring.statCardDetailsTitle({ label })}
       </div>
 
       <div class="space-y-2">
@@ -201,7 +201,7 @@
       {#if previousValue !== null}
         <div class="mt-3 pt-2 border-t border-gray-700">
           <div class="flex justify-between text-xs">
-            <span style="color: {$colorStore.muted}">Previous</span>
+            <span style="color: {$colorStore.muted}">{m.common.previous()}</span>
             <span style="color: {$colorStore.text}">{previousValue}</span>
           </div>
         </div>

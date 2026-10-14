@@ -1,5 +1,6 @@
 <!-- routes/credguide/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
     import {onDestroy, onMount} from "svelte";
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
@@ -9,13 +10,12 @@
 
     let mounted = $state(false);
 
-    const previewEmbed = container(
-      header(
-        "## Credentials Setup Guide\nA step-by-step walkthrough for setting up the credentials a self-hosted Mewdeko needs.",
-        `${SITE_ORIGIN}/img/Mewdeko.png`
-      ),
-      separator(),
-      buttons(linkButton("Start the guide", `${SITE_ORIGIN}/credguide`))
+    const previewEmbed = $derived(
+      container(
+        header(`## ${m.public.credguideEmbedTitle()}\n${m.public.credguideEmbedSummary()}`, `${SITE_ORIGIN}/img/Mewdeko.png`),
+        separator(),
+        buttons(linkButton(m.public.credguideEmbedButton(), `${SITE_ORIGIN}/credguide`))
+      )
     );
   let currentStep = $state(0);
   let completedSteps: Set<number> = $state(new Set());
@@ -55,130 +55,130 @@
         };
       });
 
-  const steps: Step[] = [
+  const steps: Step[] = $derived([
     {
       id: "overview",
-      title: "Overview",
+      title: m.common.overview(),
       icon: "fa-clipboard-list",
-      description: "Understanding credentials setup",
+      description: m.public.credguideUnderstandingCredentialsSetup(),
       required: true,
-      estimatedTime: "2 min",
+      estimatedTime: m.features.setupTimeSingle({ minutes: 2 }),
       content: {
-        intro: "Welcome to the Mewdeko credentials setup guide. This wizard will walk you through setting up your bot's credentials step by step.",
+        intro: m.public.credguideWelcomeToTheMewdekoCredentials(),
         highlights: [
-          "Bot token configuration",
-          "Database setup",
-          "Owner ID configuration",
-          "Optional API keys for enhanced features"
+          m.public.credguideBotTokenConfiguration(),
+          m.public.credguideDatabaseSetup(),
+          m.public.credguideOwnerIdConfiguration(),
+          m.public.credguideOptionalApiKeysForEnhanced()
         ],
-        note: "The credentials_example.json file is located in the Mewdeko/src/Mewdeko folder. You'll need to rename it to credentials.json and configure it."
+        note: m.public.credguideTheCredentialsExampleJsonFile()
       }
     },
     {
       id: "bot-token",
-      title: "Bot Token",
+      title: m.common.botToken(),
       icon: "fa-robot",
-      description: "Get your Discord bot token",
+      description: m.public.credguideGetYourDiscordBotToken2(),
       required: true,
-      estimatedTime: "5 min",
+      estimatedTime: m.features.setupTimeSingle({ minutes: 5 }),
       content: {
-        intro: "Your bot token is the unique identifier that allows your bot to connect to Discord.",
+        intro: m.public.credguideYourBotTokenIsThe(),
         steps: [
-          "Go to the Discord Developer Portal (https://discord.dev) and log in",
-          "Click on 'New Application'",
-          "Give your application a name and click 'Create'",
-          "Navigate to the 'Bot' tab on the left sidebar",
-          "Click 'Add Bot' and confirm by clicking 'Yes, do it!'",
-          "Under the TOKEN section, click 'Copy' to get your bot token"
+          m.public.credguideGoToTheDiscordDeveloper(),
+          m.public.credguideClickOnNewApplication(),
+          m.public.credguideGiveYourApplicationAName(),
+          m.public.credguideNavigateToTheBotTab(),
+          m.public.credguideClickAddBotAndConfirm(),
+          m.public.credguideUnderTheTokenSectionClick()
         ],
-        warning: "Never share your bot token with anyone. Treat it like a password!",
+        warning: m.public.credguideNeverShareYourBotToken(),
         example: "\"Token\": \"YOUR_BOT_TOKEN_HERE\""
       }
     },
     {
       id: "database",
-      title: "Database Setup",
+      title: m.public.credguideDatabaseSetup(),
       icon: "fa-database",
-      description: "Configure PostgreSQL database",
+      description: m.public.credguideConfigurePostgresqlDatabase(),
       required: true,
-      estimatedTime: "15 min",
+      estimatedTime: m.features.setupTimeSingle({ minutes: 15 }),
       content: {
-        intro: "Mewdeko uses PostgreSQL to store server configurations and user data.",
+        intro: m.public.credguideMewdekoUsesPostgresqlToStore(),
         linuxSteps: [
           {
-            step: "Update system packages",
+            step: m.public.credguideUpdateSystemPackages(),
             command: "sudo apt update && sudo apt upgrade -y"
           },
           {
-            step: "Install PostgreSQL and additional components",
+            step: m.public.credguideInstallPostgresqlAndAdditionalComponents(),
             command: "sudo apt install postgresql postgresql-contrib -y"
           },
           {
-            step: "Start and enable PostgreSQL service",
+            step: m.public.credguideStartAndEnablePostgresqlService(),
             command: "sudo systemctl start postgresql\nsudo systemctl enable postgresql"
           },
           {
-            step: "Switch to postgres user",
+            step: m.public.credguideSwitchToPostgresUser(),
             command: "sudo -i -u postgres"
           },
           {
-            step: "Create a new database user",
+            step: m.public.credguideCreateANewDatabaseUser(),
             command: "createuser --interactive --pwprompt mewdeko",
-            note: "When prompted, enter 'y' for superuser, and set a strong password"
+            note: m.public.credguideWhenPromptedEnterYFor()
           },
           {
-            step: "Create the database",
+            step: m.public.credguideCreateTheDatabase(),
             command: "createdb -O mewdeko mewdeko"
           },
           {
-            step: "Exit postgres user",
+            step: m.public.credguideExitPostgresUser(),
             command: "exit"
           },
           {
-            step: "Test the connection",
+            step: m.public.credguideTestTheConnection(),
             command: "psql -U mewdeko -d mewdeko -h localhost",
-            note: "Enter the password you set earlier. Use \\q to exit psql."
+            note: m.public.credguideEnterThePasswordYouSet()
           }
         ],
         windowsSteps: [
           {
-            step: "Download PostgreSQL installer",
-            command: "Visit https://www.postgresql.org/download/windows/ and download the latest version"
+            step: m.public.credguideDownloadPostgresqlInstaller(),
+            command: m.public.credguideVisitHttpsWwwPostgresqlOrg()
           },
           {
-            step: "Run the installer",
-            command: "Execute the downloaded .exe file",
-            note: "During installation, remember the password you set for the 'postgres' user"
+            step: m.public.credguideRunTheInstaller(),
+            command: m.public.credguideExecuteTheDownloadedExeFile(),
+            note: m.public.credguideDuringInstallationRememberThePassword()
           },
           {
-            step: "Open Command Prompt as Administrator",
-            command: "Press Win+X and select 'Windows Terminal (Admin)'"
+            step: m.public.credguideOpenCommandPromptAsAdministrator(),
+            command: m.public.credguidePressWinXAndSelect()
           },
           {
-            step: "Navigate to PostgreSQL bin directory",
+            step: m.public.credguideNavigateToPostgresqlBinDirectory(),
             command: "cd \"C:\\Program Files\\PostgreSQL\\15\\bin\"",
-            note: "Replace '15' with your PostgreSQL version number"
+            note: m.public.credguideReplace15WithYourPostgresql()
           },
           {
-            step: "Connect to PostgreSQL",
+            step: m.public.credguideConnectToPostgresql(),
             command: "psql -U postgres"
           },
           {
-            step: "Create a new user",
+            step: m.public.credguideCreateANewUser(),
             command: "CREATE USER mewdeko WITH PASSWORD 'your_secure_password' SUPERUSER;"
           },
           {
-            step: "Create the database",
+            step: m.public.credguideCreateTheDatabase(),
             command: "CREATE DATABASE mewdeko OWNER mewdeko;"
           },
           {
-            step: "Exit psql",
+            step: m.public.credguideExitPsql(),
             command: "\\q"
           },
           {
-            step: "Test the connection",
+            step: m.public.credguideTestTheConnection(),
             command: "psql -U mewdeko -d mewdeko -h localhost",
-            note: "Enter your password when prompted. Use \\q to exit."
+            note: m.public.credguideEnterYourPasswordWhenPrompted()
           }
         ],
         connectionExamples: {
@@ -189,19 +189,19 @@
     },
     {
       id: "owner-id",
-      title: "Owner ID",
+      title: m.public.credguideOwnerId(),
       icon: "fa-crown",
-      description: "Configure bot owner permissions",
+      description: m.public.credguideConfigureBotOwnerPermissions(),
       required: true,
-      estimatedTime: "3 min",
+      estimatedTime: m.features.setupTimeSingle({ minutes: 3 }),
       content: {
-        intro: "The owner ID gives you full control over your bot. You can have multiple owners.",
+        intro: m.public.credguideTheOwnerIdGivesYou(),
         steps: [
-          "Go to your Discord server",
-          "Type \\@yourusername (with a backslash before the @)",
-          "Send the message - it will show as <@YOUR_USER_ID>",
-          "Copy the numbers (YOUR_USER_ID)",
-          "Add it to your credentials.json file"
+          m.public.credguideGoToYourDiscordServer(),
+          m.public.credguideTypeYourusernameWithABackslash(),
+          m.public.credguideSendTheMessageItWill(),
+          m.public.credguideCopyTheNumbersYourUser(),
+          m.public.credguideAddItToYourCredentials()
         ],
         singleOwner: "\"OwnerIds\": [123456789012345678]",
         multipleOwners: "\"OwnerIds\": [123456789012345678, 987654321098765432]"
@@ -209,72 +209,72 @@
     },
     {
       id: "api-keys",
-      title: "API Keys",
+      title: m.public.credguideApiKeys(),
       icon: "fa-key",
-      description: "Optional API keys for enhanced features",
+      description: m.public.credguideOptionalApiKeysForEnhanced(),
       required: false,
-      estimatedTime: "10 min",
+      estimatedTime: m.features.setupTimeSingle({ minutes: 10 }),
       content: {
-        intro: "These API keys are optional but enable additional features like music, games, and more.",
+        intro: m.public.credguideTheseApiKeysAreOptional(),
         keys: [
           {
             name: "GoogleApiKey",
-            purpose: "YouTube search and playlist queuing",
+            purpose: m.public.credguideYoutubeSearchAndPlaylistQueuing(),
             required: false,
             priority: "high",
             steps: [
-              "Go to https://console.developers.google.com/ and log in",
-              "Create a new project",
-              "Go to Library and enable the YouTube Data API v3",
-              "Go to Credentials → Create Credentials → API Key",
-              "Copy the key to your credentials.json"
+              m.public.credguideGoToHttpsConsoleDevelopers(),
+              m.public.credguideCreateANewProject(),
+              m.public.credguideGoToLibraryAndEnable(),
+              m.public.credguideGoToCredentialsCreateCredentials(),
+              m.public.credguideCopyTheKeyToYour()
             ]
           },
           {
             name: "SpotifyClientId & SpotifyClientSecret",
-            purpose: "Spotify track and playlist support",
+            purpose: m.public.credguideSpotifyTrackAndPlaylistSupport(),
             required: false,
             priority: "high",
             steps: [
-              "Go to https://developer.spotify.com/dashboard and log in",
-              "Click 'Create app'",
-              "Fill in a name and description, set redirect URI to http://localhost",
-              "Copy the Client ID and Client Secret to your credentials.json"
+              m.public.credguideGoToHttpsDeveloperSpotify(),
+              m.public.credguideClickCreateApp(),
+              m.public.credguideFillInANameAnd(),
+              m.public.credguideCopyTheClientIdAnd()
             ]
           },
           {
             name: "TwitchClientId & TwitchClientSecret",
-            purpose: "Twitch stream notifications",
+            purpose: m.public.credguideTwitchStreamNotifications(),
             required: false,
             priority: "medium",
             steps: [
-              "Go to https://dev.twitch.tv/console and log in",
-              "Click 'Register Your Application'",
-              "Set OAuth redirect URL to http://localhost",
-              "Select 'Chat Bot' category",
-              "Copy Client ID and Client Secret to your credentials.json"
+              m.public.credguideGoToHttpsDevTwitch(),
+              m.public.credguideClickRegisterYourApplication(),
+              m.public.credguideSetOauthRedirectUrlTo(),
+              m.public.credguideSelectChatBotCategory(),
+              m.public.credguideCopyClientIdAndClient()
             ]
           },
           {
             name: "LastFmApiKey",
-            purpose: "Last.fm now-playing and scrobbling",
+            purpose: m.public.credguideLastFmNowPlayingAnd(),
             required: false,
             priority: "low",
             steps: [
-              "Go to https://www.last.fm/api/account/create and log in",
-              "Fill in the application name and description",
-              "Copy the API key to your credentials.json"
+              m.public.credguideGoToHttpsWwwLast(),
+              m.public.credguideFillInTheApplicationName(),
+              m.public.credguideCopyTheApiKeyTo()
             ]
           },
           {
             name: "OsuApiKey",
-            purpose: "osu! player stats lookup",
+            purpose: m.public.credguideOsuPlayerStatsLookup(),
             required: false,
             priority: "low",
             steps: [
-              "Go to https://osu.ppy.sh/home/account/edit and scroll to Legacy API",
-              "Click 'New Legacy API Key' and fill in the form",
-              "Copy the key to your credentials.json"
+              m.public.credguideGoToHttpsOsuPpy(),
+              m.public.credguideClickNewLegacyApiKey(),
+              m.public.credguideCopyTheKeyToYour()
             ]
           }
         ]
@@ -282,32 +282,32 @@
     },
     {
       id: "final-config",
-      title: "Final Configuration",
+      title: m.public.credguideFinalConfiguration(),
       icon: "fa-circle-check",
-      description: "Complete your setup",
+      description: m.public.credguideCompleteYourSetup(),
       required: true,
-      estimatedTime: "5 min",
+      estimatedTime: m.features.setupTimeSingle({ minutes: 5 }),
       content: {
-        intro: "Review your final configuration and additional optional settings.",
+        intro: m.public.credguideReviewYourFinalConfigurationAnd(),
         additionalSettings: [
           {
             name: "LavalinkUrl",
-            purpose: "Music playback server address",
+            purpose: m.public.credguideMusicPlaybackServerAddress(),
             example: "\"LavalinkUrl\": \"http://localhost:2334\""
           },
           {
             name: "RedisConnections",
-            purpose: "Redis connection string for caching",
+            purpose: m.public.credguideRedisConnectionStringForCaching(),
             example: "\"RedisConnections\": \"127.0.0.1:6379\""
           },
           {
             name: "IsApiEnabled / ApiPort / ApiKey",
-            purpose: "Enable the bot's HTTP API (required for the dashboard)",
+            purpose: m.public.credguideEnableTheBotsHttpApi(),
             example: "\"IsApiEnabled\": true, \"ApiPort\": 5001, \"ApiKey\": \"your-secure-key\""
           },
           {
             name: "JwtSecret",
-            purpose: "Signs dashboard user tokens, must match BOT_JWT_SECRET in the dashboard .env",
+            purpose: m.public.credguideSignsDashboardUserTokensMust(),
             example: "\"JwtSecret\": \"your-secret-here\""
           }
         ],
@@ -327,7 +327,7 @@
 }`
       }
     }
-  ];
+  ]);
 
   // Navigation functions
   function nextStep() {
@@ -388,11 +388,11 @@
 <ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
-  <title>Mewdeko - Credentials Setup Wizard</title>
-  <meta content="Mewdeko - Interactive Credentials Setup Guide" property="og:title" />
-  <meta content="Step-by-step guide to setting up credentials for Mewdeko Discord bot" name="description" />
-  <meta content="Step-by-step guide to setting up credentials for Mewdeko Discord bot" property="og:description" />
-  <meta content="Step-by-step guide to setting up credentials for Mewdeko Discord bot" name="twitter:description" />
+  <title>{m.public.credguideTitle()}</title>
+  <meta content={m.public.credguideOgTitle()} property="og:title" />
+  <meta content={m.public.credguideDescription()} name="description" />
+  <meta content={m.public.credguideDescription()} property="og:description" />
+  <meta content={m.public.credguideDescription()} name="twitter:description" />
 </svelte:head>
 
 {#if mounted}
@@ -417,10 +417,10 @@
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h1 class="text-lg lg:text-xl font-bold mb-1" style="color: {$colorStore.text};">
-              Credentials Setup Wizard
+              {m.public.credguideCredentialsSetupWizard()}
             </h1>
             <p class="text-sm" style="color: {$colorStore.muted};">
-              Configure your Mewdeko bot step by step
+              {m.public.credguideConfigureYourMewdekoBotStep()}
             </p>
           </div>
 
@@ -428,7 +428,7 @@
           <div class="shrink-0 lg:max-w-md lg:w-full">
             <div class="flex items-center justify-between mb-2">
               <span class="text-sm font-medium" style="color: {$colorStore.text};">
-                Progress: {completedRequiredSteps}/{requiredSteps} required steps
+                {m.public.credguideProgress({ completed: completedRequiredSteps, required: requiredSteps })}
               </span>
               <span class="text-sm" style="color: {$colorStore.muted};">
                 {Math.round(progress)}%
@@ -457,7 +457,7 @@
                 type="custom"
                 options={steps.map((step, index) => ({
                   id: index.toString(),
-                  name: `${step.title}${step.required ? ' *' : ''}`
+                  name: step.required ? m.public.credguideRequiredStepOption({ title: step.title }) : step.title
                 }))}
                 selected={currentStep.toString()}
                 searchable={false}
@@ -468,7 +468,7 @@
 
             <!-- Desktop Step Navigation -->
             <div class="hidden lg:block">
-              <h3 class="font-semibold mb-4" style="color: {$colorStore.text};">Setup Steps</h3>
+              <h3 class="font-semibold mb-4" style="color: {$colorStore.text};">{m.public.credguideSetupSteps()}</h3>
               <nav class="space-y-2">
                 {#each steps as step, index}
                   <button
@@ -504,7 +504,7 @@
               <!-- Quick Actions -->
               <div class="mt-6 p-4 rounded-xl "
                    style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                <h4 class="font-medium mb-3" style="color: {$colorStore.text};">Quick Actions</h4>
+                <h4 class="font-medium mb-3" style="color: {$colorStore.text};">{m.common.quickActions()}</h4>
                 <div class="space-y-2">
                   <button
                     class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02] flex items-center gap-2"
@@ -512,7 +512,7 @@
                     onclick={() => showAllSteps = !showAllSteps}
                   >
                     <i class="fa-solid {showAllSteps ? 'fa-clipboard-list' : 'fa-scroll'}"></i>
-                    {showAllSteps ? 'Show Wizard' : 'Show All Steps'}
+                    {showAllSteps ? m.public.credguideShowWizard() : m.public.credguideShowAllSteps()}
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02] flex items-center gap-2"
@@ -520,7 +520,7 @@
                     onclick={() => completedSteps = new Set()}
                   >
                     <i class="fa-solid fa-rotate-right"></i>
-                    Reset Progress
+                    {m.public.credguideResetProgress()}
                   </button>
                 </div>
               </div>
@@ -549,7 +549,7 @@
                       style="background: {$colorStore.primary}20; color: {$colorStore.text};"
                       onclick={() => { goToStep(index); showAllSteps = false; }}
                     >
-                      Enter Wizard
+                      {m.public.credguideEnterWizard()}
                     </button>
                   </div>
 
@@ -564,19 +564,19 @@
                     </ul>
                   {:else if step.id === 'bot-token'}
                     <div class="space-y-2">
-                      <p style="color: {$colorStore.text};">Get your Discord bot token from the Developer Portal</p>
+                      <p style="color: {$colorStore.text};">{m.public.credguideGetYourDiscordBotToken()}</p>
                       <code class="block p-2 rounded-sm"
                             style="background: {$colorStore.primary}15; color: {$colorStore.text};">{step.content.example}</code>
                     </div>
                   {:else if step.id === 'database'}
                     <div class="space-y-2">
-                      <p style="color: {$colorStore.text};">Configure PostgreSQL for data storage</p>
+                      <p style="color: {$colorStore.text};">{m.public.credguideConfigurePostgresqlForDataStorage()}</p>
                       <code class="block p-2 rounded-sm"
                             style="background: {$colorStore.primary}15; color: {$colorStore.text};">{step.content.connectionExamples.linux}</code>
                     </div>
                   {:else if step.id === 'owner-id'}
                     <div class="space-y-2">
-                      <p style="color: {$colorStore.text};">Set up bot owner permissions</p>
+                      <p style="color: {$colorStore.text};">{m.public.credguideSetUpBotOwnerPermissions()}</p>
                       <code class="block p-2 rounded-sm"
                             style="background: {$colorStore.primary}15; color: {$colorStore.text};">{step.content.singleOwner}</code>
                     </div>
@@ -591,7 +591,7 @@
                     </div>
                   {:else if step.id === 'final-config'}
                     <div class="space-y-2">
-                      <p style="color: {$colorStore.text};">Review and finalize your configuration</p>
+                      <p style="color: {$colorStore.text};">{m.public.credguideReviewAndFinalizeYourConfiguration()}</p>
                       <pre class="p-3 rounded-lg text-sm overflow-x-auto"
                            style="background: {$colorStore.primary}15; color: {$colorStore.text};">{step.content.finalExample}</pre>
                     </div>
@@ -629,7 +629,7 @@
                         </span>
                         <span class="flex items-center gap-1">
                           <i class="fa-solid fa-location-dot"></i>
-                          Step {currentStep + 1} of {steps.length}
+                          {m.common.stepCurrentOfTotal({ current: currentStep + 1, total: steps.length })}
                         </span>
                       </div>
                     </div>
@@ -640,7 +640,7 @@
                     onclick={() => completedSteps.has(currentStep) ? markStepIncomplete(currentStep) : markStepComplete(currentStep)}
                   >
                     <i class="fa-solid {completedSteps.has(currentStep) ? 'fa-circle-check' : 'fa-circle'}"></i>
-                    {completedSteps.has(currentStep) ? 'Completed' : 'Mark Complete'}
+                    {completedSteps.has(currentStep) ? m.public.credguideCompleted() : m.public.credguideMarkComplete()}
                   </button>
                 </div>
 
@@ -652,7 +652,7 @@
 
                       <div class="grid md:grid-cols-2 gap-6 mb-8">
                         <div class="p-4 rounded-xl" style="background: {$colorStore.primary}08;">
-                          <h3 class="font-semibold mb-4" style="color: {$colorStore.text};">What you'll configure:</h3>
+                          <h3 class="font-semibold mb-4" style="color: {$colorStore.text};">{m.public.credguideWhatYoullConfigure()}</h3>
                           <ul class="space-y-2 list-disc list-inside">
                             {#each currentStepData.content.highlights as highlight}
                               <li style="color: {$colorStore.text};">{highlight}</li>
@@ -661,7 +661,7 @@
                         </div>
 
                         <div class="p-4 rounded-xl" style="background: {$colorStore.primary}08;">
-                          <h3 class="font-semibold mb-4" style="color: {$colorStore.text};">Important Note:</h3>
+                          <h3 class="font-semibold mb-4" style="color: {$colorStore.text};">{m.public.credguideImportantNote()}</h3>
                           <p class="text-sm">{currentStepData.content.note}</p>
                         </div>
                       </div>
@@ -673,7 +673,7 @@
                       <div class="mb-8 p-5 rounded-xl" style="background: {$colorStore.accent}20; border: 1px solid {$colorStore.accent}40;">
                         <div class="flex items-start gap-3">
                           <i class="fa-solid fa-triangle-exclamation text-xl shrink-0" style="color: {$colorStore.accent};"></i>
-                          <p class="text-lg"><strong>Security Warning:</strong> {currentStepData.content.warning}</p>
+                          <p class="text-lg"><strong>{m.public.credguideSecurityWarning()}</strong> {currentStepData.content.warning}</p>
                         </div>
                       </div>
 
@@ -685,8 +685,7 @@
 
                       <div class="p-8 rounded-xl border"
                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
-                        <h4 class="text-lg font-semibold mb-6" style="color: {$colorStore.text};">Add to
-                          credentials.json:</h4>
+                        <h4 class="text-lg font-semibold mb-6" style="color: {$colorStore.text};">{m.public.credguideAddToCredentialsJson()}</h4>
                         <div class="p-5 rounded-xl border"
                              style="background: {$colorStore.primary}15; border-color: {$colorStore.primary}30;">
                           <code class="block text-sm font-mono" style="color: {$colorStore.text};">
@@ -701,8 +700,7 @@
 
                       <!-- OS Selector -->
                       <div class="mb-8">
-                        <h3 class="text-xl font-semibold mb-4" style="color: {$colorStore.text};">Select Your Operating
-                          System:</h3>
+                        <h3 class="text-xl font-semibold mb-4" style="color: {$colorStore.text};">{m.public.credguideSelectYourOperatingSystem()}</h3>
                         <div class="flex flex-col sm:flex-row gap-4 mb-6">
                           <button
                             class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
@@ -710,7 +708,7 @@
                             onclick={() => selectedOS = 'linux'}
                           >
                             <i class="fa-brands fa-linux"></i>
-                            Linux (Ubuntu/Debian)
+                            {m.public.credguideLinuxUbuntuDebian()}
                           </button>
                           <button
                             class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
@@ -718,15 +716,14 @@
                             onclick={() => selectedOS = 'windows'}
                           >
                             <i class="fa-brands fa-windows"></i>
-                            Windows
+                            {m.public.credguideWindows()}
                           </button>
                         </div>
                       </div>
 
                       {#if selectedOS === 'linux'}
                         <div class="mb-12" in:fly={{ x: -20, duration: 300 }}>
-                          <h3 class="text-xl font-semibold mb-8" style="color: {$colorStore.text};">Linux Installation
-                            Steps:</h3>
+                          <h3 class="text-xl font-semibold mb-8" style="color: {$colorStore.text};">{m.public.credguideLinuxInstallationSteps()}</h3>
                           <ol class="space-y-6 list-decimal list-inside">
                             {#each currentStepData.content.linuxSteps as step}
                               <li class="list-item">
@@ -756,8 +753,7 @@
                         </div>
                       {:else}
                         <div class="mb-12" in:fly={{ x: 20, duration: 300 }}>
-                          <h3 class="text-xl font-semibold mb-8" style="color: {$colorStore.text};">Windows Installation
-                            Steps:</h3>
+                          <h3 class="text-xl font-semibold mb-8" style="color: {$colorStore.text};">{m.public.credguideWindowsInstallationSteps()}</h3>
                           <ol class="space-y-6 list-decimal list-inside">
                             {#each currentStepData.content.windowsSteps as step}
                               <li class="list-item">
@@ -789,10 +785,8 @@
 
                       <div class="p-8 rounded-xl border"
                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
-                        <h3 class="text-xl font-semibold mb-6" style="color: {$colorStore.text};">Connection String
-                          Configuration:</h3>
-                        <p class="mb-6 text-lg" style="color: {$colorStore.muted};">Add this to your credentials.json
-                          file:</p>
+                        <h3 class="text-xl font-semibold mb-6" style="color: {$colorStore.text};">{m.public.credguideConnectionStringConfiguration()}</h3>
+                        <p class="mb-6 text-lg" style="color: {$colorStore.muted};">{m.public.credguideAddThisToYourCredentials()}</p>
                         <div class="p-5 rounded-xl border"
                              style="background: {$colorStore.primary}15; border-color: {$colorStore.primary}30;">
                           <code class="block text-sm overflow-x-auto font-mono" style="color: {$colorStore.text};">
@@ -802,7 +796,7 @@
                         <div class="mt-6 p-4 rounded-lg" style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30;">
                           <p class="text-sm flex items-start gap-2" style="color: {$colorStore.text};">
                             <i class="fa-solid fa-triangle-exclamation shrink-0" style="color: {$colorStore.accent};"></i>
-                            <span>Replace "your_secure_password" with the actual password you set for the mewdeko user.</span>
+                            <span>{m.public.credguideReplaceYourSecurePasswordWith()}</span>
                           </p>
                         </div>
                       </div>
@@ -820,7 +814,7 @@
                       <div class="grid md:grid-cols-2 gap-8">
                         <div class="p-6 rounded-xl border"
                              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
-                          <h4 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Single Owner:</h4>
+                          <h4 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.public.credguideSingleOwner()}</h4>
                           <div class="p-4 rounded-lg border"
                                style="background: {$colorStore.primary}15; border-color: {$colorStore.primary}30;">
                             <code class="block text-sm font-mono" style="color: {$colorStore.text};">
@@ -831,8 +825,7 @@
 
                         <div class="p-6 rounded-xl border"
                              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
-                          <h4 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Multiple
-                            Owners:</h4>
+                          <h4 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.public.credguideMultipleOwners()}</h4>
                           <div class="p-4 rounded-lg border"
                                style="background: {$colorStore.primary}15; border-color: {$colorStore.primary}30;">
                             <code class="block text-sm font-mono" style="color: {$colorStore.text};">
@@ -857,19 +850,19 @@
                               <div class="flex items-center gap-2">
                                 <span class="px-2 py-1 rounded-full text-xs"
                                       style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
-                                  {key.priority} priority
+                                  {key.priority === "high" ? m.public.credguidePriorityHigh() : key.priority === "medium" ? m.public.credguidePriorityMedium() : m.public.credguidePriorityLow()}
                                 </span>
                                 {#if key.required}
                                   <span class="px-2 py-1 rounded-full text-xs"
                                         style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
-                                    Required
+                                    {m.common.required()}
                                   </span>
                                 {/if}
                               </div>
                             </div>
 
                             <p class="mb-4" style="color: {$colorStore.muted};">
-                              <strong>Purpose:</strong> {key.purpose}
+                              <strong>{m.public.credguidePurpose()}</strong> {key.purpose}
                             </p>
 
                             <ol class="space-y-2 list-decimal list-inside">
@@ -886,8 +879,7 @@
                       <p class="text-lg mb-6">{currentStepData.content.intro}</p>
 
                       <div class="mb-8">
-                        <h3 class="text-xl font-semibold mb-4" style="color: {$colorStore.text};">Additional
-                          Settings:</h3>
+                        <h3 class="text-xl font-semibold mb-4" style="color: {$colorStore.text};">{m.public.credguideAdditionalSettings()}</h3>
                         <div class="grid gap-4">
                           {#each currentStepData.content.additionalSettings as setting}
                             <div class="p-4 rounded-xl" style="background: {$colorStore.primary}08;">
@@ -907,8 +899,7 @@
                       </div>
 
                       <div class="p-6 rounded-xl" style="background: {$colorStore.primary}10;">
-                        <h3 class="text-xl font-semibold mb-4" style="color: {$colorStore.text};">Final Configuration
-                          Example:</h3>
+                        <h3 class="text-xl font-semibold mb-4" style="color: {$colorStore.text};">{m.public.credguideFinalConfigurationExample()}</h3>
                         <pre class="p-4 rounded-lg text-sm overflow-x-auto"
                              style="background: {$colorStore.primary}15; color: {$colorStore.text};">{currentStepData.content.finalExample}</pre>
                       </div>
@@ -925,7 +916,7 @@
                     disabled={currentStep === 0}
                     onclick={prevStep}
                   >
-                    ← Previous
+                    {m.public.credguidePrevious()}
                   </button>
 
                   <div class="flex items-center gap-2">
@@ -934,7 +925,7 @@
                         class="w-3 h-3 rounded-full transition-all duration-200 hover:scale-125"
                         style="background: {index === currentStep ? $colorStore.primary : $colorStore.primary + '30'};"
                         onclick={() => goToStep(index)}
-                        aria-label="Go to step {index + 1}"
+                        aria-label={m.public.credguideGoToStep({ number: index + 1 })}
                       ></button>
                     {/each}
                   </div>
@@ -945,7 +936,7 @@
                     disabled={currentStep === steps.length - 1}
                     onclick={nextStep}
                   >
-                    {currentStep === steps.length - 1 ? 'Complete' : 'Next →'}
+                    {currentStep === steps.length - 1 ? m.common.complete() : m.public.credguideNext()}
                   </button>
                 </div>
               </div>

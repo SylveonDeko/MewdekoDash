@@ -1,5 +1,6 @@
 <!-- routes/wiki/[slug]/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -16,17 +17,17 @@
       header(`## ${plain(data.article.title)}\n${plain(data.article.summary)}`, `${SITE_ORIGIN}/img/Mewdeko.png`),
       text(
         [
-          `${plain(data.article.category)} · ${data.article.readingMinutes} min read`,
-          data.article.module ? `Commands live in the **${plain(data.article.module)}** module` : null,
-          data.related.length ? `Related: ${data.related.map((a) => `[${a.title}](${SITE_ORIGIN}/wiki/${a.slug})`).join(", ")}` : null
+          m.wiki.embedCategoryReading({ category: plain(data.article.category), minutes: data.article.readingMinutes }),
+          data.article.module ? m.wiki.embedModule({ module: plain(data.article.module) }) : null,
+          data.related.length ? m.wiki.embedRelated({ articles: data.related.map((a) => `[${a.title}](${SITE_ORIGIN}/wiki/${a.slug})`).join(", ") }) : null
         ]
           .filter(Boolean)
           .join("\n")
       ),
       separator(),
       buttons(
-        linkButton("Read the article", `${SITE_ORIGIN}/wiki/${data.article.slug}`),
-        data.article.dashboardHref ? linkButton("Open in dashboard", `${SITE_ORIGIN}${data.article.dashboardHref}`) : null
+        linkButton(m.wiki.embedReadArticle(), `${SITE_ORIGIN}/wiki/${data.article.slug}`),
+        data.article.dashboardHref ? linkButton(m.wiki.openInDashboard(), `${SITE_ORIGIN}${data.article.dashboardHref}`) : null
       )
     )
   );
@@ -79,17 +80,17 @@
 <ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
-  <title>{data.article.title} - Mewdeko Wiki</title>
+  <title>{m.wiki.articleTitle({ title: data.article.title })}</title>
   <meta name="description" content={data.article.summary} />
-  <meta property="og:title" content="{data.article.title} - Mewdeko Wiki" />
+  <meta property="og:title" content={m.wiki.articleTitle({ title: data.article.title })} />
   <meta property="og:description" content={data.article.summary} />
 </svelte:head>
 
 {#if mounted}
   {#key data.article.slug}
     <div in:fly={{ y: 16, duration: 300 }}>
-      <nav class="text-sm mb-6 flex items-center gap-2 flex-wrap" aria-label="Breadcrumb" style="color: {$colorStore.muted}">
-        <a href="/wiki" class="hover:underline" style="color: {$colorStore.primary}">Wiki</a>
+      <nav class="text-sm mb-6 flex items-center gap-2 flex-wrap" aria-label={m.wiki.breadcrumb()} style="color: {$colorStore.muted}">
+        <a href="/wiki" class="hover:underline" style="color: {$colorStore.primary}">{m.common.wiki()}</a>
         <i class="fa-solid fa-chevron-right text-xs"></i>
         <span>{data.article.category}</span>
         <i class="fa-solid fa-chevron-right text-xs"></i>
@@ -118,10 +119,10 @@
                   </span>
                   {#if data.article.module}
                     <span class="px-2 py-1 rounded-md" style="background: {$colorStore.secondary}15; color: {$colorStore.secondary}">
-                      <i class="fa-solid fa-terminal mr-1"></i>{data.article.module} module
+                      <i class="fa-solid fa-terminal mr-1"></i>{m.wiki.moduleBadge({ module: data.article.module })}
                     </span>
                   {/if}
-                  <span><i class="fa-regular fa-clock mr-1"></i>{data.article.readingMinutes} min read</span>
+                  <span><i class="fa-regular fa-clock mr-1"></i>{m.wiki.readingMinutes({ minutes: data.article.readingMinutes })}</span>
                 </div>
               </div>
             </div>
@@ -134,7 +135,7 @@
                   style="background: {$colorStore.primary}; color: #0f172a;"
                 >
                   <i class="fa-solid fa-sliders shrink-0"></i>
-                  <span class="truncate max-w-[18rem]">{$currentGuild ? `Open in ${$currentGuild.name}` : "Open in dashboard"}</span>
+                  <span class="truncate max-w-[18rem]">{$currentGuild ? m.wiki.openInGuild({ name: $currentGuild.name }) : m.wiki.openInDashboard()}</span>
                 </a>
               {/if}
               {#if data.article.module}
@@ -144,7 +145,7 @@
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 >
                   <i class="fa-solid fa-terminal"></i>
-                  Command reference
+                  {m.common.commandReference()}
                 </a>
               {/if}
             </div>
@@ -157,7 +158,7 @@
 
           {#if data.related.length > 0}
             <section class="mt-10">
-              <h2 class="text-lg font-bold mb-4" style="color: {$colorStore.text}">Related features</h2>
+              <h2 class="text-lg font-bold mb-4" style="color: {$colorStore.text}">{m.wiki.relatedFeatures()}</h2>
               <div class="grid gap-3 sm:grid-cols-2">
                 {#each data.related as r (r.slug)}
                   <a
@@ -177,12 +178,12 @@
             </section>
           {/if}
 
-          <nav class="mt-10 flex flex-col sm:flex-row gap-3 justify-between" aria-label="Article pagination">
+          <nav class="mt-10 flex flex-col sm:flex-row gap-3 justify-between" aria-label={m.wiki.articlePagination()}>
             {#if data.previous}
               <a href="/wiki/{data.previous.slug}"
                  class="flex-1 rounded-xl p-4 transition-all hover:scale-[1.01]"
                  style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}25;">
-                <div class="text-xs" style="color: {$colorStore.muted}"><i class="fa-solid fa-arrow-left mr-1"></i>Previous</div>
+                <div class="text-xs" style="color: {$colorStore.muted}"><i class="fa-solid fa-arrow-left mr-1"></i>{m.common.previous()}</div>
                 <div class="font-semibold" style="color: {$colorStore.text}">{data.previous.title}</div>
               </a>
             {:else}
@@ -192,7 +193,7 @@
               <a href="/wiki/{data.next.slug}"
                  class="flex-1 rounded-xl p-4 text-right transition-all hover:scale-[1.01]"
                  style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}25;">
-                <div class="text-xs" style="color: {$colorStore.muted}">Next<i class="fa-solid fa-arrow-right ml-1"></i></div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.common.next()}<i class="fa-solid fa-arrow-right ml-1"></i></div>
                 <div class="font-semibold" style="color: {$colorStore.text}">{data.next.title}</div>
               </a>
             {/if}
@@ -203,7 +204,7 @@
           {#if data.article.headings.length > 0}
             <div class="sticky top-24">
               <p class="text-xs uppercase tracking-widest font-semibold mb-3" style="color: {$colorStore.muted}">
-                On this page
+                {m.wiki.onThisPage()}
               </p>
               <ul class="space-y-1 border-l" style="border-color: {$colorStore.primary}25;">
                 {#each data.article.headings as h (h.id)}

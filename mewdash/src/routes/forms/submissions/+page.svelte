@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   /**
    * Everything the signed-in person has submitted, across every server, newest first.
    *
@@ -15,6 +16,7 @@
     type UserSubmission
   } from "$lib/api/index.ts";
   import { colorStore } from "$lib/stores/colorStore";
+  import { responseStatusLabel } from "$lib/components/forms/formLabels";
   import type { PageData } from "./$types";
 
   interface Props {
@@ -77,7 +79,7 @@
         (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
       );
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to load your submissions";
+      error = err instanceof Error ? err.message : m.forms.submissionsLoadFailed();
     } finally {
       loading = false;
     }
@@ -85,11 +87,9 @@
 
   function statusStyle(status: string) {
     return (
-      RESPONSE_STATUS_LABELS[status as keyof typeof RESPONSE_STATUS_LABELS] ?? {
-        label: status,
-        color: $colorStore.muted,
-        icon: "fa-circle"
-      }
+      RESPONSE_STATUS_LABELS[status as keyof typeof RESPONSE_STATUS_LABELS]
+        ? { ...RESPONSE_STATUS_LABELS[status as keyof typeof RESPONSE_STATUS_LABELS], label: responseStatusLabel(status) }
+        : { label: status, color: $colorStore.muted, icon: "fa-circle" }
     );
   }
 
@@ -104,8 +104,8 @@
 </script>
 
 <svelte:head>
-  <title>My submissions - Mewdeko</title>
-  <meta content="Every form you have submitted and where each one stands" name="description" />
+  <title>{m.forms.submissionsTitle()}</title>
+  <meta content={m.forms.submissionsDescription()} name="description" />
 </svelte:head>
 
 <main
@@ -114,9 +114,9 @@
 >
   <div class="container mx-auto max-w-3xl space-y-6">
     <div>
-      <h1 class="text-3xl font-bold mb-1" style="color: {$colorStore.text};">My submissions</h1>
+      <h1 class="text-3xl font-bold mb-1" style="color: {$colorStore.text};">{m.forms.submissionsHeading()}</h1>
       <p style="color: {$colorStore.muted};">
-        Every form you have sent, and where each one stands.
+        {m.forms.submissionsEveryFormYouHaveSent()}
       </p>
     </div>
 
@@ -133,7 +133,7 @@
     {#if loading}
       <div class="p-10 text-center" style="color: {$colorStore.muted};">
         <i class="fa-solid fa-spinner fa-spin text-2xl mb-3"></i>
-        <div>Gathering your submissions</div>
+        <div>{m.forms.submissionsGatheringYourSubmissions()}</div>
       </div>
     {:else if submissions.length === 0}
       <div
@@ -141,9 +141,9 @@
         style="background: {$colorStore.primary}05; border: 1px solid {$colorStore.primary}20;"
       >
         <i class="fa-solid fa-inbox text-3xl mb-3" style="color: {$colorStore.muted};"></i>
-        <div class="font-semibold mb-1" style="color: {$colorStore.text};">Nothing here yet</div>
+        <div class="font-semibold mb-1" style="color: {$colorStore.text};">{m.common.nothingHereYet()}</div>
         <div style="color: {$colorStore.muted};">
-          Forms you submit will show up here so you can check on them.
+          {m.forms.submissionsFormsYouSubmitWillShow()}
         </div>
       </div>
     {:else}
@@ -156,7 +156,7 @@
                  color: {statusFilter === null ? $colorStore.text : $colorStore.muted};
                  border: 1px solid {$colorStore.primary}25;"
         >
-          All ({submissions.length})
+          {m.forms.submissionsFilterAll({ count: submissions.length })}
         </button>
 
         {#each Object.entries(counts) as [status, count]}
@@ -200,7 +200,7 @@
                     {submission.formName}
                   </div>
                   <div class="text-sm truncate" style="color: {$colorStore.muted};">
-                    {submission.guildName ?? "Unknown server"}
+                    {submission.guildName ?? m.common.unknownServer()}
                   </div>
                 </div>
               </div>
@@ -217,20 +217,20 @@
             <div class="mt-3 text-sm space-y-1" style="color: {$colorStore.muted};">
               <div>
                 <i class="fa-solid fa-paper-plane mr-2"></i>
-                Submitted {new Date(submission.submittedAt).toLocaleString()}
+                {m.forms.submissionsSubmittedAt({ time: new Date(submission.submittedAt).toLocaleString() })}
               </div>
 
               {#if submission.editedAt}
                 <div>
                   <i class="fa-solid fa-pen mr-2"></i>
-                  Edited {new Date(submission.editedAt).toLocaleString()}
+                  {m.forms.submissionsEditedAt({ time: new Date(submission.editedAt).toLocaleString() })}
                 </div>
               {/if}
 
               {#if submission.reviewedAt}
                 <div>
                   <i class="fa-solid fa-gavel mr-2"></i>
-                  Reviewed {new Date(submission.reviewedAt).toLocaleString()}
+                  {m.forms.submissionsReviewedAt({ time: new Date(submission.reviewedAt).toLocaleString() })}
                 </div>
               {/if}
             </div>
@@ -241,7 +241,7 @@
                 style="background: {$colorStore.primary}08; color: {$colorStore.text};"
               >
                 <div class="font-medium mb-1" style="color: {$colorStore.muted};">
-                  Reviewer notes
+                  {m.forms.queueReviewerNotes()}
                 </div>
                 <div class="whitespace-pre-wrap">{submission.reviewNotes}</div>
               </div>
@@ -254,7 +254,7 @@
                 style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
               >
                 <i class="fa-solid fa-arrow-up-right-from-square mr-2"></i>
-                View status
+                {m.forms.submissionsViewStatus()}
               </a>
             {/if}
           </div>
@@ -262,8 +262,7 @@
       </div>
 
       <p class="text-xs text-center" style="color: {$colorStore.muted};">
-        Responses sent anonymously are stored without a submitter, so they do not appear here. The
-        status link you were given at the time is the only way back to one.
+        {m.forms.submissionsResponsesSentAnonymouslyAreStored()}
       </p>
     {/if}
   </div>

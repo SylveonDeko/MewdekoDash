@@ -4,6 +4,7 @@ Complete Setup Wizard with Progressive Disclosure, Templates, Real-Time Previews
 Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selection
 -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { goto } from "$app/navigation";
   import { onMount, untrack } from "svelte";
   import { logger } from "$lib/logger";
@@ -81,48 +82,48 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   let { data }: Props = $props();
 
   // Comprehensive placeholder list for embed editors
-  const allPlaceholders = [
+  const allPlaceholders = $derived([
     // User placeholders
-    { category: "User", name: "%user%", description: "Username of the user" },
-    { category: "User", name: "%user.mention%", description: "Mention the user" },
-    { category: "User", name: "%user.id%", description: "User ID" },
-    { category: "User", name: "%user.avatar%", description: "User's avatar URL" },
-    { category: "User", name: "%user.name%", description: "User's display name" },
-    { category: "User", name: "%user.nick%", description: "User's nickname in the server" },
+    { category: "User", name: "%user%", description: m.placeholders.user() },
+    { category: "User", name: "%user.mention%", description: m.placeholders.userMention() },
+    { category: "User", name: "%user.id%", description: m.placeholders.userId() },
+    { category: "User", name: "%user.avatar%", description: m.placeholders.userAvatar() },
+    { category: "User", name: "%user.name%", description: m.placeholders.userName() },
+    { category: "User", name: "%user.nick%", description: m.placeholders.userNick() },
     // Server placeholders
-    { category: "Server", name: "%server%", description: "Server name" },
-    { category: "Server", name: "%server.name%", description: "Server name" },
-    { category: "Server", name: "%server.id%", description: "Server ID" },
-    { category: "Server", name: "%server.members%", description: "Number of server members" },
-    { category: "Server", name: "%server.membercount%", description: "Number of server members" },
-    { category: "Server", name: "%server.owner%", description: "Server owner username" },
-    { category: "Server", name: "%server.icon%", description: "Server icon URL" },
+    { category: "Server", name: "%server%", description: m.placeholders.server() },
+    { category: "Server", name: "%server.name%", description: m.placeholders.serverName() },
+    { category: "Server", name: "%server.id%", description: m.placeholders.serverId() },
+    { category: "Server", name: "%server.members%", description: m.placeholders.serverMembers() },
+    { category: "Server", name: "%server.membercount%", description: m.placeholders.serverMembercount() },
+    { category: "Server", name: "%server.owner%", description: m.placeholders.serverOwner() },
+    { category: "Server", name: "%server.icon%", description: m.placeholders.mcFavicon() },
     // Role placeholders
-    { category: "Role", name: "%role.name%", description: "Role name" },
-    { category: "Role", name: "%role.mention%", description: "Mention the role" },
-    { category: "Role", name: "%role.id%", description: "Role ID" },
+    { category: "Role", name: "%role.name%", description: m.placeholders.roleName() },
+    { category: "Role", name: "%role.mention%", description: m.placeholders.roleMention() },
+    { category: "Role", name: "%role.id%", description: m.placeholders.roleId() },
     // Date/Time placeholders
-    { category: "Time", name: "%date%", description: "Current date" },
-    { category: "Time", name: "%time%", description: "Current time" },
-    { category: "Time", name: "%timestamp%", description: "Discord timestamp" },
-    { category: "Time", name: "%timestamp.relative%", description: "Relative Discord timestamp" },
+    { category: "Time", name: "%date%", description: m.placeholders.date() },
+    { category: "Time", name: "%time%", description: m.placeholders.time() },
+    { category: "Time", name: "%timestamp%", description: m.placeholders.timestamp() },
+    { category: "Time", name: "%timestamp.relative%", description: m.placeholders.timestampRelative() },
     // XP placeholders
-    { category: "XP", name: "%xp.level.old%", description: "Previous level" },
-    { category: "XP", name: "%xp.level.new%", description: "New level" },
-    { category: "XP", name: "%xp.level.current%", description: "Current level" },
-    { category: "XP", name: "%xp.total%", description: "Total XP" },
-    { category: "XP", name: "%xp.rank%", description: "Server rank" },
+    { category: "XP", name: "%xp.level.old%", description: m.placeholders.xpLevelOld() },
+    { category: "XP", name: "%xp.level.new%", description: m.placeholders.xpLevelNew() },
+    { category: "XP", name: "%xp.level.current%", description: m.placeholders.xpLevelCurrent() },
+    { category: "XP", name: "%xp.total%", description: m.placeholders.xpTotal() },
+    { category: "XP", name: "%xp.rank%", description: m.placeholders.xpRank() },
     // Birthday placeholders
-    { category: "Birthday", name: "%birthday.age%", description: "Calculated age" },
+    { category: "Birthday", name: "%birthday.age%", description: m.placeholders.birthdayAge() },
     // Inviter placeholders
-    { category: "Inviter", name: "%inviter.username%", description: "Inviter's username" },
-    { category: "Inviter", name: "%inviter.mention%", description: "Mention the inviter" },
-    { category: "Inviter", name: "%inviter.count%", description: "Inviter's total invites" },
+    { category: "Inviter", name: "%inviter.username%", description: m.placeholders.inviterUsername() },
+    { category: "Inviter", name: "%inviter.mention%", description: m.placeholders.inviterMention() },
+    { category: "Inviter", name: "%inviter.count%", description: m.placeholders.inviterCount() },
     // Random placeholders
-    { category: "Random", name: "%rng%", description: "Random number" },
-    { category: "Random", name: "%rng(1,10)%", description: "Random number 1-10" },
-    { category: "Random", name: "%choose(a|b|c)%", description: "Choose randomly from options" }
-  ];
+    { category: "Random", name: "%rng%", description: m.placeholders.rng() },
+    { category: "Random", name: "%rng(1,10)%", description: m.placeholders.rngRange() },
+    { category: "Random", name: "%choose(a|b|c)%", description: m.placeholders.choose() }
+  ]);
 
   // Wizard state
   let currentStep = $state(1);
@@ -141,7 +142,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   // Feature states
   type FeatureState = WizardFeatureState;
   let featureStates = $state<Record<string, FeatureState>>(createDefaultFeatureStates());
-  let featureSuggestions = $state<Record<string, WizardSuggestion>>({});
+  let featureSuggestions = $state.raw<Record<string, WizardSuggestion>>({});
   let recommendationsApplied = $state(false);
   let browsingAllFeatures = $state(false);
 
@@ -211,7 +212,15 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   );
 
   /** Every supported log type, pre-populated from the shared catalog. */
-  let loggingEvents = $state(wizardLoggingEvents.map((event) => ({ ...event })));
+  let loggingEvents = $state(
+    wizardLoggingEvents.map(({ id, icon, enabled, channelId, category }) => ({ id, icon, enabled, channelId, category }))
+  );
+
+  /** Localized texts for a log type, resolved at render time so they follow locale switches. */
+  function eventSource(id: string) {
+    const event = wizardLoggingEvents.find((e) => e.id === id);
+    return { name: event?.name ?? id, description: event?.description ?? "", categoryLabel: event?.categoryLabel };
+  }
 
   /** Feature catalog, shared with the dashboard's wizard config module. */
   const featureCategories = wizardFeatureCategories;
@@ -278,14 +287,14 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
   let currentStepTitle = $derived.by(() => {
     const titles: string[] = [
-      "Welcome",
-      ...(hasPermissionStep ? ["Permissions"] : []),
-      "Server Basics",
-      "Bring Your Data",
-      "Select Features",
+      m.common.welcome(),
+      ...(hasPermissionStep ? [m.common.permissions()] : []),
+      m.wizard.basicsTitle(),
+      m.wizard.stepTitleImport(),
+      m.wizard.stepTitleSelectFeatures(),
       ...fullSetupFeatures.map(id => allFeatures.find(f => f.id === id)?.title || id),
-      ...(quickEnableFeatures.length > 0 ? ["Quick Setup"] : []),
-      "Complete"
+      ...(quickEnableFeatures.length > 0 ? [m.common.quickSetup()] : []),
+      m.common.complete()
     ];
     return titles;
   });
@@ -346,7 +355,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
       guild = userGuilds?.find((g: any) => g.id.toString() === data.guildId);
       if (!guild) {
-        dataError = "You do not have access to this guild. Make sure you've selected the correct bot instance.";
+        dataError = m.wizard.errorNoGuildAccess();
         return;
       }
 
@@ -365,7 +374,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
     } catch (err) {
       logger.error("Error loading wizard data:", err);
-      dataError = "Failed to load wizard data";
+      dataError = m.wizard.errorLoadFailed();
     } finally {
       dataLoading = false;
     }
@@ -722,97 +731,102 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       .map(ch => ch.id);
   }
 
+  /** Localized title of a catalogue feature; suggestions are matched back to features by this title. */
+  function featureTitle(featureId: string): string {
+    return allFeatures.find((f) => f.id === featureId)?.title ?? featureId;
+  }
+
   // Feature dependency detection
   function checkDependencies(featureId: string) {
     const newSuggestions: any[] = [];
 
     if (featureId === "xp" && featureStates.rolegreets === "skip") {
       newSuggestions.push({
-        feature: "Role Greets",
-        reason: "Congratulate members when they reach XP reward levels",
+        feature: featureTitle("rolegreets"),
+        reason: m.wizard.suggestionRolegreetsReason(),
         icon: "fa-user-plus",
         benefits: [
-          "Celebrate members reaching level milestones",
-          "Announce new role rewards publicly",
-          "Make leveling feel more rewarding"
+          m.wizard.suggestionRolegreetsBenefit1(),
+          m.wizard.suggestionRolegreetsBenefit2(),
+          m.wizard.suggestionRolegreetsBenefit3()
         ]
       });
     }
 
     if (featureId === "tickets" && featureStates.logging === "skip") {
       newSuggestions.push({
-        feature: "Logging",
-        reason: "Track ticket creation and resolution",
+        feature: featureTitle("logging"),
+        reason: m.wizard.suggestionTicketsLoggingReason(),
         icon: "fa-file-lines",
         benefits: [
-          "Monitor support team activity",
-          "Track ticket resolution times",
-          "Keep audit trail of support interactions"
+          m.wizard.suggestionTicketsLoggingBenefit1(),
+          m.wizard.suggestionTicketsLoggingBenefit2(),
+          m.wizard.suggestionTicketsLoggingBenefit3()
         ]
       });
     }
 
     if (featureId === "moderation" && featureStates.logging === "skip") {
       newSuggestions.push({
-        feature: "Logging",
-        reason: "Track all moderation actions in one place",
+        feature: featureTitle("logging"),
+        reason: m.wizard.suggestionModerationLoggingReason(),
         icon: "fa-file-lines",
         benefits: [
-          "Central log of all mod actions",
-          "Track who performed actions",
-          "Review moderation history"
+          m.wizard.suggestionModerationLoggingBenefit1(),
+          m.wizard.suggestionModerationLoggingBenefit2(),
+          m.wizard.suggestionModerationLoggingBenefit3()
         ]
       });
     }
 
     if (featureId === "protection" && featureStates.logging === "skip") {
       newSuggestions.push({
-        feature: "Event Logging",
-        reason: "See what protection acted on and why",
+        feature: featureTitle("logging"),
+        reason: m.wizard.suggestionProtectionLoggingReason(),
         icon: "fa-file-lines",
         benefits: [
-          "Review every automated punishment",
-          "Spot false positives early",
-          "Keep a record of raid attempts"
+          m.wizard.suggestionProtectionLoggingBenefit1(),
+          m.wizard.suggestionProtectionLoggingBenefit2(),
+          m.wizard.suggestionProtectionLoggingBenefit3()
         ]
       });
     }
 
     if (featureId === "multigreets" && featureStates.invitetracking === "skip") {
       newSuggestions.push({
-        feature: "Invite Tracking",
-        reason: "Unlocks %inviter% placeholders in your welcome message",
+        feature: featureTitle("invitetracking"),
+        reason: m.wizard.suggestionInvitetrackingReason(),
         icon: "fa-link",
         benefits: [
-          "Credit the member who brought someone in",
-          "Build an invite leaderboard",
-          "Spot invite farming"
+          m.wizard.suggestionInvitetrackingBenefit1(),
+          m.wizard.suggestionInvitetrackingBenefit2(),
+          m.wizard.suggestionInvitetrackingBenefit3()
         ]
       });
     }
 
     if (featureId === "tickets" && featureStates.roles === "skip") {
       newSuggestions.push({
-        feature: "Server Roles",
-        reason: "Tickets need a support role to notify",
+        feature: featureTitle("roles"),
+        reason: m.wizard.suggestionRolesReason(),
         icon: "fa-crown",
         benefits: [
-          "Set the staff role once and reuse it",
-          "Support roles get access to every ticket",
-          "Powers permission checks elsewhere"
+          m.wizard.suggestionRolesBenefit1(),
+          m.wizard.suggestionRolesBenefit2(),
+          m.wizard.suggestionRolesBenefit3()
         ]
       });
     }
 
     if (featureId === "rolegreets" && featureStates.administration === "skip") {
       newSuggestions.push({
-        feature: "Auto-Assign Roles",
-        reason: "Manage roles that trigger greets",
+        feature: featureTitle("administration"),
+        reason: m.wizard.suggestionAdministrationReason(),
         icon: "fa-user-gear",
         benefits: [
-          "Automatically assign verification roles",
-          "Set up roles for role greets to use",
-          "Streamline role management"
+          m.wizard.suggestionAdministrationBenefit1(),
+          m.wizard.suggestionAdministrationBenefit2(),
+          m.wizard.suggestionAdministrationBenefit3()
         ]
       });
     }
@@ -889,7 +903,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       goto(`/dashboard?guild=${data.guildId}`);
     } catch (error: any) {
       logger.error("Error skipping wizard:", error);
-      actionError = `Failed to skip setup: ${error?.message || "Unknown error"}`;
+      actionError = m.wizard.notifySkipFailed({ error: error?.message || m.common.unknownError() });
     } finally {
       wizardLoading = false;
       skipConfirmation = false;
@@ -909,7 +923,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       nextStep();
     } catch (error: any) {
       logger.error("Error saving server basics:", error);
-      actionError = `Could not save server settings: ${error?.message || "Unknown error"}. You can change them later in Settings.`;
+      actionError = m.wizard.notifyBasicsSaveFailed({ error: error?.message || m.common.unknownError() });
     } finally {
       wizardLoading = false;
     }
@@ -1259,7 +1273,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
           if (panel) {
             await ticketApi.addPanelButton(guildId, BigInt(panel.id), {
-              label: config.buttonLabel || "Create Ticket",
+              label: config.buttonLabel || m.features.defaultTicketButtonLabel(),
               emoji: config.buttonEmoji || "🎫",
               categoryId: config.categoryId ? BigInt(config.categoryId) : null,
               supportRoles: config.supportRoles?.length
@@ -1492,7 +1506,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
     } catch (error: any) {
       logger.error("Error completing wizard:", error);
-      actionError = `Failed to finish setup: ${error?.message || "Unknown error"}`;
+      actionError = m.wizard.notifyFinishFailed({ error: error?.message || m.common.unknownError() });
     } finally {
       wizardLoading = false;
     }
@@ -1521,7 +1535,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         await configureFeature(currentConfigFeature);
       } catch (error: any) {
         logger.error(`Error configuring ${currentConfigFeature}:`, error);
-        actionError = `${feature.title} could not be saved: ${error?.message || "Unknown error"}. You can set it up later from the dashboard.`;
+        actionError = m.wizard.notifyFeatureSaveFailed({ feature: feature.title, error: error?.message || m.common.unknownError() });
         failedFeatures = [...failedFeatures, currentConfigFeature];
       } finally {
         wizardLoading = false;
@@ -1608,41 +1622,53 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   }
 
   // Permission helpers
-  function getHealthStatusText(status: any) {
+  /** Normalises the API's numeric or named health status into one matching key. */
+  function getHealthLevel(status: any): "excellent" | "good" | "warning" | "poor" | "unknown" {
     switch (status) {
       case 0:
       case "Excellent":
-        return "Excellent";
+        return "excellent";
       case 1:
       case "Good":
-        return "Good";
+        return "good";
       case 2:
       case "Warning":
-        return "Needs Attention";
+        return "warning";
       case 3:
       case "Poor":
-        return "Critical Issues";
+        return "poor";
       default:
-        return "Unknown";
+        return "unknown";
+    }
+  }
+
+  function getHealthStatusText(status: any) {
+    switch (getHealthLevel(status)) {
+      case "excellent":
+        return m.wizard.healthExcellent();
+      case "good":
+        return m.common.good();
+      case "warning":
+        return m.wizard.healthWarning();
+      case "poor":
+        return m.wizard.healthPoor();
+      default:
+        return m.common.unknown();
     }
   }
 
   function getHealthStatusDescription(status: any) {
-    switch (status) {
-      case 0:
-      case "Excellent":
-        return "All required permissions are present";
-      case 1:
-      case "Good":
-        return "Most permissions present, minor issues";
-      case 2:
-      case "Warning":
-        return "Some important permissions missing";
-      case 3:
-      case "Poor":
-        return "Critical permissions missing - bot may not work properly";
+    switch (getHealthLevel(status)) {
+      case "excellent":
+        return m.wizard.healthExcellentDescription();
+      case "good":
+        return m.wizard.healthGoodDescription();
+      case "warning":
+        return m.wizard.healthWarningDescription();
+      case "poor":
+        return m.wizard.healthPoorDescription();
       default:
-        return "Unable to check permission status";
+        return m.wizard.healthUnknownDescription();
     }
   }
 
@@ -1659,7 +1685,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 </script>
 
 <svelte:head>
-  <title>Setup Wizard - {guild?.name || 'Loading...'} - Mewdeko</title>
+  <title>{m.wizard.pageTitle({ guild: guild?.name || m.common.loading() })}</title>
 </svelte:head>
 
 <div class="wizard-container min-h-screen">
@@ -1668,21 +1694,21 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       <div class="text-center">
         <i class="fa-solid fa-arrows-rotate fa-spin"
            style="color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 16px;"></i>
-        <p style="color: {$colorStore.text};">Loading wizard data...</p>
+        <p style="color: {$colorStore.text};">{m.wizard.loadingWizardData()}</p>
       </div>
     </div>
   {:else if dataError}
     <div class="flex items-center justify-center min-h-screen">
       <div class="text-center p-6 rounded-lg border max-w-md"
            style="background: #ef444415; border-color: #ef444430; color: #ef4444;">
-        <h2 class="text-xl font-bold mb-2">Error Loading Wizard</h2>
+        <h2 class="text-xl font-bold mb-2">{m.wizard.errorLoadingTitle()}</h2>
         <p class="mb-4">{dataError}</p>
         <button
           class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
           style="background: {$colorStore.primary}; color: white;"
           onclick={() => goto('/dashboard')}
         >
-          Back to Dashboard
+          {m.wizard.backToDashboard()}
         </button>
       </div>
     </div>
@@ -1699,10 +1725,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
     <!-- Step 1: Welcome -->
     <WizardStep
-      title={data.wizardType === 'first-time' ? `Welcome to Mewdeko!` : `Quick Setup for ${guild.name}`}
+      title={data.wizardType === 'first-time' ? m.wizard.welcomeTitleFirstTime() : m.wizard.welcomeTitleRepeat({ guild: guild.name })}
       subtitle={data.wizardType === 'first-time'
-        ? `Let's set up ${guild.name} with essential features in just a few minutes.`
-        : `Configure essential features for your server quickly.`}
+        ? m.wizard.welcomeSubtitleFirstTime({ guild: guild.name })
+        : m.wizard.welcomeSubtitleRepeat()}
       stepNumber={1}
       isActive={currentStep === 1}
       icon="fa-solid fa-hand-peace"
@@ -1721,29 +1747,29 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           />
           <div class="text-left">
             <h3 class="text-xl font-bold" style="color: {$colorStore.text};">{guild.name}</h3>
-            <p class="text-sm" style="color: {$colorStore.muted};">Ready for setup</p>
+            <p class="text-sm" style="color: {$colorStore.muted};">{m.wizard.welcomeReady()}</p>
           </div>
         </div>
 
         {#if data.wizardType === 'first-time'}
           <div class="max-w-lg mx-auto space-y-4">
-            <h4 class="text-lg font-semibold" style="color: {$colorStore.text};">What we'll do:</h4>
+            <h4 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.wizard.welcomeWhatWeDo()}</h4>
             <div class="space-y-2 text-sm" style="color: {$colorStore.text};">
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-circle-check" style="color: {$colorStore.accent}; font-size: 16px;"></i>
-                <span>Verify bot permissions</span>
+                <span>{m.wizard.welcomeItemPermissions()}</span>
               </div>
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-circle-check" style="color: {$colorStore.accent}; font-size: 16px;"></i>
-                <span>Set your prefix, timezone and language</span>
+                <span>{m.wizard.welcomeItemBasics()}</span>
               </div>
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-circle-check" style="color: {$colorStore.accent}; font-size: 16px;"></i>
-                <span>Turn on the features that suit your server</span>
+                <span>{m.wizard.welcomeItemFeatures()}</span>
               </div>
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-circle-check" style="color: {$colorStore.accent}; font-size: 16px;"></i>
-                <span>Get your server ready to go!</span>
+                <span>{m.wizard.welcomeItemReady()}</span>
               </div>
             </div>
           </div>
@@ -1756,7 +1782,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
             onclick={nextStep}
           >
-            Get Started
+            {m.wizard.welcomeGetStarted()}
             <i class="fa-solid fa-arrow-right" style="font-size: 16px;"></i>
           </button>
 
@@ -1766,7 +1792,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             onclick={skipWizard}
             disabled={wizardLoading}
           >
-            {skipConfirmation ? 'Confirm Skip' : 'Skip Setup'}
+            {skipConfirmation ? m.wizard.welcomeConfirmSkip() : m.wizard.welcomeSkipSetup()}
             <i class="fa-solid fa-forward" style="font-size: 16px;"></i>
           </button>
         </div>
@@ -1786,9 +1812,9 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                style="background: #f59e0b15; border-color: #f59e0b30; color: #f59e0b;">
             <div class="flex items-center gap-2 mb-2">
               <i class="fa-solid fa-triangle-exclamation" style="font-size: 16px;"></i>
-              <span class="font-medium">Skip setup?</span>
+              <span class="font-medium">{m.wizard.welcomeSkipTitle()}</span>
             </div>
-            <p class="text-sm mb-3">You can always configure features later from the dashboard.</p>
+            <p class="text-sm mb-3">{m.wizard.welcomeSkipHint()}</p>
             <div class="flex gap-2 justify-center">
               <button
                 class="px-3 py-1 rounded-sm text-sm font-medium transition-all"
@@ -1796,14 +1822,14 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                 onclick={skipWizard}
                 disabled={wizardLoading}
               >
-                {wizardLoading ? 'Skipping...' : 'Yes, Skip'}
+                {wizardLoading ? m.wizard.welcomeSkipping() : m.wizard.welcomeYesSkip()}
               </button>
               <button
                 class="px-3 py-1 rounded-sm text-sm font-medium transition-all"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                 onclick={cancelSkip}
               >
-                Cancel
+                {m.common.cancel()}
               </button>
             </div>
           </div>
@@ -1814,8 +1840,8 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
     <!-- Step 2: Permissions (First-time only) -->
     {#if data.wizardType === 'first-time'}
       <WizardStep
-        title="Permission Check"
-        subtitle="Let's make sure Mewdeko has the permissions it needs to function properly."
+        title={m.wizard.permsTitle()}
+        subtitle={m.wizard.permsSubtitle()}
         stepNumber={2}
         isActive={currentStep === 2}
         icon="fa-solid fa-shield"
@@ -1825,15 +1851,15 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           {#if permissionsLoading}
             <div class="flex items-center justify-center py-8">
               <i class="fa-solid fa-arrows-rotate fa-spin" style="color: {$colorStore.primary}; font-size: 24px;"></i>
-              <span class="ml-2" style="color: {$colorStore.text};">Checking permissions...</span>
+              <span class="ml-2" style="color: {$colorStore.text};">{m.common.checkingPermissions()}</span>
             </div>
           {:else if permissionData}
             <div class="text-center p-4 rounded-lg border"
-                 style="background: {getHealthStatusText(permissionData.healthStatus) === 'Excellent' ? $colorStore.accent + '10' :
-                       getHealthStatusText(permissionData.healthStatus) === 'Good' ? '#f59e0b15' :
+                 style="background: {getHealthLevel(permissionData.healthStatus) === 'excellent' ? $colorStore.accent + '10' :
+                       getHealthLevel(permissionData.healthStatus) === 'good' ? '#f59e0b15' :
                        '#ef444415'};
-                       border-color: {getHealthStatusText(permissionData.healthStatus) === 'Excellent' ? $colorStore.accent + '30' :
-                       getHealthStatusText(permissionData.healthStatus) === 'Good' ? '#f59e0b30' :
+                       border-color: {getHealthLevel(permissionData.healthStatus) === 'excellent' ? $colorStore.accent + '30' :
+                       getHealthLevel(permissionData.healthStatus) === 'good' ? '#f59e0b30' :
                        '#ef444430'};">
               <h3 class="text-lg font-bold mb-2" style="color: {$colorStore.text};">
                 {getHealthStatusText(permissionData.healthStatus)}
@@ -1860,7 +1886,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
               {#if permissionData.permissionResults.length > 4}
                 <div class="lg:hidden absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 rounded-md text-xs"
                      style="background: {$colorStore.primary}15; color: {$colorStore.muted}; backdrop-filter: blur(4px);">
-                  <span>Scroll for more</span>
+                  <span>{m.wizard.permsScrollMore()}</span>
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M19 14l-7 7m0 0l-7-7m7 7V3" />
@@ -1872,9 +1898,9 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             {#if !permissionData.hasAllRequiredPermissions}
               <div class="text-center p-4 rounded-lg border"
                    style="background: #f59e0b15; border-color: #f59e0b30;">
-                <h4 class="font-semibold mb-2" style="color: #f59e0b;">Need to fix permissions?</h4>
+                <h4 class="font-semibold mb-2" style="color: #f59e0b;">{m.wizard.permsFixTitle()}</h4>
                 <p class="text-sm mb-4" style="color: {$colorStore.muted};">
-                  Click the button below to re-invite Mewdeko with the correct permissions.
+                  {m.wizard.permsFixHint()}
                 </p>
                 <a
                   href={permissionData.suggestedInviteUrl}
@@ -1882,7 +1908,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
                   style="background: #f59e0b; color: white;"
                 >
-                  Fix Permissions
+                  {m.wizard.permsFixButton()}
                   <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 16px;"></i>
                 </a>
               </div>
@@ -1896,7 +1922,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
               onclick={previousStep}
             >
               <i class="fa-solid fa-arrow-left" style="font-size: 16px;"></i>
-              Back
+              {m.common.back()}
             </button>
 
             <button
@@ -1905,7 +1931,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
               onclick={nextStep}
               disabled={!canProceed}
             >
-              Continue
+              {m.wizard.continue()}
               <i class="fa-solid fa-arrow-right" style="font-size: 16px;"></i>
             </button>
           </div>
@@ -1915,8 +1941,8 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
     <!-- Server Basics -->
     <WizardStep
-      title="Server Basics"
-      subtitle="A few server-wide settings that everything else builds on."
+      title={m.wizard.basicsTitle()}
+      subtitle={m.wizard.basicsSubtitle()}
       stepNumber={basicsStep}
       isActive={currentStep === basicsStep}
       icon="fa-solid fa-gear"
@@ -1926,12 +1952,12 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         {#if basicsLoading}
           <div class="flex items-center justify-center py-8">
             <i class="fa-solid fa-arrows-rotate fa-spin" style="color: {$colorStore.primary}; font-size: 24px;"></i>
-            <span class="ml-2" style="color: {$colorStore.text};">Loading server settings...</span>
+            <span class="ml-2" style="color: {$colorStore.text};">{m.wizard.basicsLoading()}</span>
           </div>
         {:else}
           <div>
             <label for="basics-prefix" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-              Command Prefix
+              {m.common.commandPrefix()}
             </label>
             <input
               id="basics-prefix"
@@ -1940,42 +1966,41 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
               class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               bind:value={basicsConfig.prefix}
-              placeholder="Leave blank to keep the default"
+              placeholder={m.wizard.basicsPrefixPlaceholder()}
             />
             <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-              What members type before a command, for example <code>.help</code>. Slash commands work regardless.
+              {@html m.wizard.basicsPrefixHint()}
             </p>
           </div>
 
           <div>
             <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-              Server Timezone
+              {m.common.serverTimezone()}
             </span>
             <DiscordSelector
               type="timezone"
               options={availableTimezones}
               bind:selected={basicsConfig.timezoneId}
-              placeholder="Choose your server's timezone..."
+              placeholder={m.wizard.basicsTimezonePlaceholder()}
             />
             <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-              Used for birthdays, repeating messages, timestamps and every other scheduled feature. Worth
-              setting even if you skip everything else.
+              {m.wizard.basicsTimezoneHint()}
             </p>
           </div>
 
           <div>
             <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-              Language
+              {m.common.language()}
             </span>
             <DiscordSelector
               type="custom"
               customIcon="fa-globe"
               options={availableLocales}
               bind:selected={basicsConfig.locale}
-              placeholder="Choose a language..."
+              placeholder={m.wizard.basicsLanguagePlaceholder()}
             />
             <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-              The language Mewdeko replies in for this server.
+              {m.wizard.basicsLanguageHint()}
             </p>
           </div>
         {/if}
@@ -1996,7 +2021,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             onclick={previousStep}
           >
             <i class="fa-solid fa-arrow-left" style="font-size: 16px;"></i>
-            Back
+            {m.common.back()}
           </button>
 
           <button
@@ -2005,7 +2030,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             onclick={handleBasicsNext}
             disabled={wizardLoading}
           >
-            {wizardLoading ? 'Saving...' : 'Continue'}
+            {wizardLoading ? m.common.saving() : m.wizard.continue()}
             <i class="fa-solid {wizardLoading ? 'fa-arrows-rotate fa-spin' : 'fa-arrow-right'}"
                style="font-size: 16px;"></i>
           </button>
@@ -2015,8 +2040,8 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
     <!-- Bring Your Data -->
     <WizardStep
-      title="Coming From Another Bot?"
-      subtitle="Bring your members' XP, levels, level roles and balances with you. Skip this if you're starting fresh."
+      title={m.wizard.importTitle()}
+      subtitle={m.wizard.importSubtitle()}
       stepNumber={importStep}
       isActive={currentStep === importStep}
       icon="fa-solid fa-arrow-right-to-bracket"
@@ -2032,7 +2057,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             onclick={previousStep}
           >
             <i class="fa-solid fa-arrow-left" style="font-size: 16px;"></i>
-            Back
+            {m.common.back()}
           </button>
 
           <button
@@ -2040,7 +2065,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
             onclick={nextStep}
           >
-            Continue
+            {m.wizard.continue()}
             <i class="fa-solid fa-arrow-right" style="font-size: 16px;"></i>
           </button>
         </div>
@@ -2049,8 +2074,8 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
     <!-- Feature Selection -->
     <WizardStep
-      title="Choose Features"
-      subtitle="We've picked a starting point. Adjust it if you like, or carry on."
+      title={m.wizard.featuresTitle()}
+      subtitle={m.wizard.featuresSubtitle()}
       stepNumber={featureSelectionStep}
       isActive={currentStep === featureSelectionStep}
       icon="fa-solid fa-sliders"
@@ -2075,7 +2100,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             }}
           >
             <i class="fa-solid fa-layer-group" style="font-size: 14px;"></i>
-            <span>Full Setup All</span>
+            <span>{m.wizard.featuresFullSetupAll()}</span>
           </button>
 
           <button
@@ -2091,7 +2116,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             }}
           >
             <i class="fa-solid fa-bolt" style="font-size: 14px;"></i>
-            <span>Quick Enable All</span>
+            <span>{m.wizard.featuresQuickEnableAll()}</span>
           </button>
 
           <button
@@ -2107,7 +2132,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             }}
           >
             <i class="fa-solid fa-ban" style="font-size: 14px;"></i>
-            <span>Clear All</span>
+            <span>{m.common.clearAll()}</span>
           </button>
         </div>
         {/if}
@@ -2138,10 +2163,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           <div in:fly={{ y: 20, duration: 300 }}>
             <div class="mb-4 text-center">
               <h3 class="text-xl font-bold mb-1" style="color: {$colorStore.text};">
-                Suggested for your server
+                {m.wizard.featuresSuggestedTitle()}
               </h3>
               <p class="text-sm" style="color: {$colorStore.muted};">
-                Based on your channels, roles and size. Change anything you like, or continue as is.
+                {m.wizard.featuresSuggestedHint()}
               </p>
             </div>
 
@@ -2171,7 +2196,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                 onclick={() => (browsingAllFeatures = true)}
               >
                 <i class="fa-solid fa-layer-group"></i>
-                Browse all {allWizardFeatures.length} features
+                {m.wizard.featuresBrowseAll({ count: allWizardFeatures.length })}
               </button>
             </div>
           </div>
@@ -2186,7 +2211,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             onclick={() => (browsingAllFeatures = false)}
           >
             <i class="fa-solid fa-chevron-up"></i>
-            Show only what's suggested
+            {m.wizard.featuresShowSuggestedOnly()}
           </button>
         </div>
         {#each featureCategories as category (category.name)}
@@ -2203,7 +2228,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     <i
                       class="fa-solid {expandedFeatureCategories[category.name] ? 'fa-chevron-down' : 'fa-chevron-right'}"
                       style="font-size: 16px;"></i>
-                    {category.name}
+                    {category.label}
                     <span class="text-xs px-2 py-1 rounded-full"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
                       {category.features.filter(f => featureStates[f.id] !== 'skip').length}/{category.features.length}
@@ -2232,7 +2257,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     }}
                   >
                     <i class="fa-solid fa-layer-group" style="font-size: 12px;"></i>
-                    Full Setup All
+                    {m.wizard.featuresFullSetupAll()}
                   </button>
                   <button
                     class="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
@@ -2248,7 +2273,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     }}
                   >
                     <i class="fa-solid fa-bolt" style="font-size: 12px;"></i>
-                    Quick Enable All
+                    {m.wizard.featuresQuickEnableAll()}
                   </button>
                 </div>
               {/if}
@@ -2293,7 +2318,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                   {allEnabledFeatures.length}
                 </span>
                 <p class="text-sm mt-1" style="color: {$colorStore.text};">
-                  feature{allEnabledFeatures.length === 1 ? '' : 's'} selected
+                  {allEnabledFeatures.length === 1 ? m.wizard.featuresSelectedOne() : m.wizard.featuresSelectedOther()}
                 </p>
               </div>
 
@@ -2305,7 +2330,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     {fullSetupFeatures.length}
                   </div>
                   <div class="text-xs" style="color: {$colorStore.muted};">
-                    Full Setup
+                    {m.wizard.featuresSummaryFull()}
                   </div>
                 </div>
                 <div class="p-3 rounded-lg transition-all"
@@ -2315,7 +2340,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     {quickEnableFeatures.length}
                   </div>
                   <div class="text-xs" style="color: {$colorStore.muted};">
-                    Quick Enable
+                    {m.wizard.featuresSummaryQuick()}
                   </div>
                 </div>
               </div>
@@ -2352,7 +2377,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             onclick={previousStep}
           >
             <i class="fa-solid fa-arrow-left" style="font-size: 16px;"></i>
-            Back
+            {m.common.back()}
           </button>
 
           <button
@@ -2367,7 +2392,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             disabled={!canProceed}
           >
             <span class="truncate">
-              {allEnabledFeatures.length > 0 ? 'Configure Features' : 'Select a feature'}
+              {allEnabledFeatures.length > 0 ? m.wizard.featuresConfigure() : m.wizard.featuresSelectOne()}
             </span>
             <i class="fa-solid fa-arrow-right shrink-0" style="font-size: 16px;"></i>
           </button>
@@ -2380,7 +2405,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       {@const feature = allFeatures.find(f => f.id === currentConfigFeature)}
       {#if feature}
         <WizardStep
-          title="Configure {feature.title}"
+          title={m.wizard.configTitle({ feature: feature.title })}
           subtitle={feature.description}
           stepNumber={currentStep}
           isActive={true}
@@ -2417,16 +2442,16 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     <div class="space-y-4">
                       <div>
                     <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                      Select Role
+                      {m.common.selectRolePlaceholder()}
                     </span>
                         <DiscordSelector
                           type="role"
                           options={availableRoles}
                           bind:selected={config.roleId}
-                          placeholder="Choose a role to greet for..."
+                          placeholder={m.wizard.configRolegreetsRolePlaceholder()}
                         />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          When members get this role, they'll receive a congratulations message
+                          {m.wizard.configRolegreetsRoleHint()}
                         </p>
                       </div>
                     </div>
@@ -2436,7 +2461,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <div>
                           <label for="xp-text-rate" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text};">
-                            XP per Message
+                            {m.common.xpPerMessage()}
                           </label>
                           <input
                             id="xp-text-rate"
@@ -2448,13 +2473,13 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                             bind:value={config.textRate}
                           />
                           <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                            Recommended: 3-5 for balanced leveling
+                            {m.wizard.configXpTextRateHint()}
                           </p>
                         </div>
                         <div>
                           <label for="xp-voice-rate" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text};">
-                            Voice XP per Minute
+                            {m.common.voiceXpPerMinute()}
                           </label>
                           <input
                             id="xp-voice-rate"
@@ -2466,7 +2491,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                             bind:value={config.voiceRate}
                           />
                           <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                            Recommended: 2-3 for voice activity
+                            {m.wizard.configXpVoiceRateHint()}
                           </p>
                         </div>
                       </div>
@@ -2476,10 +2501,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                       <div class="p-4 rounded-lg border"
                            style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                         <h4 class="font-semibold mb-2" style="color: {$colorStore.text};">
-                          Role Rewards
+                          {m.features.wizardXpStepRewardsTitle()}
                         </h4>
                         <p class="text-sm mb-4" style="color: {$colorStore.muted};">
-                          Give roles when members reach specific levels. You can add more later in the dashboard.
+                          {m.wizard.configXpRewardsHint()}
                         </p>
 
                         {#if !config.roleRewards}
@@ -2493,7 +2518,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                             onclick={() => config.roleRewards = [{ level: 5, roleId: null }, { level: 10, roleId: null }, { level: 25, roleId: null }]}
                           >
                             <i class="fa-solid fa-plus" style="font-size: 18px;"></i>
-                            <span class="block mt-2 font-medium">Add Level Rewards</span>
+                            <span class="block mt-2 font-medium">{m.wizard.configXpAddLevelRewards()}</span>
                           </button>
                         {:else}
                           <div class="space-y-3">
@@ -2506,21 +2531,21 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                                   class="w-20 px-3 py-2 rounded-lg border"
                                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                   bind:value={reward.level}
-                                  placeholder="Level"
+                                  placeholder={m.common.level()}
                                 />
                                 <div class="flex-1">
                                   <DiscordSelector
                                     type="role"
                                     options={availableRoles}
                                     bind:selected={reward.roleId}
-                                    placeholder="Choose reward role..."
+                                    placeholder={m.wizard.configXpRewardRolePlaceholder()}
                                   />
                             </div>
                                 <button
                                   class="p-2 rounded-lg transition-all hover:scale-[1.02]"
                                   style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                   onclick={() => removeRoleReward(config, index)}
-                                  aria-label="Remove reward"
+                                  aria-label={m.wizard.configXpRemoveReward()}
                                 >
                                   <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
                                 </button>
@@ -2532,7 +2557,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                               onclick={() => addRoleReward(config)}
                             >
                               <i class="fa-solid fa-plus" style="font-size: 12px;"></i>
-                              Add Another Reward
+                              {m.wizard.configXpAddReward()}
                             </button>
                           </div>
                         {/if}
@@ -2545,19 +2570,19 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         categories={availableCategories}
                         bind:selected={config.excludedChannels}
                         mode="multiple"
-                        label="Exclude Channels from XP"
-                        placeholder="Choose channels to exclude..."
+                        label={m.wizard.configXpExcludeLabel()}
+                        placeholder={m.wizard.configXpExcludePlaceholder()}
                         detectedPattern={detectChannelsForFeature('xp-exclude')}
                       />
                       <p class="text-sm" style="color: {$colorStore.muted};">
-                        Members won't gain XP in these channels. Useful for bot channels, counting, etc.
+                        {m.wizard.configXpExcludeHint()}
                       </p>
                     </div>
                   {:else if feature.id === 'starboard' && step.id === 'config'}
                     <div class="space-y-4">
                       <div class="flex items-center justify-between mb-2">
                         <h4 class="text-sm font-semibold" style="color: {$colorStore.text};">
-                          Starboard Channels
+                          {m.wizard.configStarboardTitle()}
                         </h4>
                         <button
                           class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02]"
@@ -2567,7 +2592,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                       }}
                         >
                           <i class="fa-solid fa-plus" style="font-size: 12px;"></i>
-                          Add Starboard
+                          {m.wizard.configStarboardAdd()}
                         </button>
                       </div>
 
@@ -2576,13 +2601,13 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                           <div class="flex items-start justify-between gap-3 mb-3">
                         <span class="text-sm font-medium" style="color: {$colorStore.text};">
-                          Starboard #{index + 1}
+                          {m.wizard.configStarboardItemTitle({ number: index + 1 })}
                         </span>
                             {#if config.starboards.length > 1}
                               <button
                                 class="px-2 py-1 rounded text-xs transition-all hover:scale-[1.05]"
                                 style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                                aria-label="Remove starboard {index + 1}"
+                                aria-label={m.wizard.configStarboardRemoveAria({ number: index + 1 })}
                                 onclick={() => {
                               config.starboards = config.starboards.filter((_: unknown, i: number) => i !== index);
                             }}
@@ -2595,20 +2620,20 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                           <div class="space-y-3">
                             <div>
                               <label for="f-+page-channel-2383" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                                Channel
+                                {m.common.channel()}
                               </label>
                               <DiscordSelector id="f-+page-channel-2383"
                                 type="channel"
                                 options={availableChannels}
                                 bind:selected={starboard.channelId}
-                                placeholder="Choose starboard channel..."
+                                placeholder={m.wizard.configStarboardChannelPlaceholder()}
                               />
                             </div>
 
                             <div class="grid grid-cols-2 gap-3">
                               <div>
                                 <label for="f-+page-threshold-2396" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                                  Threshold
+                                  {m.common.threshold()}
                                 </label>
                                 <input id="f-+page-threshold-2396"
                                   type="number"
@@ -2619,24 +2644,24 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                                   bind:value={starboard.threshold}
                                 />
                                 <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                                  Reactions needed
+                                  {m.wizard.configStarboardThresholdHint()}
                                 </p>
                               </div>
                               <div>
                                 <span class="block text-sm font-medium mb-2" id="starboard-emoji-label"
                                       style="color: {$colorStore.text};">
-                                  Emoji
+                                  {m.common.emoji()}
                                 </span>
                                 <EmojiPicker
                                   guildEmojis={availableEmojis}
                                   selected={starboard.emoji}
                                   multiple={false}
-                                  placeholder="Pick an emoji..."
+                                  placeholder={m.wizard.pickEmojiPlaceholder()}
                                   ariaLabelledby="starboard-emoji-label"
                                   onchange={(detail) => (starboard.emoji = detail.selected)}
                                 />
                                 <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                                  Each must be unique
+                                  {m.wizard.configStarboardEmojiHint()}
                                 </p>
                               </div>
                             </div>
@@ -2647,9 +2672,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                   {:else if feature.id === 'logging' && step.id === 'channels'}
                     <BulkNotificationSetup
                       bind:features={loggingEvents}
+                      resolveText={eventSource}
                       channels={availableChannels}
-                      title="Configure Event Logging"
-                      description="Choose which events to log and where"
+                      title={m.wizard.configLoggingTitle()}
+                      description={m.wizard.configLoggingDescription()}
                       onchange={() => {
                     // loggingEvents is already bound and reactive
                   }}
@@ -2659,34 +2685,34 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                   <div>
                     <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
                       <i class="fa-solid fa-users" style="font-size: 14px;"></i>
-                      Normal User Roles
+                      {m.wizard.configAdministrationNormalRoles()}
                     </span>
                     <DiscordSelector
                       type="role"
                       options={availableRoles}
                       bind:selected={config.normalRoles}
                       multiple={true}
-                      placeholder="Select roles for normal users..."
+                      placeholder={m.wizard.configAdministrationNormalRolesPlaceholder()}
                     />
                     <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                      These roles will be assigned to new members when they join
+                      {m.wizard.configAdministrationNormalRolesHint()}
                     </p>
                   </div>
 
                   <div>
                     <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
                       <i class="fa-solid fa-robot" style="font-size: 14px;"></i>
-                      Bot User Roles (Optional)
+                      {m.wizard.configAdministrationBotRoles()}
                     </span>
                     <DiscordSelector
                       type="role"
                       options={availableRoles}
                       bind:selected={config.botRoles}
                       multiple={true}
-                      placeholder="Select roles for bot users..."
+                      placeholder={m.wizard.configAdministrationBotRolesPlaceholder()}
                     />
                     <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                      These roles will be assigned to bots when they join (helps organize bots)
+                      {m.wizard.configAdministrationBotRolesHint()}
                     </p>
                   </div>
                 </div>
@@ -2694,28 +2720,28 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     <div class="space-y-4">
                       <div>
                     <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                      Confession Channel
+                      {m.common.confessionChannel()}
                     </span>
                         <DiscordSelector
                           type="channel"
                           options={availableChannels}
                           bind:selected={config.channelId}
-                          placeholder="Where should confessions be posted?"
+                          placeholder={m.wizard.configConfessionsChannelPlaceholder()}
                         />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Members will submit anonymous confessions to this channel
+                          {m.wizard.configConfessionsChannelHint()}
                         </p>
                       </div>
 
                   <div>
                     <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                      Log Channel (Staff Only - Shows User IDs)
+                      {m.wizard.configConfessionsLogChannel()}
                     </span>
                     <DiscordSelector
                       type="channel"
                       options={availableChannels}
                       bind:selected={config.logChannelId}
-                      placeholder="Optional: Staff moderation channel"
+                      placeholder={m.wizard.configConfessionsLogPlaceholder()}
                     />
 
                     <!-- BIG WARNING -->
@@ -2725,13 +2751,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                            style="color: #ef4444; font-size: 20px; margin-top: 2px;"></i>
                         <div>
                           <h5 class="font-bold text-sm mb-2" style="color: #ef4444;">
-                            CRITICAL WARNING
+                            {m.wizard.configConfessionsWarningTitle()}
                           </h5>
                           <p class="text-xs" style="color: #ef4444;">
-                            The log channel reveals user IDs of anonymous confessions. Abusing this feature (sharing
-                            IDs, punishing users for confessions) will result in <strong>immediate blacklisting</strong>
-                            of your server from Mewdeko. This feature is for moderation only (removing illegal content,
-                            etc.).
+                            {@html m.wizard.configConfessionsWarningBody()}
                           </p>
                         </div>
                       </div>
@@ -2743,16 +2766,16 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                   <div>
                     <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
                       <i class="fa-solid fa-lightbulb" style="font-size: 14px;"></i>
-                      Suggestion Channel (Required)
+                      {m.wizard.configSuggestionsChannel()}
                     </span>
                     <DiscordSelector
                       type="channel"
                       options={availableChannels}
                       bind:selected={config.channelId}
-                      placeholder="Where should suggestions be posted?"
+                      placeholder={m.wizard.configSuggestionsChannelPlaceholder()}
                     />
                     <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                      Members will submit suggestions here
+                      {m.wizard.configSuggestionsChannelHint()}
                     </p>
                   </div>
 
@@ -2760,62 +2783,62 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                   <div class="p-4 rounded-lg border"
                        style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                     <h4 class="font-semibold mb-3 text-sm" style="color: {$colorStore.text};">
-                      Optional: Workflow Channels
+                      {m.wizard.configSuggestionsWorkflowTitle()}
                     </h4>
                     <p class="text-xs mb-4" style="color: {$colorStore.muted};">
-                      Configure separate channels for different suggestion states
+                      {m.wizard.configSuggestionsWorkflowHint()}
                     </p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <span class="block text-xs font-medium mb-2" style="color: {$colorStore.text};">
                           <i class="fa-solid fa-check" style="font-size: 12px; color: #10b981;"></i>
-                          Accepted
+                          {m.common.accepted()}
                         </span>
                         <DiscordSelector
                           type="channel"
                           options={availableChannels}
                           bind:selected={config.acceptChannelId}
-                          placeholder="Optional"
+                          placeholder={m.common.optional()}
                         />
                       </div>
 
                       <div>
                         <span class="block text-xs font-medium mb-2" style="color: {$colorStore.text};">
                           <i class="fa-solid fa-xmark" style="font-size: 12px; color: #ef4444;"></i>
-                          Denied
+                          {m.common.denied()}
                         </span>
                         <DiscordSelector
                           type="channel"
                           options={availableChannels}
                           bind:selected={config.denyChannelId}
-                          placeholder="Optional"
+                          placeholder={m.common.optional()}
                         />
                       </div>
 
                       <div>
                         <span class="block text-xs font-medium mb-2" style="color: {$colorStore.text};">
                           <i class="fa-solid fa-clock" style="font-size: 12px; color: #f59e0b;"></i>
-                          Under Consideration
+                          {m.wizard.configSuggestionsConsidered()}
                         </span>
                         <DiscordSelector
                           type="channel"
                           options={availableChannels}
                           bind:selected={config.considerChannelId}
-                          placeholder="Optional"
+                          placeholder={m.common.optional()}
                         />
                       </div>
 
                       <div>
                         <span class="block text-xs font-medium mb-2" style="color: {$colorStore.text};">
                           <i class="fa-solid fa-code" style="font-size: 12px; color: #8b5cf6;"></i>
-                          Implemented
+                          {m.common.implemented()}
                         </span>
                         <DiscordSelector
                           type="channel"
                           options={availableChannels}
                           bind:selected={config.implementChannelId}
-                          placeholder="Optional"
+                          placeholder={m.common.optional()}
                         />
                       </div>
                     </div>
@@ -2825,31 +2848,31 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     <div class="space-y-4">
                       <div>
                     <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                      Birthday Announcement Channel
+                      {m.wizard.configBirthdayChannel()}
                     </span>
                         <DiscordSelector
                           type="channel"
                           options={availableChannels}
                           bind:selected={config.channelId}
-                          placeholder="Where should birthday announcements go?"
+                          placeholder={m.wizard.configBirthdayChannelPlaceholder()}
                         />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Birthday announcements will be posted here automatically
+                          {m.wizard.configBirthdayChannelHint()}
                         </p>
                       </div>
 
                       <div>
                     <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                      Birthday Role (Optional)
+                      {m.wizard.configBirthdayRole()}
                     </span>
                         <DiscordSelector
                           type="role"
                           options={availableRoles}
                           bind:selected={config.roleId}
-                          placeholder="Optional role for birthday members..."
+                          placeholder={m.wizard.configBirthdayRolePlaceholder()}
                         />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Members will get this role on their birthday (removed the next day)
+                          {m.wizard.configBirthdayRoleHint()}
                         </p>
                       </div>
                     </div>
@@ -2861,10 +2884,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                           <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.antiRaid.enabled} />
                           <span>
                             <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
-                              Anti-Raid
+                              {m.common.antiRaid()}
                             </span>
                             <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
-                              Acts when a burst of members joins at once
+                              {m.wizard.protectionAntiRaidHint()}
                             </span>
                           </span>
                         </label>
@@ -2874,7 +2897,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                             <div>
                               <label for="raid-threshold" class="block text-xs font-medium mb-2"
                                      style="color: {$colorStore.text};">
-                                Members
+                                {m.common.members()}
                               </label>
                               <input id="raid-threshold" type="number" min="2" max="30"
                                      class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
@@ -2884,7 +2907,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                             <div>
                               <label for="raid-seconds" class="block text-xs font-medium mb-2"
                                      style="color: {$colorStore.text};">
-                                Within (seconds)
+                                {m.common.withinSeconds()}
                               </label>
                               <input id="raid-seconds" type="number" min="2" max="300"
                                      class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
@@ -2893,7 +2916,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                             </div>
                             <div>
                               <span class="block text-xs font-medium mb-2" style="color: {$colorStore.text};">
-                                Punishment
+                                {m.common.punishment()}
                               </span>
                               <DiscordSelector
                                 type="custom"
@@ -2901,13 +2924,12 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                                 options={wizardPunishmentActions}
                                 selected={String(config.antiRaid.action)}
                                 onchange={(detail) => config.antiRaid.action = Number(detail.selected)}
-                                placeholder="Choose action..."
+                                placeholder={m.wizard.protectionActionPlaceholder()}
                               />
                             </div>
                           </div>
                           <p class="text-xs mt-3" style="color: {$colorStore.muted};">
-                            Triggers when {config.antiRaid.userThreshold} members join within
-                            {config.antiRaid.seconds} seconds.
+                            {m.wizard.protectionRaidSummary({ count: config.antiRaid.userThreshold, seconds: config.antiRaid.seconds })}
                           </p>
                         {/if}
                       </div>
@@ -2918,10 +2940,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                           <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.antiSpam.enabled} />
                           <span>
                             <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
-                              Anti-Spam
+                              {m.common.antiSpam()}
                             </span>
                             <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
-                              Acts when someone repeats the same message
+                              {m.wizard.protectionAntiSpamHint()}
                             </span>
                           </span>
                         </label>
@@ -2931,7 +2953,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                             <div>
                               <label for="spam-threshold" class="block text-xs font-medium mb-2"
                                      style="color: {$colorStore.text};">
-                                Repeated messages
+                                {m.wizard.protectionRepeatedMessages()}
                               </label>
                               <input id="spam-threshold" type="number" min="2" max="10"
                                      class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
@@ -2940,7 +2962,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                             </div>
                             <div>
                               <span class="block text-xs font-medium mb-2" style="color: {$colorStore.text};">
-                                Punishment
+                                {m.common.punishment()}
                               </span>
                               <DiscordSelector
                                 type="custom"
@@ -2948,7 +2970,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                                 options={wizardPunishmentActions}
                                 selected={String(config.antiSpam.action)}
                                 onchange={(detail) => config.antiSpam.action = Number(detail.selected)}
-                                placeholder="Choose action..."
+                                placeholder={m.wizard.protectionActionPlaceholder()}
                               />
                             </div>
                           </div>
@@ -2963,10 +2985,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                           <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.antiAlt.enabled} />
                           <span>
                             <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
-                              Anti-Alt
+                              {m.common.antiAlt()}
                             </span>
                             <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
-                              Acts on accounts younger than a minimum age
+                              {m.wizard.protectionAntiAltHint()}
                             </span>
                           </span>
                         </label>
@@ -2976,7 +2998,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                             <div>
                               <label for="alt-age" class="block text-xs font-medium mb-2"
                                      style="color: {$colorStore.text};">
-                                Minimum account age (hours)
+                                {m.wizard.protectionMinAccountAgeHours()}
                               </label>
                               <input id="alt-age" type="number" min="1" max="8760"
                                      class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
@@ -2986,7 +3008,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                             </div>
                             <div>
                               <span class="block text-xs font-medium mb-2" style="color: {$colorStore.text};">
-                                Punishment
+                                {m.common.punishment()}
                               </span>
                               <DiscordSelector
                                 type="custom"
@@ -2994,7 +3016,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                                 options={wizardPunishmentActions}
                                 selected={String(config.antiAlt.action)}
                                 onchange={(detail) => config.antiAlt.action = Number(detail.selected)}
-                                placeholder="Choose action..."
+                                placeholder={m.wizard.protectionActionPlaceholder()}
                               />
                             </div>
                           </div>
@@ -3008,10 +3030,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                                  bind:checked={config.antiMassMention.enabled} />
                           <span>
                             <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
-                              Anti-Mass-Mention
+                              {m.wizard.protectionAntiMassMention()}
                             </span>
                             <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
-                              Acts on members who mention many people at once
+                              {m.wizard.protectionAntiMassMentionHint()}
                             </span>
                           </span>
                         </label>
@@ -3021,7 +3043,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                             <div>
                               <label for="mention-threshold" class="block text-xs font-medium mb-2"
                                      style="color: {$colorStore.text};">
-                                Mentions allowed
+                                {m.wizard.protectionMentionsAllowed()}
                               </label>
                               <input id="mention-threshold" type="number" min="2" max="50"
                                      class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
@@ -3030,7 +3052,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                             </div>
                             <div>
                               <span class="block text-xs font-medium mb-2" style="color: {$colorStore.text};">
-                                Punishment
+                                {m.common.punishment()}
                               </span>
                               <DiscordSelector
                                 type="custom"
@@ -3038,7 +3060,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                                 options={wizardPunishmentActions}
                                 selected={String(config.antiMassMention.action)}
                                 onchange={(detail) => config.antiMassMention.action = Number(detail.selected)}
-                                placeholder="Choose action..."
+                                placeholder={m.wizard.protectionActionPlaceholder()}
                               />
                             </div>
                           </div>
@@ -3049,42 +3071,42 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     <div class="space-y-4">
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Warning Log Channel
+                          {m.common.warningLogChannel()}
                         </span>
                         <DiscordSelector
                           type="channel"
                           options={availableChannels}
                           bind:selected={config.warnlogChannelId}
-                          placeholder="Where should warnings be logged?"
+                          placeholder={m.wizard.configModerationWarnlogPlaceholder()}
                         />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Full warning details are posted here
+                          {m.wizard.configModerationWarnlogHint()}
                         </p>
                       </div>
 
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Short Warning Log (Optional)
+                          {m.wizard.configModerationMiniWarnlog()}
                         </span>
                         <DiscordSelector
                           type="channel"
                           options={availableChannels}
                           bind:selected={config.miniWarnlogChannelId}
-                          placeholder="Optional condensed log channel"
+                          placeholder={m.wizard.configModerationMiniWarnlogPlaceholder()}
                         />
                       </div>
 
                       <div>
                         <label for="warn-expire" class="block text-sm font-medium mb-2"
                                style="color: {$colorStore.text};">
-                          Warnings Expire After (hours)
+                          {m.wizard.configModerationExpire()}
                         </label>
                         <input id="warn-expire" type="number" min="0" max="8760"
                                class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                bind:value={config.warnExpireHours} />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Set to 0 to keep warnings forever
+                          {m.wizard.configModerationExpireHint()}
                         </p>
                       </div>
                     </div>
@@ -3092,45 +3114,45 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     <div class="space-y-4">
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Panel Channel
+                          {m.wizard.configTicketsPanelChannel()}
                         </span>
                         <DiscordSelector
                           type="channel"
                           options={availableChannels}
                           bind:selected={config.panelChannelId}
-                          placeholder="Where should the ticket panel be posted?"
+                          placeholder={m.wizard.configTicketsPanelChannelPlaceholder()}
                         />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Members click a button here to open a ticket
+                          {m.wizard.configTicketsPanelChannelHint()}
                         </p>
                       </div>
 
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Ticket Category
+                          {m.common.ticketCategory()}
                         </span>
                         <DiscordSelector
                           type="custom"
                           customIcon="fa-folder"
                           options={availableCategories}
                           bind:selected={config.categoryId}
-                          placeholder="Choose category for tickets..."
+                          placeholder={m.wizard.configTicketsCategoryPlaceholder()}
                         />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Ticket channels will be created under this category
+                          {m.wizard.configTicketsCategoryHint()}
                         </p>
                       </div>
 
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Support Roles
+                          {m.common.supportRoles()}
                         </span>
                         <DiscordSelector
                           type="role"
                           options={availableRoles}
                           bind:selected={config.supportRoles}
                           multiple={true}
-                          placeholder="Who should see and answer tickets?"
+                          placeholder={m.wizard.configTicketsSupportRolesPlaceholder()}
                         />
                       </div>
 
@@ -3138,7 +3160,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <div>
                           <label for="panel-title" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text};">
-                            Panel Title
+                            {m.wizard.configTicketsPanelTitle()}
                           </label>
                           <input id="panel-title" type="text" maxlength="256"
                                  class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
@@ -3148,7 +3170,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <div>
                           <label for="button-label" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text};">
-                            Button Label
+                            {m.common.buttonLabel()}
                           </label>
                           <input id="button-label" type="text" maxlength="80"
                                  class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
@@ -3160,7 +3182,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                       <div>
                         <label for="panel-description" class="block text-sm font-medium mb-2"
                                style="color: {$colorStore.text};">
-                          Panel Description
+                          {m.wizard.configTicketsPanelDescription()}
                         </label>
                         <textarea id="panel-description" rows="3"
                                   class="w-full px-3 py-2 rounded-lg border resize-none"
@@ -3172,13 +3194,13 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <div>
                           <span class="block text-sm font-medium mb-2" id="button-emoji-label"
                                 style="color: {$colorStore.text};">
-                            Button Emoji
+                            {m.wizard.configTicketsButtonEmoji()}
                           </span>
                           <EmojiPicker
                             guildEmojis={availableEmojis}
                             selected={config.buttonEmoji}
                             multiple={false}
-                            placeholder="Pick an emoji..."
+                            placeholder={m.wizard.pickEmojiPlaceholder()}
                             ariaLabelledby="button-emoji-label"
                             onchange={(detail) => (config.buttonEmoji = detail.selected)}
                           />
@@ -3186,7 +3208,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <div>
                           <label for="max-active-tickets" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text};">
-                            Open Tickets Per Member
+                            {m.wizard.configTicketsMaxActive()}
                           </label>
                           <input id="max-active-tickets" type="number" min="1" max="10"
                                  class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
@@ -3196,14 +3218,14 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <div>
                           <label for="auto-close-hours" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text};">
-                            Auto Close After (hours)
+                            {m.wizard.configTicketsAutoClose()}
                           </label>
                           <input id="auto-close-hours" type="number" min="0" max="720"
                                  class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                  bind:value={config.autoCloseHours} />
                           <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                            0 keeps tickets open until staff close them
+                            {m.wizard.configTicketsAutoCloseHint()}
                           </p>
                         </div>
                       </div>
@@ -3215,10 +3237,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.ignoreBots} />
                         <span>
                           <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
-                            Ignore bots
+                            {m.common.ignoreBots()}
                           </span>
                           <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
-                            Don't save or restore roles for bot accounts
+                            {m.wizard.configRolestatesIgnoreBotsHint()}
                           </span>
                         </span>
                       </label>
@@ -3228,10 +3250,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.clearOnBan} />
                         <span>
                           <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
-                            Clear saved roles on ban
+                            {m.wizard.configRolestatesClearOnBan()}
                           </span>
                           <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
-                            A banned member who is later unbanned starts fresh
+                            {m.wizard.configRolestatesClearOnBanHint()}
                           </span>
                         </span>
                       </label>
@@ -3242,20 +3264,20 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <div>
                           <label for="rep-cooldown" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text};">
-                            Cooldown (minutes)
+                            {m.common.cooldownMinutes()}
                           </label>
                           <input id="rep-cooldown" type="number" min="0" max="10080"
                                  class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                  bind:value={config.cooldownMinutes} />
                           <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                            How long before a member can give rep again
+                            {m.wizard.configReputationCooldownHint()}
                           </p>
                         </div>
                         <div>
                           <label for="rep-daily" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text};">
-                            Daily limit
+                            {m.common.dailyLimit()}
                           </label>
                           <input id="rep-daily" type="number" min="1" max="100"
                                  class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
@@ -3266,13 +3288,13 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Announcement Channel (Optional)
+                          {m.wizard.configAnnouncementChannelOptional()}
                         </span>
                         <DiscordSelector
                           type="channel"
                           options={availableChannels}
                           bind:selected={config.notificationChannelId}
-                          placeholder="Announce reputation changes here"
+                          placeholder={m.wizard.configReputationAnnouncePlaceholder()}
                         />
                       </div>
 
@@ -3281,10 +3303,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.enableAnonymous} />
                         <span>
                           <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
-                            Allow anonymous reputation
+                            {m.wizard.configReputationAnonymous()}
                           </span>
                           <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
-                            Members can give rep without revealing who they are
+                            {m.wizard.configReputationAnonymousHint()}
                           </span>
                         </span>
                       </label>
@@ -3294,10 +3316,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.enableNegative} />
                         <span>
                           <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
-                            Allow negative reputation
+                            {m.common.allowNegativeReputation()}
                           </span>
                           <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
-                            Members can take reputation away as well as give it
+                            {m.wizard.configReputationNegativeHint()}
                           </span>
                         </span>
                       </label>
@@ -3306,28 +3328,28 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     <div class="space-y-4">
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Staff Role
+                          {m.common.staffRole()}
                         </span>
                         <DiscordSelector
                           type="role"
                           options={availableRoles}
                           bind:selected={config.staffRoleId}
-                          placeholder="Which role are your moderators?"
+                          placeholder={m.wizard.configRolesStaffPlaceholder()}
                         />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Used by permission checks and staff-only features
+                          {m.wizard.configRolesStaffHint()}
                         </p>
                       </div>
 
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Member Role (Optional)
+                          {m.wizard.configRolesMember()}
                         </span>
                         <DiscordSelector
                           type="role"
                           options={availableRoles}
                           bind:selected={config.memberRoleId}
-                          placeholder="Which role marks a verified member?"
+                          placeholder={m.wizard.configRolesMemberPlaceholder()}
                         />
                       </div>
                     </div>
@@ -3335,18 +3357,17 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     <div class="space-y-4">
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Self-Assignable Roles
+                          {m.features.wizardRolesStepSelfassignTitle()}
                         </span>
                         <DiscordSelector
                           type="role"
                           options={availableRoles}
                           bind:selected={config.selfAssignableRoles}
                           multiple={true}
-                          placeholder="Roles members can give themselves..."
+                          placeholder={m.wizard.configRolesSelfAssignablePlaceholder()}
                         />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Members claim these with the <code>.iam</code> command. Colour and pronoun roles are
-                          the usual picks.
+                          {@html m.wizard.configRolesSelfAssignableHint()}
                         </p>
                       </div>
                     </div>
@@ -3355,40 +3376,40 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                       <div>
                         <label for="status-text" class="block text-sm font-medium mb-2"
                                style="color: {$colorStore.text};">
-                          Status Text
+                          {m.wizard.configStatusrolesText()}
                         </label>
                         <input id="status-text" type="text" maxlength="128"
                                class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                bind:value={config.status}
-                               placeholder="discord.gg/yourserver" />
+                               placeholder={m.wizard.configStatusrolesTextPlaceholder()} />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Members whose custom status contains this text get the roles below
+                          {m.wizard.configStatusrolesTextHint()}
                         </p>
                       </div>
 
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Roles to Grant
+                          {m.common.rolesToGrant()}
                         </span>
                         <DiscordSelector
                           type="role"
                           options={availableRoles}
                           bind:selected={config.addRoles}
                           multiple={true}
-                          placeholder="Roles to give while the status matches..."
+                          placeholder={m.wizard.configStatusrolesRolesPlaceholder()}
                         />
                       </div>
 
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Announcement Channel (Optional)
+                          {m.wizard.configAnnouncementChannelOptional()}
                         </span>
                         <DiscordSelector
                           type="channel"
                           options={availableChannels}
                           bind:selected={config.channelId}
-                          placeholder="Announce when someone qualifies"
+                          placeholder={m.wizard.configStatusrolesAnnouncePlaceholder()}
                         />
                       </div>
                     </div>
@@ -3396,30 +3417,30 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     <div class="space-y-4">
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Hub Voice Channel
+                          {m.common.hubVoiceChannel()}
                         </span>
                         <DiscordSelector
                           type="custom"
                           customIcon="fa-microphone"
                           options={availableVoiceChannels}
                           bind:selected={config.hubChannelId}
-                          placeholder="Which channel do members join to get a room?"
+                          placeholder={m.wizard.configCustomvoiceHubPlaceholder()}
                         />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Joining this channel creates a personal voice channel and moves the member into it
+                          {m.wizard.configCustomvoiceHubHint()}
                         </p>
                       </div>
 
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Category (Optional)
+                          {m.common.categoryOptional()}
                         </span>
                         <DiscordSelector
                           type="custom"
                           customIcon="fa-folder"
                           options={availableCategories}
                           bind:selected={config.categoryId}
-                          placeholder="Where should new channels be created?"
+                          placeholder={m.wizard.configCustomvoiceCategoryPlaceholder()}
                         />
                       </div>
 
@@ -3427,7 +3448,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <div>
                           <label for="cv-name" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text};">
-                            Channel Name Format
+                            {m.common.channelNameFormat()}
                           </label>
                           <input id="cv-name" type="text" maxlength="100"
                                  class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
@@ -3437,14 +3458,14 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <div>
                           <label for="cv-limit" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text};">
-                            Default User Limit
+                            {m.common.defaultUserLimit()}
                           </label>
                           <input id="cv-limit" type="number" min="0" max="99"
                                  class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                  bind:value={config.defaultUserLimit} />
                           <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                            0 means unlimited
+                            {m.wizard.configCustomvoiceUserLimitHint()}
                           </p>
                         </div>
                       </div>
@@ -3454,10 +3475,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.deleteWhenEmpty} />
                         <span>
                           <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
-                            Delete channels when empty
+                            {m.common.deleteChannelsWhenEmpty()}
                           </span>
                           <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
-                            Keeps your channel list from filling up with dead rooms
+                            {m.wizard.configCustomvoiceDeleteEmptyHint()}
                           </span>
                         </span>
                       </label>
@@ -3469,12 +3490,12 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                           <div class="flex items-center justify-between gap-2">
                             <span class="text-sm font-medium" style="color: {$colorStore.text};">
-                              Feed #{index + 1}
+                              {m.wizard.configFeedsItemTitle({ number: index + 1 })}
                             </span>
                             {#if config.entries.length > 1}
                               <button class="px-2 py-1 rounded text-xs transition-all hover:scale-[1.05]"
                                       style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                                      aria-label="Remove feed {index + 1}"
+                                      aria-label={m.wizard.configFeedsRemoveAria({ number: index + 1 })}
                                       onclick={() => config.entries = config.entries.filter((_: unknown, i: number) => i !== index)}>
                                 <i class="fa-solid fa-trash" style="font-size: 11px;"></i>
                               </button>
@@ -3484,13 +3505,13 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                                  class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                  bind:value={entry.url}
-                                 placeholder="https://example.com/feed.xml"
-                                 aria-label="Feed URL {index + 1}" />
+                                 placeholder={m.wizard.configFeedsUrlPlaceholder()}
+                                 aria-label={m.wizard.configFeedsUrlAria({ number: index + 1 })} />
                           <DiscordSelector
                             type="channel"
                             options={availableChannels}
                             bind:selected={entry.channelId}
-                            placeholder="Post new items to..."
+                            placeholder={m.wizard.configFeedsChannelPlaceholder()}
                           />
                         </div>
                       {/each}
@@ -3498,7 +3519,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                               onclick={() => config.entries = [...config.entries, { url: '', channelId: null }]}>
                         <i class="fa-solid fa-plus" style="font-size: 12px;"></i>
-                        Add Another Feed
+                        {m.wizard.configFeedsAdd()}
                       </button>
                     </div>
                   {:else if feature.id === 'streams' && step.id === 'streams'}
@@ -3508,12 +3529,12 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                           <div class="flex items-center justify-between gap-2">
                             <span class="text-sm font-medium" style="color: {$colorStore.text};">
-                              Stream #{index + 1}
+                              {m.wizard.configStreamsItemTitle({ number: index + 1 })}
                             </span>
                             {#if config.entries.length > 1}
                               <button class="px-2 py-1 rounded text-xs transition-all hover:scale-[1.05]"
                                       style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                                      aria-label="Remove stream {index + 1}"
+                                      aria-label={m.wizard.configStreamsRemoveAria({ number: index + 1 })}
                                       onclick={() => config.entries = config.entries.filter((_: unknown, i: number) => i !== index)}>
                                 <i class="fa-solid fa-trash" style="font-size: 11px;"></i>
                               </button>
@@ -3523,13 +3544,13 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                                  class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                  bind:value={entry.url}
-                                 placeholder="https://twitch.tv/username"
-                                 aria-label="Stream URL {index + 1}" />
+                                 placeholder={m.wizard.configStreamsUrlPlaceholder()}
+                                 aria-label={m.wizard.configStreamsUrlAria({ number: index + 1 })} />
                           <DiscordSelector
                             type="channel"
                             options={availableChannels}
                             bind:selected={entry.channelId}
-                            placeholder="Announce going live in..."
+                            placeholder={m.wizard.configStreamsChannelPlaceholder()}
                           />
                         </div>
                       {/each}
@@ -3537,7 +3558,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                               onclick={() => config.entries = [...config.entries, { url: '', channelId: null }]}>
                         <i class="fa-solid fa-plus" style="font-size: 12px;"></i>
-                        Add Another Stream
+                        {m.wizard.configStreamsAdd()}
                       </button>
 
                       <label class="flex items-start gap-3 p-4 rounded-lg border cursor-pointer"
@@ -3546,7 +3567,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                                bind:checked={config.offlineNotifications} />
                         <span>
                           <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
-                            Also announce when a stream ends
+                            {m.wizard.configStreamsOffline()}
                           </span>
                         </span>
                       </label>
@@ -3555,32 +3576,32 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     <div class="space-y-4">
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Channel
+                          {m.common.channel()}
                         </span>
                         <DiscordSelector
                           type="channel"
                           options={availableChannels}
                           bind:selected={config.channelId}
-                          placeholder="Where should the message repeat?"
+                          placeholder={m.wizard.configRepeatersChannelPlaceholder()}
                         />
                       </div>
 
                       <div>
                         <label for="repeat-message" class="block text-sm font-medium mb-2"
                                style="color: {$colorStore.text};">
-                          Message
+                          {m.common.message()}
                         </label>
                         <textarea id="repeat-message" rows="4"
                                   class="w-full px-3 py-2 rounded-lg border resize-none"
                                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                   bind:value={config.message}
-                                  placeholder="Remember to read the rules in #rules!"></textarea>
+                                  placeholder={m.wizard.configRepeatersMessagePlaceholder()}></textarea>
                       </div>
 
                       <div>
                         <label for="repeat-interval" class="block text-sm font-medium mb-2"
                                style="color: {$colorStore.text};">
-                          Repeat Every (minutes)
+                          {m.wizard.configRepeatersInterval()}
                         </label>
                         <input id="repeat-interval" type="number" min="5" max="10080"
                                class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
@@ -3593,10 +3614,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.noRedundant} />
                         <span>
                           <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
-                            Skip if it's still the last message
+                            {m.wizard.configRepeatersNoRedundant()}
                           </span>
                           <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
-                            Avoids spamming a quiet channel
+                            {m.wizard.configRepeatersNoRedundantHint()}
                           </span>
                         </span>
                       </label>
@@ -3605,42 +3626,42 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     <div class="space-y-4">
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Vote Announcement Channel
+                          {m.common.voteAnnouncementChannel()}
                         </span>
                         <DiscordSelector
                           type="channel"
                           options={availableChannels}
                           bind:selected={config.channelId}
-                          placeholder="Where should votes be announced?"
+                          placeholder={m.wizard.configVotesChannelPlaceholder()}
                         />
                       </div>
 
                       <div>
                         <label for="vote-message" class="block text-sm font-medium mb-2"
                                style="color: {$colorStore.text};">
-                          Thank You Message
+                          {m.wizard.configVotesMessage()}
                         </label>
                         <textarea id="vote-message" rows="3"
                                   class="w-full px-3 py-2 rounded-lg border resize-none"
                                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                   bind:value={config.message}></textarea>
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Supports placeholders like %user.mention%
+                          {m.wizard.configVotesMessageHint()}
                         </p>
                       </div>
 
                       <div>
                         <label for="vote-password" class="block text-sm font-medium mb-2"
                                style="color: {$colorStore.text};">
-                          Webhook Password
+                          {m.wizard.configVotesPassword()}
                         </label>
                         <input id="vote-password" type="text"
                                class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                bind:value={config.password}
-                               placeholder="Paste the same secret you set on top.gg" />
+                               placeholder={m.wizard.configVotesPasswordPlaceholder()} />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Must match the authorization secret configured in your top.gg webhook settings
+                          {m.wizard.configVotesPasswordHint()}
                         </p>
                       </div>
                     </div>
@@ -3648,17 +3669,17 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     <div class="space-y-4">
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Category (Optional)
+                          {m.common.categoryOptional()}
                         </span>
                         <DiscordSelector
                           type="custom"
                           customIcon="fa-folder"
                           options={availableCategories}
                           bind:selected={config.categoryId}
-                          placeholder="Where should the counters be created?"
+                          placeholder={m.wizard.configStatchannelsCategoryPlaceholder()}
                         />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          A locked voice channel is created for each counter you pick below
+                          {m.wizard.configStatchannelsCategoryHint()}
                         </p>
                       </div>
 
@@ -3691,10 +3712,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                       <div class="p-4 rounded-lg border"
                            style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                         <p class="text-sm" style="color: {$colorStore.text};">
-                          Invite tracking will be turned on for this server.
+                          {m.wizard.configInvitetrackingIntro()}
                         </p>
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Mewdeko needs the Manage Server permission to read invite counts.
+                          {m.wizard.configInvitetrackingPermission()}
                         </p>
                       </div>
 
@@ -3703,10 +3724,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.removeOnLeave} />
                         <span>
                           <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
-                            Subtract invites when a member leaves
+                            {m.wizard.configInvitetrackingRemoveOnLeave()}
                           </span>
                           <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
-                            Keeps the leaderboard honest against invite farming
+                            {m.wizard.configInvitetrackingRemoveOnLeaveHint()}
                           </span>
                         </span>
                       </label>
@@ -3714,14 +3735,14 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                       <div>
                         <label for="invite-min-age" class="block text-sm font-medium mb-2"
                                style="color: {$colorStore.text};">
-                          Minimum Account Age (days)
+                          {m.wizard.configInvitetrackingMinAge()}
                         </label>
                         <input id="invite-min-age" type="number" min="0" max="365"
                                class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                bind:value={config.minAccountAgeDays} />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Joins from newer accounts won't count towards invites. 0 disables the check.
+                          {m.wizard.configInvitetrackingMinAgeHint()}
                         </p>
                       </div>
                     </div>
@@ -3729,7 +3750,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     <div class="space-y-4">
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Clear AFK When
+                          {m.wizard.configAfkType()}
                         </span>
                         <DiscordSelector
                           type="custom"
@@ -3737,32 +3758,32 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                           options={wizardAfkTypes}
                           selected={String(config.afkType)}
                           onchange={(detail) => config.afkType = Number(detail.selected)}
-                          placeholder="Choose behaviour..."
+                          placeholder={m.wizard.configAfkTypePlaceholder()}
                         />
                       </div>
 
                       <div>
                         <label for="afk-message" class="block text-sm font-medium mb-2"
                                style="color: {$colorStore.text};">
-                          Custom AFK Message (Optional)
+                          {m.wizard.configAfkMessage()}
                         </label>
                         <textarea id="afk-message" rows="3"
                                   class="w-full px-3 py-2 rounded-lg border resize-none"
                                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                   bind:value={config.customMessage}
-                                  placeholder="%user.mention% is AFK: %afk.message%"></textarea>
+                                  placeholder={m.wizard.configAfkMessagePlaceholder()}></textarea>
                       </div>
 
                       <div>
                         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                          Disable AFK In (Optional)
+                          {m.wizard.configAfkDisabledChannels()}
                         </span>
                         <DiscordSelector
                           type="channel"
                           options={availableChannels}
                           bind:selected={config.disabledChannels}
                           multiple={true}
-                          placeholder="Channels where AFK replies are noise..."
+                          placeholder={m.wizard.configAfkDisabledChannelsPlaceholder()}
                         />
                       </div>
                     </div>
@@ -3779,8 +3800,8 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
     <!-- Quick Enable Bulk Setup -->
     {#if !configPhase && quickEnableFeatures.length > 0 && currentStep === quickSetupStep}
       <WizardStep
-        title="Quick Enable Features"
-        subtitle="Configure essential settings for features you're quick enabling"
+        title={m.wizard.quickTitle()}
+        subtitle={m.wizard.quickSubtitle()}
         stepNumber={currentStep}
         isActive={true}
         icon="fa-solid fa-bolt"
@@ -3790,8 +3811,8 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           <BulkNotificationSetup
             bind:features={quickEnableFeaturesData}
             channels={availableChannels}
-            title="Quick Feature Setup"
-            description="Set basic channels for quick-enabled features"
+            title={m.wizard.quickBulkTitle()}
+            description={m.wizard.quickBulkDescription()}
             onchange={(detail) => {
               detail.features.forEach(f => {
                 if (featureConfigs[f.id]) {
@@ -3817,7 +3838,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
               onclick={previousStep}
             >
               <i class="fa-solid fa-arrow-left" style="font-size: 16px;"></i>
-              Back
+              {m.common.back()}
             </button>
 
             <button
@@ -3826,7 +3847,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
               onclick={completeWizard}
               disabled={wizardLoading}
             >
-              <span class="truncate">{wizardLoading ? 'Completing...' : 'Complete Setup'}</span>
+              <span class="truncate">{wizardLoading ? m.wizard.quickCompleting() : m.wizard.quickCompleteSetup()}</span>
               <i class="fa-solid {wizardLoading ? 'fa-arrows-rotate fa-spin' : 'fa-check'} shrink-0"
                  style="font-size: 16px;"></i>
             </button>
@@ -3837,8 +3858,8 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
     <!-- Completion Step -->
     <WizardStep
-      title="Setup Complete!"
-      subtitle="{guild.name} is now ready to go with your selected features."
+      title={m.wizard.completeTitle()}
+      subtitle={m.wizard.completeSubtitle({ guild: guild.name })}
       stepNumber={totalSteps}
       isActive={currentStep === totalSteps}
       icon="fa-solid fa-circle-check"
@@ -3855,7 +3876,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         {#if configuredFeatureIds.length > 0}
           <div class="p-4 rounded-lg border"
                style="background: {$colorStore.accent}10; border-color: {$colorStore.accent}30;">
-            <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">Features Configured:</h3>
+            <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">{m.wizard.completeConfigured()}</h3>
             <div class="flex flex-wrap justify-center gap-2">
               {#each configuredFeatureIds as featureId (featureId)}
                 {@const feature = allFeatures.find(f => f.id === featureId)}
@@ -3875,7 +3896,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                style="background: #f59e0b15; border-color: #f59e0b40;">
             <h3 class="font-semibold mb-2 flex items-center gap-2" style="color: #f59e0b;">
               <i class="fa-solid fa-triangle-exclamation" style="font-size: 16px;"></i>
-              Could not be set up
+              {m.wizard.completeFailedTitle()}
             </h3>
             <div class="flex flex-wrap gap-2 mb-2">
               {#each failedFeatures as featureId (featureId)}
@@ -3889,18 +3910,17 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
               {/each}
             </div>
             <p class="text-sm" style="color: {$colorStore.muted};">
-              Everything else was saved. Set these up from the dashboard, and check that Mewdeko has the
-              permissions they need.
+              {m.wizard.completeFailedHint()}
             </p>
           </div>
         {/if}
 
         <div class="space-y-2">
           <p class="text-lg" style="color: {$colorStore.text};">
-            Redirecting to dashboard...
+            {m.wizard.completeRedirecting()}
           </p>
           <p class="text-sm" style="color: {$colorStore.muted};">
-            You can configure additional features and fine-tune settings there.
+            {m.wizard.completeRedirectHint()}
           </p>
         </div>
       </div>

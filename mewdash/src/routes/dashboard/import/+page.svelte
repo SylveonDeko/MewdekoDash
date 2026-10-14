@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -8,23 +9,23 @@
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
   import ImportFlow from "$lib/components/dashboard/import/ImportFlow.svelte";
 
-  const sourceNames: Record<number, string> = {
+  const sourceNames = $derived<Record<number, string>>({
     [ImportSource.Mee6]: "MEE6",
     [ImportSource.Lurkr]: "Lurkr",
     [ImportSource.Polaris]: "Polaris",
     [ImportSource.Arcane]: "Arcane",
     [ImportSource.Amari]: "Amari",
     [ImportSource.Tatsu]: "Tatsu",
-    [ImportSource.File]: "File",
+    [ImportSource.File]: m.import.pageSourceFile(),
     [ImportSource.UnbelievaBoat]: "UnbelievaBoat",
-    [ImportSource.Mee6Settings]: "MEE6 settings"
-  };
+    [ImportSource.Mee6Settings]: m.import.pageSourceMee6Settings()
+  });
 
-  const undoErrors: Record<string, string> = {
-    UndoExpired: "That import can no longer be undone.",
-    UndoNotLatest: "Undo the newer import first.",
-    JobMissing: "That import no longer exists."
-  };
+  const undoErrors = $derived<Record<string, string>>({
+    UndoExpired: m.import.pageUndoExpired(),
+    UndoNotLatest: m.import.pageUndoNotLatest(),
+    JobMissing: m.import.pageUndoJobMissing()
+  });
 
   let activeTab = $state("import");
   let history = $state<ImportHistoryEntry[]>([]);
@@ -50,7 +51,7 @@
       history = await dataImportApi.getHistory($currentGuild.id);
     } catch (err) {
       logger.error("Failed to load import history:", err);
-      error = "Couldn't load past imports.";
+      error = m.import.pageErrorLoadHistory();
     } finally {
       historyLoading = false;
     }
@@ -66,7 +67,7 @@
       await loadHistory();
     } catch (err) {
       logger.error("Failed to undo an import:", err);
-      error = undoErrors[err instanceof Error ? err.message : ""] ?? "Couldn't undo that import.";
+      error = undoErrors[err instanceof Error ? err.message : ""] ?? m.import.pageErrorUndo();
     } finally {
       undoing = null;
       undoTarget = null;
@@ -77,19 +78,19 @@
     if ($currentGuild?.id) loadHistory();
   });
 
-  const tabs = [
-    { id: "import", label: "Import", icon: "fa-arrow-right-to-bracket" },
-    { id: "history", label: "History", icon: "fa-clock-rotate-left" }
-  ];
+  const tabs = $derived([
+    { id: "import", label: m.common.import(), icon: "fa-arrow-right-to-bracket" },
+    { id: "history", label: m.common.history(), icon: "fa-clock-rotate-left" }
+  ]);
 </script>
 
 <DashboardPageLayout
   bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-arrow-right-to-bracket"
-  subtitle="Bring XP, levels and balances over from other bots"
+  subtitle={m.features.importDescription()}
   {tabs}
-  title="Import"
+  title={m.common.import()}
 >
   <div class:hidden={activeTab !== "import"}>
     {#if $currentGuild?.id}
@@ -109,10 +110,10 @@
     {#if historyLoading && !history.length}
       <div class="flex items-center justify-center py-16" style="color: {$colorStore.muted}">
         <i class="fa-solid fa-spinner fa-spin text-2xl" aria-hidden="true"></i>
-        <span class="sr-only">Loading</span>
+        <span class="sr-only">{m.common.loading()}</span>
       </div>
     {:else if !history.length}
-      <p class="text-sm py-8 text-center" style="color: {$colorStore.muted}">Nothing has been imported into this server yet.</p>
+      <p class="text-sm py-8 text-center" style="color: {$colorStore.muted}">{m.import.pageHistoryEmpty()}</p>
     {:else}
       <ul class="space-y-2">
         {#each history as entry (entry.id)}
@@ -121,15 +122,20 @@
             <div class="flex-1 min-w-0">
               <p class="text-sm font-medium" style="color: {$colorStore.text}">
                 {#if entry.kind === ImportKind.Settings}
-                  {sourceNames[entry.source]}: {Number(entry.memberCount).toLocaleString()} settings
+                  {m.import.pageHistorySettings({ source: sourceNames[entry.source], count: Number(entry.memberCount).toLocaleString() })}
+                {:else if entry.kind === ImportKind.Currency}
+                  {entry.roleRewardCount
+                    ? m.import.pageHistoryBalancesRoles({ source: sourceNames[entry.source], count: Number(entry.memberCount).toLocaleString(), roles: entry.roleRewardCount })
+                    : m.import.pageHistoryBalances({ source: sourceNames[entry.source], count: Number(entry.memberCount).toLocaleString() })}
                 {:else}
-                  {sourceNames[entry.source]}: {entry.kind === ImportKind.Currency ? "balances" : "XP"} for
-                  {Number(entry.memberCount).toLocaleString()} members{entry.roleRewardCount ? `, ${entry.roleRewardCount} level roles` : ""}
+                  {entry.roleRewardCount
+                    ? m.import.pageHistoryXpRoles({ source: sourceNames[entry.source], count: Number(entry.memberCount).toLocaleString(), roles: entry.roleRewardCount })
+                    : m.import.pageHistoryXp({ source: sourceNames[entry.source], count: Number(entry.memberCount).toLocaleString() })}
                 {/if}
               </p>
               <p class="text-xs" style="color: {$colorStore.muted}">
                 {when(entry.dateAdded)}
-                {#if entry.undoneAt}, undone {when(entry.undoneAt)}{/if}
+                {#if entry.undoneAt}, {m.import.pageHistoryUndone({ when: when(entry.undoneAt) })}{/if}
               </p>
             </div>
             {#if entry.canUndo}
@@ -141,7 +147,7 @@
                 onclick={() => { undoTarget = entry; undoOpen = true; }}
               >
                 <i class="fa-solid {undoing === entry.id ? 'fa-arrows-rotate fa-spin' : 'fa-rotate-left'}" aria-hidden="true"></i>
-                Undo
+                {m.common.undo()}
               </button>
             {/if}
           </li>
@@ -153,9 +159,9 @@
 
 <ConfirmationModal
   bind:isOpen={undoOpen}
-  title="Undo this import?"
-  message="Every member it changed goes back to what they had before. Anything they earned since the import is lost."
-  confirmText="Undo import"
+  title={m.import.pageUndoTitle()}
+  message={m.import.pageUndoMessage()}
+  confirmText={m.import.pageUndoConfirm()}
   variant="warning"
   onconfirm={undo}
   oncancel={() => { undoTarget = null; }}

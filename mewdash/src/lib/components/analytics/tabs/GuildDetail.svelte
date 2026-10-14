@@ -1,5 +1,6 @@
 <!-- lib/components/analytics/tabs/GuildDetail.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
   import { analyticsApi } from "$lib/api/analytics/analytics";
@@ -37,12 +38,12 @@
     `background: ${$colorStore.primary}08; color: ${$colorStore.text}; border-color: ${$colorStore.primary}20;`,
   );
 
-  const columns: Column<GuildEventRow>[] = [
-    { key: "at", label: "When (UTC)", muted: true, format: (r) => stamp(r.at), sortValue: (r) => utcParse(r.at) },
-    { key: "eventType", label: "Type", mono: true },
-    { key: "bot", label: "Bot", mono: true, muted: true },
-    { key: "shard", label: "Shard", num: true, format: (r) => (r.shard === null ? "—" : String(r.shard)) },
-  ];
+  const columns: Column<GuildEventRow>[] = $derived([
+    { key: "at", label: m.analytics.tableColWhenUtc(), muted: true, format: (r) => stamp(r.at), sortValue: (r) => utcParse(r.at) },
+    { key: "eventType", label: m.common.type(), mono: true },
+    { key: "bot", label: m.placeholders.categoryBot(), mono: true, muted: true },
+    { key: "shard", label: m.analytics.filterShard(), num: true, format: (r) => (r.shard === null ? "—" : String(r.shard)) },
+  ]);
 
   function hourLabel(h: string): string {
     const ms = utcParse(h);
@@ -101,18 +102,18 @@
 </script>
 
 <div class="space-y-4">
-  <Card title="Guild card">
+  <Card title={m.analytics.tabGuildDetailCard()}>
     <GuildCardView {guildId} />
   </Card>
 
-  <Card title="Activity by type and hour" note="UTC">
-    <MatrixHeatmap rows={timeline?.types ?? []} cols={hours} {cells} colLabel={hourLabel} loading={timelineLoading} unit="events" empty="No activity in range" />
+  <Card title={m.analytics.tabGuildDetailActivity()} note={m.analytics.tabGuildDetailActivityNote()}>
+    <MatrixHeatmap rows={timeline?.types ?? []} cols={hours} {cells} colLabel={hourLabel} loading={timelineLoading} unit={m.analytics.tabGuildDetailUnitEvents()} empty={m.analytics.tabGuildDetailEmptyActivity()} />
   </Card>
 
-  <Card title="Security events">
+  <Card title={m.analytics.tabGuildDetailSecurity()}>
     {#snippet actions()}
-      <select class="min-h-[44px] rounded-lg border px-2 text-xs" style={selectStyle} bind:value={eventType} aria-label="Event type">
-        <option value="">any type</option>
+      <select class="min-h-[44px] rounded-lg border px-2 text-xs" style={selectStyle} bind:value={eventType} aria-label={m.common.eventType()}>
+        <option value="">{m.analytics.tabGuildDetailAnyType()}</option>
         {#each eventTypes as t}<option value={t}>{t}</option>{/each}
       </select>
     {/snippet}
@@ -120,7 +121,7 @@
       {columns}
       rows={events.items}
       loading={eventsLoading}
-      empty="No logged events"
+      empty={m.analytics.tabGuildDetailNoEvents()}
       sortKey="at"
       page={events.page}
       pageSize={25}

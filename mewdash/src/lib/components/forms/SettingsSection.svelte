@@ -6,6 +6,7 @@
    * looking for "the role people get while their answer is being reviewed" has one place to look
    * rather than scanning thirteen role pickers.
    */
+  import { m } from "$lib/i18n";
   import { slide } from "svelte/transition";
   import { type Snippet, untrack } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
@@ -58,7 +59,7 @@
           class="px-2 py-0.5 text-xs rounded-full"
           style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
         >
-          {changed} set
+          {m.common.setCount({ count: changed })}
         </span>
       {/if}
       <i

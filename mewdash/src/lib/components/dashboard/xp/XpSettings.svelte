@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
@@ -76,16 +77,16 @@
     }
   }
 
-  const xpCurveOptions = [
-    { id: "0", name: "Default" },
-    { id: "1", name: "Linear" },
-    { id: "2", name: "Quadratic" },
-    { id: "3", name: "Exponential" },
-    { id: "5", name: "Legacy" },
+  const xpCurveOptions = $derived([
+    { id: "0", name: m.common.default() },
+    { id: "1", name: m.common.linear() },
+    { id: "2", name: m.common.quadratic() },
+    { id: "3", name: m.common.exponential() },
+    { id: "5", name: m.common.legacy() },
     { id: "6", name: "MEE6" },
     { id: "7", name: "Lurkr" },
     { id: "8", name: "Amari" }
-  ];
+  ]);
 </script>
 
 <div class="flex items-center gap-3 mb-6">
@@ -98,7 +99,7 @@
        class="fa-utility-duo fa-regular fa-gear"
        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
   </div>
-  <h2 class="text-xl font-bold" style="color: {$colorStore.text}">XP Settings</h2>
+  <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.xp.settingsTitle()}</h2>
 </div>
 
 {#if loading}
@@ -107,7 +108,7 @@
       class="w-12 h-12 border-4 rounded-full animate-spin"
       style="border-color: {$colorStore.primary}20;
              border-top-color: {$colorStore.primary};"
-      aria-label="Loading"
+      aria-label={m.common.loading()}
     >
     </div>
   </div>
@@ -133,7 +134,7 @@
         <i class="fa-utility-duo fa-regular fa-gear"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"
            aria-hidden="true"></i>
-        <h3 class="font-semibold" style="color: {$colorStore.text}">XP Per Message</h3>
+        <h3 class="font-semibold" style="color: {$colorStore.text}">{m.common.xpPerMessage()}</h3>
       </div>
       <input
         id="xp-per-message"
@@ -148,10 +149,10 @@
         type="number"
         min="0"
         max="50"
-        aria-label="XP per message"
+        aria-label={m.common.xpPerMessage()}
       >
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-        Amount of XP users earn per message (max 50).
+        {m.xp.settingsPerMessageHint()}
       </p>
     </div>
 
@@ -164,7 +165,7 @@
         <i class="fa-utility-duo fa-regular fa-gear"
            style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent}; font-size: 20px;"
            aria-hidden="true"></i>
-        <h3 class="font-semibold" style="color: {$colorStore.text}">Message XP Cooldown</h3>
+        <h3 class="font-semibold" style="color: {$colorStore.text}">{m.xp.settingsCooldown()}</h3>
       </div>
       <input
         id="message-xp-cooldown"
@@ -178,10 +179,10 @@
                focus-visible:ring-color: {$colorStore.secondary}50;"
         type="number"
         min="0"
-        aria-label="Message XP cooldown in seconds"
+        aria-label={m.xp.settingsCooldownAria()}
       >
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-        Cooldown in seconds between messages that can earn XP.
+        {m.xp.settingsCooldownHint()}
       </p>
     </div>
 
@@ -194,7 +195,7 @@
         <i class="fa-utility-duo fa-regular fa-gear"
            style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
            aria-hidden="true"></i>
-        <h3 class="font-semibold" style="color: {$colorStore.text}">Voice XP Per Minute</h3>
+        <h3 class="font-semibold" style="color: {$colorStore.text}">{m.common.voiceXpPerMinute()}</h3>
       </div>
       <input
         id="voice-xp-per-minute"
@@ -209,10 +210,10 @@
         type="number"
         min="0"
         max="10"
-        aria-label="Voice XP per minute"
+        aria-label={m.common.voiceXpPerMinute()}
       >
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-        Amount of XP users earn per minute in voice channels (max 10).
+        {m.xp.settingsVoicePerMinuteHint()}
       </p>
     </div>
 
@@ -225,7 +226,7 @@
         <i class="fa-utility-duo fa-regular fa-gear"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"
            aria-hidden="true"></i>
-        <h3 class="font-semibold" style="color: {$colorStore.text}">Voice XP Timeout</h3>
+        <h3 class="font-semibold" style="color: {$colorStore.text}">{m.xp.settingsVoiceTimeout()}</h3>
       </div>
       <input
         id="voice-xp-timeout"
@@ -239,10 +240,10 @@
                focus-visible:ring-color: {$colorStore.primary}50;"
         type="number"
         min="0"
-        aria-label="Voice XP timeout in minutes"
+        aria-label={m.xp.settingsVoiceTimeoutAria()}
       >
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-        Time in minutes before a voice session expires if user is inactive.
+        {m.xp.settingsVoiceTimeoutHint()}
       </p>
     </div>
 
@@ -255,7 +256,7 @@
         <i class="fa-utility-duo fa-regular fa-gear"
            style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent}; font-size: 20px;"
            aria-hidden="true"></i>
-        <h3 class="font-semibold" style="color: {$colorStore.text}">Global XP Multiplier</h3>
+        <h3 class="font-semibold" style="color: {$colorStore.text}">{m.xp.settingsMultiplier()}</h3>
       </div>
       <input
         id="xp-multiplier"
@@ -270,10 +271,10 @@
         type="number"
         min="0.1"
         step="0.1"
-        aria-label="Global XP multiplier"
+        aria-label={m.xp.settingsMultiplier()}
       >
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-        Global multiplier applied to all XP gains.
+        {m.xp.settingsMultiplierHint()}
       </p>
     </div>
 
@@ -286,13 +287,13 @@
         <i class="fa-utility-duo fa-regular fa-gear"
            style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
            aria-hidden="true"></i>
-        <h3 class="font-semibold" style="color: {$colorStore.text}">XP Curve Type</h3>
+        <h3 class="font-semibold" style="color: {$colorStore.text}">{m.xp.settingsCurveType()}</h3>
       </div>
       <DiscordSelector
         type="custom"
         options={xpCurveOptions}
         selected={xpSettings.xpCurveType?.toString()}
-        placeholder="Select curve type"
+        placeholder={m.xp.settingsCurvePlaceholder()}
         searchable={false}
         onchange={(detail) => {
           if (detail.selected && typeof detail.selected === 'string') {
@@ -302,7 +303,7 @@
         }}
       />
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-        Determines how much XP is required for each level.
+        {m.xp.settingsCurveHint()}
       </p>
     </div>
 
@@ -315,7 +316,7 @@
         <i class="fa-utility-duo fa-regular fa-gear"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"
            aria-hidden="true"></i>
-        <h3 class="font-semibold" style="color: {$colorStore.text}">Custom XP Card Background</h3>
+        <h3 class="font-semibold" style="color: {$colorStore.text}">{m.xp.settingsBackground()}</h3>
       </div>
       <input
         id="custom-xp-image-url"
@@ -329,10 +330,10 @@
                focus-visible:ring-color: {$colorStore.primary}50;"
         type="url"
         placeholder="https://example.com/image.png"
-        aria-label="Custom XP card background URL"
+        aria-label={m.xp.settingsBackgroundAria()}
       >
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-        URL to a custom background image for XP cards. Recommended size: 797x279 pixels.
+        {m.xp.settingsBackgroundHint()}
       </p>
     </div>
 
@@ -346,7 +347,7 @@
           <i class="fa-utility-duo fa-regular fa-gear"
              style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent}; font-size: 20px;"
              aria-hidden="true"></i>
-          <h3 class="font-semibold" style="color: {$colorStore.text}">Server XP Exclusion</h3>
+          <h3 class="font-semibold" style="color: {$colorStore.text}">{m.xp.settingsServerExclusion()}</h3>
         </div>
         <label class="relative inline-flex items-center cursor-pointer">
           <input
@@ -354,7 +355,7 @@
             checked={xpSettings.xpGainDisabled}
             class="sr-only peer"
             onchange={handleCheckboxChange}
-            aria-label="Enable or disable XP gain for the entire server"
+            aria-label={m.xp.settingsServerExclusionAria()}
             id="server-exclusion"
           >
           <span
@@ -366,7 +367,7 @@
         </label>
       </div>
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-        When enabled, XP gain is disabled server-wide.
+        {m.xp.settingsServerExclusionHint()}
       </p>
     </div>
   </div>

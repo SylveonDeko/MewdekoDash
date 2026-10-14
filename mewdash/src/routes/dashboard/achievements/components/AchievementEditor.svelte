@@ -12,6 +12,7 @@
     type AchievementLookups
   } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
+  import { m } from "$lib/i18n";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import EmojiPicker from "$lib/components/forms/EmojiPicker.svelte";
   import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
@@ -83,7 +84,7 @@
       categoryKey: a?.categoryKey ?? startCategory,
       grade: a?.grade ?? 0,
       trigger: a?.trigger ?? AchievementTrigger.Metric,
-      metric: a?.metric || (catalog.metrics.find((m) => m.allowCustom)?.value ?? 1),
+      metric: a?.metric || (catalog.metrics.find((metric) => metric.allowCustom)?.value ?? 1),
       threshold: a?.threshold || 100,
       keyword: a?.keyword ?? "",
       channelId: a?.channelId ? a.channelId.toString() : null as string | null,
@@ -96,7 +97,7 @@
   let grade = $derived(gradeOf(catalog.grades, draft.grade));
   let defaultPoints = $derived(isBuiltIn ? achievement?.defaultPoints ?? grade.points : grade.points);
   let shownPoints = $derived(draft.points ?? defaultPoints);
-  let previewName = $derived(draft.name.trim() || (isBuiltIn ? achievement?.defaultName ?? "" : "New achievement"));
+  let previewName = $derived(draft.name.trim() || (isBuiltIn ? achievement?.defaultName ?? "" : m.achievements.editorNewTitle()));
   let draftCategory = $derived(catalog.categories.find((c) => c.key === draft.categoryKey) ?? null);
   let headerIcon = $derived(draft.icon ?? draftCategory?.icon ?? achievement?.icon ?? null);
   let headerIconUrl = $derived(
@@ -146,13 +147,13 @@
   );
   let metricOptions = $derived(
     catalog.metrics
-      .filter((m) => m.allowCustom)
-      .map((m) => ({ id: m.value.toString(), name: m.label, displayName: `${m.label}: ${m.description}` }))
+      .filter((metric) => metric.allowCustom)
+      .map((metric) => ({ id: metric.value.toString(), name: metric.label, displayName: `${metric.label}: ${metric.description}` }))
   );
   let roleOptions = $derived(
     (lookups?.roles ?? []).map((r) => ({
       id: r.id.toString(),
-      name: r.assignable ? r.name : `${r.name} (bot can't give it)`,
+      name: r.assignable ? r.name : m.achievements.editorRoleUnassignable({ name: r.name }),
       color: r.color
     }))
   );
@@ -181,6 +182,18 @@
       : false
   );
   let selectedMetric = $derived(metricOf(catalog, draft.metric));
+  let triggerChoices = $derived(CUSTOM_TRIGGERS.map((choice) => {
+    switch (choice.value) {
+      case AchievementTrigger.Metric:
+        return { ...choice, title: m.achievements.editorTriggerMetricTitle(), text: m.achievements.editorTriggerMetricText() };
+      case AchievementTrigger.Keyword:
+        return { ...choice, title: m.achievements.editorAutoSayAPhrase(), text: m.achievements.editorTriggerKeywordText() };
+      case AchievementTrigger.Reaction:
+        return { ...choice, title: m.achievements.editorAutoReactEmoji(), text: m.achievements.editorTriggerReactionText() };
+      default:
+        return { ...choice, title: m.achievements.editorTriggerManualTitle(), text: m.achievements.editorTriggerManualText() };
+    }
+  }));
 
 
   /** The description the bot writes when none is given. */
@@ -188,32 +201,32 @@
     if (isBuiltIn) return achievement?.defaultDescription ?? "";
     switch (draft.trigger) {
       case AchievementTrigger.Keyword:
-        return draft.keyword.trim() ? `Say "${draft.keyword.trim()}"` : "Say a phrase";
+        return draft.keyword.trim() ? m.achievements.editorAutoSayPhrase({ phrase: draft.keyword.trim() }) : m.achievements.editorAutoSayAPhrase();
       case AchievementTrigger.Reaction:
-        return draft.keyword.trim() ? `React with ${draft.keyword.trim()}` : "React with an emoji";
+        return draft.keyword.trim() ? m.achievements.editorAutoReactWith({ emoji: draft.keyword.trim() }) : m.achievements.editorAutoReactEmoji();
       case AchievementTrigger.Manual:
-        return "Handed out by the staff";
+        return m.achievements.editorAutoManual();
       default: {
         const metric = selectedMetric;
         if (!metric) return "";
         const unit = draft.threshold === 1 ? metric.unit : metric.unitPlural;
-        return `Reach ${Number(draft.threshold || 0).toLocaleString()} ${unit} (${metric.label.toLowerCase()})`;
+        return m.achievements.editorAutoReach({ count: Number(draft.threshold || 0).toLocaleString(), unit, metric: metric.label.toLowerCase() });
       }
     }
   }
 
   /** Why the form can't be saved yet, or null. */
   let blocker = $derived.by(() => {
-    if (!isBuiltIn && !draft.name.trim()) return "Give it a name.";
-    if (draft.name.length > catalog.limits.nameLength) return `Names can be ${catalog.limits.nameLength} characters at most.`;
-    if (draft.description.length > catalog.limits.descriptionLength) return "The description is too long.";
-    if (!isBuiltIn && draft.trigger === AchievementTrigger.Metric && (!draft.threshold || draft.threshold < 1)) return "Set a goal of at least 1.";
+    if (!isBuiltIn && !draft.name.trim()) return m.achievements.editorBlockerName();
+    if (draft.name.length > catalog.limits.nameLength) return m.achievements.editorBlockerNameLength({ max: catalog.limits.nameLength });
+    if (draft.description.length > catalog.limits.descriptionLength) return m.achievements.editorBlockerDescriptionLength();
+    if (!isBuiltIn && draft.trigger === AchievementTrigger.Metric && (!draft.threshold || draft.threshold < 1)) return m.achievements.editorBlockerGoal();
     if (!isBuiltIn && (draft.trigger === AchievementTrigger.Keyword || draft.trigger === AchievementTrigger.Reaction) && !draft.keyword.trim()) {
-      return draft.trigger === AchievementTrigger.Keyword ? "Add the phrase to watch for." : "Pick the emoji to watch for.";
+      return draft.trigger === AchievementTrigger.Keyword ? m.achievements.editorBlockerPhrase() : m.achievements.editorBlockerEmoji();
     }
-    if (draft.points !== null && (draft.points < 0 || draft.points > catalog.limits.maxPoints)) return `Points can be 0 to ${catalog.limits.maxPoints}.`;
-    if (draft.currencyReward < 0 || draft.xpReward < 0) return "Rewards can't be negative.";
-    if (rewardRoleProblem) return "The bot can't give out that role. Move its highest role above it.";
+    if (draft.points !== null && (draft.points < 0 || draft.points > catalog.limits.maxPoints)) return m.achievements.editorBlockerPoints({ max: catalog.limits.maxPoints });
+    if (draft.currencyReward < 0 || draft.xpReward < 0) return m.achievements.editorBlockerNegative();
+    if (rewardRoleProblem) return m.achievements.editorBlockerRole();
     return null;
   });
 
@@ -262,7 +275,7 @@
       onsaved(saved, isNew);
     } catch (err: any) {
       logger.error("Failed to save an achievement:", err);
-      onerror(err?.message || "Couldn't save the achievement.");
+      onerror(err?.message || m.achievements.editorErrorSave());
     } finally {
       saving = false;
     }
@@ -272,9 +285,9 @@
   async function resetToDefault() {
     if (!$currentGuild?.id || !achievement || !isBuiltIn) return;
     const ok = await requestConfirmation({
-      title: "Reset to default?",
-      message: "Its name, description, icon, points, and rewards go back to how the bot ships them, and it becomes active again.",
-      confirmText: "Reset",
+      title: m.achievements.editorResetTitle(),
+      message: m.achievements.editorResetMessage(),
+      confirmText: m.common.reset(),
       variant: "danger"
     });
     if (!ok) return;
@@ -283,7 +296,7 @@
       onsaved(await achievementsApi.resetBuiltIn($currentGuild.id, achievement.key), false);
     } catch (err: any) {
       logger.error("Failed to reset an achievement:", err);
-      onerror(err?.message || "Couldn't reset the achievement.");
+      onerror(err?.message || m.achievements.editorErrorReset());
     } finally {
       saving = false;
     }
@@ -293,11 +306,13 @@
   async function remove() {
     if (!$currentGuild?.id || !achievement?.customId) return;
     const ok = await requestConfirmation({
-      title: `Delete ${achievement.name}?`,
-      message: achievement.unlockCount > 0
-        ? `${achievement.unlockCount.toLocaleString()} members unlocked it and lose it, along with its points.`
-        : "Nobody has unlocked it yet.",
-      confirmText: "Delete",
+      title: m.achievements.editorDeleteTitle({ name: achievement.name }),
+      message: achievement.unlockCount === 0
+        ? m.achievements.editorDeleteMessageNone()
+        : achievement.unlockCount === 1
+          ? m.achievements.editorDeleteMessageOne({ count: "1" })
+          : m.achievements.editorDeleteMessageOther({ count: achievement.unlockCount.toLocaleString() }),
+      confirmText: m.common.delete(),
       variant: "danger"
     });
     if (!ok) return;
@@ -307,7 +322,7 @@
       onremoved(achievement.key);
     } catch (err: any) {
       logger.error("Failed to delete an achievement:", err);
-      onerror(err?.message || "Couldn't delete the achievement.");
+      onerror(err?.message || m.achievements.editorErrorDelete());
     } finally {
       deleting = false;
     }
@@ -317,9 +332,9 @@
   async function close() {
     if (dirty) {
       const ok = await requestConfirmation({
-        title: "Discard changes?",
-        message: "Your edits to this achievement haven't been saved.",
-        confirmText: "Discard",
+        title: m.common.discardChanges(),
+        message: m.achievements.editorDiscardMessage(),
+        confirmText: m.common.discard(),
         variant: "danger"
       });
       if (!ok) return;
@@ -374,15 +389,15 @@
       <AchievementIcon icon={headerIcon} iconUrl={headerIconUrl} color={grade.color} />
       <div class="flex-1 min-w-0">
         <h2 id="ach-editor-title" class="text-lg font-bold truncate" style="color: {$colorStore.text}">
-          {isNew ? "New achievement" : previewName}
+          {isNew ? m.achievements.editorNewTitle() : previewName}
         </h2>
         <p class="text-xs truncate" style="color: {$colorStore.muted}">
-          {#if isNew}Made by this server{:else if isBuiltIn}Built in · {achievement ? criteriaText(achievement, catalog) : ""}{:else}Made by this server · {achievement?.key}{/if}
+          {#if isNew}{m.achievements.editorSubtitleNew()}{:else if isBuiltIn}{m.achievements.editorSubtitleBuiltIn({ criteria: achievement ? criteriaText(achievement, catalog) : "" })}{:else}{m.achievements.editorSubtitleCustom({ key: achievement?.key ?? "" })}{/if}
         </p>
       </div>
       <button type="button" class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
               style="background: {$colorStore.primary}08; color: {$colorStore.text};"
-              aria-label="Close" onclick={close}>
+              aria-label={m.common.close()} onclick={close}>
         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
       </button>
     </div>
@@ -390,23 +405,23 @@
     <div class="flex-1 overflow-y-auto p-4 md:p-6">
       {#if isGlobal}
         <div class="p-4 rounded-xl text-sm" style="background: {$colorStore.primary}08; color: {$colorStore.text}">
-          Global achievements are earned across every server and can't be changed per server.
+          {m.achievements.editorGlobalNotice()}
         </div>
       {:else}
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
           <div class="lg:col-span-3 space-y-6">
             <section class="relative rounded-2xl border p-5" style="z-index: 40; background: {$colorStore.primary}05; border-color: {$colorStore.primary}25;">
-              {@render sectionHeading("fa-circle-info", "Basics")}
+              {@render sectionHeading("fa-circle-info", m.common.basics())}
               <div class="space-y-4">
                 <div>
-                  {@render field("Name", "ach-name", isBuiltIn ? `Leave blank to keep "${achievement?.defaultName}".` : null)}
+                  {@render field(m.common.name(), "ach-name", isBuiltIn ? m.achievements.editorNameHintBuiltIn({ name: achievement?.defaultName ?? "" }) : null)}
                   <input id="ach-name" type="text" bind:value={draft.name} maxlength={catalog.limits.nameLength}
-                         placeholder={isBuiltIn ? achievement?.defaultName ?? "" : "Night Shift"}
+                         placeholder={isBuiltIn ? achievement?.defaultName ?? "" : m.achievements.editorNamePlaceholder()}
                          class="w-full px-3 h-[44px] rounded-xl border text-sm"
                          style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
                 </div>
                 <div>
-                  {@render field("Description", "ach-description", "Leave blank to describe the goal automatically.")}
+                  {@render field(m.common.description(), "ach-description", m.achievements.editorDescriptionHint())}
                   <textarea id="ach-description" bind:value={draft.description} maxlength={catalog.limits.descriptionLength} rows="2"
                             placeholder={autoDescription()}
                             class="w-full p-3 rounded-xl border text-base resize-y"
@@ -414,39 +429,39 @@
                 </div>
                 {#if !isBuiltIn}
                   <div>
-                    <span id="ach-category-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Category</span>
+                    <span id="ach-category-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.category()}</span>
                     <div class="min-h-[44px]">
                       <DiscordSelector type="custom" options={categoryOptions} selected={draft.categoryKey}
-                                       placeholder="Pick a category" ariaLabelledby="ach-category-label"
+                                       placeholder={m.common.pickCategoryPlaceholder()} ariaLabelledby="ach-category-label"
                                        onchange={(detail) => { if (typeof detail.selected === "string") draft.categoryKey = detail.selected; }} />
                     </div>
                   </div>
                 {/if}
                 <div>
-                  <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Icon</span>
+                  <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.achievements.editorIconLabel()}</span>
                   <p class="text-xs -mt-1 mb-2" style="color: {$colorStore.muted}">
-                    Shown in its image, here, and in the apps. Pick an icon, one of the server's emojis, or an image.
+                    {m.achievements.editorIconHint()}
                   </p>
                   <IconPicker value={draft.icon} defaultIcon={draftCategory?.icon ?? null}
-                              defaultIconUrl={draftCategory?.iconUrl ?? null} defaultLabel="the category's icon"
+                              defaultIconUrl={draftCategory?.iconUrl ?? null} defaultLabel={m.achievements.editorIconDefaultLabel()}
                               uploads={catalog.uploads} emojis={lookups?.emojis ?? []} color={grade.color}
-                              label="Change the icon" onchange={(icon) => { draft.icon = icon; }}
+                              label={m.achievements.editorIconChange()} onchange={(icon) => { draft.icon = icon; }}
                               onuploadschanged={onuploadschanged} {onerror} />
                 </div>
-                <ToggleRow checked={draft.enabled} title="Active"
-                           subtitle={isNew ? "Members can start earning it as soon as it's saved." : "Deactivating it keeps it for everyone who already unlocked it."}
+                <ToggleRow checked={draft.enabled} title={m.common.active()}
+                           subtitle={isNew ? m.achievements.editorActiveSubtitleNew() : m.achievements.editorActiveSubtitleExisting()}
                            colors={$colorStore} onchange={(v) => { draft.enabled = v; }} />
-                <ToggleRow checked={draft.hidden} title="Secret until unlocked"
-                           subtitle="Shown as a hidden achievement until someone finds it."
+                <ToggleRow checked={draft.hidden} title={m.achievements.editorSecretTitle()}
+                           subtitle={m.achievements.editorSecretSubtitle()}
                            colors={$colorStore} onchange={(v) => { draft.hidden = v; }} />
               </div>
             </section>
 
             {#if !isBuiltIn}
               <section class="relative rounded-2xl border p-5" style="z-index: 30; background: {$colorStore.primary}05; border-color: {$colorStore.primary}25;">
-                {@render sectionHeading("fa-unlock", "How it unlocks")}
+                {@render sectionHeading("fa-unlock", m.achievements.editorSectionUnlock())}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {#each CUSTOM_TRIGGERS as choice (choice.value)}
+                  {#each triggerChoices as choice (choice.value)}
                     {@const pressed = draft.trigger === choice.value}
                     <button type="button"
                             class="flex items-start gap-3 p-4 rounded-xl border text-left transition-all hover:scale-[1.01] min-h-[44px]"
@@ -466,10 +481,10 @@
                 {#if draft.trigger === AchievementTrigger.Metric}
                   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5">
                     <div class="sm:col-span-2">
-                      <span id="ach-metric-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">What to count</span>
+                      <span id="ach-metric-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.achievements.editorMetricLabel()}</span>
                       <div class="min-h-[44px]">
                         <DiscordSelector type="custom" options={metricOptions} selected={draft.metric.toString()}
-                                         placeholder="Pick what to count" ariaLabelledby="ach-metric-label"
+                                         placeholder={m.achievements.editorMetricPlaceholder()} ariaLabelledby="ach-metric-label"
                                          onchange={(detail) => { if (typeof detail.selected === "string") draft.metric = Number(detail.selected); }} />
                       </div>
                       {#if selectedMetric}
@@ -477,7 +492,7 @@
                       {/if}
                     </div>
                     <div>
-                      {@render field("Goal", "ach-threshold", null)}
+                      {@render field(m.achievements.editorGoalLabel(), "ach-threshold", null)}
                       <input id="ach-threshold" type="number" min="1" bind:value={draft.threshold}
                              class="w-full px-3 h-[44px] rounded-xl border text-sm"
                              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
@@ -487,45 +502,45 @@
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
                     <div>
                       {#if draft.trigger === AchievementTrigger.Keyword}
-                        {@render field("Phrase", "ach-keyword", "Matched anywhere in a message, ignoring case.")}
+                        {@render field(m.achievements.editorPhraseLabel(), "ach-keyword", m.achievements.editorPhraseHint())}
                         <input id="ach-keyword" type="text" bind:value={draft.keyword} maxlength={catalog.limits.keywordLength}
-                               placeholder="good morning"
+                               placeholder={m.achievements.editorPhrasePlaceholder()}
                                class="w-full px-3 h-[44px] rounded-xl border text-sm"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
                       {:else}
-                        <span id="ach-reaction-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Emoji to react with</span>
+                        <span id="ach-reaction-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.emojiToReactWith()}</span>
                         <div class="min-h-[44px]">
-                          <EmojiPicker {guildEmojis} selected={draft.keyword || null} placeholder="Pick an emoji"
+                          <EmojiPicker {guildEmojis} selected={draft.keyword || null} placeholder={m.achievements.editorReactionPlaceholder()}
                                        showUnicodeEmojis={true} ariaLabelledby="ach-reaction-label"
                                        onchange={(detail) => { draft.keyword = typeof detail.selected === "string" ? detail.selected : ""; }} />
                         </div>
                       {/if}
                     </div>
                     <div>
-                      <span id="ach-channel-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Only in channel</span>
+                      <span id="ach-channel-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.achievements.editorChannelLabel()}</span>
                       <div class="min-h-[44px]">
                         <DiscordSelector type="channel" options={channelOptions} selected={draft.channelId}
-                                         placeholder="Any channel" ariaLabelledby="ach-channel-label"
+                                         placeholder={m.common.anyChannel()} ariaLabelledby="ach-channel-label"
                                          onchange={(detail) => { draft.channelId = typeof detail.selected === "string" && detail.selected ? detail.selected : null; }} />
                       </div>
                       {#if draft.channelId}
                         <button type="button" class="text-xs mt-2 underline" style="color: {$colorStore.muted}"
-                                onclick={() => { draft.channelId = null; }}>Any channel</button>
+                                onclick={() => { draft.channelId = null; }}>{m.common.anyChannel()}</button>
                       {/if}
                     </div>
                   </div>
                 {:else}
                   <p class="text-sm mt-5" style="color: {$colorStore.muted}">
-                    Give it from the Members tab or with the achgrant command.
+                    {m.achievements.editorManualHint()}
                   </p>
                 {/if}
               </section>
             {/if}
 
             <section class="relative rounded-2xl border p-5" style="z-index: 20; background: {$colorStore.primary}05; border-color: {$colorStore.primary}25;">
-              {@render sectionHeading(GRADE_ICON, isBuiltIn ? "Points" : "Grade and points")}
+              {@render sectionHeading(GRADE_ICON, isBuiltIn ? m.common.points() : m.achievements.editorSectionGradePoints())}
               {#if !isBuiltIn}
-                <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4" role="radiogroup" aria-label="Grade">
+                <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4" role="radiogroup" aria-label={m.achievements.editorGradeLabel()}>
                   {#each catalog.grades as option (option.value)}
                     {@const pressed = draft.grade === option.value}
                     <button type="button" role="radio" aria-checked={pressed}
@@ -540,7 +555,7 @@
               {/if}
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  {@render field("Points", "ach-points", `Blank uses ${defaultPoints.toLocaleString()}.`)}
+                  {@render field(m.common.points(), "ach-points", m.achievements.editorPointsHint({ points: defaultPoints.toLocaleString() }))}
                   <input id="ach-points" type="number" min="0" max={catalog.limits.maxPoints}
                          value={draft.points ?? ""}
                          placeholder={defaultPoints.toString()}
@@ -549,42 +564,42 @@
                          style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
                 </div>
                 <div class="text-xs self-end pb-3" style="color: {$colorStore.muted}">
-                  Points add up to ranks: {catalog.tiers.filter((t) => t.minPoints > 0).map((t) => `${t.name} ${t.minPoints.toLocaleString()}`).join(", ")}.
+                  {m.achievements.editorPointsRanks({ ranks: catalog.tiers.filter((t) => t.minPoints > 0).map((t) => `${t.name} ${t.minPoints.toLocaleString()}`).join(", ") })}
                 </div>
               </div>
             </section>
 
             <section class="relative rounded-2xl border p-5" style="z-index: 10; background: {$colorStore.primary}05; border-color: {$colorStore.primary}25;">
-              {@render sectionHeading("fa-gift", "Rewards")}
+              {@render sectionHeading("fa-gift", m.common.rewards())}
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="sm:col-span-3">
-                  <span id="ach-role-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Role</span>
+                  <span id="ach-role-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.role()}</span>
                   <div class="flex items-center gap-2">
                     <div class="flex-1 min-w-0 min-h-[44px]">
                       <DiscordSelector type="role" options={roleOptions} selected={draft.roleRewardId}
-                                       placeholder="No role" ariaLabelledby="ach-role-label"
+                                       placeholder={m.common.noRole()} ariaLabelledby="ach-role-label"
                                        onchange={(detail) => { draft.roleRewardId = typeof detail.selected === "string" && detail.selected ? detail.selected : null; }} />
                     </div>
                     {#if draft.roleRewardId}
                       <button type="button" class="w-[44px] h-[44px] rounded-xl shrink-0"
                               style="background: {$colorStore.primary}08; color: {$colorStore.muted};"
-                              aria-label="No role reward" onclick={() => { draft.roleRewardId = null; }}>
+                              aria-label={m.achievements.editorRoleClear()} onclick={() => { draft.roleRewardId = null; }}>
                         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                       </button>
                     {/if}
                   </div>
                   {#if rewardRoleProblem}
-                    <p class="text-xs mt-2" style="color: #ef4444">The bot can't give out that role.</p>
+                    <p class="text-xs mt-2" style="color: #ef4444">{m.achievements.editorRoleProblem()}</p>
                   {/if}
                 </div>
                 <div>
-                  {@render field("Currency", "ach-currency", null)}
+                  {@render field(m.features.currencyName(), "ach-currency", null)}
                   <input id="ach-currency" type="number" min="0" bind:value={draft.currencyReward}
                          class="w-full px-3 h-[44px] rounded-xl border text-sm"
                          style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
                 </div>
                 <div>
-                  {@render field("XP", "ach-xp", null)}
+                  {@render field(m.common.xp(), "ach-xp", null)}
                   <input id="ach-xp" type="number" min="0" bind:value={draft.xpReward}
                          class="w-full px-3 h-[44px] rounded-xl border text-sm"
                          style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
@@ -594,26 +609,26 @@
           </div>
 
           <div class="lg:col-span-2 lg:sticky lg:top-0 space-y-4">
-            <div class="text-xs font-semibold uppercase tracking-wide" style="color: {$colorStore.muted}">Unlock image</div>
+            <div class="text-xs font-semibold uppercase tracking-wide" style="color: {$colorStore.muted}">{m.achievements.editorUnlockImage()}</div>
             <div class="relative rounded-xl overflow-hidden" style="background: #2b2d31; aspect-ratio: 1200 / 420;">
               {#if previewImage}
-                <img src={previewImage} alt="{previewName}: {previewDescription}, +{shownPoints.toLocaleString()} points"
+                <img src={previewImage} alt={m.achievements.editorPreviewAlt({ name: previewName, description: previewDescription, points: shownPoints.toLocaleString() })}
                      class="w-full h-full object-contain transition-opacity"
                      class:opacity-60={previewLoading} />
               {:else}
                 <div class="absolute inset-0 flex items-center justify-center text-sm" style="color: {$colorStore.muted}">
-                  {previewLoading ? "Drawing" : "The image appears here."}
+                  {previewLoading ? m.achievements.cardDesignerDrawing() : m.achievements.editorPreviewEmpty()}
                 </div>
               {/if}
             </div>
             <p class="text-xs" style="color: {$colorStore.muted}">
-              Attached to unlock messages while unlock images are on. Members can also show it with the achview command.
+              {m.achievements.editorPreviewHint()}
             </p>
             {#if !isNew && achievement}
               <div class="rounded-xl p-4 space-y-2 text-sm" style="background: {$colorStore.primary}08;">
-                <div class="flex justify-between gap-2"><span style="color: {$colorStore.muted}">Unlocked by</span>
-                  <span style="color: {$colorStore.text}">{achievement.unlockCount.toLocaleString()} members</span></div>
-                <div class="flex justify-between gap-2"><span style="color: {$colorStore.muted}">Key</span>
+                <div class="flex justify-between gap-2"><span style="color: {$colorStore.muted}">{m.achievements.editorUnlockedBy()}</span>
+                  <span style="color: {$colorStore.text}">{achievement.unlockCount === 1 ? m.achievements.editorUnlockedMembersOne({ count: "1" }) : m.common.membersCount({ count: achievement.unlockCount.toLocaleString() })}</span></div>
+                <div class="flex justify-between gap-2"><span style="color: {$colorStore.muted}">{m.achievements.editorKeyLabel()}</span>
                   <code class="text-xs" style="color: {$colorStore.primary}">{achievement.key}</code></div>
               </div>
             {/if}
@@ -627,13 +642,13 @@
         <button type="button" class="px-4 py-2.5 rounded-xl min-h-[44px] font-medium disabled:opacity-50"
                 style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
                 disabled={deleting} onclick={remove}>
-          <i class="fa-solid fa-trash mr-2" aria-hidden="true"></i>Delete
+          <i class="fa-solid fa-trash mr-2" aria-hidden="true"></i>{m.common.delete()}
         </button>
       {:else if isBuiltIn && achievement?.isOverridden}
         <button type="button" class="px-4 py-2.5 rounded-xl min-h-[44px] font-medium disabled:opacity-50"
                 style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
                 disabled={saving} onclick={resetToDefault}>
-          <i class="fa-solid fa-rotate-left mr-2" aria-hidden="true"></i>Reset to default
+          <i class="fa-solid fa-rotate-left mr-2" aria-hidden="true"></i>{m.common.resetToDefault()}
         </button>
       {/if}
       <div class="sm:ml-auto flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-3">
@@ -642,13 +657,13 @@
         {/if}
         <button type="button" class="px-4 py-2.5 rounded-xl min-h-[44px] font-medium"
                 style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
-                onclick={close}>Cancel</button>
+                onclick={close}>{m.common.cancel()}</button>
         {#if !isGlobal}
           <button type="button" class="px-5 py-2.5 rounded-xl min-h-[44px] font-semibold disabled:opacity-50"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   disabled={saving || !!blocker || (!dirty && !isNew)} onclick={save}>
             {#if saving}<i class="fa-solid fa-spinner fa-spin mr-2" aria-hidden="true"></i>{/if}
-            {isNew ? "Create achievement" : "Save"}
+            {isNew ? m.achievements.editorCreate() : m.common.save()}
           </button>
         {/if}
       </div>

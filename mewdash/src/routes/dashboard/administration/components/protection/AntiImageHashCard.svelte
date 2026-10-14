@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -23,20 +24,31 @@
    * The full PunishmentAction set that makes sense here. "Delete" removes the image without
    * touching the poster, which is why the per-image override exists at all.
    */
-  const imageActionOptions = [
-    { id: "8", name: "Delete only", label: "Delete only" },
-    { id: "9", name: "Warn", label: "Warn" },
-    { id: "0", name: "Mute", label: "Mute" },
-    { id: "10", name: "Timeout", label: "Timeout" },
-    { id: "1", name: "Kick", label: "Kick" },
-    { id: "2", name: "Ban", label: "Ban" }
-  ];
+  const imageActionOptions = $derived([
+    { id: "8", name: m.administration.protectionActionDeleteOnly(), label: m.administration.protectionActionDeleteOnly() },
+    { id: "9", name: m.common.warn(), label: m.common.warn() },
+    { id: "0", name: m.common.actionMute(), label: m.common.actionMute() },
+    { id: "10", name: m.common.timeout(), label: m.common.timeout() },
+    { id: "1", name: m.common.actionKick(), label: m.common.actionKick() },
+    { id: "2", name: m.common.actionBan(), label: m.common.actionBan() }
+  ]);
 
   /**
    * PunishmentAction values the bot accepts a duration for. Everything else is instantaneous and the
    * duration is discarded server side.
    */
   const TIMED_ACTIONS = ["0", "2", "10"];
+
+  let presetCountLabel = $derived(
+    protectionStatus.antiImageHash.presetCount === 1
+      ? m.administration.protectionImagehashPresetCountOne({ count: protectionStatus.antiImageHash.presetCount })
+      : m.administration.protectionImagehashPresetCountOther({ count: protectionStatus.antiImageHash.presetCount })
+  );
+  let presetCaughtLabel = $derived(
+    protectionStatus.antiImageHash.presetTriggers === 1
+      ? m.administration.protectionImagehashPresetCaughtOne({ count: protectionStatus.antiImageHash.presetTriggers })
+      : m.administration.protectionImagehashPresetCaughtOther({ count: protectionStatus.antiImageHash.presetTriggers })
+  );
 
   const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 
@@ -81,8 +93,8 @@
   }
 
   function actionLabel(action: number | null): string {
-    if (action === null || action === undefined) return "Default";
-    return imageActionOptions.find(o => o.id === action.toString())?.label ?? `Action ${action}`;
+    if (action === null || action === undefined) return m.common.default();
+    return imageActionOptions.find(o => o.id === action.toString())?.label ?? m.administration.protectionImagehashActionFallback({ action });
   }
 
   function resetPending() {
@@ -102,11 +114,11 @@
     addError = null;
 
     if (!file.type.startsWith("image/")) {
-      addError = "That file is not an image.";
+      addError = m.administration.protectionImagehashErrorNotImage();
       return;
     }
     if (file.size > MAX_UPLOAD_BYTES) {
-      addError = "Images must be under 8MB. Paste the image URL instead.";
+      addError = m.administration.protectionImagehashErrorTooLarge();
       return;
     }
 
@@ -140,16 +152,16 @@
       pendingReliable = result?.reliable ?? false;
 
       if (!pendingHash) {
-        addError = "Could not read that image.";
+        addError = m.administration.protectionImagehashErrorUnreadable();
       } else if (!pendingReliable) {
-        addError = "This image is too plain to identify reliably, so blocking it would catch unrelated images too. Use a more detailed version of it.";
+        addError = m.administration.protectionImagehashErrorTooPlain();
         pendingHash = null;
       } else if (!pendingBase64) {
         pendingPreview = pendingUrl.trim();
       }
     } catch (err) {
       logger.error("Failed to hash image:", err);
-      addError = "Could not read that image. Supported formats are png, jpeg, webp, gif, and bmp.";
+      addError = m.administration.protectionImagehashErrorUnsupported();
       pendingHash = null;
     } finally {
       hashing = false;
@@ -175,7 +187,7 @@
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to block image:", err);
-      addError = "That image is already blocked.";
+      addError = m.administration.protectionImagehashErrorAlreadyBlocked();
     } finally {
       blocking = false;
     }
@@ -226,8 +238,8 @@
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
       <div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Image-Hash</h2>
-        <p class="text-sm" style="color: {$colorStore.muted}">Action anyone posting a blocked image</p>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.overviewAntiImageHash()}</h2>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionImagehashSubtitle()}</p>
       </div>
     </div>
 
@@ -241,10 +253,10 @@
       >
         {#if protectionStatus.antiImageHash.enabled}
           <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
-          Enabled
+          {m.common.enabled()}
         {:else}
           <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
-          Disabled
+          {m.common.disabled()}
         {/if}
       </button>
 
@@ -259,7 +271,7 @@
           {:else}
             <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
           {/if}
-          {expandedProtectionCard === 'antiImageHash' ? 'Collapse' : 'Configure'}
+          {expandedProtectionCard === 'antiImageHash' ? m.common.collapse() : m.common.configure()}
         </button>
       {/if}
     </div>
@@ -270,17 +282,17 @@
       <div class="text-center">
         <div class="text-2xl font-bold"
              style="color: {$colorStore.primary}">{protectionStatus.antiImageHash.hashCount}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Blocked Images</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionImagehashBlockedImages()}</div>
       </div>
       <div class="text-center">
         <div class="text-2xl font-bold"
              style="color: {$colorStore.primary}">{protectionStatus.antiImageHash.counter}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Times Caught</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionImagehashTimesCaught()}</div>
       </div>
       <div class="text-center">
         <div class="text-2xl font-bold"
              style="color: {$colorStore.primary}">{protectionStatus.antiImageHash.hashThreshold}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Match Tolerance</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionImagehashMatchTolerance()}</div>
       </div>
     </div>
 
@@ -294,20 +306,19 @@
              style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
           <div class="min-w-0">
             <div class="font-medium" style="color: {$colorStore.text}">
-              Block known scam images
+              {m.administration.protectionImagehashBlockPreset()}
               {#if protectionStatus.antiImageHash.presetCount}
                 <span class="text-sm font-normal" style="color: {$colorStore.muted}">
-                  ({protectionStatus.antiImageHash.presetCount} images)
+                  {presetCountLabel}
                 </span>
               {/if}
             </div>
             <p class="text-sm" style="color: {$colorStore.muted}">
-              The fake crypto casino and MrBeast giveaway images currently being spammed across Discord.
+              {m.administration.protectionImagehashPresetDescription()}
             </p>
             {#if protectionStatus.antiImageHash.usePresetList && protectionStatus.antiImageHash.presetTriggers > 0}
               <p class="text-sm mt-1" style="color: {$colorStore.accent}">
-                Caught {protectionStatus.antiImageHash.presetTriggers}
-                {protectionStatus.antiImageHash.presetTriggers === 1 ? "post" : "posts"} in this server.
+                {presetCaughtLabel}
               </p>
             {/if}
           </div>
@@ -328,7 +339,7 @@
           {:else}
             <i class="fa-solid fa-toggle-off"></i>
           {/if}
-          <span>{protectionStatus.antiImageHash.usePresetList ? "Enabled" : "Enable"}</span>
+          <span>{protectionStatus.antiImageHash.usePresetList ? m.common.enabled() : m.common.enable()}</span>
         </button>
       </div>
     </div>
@@ -337,18 +348,17 @@
     <div class="mt-6 space-y-2">
       {#if loadingHashes && hashes.length === 0}
         <div class="text-sm text-center py-4" style="color: {$colorStore.muted}">
-          <i class="fa-solid fa-spinner fa-spin"></i> Loading blocked images...
+          <i class="fa-solid fa-spinner fa-spin"></i> {m.administration.protectionImagehashLoadingHashes()}
         </div>
       {:else if hashes.length === 0}
         <p class="text-sm text-center py-4" style="color: {$colorStore.muted}">
-          You have not blocked any images of your own yet. Add one below, or run <code>.blockimage</code> while replying
-          to a scam.
+          {@html m.administration.protectionImagehashEmptyHtml()}
         </p>
       {:else}
         {#each hashes as entry (entry.id)}
           <div class="flex items-center gap-3 p-3 rounded-xl" style="background: {$colorStore.primary}08;">
             {#if entry.sourceUrl}
-              <img src={entry.sourceUrl} alt={entry.name || "Blocked image"}
+              <img src={entry.sourceUrl} alt={entry.name || m.administration.protectionImagehashBlockedImageAlt()}
                    class="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                    style="border: 1px solid {$colorStore.primary}30;" />
             {:else}
@@ -360,12 +370,12 @@
 
             <div class="min-w-0 flex-1">
               <div class="font-medium truncate flex items-center gap-2" style="color: {$colorStore.text}">
-                <span class="truncate">{entry.name || "Unnamed"}</span>
+                <span class="truncate">{entry.name || m.administration.protectionImagehashUnnamed()}</span>
                 {#if !entry.variants}
                   <span class="text-xs px-2 py-0.5 rounded flex-shrink-0"
                         style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                        title="Added from a hash instead of the image itself, so mirrored and bordered copies will not be caught. Re-add it using the image to cover those.">
-                    exact copies only
+                        title={m.administration.protectionImagehashExactCopiesTitle()}>
+                    {m.administration.protectionImagehashExactCopiesOnly()}
                   </span>
                 {/if}
               </div>
@@ -374,7 +384,7 @@
 
             <div class="text-center flex-shrink-0 px-2">
               <div class="text-lg font-bold" style="color: {$colorStore.accent}">{entry.hitCount}</div>
-              <div class="text-xs" style="color: {$colorStore.muted}">hits</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{m.common.hits()}</div>
             </div>
 
             <span class="text-xs px-2 py-1 rounded-lg flex-shrink-0 hidden sm:inline"
@@ -385,7 +395,7 @@
             <button
               class="px-3 py-2 rounded-lg transition-all hover:scale-110 min-h-[44px] flex-shrink-0"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-              aria-label="Remove blocked image"
+              aria-label={m.administration.protectionImagehashRemoveBlockedImage()}
               onclick={() => removeHash(entry.id)}
             >
               <i class="fa-solid fa-xmark"></i>
@@ -400,14 +410,14 @@
          style="background: {dragging ? $colorStore.primary + '15' : $colorStore.primary + '05'};
                 border-color: {dragging ? $colorStore.accent : $colorStore.primary}40;"
          role="region"
-         aria-label="Block a new image"
+         aria-label={m.administration.protectionImagehashBlockNewImage()}
          ondragover={(e) => { e.preventDefault(); dragging = true; }}
          ondragleave={() => dragging = false}
          ondrop={onDrop}>
 
       <div class="flex flex-col sm:flex-row gap-3 sm:items-center">
         {#if pendingPreview}
-          <img src={pendingPreview} alt="Pending upload preview"
+          <img src={pendingPreview} alt={m.administration.protectionImagehashPendingPreviewAlt()}
                class="w-20 h-20 rounded-lg object-cover flex-shrink-0"
                style="border: 1px solid {$colorStore.primary}30;" />
         {/if}
@@ -420,7 +430,7 @@
             disabled={hashing}
           >
             <i class="fa-solid fa-upload"></i>
-            <span>Upload an image or drop it here</span>
+            <span>{m.administration.protectionImagehashUploadOrDrop()}</span>
           </button>
 
           <input
@@ -439,7 +449,7 @@
               type="text"
               bind:value={pendingUrl}
               oninput={() => { pendingBase64 = null; pendingHash = null; }}
-              placeholder="...or paste an image URL"
+              placeholder={m.administration.protectionImagehashPasteUrlPlaceholder()}
               class="flex-1 px-4 py-2 rounded-lg border transition-colors min-h-[44px]"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
             />
@@ -454,7 +464,7 @@
               {:else}
                 <i class="fa-solid fa-fingerprint"></i>
               {/if}
-              <span class="ml-2">Hash</span>
+              <span class="ml-2">{m.administration.protectionImagehashHash()}</span>
             </button>
           </div>
         </div>
@@ -467,7 +477,7 @@
       {#if pendingHash}
         <div transition:slide={{ duration: 200 }} class="space-y-3">
           <div class="flex items-center gap-2 text-sm">
-            <span style="color: {$colorStore.muted}">Hash:</span>
+            <span style="color: {$colorStore.muted}">{m.administration.protectionImagehashHashLabel()}</span>
             <code class="font-mono px-2 py-1 rounded"
                   style="background: {$colorStore.primary}15; color: {$colorStore.text}">{pendingHash}</code>
           </div>
@@ -475,13 +485,13 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
             <div>
               <label for="aih-new-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                Label
+                {m.common.label()}
               </label>
               <input
                 id="aih-new-name"
                 type="text"
                 bind:value={pendingName}
-                placeholder="e.g. mrbeast crypto giveaway"
+                placeholder={m.administration.protectionImagehashLabelPlaceholder()}
                 class="w-full px-3 rounded-xl border transition-colors"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};
                        min-height: 50px;"
@@ -489,14 +499,14 @@
             </div>
             <div>
               <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                Action for this image
-                <span class="text-xs" style="color: {$colorStore.muted}">(leave empty to use the default)</span>
+                {m.administration.protectionImagehashActionForImage()}
+                <span class="text-xs" style="color: {$colorStore.muted}">{m.administration.protectionImagehashActionLeaveEmpty()}</span>
               </span>
               <DiscordSelector
                 type="custom"
                 options={imageActionOptions}
                 bind:selected={pendingAction}
-                placeholder="Use default action..."
+                placeholder={m.administration.protectionImagehashUseDefaultAction()}
               />
             </div>
           </div>
@@ -507,7 +517,7 @@
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={resetPending}
             >
-              Cancel
+              {m.common.cancel()}
             </button>
             <button
               class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
@@ -520,7 +530,7 @@
               {:else}
                 <i class="fa-solid fa-ban"></i>
               {/if}
-              <span>Block Image</span>
+              <span>{m.administration.protectionImagehashBlockImage()}</span>
             </button>
           </div>
         </div>
@@ -533,21 +543,21 @@
            in:slide={{ duration: 300 }}>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
           <div>
-            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Default Action</span>
+            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.administration.protectionImagehashDefaultAction()}</span>
             <DiscordSelector
               type="custom"
               options={imageActionOptions}
               bind:selected={tempProtectionConfig.action}
-              placeholder="Select action..."
+              placeholder={m.administration.protectionCommonSelectAction()}
             />
           </div>
 
           <div>
             <label for="aih-punish-duration" class="block text-sm font-medium mb-2"
                    style="color: {$colorStore.text}">
-              Punishment Duration (minutes)
+              {m.administration.protectionCommonPunishmentDurationMinutes()}
               {#if !durationApplies}
-                <span class="text-xs font-normal" style="color: {$colorStore.muted}">(not used by this action)</span>
+                <span class="text-xs font-normal" style="color: {$colorStore.muted}">{m.administration.protectionImagehashDurationNotUsed()}</span>
               {/if}
             </label>
             <input id="aih-punish-duration"
@@ -566,12 +576,9 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="col-span-full">
             <label for="aih-threshold" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-              Match Tolerance: {tempProtectionConfig.hashThreshold}
+              {m.administration.protectionImagehashMatchToleranceValue({ value: tempProtectionConfig.hashThreshold })}
               <span class="block text-xs font-normal mt-1" style="color: {$colorStore.muted}">
-                How different a posted image can look and still count as a blocked one. The default of 31 catches
-                re-uploads that were resized, recompressed, brightened, or flipped. Lower it if an innocent image gets
-                caught; raise it only if scammers are slipping through, since high values start catching unrelated
-                images.
+                {m.administration.protectionImagehashMatchToleranceHint()}
               </span>
             </label>
             <input id="aih-threshold"
@@ -588,28 +595,28 @@
                  style="background: {$colorStore.primary}08;">
             <input type="checkbox" bind:checked={tempProtectionConfig.deleteMessages}
                    style="accent-color: {$colorStore.primary};">
-            <span class="text-sm" style="color: {$colorStore.text}">Delete the message</span>
+            <span class="text-sm" style="color: {$colorStore.text}">{m.administration.protectionImagehashDeleteMessage()}</span>
           </label>
 
           <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer min-h-[44px]"
                  style="background: {$colorStore.primary}08;">
             <input type="checkbox" bind:checked={tempProtectionConfig.notifyUser}
                    style="accent-color: {$colorStore.primary};">
-            <span class="text-sm" style="color: {$colorStore.text}">DM the user</span>
+            <span class="text-sm" style="color: {$colorStore.text}">{m.administration.protectionImagehashDmUser()}</span>
           </label>
 
           <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer min-h-[44px]"
                  style="background: {$colorStore.primary}08;">
             <input type="checkbox" bind:checked={tempProtectionConfig.checkEmbeds}
                    style="accent-color: {$colorStore.primary};">
-            <span class="text-sm" style="color: {$colorStore.text}">Check embedded images</span>
+            <span class="text-sm" style="color: {$colorStore.text}">{m.administration.protectionImagehashCheckEmbeddedImages()}</span>
           </label>
 
           <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer min-h-[44px]"
                  style="background: {$colorStore.primary}08;">
             <input type="checkbox" bind:checked={tempProtectionConfig.ignoreBots}
                    style="accent-color: {$colorStore.primary};">
-            <span class="text-sm" style="color: {$colorStore.text}">Ignore bots</span>
+            <span class="text-sm" style="color: {$colorStore.text}">{m.common.ignoreBots()}</span>
           </label>
 
           <label class="col-span-full flex items-start gap-3 p-3 rounded-lg cursor-pointer"
@@ -618,10 +625,9 @@
                    class="mt-1"
                    style="accent-color: {$colorStore.primary};">
             <span class="text-sm" style="color: {$colorStore.text}">
-              Catch bordered copies
+              {m.administration.protectionImagehashCatchBordered()}
               <span class="block text-xs" style="color: {$colorStore.muted}">
-                Strips a border off a posted image before matching, so wrapping a blocked image in a frame does not get
-                it past the filter. Mirrored copies are always caught.
+                {m.administration.protectionImagehashCatchBorderedHint()}
               </span>
             </span>
           </label>
@@ -633,7 +639,7 @@
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
             onclick={cancelProtectionEdit}
           >
-            Cancel
+            {m.common.cancel()}
           </button>
           <button
             class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
@@ -646,7 +652,7 @@
             {:else}
               <i class="fa-solid fa-save" style="font-size: 14px;"></i>
             {/if}
-            <span>Save</span>
+            <span>{m.common.save()}</span>
           </button>
         </div>
       </div>
@@ -655,10 +661,9 @@
     <div class="text-center py-8">
       <i class="fa-utility-duo fa-regular fa-image"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-      <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-Image-Hash Protection Disabled</p>
+      <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.administration.protectionImagehashDisabledTitle()}</p>
       <p class="text-sm" style="color: {$colorStore.muted}">
-        Enable to block scam images by how they look, so re-uploads still get caught when they are resized,
-        recompressed, or flipped
+        {m.administration.protectionImagehashDisabledHint()}
       </p>
     </div>
   {/if}

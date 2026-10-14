@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { administrationApi, type ServerRecoveryStatus } from "$lib/api/index.ts";
@@ -41,11 +42,11 @@
     if (!$currentGuild?.id) return;
     formError = "";
     if (recoveryKey.trim().length < 16) {
-      formError = "Recovery key must be at least 16 characters.";
+      formError = m.administration.advancedRecoveryErrorKeyShort();
       return;
     }
     if (twoFactorKey.trim().length < 6) {
-      formError = "Two-factor key must be at least 6 characters.";
+      formError = m.administration.advancedRecoveryErrorTwoFactorShort();
       return;
     }
     saving = true;
@@ -60,7 +61,7 @@
       await loadStatus();
     } catch (err) {
       logger.error("Failed to set up server recovery:", err);
-      formError = "Failed to set up server recovery. Please try again.";
+      formError = m.administration.advancedRecoveryErrorSetup();
     } finally {
       saving = false;
     }
@@ -108,8 +109,8 @@
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
       <div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Server Recovery</h2>
-        <p class="text-sm" style="color: {$colorStore.muted}">Regain control of the server if the owner account is lost or compromised</p>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.advancedRecoveryTitle()}</h2>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.advancedRecoverySubtitle()}</p>
       </div>
     </div>
 
@@ -117,7 +118,7 @@
       <span class="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap"
             style="background: {status.isSetup ? '#10b98120' : $colorStore.muted + '20'}; color: {status.isSetup ? '#10b981' : $colorStore.muted};">
         <i class="fa-solid {status.isSetup ? 'fa-circle-check' : 'fa-circle-minus'} mr-1"></i>
-        {status.isSetup ? "Configured" : "Not configured"}
+        {status.isSetup ? m.common.configured() : m.common.notConfigured()}
       </span>
     {/if}
   </div>
@@ -129,7 +130,7 @@
   {:else if status?.isSetup}
     <div class="space-y-4">
       <div class="p-4 rounded-xl border" style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-        <div class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Recovery key</div>
+        <div class="text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.administration.advancedRecoveryKey()}</div>
         <div class="flex flex-col sm:flex-row gap-2">
           <code class="flex-1 px-3 py-2 rounded-lg text-sm font-mono break-all min-h-[44px] flex items-center"
                 style="background: {$colorStore.primary}10; color: {$colorStore.text};">
@@ -139,28 +140,28 @@
             <button class="px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02] min-h-[44px]"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                     onclick={() => showKey = !showKey}
-                    aria-label={showKey ? "Hide recovery key" : "Show recovery key"}>
+                    aria-label={showKey ? m.administration.advancedRecoveryHideKey() : m.administration.advancedRecoveryShowKey()}>
               <i class="fa-solid {showKey ? 'fa-eye-slash' : 'fa-eye'}"></i>
             </button>
             <button class="px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02] min-h-[44px]"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     onclick={copyKey}
-                    aria-label="Copy recovery key">
+                    aria-label={m.administration.advancedRecoveryCopyKey()}>
               <i class="fa-solid {copied ? 'fa-check' : 'fa-copy'}"></i>
             </button>
           </div>
         </div>
         <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-          Store this key somewhere safe. Combined with your two-factor key it lets the bot restore admin access via the recovery command.
+          {m.administration.advancedRecoveryKeyHint()}
         </p>
       </div>
 
       <button class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
               disabled={saving}
-              onclick={() => showConfirm("Remove Server Recovery", "The stored recovery and two-factor keys will be deleted. You can set new ones afterwards.", clearRecovery, "danger")}>
+              onclick={() => showConfirm(m.administration.advancedRecoveryRemoveTitle(), m.administration.advancedRecoveryRemoveMessage(), clearRecovery, "danger")}>
         <i class="fa-solid fa-trash"></i>
-        Remove recovery setup
+        {m.administration.advancedRecoveryRemove()}
       </button>
     </div>
   {:else}
@@ -170,19 +171,19 @@
           <i class="fa-utility-duo fa-regular fa-life-ring"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 32px; opacity: 0.6;"></i>
           <p class="text-sm mt-3 mb-4" style="color: {$colorStore.muted}">
-            No recovery keys are stored. Set them up now so you can recover the server later.
+            {m.administration.advancedRecoveryEmpty()}
           </p>
           <button class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] inline-flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   onclick={() => { showSetup = true; if (!recoveryKey) generateKey(); }}>
             <i class="fa-solid fa-key"></i>
-            Set up recovery
+            {m.administration.advancedRecoverySetup()}
           </button>
         </div>
       {:else}
         <form class="space-y-4" transition:slide onsubmit={(e) => { e.preventDefault(); setupRecovery(); }}>
           <div>
-            <label for="recovery-key" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Recovery key</label>
+            <label for="recovery-key" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.administration.advancedRecoveryKey()}</label>
             <div class="flex flex-col sm:flex-row gap-2">
               <input id="recovery-key" type="text" bind:value={recoveryKey} autocomplete="off" spellcheck="false"
                      class="flex-1 px-4 py-3 rounded-lg border font-mono text-sm min-h-[44px]"
@@ -190,14 +191,14 @@
               <button type="button" class="px-4 py-3 rounded-lg text-sm transition-all hover:scale-[1.02] min-h-[44px]"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                       onclick={generateKey}>
-                <i class="fa-solid fa-dice mr-1"></i>Generate
+                <i class="fa-solid fa-dice mr-1"></i>{m.administration.advancedRecoveryGenerate()}
               </button>
             </div>
           </div>
           <div>
-            <label for="two-factor-key" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Two-factor key</label>
+            <label for="two-factor-key" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.administration.advancedRecoveryTwoFactorKey()}</label>
             <input id="two-factor-key" type="password" bind:value={twoFactorKey} autocomplete="new-password"
-                   placeholder="A second secret only you know"
+                   placeholder={m.administration.advancedRecoveryTwoFactorPlaceholder()}
                    class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           </div>
@@ -214,13 +215,13 @@
             <button type="button" class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                     onclick={() => { showSetup = false; formError = ""; }}>
-              Cancel
+              {m.common.cancel()}
             </button>
             <button type="submit" disabled={saving}
                     class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
               {#if saving}<i class="fa-solid fa-spinner fa-spin mr-2"></i>{/if}
-              Save recovery keys
+              {m.administration.advancedRecoverySave()}
             </button>
           </div>
         </form>

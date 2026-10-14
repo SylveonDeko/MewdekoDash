@@ -1,5 +1,6 @@
 <!-- routes/leaderboard/[guildId]/+page.svelte -->
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { fade, fly } from "svelte/transition";
@@ -19,16 +20,16 @@
     const preview = data.preview;
     if (!preview?.guildName) return null;
     const rows = (preview.top ?? []).map(
-      (entry) => `**#${entry.rank}** ${plain(entry.username)} · Level ${entry.level}`
+      (entry) => m.public.leaderboardEmbedRow({ rank: entry.rank, user: plain(entry.username), level: entry.level })
     );
     return withRows(
       (list) =>
         container(
-          header("## " + plain(preview.guildName) + "\nXP Leaderboard", preview.guildIcon),
+          header(`## ${plain(preview.guildName)}\n${m.common.xpLeaderboard()}`, preview.guildIcon),
           separator(),
           list.length ? text(list.join("\n")) : null,
           list.length ? separator() : null,
-          buttons(linkButton("Open leaderboard", `${SITE_ORIGIN}/leaderboard/${$page.params.guildId}`))
+          buttons(linkButton(m.public.leaderboardEmbedOpen(), `${SITE_ORIGIN}/leaderboard/${$page.params.guildId}`))
         ),
       rows
     );
@@ -77,7 +78,7 @@
       const instances = await instanceManagementApi.getBotInstances().catch(() => []);
       
       if (instances.length === 0) {
-        error = "No bot instances available";
+        error = m.common.noBotInstancesAvailable();
         checkingInstances = false;
         return;
       }
@@ -127,7 +128,7 @@
           instanceStates[instanceId] = {
             loading: false,
             hasGuild: false,
-            error: is404 ? null : "Failed to check guild",
+            error: is404 ? null : m.public.leaderboardCheckGuildFailed(),
             checked: true
           };
         }
@@ -137,7 +138,7 @@
 
     } catch (err) {
       logger.error("Failed to find instances:", err);
-      error = "Failed to check bot instances";
+      error = m.public.leaderboardCheckInstancesFailed();
     } finally {
       checkingInstances = false;
     }
@@ -160,11 +161,11 @@
       
       
       if (!isMember) {
-        error = "You must be a member of this server to view its leaderboard";
+        error = m.public.leaderboardMembersOnly();
       }
     } catch (err) {
       logger.error("Failed to check guild membership:", err);
-      error = "Failed to verify guild membership";
+      error = m.public.leaderboardVerifyFailed();
       isMember = false;
     } finally {
       checkingMembership = false;
@@ -227,7 +228,7 @@
 
     } catch (err: any) {
       logger.error("Failed to load leaderboard:", err);
-      error = "Failed to load leaderboard data";
+      error = m.public.leaderboardLoadFailed();
     } finally {
       if (isPagination) {
         paginationLoading = false;
@@ -272,7 +273,7 @@
   onMount(async () => {
     // Require authentication
     if (!currentUser) {
-      error = "Please log in to view server leaderboards";
+      error = m.public.leaderboardLoginPrompt();
       loading = false;
       return;
     }
@@ -299,8 +300,8 @@
 <ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
-  <title>XP Leaderboard - {guildInfo?.name || previewName || 'Server'}</title>
-  <meta name="description" content="View the XP leaderboard for {guildInfo?.name || previewName || 'this server'}" />
+  <title>{m.public.leaderboardTitle({ server: guildInfo?.name || previewName || m.features.categoryServer() })}</title>
+  <meta name="description" content={m.public.leaderboardDescription({ server: guildInfo?.name || previewName || m.common.thisServer() })} />
 </svelte:head>
 
 <div class="min-h-screen p-4 md:p-6"
@@ -315,9 +316,9 @@
                style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"></div>
           <p class="text-lg" style="color: {$colorStore.muted}">
             {#if checkingInstances || stillChecking}
-              Finding which bot has this server...
+              {m.public.leaderboardFindingBot()}
             {:else if loading}
-              Loading leaderboard...
+              {m.public.leaderboardLoading()}
             {/if}
           </p>
         </div>
@@ -330,16 +331,16 @@
              style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.primary}10);
                     border-color: {$colorStore.primary}30;">
           <div class="text-6xl mb-4">🔐</div>
-          <h2 class="text-2xl font-bold mb-2" style="color: {$colorStore.text}">Login Required</h2>
+          <h2 class="text-2xl font-bold mb-2" style="color: {$colorStore.text}">{m.common.loginRequired()}</h2>
           <p class="text-lg mb-4" style="color: {$colorStore.muted}">
-            Please log in with Discord to view server leaderboards
+            {m.public.leaderboardPleaseLogInWithDiscord()}
           </p>
           <a
             href="/api/discord/login?redirect_to={encodeURIComponent($page.url.pathname)}"
             class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
             style="background: {$colorStore.primary}; color: white;"
           >
-            Login with Discord
+            {m.common.loginWithDiscord()}
           </a>
         </div>
       </div>
@@ -351,9 +352,9 @@
              style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.accent}10);
                     border-color: {$colorStore.accent}30;">
           <div class="text-6xl mb-4">🤖</div>
-          <h2 class="text-2xl font-bold mb-2" style="color: {$colorStore.text}">Server Not Found</h2>
+          <h2 class="text-2xl font-bold mb-2" style="color: {$colorStore.text}">{m.public.leaderboardServerNotFound()}</h2>
           <p class="text-lg" style="color: {$colorStore.muted}">
-            This server doesn't appear to be using Mewdeko, or XP tracking isn't enabled.
+            {m.public.leaderboardThisServerDoesntAppearTo()}
           </p>
         </div>
       </div>
@@ -365,9 +366,9 @@
              style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.accent}10);
                     border-color: {$colorStore.accent}30;">
           <div class="text-6xl mb-4">🚫</div>
-          <h2 class="text-2xl font-bold mb-2" style="color: {$colorStore.text}">Member Access Only</h2>
+          <h2 class="text-2xl font-bold mb-2" style="color: {$colorStore.text}">{m.public.leaderboardMemberAccessOnly()}</h2>
           <p class="text-lg" style="color: {$colorStore.muted}">
-            You must be a member of {guildInfo?.guildName || 'this server'} to view its leaderboard
+            {m.public.leaderboardMustBeMember({ server: guildInfo?.guildName || m.common.thisServer() })}
           </p>
         </div>
       </div>
@@ -379,7 +380,7 @@
              style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.accent}10);
                     border-color: {$colorStore.accent}30;">
           <div class="text-6xl mb-4">😅</div>
-          <h2 class="text-2xl font-bold mb-2" style="color: {$colorStore.text}">Oops!</h2>
+          <h2 class="text-2xl font-bold mb-2" style="color: {$colorStore.text}">{m.public.leaderboardOops()}</h2>
           <p class="text-lg" style="color: {$colorStore.muted}">{error}</p>
         </div>
       </div>
@@ -396,10 +397,10 @@
           >
         {/if}
         <h1 class="text-4xl font-bold mb-2" style="color: {$colorStore.text}">
-          {guildInfo?.name || 'Server'} Leaderboard
+          {m.public.leaderboardHeading({ server: guildInfo?.name || m.features.categoryServer() })}
         </h1>
         <p class="text-lg mb-4" style="color: {$colorStore.muted}">
-          Top members by experience points
+          {m.public.leaderboardTopMembersByExperiencePoints()}
         </p>
 
         <!-- Instance Selector (if multiple instances) -->
@@ -429,7 +430,7 @@
           <div class="flex justify-center">
             <div class="px-4 py-2 rounded-lg border text-sm"
                  style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}20; color: {$colorStore.text};">
-              Bot Instance: {selectedInstance.botName}
+              {m.public.leaderboardBotInstance({ bot: selectedInstance.botName })}
               {#if selectedInstance.isActive}
                 <span class="text-green-500">●</span>
               {:else}
@@ -449,7 +450,7 @@
             <i class="fa-solid fa-users"
                style="color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">{serverStats.totalUsers?.toLocaleString() || 0}</div>
-          <div class="text-sm" style="color: {$colorStore.muted}">Total Users</div>
+          <div class="text-sm" style="color: {$colorStore.muted}">{m.common.totalUsers()}</div>
         </div>
 
         <div class="p-6 rounded-2xl text-center border "
@@ -459,7 +460,7 @@
             <i class="fa-solid fa-bolt"
                style="color: {$colorStore.secondary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">{serverStats.totalXp?.toLocaleString() || 0}</div>
-          <div class="text-sm" style="color: {$colorStore.muted}">Total XP</div>
+          <div class="text-sm" style="color: {$colorStore.muted}">{m.common.totalXp()}</div>
         </div>
 
         <div class="p-6 rounded-2xl text-center border "
@@ -469,7 +470,7 @@
             <i class="fa-solid fa-arrow-trend-up"
                style="color: {$colorStore.accent}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">{serverStats.averageLevel || 0}</div>
-          <div class="text-sm" style="color: {$colorStore.muted}">Avg Level</div>
+          <div class="text-sm" style="color: {$colorStore.muted}">{m.public.leaderboardAvgLevel()}</div>
         </div>
 
         <div class="p-6 rounded-2xl text-center border "
@@ -479,7 +480,7 @@
             <i class="fa-solid fa-crown"
                style="color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">{serverStats.highestLevel || 0}</div>
-          <div class="text-sm" style="color: {$colorStore.muted}">Highest Level</div>
+          <div class="text-sm" style="color: {$colorStore.muted}">{m.common.highestLevel()}</div>
         </div>
       </div>
 
@@ -494,7 +495,7 @@
           <div class="flex items-center justify-between">
             <h2 class="text-2xl font-bold flex items-center gap-3" style="color: {$colorStore.text}">
               <i class="fa-solid fa-users" style="font-size: 24px;"></i>
-              Top Members
+              {m.common.topMembers()}
             </h2>
             
             <!-- Top Pagination -->
@@ -567,9 +568,9 @@
                       {user.username}
                     </div>
                     <div class="text-sm truncate" style="color: {$colorStore.muted}">
-                      Level {user.level} • {user.totalXp.toLocaleString()} XP
+                      {m.common.levelWithXp({ level: user.level, xp: user.totalXp.toLocaleString() })}
                       {#if user.messageCount !== undefined}
-                        • {user.messageCount.toLocaleString()} messages
+                        {m.public.leaderboardRowMessages({ count: user.messageCount.toLocaleString() })}
                       {/if}
                     </div>
                   </div>
@@ -594,7 +595,7 @@
                   <div class="px-3 py-1 rounded-lg border"
                        style="background: {$colorStore.primary}20; border-color: {$colorStore.primary}40;">
                     <span class="font-bold" style="color: {$colorStore.primary}">
-                      Level {user.level}
+                      {m.common.levelNumber({ level: user.level })}
                     </span>
                   </div>
                 </div>
@@ -604,8 +605,8 @@
             <div class="p-8 text-center">
               <i class="fa-solid fa-users"
                  style="color: {$colorStore.primary}50; font-size: 64px; display: block; margin: 0 auto 16px;"></i>
-              <p class="text-lg" style="color: {$colorStore.text}">No leaderboard data available</p>
-              <p class="text-sm" style="color: {$colorStore.muted}">This server may not have XP tracking enabled</p>
+              <p class="text-lg" style="color: {$colorStore.text}">{m.public.leaderboardNoLeaderboardDataAvailable()}</p>
+              <p class="text-sm" style="color: {$colorStore.muted}">{m.public.leaderboardThisServerMayNotHave()}</p>
             </div>
           {/each}
         </div>
@@ -623,13 +624,13 @@
                 <div class="w-4 h-4 border-2 rounded-full animate-spin"
                      style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
               {:else}
-                Previous
+                {m.common.previous()}
               {/if}
             </button>
             
             <div class="px-4 py-2 rounded-lg border min-h-[40px] flex items-center"
                  style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}20; color: {$colorStore.text};">
-              Page {currentPage}
+              {m.common.pageNumber({ page: currentPage })}
             </div>
             
             <button
@@ -642,7 +643,7 @@
                 <div class="w-4 h-4 border-2 rounded-full animate-spin"
                      style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
               {:else}
-                Next
+                {m.common.next()}
               {/if}
             </button>
           </div>
@@ -654,10 +655,10 @@
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                   border-color: {$colorStore.primary}20;">
         <p class="text-sm" style="color: {$colorStore.muted}">
-          Powered by <span style="color: {$colorStore.primary};" class="font-semibold">Mewdeko</span>
+          {@html m.public.leaderboardPoweredBy({ color: $colorStore.primary })}
         </p>
         <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-          Join this server to start earning XP and climb the leaderboard!
+          {m.public.leaderboardJoinThisServerToStart()}
         </p>
       </div>
     {/if}

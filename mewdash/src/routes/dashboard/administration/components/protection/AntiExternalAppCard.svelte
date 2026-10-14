@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/i18n";
   import { fly, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -20,14 +21,14 @@
   } = $props();
 
   /** Punishments that make sense for app abuse, Delete meaning the message is removed and nothing else. */
-  const actionOptions = [
-    { id: "8", name: "Delete only", label: "Delete only" },
-    { id: "9", name: "Warn", label: "Warn" },
-    { id: "10", name: "Timeout", label: "Timeout" },
-    { id: "0", name: "Mute", label: "Mute" },
-    { id: "1", name: "Kick", label: "Kick" },
-    { id: "2", name: "Ban", label: "Ban" }
-  ];
+  const actionOptions = $derived([
+    { id: "8", name: m.administration.protectionActionDeleteOnly(), label: m.administration.protectionActionDeleteOnly() },
+    { id: "9", name: m.common.warn(), label: m.common.warn() },
+    { id: "10", name: m.common.timeout(), label: m.common.timeout() },
+    { id: "0", name: m.common.actionMute(), label: m.common.actionMute() },
+    { id: "1", name: m.common.actionKick(), label: m.common.actionKick() },
+    { id: "2", name: m.common.actionBan(), label: m.common.actionBan() }
+  ]);
 
   /** Actions that last for a set time, so the duration field only shows for them. */
   const TIMED_ACTIONS = ["0", "10"];
@@ -41,15 +42,15 @@
    * @param value The stored limit
    */
   function limit(value: number) {
-    return value > 0 ? String(value) : "Off";
+    return value > 0 ? String(value) : m.common.off();
   }
 
   /** The three yes/no settings, drawn as the same checkbox rows. */
-  const toggles = [
-    { key: "blockInvites", label: "Remove invite links" },
-    { key: "deleteMessages", label: "Delete the app message" },
-    { key: "notifyUser", label: "Tell the member by DM" }
-  ];
+  const toggles = $derived([
+    { key: "blockInvites", label: m.administration.protectionExternalappRemoveInviteLinks() },
+    { key: "deleteMessages", label: m.administration.protectionExternalappDeleteAppMessage() },
+    { key: "notifyUser", label: m.administration.protectionExternalappNotifyMember() }
+  ]);
 </script>
 
 <div class=" rounded-2xl border p-6 shadow-2xl transition-all"
@@ -65,8 +66,8 @@
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
       <div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-External App</h2>
-        <p class="text-sm" style="color: {$colorStore.muted}">Catch abuse of apps members add to their own account</p>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.overviewAntiExternalApp()}</h2>
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionExternalappSubtitle()}</p>
       </div>
     </div>
 
@@ -80,10 +81,10 @@
       >
         {#if status.enabled}
           <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
-          Enabled
+          {m.common.enabled()}
         {:else}
           <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
-          Disabled
+          {m.common.disabled()}
         {/if}
       </button>
 
@@ -98,7 +99,7 @@
           {:else}
             <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
           {/if}
-          {expandedProtectionCard === 'antiExternalApp' ? 'Collapse' : 'Configure'}
+          {expandedProtectionCard === 'antiExternalApp' ? m.common.collapse() : m.common.configure()}
         </button>
       {/if}
     </div>
@@ -108,23 +109,23 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl" style="background: {$colorStore.primary}05;">
       <div class="text-center">
         <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{limit(status.mentionThreshold)}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Mention Limit</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionExternalappMentionLimit()}</div>
       </div>
       <div class="text-center">
         <div class="text-2xl font-bold" style="color: {$colorStore.primary}">
-          {status.maxMessages > 0 ? `${status.maxMessages} / ${status.timeWindowSeconds}s` : "Off"}
+          {status.maxMessages > 0 ? `${status.maxMessages} / ${status.timeWindowSeconds}s` : m.common.off()}
         </div>
-        <div class="text-sm" style="color: {$colorStore.muted}">App Messages</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionExternalappAppMessages()}</div>
       </div>
       <div class="text-center">
         <div class="text-lg font-semibold" style="color: {$colorStore.primary}">
           {formatAction(status.action)}{status.punishDuration > 0 ? ` (${status.punishDuration}m)` : ""}
         </div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Punishment</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.common.punishment()}</div>
       </div>
       <div class="text-center">
         <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{status.counter ?? 0}</div>
-        <div class="text-sm" style="color: {$colorStore.muted}">Times Triggered</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{m.administration.protectionExternalappTimesTriggered()}</div>
       </div>
     </div>
 
@@ -132,14 +133,13 @@
       <div transition:slide={{ duration: 300 }} class="mt-6 pt-6 border-t space-y-6"
            style="border-color: {$colorStore.primary}20;">
         <p class="text-sm" style="color: {$colorStore.muted}">
-          Apps added to the server itself are left alone. A ping of everyone or here always counts as too many
-          mentions. Set a limit to 0 to turn that check off.
+          {m.administration.protectionExternalappIntro()}
         </p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label for="antiea-mention-threshold" class="block text-sm font-medium mb-2"
-                   style="color: {$colorStore.text}">Mention Limit</label>
+                   style="color: {$colorStore.text}">{m.administration.protectionExternalappMentionLimit()}</label>
             <input id="antiea-mention-threshold"
                    type="number"
                    bind:value={tempProtectionConfig.mentionThreshold}
@@ -151,7 +151,7 @@
           </div>
           <div>
             <label for="antiea-max-messages" class="block text-sm font-medium mb-2"
-                   style="color: {$colorStore.text}">App Messages Allowed</label>
+                   style="color: {$colorStore.text}">{m.administration.protectionExternalappAppMessagesAllowed()}</label>
             <input id="antiea-max-messages"
                    type="number"
                    bind:value={tempProtectionConfig.maxMessages}
@@ -163,7 +163,7 @@
           </div>
           <div>
             <label for="antiea-window" class="block text-sm font-medium mb-2"
-                   style="color: {$colorStore.text}">Within (seconds)</label>
+                   style="color: {$colorStore.text}">{m.common.withinSeconds()}</label>
             <input id="antiea-window"
                    type="number"
                    bind:value={tempProtectionConfig.timeWindowSeconds}
@@ -174,12 +174,12 @@
             >
           </div>
           <div>
-            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</span>
+            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.action()}</span>
             <DiscordSelector
               type="custom"
               options={actionOptions}
               bind:selected={tempProtectionConfig.action}
-              placeholder="Select action..."
+              placeholder={m.administration.protectionCommonSelectAction()}
               multiple={false}
             />
           </div>
@@ -189,7 +189,7 @@
           {#if showsDuration}
             <div>
               <label for="antiea-duration" class="block text-sm font-medium mb-2"
-                     style="color: {$colorStore.text}">Duration (minutes)</label>
+                     style="color: {$colorStore.text}">{m.common.durationMinutes()}</label>
               <input id="antiea-duration"
                      type="number"
                      bind:value={tempProtectionConfig.punishDuration}
@@ -228,7 +228,7 @@
             style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
             onclick={cancelProtectionEdit}
           >
-            Cancel
+            {m.common.cancel()}
           </button>
           <button
             class="px-4 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px]"
@@ -241,7 +241,7 @@
             {:else}
               <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
             {/if}
-            <span>Save Configuration</span>
+            <span>{m.common.saveConfiguration()}</span>
           </button>
         </div>
       </div>
@@ -250,9 +250,9 @@
     <div class="text-center py-8">
       <i class="fa-utility-duo fa-regular fa-grid-2"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-      <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-External App Disabled</p>
+      <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.administration.protectionExternalappDisabledTitle()}</p>
       <p class="text-sm" style="color: {$colorStore.muted}">
-        Turn it on to remove mass pings, invite links and spam sent through members' own apps
+        {m.administration.protectionExternalappDisabledHint()}
       </p>
     </div>
   {/if}

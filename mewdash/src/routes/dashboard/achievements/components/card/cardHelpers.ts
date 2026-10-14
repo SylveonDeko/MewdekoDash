@@ -1,3 +1,4 @@
+import { m } from "$lib/i18n";
 import type {
   AchievementCardCustomType,
   AchievementCardElement,
@@ -13,23 +14,23 @@ export const BUILT_IN_TYPES = [
 ] as const;
 
 /** What each element kind is called and its icon. */
-export const ELEMENT_KINDS: Record<string, { label: string; icon: string; hint: string }> = {
-  icon: { label: "Icon tile", icon: "fa-crown", hint: "The achievement's icon on a tile" },
-  grade: { label: "Grade badge", icon: "fa-trophy", hint: "Bronze, Silver, and so on" },
-  label: { label: "State line", icon: "fa-tag", hint: "\"Achievement unlocked\" or \"Locked\"" },
-  title: { label: "Title", icon: "fa-heading", hint: "The achievement's name" },
-  description: { label: "Description", icon: "fa-align-left", hint: "What it asks for" },
-  progress: { label: "Progress bar", icon: "fa-bars-progress", hint: "Shown on locked achievements with a goal" },
-  avatar: { label: "Avatar", icon: "fa-circle-user", hint: "The member's avatar" },
-  member: { label: "Member line", icon: "fa-user", hint: "The member's name and the server" },
-  category: { label: "Category badge", icon: "fa-layer-group", hint: "The achievement's category" },
-  points: { label: "Points badge", icon: "fa-star", hint: "Points it is worth" },
-  more: { label: "More badge", icon: "fa-plus", hint: "\"+2 more\" when several unlock at once" },
-  rectangle: { label: "Rectangle", icon: "fa-square", hint: "A box, panel, or stripe" },
-  ellipse: { label: "Ellipse", icon: "fa-circle", hint: "A circle or oval" },
-  text: { label: "Text", icon: "fa-font", hint: "Your own text, with placeholders" },
-  image: { label: "Image", icon: "fa-image", hint: "An uploaded or linked image" },
-  glyph: { label: "Icon", icon: "fa-icons", hint: "Any Font Awesome icon" },
+export const ELEMENT_KINDS: Record<string, { label: () => string; icon: string; hint: () => string }> = {
+  icon: { label: m.achievements.cardHelpersKindIconLabel, icon: "fa-crown", hint: m.achievements.cardHelpersKindIconHint },
+  grade: { label: m.achievements.cardHelpersKindGradeLabel, icon: "fa-trophy", hint: m.achievements.cardHelpersKindGradeHint },
+  label: { label: m.achievements.cardHelpersKindLabelLabel, icon: "fa-tag", hint: m.achievements.cardHelpersKindLabelHint },
+  title: { label: m.common.title, icon: "fa-heading", hint: m.achievements.cardHelpersKindTitleHint },
+  description: { label: m.common.description, icon: "fa-align-left", hint: m.achievements.cardHelpersKindDescriptionHint },
+  progress: { label: m.common.progressBar, icon: "fa-bars-progress", hint: m.achievements.cardHelpersKindProgressHint },
+  avatar: { label: m.common.avatar, icon: "fa-circle-user", hint: m.achievements.cardHelpersKindAvatarHint },
+  member: { label: m.achievements.cardHelpersKindMemberLabel, icon: "fa-user", hint: m.achievements.cardHelpersKindMemberHint },
+  category: { label: m.achievements.cardHelpersKindCategoryLabel, icon: "fa-layer-group", hint: m.achievements.cardHelpersKindCategoryHint },
+  points: { label: m.achievements.cardHelpersKindPointsLabel, icon: "fa-star", hint: m.achievements.cardHelpersKindPointsHint },
+  more: { label: m.achievements.cardHelpersKindMoreLabel, icon: "fa-plus", hint: m.achievements.cardHelpersKindMoreHint },
+  rectangle: { label: m.common.rectangle, icon: "fa-square", hint: m.achievements.cardHelpersKindRectangleHint },
+  ellipse: { label: m.common.ellipse, icon: "fa-circle", hint: m.achievements.cardHelpersKindEllipseHint },
+  text: { label: m.common.text, icon: "fa-font", hint: m.achievements.cardHelpersKindTextHint },
+  image: { label: m.common.image, icon: "fa-image", hint: m.achievements.cardHelpersKindImageHint },
+  glyph: { label: m.achievements.editorIconLabel, icon: "fa-icons", hint: m.achievements.cardHelpersKindGlyphHint },
 };
 
 /** Element kinds a server can add. */
@@ -57,7 +58,7 @@ export function isBuiltIn(type: string): boolean {
  * @param element The element
  */
 export function elementName(element: AchievementCardElement): string {
-  return element.name || ELEMENT_KINDS[element.type]?.label || element.type;
+  return element.name || ELEMENT_KINDS[element.type]?.label() || element.type;
 }
 
 /**
@@ -97,9 +98,25 @@ export function resolveToken(value: string, palette: Record<string, string>, gra
  * @param value The token
  */
 export function tokenLabel(value: string): string {
-  if (!value) return "None";
+  if (!value) return m.common.none();
   const { base, alpha } = parseToken(value);
-  return alpha >= 255 ? base : `${base} at ${Math.round(alpha / 2.55)}%`;
+  return alpha >= 255 ? tokenName(base) : m.achievements.cardHelpersTokenAtAlpha({ token: tokenName(base), percent: Math.round(alpha / 2.55) });
+}
+
+/**
+ * The display name of a color token; custom colors stay as their hex.
+ * @param base A token name or #rrggbb
+ */
+export function tokenName(base: string): string {
+  switch (base) {
+    case "primary": return m.achievements.cardHelpersTokenPrimary();
+    case "secondary": return m.achievements.cardHelpersTokenSecondary();
+    case "accent": return m.achievements.cardHelpersTokenAccent();
+    case "text": return m.achievements.cardHelpersTokenText();
+    case "muted": return m.common.muted();
+    case "grade": return m.achievements.cardHelpersTokenGrade();
+    default: return base;
+  }
 }
 
 /**

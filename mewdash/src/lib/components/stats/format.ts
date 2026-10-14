@@ -1,3 +1,5 @@
+import { m } from "$lib/i18n";
+
 // lib/components/stats/format.ts
 
 /** Formats a whole number with thousands separators. */
@@ -36,9 +38,9 @@ export function formatSigned(value: number): string {
 
 /** Names a lookback window. */
 export function windowLabel(days: number): string {
-  if (days === 0) return "All time";
-  if (days === 1) return "Last 24 hours";
-  return `Last ${days} days`;
+  if (days === 0) return m.common.allTime();
+  if (days === 1) return m.common.last24Hours();
+  return m.monitoring.formatWindowLastDays({ days });
 }
 
 /** Formats an ISO timestamp as a short local date. */
@@ -73,10 +75,10 @@ export function formatAgo(iso: string | null | undefined): string {
   const then = new Date(iso).getTime();
   if (Number.isNaN(then)) return "-";
   const seconds = Math.max(0, (Date.now() - then) / 1000);
-  if (seconds < 60) return "just now";
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  return `${Math.floor(seconds / 86400)}d ago`;
+  if (seconds < 60) return m.common.justNowLower();
+  if (seconds < 3600) return m.common.agoMinutes({ count: Math.floor(seconds / 60) });
+  if (seconds < 86400) return m.common.agoHours({ count: Math.floor(seconds / 3600) });
+  return m.common.agoDays({ count: Math.floor(seconds / 86400) });
 }
 
 /** Formats a byte count as B, KB, MB or GB with one decimal above kilobytes. */
@@ -112,7 +114,7 @@ export const lookbackOptions = [
   { value: 14, label: "14d" },
   { value: 30, label: "30d" },
   { value: 90, label: "90d" },
-  { value: 0, label: "All" },
+  { value: 0, get label() { return m.common.all(); } },
 ];
 
 /** The invite windows offered by invite pages, as StatsRange values. */
@@ -120,5 +122,5 @@ export const rangeOptions = [
   { value: 1, label: "24h" },
   { value: 2, label: "7d" },
   { value: 3, label: "30d" },
-  { value: 0, label: "All" },
+  { value: 0, get label() { return m.common.all(); } },
 ];
