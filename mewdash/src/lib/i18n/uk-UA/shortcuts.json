@@ -1,0 +1,16 @@
+{
+  "shortcuts_close_dialog": "Закрити діалог гарячих клавіш",
+  "shortcuts_close_popups": "Закрити спливаючі вікна і діалоги",
+  "shortcuts_context_global": "Загальні",
+  "shortcuts_focus_search": "Перейти до пошуку",
+  "shortcuts_footer": "Натисни {key} у будь-який момент, щоб показати це вікно",
+  "shortcuts_go_home": "Перейти на головну панелі керування",
+  "shortcuts_go_music": "Перейти до музичного плеєра",
+  "shortcuts_go_settings": "Перейти до налаштувань",
+  "shortcuts_play_pause": "Відтворити/призупинити музику",
+  "shortcuts_quick_switch": "Швидке перемикання серверів",
+  "shortcuts_refresh": "Оновити поточні дані",
+  "shortcuts_skip": "Перемотати назад/вперед",
+  "shortcuts_toggle": "Показати/сховати гарячі клавіші",
+  "tabnav_aria_label": "Навігація по вкладках"
+}

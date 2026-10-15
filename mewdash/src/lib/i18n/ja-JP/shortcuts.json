@@ -1,0 +1,16 @@
+{
+  "shortcuts_close_dialog": "キーボードショートカットのダイアログを閉じる",
+  "shortcuts_close_popups": "ポップアップ・ダイアログを閉じる",
+  "shortcuts_context_global": "全体",
+  "shortcuts_focus_search": "検索にフォーカス",
+  "shortcuts_footer": "このダイアログはいつでも {key} を押すと表示されます",
+  "shortcuts_go_home": "ダッシュボードのホームへ移動",
+  "shortcuts_go_music": "ミュージックプレーヤーへ移動",
+  "shortcuts_go_settings": "設定へ移動",
+  "shortcuts_play_pause": "音楽の再生・一時停止",
+  "shortcuts_quick_switch": "サーバーをすばやく切り替え",
+  "shortcuts_refresh": "現在のデータを更新",
+  "shortcuts_skip": "後方・前方へスキップ",
+  "shortcuts_toggle": "キーボードショートカットの表示・非表示",
+  "tabnav_aria_label": "タブのナビゲーション"
+}

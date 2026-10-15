@@ -1,19 +1,20 @@
 <script lang="ts">
   import { fade, fly } from "svelte/transition";
   import { m } from "$lib/i18n";
+  import { siteStatParams, type SiteStats } from "$lib/config/siteStats";
   import { colorStore } from "$lib/stores/colorStore";
   import Mascot from "$lib/components/brand/Mascot.svelte";
 
   /**
    * The landing page's opening: what Mewdeko is in one line, the invite and dashboard buttons, a few real
-   * commands, and the cat. It takes no inputs.
+   * commands, and the cat.
    */
   const INVITE_URL =
     "https://discord.com/oauth2/authorize?client_id=752236274261426212&permissions=66186303&response_type=code&redirect_uri=https%3A%2F%2Fmewdeko.tech%2Fapi%2Fdiscord%2Fcallback&integration_type=0&scope=identify+guilds+bot";
 
   /** Commands shown as a taste of what the bot does. Each is a real command name. */
   const commands = [".achievements", ".rank", ".ticketpanel", ".play", ".gstart", ".antiraid"];
-  const totalCommands = 1082;
+  let { stats }: { stats: SiteStats } = $props();
 </script>
 
 <div class="w-full max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-2 items-center gap-8 lg:gap-12 px-2 sm:px-6"
@@ -56,12 +57,12 @@
       {/each}
       <a href="/commands" class="font-mono text-xs sm:text-sm px-3 py-2 rounded-lg"
          style="color: {$colorStore.primary}">
-        {m.common.moreCount({ count: (totalCommands - commands.length).toLocaleString() })}
+        {m.common.moreCount({ count: (stats.commands - commands.length).toLocaleString() })}
       </a>
     </div>
 
     <p class="text-sm mt-5" style="color: {$colorStore.muted}">
-      {m.home.heroServers()}
+      {m.home.heroServers(siteStatParams(stats))}
     </p>
   </div>
 

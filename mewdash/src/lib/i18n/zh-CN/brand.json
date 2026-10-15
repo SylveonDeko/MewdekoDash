@@ -1,0 +1,5 @@
+{
+  "star_rating_label": "星级评分",
+  "star_rating_rate_one": "评 1 星",
+  "star_rating_rate_other": "评 {count} 星"
+}

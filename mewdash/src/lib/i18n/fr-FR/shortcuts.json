@@ -1,0 +1,16 @@
+{
+  "shortcuts_close_dialog": "Fermer la fenêtre des raccourcis clavier",
+  "shortcuts_close_popups": "Fermer les pop-ups et fenêtres de dialogue",
+  "shortcuts_context_global": "Global",
+  "shortcuts_focus_search": "Placer le curseur dans la recherche",
+  "shortcuts_footer": "Appuyez sur {key} à tout moment pour afficher cette fenêtre",
+  "shortcuts_go_home": "Aller à l'accueil du tableau de bord",
+  "shortcuts_go_music": "Aller au lecteur de musique",
+  "shortcuts_go_settings": "Aller aux paramètres",
+  "shortcuts_play_pause": "Lecture/pause de la musique",
+  "shortcuts_quick_switch": "Changement rapide de serveur",
+  "shortcuts_refresh": "Actualiser les données actuelles",
+  "shortcuts_skip": "Reculer/avancer",
+  "shortcuts_toggle": "Afficher/masquer les raccourcis clavier",
+  "tabnav_aria_label": "Navigation par onglets"
+}

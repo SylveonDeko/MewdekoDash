@@ -1,0 +1,7 @@
+{
+  "star_rating_label": "Ocena w gwiazdkach",
+  "star_rating_rate_few": "Oceń: {count} ★",
+  "star_rating_rate_many": "Oceń: {count} ★",
+  "star_rating_rate_one": "Oceń na 1 gwiazdkę",
+  "star_rating_rate_other": "Oceń: {count} ★"
+}

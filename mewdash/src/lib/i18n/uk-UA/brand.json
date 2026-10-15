@@ -1,0 +1,7 @@
+{
+  "star_rating_label": "Оцінка зірками",
+  "star_rating_rate_few": "Оцінити на {count} зірки",
+  "star_rating_rate_many": "Оцінити на {count} зірок",
+  "star_rating_rate_one": "Оцінити на 1 зірку",
+  "star_rating_rate_other": "Оцінити на {count} зірок"
+}

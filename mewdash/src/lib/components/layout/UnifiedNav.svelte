@@ -51,6 +51,7 @@ A unified navigation component that provides responsive navigation with server a
   import MiniMusicPlayer from "$lib/components/music/MiniMusicPlayer.svelte";
   import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
   import { themeStore } from "$lib/stores/themeStore.ts";
+  import LocaleSwitcher from "$lib/components/layout/LocaleSwitcher.svelte";
 
   // Types
   type NavItem = {
@@ -915,6 +916,7 @@ A unified navigation component that provides responsive navigation with server a
          style="background: {$colorStore.primary}15; border-color: {$colorStore.primary}40; color: {$colorStore.text};">
         {m.layout.navDonate()}
       </a>
+      <LocaleSwitcher />
       <!-- Dyslexia-friendly font toggle - always visible, no login required -->
       <button
         type="button"

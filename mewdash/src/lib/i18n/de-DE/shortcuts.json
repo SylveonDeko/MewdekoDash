@@ -1,0 +1,16 @@
+{
+  "shortcuts_close_dialog": "Dialog mit Tastenkürzeln schließen",
+  "shortcuts_close_popups": "Popups/Dialoge schließen",
+  "shortcuts_context_global": "Global",
+  "shortcuts_focus_search": "Suche fokussieren",
+  "shortcuts_footer": "Drücke jederzeit {key}, um diesen Dialog anzuzeigen",
+  "shortcuts_go_home": "Zur Dashboard-Startseite",
+  "shortcuts_go_music": "Zum Musikplayer",
+  "shortcuts_go_settings": "Zu den Einstellungen",
+  "shortcuts_play_pause": "Musik abspielen/pausieren",
+  "shortcuts_quick_switch": "Schneller Serverwechsel",
+  "shortcuts_refresh": "Aktuelle Daten aktualisieren",
+  "shortcuts_skip": "Zurück-/Vorspringen",
+  "shortcuts_toggle": "Tastenkürzel ein-/ausblenden",
+  "tabnav_aria_label": "Tab-Navigation"
+}

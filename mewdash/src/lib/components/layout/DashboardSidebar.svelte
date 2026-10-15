@@ -844,8 +844,6 @@
           <span class="text-sm">{m.common.mySettings()}</span>
         </a>
 
-        <LocaleSwitcher />
-
         <!-- Dyslexia-friendly font -->
         <button
           type="button"
@@ -898,6 +896,12 @@
       </div>
     {/if}
 
+    {#if collapsed}
+      <div class="px-1 pt-2 flex justify-center">
+        <LocaleSwitcher />
+      </div>
+    {/if}
+
     <div class="p-2 flex items-center gap-1" class:justify-center={collapsed}>
       <!-- User profile button -->
       {#if $userStore}
@@ -945,6 +949,8 @@
       {/if}
 
       {#if !collapsed}
+        <LocaleSwitcher />
+
         <!-- Collapse toggle (desktop only) -->
         <button
           class="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.05] shrink-0"

@@ -1,0 +1,16 @@
+{
+  "shortcuts_close_dialog": "Zamknij okno skrótów klawiszowych",
+  "shortcuts_close_popups": "Zamknij wyskakujące okna/dialogi",
+  "shortcuts_context_global": "Globalne",
+  "shortcuts_focus_search": "Przejdź do wyszukiwania",
+  "shortcuts_footer": "Naciśnij {key} w dowolnym momencie, aby wyświetlić to okno",
+  "shortcuts_go_home": "Przejdź do strony głównej dashboardu",
+  "shortcuts_go_music": "Przejdź do odtwarzacza muzyki",
+  "shortcuts_go_settings": "Przejdź do ustawień",
+  "shortcuts_play_pause": "Odtwarzaj/wstrzymaj muzykę",
+  "shortcuts_quick_switch": "Szybka zmiana serwera",
+  "shortcuts_refresh": "Odśwież bieżące dane",
+  "shortcuts_skip": "Przewiń do tyłu/do przodu",
+  "shortcuts_toggle": "Pokaż/ukryj skróty klawiszowe",
+  "tabnav_aria_label": "Nawigacja zakładek"
+}

@@ -1,0 +1,5 @@
+{
+  "star_rating_label": "星評価",
+  "star_rating_rate_one": "星1つで評価",
+  "star_rating_rate_other": "星{count}つで評価"
+}

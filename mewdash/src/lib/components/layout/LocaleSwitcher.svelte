@@ -1,8 +1,9 @@
 <!--
 @component
-Dashboard language picker. Hidden while only the source locale exists. Switching re-renders every
-message on the page immediately and writes the `locale` cookie so the server renders the next
-request the same way.
+Language picker: a globe and the current language code, opening the platform's native select with
+every language in its own name. Hidden while only the source locale exists. Switching re-renders
+every message immediately and writes the `locale` cookie so the server renders the next request the
+same way.
 -->
 <script lang="ts">
   import { availableLocales, getLocale, m, setLocale } from "$lib/i18n";
@@ -27,19 +28,22 @@ request the same way.
 </script>
 
 {#if locales.length > 1}
-  <label class="w-full flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl" style="color: {$colorStore.text};">
-    <i class="fa-solid fa-language text-sm shrink-0" style="color: {$colorStore.primary}; width: 20px; text-align: center;" aria-hidden="true"></i>
-    <span class="text-sm flex-1 text-left">{m.common.language()}</span>
+  <label
+    class="relative z-30 flex items-center justify-center gap-1.5 h-9 px-2.5 rounded-lg border shrink-0 cursor-pointer transition-all duration-200 hover:scale-[1.05] focus-within:ring-2"
+    style="border-color: {$colorStore.primary}40; color: {$colorStore.text}; --tw-ring-color: {$colorStore.primary};"
+    title={m.common.language()}
+  >
+    <i class="fa-solid fa-globe text-sm" style="color: {$colorStore.primary};" aria-hidden="true"></i>
+    <span class="text-xs font-semibold tracking-wide">{current.split("-")[0].toUpperCase()}</span>
     <select
-      class="text-sm rounded-lg px-2 py-1 border bg-transparent min-h-[32px]"
-      style="color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
+      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
       value={current}
       disabled={busy}
       aria-label={m.common.language()}
       onchange={(e) => choose((e.currentTarget as HTMLSelectElement).value)}
     >
-      {#each locales as locale}
-        <option value={locale}>{localeDisplayName(locale)}</option>
+      {#each locales as locale (locale)}
+        <option value={locale} lang={locale}>{localeDisplayName(locale)}</option>
       {/each}
     </select>
   </label>

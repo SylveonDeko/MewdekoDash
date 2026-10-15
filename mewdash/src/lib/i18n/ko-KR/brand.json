@@ -1,0 +1,5 @@
+{
+  "star_rating_label": "별점",
+  "star_rating_rate_one": "별 1개로 평가하기",
+  "star_rating_rate_other": "별 {count}개로 평가하기"
+}

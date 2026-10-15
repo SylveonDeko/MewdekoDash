@@ -325,6 +325,8 @@ export const m = {
     denied: () => t("_common", "denied", "Denied"),
     /** Deny */
     deny: () => t("_common", "deny", "Deny"),
+    /** Left */
+    departed: () => t("_common", "departed", "Left"),
     /** Descending */
     descending: () => t("_common", "descending", "Descending"),
     /** Description */
@@ -9137,8 +9139,8 @@ export const m = {
     heroEyebrow: () => t("home", "hero_eyebrow", "Mewdeko, the free and open source Discord bot"),
     /** Open dashboard */
     heroOpenDashboard: () => t("home", "hero_open_dashboard", "Open dashboard"),
-    /** In 11,400+ servers, with every feature free. */
-    heroServers: () => t("home", "hero_servers", "In 11,400+ servers, with every feature free."),
+    /** In {servers}+ servers, with every feature free. */
+    heroServers: (p: { servers: P }) => t("home", "hero_servers", "In {servers}+ servers, with every feature free.", p),
     /** Moderation, tickets, XP, achievements, music, forms, giveaways and about a thousand oth... */
     heroSubtitle: () => t("home", "hero_subtitle", "Moderation, tickets, XP, achievements, music, forms, giveaways and about a thousand other things. We might have gone a little overboard."),
     /** One bot.<br />Way too many <span style="color: {color}">tails.</span> */
@@ -9167,8 +9169,8 @@ export const m = {
     landingAnonymousPosts: () => t("home", "landing_anonymous_posts", "Anonymous posts"),
     /** Birthday Tracking */
     landingBirthdayTracking: () => t("home", "landing_birthday_tracking", "Birthday Tracking"),
-    /** Browse All 1,082 Commands */
-    landingBrowseAll1082Commands: () => t("home", "landing_browse_all_1_082_commands", "Browse All 1,082 Commands"),
+    /** Browse All {commands} Commands */
+    landingBrowseAllCommands: (p: { commands: P }) => t("home", "landing_browse_all_commands", "Browse All {commands} Commands", p),
     /** Build a form on the dashboard and share the link for people to fill in. */
     landingBuildAFormOnTheDashboard: () => t("home", "landing_build_a_form_on_the_dashboard", "Build a form on the dashboard and share the link for people to fill in."),
     /** Build embeds without writing JSON */
@@ -9187,8 +9189,8 @@ export const m = {
     landingCustomizeNow: () => t("home", "landing_customize_now", "Customize Now"),
     /** Economy Games */
     landingEconomyGames: () => t("home", "landing_economy_games", "Economy Games"),
-    /** 1,082 commands across 34 modules: forms, XP, economy, music, protection, logging and mo... */
-    landingEmbedSummary: () => t("home", "landing_embed_summary", "1,082 commands across 34 modules: forms, XP, economy, music, protection, logging and more. Trusted by 11,400+ servers. Free and open source since 2020."),
+    /** {commands} commands across {modules} modules: forms, XP, economy, music, protection, lo... */
+    landingEmbedSummary: (p: { commands: P; modules: P; servers: P }) => t("home", "landing_embed_summary", "{commands} commands across {modules} modules: forms, XP, economy, music, protection, logging and more. Trusted by {servers}+ servers. Free and open source since 2020.", p),
     /** Engagement */
     landingEngagement: () => t("home", "landing_engagement", "Engagement"),
     /** Every command, with examples and the permissions it needs. */
@@ -9229,12 +9231,12 @@ export const m = {
     landingMembersGetTheirOwnVoiceChannel: () => t("home", "landing_members_get_their_own_voice_channel", "Members get their own voice channel"),
     /** Members thank each other */
     landingMembersThankEachOther: () => t("home", "landing_members_thank_each_other", "Members thank each other"),
-    /** 1,082 commands across 34 modules - Forms, XP/Leveling, Economy, Music, Protection, Logg... */
-    landingMetaDescription: () => t("home", "landing_meta_description", "1,082 commands across 34 modules - Forms, XP/Leveling, Economy, Music, Protection, Logging, and more. Trusted by 11,400+ servers. Completely free and open source since 2020."),
-    /** Discord bot, free Discord bot, open source Discord bot, 1082 commands, forms builder, b... */
-    landingMetaKeywords: () => t("home", "landing_meta_keywords", "Discord bot, free Discord bot, open source Discord bot, 1082 commands, forms builder, ban appeals, XP leveling bot, Discord economy bot, Discord music bot, Discord moderation bot, anti-raid protection, anti-spam, server logging, chat triggers, embed builder, ticket system, giveaway bot, suggestion bot, starboard, custom commands, role states, multi-purpose bot, Discord reputation system, stream alerts, invite tracking, automated moderation, Mewdeko"),
-    /** Mewdeko - 1,082 Commands. Free & Open Source Discord Bot */
-    landingMetaTitle: () => t("home", "landing_meta_title", "Mewdeko - 1,082 Commands. Free & Open Source Discord Bot"),
+    /** {commands} commands across {modules} modules - Forms, XP/Leveling, Economy, Music, Prot... */
+    landingMetaDescription: (p: { commands: P; modules: P; servers: P }) => t("home", "landing_meta_description", "{commands} commands across {modules} modules - Forms, XP/Leveling, Economy, Music, Protection, Logging, and more. Trusted by {servers}+ servers. Completely free and open source since 2020.", p),
+    /** Discord bot, free Discord bot, open source Discord bot, forms builder, ban appeals, XP ... */
+    landingMetaKeywords: () => t("home", "landing_meta_keywords", "Discord bot, free Discord bot, open source Discord bot, forms builder, ban appeals, XP leveling bot, Discord economy bot, Discord music bot, Discord moderation bot, anti-raid protection, anti-spam, server logging, chat triggers, embed builder, ticket system, giveaway bot, suggestion bot, starboard, custom commands, role states, multi-purpose bot, Discord reputation system, stream alerts, invite tracking, automated moderation, Mewdeko"),
+    /** Mewdeko - {commands} Commands. Free & Open Source Discord Bot */
+    landingMetaTitle: (p: { commands: P }) => t("home", "landing_meta_title", "Mewdeko - {commands} Commands. Free & Open Source Discord Bot", p),
     /** Mewdeko Bot Customization */
     landingMewdekoBotCustomization: () => t("home", "landing_mewdeko_bot_customization", "Mewdeko Bot Customization"),
     /** Mewdeko Forms Builder Interface */
@@ -9301,10 +9303,10 @@ export const m = {
     landingTriviaHangmanTictactoe: () => t("home", "landing_trivia_hangman_tictactoe", "Trivia, hangman, TicTacToe"),
     /** Twitch/YouTube */
     landingTwitchYoutube: () => t("home", "landing_twitch_youtube", "Twitch/YouTube"),
-    /** Free & open source Discord bot with 1,082 commands. Forms builder, XP/leveling, economy... */
-    landingTwitterDescription: () => t("home", "landing_twitter_description", "Free & open source Discord bot with 1,082 commands. Forms builder, XP/leveling, economy, music, protection systems, and more. No limitations, no subscriptions."),
-    /** Mewdeko - 1,082 Commands. Ridiculously Over-Engineered. */
-    landingTwitterTitle: () => t("home", "landing_twitter_title", "Mewdeko - 1,082 Commands. Ridiculously Over-Engineered."),
+    /** Free & open source Discord bot with {commands} commands. Forms builder, XP/leveling, ec... */
+    landingTwitterDescription: (p: { commands: P }) => t("home", "landing_twitter_description", "Free & open source Discord bot with {commands} commands. Forms builder, XP/leveling, economy, music, protection systems, and more. No limitations, no subscriptions.", p),
+    /** Mewdeko - {commands} Commands. Ridiculously Over-Engineered. */
+    landingTwitterTitle: (p: { commands: P }) => t("home", "landing_twitter_title", "Mewdeko - {commands} Commands. Ridiculously Over-Engineered.", p),
     /** View Complete Feature List */
     landingViewCompleteFeatureList: () => t("home", "landing_view_complete_feature_list", "View Complete Feature List"),
     /** View Dashboard */
@@ -12181,6 +12183,8 @@ export const m = {
     dockerNoticeContainer: (p: { message: P; name: P }) => t("owner", "docker_notice_container", "{name}: {message}", p),
     /** Pull */
     dockerOpPull: () => t("owner", "docker_op_pull", "Pull"),
+    /** Up */
+    dockerOpUp: () => t("owner", "docker_op_up", "Up"),
     /** Open this bot's container log */
     dockerOpenBotLog: () => t("owner", "docker_open_bot_log", "Open this bot's container log"),
     /** {name} runs on another host; select that instance to read its logs */

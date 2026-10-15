@@ -1,0 +1,16 @@
+{
+  "shortcuts_close_dialog": "Chiudi la finestra delle scorciatoie da tastiera",
+  "shortcuts_close_popups": "Chiudi popup/finestre",
+  "shortcuts_context_global": "Globale",
+  "shortcuts_focus_search": "Metti a fuoco la ricerca",
+  "shortcuts_footer": "Premi {key} in qualsiasi momento per mostrare questa finestra",
+  "shortcuts_go_home": "Vai alla home della dashboard",
+  "shortcuts_go_music": "Vai al lettore musicale",
+  "shortcuts_go_settings": "Vai alle impostazioni",
+  "shortcuts_play_pause": "Riproduci/pausa musica",
+  "shortcuts_quick_switch": "Cambio server rapido",
+  "shortcuts_refresh": "Aggiorna i dati correnti",
+  "shortcuts_skip": "Scorri indietro/avanti",
+  "shortcuts_toggle": "Mostra/nascondi le scorciatoie da tastiera",
+  "tabnav_aria_label": "Navigazione schede"
+}

@@ -1,0 +1,5 @@
+{
+  "star_rating_label": "Valoración con estrellas",
+  "star_rating_rate_one": "Valorar con 1 estrella",
+  "star_rating_rate_other": "Valorar con {count} estrellas"
+}

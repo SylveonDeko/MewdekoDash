@@ -1,0 +1,16 @@
+{
+  "shortcuts_close_dialog": "키보드 단축키 대화상자 닫기",
+  "shortcuts_close_popups": "팝업/대화상자 닫기",
+  "shortcuts_context_global": "전체",
+  "shortcuts_focus_search": "검색으로 이동",
+  "shortcuts_footer": "언제든지 {key}을(를) 누르면 이 대화상자가 열려요",
+  "shortcuts_go_home": "대시보드 홈으로 이동",
+  "shortcuts_go_music": "음악 플레이어로 이동",
+  "shortcuts_go_settings": "설정으로 이동",
+  "shortcuts_play_pause": "음악 재생/일시 정지",
+  "shortcuts_quick_switch": "서버 빠르게 전환",
+  "shortcuts_refresh": "현재 데이터 새로 고침",
+  "shortcuts_skip": "뒤로/앞으로 건너뛰기",
+  "shortcuts_toggle": "키보드 단축키 보기/숨기기",
+  "tabnav_aria_label": "탭 탐색"
+}

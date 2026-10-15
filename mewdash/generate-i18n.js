@@ -99,10 +99,14 @@ for (const locale of locales) {
         errors.push(`${locale}/${moduleName}.json: no such module in ${sourceLocale}`);
       } else {
         for (const [key, text] of Object.entries(entries)) {
-          if (!(key in sourceEntries)) {
+          const pluralBase = /^(.*)_(zero|two|few|many)$/.exec(key)?.[1];
+          const sourceKey = !(key in sourceEntries) && pluralBase && `${pluralBase}_other` in sourceEntries
+            ? `${pluralBase}_other`
+            : key;
+          if (!(sourceKey in sourceEntries)) {
             errors.push(`${locale}/${moduleName}.json: "${key}" does not exist in ${sourceLocale}`);
           } else if (typeof text === "string") {
-            const want = placeholdersOf(sourceEntries[key]).join(",");
+            const want = placeholdersOf(sourceEntries[sourceKey]).join(",");
             const have = placeholdersOf(text).join(",");
             if (want !== have) {
               errors.push(`${locale}/${moduleName}.json: "${key}" placeholders {${have}} differ from ${sourceLocale} {${want}}`);
@@ -139,6 +143,12 @@ const commonTwinsOfCanonicalKeys = new Set([
   "user_id", // placeholders.user_id, placeholders.xp_user_id
   "username", // placeholders.user_name
 ]);
+// Same English word, different meaning: other languages need a different word for each, so these
+// keys may share text with another key.
+const homographKeys = new Set([
+  "_common.departed", // "Left" as in left the server; _common.left is the direction
+  "owner.docker_op_up", // the `docker compose up` operation; _common.up is the direction
+]);
 if (checkOnly) {
   const canonicalModules = new Set(["features", "placeholders"]);
   const byValue = new Map();
@@ -150,7 +160,7 @@ if (checkOnly) {
     }
   }
   for (const [text, owners] of byValue) {
-    if (owners.length < 2) continue;
+    if (owners.filter((o) => !homographKeys.has(o.moduleName + "." + o.key)).length < 2) continue;
     if (owners.every((o) => canonicalModules.has(o.moduleName))) continue;
     const rest = owners.filter((o) => !(o.moduleName === "_common" && commonTwinsOfCanonicalKeys.has(o.key)));
     if (rest.every((o) => canonicalModules.has(o.moduleName))) continue;

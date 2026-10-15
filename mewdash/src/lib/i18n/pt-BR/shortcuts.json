@@ -1,0 +1,16 @@
+{
+  "shortcuts_close_dialog": "Fechar a janela de atalhos de teclado",
+  "shortcuts_close_popups": "Fechar pop-ups/janelas",
+  "shortcuts_context_global": "Global",
+  "shortcuts_focus_search": "Focar na busca",
+  "shortcuts_footer": "Pressione {key} a qualquer momento para mostrar esta janela",
+  "shortcuts_go_home": "Ir para o início do painel",
+  "shortcuts_go_music": "Ir para o player de música",
+  "shortcuts_go_settings": "Ir para as configurações",
+  "shortcuts_play_pause": "Tocar/pausar música",
+  "shortcuts_quick_switch": "Troca rápida de servidor",
+  "shortcuts_refresh": "Atualizar os dados atuais",
+  "shortcuts_skip": "Avançar/retroceder",
+  "shortcuts_toggle": "Mostrar/ocultar atalhos de teclado",
+  "tabnav_aria_label": "Navegação por abas"
+}

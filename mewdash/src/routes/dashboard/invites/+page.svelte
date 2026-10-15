@@ -735,7 +735,7 @@
               <div class="grid grid-cols-2 gap-2 mb-4">
                 <StatTile label={m.common.total()} value={formatNumber(detail.total)} sub={detail.rank ? m.common.rankNumber({ rank: detail.rank }) : m.invites.detailUnranked()} />
                 <StatTile label={m.invites.detailRegular()} value={formatNumber(detail.regular)} />
-                <StatTile label={m.common.left()} value={formatNumber(detail.left)} />
+                <StatTile label={m.common.departed()} value={formatNumber(detail.left)} />
                 <StatTile label={m.invites.detailFake()} value={formatNumber(detail.fake)} tone={detail.fake > 0 ? "warn" : null} />
                 <StatTile label={m.invites.detailBonus()} value={formatNumber(detail.bonus)} />
                 <StatTile

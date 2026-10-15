@@ -853,7 +853,7 @@
                     {#if group.project.operable}
                       {#each [
                         { op: "pull", icon: "fa-cloud-arrow-down", label: m.owner.dockerOpPull() },
-                        { op: "up", icon: "fa-arrow-up", label: m.common.up() },
+                        { op: "up", icon: "fa-arrow-up", label: m.owner.dockerOpUp() },
                         { op: "update", icon: "fa-arrows-rotate", label: m.common.update() },
                       ] as button (button.op)}
                         <button

@@ -1,0 +1,16 @@
+{
+  "shortcuts_close_dialog": "Klavye kısayolları penceresini kapat",
+  "shortcuts_close_popups": "Açılır pencereleri/diyalogları kapat",
+  "shortcuts_context_global": "Genel",
+  "shortcuts_focus_search": "Aramaya odaklan",
+  "shortcuts_footer": "Bu pencereyi istediğin zaman göstermek için {key} tuşuna bas",
+  "shortcuts_go_home": "Kontrol paneli ana sayfasına git",
+  "shortcuts_go_music": "Müzik oynatıcıya git",
+  "shortcuts_go_settings": "Ayarlara git",
+  "shortcuts_play_pause": "Müziği oynat/duraklat",
+  "shortcuts_quick_switch": "Hızlı sunucu değiştirme",
+  "shortcuts_refresh": "Mevcut verileri yenile",
+  "shortcuts_skip": "Geri/ileri atla",
+  "shortcuts_toggle": "Klavye kısayollarını göster/gizle",
+  "tabnav_aria_label": "Sekme gezinmesi"
+}

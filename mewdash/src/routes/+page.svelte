@@ -1,6 +1,10 @@
 <!-- routes/+page.svelte -->
 <script lang="ts">
   import { m } from "$lib/i18n";
+  import { siteStatParams } from "$lib/config/siteStats";
+  import type { PageData } from "./$types";
+
+  let { data }: { data: PageData } = $props();
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import type { RedisGuild } from "$lib/types/redisGuild";
@@ -18,7 +22,7 @@
   const previewEmbed = $derived(
     container(
       gallery(`${SITE_ORIGIN}/img/hero-dashboard.png`),
-      text(`## Mewdeko\n${m.home.landingEmbedSummary()}`),
+      text(`## Mewdeko\n${m.home.landingEmbedSummary(siteStatParams(data.stats))}`),
       separator(),
       buttons(
         linkButton(m.home.heroAddToDiscord(), inviteUrl),
@@ -103,11 +107,11 @@
 <ComponentEmbed embed={previewEmbed} />
 
 <svelte:head>
-  <title>{m.home.landingMetaTitle()}</title>
+  <title>{m.home.landingMetaTitle(siteStatParams(data.stats))}</title>
 
   <!-- Open Graph -->
-  <meta content={m.home.landingMetaTitle()} property="og:title" />
-  <meta content={m.home.landingMetaDescription()}
+  <meta content={m.home.landingMetaTitle(siteStatParams(data.stats))} property="og:title" />
+  <meta content={m.home.landingMetaDescription(siteStatParams(data.stats))}
         property="og:description" />
   <meta content="https://mewdeko.tech/img/hero-dashboard.png" property="og:image" />
   <meta content="https://mewdeko.tech/" property="og:url" />
@@ -115,14 +119,14 @@
 
   <!-- Twitter Card -->
   <meta content="summary_large_image" name="twitter:card" />
-  <meta content={m.home.landingTwitterTitle()} name="twitter:title" />
-  <meta content={m.home.landingTwitterDescription()}
+  <meta content={m.home.landingTwitterTitle(siteStatParams(data.stats))} name="twitter:title" />
+  <meta content={m.home.landingTwitterDescription(siteStatParams(data.stats))}
         name="twitter:description" />
   <meta content="https://mewdeko.tech/img/hero-dashboard.png" name="twitter:image" />
   <meta content="@MewdekoBot" name="twitter:site" />
 
   <!-- Primary Meta Tags -->
-  <meta content={m.home.landingMetaDescription()}
+  <meta content={m.home.landingMetaDescription(siteStatParams(data.stats))}
         name="description" />
   <meta content={m.home.landingMetaKeywords()}
         name="keywords" />
@@ -134,20 +138,13 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Mewdeko",
-    "description": "Free and open source Discord bot with 1,082 commands across 34 modules. Features include forms builder, XP/leveling, economy games, music bot, automated moderation, and more.",
+    "description": "Free and open source Discord bot with ${data.stats.commands.toLocaleString("en-US")} commands across ${data.stats.modules} modules. Features include forms builder, XP/leveling, economy games, music bot, automated moderation, and more.",
     "applicationCategory": "CommunicationApplication",
     "operatingSystem": "Discord",
     "offers": {
       "@type": "Offer",
       "price": "0",
       "priceCurrency": "USD"
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "ratingCount": "11400",
-      "bestRating": "5",
-      "worstRating": "1"
     },
     "creator": {
       "@type": "Person",
@@ -158,7 +155,7 @@
     "url": "https://mewdeko.tech",
     "screenshot": "https://mewdeko.tech/img/hero-dashboard.png",
     "featureList": [
-      "1,082 commands across 34 modules",
+      "${data.stats.commands.toLocaleString("en-US")} commands across ${data.stats.modules} modules",
       "Visual forms builder with ban appeals and join applications",
       "XP and leveling system with competitions",
       "20+ economy and gambling games",
@@ -196,7 +193,7 @@
       {$colorStore.gradientEnd}05 100%
     );"
   >
-    <HomeHero />
+    <HomeHero stats={data.stats} />
 
       {#if fetched}
       <section
@@ -528,7 +525,7 @@
               <div
                 class="text-6xl sm:text-7xl lg:text-8xl font-extrabold mb-4 bg-gradient-to-r bg-clip-text text-transparent"
                 style="background-image: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary}, {$colorStore.accent});">
-                1,082
+                {siteStatParams(data.stats).commands}
               </div>
               <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3" style="color: {$colorStore.text}">
                 {m.common.commandReference()}
@@ -562,7 +559,7 @@
             <a class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02]"
                href="/commands"
                style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}12); color: {$colorStore.text}; border: 1px solid {$colorStore.secondary}30; box-shadow: 0 8px 32px {$colorStore.secondary}10;">
-              {m.home.landingBrowseAll1082Commands()}
+              {m.home.landingBrowseAllCommands(siteStatParams(data.stats))}
               <i class="fa-solid fa-arrow-right"></i>
             </a>
 

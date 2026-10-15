@@ -41,8 +41,10 @@ The wiki is localized by folder instead: `src/lib/content/wiki/<locale>/<slug>.m
 - **One message per sentence or label.** Never split a sentence into fragments and glue them in
   markup. If a sentence contains a bold word or a link, put the whole sentence in one key with
   inline HTML and render with `{@html m.x.key()}`, and only do this when it is unavoidable.
-- **Plurals**: use two keys (`item_one`, `item_other`) chosen in the component. Do not invent a
-  plural syntax inside the string.
+- **Plurals**: use two keys (`item_one`, `item_other`) chosen in the component, with the number
+  passed as `{count}`. Do not invent a plural syntax inside the string. Languages with more forms
+  add `item_few` / `item_many` (or `_two` / `_zero`) in their own catalog only; the runtime picks
+  the right one from `count` with `Intl.PluralRules`, so components never change.
 - **Do not localize**: Discord-side names, API error payloads (the bot localizes those), code,
   slugs, CSS, icon classes, log messages, `logger.*` calls, developer comments.
 - **One text, one key.** Any text used in more than one place is a single key, never a copy in

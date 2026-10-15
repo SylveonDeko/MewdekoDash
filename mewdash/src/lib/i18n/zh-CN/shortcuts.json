@@ -1,0 +1,16 @@
+{
+  "shortcuts_close_dialog": "关闭键盘快捷键对话框",
+  "shortcuts_close_popups": "关闭弹出窗口/对话框",
+  "shortcuts_context_global": "全局",
+  "shortcuts_focus_search": "聚焦搜索",
+  "shortcuts_footer": "随时按 {key} 即可显示此对话框",
+  "shortcuts_go_home": "前往仪表板首页",
+  "shortcuts_go_music": "前往音乐播放器",
+  "shortcuts_go_settings": "前往设置",
+  "shortcuts_play_pause": "播放/暂停音乐",
+  "shortcuts_quick_switch": "快速切换服务器",
+  "shortcuts_refresh": "刷新当前数据",
+  "shortcuts_skip": "后退/前进",
+  "shortcuts_toggle": "显示/隐藏键盘快捷键",
+  "tabnav_aria_label": "标签导航"
+}

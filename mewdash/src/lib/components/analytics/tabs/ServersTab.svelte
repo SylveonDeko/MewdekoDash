@@ -166,7 +166,7 @@
     <AnalyticsTile label={m.common.servers()} metric="guild.count" agg="last" format="int" filters={["bot", "shard"]} />
     <AnalyticsTile label={m.common.users()} metric="user.count" agg="last" format="compact" filters={["bot"]} />
     <StatTile label={m.common.joined()} value={n(churn?.joins)} loading={churnLoading} />
-    <StatTile label={m.common.left()} value={n(churn?.leaves)} loading={churnLoading} />
+    <StatTile label={m.common.departed()} value={n(churn?.leaves)} loading={churnLoading} />
     <StatTile label={m.analytics.tabServersNet()} value={churn ? `${churn.net >= 0 ? "+" : ""}${n(churn.net)}` : "—"} loading={churnLoading} tone={churn ? (churn.net >= 0 ? "ok" : "crit") : null} />
   </div>
 

@@ -508,7 +508,7 @@
       <table class="w-full min-w-[640px] text-sm">
         <thead>
           <tr style="background: {$colorStore.primary}15;">
-            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">{m.common.left()}</th>
+            <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">{m.common.departed()}</th>
             <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">{m.features.categoryServer()}</th>
             <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">{m.common.reason()}</th>
             <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">{m.common.status()}</th>
