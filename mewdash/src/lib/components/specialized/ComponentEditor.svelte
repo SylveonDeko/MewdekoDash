@@ -608,7 +608,7 @@
     {#if component.isSelect}
       <!-- Select Menu Preview (full width) -->
       <button aria-label={m.embedbuilder.componentsSelectPreviewAria()}
-              class="border border-transparent bg-[#2F3136] text-white text-xs sm:text-sm font-medium rounded-sm cursor-pointer box-border grid grid-cols-[1fr_auto] items-center w-full text-left"
+              class="border border-transparent bg-[#2F3136] text-white text-xs sm:text-sm font-medium rounded-sm pointer-events-none box-border grid grid-cols-[1fr_auto] items-center w-full text-left"
               disabled
       >
         <span class="placeholder px-2 sm:px-3 py-1 sm:py-2">
@@ -621,7 +621,7 @@
     {:else}
       <!-- Button Preview -->
       <button
-        class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center grow-0 items-center box-border border-0 rounded-sm px-2 sm:px-4 py-[1px] sm:py-[2px] min-h-[24px] sm:min-h-[32px] text-[11px] sm:text-sm font-medium leading-[14px] sm:leading-[16px] transition-colors duration-200 select-none gap-1 sm:gap-2"
+        class="{getButtonColorClass(component.style)} relative discord-button button-content pointer-events-none flex justify-center grow-0 items-center box-border border-0 rounded-sm px-2 sm:px-4 py-[1px] sm:py-[2px] min-h-[24px] sm:min-h-[32px] text-[11px] sm:text-sm font-medium leading-[14px] sm:leading-[16px] transition-colors duration-200 select-none gap-1 sm:gap-2"
         disabled
         aria-label={m.embedbuilder.componentsButtonPreviewAria()}
       >
@@ -664,9 +664,5 @@
   
   .discord-button:hover:not(:disabled) {
     transform: translateY(-1px);
-  }
-  
-  .group:hover .opacity-0 {
-    opacity: 1;
   }
 </style>

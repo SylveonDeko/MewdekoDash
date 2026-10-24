@@ -319,8 +319,9 @@
     {#if actionButtons.length > 0 || wikiArticle || autoSave}
       <!--
         On phones the row keeps one line: the wiki button collapses to its icon,
-        and the action buttons share the remaining width without wrapping their
-        labels. From the sm breakpoint up every button shows its full label.
+        and the action buttons share the remaining width, truncating their labels
+        or, past two buttons, dropping them. From the sm breakpoint up every
+        button shows its full label.
       -->
       <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full lg:w-auto lg:shrink-0">
         {#if autoSave}
@@ -346,11 +347,12 @@
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
             aria-busy={button.loading}
                   aria-label={button.label}
+            title={button.label}
           >
-            <i class="fa-solid {button.icon} {button.loading ? 'fa-spin' : ''}"
+            <i class="fa-solid {button.icon} {button.loading ? 'fa-spin' : ''} shrink-0"
                style="font-size: 18px;"
                aria-hidden="true"></i>
-            <span class="text-sm sm:text-base">{button.label}</span>
+            <span class="text-sm sm:text-base {actionButtons.length > 2 ? 'hidden sm:inline' : 'min-w-0 truncate'}">{button.label}</span>
           </button>
         {/each}
       </div>

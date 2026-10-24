@@ -238,12 +238,7 @@
   onDestroy(() => {
     // Clean up if dragging when component unmounts
     if (isDragging || isDraggingRow) {
-      document.removeEventListener("touchmove", preventScroll);
-      document.body.style.overflow = "";
-      document.body.style.touchAction = "";
-      document.body.style.webkitUserSelect = "";
-      (document.body.style as any).webkitTouchCallout = "";
-      document.body.classList.remove("dragging-active");
+      unlockBodyScroll();
     }
   });
 
@@ -1013,21 +1008,19 @@
     handleRowDragEnd();
   }
 
-  // Touch event handlers for rows
-  function handleRowTouchStart(e: TouchEvent, row: ComponentRow) {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const element = e.target as HTMLElement;
+  const TOUCH_DRAG_THRESHOLD = 8;
+  let touchStartPoint = { x: 0, y: 0 };
+  let pendingTouchRow: ComponentRow | null = null;
+  let pendingTouchComponent: { component: NewEmbedComponent; fromRow: string } | null = null;
 
+  function movedPastThreshold(touch: Touch): boolean {
+    return Math.hypot(touch.clientX - touchStartPoint.x, touch.clientY - touchStartPoint.y) >= TOUCH_DRAG_THRESHOLD;
+  }
+
+  function lockBodyScroll() {
     // Store scroll position
     scrollPosition.x = window.pageXOffset;
     scrollPosition.y = window.pageYOffset;
-
-    // Start row drag
-    handleRowDragStart(e, row);
-
-    // Visual feedback
-    element.style.opacity = "0.5";
 
     // Prevent scrolling - Safari specific
     document.body.style.overflow = "hidden";
@@ -1045,12 +1038,46 @@
     document.body.style.width = "100%";
   }
 
+  function unlockBodyScroll() {
+    // Re-enable scrolling
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.width = "";
+    document.body.style.overflow = "";
+    document.body.style.touchAction = "";
+    document.body.style.webkitUserSelect = "";
+    (document.body.style as any).webkitTouchCallout = "";
+    document.body.classList.remove("dragging-active");
+
+    // Restore scroll position
+    window.scrollTo(scrollPosition.x, scrollPosition.y);
+
+    // Remove global touch move listener
+    document.removeEventListener("touchmove", preventScroll);
+  }
+
+  // Touch event handlers for rows
+  function handleRowTouchStart(e: TouchEvent, row: ComponentRow) {
+    const touch = e.touches[0];
+    touchStartPoint = { x: touch.clientX, y: touch.clientY };
+    pendingTouchRow = row;
+  }
+
   function handleRowTouchMove(e: TouchEvent) {
+    const touch = e.touches[0];
+
+    if (!isDraggingRow && pendingTouchRow) {
+      if (!movedPastThreshold(touch)) return;
+
+      handleRowDragStart(e, pendingTouchRow);
+      pendingTouchRow = null;
+      (e.currentTarget as HTMLElement).style.opacity = "0.5";
+      lockBodyScroll();
+    }
+
     if (!isDraggingRow || !draggedRow) return;
 
-    e.preventDefault();
     e.stopPropagation();
-    const touch = e.touches[0];
 
     // Find row under touch point
     const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -1067,29 +1094,14 @@
   }
 
   function handleRowTouchEnd(e: TouchEvent) {
+    pendingTouchRow = null;
     if (!isDraggingRow) return;
 
     e.preventDefault();
-
-    // Re-enable scrolling
-    document.body.style.position = "";
-    document.body.style.top = "";
-    document.body.style.width = "";
-    document.body.style.overflow = "";
-    document.body.style.touchAction = "";
-    document.body.style.webkitUserSelect = "";
-    (document.body.style as any).webkitTouchCallout = "";
-    document.body.classList.remove("dragging-active");
-
-    // Restore scroll position
-    window.scrollTo(scrollPosition.x, scrollPosition.y);
-
-    // Remove global touch move listener
-    document.removeEventListener("touchmove", preventScroll);
+    unlockBodyScroll();
 
     // Reset visual feedback
-    const element = e.target as HTMLElement;
-    element.style.opacity = "";
+    (e.currentTarget as HTMLElement).style.opacity = "";
 
     if (dragOverRowIndex >= 0) {
       handleRowDrop(e, dragOverRowIndex);
@@ -1112,42 +1124,30 @@
   let touchOffset = { x: 0, y: 0 };
 
   function handleTouchStart(e: TouchEvent, component: NewEmbedComponent, fromRow: string) {
-    e.preventDefault();
     const touch = e.touches[0];
-    touchItem = e.target as HTMLElement;
-
-    // Store scroll position
-    scrollPosition.x = window.pageXOffset;
-    scrollPosition.y = window.pageYOffset;
+    touchStartPoint = { x: touch.clientX, y: touch.clientY };
+    pendingTouchComponent = { component, fromRow };
+    touchItem = e.currentTarget as HTMLElement;
 
     const rect = touchItem.getBoundingClientRect();
     touchOffset.x = touch.clientX - rect.left;
     touchOffset.y = touch.clientY - rect.top;
-
-    handleDragStart(e, component, fromRow);
-
-    // Prevent scrolling while dragging - Safari specific
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
-    document.body.style.webkitUserSelect = "none";
-    (document.body.style as any).webkitTouchCallout = "none";
-    document.body.classList.add("dragging-active");
-
-    // Add global touch move listener to prevent scrolling
-    document.addEventListener("touchmove", preventScroll, { passive: false });
-
-    // Extra Safari fix - save body position and fix it
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollPosition.y}px`;
-    document.body.style.width = "100%";
   }
 
   function handleTouchMove(e: TouchEvent) {
+    const touch = e.touches[0];
+
+    if (!isDragging && pendingTouchComponent) {
+      if (!movedPastThreshold(touch)) return;
+
+      handleDragStart(e, pendingTouchComponent.component, pendingTouchComponent.fromRow);
+      pendingTouchComponent = null;
+      lockBodyScroll();
+    }
+
     if (!isDragging || !touchItem) return;
 
-    e.preventDefault();
     e.stopPropagation();
-    const touch = e.touches[0];
 
     // Move a ghost element
     if (touchItem) {
@@ -1186,25 +1186,14 @@
   }
 
   function handleTouchEnd(e: TouchEvent) {
-    if (!isDragging) return;
+    pendingTouchComponent = null;
+    if (!isDragging) {
+      touchItem = null;
+      return;
+    }
 
     e.preventDefault();
-
-    // Re-enable scrolling
-    document.body.style.position = "";
-    document.body.style.top = "";
-    document.body.style.width = "";
-    document.body.style.overflow = "";
-    document.body.style.touchAction = "";
-    document.body.style.webkitUserSelect = "";
-    (document.body.style as any).webkitTouchCallout = "";
-    document.body.classList.remove("dragging-active");
-
-    // Restore scroll position
-    window.scrollTo(scrollPosition.x, scrollPosition.y);
-
-    // Remove global touch move listener
-    document.removeEventListener("touchmove", preventScroll);
+    unlockBodyScroll();
 
     if (touchItem) {
       touchItem.style.position = "";
@@ -1361,6 +1350,14 @@
           id: `component-${component.componentKey}-trigger`,
           message: component.isSelect ? m.embedbuilder.fullscreenValidationSelectNeedsTrigger({ name: component.displayName }) : m.embedbuilder.fullscreenValidationButtonNeedsTrigger({ name: component.displayName }),
           field: `components[${index}]`
+        });
+      }
+
+      if (component.isSelect && component.options.length === 0) {
+        validationErrors.push({
+          id: `component-${component.componentKey}-options`,
+          message: m.embedbuilder.fullscreenValidationSelectNeedsOptions({ name: component.displayName }),
+          field: `components[${index}].options`
         });
       }
 
@@ -1681,11 +1678,11 @@
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full w-full">
     <!-- Editor Side -->
     <section
-      class="rounded-2xl border shadow-2xl"
+      class="rounded-2xl border shadow-2xl min-w-0"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
-      <div class="p-6 min-h-[600px]">
+      <div class="p-4 sm:p-6 lg:min-h-[600px]">
         {#if activeMainTab === "templates"}
           <!-- Templates Tab -->
           <div class="space-y-6">
@@ -1858,7 +1855,7 @@
                     <div class="flex items-center justify-between mb-2 sm:mb-3">
                       <div class="flex items-center gap-1 sm:gap-2">
                         <div
-                          class="cursor-grab p-2 sm:p-1 -m-2 sm:-m-1 rounded-md hover:bg-white/5 active:bg-white/10 transition-all hover:scale-110 active:scale-95"
+                          class="cursor-grab p-1 rounded-md hover:bg-white/5 active:bg-white/10 transition-colors"
                           style="touch-action: none; background: {$colorStore.primary}10;"
                           role="button"
                           tabindex="0"
@@ -1868,12 +1865,13 @@
                           ontouchstart={(e) => handleRowTouchStart(e, row)}
                           ontouchmove={(e) => handleRowTouchMove(e)}
                           ontouchend={(e) => handleRowTouchEnd(e)}
+                          ontouchcancel={(e) => handleRowTouchEnd(e)}
                           title={m.embedbuilder.pageRowDragTitle()}
                           aria-label={m.embedbuilder.pageRowDragAria({ number: componentRows.indexOf(row) + 1 })}
                         >
                           <i
                             class="fa-solid fa-grip-vertical"
-                            style="color: {$colorStore.primary}; font-size: 16px; pointer-events: none;"
+                            style="color: {$colorStore.primary}; font-size: 12px; pointer-events: none;"
                           ></i>
                         </div>
                         <span class="text-xs sm:text-sm font-medium" style="color: {$colorStore.text};">
@@ -2030,6 +2028,7 @@
                             ontouchstart={(e) => handleTouchStart(e, component, row.rowKey)}
                             ontouchmove={(e) => handleTouchMove(e)}
                             ontouchend={(e) => handleTouchEnd(e)}
+                            ontouchcancel={(e) => handleTouchEnd(e)}
                             onclick={() => !isDragging && handleComponentEdit({ component })}
                             onkeydown={(e) => { if (e.key === 'Enter' && !isDragging) handleComponentEdit({ component }); }}
                             role="button"
@@ -2446,12 +2445,16 @@
                 aria-label={m.embedbuilder.pageSendButton()}
                 class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                disabled={sending || !selectedSendChannelId || !canCopyJson || !!embedPermissionBlock}
+                disabled={sending || !selectedSendChannelId || !canCopyJson || !!embedPermissionBlock || validationErrors.length > 0}
                 onclick={() => (showSendConfirm = true)}
               >
                 <i class="fa-solid fa-paper-plane" style="font-size: 14px;"></i>
                 {sending ? m.common.sending() : m.embedbuilder.pageSendButton()}
               </button>
+
+              {#if validationErrors.length > 0}
+                <p class="text-xs" style="color: #ED4245;">{m.embedbuilder.pageSendBlockedByErrors()}</p>
+              {/if}
 
               {#if lastSendResult}
                 <div
@@ -2501,7 +2504,7 @@
 
     <!-- Preview Side -->
     <section
-      class="hidden lg:block rounded-2xl border shadow-2xl sticky top-4 self-start"
+      class="rounded-2xl border shadow-2xl lg:sticky lg:top-4 self-start min-w-0"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >

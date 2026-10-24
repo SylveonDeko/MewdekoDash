@@ -50,6 +50,9 @@ export default defineConfig(() => ({
   server: {
     allowedHosts: ["test.mewdeko.tech"],
   },
+  optimizeDeps: {
+    include: ["@sentry/sveltekit"],
+  },
   esbuild: {
     supported: {
       "top-level-await": true,

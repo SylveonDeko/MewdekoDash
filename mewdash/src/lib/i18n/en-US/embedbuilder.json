@@ -205,6 +205,7 @@
   "page_send_as": "Send as",
   "page_send_as_persona_aria": "Send as {name}",
   "page_send_audit_hint": "Sends are recorded in the audit log.",
+  "page_send_blocked_by_errors": "Fix the issues in the live preview before sending.",
   "page_send_button": "Send Message",
   "page_send_channel_aria": "Channel to send the message to",
   "page_send_confirm_channel_fallback": "the selected channel",

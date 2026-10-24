@@ -6389,6 +6389,8 @@ export const m = {
     pageSendAsPersonaAria: (p: { name: P }) => t("embedbuilder", "page_send_as_persona_aria", "Send as {name}", p),
     /** Sends are recorded in the audit log. */
     pageSendAuditHint: () => t("embedbuilder", "page_send_audit_hint", "Sends are recorded in the audit log."),
+    /** Fix the issues in the live preview before sending. */
+    pageSendBlockedByErrors: () => t("embedbuilder", "page_send_blocked_by_errors", "Fix the issues in the live preview before sending."),
     /** Send Message */
     pageSendButton: () => t("embedbuilder", "page_send_button", "Send Message"),
     /** Channel to send the message to */
