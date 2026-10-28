@@ -9,7 +9,8 @@
     achievementsApi,
     type AchievementCard,
     type AchievementCardTemplate,
-    type AchievementCatalog
+    type AchievementCatalog,
+    type AchievementLookups
   } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
   import { escapeHtml } from "$lib/utils/sanitize";
@@ -25,10 +26,11 @@
    */
   interface Props {
     catalog: AchievementCatalog;
+    lookups: AchievementLookups | null;
     onerror: (text: string) => void;
   }
 
-  let { catalog, onerror }: Props = $props();
+  let { catalog, lookups, onerror }: Props = $props();
 
   let card = $state<AchievementCard | null>(null);
   let loading = $state(true);
@@ -272,7 +274,7 @@
   </div>
 {:else if card && editing}
   {#key session}
-    <CardDesigner name={editing.name} template={editing.template} isNew={editing.id === null} {card} {catalog} onsave={save}
+    <CardDesigner name={editing.name} template={editing.template} isNew={editing.id === null} {card} {catalog} {lookups} onsave={save}
                   onclose={() => { editing = null; }} onimages={(images) => { if (card) card = { ...card, images }; }} {onerror} />
   {/key}
 {:else if card}

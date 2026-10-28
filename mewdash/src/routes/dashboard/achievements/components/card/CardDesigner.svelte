@@ -1,7 +1,7 @@
 <script lang="ts">
   import { m } from "$lib/i18n";
   import { onDestroy, untrack } from "svelte";
-  import { fade } from "svelte/transition";
+  import { fade, fly } from "svelte/transition";
   import { flip } from "svelte/animate";
   import { dragHandle, dragHandleZone } from "svelte-dnd-action";
   import { colorStore } from "$lib/stores/colorStore";
@@ -15,7 +15,8 @@
     type AchievementCardPreview,
     type AchievementCardTemplate,
     type AchievementCatalog,
-    type AchievementIconUpload
+    type AchievementIconUpload,
+    type AchievementLookups
   } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -24,14 +25,20 @@
   import ColorTokenField from "./ColorTokenField.svelte";
   import GlyphField from "./GlyphField.svelte";
   import CardImageField from "./CardImageField.svelte";
+  import CardTextField from "./CardTextField.svelte";
+  import CardRichText from "./CardRichText.svelte";
+  import CardTextTools from "./CardTextTools.svelte";
+  import { guildEmojiGroups } from "../../achievementHelpers";
   import {
     cloneTemplate,
     CUSTOM_TYPES,
+    DEFAULT_TEXT,
     ELEMENT_KINDS,
     elementName,
     isBuiltIn,
     newElement,
     PILL_TYPES,
+    resolveToken,
     SHAPE_TYPES,
     TEXT_TYPES,
     uniqueId
@@ -50,6 +57,7 @@
     isNew?: boolean;
     card: AchievementCard;
     catalog: AchievementCatalog;
+    lookups: AchievementLookups | null;
     /** Saves the design; resolves when done */
     onsave: (name: string, template: AchievementCardTemplate) => Promise<void>;
     onclose: () => void;
@@ -57,7 +65,7 @@
     onerror: (text: string) => void;
   }
 
-  let { name, template, isNew = false, card, catalog, onsave, onclose, onimages, onerror }: Props = $props();
+  let { name, template, isNew = false, card, catalog, lookups, onsave, onclose, onimages, onerror }: Props = $props();
 
   type Drag = {
     id: string;
@@ -65,6 +73,7 @@
     startX: number;
     startY: number;
     origin: { x: number; y: number; w: number; h: number };
+    moved: boolean;
   };
 
   /** The design as opened. The designer is re-created for each design, so later prop changes are not followed. */
@@ -86,10 +95,16 @@
   let undoStack = $state<string[]>([]);
   let redoStack = $state<string[]>([]);
   let showAdd = $state(false);
+  let editing = $state<{ id: string; field: "text" | "lockedText"; before: string; prefill: string } | null>(null);
+  let inlineEditor = $state<CardRichText>();
 
   let json = $derived(JSON.stringify(draft));
   let dirty = $derived(json !== savedJson || draftName.trim() !== savedName);
   let selected = $derived(draft.elements.find((e) => e.id === selectedId) ?? null);
+  let lastEdit = $state<{ id: string; field: "text" | "lockedText" } | null>(null);
+  let drawnWithout = $state<string | null>(null);
+  let overlay = $derived(editing ?? (drawnWithout && lastEdit?.id === drawnWithout ? lastEdit : null));
+  let overlayElement = $derived(overlay ? draft.elements.find((e) => e.id === overlay!.id) ?? null : null);
   /** The layer list front first, as the drag and drop zone holds it, following the draft between drags. */
   let layerItems = $state<{ id: string; element: AchievementCardElement }[]>([]);
 
@@ -107,6 +122,7 @@
   let outerWidth = $derived(preview ? preview.width + preview.margin * 2 : draft.width + 80);
   let outerHeight = $derived(preview ? preview.height + preview.margin * 2 : draft.height + 80);
   let pxPerUnit = $derived(canvasWidth > 0 ? canvasWidth / outerWidth : 1);
+  let guildEmojis = $derived(guildEmojiGroups(lookups, $currentGuild));
   let sampleOptions = $derived(catalog.achievements.map((a) => ({ id: a.key, name: a.name })));
   let followOptions = $derived([
     { id: "", name: m.achievements.cardDesignerNothing() },
@@ -130,8 +146,9 @@
     const body = json;
     const state = locked;
     const key = sample?.key ?? null;
+    const typing = editing?.id ?? null;
     if (previewTimer) clearTimeout(previewTimer);
-    previewTimer = setTimeout(() => loadPreview(body, state, key), drag ? 90 : 160);
+    previewTimer = setTimeout(() => loadPreview(body, state, key, typing), drag ? 90 : typing ? 60 : 160);
   });
 
   $effect(() => {
@@ -155,14 +172,18 @@
    * @param body The draft as JSON
    * @param state Whether to draw the locked state
    * @param key The sample achievement
+   * @param typing The element being typed over, drawn without its text
    */
-  async function loadPreview(body: string, state: boolean, key: string | null) {
+  async function loadPreview(body: string, state: boolean, key: string | null, typing: string | null) {
     if (!$currentGuild?.id) return;
     const seq = ++previewSeq;
     previewing = true;
     try {
-      const result = await achievementsApi.previewCard($currentGuild.id, JSON.parse(body), state, key);
-      if (seq === previewSeq) preview = result;
+      const result = await achievementsApi.previewCard($currentGuild.id, JSON.parse(body), state, key, null, typing);
+      if (seq === previewSeq) {
+        preview = result;
+        drawnWithout = typing;
+      }
     } catch (err: any) {
       if (seq === previewSeq) {
         logger.error("Failed to draw the card:", err);
@@ -228,13 +249,15 @@
   function startDrag(event: PointerEvent, element: AchievementCardElement, mode: "move" | "resize") {
     event.preventDefault();
     event.stopPropagation();
+    if (editing && editing.id !== element.id) finishEdit();
     selectedId = element.id;
     drag = {
       id: element.id,
       mode,
       startX: event.clientX,
       startY: event.clientY,
-      origin: { x: element.x, y: element.y, w: element.w, h: element.h }
+      origin: { x: element.x, y: element.y, w: element.w, h: element.h },
+      moved: false
     };
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
   }
@@ -247,6 +270,8 @@
     if (!drag) return;
     const element = draft.elements.find((e) => e.id === drag!.id);
     if (!element) return;
+    if (!drag.moved && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 4) return;
+    drag.moved = true;
     const step = snap && !event.altKey ? 4 : 1;
     const round = (v: number) => Math.round(v / step) * step;
     const dx = (event.clientX - drag.startX) / pxPerUnit;
@@ -260,9 +285,55 @@
     }
   }
 
-  /** Ends a drag. */
+  /** Ends a drag. A press on text that didn't move it starts typing over it. */
   function endDrag() {
+    const ended = drag;
     drag = null;
+    if (!ended || ended.moved || ended.mode !== "move" || editing?.id === ended.id) return;
+    const element = draft.elements.find((e) => e.id === ended.id);
+    if (element) startEdit(element);
+  }
+
+  /**
+   * Whether an element's text can be typed over.
+   * @param type The element kind
+   */
+  function editsText(type: string): boolean {
+    return type === "text" || type === "label" || type in DEFAULT_TEXT;
+  }
+
+  /**
+   * Starts typing over an element's text on the card, filled with what it shows now so it can be edited in place.
+   * The label edits its locked text while the locked state is shown.
+   * @param element The element
+   */
+  function startEdit(element: AchievementCardElement) {
+    if (!editsText(element.type)) return;
+    if (editing) finishEdit();
+    selectedId = element.id;
+    const field = element.type === "label" && locked ? "lockedText" : "text";
+    const before = element[field];
+    const prefill = before ||
+      (element.type === "label" ? (locked ? card.defaultLockedLabel : card.defaultLabel) : DEFAULT_TEXT[element.type] ?? "");
+    editing = { id: element.id, field, before, prefill };
+    lastEdit = { id: element.id, field };
+    element[field] = prefill;
+  }
+
+  /** Keeps the typed text, leaving it empty when it still matches the default so it keeps following the default. */
+  function finishEdit() {
+    if (!editing) return;
+    const element = draft.elements.find((e) => e.id === editing!.id);
+    if (element && !editing.before && element[editing.field] === editing.prefill) element[editing.field] = "";
+    editing = null;
+  }
+
+  /** Puts the text back the way it was before typing over it. */
+  function cancelEdit() {
+    if (!editing) return;
+    const element = draft.elements.find((e) => e.id === editing!.id);
+    if (element) element[editing.field] = editing.before;
+    editing = null;
   }
 
   /**
@@ -291,6 +362,9 @@
     } else if ((event.key === "Delete" || event.key === "Backspace") && !isBuiltIn(selected.type)) {
       event.preventDefault();
       removeElement(selected.id);
+    } else if (event.key === "Enter" && editsText(selected.type)) {
+      event.preventDefault();
+      startEdit(selected);
     } else if (mod && event.key.toLowerCase() === "d") {
       event.preventDefault();
       duplicate(selected);
@@ -420,16 +494,6 @@
   }
 
   /**
-   * Inserts a placeholder at the end of the selected text element.
-   * @param placeholder The placeholder
-   */
-  function insertPlaceholder(placeholder: string) {
-    if (!selected) return;
-    selected.text = `${selected.text}${selected.text && !selected.text.endsWith(" ") ? " " : ""}${placeholder}`
-      .slice(0, card.limits.maxText);
-  }
-
-  /**
    * A number from an input, or the fallback when it isn't one.
    * @param event The input event
    * @param fallback The value to keep
@@ -490,7 +554,7 @@
           <button type="button" aria-pressed={locked === option.id}
                   class="px-3 h-full rounded-lg text-xs font-medium"
                   style="background: {locked === option.id ? $colorStore.primary + '30' : 'transparent'}; color: {locked === option.id ? $colorStore.primary : $colorStore.text};"
-                  onclick={() => { locked = option.id; }}>{option.label}</button>
+                  onclick={() => { finishEdit(); locked = option.id; }}>{option.label}</button>
         {/each}
       </div>
       <div class="w-80">
@@ -582,7 +646,7 @@
       <div class="rounded-2xl border p-3 md:p-4" style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
         <div class="relative w-full select-none touch-none" bind:clientWidth={canvasWidth}
              style="aspect-ratio: {outerWidth} / {outerHeight};"
-             role="presentation" onpointerdown={() => { selectedId = null; }}>
+             role="presentation" onpointerdown={() => { finishEdit(); selectedId = null; }}>
           {#if preview}
             <img src={preview.image} alt={m.achievements.cardDesignerAriaPreview()} class="absolute inset-0 w-full h-full pointer-events-none" draggable="false" />
           {/if}
@@ -595,7 +659,8 @@
                    style="left: {box.left}%; top: {box.top}%; width: {box.width}%; height: {box.height}%;
                           transform: rotate({element.rotation}deg);
                           outline: {active ? `2px solid ${$colorStore.primary}` : box.drawn ? `1px dashed ${$colorStore.text}25` : 'none'};
-                          cursor: move; z-index: {active ? 20 : 10};"
+                          cursor: {editsText(element.type) ? 'text' : 'move'}; z-index: {active ? 20 : 10};"
+                   title={editsText(element.type) ? m.achievements.cardDesignerEditTextHint() : undefined}
                    onpointerdown={(e) => startDrag(e, element, "move")}>
                 {#if active}
                   <span class="absolute -right-2 -bottom-2 w-4 h-4 rounded-sm"
@@ -605,6 +670,50 @@
               </div>
             {/if}
           {/each}
+          {#if overlay && overlayElement}
+            {@const box = boxOf(overlayElement)}
+            {@const el = overlayElement}
+            {@const field = overlay.field}
+            {@const pill = PILL_TYPES.includes(el.type)}
+            {@const sideGlyph = el.glyph !== "none" && (!!el.glyph || ["label", "grade", "category"].includes(el.type))}
+            {@const glyphSlot = sideGlyph ? (pill ? 32 : el.fontSize * 1.8) * pxPerUnit : 0}
+            {@const shown = drawnWithout === overlay.id}
+            {#key editing?.id ?? ""}
+            <div class="absolute z-30" role="presentation" onpointerdown={(e) => e.stopPropagation()}
+                 style="left: {box.left}%; top: {box.top}%; width: {box.width}%; height: {box.height}%; pointer-events: {editing ? 'auto' : 'none'};">
+              <CardRichText bind:this={inlineEditor} value={el[field]} placeholders={card.placeholders} {guildEmojis}
+                            autofocus={!!editing} editable={!!editing}
+                            onbackspacestart={() => { if (sideGlyph) el.glyph = "none"; }}
+                            multiline={["title", "description", "text"].includes(el.type)} maxLength={card.limits.maxText}
+                            ariaLabel={elementName(el)} oncommit={finishEdit} oncancel={cancelEdit}
+                            onchange={(v) => { el[field] = v; }}
+                            class="w-full h-full {pill ? 'flex items-center justify-center overflow-hidden' : ''}"
+                            style="{pill ? 'white-space: nowrap;' : ''} font-family: 'Noto Sans', sans-serif; font-size: {el.fontSize * pxPerUnit}px;
+                                   line-height: {pill ? 1 : el.lineHeight}; font-weight: {el.bold ? 700 : 400};
+                                   text-align: {el.align}; text-transform: {el.uppercase ? 'uppercase' : 'none'};
+                                   letter-spacing: {el.spacing * pxPerUnit}px;
+                                   padding-left: {(pill ? 16 * pxPerUnit : 0) + glyphSlot}px; padding-right: {pill ? 16 * pxPerUnit : 0}px;
+                                   color: {shown ? resolveToken(el.color, card.palette, gradeColor) ?? $colorStore.text : 'transparent'};
+                                   caret-color: {$colorStore.primary}; background: transparent;" />
+              {#if editing}
+              <div class="absolute left-0 top-full mt-3 w-[min(340px,80vw)] p-2 rounded-lg border shadow-2xl backdrop-blur-md space-y-2"
+                   style="background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,0,0,0.8)), linear-gradient(135deg, {$colorStore.gradientStart}25, {$colorStore.gradientMid}30, {$colorStore.gradientEnd}25);
+                          border-color: {$colorStore.primary}50; box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 0 0 1px {$colorStore.primary}20;"
+                   transition:fly={{ y: -8, duration: 200 }}>
+                <CardTextTools placeholders={card.placeholders} {guildEmojis} {onerror} oninsert={(t) => inlineEditor?.insert(t)} />
+                <div class="flex justify-end gap-1.5">
+                  <button type="button" class="px-2.5 py-1.5 rounded-lg text-xs min-h-[32px]"
+                          style="background: {$colorStore.primary}10; color: {$colorStore.text};"
+                          onmousedown={(e) => e.preventDefault()} onclick={cancelEdit}>{m.common.cancel()}</button>
+                  <button type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold min-h-[32px]"
+                          style="background: {$colorStore.primary}30; color: {$colorStore.primary};"
+                          onmousedown={(e) => e.preventDefault()} onclick={finishEdit}>{m.common.done()}</button>
+                </div>
+              </div>
+              {/if}
+            </div>
+            {/key}
+          {/if}
           {#if previewing}
             <span class="absolute top-2 right-2 text-xs px-2 py-1 rounded-md" style="background: #000a; color: #fff;">
               <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
@@ -619,6 +728,7 @@
           {m.achievements.cardDesignerSnap()}
         </label>
         <span>{m.achievements.cardDesignerShortcutsHint()}</span>
+        <span>{m.achievements.cardDesignerEditTextHint()}</span>
       </div>
     </section>
 
@@ -674,18 +784,19 @@
                            onchange={(d) => { selected!.followId = typeof d.selected === "string" ? d.selected : ""; }} />
         </div>
 
-        {#if selected.type === "text"}
+        {#if selected.type === "label"}
           {@render section(m.common.text())}
-          <textarea rows="3" maxlength={card.limits.maxText} aria-label={m.common.text()} value={selected.text}
-                    class="w-full px-2.5 py-2 rounded-lg border text-sm" style={inputStyle}
-                    oninput={(e) => { selected!.text = e.currentTarget.value; }}></textarea>
-          <div class="flex flex-wrap gap-1">
-            {#each card.placeholders as placeholder (placeholder)}
-              <button type="button" class="px-1.5 py-1 rounded-md text-[11px] font-mono"
-                      style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
-                      onclick={() => insertPlaceholder(placeholder)}>{placeholder}</button>
-            {/each}
-          </div>
+          <CardTextField label={m.achievements.cardTextUnlocked()} value={selected.text} placeholder={card.defaultLabel} hasDefault
+                         maxLength={card.limits.maxText} placeholders={card.placeholders} {guildEmojis} {onerror}
+                         onchange={(v) => { selected!.text = v; }} />
+          <CardTextField label={m.achievements.cardTextLocked()} value={selected.lockedText} placeholder={card.defaultLockedLabel} hasDefault
+                         maxLength={card.limits.maxText} placeholders={card.placeholders} {guildEmojis} {onerror}
+                         onchange={(v) => { selected!.lockedText = v; }} />
+        {:else if selected.type === "text" || DEFAULT_TEXT[selected.type]}
+          {@render section(m.common.text())}
+          <CardTextField label={m.common.text()} value={selected.text} placeholder={DEFAULT_TEXT[selected.type] ?? ""}
+                         hasDefault={selected.type !== "text"} maxLength={card.limits.maxText} placeholders={card.placeholders}
+                         {guildEmojis} {onerror} onchange={(v) => { selected!.text = v; }} />
         {/if}
 
         {#if selected.type === "glyph"}

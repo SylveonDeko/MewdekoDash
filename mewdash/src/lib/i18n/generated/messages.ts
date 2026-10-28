@@ -1517,6 +1517,8 @@ export const m = {
     cardDesignerDarken: (p: { percent: P }) => t("achievements", "card_designer_darken", "Darken {percent}%", p),
     /** Drawing */
     cardDesignerDrawing: () => t("achievements", "card_designer_drawing", "Drawing"),
+    /** Click text on the card to type over it, or drag it to move it. */
+    cardDesignerEditTextHint: () => t("achievements", "card_designer_edit_text_hint", "Click text on the card to type over it, or drag it to move it."),
     /** Couldn't draw the card. */
     cardDesignerErrorDraw: () => t("achievements", "card_designer_error_draw", "Couldn't draw the card."),
     /** A card holds at most {max} elements. */
@@ -1683,6 +1685,14 @@ export const m = {
     cardImageNone: () => t("achievements", "card_image_none", "No image"),
     /** Use this image */
     cardImageUseThisAria: () => t("achievements", "card_image_use_this_aria", "Use this image"),
+    /** Add an icon */
+    cardTextAddIcon: () => t("achievements", "card_text_add_icon", "Add an icon"),
+    /** Leave it empty to keep the default. Emoji and icons show up in the preview. */
+    cardTextDefaultHint: () => t("achievements", "card_text_default_hint", "Leave it empty to keep the default. Emoji and icons show up in the preview."),
+    /** Text when locked */
+    cardTextLocked: () => t("achievements", "card_text_locked", "Text when locked"),
+    /** Text when unlocked */
+    cardTextUnlocked: () => t("achievements", "card_text_unlocked", "Text when unlocked"),
     /** Built in */
     cardsTabBuiltIn: () => t("achievements", "cards_tab_built_in", "Built in"),
     /** Mewdeko's design in your server's colors. */

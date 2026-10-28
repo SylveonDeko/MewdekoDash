@@ -23,6 +23,7 @@
     draftIconSrc,
     GRADE_ICON,
     gradeOf,
+    guildEmojiGroups,
     metricOf,
     RESERVED_CATEGORIES
   } from "../achievementHelpers";
@@ -160,22 +161,7 @@
   let channelOptions = $derived(
     (lookups?.channels ?? []).filter((c) => c.type === 0).map((c) => ({ id: c.id.toString(), name: c.name, type: 0 }))
   );
-  let guildEmojis = $derived(
-    lookups && $currentGuild
-      ? [{
-        guild: { id: $currentGuild.id.toString(), name: $currentGuild.name },
-        emojis: lookups.emojis.map((e) => ({
-          id: e.id.toString(),
-          name: e.name,
-          animated: e.formatted.startsWith("<a:"),
-          isAvailable: true,
-          roleIds: [],
-          requireColons: true,
-          url: e.url
-        }))
-      }]
-      : []
-  );
+  let guildEmojis = $derived(guildEmojiGroups(lookups, $currentGuild));
   let rewardRoleProblem = $derived(
     draft.roleRewardId && lookups
       ? !(lookups.roles.find((r) => r.id.toString() === draft.roleRewardId)?.assignable ?? false)

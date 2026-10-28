@@ -295,7 +295,7 @@
 
     <div class:hidden={activeTab !== 'cards'}>
       {#if activeTab === 'cards'}
-        <CardsTab {catalog} onerror={(text) => showMessage(text, "error")} />
+        <CardsTab {catalog} {lookups} onerror={(text) => showMessage(text, "error")} />
       {/if}
     </div>
 

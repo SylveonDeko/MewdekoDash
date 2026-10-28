@@ -1,16 +1,29 @@
 <script module lang="ts">
   import { m } from "$lib/i18n";
-  import type { AchievementGlyph } from "$lib/api/index.ts";
+  import { achievementsApi, type AchievementGlyph } from "$lib/api/index.ts";
 
   /** The glyph list, fetched once and shared by every field on the page. */
   let glyphCache: Promise<AchievementGlyph[]> | null = null;
+
+  /**
+   * The glyph list, fetched the first time anything asks for it.
+   * @param guildId The guild ID
+   */
+  export async function loadGlyphs(guildId: bigint): Promise<AchievementGlyph[]> {
+    glyphCache ??= achievementsApi.glyphs(guildId);
+    try {
+      return await glyphCache;
+    } catch (err) {
+      glyphCache = null;
+      throw err;
+    }
+  }
 </script>
 
 <script lang="ts">
   import { slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
-  import { achievementsApi } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
   import DuoIcon from "../DuoIcon.svelte";
 
@@ -46,10 +59,8 @@
     open = !open;
     if (!open || glyphs.length > 0 || !$currentGuild?.id) return;
     try {
-      glyphCache ??= achievementsApi.glyphs($currentGuild.id);
-      glyphs = await glyphCache;
+      glyphs = await loadGlyphs($currentGuild.id);
     } catch (err: any) {
-      glyphCache = null;
       logger.error("Failed to load icons:", err);
       onerror(err?.message || m.achievements.iconErrorLoad());
     }

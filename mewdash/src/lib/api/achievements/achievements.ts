@@ -348,11 +348,12 @@ export const achievementsApi = {
    * @param locked Whether to draw the locked state
    * @param key The achievement to show, or a sample when missing
    * @param designId A saved design to draw when template is null
+   * @param editingId An element being typed over, drawn without its text
    */
   previewCard: (guildId: bigint, template: AchievementCardTemplate | null, locked: boolean, key?: string | null,
-    designId?: number | null) =>
+    designId?: number | null, editingId?: string | null) =>
     apiRequest<AchievementCardPreview>(`achievements/${guildId}/card/preview`, "POST",
-      { template, locked, key, designId }),
+      { template, locked, key, designId, editingId }),
 
   /**
    * Uploads an image for the card designer; delete it with deleteIcon

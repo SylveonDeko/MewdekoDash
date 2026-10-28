@@ -3,8 +3,10 @@ import type {
   Achievement,
   AchievementCatalog,
   AchievementGrade,
+  AchievementLookups,
   AchievementMetric,
 } from "$lib/api/achievements/models";
+import type { GuildEmojiInfo } from "$lib/api/client/models";
 import { AchievementTrigger } from "$lib/api/achievements/models";
 
 /** Grade colors used before the catalog loads; they match the bot's. */
@@ -141,6 +143,30 @@ export function emojiImageUrl(emoji: string | null | undefined): string | null {
   const match = emoji.match(/^<(a?):[^:]+:(\d+)>$/);
   if (!match) return null;
   return `https://cdn.discordapp.com/emojis/${match[2]}.${match[1] === "a" ? "gif" : "png"}?size=48`;
+}
+
+/**
+ * The server's custom emojis grouped the way the emoji picker takes them.
+ * @param lookups The editor lookups, or null before they load
+ * @param guild The current server
+ */
+export function guildEmojiGroups(
+  lookups: AchievementLookups | null,
+  guild: { id: { toString(): string }; name: string } | null | undefined,
+): GuildEmojiInfo[] {
+  if (!lookups || !guild) return [];
+  return [{
+    guild: { id: guild.id.toString(), name: guild.name },
+    emojis: lookups.emojis.map((e) => ({
+      id: e.id.toString(),
+      name: e.name,
+      animated: e.formatted.startsWith("<a:"),
+      isAvailable: true,
+      roleIds: [],
+      requireColons: true,
+      url: e.url,
+    })),
+  }];
 }
 
 /**

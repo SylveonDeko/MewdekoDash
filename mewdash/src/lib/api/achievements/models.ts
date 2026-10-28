@@ -547,6 +547,7 @@ export interface AchievementCardElement {
   lineHeight: number;
   maxLines: number;
   text: string;
+  lockedText: string;
   glyph: string;
   url: string;
   fit: "cover" | "contain";
@@ -587,6 +588,8 @@ export interface AchievementCard {
   assignments: { categories: Record<string, number>; achievements: Record<string, number> };
   images: AchievementIconUpload[];
   placeholders: string[];
+  defaultLabel: string;
+  defaultLockedLabel: string;
   /** primary, secondary, accent, text, muted, background as hex */
   palette: Record<string, string>;
   limits: {

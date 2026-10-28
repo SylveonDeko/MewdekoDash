@@ -42,6 +42,16 @@ export const TEXT_TYPES = ["label", "title", "description", "member", "text"];
 /** Kinds drawn as badges. */
 export const PILL_TYPES = ["grade", "category", "points", "more"];
 
+/** What each built in kind shows when its text is left empty. */
+export const DEFAULT_TEXT: Record<string, string> = {
+  title: "%achievement.name%",
+  description: "%achievement.description%",
+  grade: "%achievement.grade%",
+  category: "%achievement.category%",
+  points: "%points%",
+  more: "%more%",
+};
+
 /** Kinds with a fill, outline, and corners. */
 export const SHAPE_TYPES = ["rectangle", "ellipse", "icon", "avatar", "progress", ...PILL_TYPES];
 
@@ -176,7 +186,8 @@ export function newElement(template: AchievementCardTemplate, type: AchievementC
     spacing: 0,
     lineHeight: 1.25,
     maxLines: 1,
-    text: type === "text" ? "{achievement.name}" : "",
+    text: type === "text" ? "%achievement.name%" : "",
+    lockedText: "",
     glyph: type === "glyph" ? "star" : "",
     url: "",
     fit: "cover",
