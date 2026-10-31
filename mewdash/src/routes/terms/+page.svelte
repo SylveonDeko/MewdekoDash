@@ -1,7 +1,7 @@
 <!-- routes/terms/+page.svelte -->
 <script>
   import { m } from "$lib/i18n";
-  let date = "12th October 2026";
+  let date = "31st October 2026";
   let email = "sylveon@mewdeko.tech";
 </script>
 
