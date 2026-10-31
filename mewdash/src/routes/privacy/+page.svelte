@@ -1,7 +1,7 @@
 <!-- routes/privacy/+page.svelte -->
 <script>
   import { m } from "$lib/i18n";
-  let date = "31st October 2026";
+  let date = "12th October 2026";
   let email = "sylveon@mewdeko.tech";
 </script>
 
@@ -106,8 +106,6 @@
     <p>{m.legal.privacyIfAServerSetsUp()}</p>
 
     <p>{m.legal.privacyDiscordItselfProcessesYourData()}</p>
-
-    <p>{m.legal.privacyOnFluxerTheBot()}</p>
 
     <h2 class="text-2xl font-semibold">{m.legal.privacyTheMewdekoMobileApp()}</h2>
 

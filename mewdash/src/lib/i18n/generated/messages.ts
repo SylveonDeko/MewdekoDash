@@ -10053,16 +10053,16 @@ export const m = {
     privacyAiChatMessagesSentIn: () => t("legal", "privacy_ai_chat_messages_sent_in", "AI chat: messages sent in a channel a server has set up for AI chat, kept as conversation history until you clear it by sending \"deletesession\" in that channel."),
     /** Changes to our privacy policy */
     privacyChangesToOurPrivacyPolicy: () => t("legal", "privacy_changes_to_our_privacy_policy", "Changes to our privacy policy"),
-    /** Data belonging to a server, on Discord or on Fluxer, such as XP levels, warnings, sugge... */
-    privacyDataBelongingToADiscord: () => t("legal", "privacy_data_belonging_to_a_discord", "Data belonging to a server, on Discord or on Fluxer, such as XP levels, warnings, suggestions, starboard entries, and tickets, is kept for as long as the bot remains in that server, because the features depend on it. It is removed when a server administrator deletes it, when a relevant command is used, or when you ask us to remove it. When the bot is removed from a server, that server's data is permanently deleted after 7 days, which gives an administrator who removed it by mistake time to add it back."),
+    /** Data belonging to a Discord server, such as XP levels, warnings, suggestions, starboard... */
+    privacyDataBelongingToADiscord: () => t("legal", "privacy_data_belonging_to_a_discord", "Data belonging to a Discord server, such as XP levels, warnings, suggestions, starboard entries, and tickets, is kept for as long as the bot remains in that server, because the features depend on it. It is removed when a server administrator deletes it, when a relevant command is used, or when you ask us to remove it. When the bot is removed from a server, that server's data is permanently deleted after 7 days, which gives an administrator who removed it by mistake time to add it back."),
     /** Deleting your data */
     privacyDeletingYourData: () => t("legal", "privacy_deleting_your_data", "Deleting your data"),
     /** Privacy Policy for Mewdeko */
     privacyDescription: () => t("legal", "privacy_description", "Privacy Policy for Mewdeko"),
     /** Diagnose errors and faults so they can be fixed */
     privacyDiagnoseErrorsAndFaultsSo: () => t("legal", "privacy_diagnose_errors_and_faults_so", "Diagnose errors and faults so they can be fixed"),
-    /** Discord and Fluxer each process your data whenever you use them. Those relationships ar... */
-    privacyDiscordItselfProcessesYourData: () => t("legal", "privacy_discord_itself_processes_your_data", "Discord and Fluxer each process your data whenever you use them. Those relationships are governed by their own privacy policies, not this one."),
+    /** Discord itself processes your data whenever you use Discord. That relationship is gover... */
+    privacyDiscordItselfProcessesYourData: () => t("legal", "privacy_discord_itself_processes_your_data", "Discord itself processes your data whenever you use Discord. That relationship is governed by Discord's own privacy policy, not this one."),
     /** How do we collect your data? */
     privacyHowDoWeCollectYour: () => t("legal", "privacy_how_do_we_collect_your", "How do we collect your data?"),
     /** How do we store your data? */
@@ -10088,7 +10088,7 @@ export const m = {
     /** Measure how the bot and dashboard are used, such as which commands are run and which da... */
     privacyMeasureHowTheBotAnd: () => t("legal", "privacy_measure_how_the_bot_and", "Measure how the bot and dashboard are used, such as which commands are run and which dashboard pages are visited, so we know what to improve"),
     /** Message logs: when a server enables them, the old and new text of edited and deleted me... */
-    privacyMessageLogsWhenAServer: () => t("legal", "privacy_message_logs_when_a_server", "Message logs: when a server enables them, the old and new text of edited and deleted messages is posted to that server's log channel. It is not kept in our database."),
+    privacyMessageLogsWhenAServer: () => t("legal", "privacy_message_logs_when_a_server", "Message logs: when a server enables them, the old and new text of edited and deleted messages is posted to that server's log channel in Discord. It is not kept in our database."),
     /** Mewdeko collects the following data: */
     privacyMewdekoCollectsTheFollowingData: () => t("legal", "privacy_mewdeko_collects_the_following_data", "Mewdeko collects the following data:"),
     /** Mewdeko collects your data so that we can: */
@@ -10103,8 +10103,6 @@ export const m = {
     privacyMewdekoReadsTheMessagesIn: () => t("legal", "privacy_mewdeko_reads_the_messages_in", "Mewdeko reads the messages in channels it can see so that its features work. Most messages are checked and then forgotten: prefix commands, chat triggers, word and link filters, anti-spam, highlights, counting, games, AFK and XP all read a message without keeping its text. XP and message statistics keep counts, never the text itself."),
     /** Mewdeko stores your data in a PostgreSQL database and a Redis cache, both hosted at Het... */
     privacyMewdekoStoresYourDataIn: () => t("legal", "privacy_mewdeko_stores_your_data_in", "Mewdeko stores your data in a PostgreSQL database and a Redis cache, both hosted at Hetzner in Germany. Access to them requires authentication and neither is reachable from the public internet. Traffic between you and the dashboard or the mobile app is encrypted with HTTPS."),
-    /** On Fluxer, the bot runs as a separate instance with its own database, and the same rule... */
-    privacyOnFluxerTheBot: () => t("legal", "privacy_on_fluxer_the_bot", "On Fluxer, the bot runs as a separate instance with its own database, and the same rules apply. There is no dashboard or mobile app sign-in for the Fluxer bot at this time. Voice channels are used for music playback only: audio from members is never recorded, stored or transmitted anywhere."),
     /** Operate the bot and provide functionality */
     privacyOperateTheBotAndProvide: () => t("legal", "privacy_operate_the_bot_and_provide", "Operate the bot and provide functionality"),
     /** Send messages, join or leave, or change your roles, nickname or status in a server wher... */
@@ -10127,8 +10125,8 @@ export const m = {
     privacySomeFeaturesDoKeepMessage: () => t("legal", "privacy_some_features_do_keep_message", "Some features do keep message text:"),
     /** Some features keep their own history and expose their own retention setting, which serv... */
     privacySomeFeaturesKeepTheirOwn: () => t("legal", "privacy_some_features_keep_their_own", "Some features keep their own history and expose their own retention setting, which server administrators control. Others, such as XP and reputation, reduce scores over a period of inactivity rather than deleting the record."),
-    /** Some features read your status and activities, such as the game you are playing, whethe... */
-    privacySomeFeaturesReadYourDiscord: () => t("legal", "privacy_some_features_read_your_discord", "Some features read your status and activities, such as the game you are playing, whether you are streaming, and your custom status. They are used by Status Roles and Stream Roles to give or remove roles, by game voice channels to move you to a channel for your game, and to show how many members are online. If a server turns on activity tracking in Server Stats, the bot also records which activities members spend time on so that server's staff can see what is popular. Your custom status text is read by Status Roles but never stored."),
+    /** Some features read your Discord status and activities, such as the game you are playing... */
+    privacySomeFeaturesReadYourDiscord: () => t("legal", "privacy_some_features_read_your_discord", "Some features read your Discord status and activities, such as the game you are playing, whether you are streaming, and your custom status. They are used by Status Roles and Stream Roles to give or remove roles, by game voice channels to move you to a channel for your game, and to show how many members are online. If a server turns on activity tracking in Server Stats, the bot also records which activities members spend time on so that server's staff can see what is popular. Your custom status text is read by Status Roles but never stored."),
     /** Starboard: a copy of messages that reach a server's starboard. */
     privacyStarboardACopyOfMessages: () => t("legal", "privacy_starboard_a_copy_of_messages", "Starboard: a copy of messages that reach a server's starboard."),
     /** Status and activities */
@@ -10154,7 +10152,7 @@ export const m = {
     /** Things you create with the bot, such as suggestions, confessions, tickets, reminders, b... */
     privacyThingsYouCreateWithThe: () => t("legal", "privacy_things_you_create_with_the", "Things you create with the bot, such as suggestions, confessions, tickets, reminders, birthdays, AFK messages and highlight words"),
     /** This privacy policy explains how we use the personal data we collect from you when you ... */
-    privacyThisPrivacyPolicyExplainsHow: () => t("legal", "privacy_this_privacy_policy_explains_how", "This privacy policy explains how we use the personal data we collect from you when you use Mewdeko. It covers the Mewdeko bot on Discord and on Fluxer, this dashboard, and the Mewdeko Mobile app for Android and iOS."),
+    privacyThisPrivacyPolicyExplainsHow: () => t("legal", "privacy_this_privacy_policy_explains_how", "This privacy policy explains how we use the personal data we collect from you when you use Mewdeko. It covers the Discord bot, this dashboard, and the Mewdeko Mobile app for Android and iOS."),
     /** Usage records, such as which commands were run in which server and which dashboard page... */
     privacyUsageRecordsSuchAsWhich: () => t("legal", "privacy_usage_records_such_as_which", "Usage records, such as which commands were run in which server and which dashboard pages were visited, are deleted after 30 days. They do not contain your user ID; dashboard visits are recorded with a short anonymous hash instead. Daily totals built from them are kept."),
     /** Use or view our bot via your browser’s cookies */
@@ -10170,7 +10168,7 @@ export const m = {
     /** What data do we collect? */
     privacyWhatDataDoWeCollect: () => t("legal", "privacy_what_data_do_we_collect", "What data do we collect?"),
     /** When the bot or the dashboard encounters an error, a report is sent to Sentry, an error... */
-    privacyWhenTheBotOrThe: () => t("legal", "privacy_when_the_bot_or_the", "When the bot or the dashboard encounters an error, a report is sent to Sentry, an error tracking service, so the fault can be diagnosed. These reports can include your Discord or Fluxer user ID and the action that failed. The Mewdeko Mobile app does not send error reports."),
+    privacyWhenTheBotOrThe: () => t("legal", "privacy_when_the_bot_or_the", "When the bot or the dashboard encounters an error, a report is sent to Sentry, an error tracking service, so the fault can be diagnosed. These reports can include your Discord user ID and the action that failed. The Mewdeko Mobile app does not send error reports."),
     /** Who else processes your data */
     privacyWhoElseProcessesYourData: () => t("legal", "privacy_who_else_processes_your_data", "Who else processes your data"),
     /** You can also have specific data removed while continuing to use Mewdeko. Full instructi... */
@@ -10179,16 +10177,16 @@ export const m = {
     privacyYouDirectlyProvideMewdekoWith: () => t("legal", "privacy_you_directly_provide_mewdeko_with", "You directly provide Mewdeko with most of the data we collect. We collect data and process data when you:"),
     /** Your Discord avatar, when you sign in to the dashboard or the mobile app */
     privacyYourDiscordAvatarWhenYou: () => t("legal", "privacy_your_discord_avatar_when_you", "Your Discord avatar, when you sign in to the dashboard or the mobile app"),
-    /** Your status and activities, where a feature needs them (see <a class="underline" href="... */
-    privacyYourDiscordStatusAndActivities: () => t("legal", "privacy_your_discord_status_and_activities", "Your status and activities, where a feature needs them (see <a class=\"underline\" href=\"#presence\">Status and activities</a> below)"),
+    /** Your Discord status and activities, where a feature needs them (see <a class="underline... */
+    privacyYourDiscordStatusAndActivities: () => t("legal", "privacy_your_discord_status_and_activities", "Your Discord status and activities, where a feature needs them (see <a class=\"underline\" href=\"#presence\">Status and activities</a> below)"),
     /** Acceptable Use */
     termsAcceptableUse: () => t("legal", "terms_acceptable_use", "Acceptable Use"),
     /** Arbitration */
     termsArbitration: () => t("legal", "terms_arbitration", "Arbitration"),
     /** Attempt to disrupt, overload, or gain unauthorised access to the bot, the dashboard, or... */
     termsAttemptToDisruptOverloadOr: () => t("legal", "terms_attempt_to_disrupt_overload_or", "Attempt to disrupt, overload, or gain unauthorised access to the bot, the dashboard, or the systems they run on"),
-    /** Break the Terms of Service or Community Guidelines of Discord or Fluxer, or any law tha... */
-    termsBreakDiscordsTermsOfService: () => t("legal", "terms_break_discords_terms_of_service", "Break the Terms of Service or Community Guidelines of Discord or Fluxer, or any law that applies to you"),
+    /** Break Discord's Terms of Service or Community Guidelines, or any law that applies to you */
+    termsBreakDiscordsTermsOfService: () => t("legal", "terms_break_discords_terms_of_service", "Break Discord's Terms of Service or Community Guidelines, or any law that applies to you"),
     /** By using Mewdeko, you are agreeing to be bound by the following terms and conditions ("... */
     termsByUsingMewdekoYouAre: () => t("legal", "terms_by_using_mewdeko_you_are", "By using Mewdeko, you are agreeing to be bound by the following terms and conditions (\"Terms of Service\")."),
     /** Changes To The Service */
@@ -10217,8 +10215,8 @@ export const m = {
     termsTheService: () => t("legal", "terms_the_service", "The Service"),
     /** The Service is provided free of charge, "as is" and "as available", without warranties ... */
     termsTheServiceIsProvidedFree: () => t("legal", "terms_the_service_is_provided_free", "The Service is provided free of charge, \"as is\" and \"as available\", without warranties of any kind. We do not guarantee that it will always be available or free of errors, or that data stored by it will never be lost, and to the extent permitted by law we are not liable for any loss resulting from your use of it."),
-    /** These Terms cover the official Mewdeko bot on Discord and on Fluxer, this dashboard, an... */
-    termsTheseTermsCoverTheOfficial: () => t("legal", "terms_these_terms_cover_the_official", "These Terms cover the official Mewdeko bot on Discord and on Fluxer, this dashboard, and the Mewdeko Mobile app for Android and iOS (together, the \"Service\"). Copies of Mewdeko run by other people, and dashboards they host, are not operated by us and are not covered by these Terms. How we handle your data is described in our <a class=\"underline\" href=\"/privacy\">Privacy Policy</a>."),
+    /** These Terms cover the official Mewdeko Discord bot, this dashboard, and the Mewdeko Mob... */
+    termsTheseTermsCoverTheOfficial: () => t("legal", "terms_these_terms_cover_the_official", "These Terms cover the official Mewdeko Discord bot, this dashboard, and the Mewdeko Mobile app for Android and iOS (together, the \"Service\"). Copies of Mewdeko run by other people, and dashboards they host, are not operated by us and are not covered by these Terms. How we handle your data is described in our <a class=\"underline\" href=\"/privacy\">Privacy Policy</a>."),
     /** Third-Party Services */
     termsThirdPartyServices: () => t("legal", "terms_third_party_services", "Third-Party Services"),
     /** This Terms of Service was last updated on {date}. */
