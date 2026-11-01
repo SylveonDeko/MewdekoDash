@@ -60,7 +60,7 @@
       </div>
     {:else}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {#each voiceChannelRoles as vcRole (vcRole.channelId)}
+        {#each voiceChannelRoles as vcRole (`${vcRole.channelId}-${vcRole.roleId}`)}
           <div
             class="flex items-center justify-between p-4 rounded-lg transition-all duration-200 hover:shadow-lg  border"
             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">

@@ -413,7 +413,7 @@
         {#if antiPatternPatterns.length > 0}
           <div class="space-y-3">
             <h5 class="font-medium" style="color: {$colorStore.text}">{m.administration.protectionPatternCurrentPatterns()}</h5>
-            {#each antiPatternPatterns as pattern (pattern.name)}
+            {#each antiPatternPatterns as pattern (pattern.id ?? pattern.name)}
               <div class="flex items-center justify-between p-3 rounded-lg border"
                    style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                 <div>

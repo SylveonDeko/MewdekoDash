@@ -115,7 +115,7 @@
             </div>
 
             <div class="space-y-2">
-              {#each rr.reactionRoles as reaction (`${reaction.emoteName}-${reaction.roleId}`)}
+              {#each rr.reactionRoles as reaction, reactionIndex (`${reaction.emoteName}-${reaction.roleId}-${reactionIndex}`)}
                 {@const emojiInfo = parseEmojiForPreview(reaction.emoteName)}
                 <div class="flex items-center gap-2 text-sm" style="color: {$colorStore.text}">
                   {#if emojiInfo.type === 'custom' && emojiInfo.url}

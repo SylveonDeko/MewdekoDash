@@ -55,7 +55,7 @@
     </div>
   {:else}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {#each commandCooldowns as cooldown (cooldown.commandName || cooldown.command)}
+      {#each commandCooldowns as cooldown, index (cooldown.commandName ?? cooldown.command ?? index)}
         <div
           class="group relative p-4 rounded-lg transition-all duration-200 hover:shadow-lg  border"
           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
