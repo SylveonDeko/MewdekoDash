@@ -1188,8 +1188,8 @@ A unified navigation component that provides responsive navigation with server a
           >
         </div>
 
-        <!-- Mobile menu button for dashboard - opens sidebar drawer -->
-        {#if isDashboard}
+        <!-- Mobile menu button for dashboard - opens sidebar drawer, which only exists once an instance is selected -->
+        {#if isDashboard && $currentInstance}
           <button
             aria-label={m.layout.navOpenSidebarMenu()}
             class="inline-flex items-center p-2 rounded-lg transition-all duration-200 ease-in-out lg:hidden min-h-[36px] min-w-[36px]"
@@ -1200,8 +1200,8 @@ A unified navigation component that provides responsive navigation with server a
           </button>
         {/if}
 
-        <!-- Mobile menu button - hide in dashboard -->
-        {#if !isDashboard}
+        <!-- Mobile menu button - hide in dashboard while the sidebar drawer is there -->
+        {#if !isDashboard || !$currentInstance}
           <button
             aria-controls="mobile-menu"
             aria-expanded={menuOpen || sidebarOpen}
@@ -1427,8 +1427,8 @@ A unified navigation component that provides responsive navigation with server a
           </label>
         </div>
 
-        <!-- Only show navigation items on non-dashboard pages for mobile -->
-        {#if !isDashboard}
+        <!-- Dashboard pages put navigation in the sidebar, which is missing until an instance is selected -->
+        {#if !isDashboard || !$currentInstance}
           <nav class="p-4 space-y-1">
             {#each computedItems as item (item.href || item.title)}
               {#if item.wrapped}
