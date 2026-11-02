@@ -259,6 +259,15 @@ export const allDashboardFeatures: NavigationItem[] = [
     keywords: ["stat roles", "statroles", "activity roles", "active member", "inactive", "top chatter", "voice role", "invite rewards", "message rewards", "streak"],
   },
   {
+    label: m.features.linkfixName,
+    icon: "fa-utility-duo fa-regular fa-link",
+    href: "/dashboard/linkfix",
+    category: "Community",
+    categoryLabel: m.features.categoryCommunity,
+    description: m.features.linkfixDescription,
+    keywords: ["link fix", "fix links", "embed fix", "fxtwitter", "vxtwitter", "twitter", "instagram", "tiktok", "reddit", "pinterest", "bluesky", "pixiv", "embeds"],
+  },
+  {
     label: m.features.liveboardsName,
     icon: "fa-utility-duo fa-regular fa-thumbtack",
     href: "/dashboard/liveboards",

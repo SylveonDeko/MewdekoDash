@@ -1,0 +1,16 @@
+{
+  "enabled_hint": "When someone posts a supported link, Mewdeko replies with the fixed link and hides the original embed if it can manage messages. The reply goes away when the original message is deleted.",
+  "enabled_label": "Fix links",
+  "error_invalid_host": "{site} needs a plain host name like fixupx.com",
+  "error_load": "Failed to load link fixing settings",
+  "error_save": "Failed to save link fixing settings",
+  "host_hint": "Default: {host}",
+  "host_label": "Fixing host",
+  "host_reset": "Use default",
+  "notify_saved": "Link fixing settings saved",
+  "page_subtitle": "Reply to social media links with a copy that embeds properly",
+  "save": "Save hosts",
+  "site_hint": "Reply to {site} links with the fixed link",
+  "sites_subtitle": "Turn sites on or off, and pick the embed fixing service each one uses",
+  "sites_title": "Sites"
+}

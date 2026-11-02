@@ -35,6 +35,7 @@ const sectionsByHref: Record<string, string[]> = {
   "/dashboard/serverstats": ["ServerStats"],
   "/dashboard/statroles": ["StatRoles"],
   "/dashboard/liveboards": ["LiveBoards"],
+  "/dashboard/linkfix": ["LinkFix"],
   "/dashboard/moderation": ["Moderation", "Protection"],
   "/dashboard/filter": ["Filter"],
   "/dashboard/polls": ["Poll"],

@@ -7001,6 +7001,10 @@ export const m = {
     leaveFeedbackDescription: () => t("features", "leave_feedback_description", "Why servers removed the bot, answered by their owners"),
     /** Leave Feedback */
     leaveFeedbackName: () => t("features", "leave_feedback_name", "Leave Feedback"),
+    /** Reply to Twitter/X, Instagram, TikTok and similar links with a copy that embeds properly */
+    linkfixDescription: () => t("features", "linkfix_description", "Reply to Twitter/X, Instagram, TikTok and similar links with a copy that embeds properly"),
+    /** Link Fixing */
+    linkfixName: () => t("features", "linkfix_name", "Link Fixing"),
     /** Pinned leaderboards, charts and scheduled server reports */
     liveboardsDescription: () => t("features", "liveboards_description", "Pinned leaderboards, charts and scheduled server reports"),
     /** Live Boards */
@@ -10227,6 +10231,36 @@ export const m = {
     termsWeReserveTheRightAt: () => t("legal", "terms_we_reserve_the_right_at", "We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material we will make reasonable efforts to provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion."),
     /** You agree not to use the Service to: */
     termsYouAgreeNotToUse: () => t("legal", "terms_you_agree_not_to_use", "You agree not to use the Service to:"),
+  },
+  linkfix: {
+    /** When someone posts a supported link, Mewdeko replies with the fixed link and hides the ... */
+    enabledHint: () => t("linkfix", "enabled_hint", "When someone posts a supported link, Mewdeko replies with the fixed link and hides the original embed if it can manage messages. The reply goes away when the original message is deleted."),
+    /** Fix links */
+    enabledLabel: () => t("linkfix", "enabled_label", "Fix links"),
+    /** {site} needs a plain host name like fixupx.com */
+    errorInvalidHost: (p: { site: P }) => t("linkfix", "error_invalid_host", "{site} needs a plain host name like fixupx.com", p),
+    /** Failed to load link fixing settings */
+    errorLoad: () => t("linkfix", "error_load", "Failed to load link fixing settings"),
+    /** Failed to save link fixing settings */
+    errorSave: () => t("linkfix", "error_save", "Failed to save link fixing settings"),
+    /** Default: {host} */
+    hostHint: (p: { host: P }) => t("linkfix", "host_hint", "Default: {host}", p),
+    /** Fixing host */
+    hostLabel: () => t("linkfix", "host_label", "Fixing host"),
+    /** Use default */
+    hostReset: () => t("linkfix", "host_reset", "Use default"),
+    /** Link fixing settings saved */
+    notifySaved: () => t("linkfix", "notify_saved", "Link fixing settings saved"),
+    /** Reply to social media links with a copy that embeds properly */
+    pageSubtitle: () => t("linkfix", "page_subtitle", "Reply to social media links with a copy that embeds properly"),
+    /** Save hosts */
+    save: () => t("linkfix", "save", "Save hosts"),
+    /** Reply to {site} links with the fixed link */
+    siteHint: (p: { site: P }) => t("linkfix", "site_hint", "Reply to {site} links with the fixed link", p),
+    /** Turn sites on or off, and pick the embed fixing service each one uses */
+    sitesSubtitle: () => t("linkfix", "sites_subtitle", "Turn sites on or off, and pick the embed fixing service each one uses"),
+    /** Sites */
+    sitesTitle: () => t("linkfix", "sites_title", "Sites"),
   },
   liveboards: {
     /** Add live board */
@@ -16437,6 +16471,10 @@ export const m = {
     panelsTabSelectMenus: () => t("tickets", "panels_tab_select_menus", "Select Menus"),
     /** Panel Settings */
     panelsTabSettings: () => t("tickets", "panels_tab_settings", "Panel Settings"),
+    /** Thread Channel */
+    panelsThreadChannel: () => t("tickets", "panels_thread_channel", "Thread Channel"),
+    /** Open tickets as private threads in a text channel, or as posts in a forum, instead of a... */
+    panelsThreadChannelHint: () => t("tickets", "panels_thread_channel_hint", "Open tickets as private threads in a text channel, or as posts in a forum, instead of a channel for each ticket. Anyone who can see a forum can see its posts."),
     /** Troubleshoot */
     panelsTroubleshoot: () => t("tickets", "panels_troubleshoot", "Troubleshoot"),
     /** Viewer Roles */
@@ -18833,4 +18871,4 @@ export const m = {
 } as const;
 
 /** Module names that exist in the source locale, for loading other locales lazily later. */
-export const modules = ["_common","access","achievements","administration","afk","analytics","auditlog","birthday","brand","channel-access","chat-triggers","chatsaver","confessions","counting","currency","customvoice","dashboard","embedbuilder","feature-requests","features","feeds","filter","forms","giveaways","highlights","home","import","invites","layout","legal","liveboards","logging","me","messagestats","minecraft","moderation","monitoring","multigreets","music","owner","patreon","placeholders","polls","public","repeaters","reputation","role-menus","rolegreets","rolestates","serverstats","settings","shared","shortcuts","starboard","statchannels","statroles","statusroles","streams","suggestions","tickets","todo","twitch","utility","votes","widgets","wiki","wizard","wordoftheday","xp"] as const;
+export const modules = ["_common","access","achievements","administration","afk","analytics","auditlog","birthday","brand","channel-access","chat-triggers","chatsaver","confessions","counting","currency","customvoice","dashboard","embedbuilder","feature-requests","features","feeds","filter","forms","giveaways","highlights","home","import","invites","layout","legal","linkfix","liveboards","logging","me","messagestats","minecraft","moderation","monitoring","multigreets","music","owner","patreon","placeholders","polls","public","repeaters","reputation","role-menus","rolegreets","rolestates","serverstats","settings","shared","shortcuts","starboard","statchannels","statroles","statusroles","streams","suggestions","tickets","todo","twitch","utility","votes","widgets","wiki","wizard","wordoftheday","xp"] as const;

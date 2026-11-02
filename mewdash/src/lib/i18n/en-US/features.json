@@ -82,6 +82,8 @@
   "invites_name": "Invites",
   "leave_feedback_description": "Why servers removed the bot, answered by their owners",
   "leave_feedback_name": "Leave Feedback",
+  "linkfix_description": "Reply to Twitter/X, Instagram, TikTok and similar links with a copy that embeds properly",
+  "linkfix_name": "Link Fixing",
   "liveboards_description": "Pinned leaderboards, charts and scheduled server reports",
   "liveboards_name": "Live Boards",
   "logging_description": "Server audit logs",
