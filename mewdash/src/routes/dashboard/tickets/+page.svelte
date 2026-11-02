@@ -67,6 +67,8 @@
   let availableRoles: any[] = $state([]);
   let textChannels: any[] = $state([]);
   let categories: any[] = $state([]);
+  let forumChannels: any[] = $state([]);
+  let threadChannels = $derived([...textChannels, ...forumChannels]);
   let guildEmojis: any[] = $state([]);
 
   // UI State
@@ -99,6 +101,7 @@
     channelFormat: "ticket-{username}-{id}",
     categoryId: null as string | null,
     archiveCategoryId: null as string | null,
+    threadChannelId: null as string | null,
     supportRoles: [] as string[],
     viewerRoles: [] as string[],
     autoCloseTime: null as number | null,
@@ -182,6 +185,7 @@
           rolesData,
           textChannelsData,
           categoriesData,
+          forumChannelsData,
           emojisData
         ] = await Promise.all([
           ticketApi.getTicketOverview($currentGuild.id, 30).catch(() => null),
@@ -190,6 +194,7 @@
           clientApi.getRoles($currentGuild.id),
           clientApi.getTextChannels($currentGuild.id),
           clientApi.getCategories($currentGuild.id),
+          clientApi.getForumChannels($currentGuild.id).catch(() => []),
           clientApi.getEmojis(BigInt(data.user!.id), false).catch(() => [])
         ]);
 
@@ -220,6 +225,7 @@
         availableRoles = rolesData || [];
         textChannels = textChannelsData || [];
         categories = categoriesData || [];
+        forumChannels = forumChannelsData || [];
         guildEmojis = emojisData || [];
 
       } catch (err) {
@@ -463,6 +469,7 @@
         channelFormat: newButton.channelFormat || null,
         categoryId: newButton.categoryId ? BigInt(newButton.categoryId) : null,
         archiveCategoryId: newButton.archiveCategoryId ? BigInt(newButton.archiveCategoryId) : null,
+        threadChannelId: newButton.threadChannelId ? BigInt(newButton.threadChannelId) : null,
         supportRoles: newButton.supportRoles?.length > 0 ? newButton.supportRoles.map(r => BigInt(r)) : null,
         viewerRoles: newButton.viewerRoles?.length > 0 ? newButton.viewerRoles.map(r => BigInt(r)) : null,
         autoCloseTime: newButton.autoCloseTime ? `PT${newButton.autoCloseTime}H` : null,
@@ -530,6 +537,7 @@
         style: typeof button.style === "string" ? parseInt(button.style) : button.style,
         categoryId: button.categoryId ? BigInt(button.categoryId) : null,
         archiveCategoryId: button.archiveCategoryId ? BigInt(button.archiveCategoryId) : null,
+        threadChannelId: button.threadChannelId ? BigInt(button.threadChannelId) : 0n,
         supportRoles: button.supportRoles?.length > 0 ? button.supportRoles.map((r: string) => BigInt(r)) : null,
         viewerRoles: button.viewerRoles?.length > 0 ? button.viewerRoles.map((r: string) => BigInt(r)) : null,
         autoCloseTime: formatTimeSpan(button.autoCloseTime, "H"),
@@ -721,6 +729,7 @@
         emoji: option.emoji || null,
         categoryId: option.categoryId ? BigInt(option.categoryId) : null,
         archiveCategoryId: option.archiveCategoryId ? BigInt(option.archiveCategoryId) : null,
+        threadChannelId: option.threadChannelId ? BigInt(option.threadChannelId) : 0n,
         supportRoles: option.supportRoles?.length > 0 ? option.supportRoles.map((r: string) => BigInt(r)) : null,
         viewerRoles: option.viewerRoles?.length > 0 ? option.viewerRoles.map((r: string) => BigInt(r)) : null,
         autoCloseTime: formatTimeSpan(option.autoCloseTime, "H"),
@@ -981,6 +990,7 @@
       channelFormat: "ticket-{username}-{id}",
       categoryId: null,
       archiveCategoryId: null,
+      threadChannelId: null,
       supportRoles: [],
       viewerRoles: [],
       autoCloseTime: null,
@@ -1091,6 +1101,7 @@
         bind:tempPanelEmbed
         {textChannels}
         {categories}
+        {threadChannels}
         {availableRoles}
         {priorities}
         {guildEmojis}

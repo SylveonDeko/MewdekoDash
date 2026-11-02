@@ -210,6 +210,8 @@
   "panels_style_success_label": "Success (Green)",
   "panels_tab_select_menus": "Select Menus",
   "panels_tab_settings": "Panel Settings",
+  "panels_thread_channel": "Thread Channel",
+  "panels_thread_channel_hint": "Open tickets as private threads in a text channel, or as posts in a forum, instead of a channel for each ticket. Anyone who can see a forum can see its posts.",
   "panels_troubleshoot": "Troubleshoot",
   "panels_viewer_roles": "Viewer Roles",
   "tab_cases": "Cases",

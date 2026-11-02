@@ -34,6 +34,8 @@ export interface AddButtonRequest {
   channelFormat?: string | null;
   categoryId?: bigint | null;
   archiveCategoryId?: bigint | null;
+  /** Text or forum channel tickets open in as threads or posts; 0 clears it on an update */
+  threadChannelId?: bigint | null;
   supportRoles?: bigint[] | null;
   viewerRoles?: bigint[] | null;
   autoCloseTime?: string | null;
@@ -53,6 +55,8 @@ export interface UpdateButtonRequest {
   style?: ButtonStyle | null;
   categoryId?: bigint | null;
   archiveCategoryId?: bigint | null;
+  /** Text or forum channel tickets open in as threads or posts; 0 clears it on an update */
+  threadChannelId?: bigint | null;
   supportRoles?: bigint[] | null;
   viewerRoles?: bigint[] | null;
   autoCloseTime?: string | null;
@@ -98,6 +102,8 @@ export interface AddSelectOptionRequest {
   channelFormat?: string | null;
   categoryId?: bigint | null;
   archiveCategoryId?: bigint | null;
+  /** Text or forum channel tickets open in as threads or posts; 0 clears it on an update */
+  threadChannelId?: bigint | null;
   supportRoles?: bigint[] | null;
   viewerRoles?: bigint[] | null;
   autoCloseTime?: string | null;
