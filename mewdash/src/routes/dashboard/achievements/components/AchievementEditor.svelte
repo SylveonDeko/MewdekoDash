@@ -365,7 +365,7 @@
      onclick={(e) => { if (e.target === e.currentTarget) close(); }}
      transition:fade={{ duration: 150 }}>
   <div class="w-full md:max-w-5xl md:max-h-[90vh] flex flex-col md:rounded-2xl border shadow-2xl overflow-hidden"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10), #1a202c;
+       style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background});
               border-color: {$colorStore.primary}30;"
        role="dialog"
        aria-modal="true"
@@ -450,7 +450,7 @@
                   {#each triggerChoices as choice (choice.value)}
                     {@const pressed = draft.trigger === choice.value}
                     <button type="button"
-                            class="flex items-start gap-3 p-4 rounded-xl border text-left transition-all hover:scale-[1.01] min-h-[44px]"
+                            class="flex items-start gap-3 p-4 rounded-xl border text-left transition-all min-h-[44px]"
                             style="background: {pressed ? $colorStore.primary + '20' : $colorStore.primary + '08'};
                                    border-color: {pressed ? $colorStore.primary : $colorStore.primary + '30'};"
                             aria-pressed={pressed}
@@ -530,7 +530,7 @@
                   {#each catalog.grades as option (option.value)}
                     {@const pressed = draft.grade === option.value}
                     <button type="button" role="radio" aria-checked={pressed}
-                            class="flex flex-col items-center justify-center gap-1 p-2 rounded-xl border min-h-[64px] transition-all hover:scale-[1.03]"
+                            class="flex flex-col items-center justify-center gap-1 p-2 rounded-xl border min-h-[64px] transition-all"
                             style="background: {option.color}{pressed ? '30' : '10'}; border-color: {option.color}{pressed ? '' : '40'};"
                             onclick={() => { draft.grade = option.value; }}>
                       <DuoIcon icon={GRADE_ICON} color={option.color} size={18} />
@@ -595,7 +595,7 @@
           </div>
 
           <div class="lg:col-span-2 lg:sticky lg:top-0 space-y-4">
-            <div class="text-xs font-semibold uppercase tracking-wide" style="color: {$colorStore.muted}">{m.achievements.editorUnlockImage()}</div>
+            <div class="text-xs font-semibold" style="color: {$colorStore.muted}">{m.achievements.editorUnlockImage()}</div>
             <div class="relative rounded-xl overflow-hidden" style="background: #2b2d31; aspect-ratio: 1200 / 420;">
               {#if previewImage}
                 <img src={previewImage} alt={m.achievements.editorPreviewAlt({ name: previewName, description: previewDescription, points: shownPoints.toLocaleString() })}

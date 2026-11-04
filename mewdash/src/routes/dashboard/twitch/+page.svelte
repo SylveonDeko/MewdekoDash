@@ -910,14 +910,14 @@
 >
   {#if loading}
     <div class="min-h-[220px] grid place-items-center gap-3 font-bold rounded-2xl border p-6"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30; color: {$colorStore.text}">
+         style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30; color: {$colorStore.text}">
       <i class="fa-solid fa-spinner fa-spin text-2xl" style="color: {$colorStore.primary}"></i>
       <span>{m.twitch.loading()}</span>
     </div>
   {:else}
     <div class="flex flex-col gap-4" in:fade={{ duration: 160 }}>
       <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <article class="rounded-2xl p-4 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px] min-w-0" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
+        <article class="rounded-2xl p-4 min-w-0" style="background: {$colorStore.primary}0c;">
           <div class="flex items-center justify-between gap-3">
             <div class="min-w-0">
               <p class="text-sm font-medium" style="color: {$colorStore.muted}">{m.twitch.overviewConnection()}</p>
@@ -936,7 +936,7 @@
           </p>
         </article>
 
-        <article class="rounded-2xl p-4 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px] min-w-0" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
+        <article class="rounded-2xl p-4 min-w-0" style="background: {$colorStore.primary}0c;">
           <div class="flex items-center justify-between gap-3">
             <div class="min-w-0">
               <p class="text-sm font-medium" style="color: {$colorStore.muted}">{m.twitch.overviewBotAccount()}</p>
@@ -949,7 +949,7 @@
           <p class="mt-3 leading-relaxed text-sm" style="color: {$colorStore.muted}">{status?.hasBotAccount ? m.twitch.overviewBotOk() : m.twitch.overviewBotMissing()}</p>
         </article>
 
-        <article class="rounded-2xl p-4 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px] min-w-0" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
+        <article class="rounded-2xl p-4 min-w-0" style="background: {$colorStore.primary}0c;">
           <div class="flex items-center justify-between gap-3">
             <div class="min-w-0">
               <p class="text-sm font-medium" style="color: {$colorStore.muted}">{m.common.channel()}</p>
@@ -965,7 +965,7 @@
 
       {#if activeTab === "setup" && activeSubTab === "connect"}
         <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)] gap-4" in:fly={{ y: 10, duration: 160 }}>
-          <section class="rounded-xl border p-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30">
+          <section class="rounded-xl border p-4" style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30">
             <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
               <div>
                 <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
@@ -984,7 +984,7 @@
                     <span style="color: {$colorStore.muted}">{m.twitch.setupBotScopesHint()}</span>
                   </div>
                   <button
-                    class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
+                    class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed"
                     disabled={connectingBot}
                     onclick={() => connect("bot")}
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -1000,7 +1000,7 @@
                   <span style="color: {$colorStore.muted}">{m.twitch.setupChannelScopesHint()}</span>
                 </div>
                 <button
-                  class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
+                  class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed"
                   disabled={connectingChannel}
                   onclick={() => connect("channel")}
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -1011,7 +1011,7 @@
             </div>
           </section>
 
-          <section class="rounded-xl border p-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30">
+          <section class="rounded-xl border p-4" style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30">
             <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
               <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
               {m.twitch.healthTitle()}
@@ -1060,7 +1060,7 @@
           </section>
         </div>
       {:else if activeTab === "setup" && activeSubTab === "botsettings"}
-        <section class="rounded-xl border p-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
+        <section class="rounded-xl border p-4" style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
@@ -1095,14 +1095,14 @@
 
           <div class="flex flex-col sm:flex-row gap-2.5 mt-5">
             <button
-              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed border-0"
+              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed border-0"
               disabled={!status?.hasChannelAuthorization || saving}
               onclick={() => disconnect("channel")}
               style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
             >{m.twitch.botDisconnectChannel()}</button>
             {#if isBotOwner}
               <button
-                class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed border-0"
+                class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed border-0"
                 disabled={!status?.hasBotAccount || saving}
                 onclick={() => disconnect("bot")}
                 style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
@@ -1111,7 +1111,7 @@
           </div>
         </section>
       {:else if activeTab === "commands" && activeSubTab === "custom"}
-        <section class="rounded-xl border p-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
+        <section class="rounded-xl border p-4" style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
@@ -1121,9 +1121,9 @@
               <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.commandEditorHint()}</p>
             </div>
             <div class="flex flex-wrap gap-2 items-center">
-              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={resetCommandForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">{m.common.clear()}</button>
+              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0" onclick={resetCommandForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">{m.common.clear()}</button>
               <button
-                class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
+                class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed"
                 disabled={commandSaving || !commandForm.name.trim() || !commandForm.response.trim()}
                 onclick={saveCommand}
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -1173,7 +1173,7 @@
               <input bind:value={commandForm.testArgs} placeholder={m.twitch.commandTestArgsPlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
             <button
-              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
+              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed"
               disabled={commandTesting || !commandForm.name.trim()}
               onclick={previewCommand}
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -1194,8 +1194,8 @@
                     <p class="leading-relaxed" style="color: {$colorStore.muted}">{command.useCount === 1 ? m.twitch.commandStatsOne({ permission: command.permission, cooldown: command.cooldownSeconds, count: command.useCount }) : m.twitch.commandStatsOther({ permission: command.permission, cooldown: command.cooldownSeconds, count: command.useCount })}</p>
                   </div>
                   <div class="flex flex-wrap gap-2 items-center">
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => editCommand(command)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.edit()}</button>
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => removeCommand(command.name)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.remove()}</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0" onclick={() => editCommand(command)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.edit()}</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0" onclick={() => removeCommand(command.name)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.remove()}</button>
                   </div>
                 </li>
               {/each}
@@ -1205,7 +1205,7 @@
           {/if}
         </section>
 
-        <details class="rounded-xl border p-4 mt-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30">
+        <details class="rounded-xl border p-4 mt-4" style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30">
           <summary class="cursor-pointer text-lg font-bold flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-utility-duo fa-regular fa-book" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
             {m.common.commandReference()}
@@ -1221,7 +1221,7 @@
                     {command.name} <span style="color: {$colorStore.muted}">{command.usage}</span>
                   </div>
                   <p class="leading-relaxed" style="color: {$colorStore.muted}">{command.description}</p>
-                  <span class="inline-block text-xs font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-full whitespace-nowrap" style="color: {$colorStore.text}; background: {$colorStore.primary}15;">{command.permission}</span>
+                  <span class="inline-block text-xs font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap" style="color: {$colorStore.text}; background: {$colorStore.primary}15;">{command.permission}</span>
                 </li>
               {/each}
             </ul>
@@ -1237,7 +1237,7 @@
                 {#each chatCommands as command (command.name)}
                   <li class="flex items-center justify-between gap-3 p-3.5 border rounded-xl" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08">
                     <div class="font-extrabold font-mono" style="color: {$colorStore.primary}">{configForm.commandPrefix}{command.name}</div>
-                    <span class="inline-block text-xs font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-full whitespace-nowrap" style="color: {$colorStore.text}; background: {$colorStore.primary}15;">{command.permission}</span>
+                    <span class="inline-block text-xs font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap" style="color: {$colorStore.text}; background: {$colorStore.primary}15;">{command.permission}</span>
                   </li>
                 {/each}
               </ul>
@@ -1245,7 +1245,7 @@
           </div>
         </details>
       {:else if activeTab === "commands" && activeSubTab === "timers"}
-        <section class="rounded-xl border p-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
+        <section class="rounded-xl border p-4" style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
@@ -1255,9 +1255,9 @@
               <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.timerHint()}</p>
             </div>
             <div class="flex flex-wrap gap-2 items-center">
-              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={resetTimerForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">{m.common.clear()}</button>
+              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0" onclick={resetTimerForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">{m.common.clear()}</button>
               <button
-                class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
+                class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed"
                 disabled={timerSaving || !timerForm.name.trim() || !timerForm.messages.trim()}
                 onclick={saveTimer}
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -1313,10 +1313,10 @@
                     </p>
                   </div>
                   <div class="flex flex-wrap gap-2 items-center">
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => editTimer(timer)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.edit()}</button>
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => setTimerState(timer.name, !timer.enabled)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{timer.enabled ? m.common.disable() : m.common.enable()}</button>
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={timerTesting === timer.name} onclick={() => testTimer(timer.name)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{timerTesting === timer.name ? m.common.sending() : m.common.test()}</button>
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => removeTimer(timer.name)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.remove()}</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0" onclick={() => editTimer(timer)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.edit()}</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0" onclick={() => setTimerState(timer.name, !timer.enabled)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{timer.enabled ? m.common.disable() : m.common.enable()}</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={timerTesting === timer.name} onclick={() => testTimer(timer.name)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{timerTesting === timer.name ? m.common.sending() : m.common.test()}</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0" onclick={() => removeTimer(timer.name)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.remove()}</button>
                   </div>
                 </li>
               {/each}
@@ -1326,7 +1326,7 @@
           {/if}
         </section>
       {:else if activeTab === "commands" && activeSubTab === "quotes"}
-        <section class="rounded-xl border p-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
+        <section class="rounded-xl border p-4" style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
@@ -1336,7 +1336,7 @@
               <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.quotePoolHint({ command: `${configForm.commandPrefix}quote` })}</p>
             </div>
             <button
-              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
+              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed"
               disabled={quoteSaving || !quoteForm.text.trim()}
               onclick={addQuote}
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -1357,7 +1357,7 @@
                 <span style="color: {$colorStore.text}">{m.common.search()}</span>
                 <input bind:value={quoteForm.search} placeholder={m.twitch.quoteSearchPlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
               </label>
-              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={refreshQuotes} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.search()}</button>
+              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0" onclick={refreshQuotes} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.search()}</button>
             </div>
           </div>
 
@@ -1371,7 +1371,7 @@
                     <p class="leading-relaxed" style="color: {$colorStore.muted}">{quote.addedBy ? m.twitch.quoteAddedBy({ date: formatDate(quote.dateAdded), user: quote.addedBy }) : m.twitch.quoteAdded({ date: formatDate(quote.dateAdded) })}</p>
                   </div>
                   <div class="flex flex-wrap gap-2 items-center">
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={quoteSaving} onclick={() => removeQuote(quote.id)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.remove()}</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={quoteSaving} onclick={() => removeQuote(quote.id)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.remove()}</button>
                   </div>
                 </li>
               {/each}
@@ -1381,7 +1381,7 @@
           {/if}
         </section>
       {:else if activeTab === "events" && activeSubTab === "alerts"}
-        <section class="rounded-xl border p-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
+        <section class="rounded-xl border p-4" style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
@@ -1435,7 +1435,7 @@
 
           <div class="mt-4">
             <button
-              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
+              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed"
               disabled={testRunning === "golive"}
               onclick={() => sendTestEvent("golive")}
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -1443,7 +1443,7 @@
           </div>
         </section>
 
-        <section class="rounded-xl border p-4 mt-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
+        <section class="rounded-xl border p-4 mt-4" style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
@@ -1492,13 +1492,13 @@
 
           <div class="flex flex-wrap gap-2 items-center mt-4">
             <button
-              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
+              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed"
               disabled={testRunning === "sub"}
               onclick={() => sendTestEvent("sub")}
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
             >{testRunning === "sub" ? m.common.sending() : m.twitch.eventsTestSub()}</button>
             <button
-              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
+              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed"
               disabled={testRunning === "raid"}
               onclick={() => sendTestEvent("raid")}
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -1506,7 +1506,7 @@
           </div>
         </section>
 
-        <section class="rounded-xl border p-4 mt-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
+        <section class="rounded-xl border p-4 mt-4" style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
@@ -1516,9 +1516,9 @@
               <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.redemptionHint()}</p>
             </div>
             <div class="flex flex-wrap gap-2 items-center">
-              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={resetRedemptionForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">{m.common.clear()}</button>
+              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0" onclick={resetRedemptionForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">{m.common.clear()}</button>
               <button
-                class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
+                class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed"
                 disabled={redemptionSaving || !redemptionForm.rewardTitle.trim()}
                 onclick={saveRedemption}
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -1564,8 +1564,8 @@
                     <p class="leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.redemptionSummary({ channel: action.discordChannelId ? `#${textChannels.find((c) => c.id === action.discordChannelId?.toString())?.name || action.discordChannelId}` : m.common.noneLower(), reply: action.twitchResponse ? m.twitch.redemptionYes() : m.twitch.redemptionNo() })}</p>
                   </div>
                   <div class="flex flex-wrap gap-2 items-center">
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => editRedemption(action)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.edit()}</button>
-                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0" onclick={() => removeRedemption(action.rewardTitle)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.remove()}</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0" onclick={() => editRedemption(action)} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.edit()}</button>
+                    <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0" onclick={() => removeRedemption(action.rewardTitle)} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.remove()}</button>
                   </div>
                 </li>
               {/each}
@@ -1575,7 +1575,7 @@
           {/if}
         </section>
       {:else if activeTab === "events" && activeSubTab === "live"}
-        <section class="rounded-xl border p-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
+        <section class="rounded-xl border p-4" style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
@@ -1593,7 +1593,7 @@
                 Chat
               </h3>
               <textarea bind:value={operatorForm.chatMessage} rows="3" placeholder={m.twitch.liveChatPlaceholder()} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
-              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "chat" || !operatorForm.chatMessage.trim()} onclick={() => runOperatorAction("chat")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "chat" ? m.common.sending() : m.twitch.liveSendChat()}</button>
+              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "chat" || !operatorForm.chatMessage.trim()} onclick={() => runOperatorAction("chat")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "chat" ? m.common.sending() : m.twitch.liveSendChat()}</button>
             </div>
 
             <div class="grid gap-2.5 p-3.5 border rounded-xl" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08">
@@ -1603,8 +1603,8 @@
               </h3>
               <input bind:value={operatorForm.markerDescription} placeholder={m.twitch.liveMarkerPlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
               <div class="flex flex-wrap gap-2 items-center">
-                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "marker"} onclick={() => runOperatorAction("marker")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "marker" ? m.twitch.liveMarking() : m.twitch.liveCreateMarker()}</button>
-                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "clip"} onclick={() => runOperatorAction("clip")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "clip" ? m.twitch.liveClipping() : m.twitch.liveCreateClip()}</button>
+                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "marker"} onclick={() => runOperatorAction("marker")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "marker" ? m.twitch.liveMarking() : m.twitch.liveCreateMarker()}</button>
+                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "clip"} onclick={() => runOperatorAction("clip")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "clip" ? m.twitch.liveClipping() : m.twitch.liveCreateClip()}</button>
               </div>
             </div>
 
@@ -1616,7 +1616,7 @@
               <input bind:value={operatorForm.pollTitle} placeholder={m.twitch.livePollTitlePlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
               <textarea bind:value={operatorForm.pollChoices} rows="4" placeholder={m.twitch.livePollChoicesPlaceholder()} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
               <input type="number" min="15" max="1800" bind:value={operatorForm.pollDurationSeconds} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
-              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "poll" || !operatorForm.pollTitle.trim()} onclick={() => runOperatorAction("poll")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "poll" ? m.common.creating() : m.twitch.liveCreatePoll()}</button>
+              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "poll" || !operatorForm.pollTitle.trim()} onclick={() => runOperatorAction("poll")} style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{operatorRunning === "poll" ? m.common.creating() : m.twitch.liveCreatePoll()}</button>
             </div>
 
             <div class="grid gap-2.5 p-3.5 border rounded-xl" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08">
@@ -1628,17 +1628,17 @@
               <input type="number" min="1" max="1209600" bind:value={operatorForm.moderationDurationSeconds} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
               <input bind:value={operatorForm.moderationReason} placeholder={m.common.reason()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
               <div class="flex flex-wrap gap-2 items-center">
-                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "timeout" || !operatorForm.moderationUsername.trim()} onclick={() => runOperatorAction("timeout")} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.timeout()}</button>
-                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "ban" || !operatorForm.moderationUsername.trim()} onclick={() => runOperatorAction("ban")} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.actionBan()}</button>
-                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "unban" || !operatorForm.moderationUsername.trim()} onclick={() => runOperatorAction("unban")} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.unban()}</button>
+                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "timeout" || !operatorForm.moderationUsername.trim()} onclick={() => runOperatorAction("timeout")} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.timeout()}</button>
+                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "ban" || !operatorForm.moderationUsername.trim()} onclick={() => runOperatorAction("ban")} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.common.actionBan()}</button>
+                <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "unban" || !operatorForm.moderationUsername.trim()} onclick={() => runOperatorAction("unban")} style="background: {$colorStore.primary}12; color: {$colorStore.text};">{m.common.unban()}</button>
               </div>
               <input bind:value={operatorForm.deleteMessageId} placeholder={m.twitch.liveMessageIdPlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
-              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "delete" || !operatorForm.deleteMessageId.trim()} onclick={() => runOperatorAction("delete")} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.twitch.liveDeleteMessage()}</button>
+              <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0 disabled:opacity-55 disabled:cursor-not-allowed" disabled={operatorRunning === "delete" || !operatorForm.deleteMessageId.trim()} onclick={() => runOperatorAction("delete")} style="background: {$colorStore.accent}15; color: {$colorStore.accent};">{m.twitch.liveDeleteMessage()}</button>
             </div>
           </div>
         </section>
       {:else if activeTab === "links"}
-        <section class="rounded-xl border p-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
+        <section class="rounded-xl border p-4" style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30" in:fly={{ y: 10, duration: 160 }}>
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
@@ -1665,7 +1665,7 @@
               <input bind:value={linkTwitchUsername} placeholder={m.twitch.linksTwitchPlaceholder()} class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
             </label>
             <button
-              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] disabled:opacity-55 disabled:cursor-not-allowed"
+              class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed"
               disabled={linking || !selectedLinkUserId || !linkTwitchUsername.trim()}
               onclick={addLink}
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -1681,7 +1681,7 @@
                   <span style="color: {$colorStore.text}">{memberName(link.discordUserId)}</span>
                   <span style="color: {$colorStore.muted}">@{link.twitchUsername}</span>
                   <button
-                    class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform hover:scale-[1.02] border-0 disabled:opacity-55 disabled:cursor-not-allowed"
+                    class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0 disabled:opacity-55 disabled:cursor-not-allowed"
                     disabled={linking}
                     onclick={() => removeLink(link.discordUserId)}
                     style="background: {$colorStore.accent}15; color: {$colorStore.accent};"

@@ -75,14 +75,10 @@
 </script>
 
 <div
-        class="fixed top-20 md:top-4 right-4 p-4 rounded-xl shadow-2xl backdrop-blur-md border max-w-sm min-w-80 z-60"
+        class="fixed top-20 md:top-4 right-4 p-4 rounded-xl shadow-lg border max-w-sm min-w-80 z-60"
   style="
-    background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10),
-                linear-gradient(135deg, {type === 'success' ? successColor : errorColor}25, {type === 'success' ? successColor : errorColor}15);
+    background-color: {$colorStore.background};
     border-color: {type === 'success' ? successColor : errorColor}50;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 
-                0 0 0 1px {type === 'success' ? successColor : errorColor}20,
-                0 4px 12px {type === 'success' ? successColor : errorColor}30;
   "
   in:fly={{ 
     x: 400, 
@@ -120,7 +116,7 @@
 
       <!-- Dismiss Button -->
       <button aria-label={m.common.ariaDismissNotification()}
-              class="shrink-0 p-1 rounded-lg transition-all duration-200 hover:scale-110"
+              class="shrink-0 p-1 rounded-lg transition-all duration-200"
         style="color: {$colorStore.muted};
                hover:background-color: {type === 'success' ? successColor : errorColor}20;
                hover:color: {$colorStore.text};"
@@ -134,7 +130,7 @@
       <div 
         class="absolute bottom-0 left-0 h-1 rounded-b-xl transition-all ease-linear"
         style="
-          background: linear-gradient(90deg, {type === 'success' ? successColor : errorColor}, {type === 'success' ? successColor : errorColor}80);
+          background: {type === 'success' ? successColor : errorColor};
           width: 100%;
           animation: notificationProgress {timeout}ms linear forwards;
         "

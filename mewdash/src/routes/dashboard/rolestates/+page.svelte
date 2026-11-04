@@ -443,14 +443,14 @@
   {#if activeTab === 'settings'}
     <!-- Settings Section -->
     <section
-      class=" rounded-2xl border p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      class=" rounded-2xl border p-6"
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
     >
       <div class="flex items-center gap-3 mb-6">
         <div
           class="p-3 rounded-xl"
-          style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+          style="background: {$colorStore.primary}20;
                  color: {$colorStore.primary};"
         >
           <i class="fa-utility-duo fa-regular fa-gear"
@@ -777,8 +777,8 @@
     <!-- Role Management Section -->
     <div class="space-y-6" in:fade={{ duration: 200 }}>
       <!-- Add/Remove Roles -->
-      <section class="rounded-2xl border p-6 shadow-2xl"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      <section class="rounded-2xl border p-6"
+               style="background: {$colorStore.primary}0c;
                       border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-user-plus"
@@ -841,8 +841,8 @@
       </section>
 
       <!-- Copy Role State -->
-      <section class="rounded-2xl border p-6 shadow-2xl"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      <section class="rounded-2xl border p-6"
+               style="background: {$colorStore.primary}0c;
                       border-color: {$colorStore.secondary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-copy"
@@ -896,8 +896,8 @@
 
   {#if activeTab === 'states'}
     <!-- Role States List Section -->
-    <section class="rounded-2xl border p-6 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+    <section class="rounded-2xl border p-6"
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
       <div class="flex items-center gap-3 mb-6">
         <i class="fa-utility-duo fa-regular fa-users"
@@ -930,7 +930,7 @@
       {:else}
         <div class="space-y-3">
           {#each paginatedStates as state}
-            <div class="rounded-xl p-4 border transition-all hover:scale-[1.01]"
+            <div class="rounded-xl p-4 border transition-all"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;">
               <div class="flex items-center justify-between">
                 <div class="flex-1">

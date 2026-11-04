@@ -157,7 +157,7 @@ Each feature gets multiple screens for deeper configuration
   <div class="pt-6 border-t" style="border-color: {$colorStore.primary}20;">
     <div class="flex items-center justify-between gap-3">
       <button
-        class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px] disabled:opacity-60 disabled:hover:scale-100"
+        class="px-4 py-3 rounded-xl font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px] disabled:opacity-60"
         onclick={handleBack}
         disabled={busy}
         style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
@@ -172,7 +172,7 @@ Each feature gets multiple screens for deeper configuration
         </span>
         {#if onskip}
           <button
-            class="px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
+            class="px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
             style="background: {$colorStore.muted}15; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
             onclick={onskip}
             disabled={busy}
@@ -184,7 +184,7 @@ Each feature gets multiple screens for deeper configuration
       </div>
 
       <button
-        class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px] disabled:opacity-60 disabled:hover:scale-100"
+        class="px-6 py-3 rounded-xl font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px] disabled:opacity-60"
         onclick={handleNext}
         disabled={busy}
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
@@ -203,7 +203,7 @@ Each feature gets multiple screens for deeper configuration
       </p>
       {#if onskip}
         <button
-          class="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center justify-center gap-2 min-h-[44px]"
+          class="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center justify-center gap-2 min-h-[44px]"
           style="background: {$colorStore.muted}15; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
           onclick={onskip}
         >

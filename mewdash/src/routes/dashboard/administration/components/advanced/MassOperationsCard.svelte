@@ -110,14 +110,14 @@
   }
 </script>
 
-<div class=" rounded-2xl border p-6 shadow-2xl transition-all"
+<div class=" rounded-2xl border p-6 transition-all"
      in:fly={{ y: 20, duration: 300, delay: 200 }}
-     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+     style="background: {$colorStore.primary}0c;
             border-color: {$colorStore.primary}30;">
 
   <div class="flex items-center gap-4 mb-6">
     <div class="p-3 rounded-xl"
-         style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30);">
+         style="background: {$colorStore.accent}20;">
       <i class="fa-utility-duo fa-regular fa-bolt"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
     </div>
@@ -149,7 +149,7 @@
           />
         </div>
         <button
-          class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
+          class="w-full px-4 py-2 rounded-lg font-medium transition-all"
           disabled={pruneDays <= 0 || saving}
           onclick={() => showConfirm(m.administration.advancedMassPruneConfirmTitle(), m.administration.advancedMassPruneConfirmMessage({ days: pruneDays }), performPrune)}
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -167,7 +167,7 @@
         {m.administration.advancedMassBanTitle()}
       </h3>
       <button
-        class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
+        class="w-full px-4 py-2 rounded-lg font-medium transition-all"
         onclick={() => expandedOperation = expandedOperation === 'massBan' ? null : 'massBan'}
         style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
       >
@@ -183,7 +183,7 @@
         {m.administration.advancedMassRenameTitle()}
       </h3>
       <button
-        class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
+        class="w-full px-4 py-2 rounded-lg font-medium transition-all"
         onclick={() => expandedOperation = expandedOperation === 'massRename' ? null : 'massRename'}
         style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
       >
@@ -199,7 +199,7 @@
         {m.administration.advancedMassPruneMessageTitle()}
       </h3>
       <button
-        class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
+        class="w-full px-4 py-2 rounded-lg font-medium transition-all"
         onclick={() => expandedOperation = expandedOperation === 'pruneToMessage' ? null : 'pruneToMessage'}
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
       >
@@ -242,7 +242,7 @@
         </div>
 
         <button
-          class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+          class="w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
           onclick={() => showConfirm(m.administration.advancedMassBanTitle(), m.administration.advancedMassBanConfirmMessage({ count: massBanUserIds.split(/[\n,]/).filter(id => id.trim()).length }), performMassBan, "danger")}
           disabled={!massBanUserIds.trim() || saving}
@@ -290,7 +290,7 @@
         </div>
 
         <button
-          class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+          class="w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
           onclick={() => showConfirm(m.administration.advancedMassRenameTitle(), m.administration.advancedMassRenameConfirmMessage(), performMassRename, "danger")}
           disabled={!massRenamePattern.trim() || saving}
@@ -342,7 +342,7 @@
         </div>
 
         <button
-          class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+          class="w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
           onclick={() => showConfirm(m.administration.advancedMassPruneMessageConfirmTitle(), m.administration.advancedMassPruneMessageConfirmMessage(), performPruneToMessage, "danger")}
           disabled={!pruneToChannel || !pruneToMessageId.trim() || saving}

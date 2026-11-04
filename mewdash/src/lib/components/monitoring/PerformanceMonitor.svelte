@@ -95,13 +95,13 @@
 </script>
 
 <div class="w-full">
-  <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+  <div class=" rounded-2xl border p-6 md:p-8"
+       style="background: {$colorStore.primary}0c;
               border-color: {$colorStore.primary}30;">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg"
-             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+             style="background: {$colorStore.primary}20;">
           <i class="fa-utility-duo fa-regular fa-clock"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
         </div>
@@ -109,7 +109,7 @@
       </div>
       <div class="flex gap-3">
         <button aria-label={m.common.refresh()}
-                class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+                class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
           disabled={refreshInProgress}
           onclick={fetchPerformanceData}
@@ -120,7 +120,7 @@
           {refreshInProgress ? m.common.refreshing() : m.common.refresh()}
         </button>
         <button
-          class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
           disabled={refreshInProgress}
           onclick={clearPerformanceData}
@@ -184,7 +184,7 @@
           </thead>
           <tbody>
             {#each safePerformanceData as method, i}
-              <tr class="border-b transition-all hover:scale-[1.01]"
+              <tr class="border-b transition-all"
                   style="background: {i % 2 === 0 ? $colorStore.primary + '08' : 'transparent'};
                          border-color: {$colorStore.primary}10;">
                 <td class="px-4 py-3 font-mono text-sm" style="color: {$colorStore.text}">{method.methodName}</td>

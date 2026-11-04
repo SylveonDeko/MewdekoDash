@@ -308,8 +308,8 @@
     </div>
   {:else if !settings?.canManageAccess}
     <div
-      class="rounded-2xl border shadow-2xl p-8 text-center"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      class="rounded-2xl border p-8 text-center"
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
     >
       <i class="fa-utility-duo fa-regular fa-key"
@@ -324,8 +324,8 @@
       {#if settings.isGuildOwner}
         <!-- Delegation settings -->
         <section
-          class="rounded-2xl border shadow-2xl p-6"
-          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+          class="rounded-2xl border p-6"
+          style="background: {$colorStore.primary}0c;
                  border-color: {$colorStore.primary}30;"
         >
           <h2 class="text-lg font-semibold mb-1" style="color: {$colorStore.text};">{m.access.delegationHeading()}</h2>
@@ -387,7 +387,7 @@
                 />
               </div>
               <button
-                class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50 min-h-[44px] shrink-0"
+                class="px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 min-h-[44px] shrink-0"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 disabled={addingManager || !managerTargetId}
                 onclick={addManager}
@@ -410,7 +410,7 @@
                     </span>
                     <button
                       aria-label={m.access.removeManagerAria()}
-                      class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                      class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
                       style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                       onclick={() => requestRemoveManager(manager)}
                     >
@@ -426,8 +426,8 @@
 
       <!-- Access grants -->
       <section
-        class="rounded-2xl border shadow-2xl p-6"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        class="rounded-2xl border p-6"
+        style="background: {$colorStore.primary}0c;
                border-color: {$colorStore.primary}30;"
       >
         <h2 class="text-lg font-semibold mb-1" style="color: {$colorStore.text};">
@@ -470,7 +470,7 @@
         <div class="space-y-4 mb-6">
           {#each groupedSections as { category, groups } (category)}
             <div>
-              <h4 class="text-xs font-semibold uppercase tracking-wide mb-2" style="color: {$colorStore.muted};">
+              <h4 class="text-xs font-semibold mb-2" style="color: {$colorStore.muted};">
                 {categoryDisplay(category)}
               </h4>
               <div class="space-y-1.5">
@@ -504,7 +504,7 @@
 
         <div class="flex gap-2">
           <button
-            class="px-6 py-2.5 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50 min-h-[44px]"
+            class="px-6 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 min-h-[44px]"
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
             disabled={savingGrant || !grantTargetId}
             onclick={saveGrant}
@@ -513,7 +513,7 @@
           </button>
           {#if editingGrantId}
             <button
-              class="px-6 py-2.5 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+              class="px-6 py-2.5 rounded-lg font-medium transition-all min-h-[44px]"
               style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
               onclick={startNewGrant}
             >
@@ -525,8 +525,8 @@
 
       <!-- Existing grants -->
       <section
-        class="rounded-2xl border shadow-2xl p-6"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        class="rounded-2xl border p-6"
+        style="background: {$colorStore.primary}0c;
                border-color: {$colorStore.primary}30;"
       >
         <h2 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">
@@ -553,7 +553,7 @@
                 <div class="flex gap-2 shrink-0">
                   <button
                     aria-label={m.access.editGrantAria()}
-                    class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                    class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                     onclick={() => editGrant(grant)}
                   >
@@ -561,7 +561,7 @@
                   </button>
                   <button
                     aria-label={m.access.removeGrantAria()}
-                    class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                    class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
                     style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                     onclick={() => requestRemoveGrant(grant)}
                   >

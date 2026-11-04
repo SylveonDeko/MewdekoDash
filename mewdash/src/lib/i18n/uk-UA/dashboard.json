@@ -106,8 +106,6 @@
   "settings_tab_auto_assign_desc": "Ролі, що автоматично призначаються новим учасникам",
   "settings_tab_auto_assign_roles_desc": "Ролі, що видаються новим учасникам",
   "settings_tab_bot_settings_desc": "Основні налаштування бота",
-  "settings_tab_configure_arrow": "Налаштувати →",
-  "settings_tab_greets_arrow": "Привітання →",
   "settings_tab_integrations": "Інтеграції",
   "settings_tab_logging_desc": "Журнал подій та аудит",
   "settings_tab_multigreets_desc": "Кілька каналів і повідомлень для привітань",

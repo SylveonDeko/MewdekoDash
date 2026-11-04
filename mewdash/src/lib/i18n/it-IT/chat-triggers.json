@@ -137,7 +137,6 @@
   "page_announce_auto_delete_disabled": "Eliminazione automatica disattivata: non può essere usata con reagisci al trigger",
   "page_announce_cards_collapsed": "Tutte le schede sono state chiuse",
   "page_announce_create_failed": "Impossibile creare il trigger",
-  "page_announce_created": "Trigger creato con successo",
   "page_announce_delete_cancelled": "Eliminazione annullata",
   "page_announce_delete_failed": "Impossibile eliminare il trigger",
   "page_announce_deleted": "Trigger {name} eliminato",

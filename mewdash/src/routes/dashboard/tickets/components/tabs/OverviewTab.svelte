@@ -135,8 +135,8 @@
 <!-- Statistics Cards -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
   {#each statCards as card}
-    <div class="p-6 rounded-xl transition-all hover:scale-[1.02]"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
+    <div class="p-6 rounded-xl transition-all"
+         style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}20;">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-medium" style="color: {$colorStore.muted}">{card.title}</p>
@@ -155,7 +155,7 @@
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
     <!-- Response Times -->
     <div class="p-6 rounded-xl"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
+         style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}20;">
       <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
         <i class="fa-solid fa-clock" style="color: {$colorStore.primary};"></i>
         {m.tickets.overviewResponseTimes()}
@@ -178,7 +178,7 @@
 
     <!-- Tickets by Priority -->
     <div class="p-6 rounded-xl"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
+         style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}20;">
       <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
         <i class="fa-solid fa-flag" style="color: {$colorStore.primary};"></i>
         {m.tickets.overviewTicketsByPriority()}
@@ -205,7 +205,7 @@
 <!-- Staff Response Stats -->
 {#if staffResponseStats.length > 0}
   <div class="p-6 rounded-xl mb-6"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
+       style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}20;">
     <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
       <i class="fa-solid fa-user-headset" style="color: {$colorStore.primary};"></i>
       {m.tickets.overviewStaffPerformance()}
@@ -227,7 +227,7 @@
 <!-- System Summary -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
   <div class="p-6 rounded-xl"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
+       style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}20;">
     <div class="flex items-center gap-3 mb-2">
       <i class="fa-solid fa-table-cells" style="color: {$colorStore.primary}; font-size: 20px;"></i>
       <span class="font-semibold" style="color: {$colorStore.text}">{m.tickets.overviewPanels()}</span>
@@ -237,7 +237,7 @@
   </div>
 
   <div class="p-6 rounded-xl"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
+       style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}20;">
     <div class="flex items-center gap-3 mb-2">
       <i class="fa-solid fa-flag" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
       <span class="font-semibold" style="color: {$colorStore.text}">{m.tickets.overviewPriorities()}</span>
@@ -247,7 +247,7 @@
   </div>
 
   <div class="p-6 rounded-xl"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
+       style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}20;">
     <div class="flex items-center gap-3 mb-2">
       <i class="fa-solid fa-tags" style="color: {$colorStore.accent}; font-size: 20px;"></i>
       <span class="font-semibold" style="color: {$colorStore.text}">{m.tickets.overviewTags()}</span>
@@ -257,7 +257,7 @@
   </div>
 
   <div class="p-6 rounded-xl"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
+       style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}20;">
     <div class="flex items-center gap-3 mb-2">
       <i class="fa-solid fa-folder-open" style="color: {$colorStore.primary}; font-size: 20px;"></i>
       <span class="font-semibold" style="color: {$colorStore.text}">{m.tickets.tabCases()}</span>
@@ -271,8 +271,8 @@
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
   {#each quickLinks as link}
     <button
-      class="p-6 rounded-xl text-left transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20; focus:ring-color: {$colorStore.primary};"
+      class="p-6 rounded-xl text-left transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+      style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}20; focus:ring-color: {$colorStore.primary};"
       onclick={() => activeTab = link.tab}
     >
       <div class="flex items-start gap-4">

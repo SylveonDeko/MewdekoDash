@@ -51,11 +51,11 @@
   <div class="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
     <!-- Protection Status -->
     <div
-      class=" rounded-2xl border p-4 sm:p-6 shadow-2xl transition-all hover:scale-[1.02] cursor-pointer"
+      class=" rounded-2xl border p-4 sm:p-6 transition-all cursor-pointer"
       onclick={() => activeTab = 'protection'}
       onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activeTab = 'protection'; } }}
       role="button"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      style="background: {$colorStore.primary}0c;
                 border-color: {$colorStore.primary}30;"
       tabindex="0">
       <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
@@ -74,8 +74,8 @@
     </div>
 
     <!-- Role Management -->
-    <div class=" rounded-2xl border p-6 shadow-2xl transition-all hover:scale-[1.02]"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+    <div class=" rounded-2xl border p-6 transition-all"
+         style="background: {$colorStore.primary}0c;
                 border-color: {$colorStore.secondary}30;">
       <div class="flex items-center gap-3 mb-4">
         <div class="p-2 rounded-lg" style="background: {$colorStore.secondary}20;">
@@ -93,8 +93,8 @@
     </div>
 
     <!-- Auto-Assign Roles -->
-    <div class=" rounded-2xl border p-6 shadow-2xl transition-all hover:scale-[1.02]"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+    <div class=" rounded-2xl border p-6 transition-all"
+         style="background: {$colorStore.primary}0c;
                 border-color: {$colorStore.accent}30;">
       <div class="flex items-center gap-3 mb-4">
         <div class="p-2 rounded-lg" style="background: {$colorStore.accent}20;">
@@ -112,8 +112,8 @@
     </div>
 
     <!-- Command Cooldowns -->
-    <div class=" rounded-2xl border p-6 shadow-2xl transition-all hover:scale-[1.02]"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+    <div class=" rounded-2xl border p-6 transition-all"
+         style="background: {$colorStore.primary}0c;
                 border-color: {$colorStore.primary}30;">
       <div class="flex items-center gap-3 mb-4">
         <div class="p-2 rounded-lg" style="background: {$colorStore.primary}20;">
@@ -132,12 +132,12 @@
   </div>
 
   <!-- Quick Actions -->
-  <div class="rounded-2xl border p-6 shadow-2xl"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+  <div class="rounded-2xl border p-6"
+       style="background: {$colorStore.primary}0c;
               border-color: {$colorStore.primary}30;">
     <div class="flex items-center gap-3 mb-6">
       <div class="p-3 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+           style="background: {$colorStore.primary}20;">
         <i class="fa-utility-duo fa-regular fa-bolt"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
@@ -146,9 +146,9 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <button
-        class="p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-[1.02] focus:scale-105"
+        class="p-4 rounded-xl border-2 transition-all duration-200 text-left"
         onclick={() => activeTab = 'protection'}
-        style="border-color: {$colorStore.primary}30; background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10);"
+        style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}10;"
       >
         <div class="flex items-center gap-3 mb-2">
           <i class="fa-utility-duo fa-regular fa-shield"
@@ -161,9 +161,9 @@
       </button>
 
       <button
-        class="p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-[1.02] focus:scale-105"
+        class="p-4 rounded-xl border-2 transition-all duration-200 text-left"
         onclick={() => activeTab = 'roles'}
-        style="border-color: {$colorStore.secondary}30; background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10);"
+        style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}12;"
       >
         <div class="flex items-center gap-3 mb-2">
           <i class="fa-utility-duo fa-regular fa-users"
@@ -176,9 +176,9 @@
       </button>
 
       <button
-        class="p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-[1.02] focus:scale-105"
+        class="p-4 rounded-xl border-2 transition-all duration-200 text-left"
         onclick={() => activeTab = 'automation'}
-        style="border-color: {$colorStore.accent}30; background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.secondary}10);"
+        style="border-color: {$colorStore.accent}30; background: {$colorStore.accent}12;"
       >
         <div class="flex items-center gap-3 mb-2">
           <i class="fa-utility-duo fa-regular fa-gear"
@@ -195,12 +195,12 @@
   <!-- Server Health Overview -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Current Configuration -->
-    <div class="rounded-2xl border p-6 shadow-2xl"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+    <div class="rounded-2xl border p-6"
+         style="background: {$colorStore.primary}0c;
                 border-color: {$colorStore.primary}30;">
       <div class="flex items-center gap-3 mb-6">
         <div class="p-3 rounded-xl"
-             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+             style="background: {$colorStore.primary}20;">
           <i class="fa-utility-duo fa-regular fa-globe"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         </div>
@@ -228,12 +228,12 @@
     </div>
 
     <!-- Protection Summary -->
-    <div class="rounded-2xl border p-6 shadow-2xl"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+    <div class="rounded-2xl border p-6"
+         style="background: {$colorStore.primary}0c;
                 border-color: {$colorStore.primary}30;">
       <div class="flex items-center gap-3 mb-6">
         <div class="p-3 rounded-xl"
-             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+             style="background: {$colorStore.primary}20;">
           <i class="fa-utility-duo fa-regular fa-shield"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         </div>

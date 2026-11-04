@@ -1306,22 +1306,19 @@
 
     <!-- Background -->
     <div class="absolute inset-0"
-         style="background: radial-gradient(circle at center,
-              {$colorStore.gradientStart}20 0%,
-              {$colorStore.gradientEnd}15 50%,
-              {$colorStore.gradientEnd}10 100%);"></div>
+         style="background: {$colorStore.primary}0c;"></div>
 
     <!-- Top Toolbar -->
     <div class="relative z-10">
       <div
         class="flex items-center justify-between px-3 py-2 border-b "
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
+        style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
       >
         <!-- Left section -->
         <div class="flex items-center gap-2">
           <button aria-label={m.common.ariaCloseEditor()}
-                  class="p-2 rounded-lg transition-all hover:scale-[1.02]"
+                  class="p-2 rounded-lg transition-all"
                   onclick={() => { showEditor = false; }}
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
           >
@@ -1355,7 +1352,7 @@
         <div class="flex items-center gap-2">
           <!-- Toolbar toggle -->
           <button
-            class="p-1.5 rounded-lg transition-all hover:scale-[1.02]"
+            class="p-1.5 rounded-lg transition-all"
             onclick={() => { toolbarExpanded = !toolbarExpanded; }}
             style="background: {toolbarExpanded ? $colorStore.primary + '20' : $colorStore.primary + '10'}; color: {$colorStore.primary};"
           >
@@ -1368,7 +1365,7 @@
 
           <!-- Zoom controls -->
           <button aria-label={m.xp.editorZoomOut()}
-                  class="p-1.5 rounded-lg transition-all hover:scale-[1.02]"
+                  class="p-1.5 rounded-lg transition-all"
                   onclick={() => { zoom = Math.max(0.5, zoom - 0.1); redrawCanvas(); }}
                   style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
           >
@@ -1378,7 +1375,7 @@
           {Math.round(zoom * 100)}%
         </span>
           <button aria-label={m.xp.editorZoomIn()}
-                  class="p-1.5 rounded-lg transition-all hover:scale-[1.02]"
+                  class="p-1.5 rounded-lg transition-all"
                   onclick={() => { zoom = Math.min(3, zoom + 0.1); redrawCanvas(); }}
                   style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
           >
@@ -1444,7 +1441,7 @@
       <div
         bind:this={canvasContainer}
         class="w-full h-full"
-        style="background: radial-gradient(circle at center, {$colorStore.primary}12, transparent);"
+        style="background: {$colorStore.primary}0c;"
       >
         <canvas
           bind:this={canvas}
@@ -1456,7 +1453,7 @@
       {#if showQuickActions && previewMode === "edit"}
         <div class="absolute right-3 top-3 flex flex-col gap-2">
           <button aria-label={m.xp.editorOpenLayers()}
-                  class="p-3 rounded-xl border shadow-lg transition-all hover:scale-[1.02] backdrop-blur-md"
+                  class="p-3 rounded-xl border transition-all"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
                   onclick={() => { bottomSheetOpen = true; bottomSheetTab = "layers"; }}
           >
@@ -1464,7 +1461,7 @@
           </button>
 
           <button aria-label={m.xp.editorOpenTools()}
-                  class="p-3 rounded-xl border shadow-lg transition-all hover:scale-[1.02] backdrop-blur-md"
+                  class="p-3 rounded-xl border transition-all"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
                   onclick={() => { bottomSheetOpen = true; bottomSheetTab = "tools"; }}
           >
@@ -1473,7 +1470,7 @@
 
           {#if undoStack.length > 0}
             <button aria-label={m.common.undo()}
-                    class="p-3 rounded-xl border shadow-lg transition-all hover:scale-[1.02] backdrop-blur-md"
+                    class="p-3 rounded-xl border transition-all"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border-color: {$colorStore.secondary}30;"
                     onclick={undo}
             >
@@ -1483,7 +1480,7 @@
 
           {#if redoStack.length > 0}
             <button aria-label={m.common.redo()}
-                    class="p-3 rounded-xl border shadow-lg transition-all hover:scale-[1.02] backdrop-blur-md"
+                    class="p-3 rounded-xl border transition-all"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border-color: {$colorStore.secondary}30;"
                     onclick={redo}
             >
@@ -1498,7 +1495,7 @@
     {#if bottomSheetOpen}
       <div
         class="fixed inset-x-0 bottom-0 z-20 rounded-t-3xl border-t shadow-2xl transition-all"
-        style="background: linear-gradient(135deg, {$colorStore.primary}12, transparent), {$colorStore.background}; border-color: {$colorStore.primary}30;
+        style="background: {$colorStore.background}; border-color: {$colorStore.primary}30;
              max-height: 70vh;"
         transition:fly={{ y: 100, duration: 300 }}
       >
@@ -1542,7 +1539,7 @@
           </div>
 
           <button aria-label={m.xp.editorCloseSheet()}
-                  class="p-2 rounded-lg transition-all hover:scale-[1.02]"
+                  class="p-2 rounded-lg transition-all"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                   onclick={() => { bottomSheetOpen = false; }}
           >
@@ -1559,7 +1556,7 @@
                 ["line", "fa-minus", m.xp.editorToolLine()], ["text", "fa-font", m.common.text()], ["image", "fa-image", m.common.image()],
                 ["progress", "fa-chart-simple", m.xp.editorToolProgress()]
               ] as tool}
-                <button class="aspect-square min-h-11 rounded-lg transition-transform hover:scale-105"
+                <button class="aspect-square min-h-11 rounded-lg transition-transform"
                         style="background: {$colorStore.primary}12; color: {$colorStore.primary};"
                         aria-label={m.xp.editorAddTool({ tool: tool[2] })}
                         title={m.xp.editorAddTool({ tool: tool[2] })}
@@ -1583,7 +1580,7 @@
                   <div class="flex items-center justify-between gap-2">
                     <div class="flex items-center gap-3 min-w-0">
                       <button
-                        class="p-2 rounded-lg transition-all hover:scale-110"
+                        class="p-2 rounded-lg transition-all"
                         style="background: {element.visible ? $colorStore.primary + '20' : 'transparent'};"
                         onclick={(e) => { e.stopPropagation(); toggleElementVisibility(element.id); }}
                       >
@@ -2097,7 +2094,7 @@
 
               <!-- Reset -->
               <button
-                class="w-full py-3 px-4 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+                class="w-full py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
                 style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                 onclick={() => {
                 zoom = 1;

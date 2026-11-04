@@ -783,8 +783,8 @@
     {#if activeTab === 'servers'}
         <div class="w-full space-y-4" in:fade={{ duration: 200 }}>
             {#each servers as server (server.id)}
-                <div class="rounded-2xl border p-6 shadow-2xl transition-all"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                <div class="rounded-2xl border p-6 transition-all"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
 
                     {#if editingServer === server.name}
@@ -799,13 +799,13 @@
                                 <div>
                                     <label for="f-+page-address-803" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldAddress()}</label>
                                     <input id="f-+page-address-803" type="text" bind:value={editForm.address}
-                                           class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                           class="w-full p-2.5 rounded-xl border focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                 </div>
                                 <div>
                                     <label for="f-+page-port-809" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldPort()}</label>
                                     <input id="f-+page-port-809" type="number" bind:value={editForm.port}
-                                           class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                           class="w-full p-2.5 rounded-xl border focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                 </div>
                                 <div>
@@ -823,7 +823,7 @@
                                 <div>
                                     <label for="f-+page-query-port-0-game-port-827" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldQueryPortEdit()}</label>
                                     <input id="f-+page-query-port-0-game-port-827" type="number" bind:value={editForm.queryPort}
-                                           class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                           class="w-full p-2.5 rounded-xl border focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                 </div>
                                 <div>
@@ -844,7 +844,7 @@
                                 <div>
                                     <label for="f-+page-watch-interval-minutes-847" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldWatchInterval()}</label>
                                     <input id="f-+page-watch-interval-minutes-847" type="number" min="1" max="60" bind:value={editForm.watchInterval}
-                                           class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                           class="w-full p-2.5 rounded-xl border focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                 </div>
                                 <div>
@@ -954,14 +954,14 @@
                                     <div>
                                         <label for="f-+page-rcon-port-957" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.rconPort()}</label>
                                         <input id="f-+page-rcon-port-957" type="number" bind:value={editForm.rconPort}
-                                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                     </div>
                                     <div>
                                         <label for="f-+page-rcon-password-963" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.rconPassword()}</label>
                                         <input id="f-+page-rcon-password-963" type="password" bind:value={editForm.rconPassword}
                                                placeholder={server.hasRconPassword ? m.minecraft.passwordUnchanged() : m.minecraft.passwordPlaceholder()}
-                                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                     </div>
                                 </div>
@@ -969,7 +969,7 @@
 
                             <div class="flex gap-3">
                                 <button
-                                  class="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all hover:scale-[1.02]"
+                                  class="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all"
                                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                                   onclick={() => saveEditing(server)}
                                   disabled={saving}
@@ -978,7 +978,7 @@
                                     {saving ? m.common.saving() : m.common.save()}
                                 </button>
                                 <button
-                                  class="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all hover:scale-[1.02]"
+                                  class="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all"
                                   style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
                                   onclick={cancelEditing}
                                 >
@@ -1078,7 +1078,7 @@
                             {/if}
 
                             <!-- Manage Button -->
-                            <button class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all hover:scale-[1.01]"
+                            <button class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all"
                                     style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}25;"
                                     onclick={() => openServerDetail(server)}>
                                 <i class="fa-solid fa-sliders" style="font-size: 14px;"></i>
@@ -1089,13 +1089,13 @@
                 </div>
             {:else}
                 <div class="rounded-2xl border p-12 text-center"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <i class="fa-utility-duo fa-regular fa-server" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
                     <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">{m.minecraft.serversEmptyTitle()}</p>
                     <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.minecraft.serversEmptyHint()}</p>
                     <button
-                      class="mt-4 flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] mx-auto"
+                      class="mt-4 flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all mx-auto"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                       onclick={() => { activeTab = 'add'; }}
                     >
@@ -1112,7 +1112,7 @@
             <!-- Header -->
             <div class="space-y-3">
                 <div class="flex items-center gap-3">
-                    <button class="p-2 rounded-lg transition-all hover:scale-110 shrink-0"
+                    <button class="p-2 rounded-lg transition-all shrink-0"
                             style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                             aria-label={m.minecraft.ariaBackToServers()}
                             onclick={() => { activeTab = 'servers'; }}>
@@ -1128,19 +1128,19 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-2 md:inline-flex md:items-center gap-2 md:flex-wrap w-full md:w-auto">
-                    <button class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover:scale-[1.02] text-sm {selectedServer.isDefault ? 'col-span-2 md:col-span-1' : ''}"
+                    <button class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm {selectedServer.isDefault ? 'col-span-2 md:col-span-1' : ''}"
                             style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                             onclick={() => queryServerStatus(selectedServer!.name)}>
                         <i class="fa-solid fa-satellite-dish" style="font-size: 13px;"></i> {m.common.refresh()}
                     </button>
                     {#if !selectedServer.isDefault}
-                        <button class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover:scale-[1.02] text-sm"
+                        <button class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm"
                                 style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                                 onclick={() => setDefault(selectedServer!.name)}>
                             <i class="fa-solid fa-star" style="font-size: 13px;"></i> {m.common.default()}
                         </button>
                     {/if}
-                    <button class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover:scale-[1.02] text-sm col-span-2 md:col-span-1"
+                    <button class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm col-span-2 md:col-span-1"
                             style="background: #ef444410; color: #ef4444;"
                             onclick={() => { removeServer(selectedServer!.name); activeTab = 'servers'; selectedServer = null; }}>
                         <i class="fa-solid fa-trash" style="font-size: 13px;"></i> {m.common.remove()}
@@ -1150,8 +1150,8 @@
 
             <!-- Status Overview -->
             {#if status}
-                <div class="rounded-2xl border p-6 shadow-2xl"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                <div class="rounded-2xl border p-6"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     {#if status.isOnline}
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1200,8 +1200,8 @@
 
             <!-- Player List with Avatars -->
             {#if status?.isOnline && status.playerList.length > 0}
-                <div class="rounded-2xl border p-6 shadow-2xl"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                <div class="rounded-2xl border p-6"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-2 mb-4">
                         <i class="fa-solid fa-users" style="color: {$colorStore.primary}; font-size: 16px;"></i>
@@ -1246,15 +1246,15 @@
 
             <!-- Whitelist Management (if RCON enabled) -->
             {#if selectedServer.rconEnabled}
-                <div class="rounded-2xl border p-6 shadow-2xl"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                <div class="rounded-2xl border p-6"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-list-check" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                             <h3 class="font-semibold" style="color: {$colorStore.text}">{m.common.whitelist()}</h3>
                         </div>
-                        <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
+                        <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all"
                                 style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                                 onclick={() => loadWhitelist(selectedServer!.name)}
                                 disabled={whitelistLoading}>
@@ -1267,10 +1267,10 @@
                     <div class="flex gap-2 mb-4">
                         <input type="text" bind:value={whitelistAddName}
                                placeholder={m.minecraft.whitelistPlayerPlaceholder()}
-                               class="flex-1 p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               class="flex-1 p-2.5 rounded-xl border focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;"
                                onkeydown={(e) => { if (e.key === 'Enter') whitelistAdd(); }} />
-                        <button class="flex items-center gap-2 px-4 rounded-xl font-medium transition-all hover:scale-[1.02]"
+                        <button class="flex items-center gap-2 px-4 rounded-xl font-medium transition-all"
                                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                                 onclick={whitelistAdd}
                                 disabled={whitelistLoading || !whitelistAddName.trim()}>
@@ -1309,8 +1309,8 @@
 
             <!-- Plugins -->
             {#if status?.isOnline && status.plugins.length > 0}
-                <div class="rounded-2xl border p-6 shadow-2xl"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                <div class="rounded-2xl border p-6"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-2 mb-4">
                         <i class="fa-solid fa-puzzle-piece" style="color: {$colorStore.primary}; font-size: 16px;"></i>
@@ -1328,8 +1328,8 @@
             {/if}
 
             <!-- Server Configuration -->
-            <div class="rounded-2xl border p-6 shadow-2xl"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+            <div class="rounded-2xl border p-6"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-2 mb-4">
                     <i class="fa-solid fa-gear" style="color: {$colorStore.primary}; font-size: 16px;"></i>
@@ -1340,13 +1340,13 @@
                     <div>
                         <label for="f-+page-address-1343" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldAddress()}</label>
                         <input id="f-+page-address-1343" type="text" bind:value={editForm.address}
-                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
                         <label for="f-+page-port-1349" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldPort()}</label>
                         <input id="f-+page-port-1349" type="number" bind:value={editForm.port}
-                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
@@ -1358,7 +1358,7 @@
                     <div>
                         <label for="f-+page-query-port-0-game-port-1361" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldQueryPortEdit()}</label>
                         <input id="f-+page-query-port-0-game-port-1361" type="number" bind:value={editForm.queryPort}
-                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
@@ -1370,7 +1370,7 @@
                     <div>
                         <label for="f-+page-watch-interval-minutes-1373" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.fieldWatchInterval()}</label>
                         <input id="f-+page-watch-interval-minutes-1373" type="number" min="1" max="60" bind:value={editForm.watchInterval}
-                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
@@ -1483,7 +1483,7 @@
                         <label for="f-+page-chat-from-discord-in-game-form-1485" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">{m.minecraft.templateChatIngame()}</label>
                         <input id="f-+page-chat-from-discord-in-game-form-1485" type="text" bind:value={editForm.eventTemplates.chatIngame}
                                placeholder={m.minecraft.placeholderTemplateIngame()}
-                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.minecraft.placeholdersLabel()} %user%, %message%, %channel%</p>
                     </div>
@@ -1530,14 +1530,14 @@
                         <div>
                             <label for="f-+page-rcon-port-1533" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.rconPort()}</label>
                             <input id="f-+page-rcon-port-1533" type="number" bind:value={editForm.rconPort}
-                                   class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                   class="w-full p-2.5 rounded-xl border focus:outline-none"
                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                         </div>
                         <div>
                             <label for="f-+page-rcon-password-1539" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.minecraft.rconPassword()}</label>
                             <input id="f-+page-rcon-password-1539" type="password" bind:value={editForm.rconPassword}
                                    placeholder={selectedServer.hasRconPassword ? m.minecraft.passwordUnchanged() : m.minecraft.passwordPlaceholder()}
-                                   class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                   class="w-full p-2.5 rounded-xl border focus:outline-none"
                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                         </div>
                     </div>
@@ -1584,14 +1584,14 @@
                     {/if}
 
                     <div class="flex items-center gap-2 flex-wrap">
-                        <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
+                        <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all"
                                 style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}25;"
                                 onclick={generatePluginKey}>
                             <i class="fa-solid fa-key" style="font-size: 12px;"></i>
                             {selectedServer.hasPluginKey ? m.minecraft.pluginRegenerate() : m.minecraft.pluginGenerate()}
                         </button>
                         {#if selectedServer.hasPluginKey}
-                            <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
+                            <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all"
                                     style="background: #ef444415; color: #ef4444; border: 1px solid #ef444425;"
                                     onclick={revokePluginKey}>
                                 <i class="fa-solid fa-ban" style="font-size: 12px;"></i>
@@ -1605,7 +1605,7 @@
                 </div>
 
                 <!-- Save Button -->
-                <button class="mt-6 flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
+                <button class="mt-6 flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                         onclick={() => saveEditing(selectedServer!)}
                         disabled={saving}>
@@ -1619,7 +1619,7 @@
         <div class="w-full space-y-4" in:fade={{ duration: 200 }}>
             {#if servers.length === 0}
                 <div class="rounded-2xl border p-12 text-center"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.minecraft.serversEmptyTitle()}</p>
                 </div>
@@ -1627,7 +1627,7 @@
                 <div class="flex flex-wrap items-center gap-3">
                     {#each servers as server}
                         <button
-                          class="px-4 py-2 rounded-xl font-medium transition-all hover:scale-[1.02]"
+                          class="px-4 py-2 rounded-xl font-medium transition-all"
                           style="background: {selectedHistoryServer === server.name ? $colorStore.primary + '30' : $colorStore.primary + '10'};
                                  color: {selectedHistoryServer === server.name ? $colorStore.primary : $colorStore.muted};
                                  border: 1px solid {selectedHistoryServer === server.name ? $colorStore.primary : $colorStore.primary + '20'};"
@@ -1654,15 +1654,15 @@
 
                 {#if !selectedHistoryServer}
                     <div class="rounded-2xl border p-12 text-center"
-                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                         style="background: {$colorStore.primary}0c;
                                 border-color: {$colorStore.primary}30;">
                         <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
                         <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">{m.minecraft.historySelectServer()}</p>
                         <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.minecraft.historySelectHint()}</p>
                     </div>
                 {:else if snapshots && snapshots.length > 1}
-                    <div class="rounded-2xl border p-6 shadow-2xl"
-                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                    <div class="rounded-2xl border p-6"
+                         style="background: {$colorStore.primary}0c;
                                 border-color: {$colorStore.primary}30;">
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fa-utility-duo fa-regular fa-users"
@@ -1674,8 +1674,8 @@
                         </div>
                     </div>
 
-                    <div class="rounded-2xl border p-6 shadow-2xl"
-                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                    <div class="rounded-2xl border p-6"
+                         style="background: {$colorStore.primary}0c;
                                 border-color: {$colorStore.primary}30;">
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fa-utility-duo fa-regular fa-signal"
@@ -1715,7 +1715,7 @@
                     {/if}
                 {:else if selectedHistoryServer}
                     <div class="rounded-2xl border p-8 text-center"
-                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                         style="background: {$colorStore.primary}0c;
                                 border-color: {$colorStore.primary}30;">
                         <p style="color: {$colorStore.muted}">{m.minecraft.historyNotEnough()}</p>
                     </div>
@@ -1727,7 +1727,7 @@
         <div class="w-full space-y-4" in:fade={{ duration: 200 }}>
             {#if servers.filter(s => s.rconEnabled).length === 0}
                 <div class="rounded-2xl border p-12 text-center"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 48px; opacity: 0.5;"></i>
                     <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">{m.minecraft.consoleNoRcon()}</p>
@@ -1737,7 +1737,7 @@
                 <div class="flex flex-wrap items-center gap-3 mb-2">
                     {#each servers.filter(s => s.rconEnabled) as server}
                         <button
-                          class="px-4 py-2 rounded-xl font-medium transition-all hover:scale-[1.02]"
+                          class="px-4 py-2 rounded-xl font-medium transition-all"
                           style="background: {rconServer === server.name ? $colorStore.primary + '30' : $colorStore.primary + '10'};
                                  color: {rconServer === server.name ? $colorStore.primary : $colorStore.muted};
                                  border: 1px solid {rconServer === server.name ? $colorStore.primary : $colorStore.primary + '20'};"
@@ -1750,12 +1750,12 @@
 
                 {#if !rconServer}
                     <div class="rounded-2xl border p-8 text-center"
-                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                         style="background: {$colorStore.primary}0c;
                                 border-color: {$colorStore.primary}30;">
                         <p style="color: {$colorStore.muted}">{m.minecraft.consoleSelectServer()}</p>
                     </div>
                 {:else}
-                    <div class="rounded-2xl border shadow-2xl overflow-hidden"
+                    <div class="rounded-2xl border overflow-hidden"
                          style="background: #0d1117; border-color: {$colorStore.primary}30;">
                         <div class="p-3 flex items-center gap-2" style="background: {$colorStore.primary}10; border-bottom: 1px solid {$colorStore.primary}20;">
                             <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 14px;"></i>
@@ -1809,8 +1809,8 @@
 
     {:else if activeTab === 'add'}
         <div class="w-full" in:fade={{ duration: 200 }}>
-            <div class="rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+            <div class="rounded-2xl border p-6 md:p-8 transition-all"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fa-utility-duo fa-regular fa-circle-plus" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -1825,7 +1825,7 @@
                         </label>
                         <input id="f-+page-server-name-1824" type="text" bind:value={addForm.name}
                                placeholder={m.minecraft.addNamePlaceholder()}
-                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
@@ -1835,7 +1835,7 @@
                         </label>
                         <input id="f-+page-server-address-1834" type="text" bind:value={addForm.address}
                                placeholder={m.minecraft.addAddressPlaceholder()}
-                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
@@ -1844,7 +1844,7 @@
                             {m.minecraft.fieldPort()}
                         </label>
                         <input id="f-+page-port-1844" type="number" bind:value={addForm.port}
-                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
@@ -1868,7 +1868,7 @@
                             {m.minecraft.fieldQueryPortAdd()}
                         </label>
                         <input id="f-+page-query-port-0-same-as-game-port-1868" type="number" bind:value={addForm.queryPort}
-                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.minecraft.addQueryHint()}</p>
                     </div>
@@ -1896,7 +1896,7 @@
                             {m.minecraft.fieldWatchInterval()}
                         </label>
                         <input id="f-+page-watch-interval-minutes-1895" type="number" min="1" max="60" bind:value={addForm.watchInterval}
-                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
@@ -1935,7 +1935,7 @@
                 </div>
 
                 <button
-                  class="mt-6 flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                  class="mt-6 flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   onclick={addServer}
                   disabled={saving}

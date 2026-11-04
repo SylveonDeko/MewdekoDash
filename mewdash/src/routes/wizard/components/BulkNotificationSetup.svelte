@@ -157,7 +157,7 @@ Groups similar features together for efficient configuration with category suppo
   <!-- Bulk Actions -->
   <div class="flex flex-wrap gap-2">
     <button
-      class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
+      class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px] disabled:opacity-50"
       disabled={!features.some(f => f.channelId)}
       onclick={applyToAll}
       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -166,7 +166,7 @@ Groups similar features together for efficient configuration with category suppo
       {m.wizard.bulkApplyFirstToAll()}
     </button>
     <button
-      class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+      class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px]"
       onclick={enableAll}
       style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
     >
@@ -174,7 +174,7 @@ Groups similar features together for efficient configuration with category suppo
       {m.wizard.bulkEnableAll()}
     </button>
     <button
-      class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+      class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px]"
       onclick={disableAll}
       style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30;"
     >
@@ -225,7 +225,7 @@ Groups similar features together for efficient configuration with category suppo
                   />
                 </div>
                 <button
-                  class="px-4 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
+                  class="px-4 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all min-h-[44px] disabled:opacity-50"
                   style="background: {$colorStore.secondary}; color: white;"
                   onclick={() => applyToCategory(category)}
                   disabled={!categoryChannelSelectors[category]}

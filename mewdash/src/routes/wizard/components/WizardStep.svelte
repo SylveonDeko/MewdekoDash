@@ -44,9 +44,9 @@ Wrapper component for individual wizard steps with consistent styling and animat
         {#if showStepNumber}
           <div class="flex justify-center mb-3 sm:mb-4">
             <div 
-              class="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl border-2 shadow-lg"
+              class="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl border-2"
               style="
-                background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+                background: {$colorStore.primary}20;
                 border-color: {$colorStore.primary}40;
                 color: {$colorStore.primary};
               "
@@ -73,9 +73,9 @@ Wrapper component for individual wizard steps with consistent styling and animat
 
       <!-- Step content -->
         <div
-          class=" rounded-xl sm:rounded-2xl border p-4 sm:p-6 md:p-8 shadow-2xl"
+          class=" rounded-xl sm:rounded-2xl border p-4 sm:p-6 md:p-8"
         style="
-          background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+          background: {$colorStore.primary}0c;
           border-color: {$colorStore.primary}30;
         "
       >

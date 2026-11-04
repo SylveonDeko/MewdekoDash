@@ -184,17 +184,12 @@
          --color-secondary: {$colorStore.secondary};
          --color-accent: {$colorStore.accent};
          --color-text: {$colorStore.text};
-         --color-muted: {$colorStore.muted};
-         background: radial-gradient(circle at center,
-           {$colorStore.gradientStart}15 0%,
-           {$colorStore.gradientEnd}10 50%,
-           {$colorStore.gradientEnd}05 100%
-         );"
+         --color-muted: {$colorStore.muted};"
 >
   <div class="container mx-auto px-4 py-8 max-w-4xl">
     <!-- Header Section -->
-    <div class="py-4 backdrop-blur-lg border rounded-2xl shadow-lg mb-8"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%); border-color: {$colorStore.primary}30;">
+    <div class="py-4 border rounded-2xl mb-8"
+         style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
       <div class="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
         <div class="text-center">
           <h1 class="text-lg lg:text-xl font-bold mb-1" style="color: {$colorStore.text};">{m.public.reviewsHeading()}</h1>
@@ -204,8 +199,8 @@
     </div>
 
   {#if user && !userHasReviewed && !loading}
-    <div class="rounded-2xl p-6 mb-8 shadow-xl  transition-all duration-300 hover:shadow-2xl"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20); border: 1px solid {$colorStore.primary}30;"
+    <div class="rounded-2xl p-6 mb-8"
+         style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}30;"
          in:fly={{ y: 20, duration: 300, delay: 100 }}>
       <h2 class="text-2xl font-semibold mb-6" style="color: {$colorStore.text}">
         {m.public.reviewsSubmitHeading()}
@@ -246,7 +241,7 @@
       </div>
       <button
               onclick={submitReview}
-              class="w-full sm:w-auto mt-4 font-bold py-3 px-8 rounded-xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] focus:outline-hidden focus:ring-2 active:scale-95 "
+              class="w-full sm:w-auto mt-4 font-bold py-3 px-8 rounded-xl transition-all duration-300 ease-in-out focus:outline-hidden focus:ring-2"
         style="background: {$colorStore.primary}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
       >
         {m.public.reviewsSubmitButton()}
@@ -254,8 +249,8 @@
     </div>
   {:else if !user}
     <div
-      class="p-6 rounded-xl mb-8 text-center shadow-xl  transition-all duration-300"
-      style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30); border: 1px solid {$colorStore.accent}40; color: {$colorStore.text};"
+      class="p-6 rounded-xl mb-8 text-center"
+      style="background: {$colorStore.accent}20; border: 1px solid {$colorStore.accent}40; color: {$colorStore.text};"
       role="alert"
       in:fly={{ y: 20, duration: 300 }}
     >
@@ -263,8 +258,8 @@
     </div>
   {:else if userHasReviewed}
     <div
-      class="p-6 rounded-xl mb-8 text-center shadow-xl  transition-all duration-300"
-      style="background: linear-gradient(135deg, {$colorStore.secondary}20, {$colorStore.secondary}30); border: 1px solid {$colorStore.secondary}40; color: {$colorStore.text};"
+      class="p-6 rounded-xl mb-8 text-center"
+      style="background: {$colorStore.secondary}20; border: 1px solid {$colorStore.secondary}40; color: {$colorStore.text};"
       role="status"
       in:fly={{ y: 20, duration: 300 }}
     >
@@ -274,8 +269,8 @@
 
   {#if error}
     <div
-      class="p-6 rounded-xl mb-8 text-center shadow-xl  transition-all duration-300"
-      style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30); border: 1px solid {$colorStore.accent}40; color: {$colorStore.text};"
+      class="p-6 rounded-xl mb-8 text-center"
+      style="background: {$colorStore.accent}20; border: 1px solid {$colorStore.accent}40; color: {$colorStore.text};"
       role="alert"
       in:fly={{ y: 20, duration: 300 }}
     >
@@ -313,8 +308,8 @@
     <div class="grid grid-cols-1 gap-8">
       {#each reviewsWithParsedContent as review, index}
         <div
-          class="rounded-2xl p-6 shadow-xl  transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:scale-[1.02]"
-          style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20); border: 1px solid {$colorStore.primary}30;"
+          class="rounded-2xl p-6"
+          style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}30;"
           in:fly={{ y: 20, duration: 300, delay: index * 100 }}
         >
           <div class="flex items-center mb-4">
@@ -377,9 +372,6 @@
 
     :global(.prose) img {
     border-radius: 0.5rem;
-    box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
 
     :global(.prose) h1,

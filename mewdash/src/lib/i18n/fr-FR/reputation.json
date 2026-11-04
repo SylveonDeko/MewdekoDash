@@ -21,8 +21,6 @@
   "min_server_time_label": "Temps minimum sur le serveur (heures)",
   "notification_channel_label": "Salon de notifications (facultatif)",
   "notification_channel_placeholder": "Aucune notification",
-  "notify_reward_added": "Récompense de rôle ajoutée avec succès !",
-  "notify_reward_removed": "Récompense de rôle supprimée !",
   "page_subtitle": "Gérez la réputation et les récompenses du serveur",
   "page_title": "Système de réputation",
   "remove_on_drop_label": "Retirer le rôle si la réputation passe sous le seuil",

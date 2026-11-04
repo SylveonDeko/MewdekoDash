@@ -562,14 +562,14 @@
   {#if activeTab === 'settings'}
     <!-- Basic Settings Section -->
     <section
-      class=" rounded-2xl border p-6 shadow-2xl transition-all"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      class=" rounded-2xl border p-6 transition-all"
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
     >
       <div class="flex items-center gap-3 mb-6">
         <div
           class="p-3 rounded-xl"
-          style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+          style="background: {$colorStore.primary}20;
                  color: {$colorStore.primary};"
         >
           <i class="fa-utility-duo fa-regular fa-gear"
@@ -684,14 +684,14 @@
   {#if activeTab === 'advanced'}
     <!-- Advanced Settings Section -->
     <section
-      class=" rounded-2xl border p-6 shadow-2xl transition-all"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      class=" rounded-2xl border p-6 transition-all"
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
     >
       <div class="flex items-center gap-3 mb-6">
         <div
           class="p-3 rounded-xl"
-          style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+          style="background: {$colorStore.primary}20;
                  color: {$colorStore.primary};"
         >
           <i class="fa-utility-duo fa-regular fa-clock"
@@ -796,15 +796,15 @@
   {#if activeTab === 'users'}
     <!-- User Management Section -->
     <section
-      class=" rounded-2xl border p-6 shadow-2xl transition-all"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      class=" rounded-2xl border p-6 transition-all"
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
     >
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
           <div
             class="p-3 rounded-xl"
-            style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+            style="background: {$colorStore.primary}20;
                    color: {$colorStore.primary};"
           >
             <i class="fa-utility-duo fa-regular fa-users"

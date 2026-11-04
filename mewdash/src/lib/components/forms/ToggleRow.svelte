@@ -41,8 +41,7 @@
            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
            after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all
            peer-checked:after:translate-x-full"
-    style="background: {checked ? colors.primary : `${colors.primary}20`};
-           {checked ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}"
+    style="background: {checked ? colors.primary : `${colors.primary}20`};"
   ></div>
   <span class="min-w-0">
     <span class="block text-sm" style="color: {colors.text}">{title}</span>

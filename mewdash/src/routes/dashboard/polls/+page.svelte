@@ -378,8 +378,8 @@
 >
   {#if activeTab === 'active'}
     <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
-      <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
+      <div class="rounded-2xl border p-6 md:p-8 transition-all"
+           style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div class="flex items-center gap-3">
             <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -464,13 +464,13 @@
                     {/if}
                     <div class="flex flex-wrap gap-2">
                       {#if poll.isActive}
-                        <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px] disabled:opacity-50"
+                        <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all min-h-[40px] disabled:opacity-50"
                                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                                 disabled={saving} onclick={() => closePoll(poll)}>
                           <i class="fa-solid fa-lock mr-1"></i>{m.polls.closeConfirmButton()}
                         </button>
                       {/if}
-                      <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px] disabled:opacity-50"
+                      <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all min-h-[40px] disabled:opacity-50"
                               style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
                               disabled={saving} onclick={() => deletePoll(poll)}>
                         <i class="fa-solid fa-trash mr-1"></i>{m.common.delete()}
@@ -487,8 +487,8 @@
 
   {:else if activeTab === 'create'}
     <div class="w-full" in:fade={{ duration: 200 }}>
-      <form class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all space-y-6"
-            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;"
+      <form class="rounded-2xl border p-6 md:p-8 transition-all space-y-6"
+            style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;"
             onsubmit={(e) => { e.preventDefault(); submitDraft(); }}>
         <div class="flex items-center gap-3">
           <i class="fa-utility-duo fa-regular fa-circle-plus" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -534,7 +534,7 @@
               {/each}
             </div>
             {#if draft.options.length < 25}
-              <button type="button" class="mt-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px]"
+              <button type="button" class="mt-2 px-4 py-2 rounded-lg text-sm font-medium transition-all min-h-[40px]"
                       style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                       onclick={() => { draft.options = [...draft.options, ""]; }}>
                 <i class="fa-solid fa-plus mr-1"></i>{m.common.addOption()}
@@ -601,12 +601,12 @@
 
         <div class="flex flex-col sm:flex-row gap-3">
           <button type="button" onclick={resetDraft}
-                  class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                  class="px-6 py-3 rounded-xl font-medium transition-all min-h-[44px]"
                   style="background: {$colorStore.muted}20; color: {$colorStore.muted};">
             {m.common.reset()}
           </button>
           <button type="submit" disabled={saving}
-                  class="flex-1 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] flex items-center justify-center gap-2 disabled:opacity-50"
+                  class="flex-1 px-6 py-3 rounded-xl font-medium transition-all min-h-[44px] flex items-center justify-center gap-2 disabled:opacity-50"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
             {#if saving}<i class="fa-solid fa-spinner fa-spin"></i>{:else}<i class="fa-solid {draft.scheduleFor ? 'fa-calendar-check' : 'fa-paper-plane'}"></i>{/if}
             {draft.scheduleFor ? m.polls.createSubmitSchedule() : m.polls.createSubmitPost()}
@@ -617,8 +617,8 @@
 
   {:else if activeTab === 'scheduled'}
     <div class="w-full" in:fade={{ duration: 200 }}>
-      <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
+      <div class="rounded-2xl border p-6 md:p-8 transition-all"
+           style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-calendar" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.polls.scheduledTitle()}</h2>
@@ -638,7 +638,7 @@
                     #{channelName(item.channelId)} · {typeLabels[item.type] ?? m.common.poll()} · {m.polls.scheduledPosts({ date: formatDate(item.scheduledFor) })}
                   </div>
                 </div>
-                <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px]"
+                <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all min-h-[40px]"
                         style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
                         onclick={() => cancelScheduled(item)}>
                   {m.common.cancel()}
@@ -652,8 +652,8 @@
 
   {:else if activeTab === 'templates'}
     <div class="w-full" in:fade={{ duration: 200 }}>
-      <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
+      <div class="rounded-2xl border p-6 md:p-8 transition-all"
+           style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-copy" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.polls.templatesTitle({ count: templates.length })}</h2>
@@ -672,12 +672,12 @@
                   <div class="text-sm break-words" style="color: {$colorStore.muted}">{template.question}</div>
                 </div>
                 <div class="flex gap-2 mt-auto">
-                  <button class="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px]"
+                  <button class="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all min-h-[40px]"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                           onclick={() => useTemplate(template)}>
                     <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>{m.common.use()}
                   </button>
-                  <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px]"
+                  <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all min-h-[40px]"
                           style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
                           aria-label={m.polls.templatesDeleteAria({ name: template.name })}
                           onclick={() => deleteTemplate(template)}>
@@ -703,8 +703,8 @@
         {#if Object.keys(analytics.pollsCreatedByDay).length > 0}
           {@const entries = Object.entries(analytics.pollsCreatedByDay).sort(([a], [b]) => a.localeCompare(b))}
           {@const max = Math.max(1, ...entries.map(([, v]) => v))}
-          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
+          <div class="rounded-2xl border p-6 md:p-8 transition-all"
+               style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
             <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.polls.analyticsPerDay()}</h2>
             <div class="flex items-end gap-1 h-40 overflow-x-auto" role="img" aria-label={m.polls.analyticsPerDay()}>
               {#each entries as [day, count]}

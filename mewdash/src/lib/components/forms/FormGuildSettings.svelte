@@ -143,7 +143,7 @@
           onclick={save}
           disabled={saving}
           class="flex-1 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50"
-          style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10); color: {$colorStore.text}; border: 1px solid {$colorStore.secondary}30;"
+          style="background: {$colorStore.secondary}18; color: {$colorStore.text}; border: 1px solid {$colorStore.secondary}30;"
         >
           {#if saving}
             <i class="fa-solid fa-spinner fa-spin mr-2"></i>

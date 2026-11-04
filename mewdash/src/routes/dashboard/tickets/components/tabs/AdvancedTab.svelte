@@ -37,13 +37,13 @@
 
 <div class="space-y-6">
   <!-- Batch Operations -->
-  <div class="rounded-2xl border p-6 shadow-2xl transition-all"
+  <div class="rounded-2xl border p-6 transition-all"
        in:fly={{ y: 20, duration: 300, delay: 100 }}
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;">
+       style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
 
     <div class="flex items-center gap-4 mb-6">
       <div class="p-3 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+           style="background: {$colorStore.primary}20;">
         <i class="fa-utility-duo fa-regular fa-bolt"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
@@ -70,7 +70,7 @@
           </div>
           <div class="flex items-end">
             <button
-              class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] flex items-center gap-2"
+              class="px-4 py-3 rounded-xl font-medium transition-all min-h-[44px] flex items-center gap-2"
               disabled={saving}
               onclick={() => showConfirm(
                 m.tickets.advancedCloseInactiveTitle(),
@@ -90,13 +90,13 @@
   </div>
 
   <!-- Blacklist Management -->
-  <div class="rounded-2xl border p-6 shadow-2xl transition-all"
+  <div class="rounded-2xl border p-6 transition-all"
        in:fly={{ y: 20, duration: 300, delay: 200 }}
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;">
+       style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
 
     <div class="flex items-center gap-4 mb-6">
       <div class="p-3 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+           style="background: {$colorStore.primary}20;">
         <i class="fa-utility-duo fa-regular fa-shield-alt"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
@@ -136,7 +136,7 @@
           />
         </div>
         <button
-          class="w-full px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] flex items-center justify-center gap-2"
+          class="w-full px-4 py-3 rounded-xl font-medium transition-all min-h-[44px] flex items-center justify-center gap-2"
           disabled={saving || !newBlacklistUserId}
           onclick={() => {
             blacklistUser(BigInt(newBlacklistUserId), newBlacklistReason);
@@ -175,7 +175,7 @@
                   {/if}
                 </div>
                 <button
-                  class="px-3 py-2 rounded-lg transition-all hover:scale-[1.02] text-sm font-medium"
+                  class="px-3 py-2 rounded-lg transition-all text-sm font-medium"
                   style="background: #10b98120; color: #10b981; border: 1px solid #10b98130;"
                   onclick={() => showConfirm(
                     m.tickets.advancedUnblacklistTitle(),

@@ -104,8 +104,6 @@
   "settings_tab_auto_assign_desc": "Yeni üyelere otomatik atanan roller",
   "settings_tab_auto_assign_roles_desc": "Yeni üyelere verilen roller",
   "settings_tab_bot_settings_desc": "Temel bot ayarları",
-  "settings_tab_configure_arrow": "Yapılandır →",
-  "settings_tab_greets_arrow": "Karşılamalar →",
   "settings_tab_integrations": "Entegrasyonlar",
   "settings_tab_logging_desc": "Olay günlüğü ve denetim izleri",
   "settings_tab_multigreets_desc": "Birden fazla karşılama kanalı ve mesajı",

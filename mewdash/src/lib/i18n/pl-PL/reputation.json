@@ -21,8 +21,6 @@
   "min_server_time_label": "Min. czas na serwerze (godziny)",
   "notification_channel_label": "Kanał powiadomień (opcjonalnie)",
   "notification_channel_placeholder": "Brak powiadomień",
-  "notify_reward_added": "Nagroda w postaci roli została dodana!",
-  "notify_reward_removed": "Nagroda w postaci roli została usunięta!",
   "page_subtitle": "Zarządzaj reputacją serwera i nagrodami",
   "page_title": "System reputacji",
   "remove_on_drop_label": "Usuń rolę, jeśli reputacja spadnie poniżej progu",

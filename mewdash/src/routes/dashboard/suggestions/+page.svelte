@@ -831,7 +831,7 @@
               </div>
             </div>
             <button aria-label={m.suggestions.sortToggleAria()}
-                    class="px-3 py-1.5 md:px-4 md:py-2 rounded-lg border transition-all hover:scale-[1.02] flex items-center gap-1 md:gap-2 text-xs md:text-sm"
+                    class="px-3 py-1.5 md:px-4 md:py-2 rounded-lg border transition-all flex items-center gap-1 md:gap-2 text-xs md:text-sm"
                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                     onclick={toggleSortDirection}
             >
@@ -857,7 +857,7 @@
         <div class="space-y-4">
           {#each sortedSuggestions as suggestion, index (suggestion.id)}
             <div
-              class=" rounded-xl border overflow-hidden transition-all hover:shadow-lg hover:-translate-y-px"
+              class=" rounded-xl border overflow-hidden transition-all"
               style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
               in:slide={{ duration: 300, delay: index * 50 }}
             >
@@ -971,7 +971,7 @@
                     <div class="flex flex-wrap gap-2 w-full"
                          transition:fade={{ duration: 200, easing: cubicOut }}>
                       <button
-                        class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] focus:ring-2 focus:ring-green-500/50 disabled:opacity-60"
+                        class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all focus:ring-2 focus:ring-green-500/50 disabled:opacity-60"
                         style="{suggestion.currentState === SuggestionState.Accepted
                           ? 'background: #22c55e; color: white; border: 1px solid #22c55e;'
                           : 'background: #22c55e20; color: #22c55e; border: 1px solid #22c55e30;'}"
@@ -983,7 +983,7 @@
                           class="hidden sm:inline">{suggestion.currentState === SuggestionState.Accepted ? m.common.accepted() : m.suggestions.actionAccept()}</span>
                       </button>
                       <button
-                        class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] focus:ring-2 focus:ring-red-500/50 disabled:opacity-60"
+                        class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all focus:ring-2 focus:ring-red-500/50 disabled:opacity-60"
                         style="{suggestion.currentState === SuggestionState.Denied
                           ? 'background: #ef4444; color: white; border: 1px solid #ef4444;'
                           : 'background: #ef444420; color: #ef4444; border: 1px solid #ef444430;'}"
@@ -995,7 +995,7 @@
                           class="hidden sm:inline">{suggestion.currentState === SuggestionState.Denied ? m.common.denied() : m.common.deny()}</span>
                       </button>
                       <button
-                        class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] focus:ring-2 disabled:opacity-60"
+                        class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all focus:ring-2 disabled:opacity-60"
                         style="{suggestion.currentState === SuggestionState.Considered
                           ? `background: ${$colorStore.secondary}; color: white; border: 1px solid ${$colorStore.secondary};`
                           : `background: ${$colorStore.secondary}20; color: ${$colorStore.secondary}; border: 1px solid ${$colorStore.secondary}30;`} --tw-ring-color: {$colorStore.secondary}50;"
@@ -1007,7 +1007,7 @@
                           class="hidden sm:inline">{suggestion.currentState === SuggestionState.Considered ? m.suggestions.actionConsidered() : m.suggestions.actionConsider()}</span>
                       </button>
                       <button
-                        class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] focus:ring-2 disabled:opacity-60"
+                        class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all focus:ring-2 disabled:opacity-60"
                         style="{suggestion.currentState === SuggestionState.Implemented
                           ? `background: ${$colorStore.accent}; color: white; border: 1px solid ${$colorStore.accent};`
                           : `background: ${$colorStore.accent}20; color: ${$colorStore.accent}; border: 1px solid ${$colorStore.accent}30;`} --tw-ring-color: {$colorStore.accent}50;"
@@ -1019,7 +1019,7 @@
                           class="hidden sm:inline">{suggestion.currentState === SuggestionState.Implemented ? m.common.implemented() : m.suggestions.actionImplement()}</span>
                       </button>
                       <button
-                        class="ml-auto px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] hover:bg-red-500/20 focus:ring-2"
+                        class="ml-auto px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:bg-red-500/20 focus:ring-2"
                         style="background: {$colorStore.muted}10; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}20; --tw-ring-color: {$colorStore.muted}50;"
                         onclick={async () => {
                             if (await requestConfirmation({ message: m.suggestions.confirmDelete(), confirmText: m.common.delete() })) {
@@ -1052,7 +1052,7 @@
                       <div class="flex gap-2 justify-end"
                            transition:fly={{ duration: 250, y: 10, delay: 150, easing: cubicOut }}>
                         <button
-                          class="px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02] focus:ring-2 disabled:opacity-50"
+                          class="px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-all focus:ring-2 disabled:opacity-50"
                           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30; --tw-ring-color: {$colorStore.secondary}50;"
                           onclick={() => cancelInlineConfirm(suggestion.id)}
                           disabled={confirmingStatus[suggestion.id]}
@@ -1060,7 +1060,7 @@
                           {m.common.cancel()}
                         </button>
                         <button
-                          class="px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02] focus:ring-2 disabled:opacity-50 min-w-[80px]"
+                          class="px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all focus:ring-2 disabled:opacity-50 min-w-[80px]"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.primary}50;"
                           onclick={() => confirmInlineStatusChange(suggestion)}
                           disabled={confirmingStatus[suggestion.id]}
@@ -1363,7 +1363,7 @@
       {#if activeSubTab === 'archive'}
         <div class=" rounded-xl border p-6 space-y-6 transition-all"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
-          <div class="flex items-center justify-between p-3 rounded-lg transition-all hover:scale-[1.01]"
+          <div class="flex items-center justify-between p-3 rounded-lg transition-all"
                style="background: {$colorStore.primary}08;">
             <span style="color: {$colorStore.text}">{m.suggestions.archiveOnAccept()}</span>
             <label class="relative inline-flex items-center cursor-pointer">
@@ -1383,7 +1383,7 @@
             </label>
           </div>
 
-          <div class="flex items-center justify-between p-3 rounded-lg transition-all hover:scale-[1.01]"
+          <div class="flex items-center justify-between p-3 rounded-lg transition-all"
                style="background: {$colorStore.primary}08;">
             <span style="color: {$colorStore.text}">{m.suggestions.archiveOnDeny()}</span>
             <label class="relative inline-flex items-center cursor-pointer">
@@ -1403,7 +1403,7 @@
             </label>
           </div>
 
-          <div class="flex items-center justify-between p-3 rounded-lg transition-all hover:scale-[1.01]"
+          <div class="flex items-center justify-between p-3 rounded-lg transition-all"
                style="background: {$colorStore.primary}08;">
             <span style="color: {$colorStore.text}">{m.suggestions.archiveOnConsider()}</span>
             <label class="relative inline-flex items-center cursor-pointer">
@@ -1423,7 +1423,7 @@
             </label>
           </div>
 
-          <div class="flex items-center justify-between p-3 rounded-lg transition-all hover:scale-[1.01]"
+          <div class="flex items-center justify-between p-3 rounded-lg transition-all"
                style="background: {$colorStore.primary}08;">
             <span style="color: {$colorStore.text}">{m.suggestions.archiveOnImplement()}</span>
             <label class="relative inline-flex items-center cursor-pointer">

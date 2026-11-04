@@ -1,6 +1,6 @@
 {
-  "alert_today_one": "{count} birthday today!",
-  "alert_today_other": "{count} birthdays today!",
+  "alert_today_one": "{count} birthday today",
+  "alert_today_other": "{count} birthdays today",
   "config_channel": "Birthday Channel",
   "config_ping_role": "Ping Role (notifies when announcing)",
   "config_reminder_days": "Reminder Days Before Birthday",
@@ -55,7 +55,6 @@
   "users_period_placeholder": "Select period",
   "users_private": "Private",
   "users_public": "Public",
-  "users_today": "Today!",
   "users_tomorrow": "Tomorrow",
   "users_upcoming_empty": "No birthdays in the next {days} days.",
   "users_upcoming_empty_title": "No Upcoming Birthdays",

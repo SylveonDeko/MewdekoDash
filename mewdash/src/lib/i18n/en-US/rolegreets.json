@@ -17,7 +17,7 @@
   "page_error_fetch": "Failed to fetch role greets",
   "page_error_toggle": "Failed to update role greet state",
   "page_greet_bots_hint": "Should bot accounts receive this greeting?",
-  "page_notify_added": "Role greet added successfully",
+  "page_notify_added": "Role greet added",
   "page_notify_deleted": "Role greet deleted",
   "page_notify_disabled": "Role greet disabled",
   "page_notify_enabled": "Role greet enabled",

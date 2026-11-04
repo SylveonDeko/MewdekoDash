@@ -14,6 +14,7 @@
     type AchievementSettings
   } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import OverviewTab from "./components/OverviewTab.svelte";
   import LibraryTab from "./components/LibraryTab.svelte";
@@ -30,6 +31,8 @@
   }
 
   let { data }: Props = $props();
+
+  const autoSave = createAutoSave();
 
   let loading = $state(false);
   let loaded = $state(false);
@@ -218,7 +221,7 @@
         <span style="color: {$colorStore.text}">{m.achievements.pagePausedNotice()}</span>
       </div>
       <button type="button"
-              class="px-4 py-2 rounded-lg min-h-[44px] text-sm font-medium transition-all hover:scale-[1.02]"
+              class="px-4 py-2 rounded-lg min-h-[44px] text-sm font-medium transition-all"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={() => { activeTab = "overview"; }}>
         {m.achievements.overviewStart()}
@@ -229,6 +232,7 @@
 
 <DashboardPageLayout
   {actionButtons}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-crown"
@@ -287,6 +291,7 @@
         {catalog}
         {lookups}
         user={data.user}
+        {autoSave}
         onsaved={setSettings}
         onerror={(text) => showMessage(text, "error")}
         onsuccess={(text) => showMessage(text, "success")}
@@ -315,6 +320,7 @@
         settings={overview.settings}
         {catalog}
         {lookups}
+        {autoSave}
         onsaved={setSettings}
         onreset={async () => { await refreshCatalog(); refreshOverview(); }}
         onerror={(text) => showMessage(text, "error")}

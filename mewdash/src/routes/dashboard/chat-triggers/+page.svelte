@@ -898,7 +898,7 @@
       quickResponseText = {};
 
       showNotificationMessage(m.chatTriggers.pageNotifyCreated(), "success");
-      announceAction(m.chatTriggers.pageAnnounceCreated());
+      announceAction(m.chatTriggers.pageNotifyCreated());
     } catch (error: any) {
       showNotificationMessage(m.chatTriggers.pageNotifyCreateFailed({ error: error.message }), "error");
       announceError(m.chatTriggers.pageAnnounceCreateFailed());
@@ -1049,7 +1049,7 @@
     <!-- Notifications -->
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
-        <div class="p-4 rounded-xl shadow-2xl border max-w-md"
+        <div class="p-4 rounded-xl shadow-lg border max-w-md"
              style="background: {notificationType === 'success' ? '#10b98120' : '#ef444420'};
                     border-color: {notificationType === 'success' ? '#10b981' : '#ef4444'}30;">
           <div class="flex items-center gap-3">
@@ -1085,13 +1085,13 @@
            role="tabpanel" id="simple-panel" aria-labelledby="simple-tab" tabindex="0">
         
         <!-- Quick Setup Card -->
-        <div class="rounded-2xl border p-6 shadow-2xl transition-all relative z-10"
-             style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+        <div class="rounded-2xl border p-6 transition-all relative z-10"
+             style="background: {colors.primary}0c;
                     border-color: {colors.primary}30;">
           
           <div class="flex items-center gap-3 mb-6">
             <div class="p-3 rounded-xl"
-                 style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);">
+                 style="background: {colors.primary}20;">
               <i class="fa-utility-duo fa-regular fa-circle-plus" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {colors.text}">{m.common.quickSetup()}</h2>
@@ -1177,8 +1177,8 @@
         </div>
 
         <!-- Template Selection -->
-        <div class="rounded-2xl border p-6 shadow-2xl transition-all relative z-5"
-             style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+        <div class="rounded-2xl border p-6 transition-all relative z-5"
+             style="background: {colors.primary}0c;
                     border-color: {colors.primary}30;">
           
           <h3 class="text-lg font-semibold mb-4" style="color: {colors.text}">
@@ -1187,8 +1187,8 @@
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <button
-              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-[1.02] focus:scale-105"
-              style="border-color: {colors.primary}30; background: linear-gradient(135deg, {colors.primary}10, {colors.secondary}10);"
+              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left"
+              style="border-color: {colors.primary}30; background: {colors.primary}10;"
               onclick={() => useTemplate('simple')}
 
               aria-describedby="template-simple-desc"
@@ -1203,8 +1203,8 @@
             </button>
 
             <button
-              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-[1.02] focus:scale-105"
-              style="border-color: {colors.secondary}30; background: linear-gradient(135deg, {colors.secondary}15, {colors.primary}10);"
+              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left"
+              style="border-color: {colors.secondary}30; background: {colors.secondary}15;"
               onclick={() => useTemplate('role')}
 
               aria-describedby="template-role-desc"
@@ -1219,8 +1219,8 @@
             </button>
 
             <button
-              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-[1.02] focus:scale-105"
-              style="border-color: {colors.accent}30; background: linear-gradient(135deg, {colors.accent}15, {colors.secondary}10);"
+              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left"
+              style="border-color: {colors.accent}30; background: {colors.accent}15;"
               onclick={() => useTemplate('slash')}
 
               aria-describedby="template-slash-desc"
@@ -1235,8 +1235,8 @@
             </button>
 
             <button
-              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-[1.02] focus:scale-105"
-              style="border-color: {colors.secondary}30; background: linear-gradient(135deg, {colors.gradientStart}15, {colors.gradientMid}10);"
+              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left"
+              style="border-color: {colors.secondary}30; background: {colors.primary}12;"
               onclick={() => useTemplate('embed')}
 
               aria-describedby="template-embed-desc"
@@ -1254,8 +1254,8 @@
 
         <!-- Existing Triggers (Simple View) -->
         {#if triggers.length === 0}
-          <div class="text-center py-12 rounded-2xl border shadow-2xl transition-all"
-               style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+          <div class="text-center py-12 rounded-2xl border transition-all"
+               style="background: {colors.primary}0c;
                       border-color: {colors.primary}30;"
                transition:fade>
             <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {colors.muted}; --fa-secondary-color: {colors.muted}; font-size: 48px; opacity: 0.5;"></i>
@@ -1433,8 +1433,8 @@
 
           <div class="space-y-4">
             {#each visibleTriggers as trigger (trigger.id)}
-              <div class="trigger-card rounded-2xl border shadow-2xl transition-all duration-200 relative"
-                   style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+              <div class="trigger-card rounded-2xl border transition-all duration-200 relative"
+                   style="background: {colors.primary}0c;
                           border-color: {colors.primary}30;
                           z-index: {expandedTriggerId === trigger.id ? 15 : 5};"
                    role="article"
@@ -1648,8 +1648,8 @@
            role="tabpanel" id="advanced-panel" aria-labelledby="advanced-tab" tabindex="0">
         
         <!-- Advanced Creation Form -->
-        <div class="rounded-2xl border p-6 shadow-2xl transition-all relative z-30"
-             style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+        <div class="rounded-2xl border p-6 transition-all relative z-30"
+             style="background: {colors.primary}0c;
                     border-color: {colors.primary}30;">
           
           <h2 class="text-xl font-bold mb-6" style="color: {colors.text}">{m.chatTriggers.pageAdvancedTitle()}</h2>
@@ -1871,7 +1871,7 @@
             <!-- Create Button -->
             <div class="flex justify-end pt-6">
               <button
-                class="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-[1.02]"
+                class="px-6 py-3 rounded-lg font-medium transition-all duration-200"
                 style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
                 onclick={addTrigger}
                 disabled={!newTrigger.trigger?.trim() || (typeof newTrigger.response === 'object' && newTrigger.response !== null ? Object.keys(newTrigger.response).length === 0 : !(typeof newTrigger.response === 'string' && newTrigger.response.trim())) || (newTrigger.isRegex && !newTrigger.isValidRegex)}

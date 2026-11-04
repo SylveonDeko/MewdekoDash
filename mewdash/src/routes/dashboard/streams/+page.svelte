@@ -22,12 +22,20 @@
   import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
   import { parseStoredMessage, serializeMessage, toBuilderValue } from "$lib/utils/embedMessage";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
   interface Props {
     data: PageData;
   }
 
   let { data }: Props = $props();
+
+  const autoSave = createAutoSave({
+    onError: () => showMessage(m.common.failedToSaveMessage(), "error")
+  });
+
+  /** The custom message as the server last confirmed it. */
+  let savedGlobalMessage: string | null = null;
 
   // Component state
   let loading = $state(false);
@@ -125,6 +133,7 @@
 
       streams = streamsData;
       globalMessage = toBuilderValue(messageData);
+      savedGlobalMessage = serializeMessage(globalMessage) || null;
       offlineNotifications = offlineData;
       stats = statsData;
       streamers = streamersData;
@@ -225,20 +234,15 @@
   }
 
   // Save global custom message
-  async function saveCustomMessage() {
+  function saveCustomMessage() {
     if (!$currentGuild?.id) return;
-
-    saving = true;
-    try {
-      const messageToSend = serializeMessage(globalMessage) || null;
-      await streamNotificationsApi.setCustomStreamMessage($currentGuild.id, messageToSend);
-      showMessage(m.streams.notifyCustomSaved(), "success");
-    } catch (err) {
-      logger.error("Failed to save custom message:", err);
-      showMessage(m.common.failedToSaveMessage(), "error");
-    } finally {
-      saving = false;
-    }
+    const guildId = $currentGuild.id;
+    const messageToSend = serializeMessage(globalMessage) || null;
+    if (messageToSend === savedGlobalMessage) return;
+    void autoSave.now("customMessage", async () => {
+      await streamNotificationsApi.setCustomStreamMessage(guildId, messageToSend);
+      savedGlobalMessage = messageToSend;
+    });
   }
 
   // Toggle offline notifications
@@ -369,6 +373,7 @@
 
 <DashboardPageLayout
   {actionButtons}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-radio"
@@ -380,8 +385,8 @@
 
   {#if activeTab === 'list'}
     <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
-      <div class="rounded-2xl border p-6 shadow-2xl"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      <div class="rounded-2xl border p-6"
+           style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center gap-3">
@@ -391,7 +396,7 @@
           </div>
           {#if streams.length > 0}
             <button
-              class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition-all hover:scale-[1.02]"
+              class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition-all"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
               onclick={clearAllStreams}
             >
@@ -436,7 +441,7 @@
                     </div>
                   </div>
                   <button aria-label={m.common.delete()}
-                          class="p-1.5 sm:p-2 rounded-lg transition-all hover:scale-110"
+                          class="p-1.5 sm:p-2 rounded-lg transition-all"
                           style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                           onclick={() => unfollowStream(stream.index)}
                   >
@@ -562,7 +567,7 @@
                   {/if}
 
                   <button
-                    class="mt-2 text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-lg transition-all hover:scale-[1.02]"
+                    class="mt-2 text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-lg transition-all"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     onclick={() => startEditing(stream)}
                   >
@@ -579,8 +584,8 @@
 
   {:else if activeTab === 'add'}
     <div class="w-full" in:fade={{ duration: 200 }}>
-      <div class="rounded-2xl border p-6 shadow-2xl"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      <div class="rounded-2xl border p-6"
+           style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-circle-plus"
@@ -621,7 +626,7 @@
           </div>
 
           <button
-            class="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-xl text-sm sm:text-base font-medium transition-all hover:scale-[1.02]"
+            class="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-xl text-sm sm:text-base font-medium transition-all"
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
             onclick={followStream}
             disabled={saving || !newStream.channelId || !newStream.url.trim()}
@@ -635,8 +640,8 @@
 
   {:else if activeTab === 'config'}
     <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
-      <div class="rounded-2xl border p-6 shadow-2xl"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      <div class="rounded-2xl border p-6"
+           style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-gear"
@@ -654,6 +659,7 @@
 
             <FullscreenEmbedBuilder id="f-+page-global-stream-message-603"
               bind:value={globalMessage}
+              onclose={saveCustomMessage}
               previewTitle={m.streams.globalMessageLabel()}
               previewDescription={m.streams.globalMessageDescription()}
               icon="fa-comment"
@@ -665,16 +671,6 @@
               guildId={$currentGuild?.id}
               user={data.user}
             />
-
-            <button
-              class="mt-3 px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-sm sm:text-base font-medium transition-all hover:scale-[1.02]"
-              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-              onclick={saveCustomMessage}
-              disabled={saving}
-            >
-              <i class="fa-solid fa-floppy-disk inline mr-1" style="font-size: 12px sm:14px;"></i>
-              {m.common.saveMessage()}
-            </button>
           </div>
 
           <div class="flex items-center justify-between p-4 rounded-xl"
@@ -742,8 +738,8 @@
         </div>
 
         {#if stats.streamsByType && stats.streamsByType.length > 0}
-          <div class="mt-6 rounded-2xl border p-6 shadow-2xl"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+          <div class="mt-6 rounded-2xl border p-6"
+               style="background: {$colorStore.primary}0c;
                                 border-color: {$colorStore.primary}30;">
             <div class="flex items-center gap-3 mb-6">
               <i class="fa-utility-duo fa-regular fa-chart-simple"

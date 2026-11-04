@@ -217,17 +217,10 @@
          --color-secondary: {$colorStore.secondary};
          --color-accent: {$colorStore.accent};
          --color-text: {$colorStore.text};
-         --color-muted: {$colorStore.muted};
-         background: radial-gradient(circle at center,
-           {$colorStore.gradientStart}15 0%,
-           {$colorStore.gradientEnd}10 50%,
-           {$colorStore.gradientEnd}05 100%
-         );"
+         --color-muted: {$colorStore.muted};"
 >
   <!-- Header and Search Section -->
-  <div class="py-4 backdrop-blur-lg border-b shadow-lg"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%);
-              border-color: {$colorStore.primary}30;">
+  <div class="py-4 border-b" style="border-color: {$colorStore.primary}20;">
     <div class="container mx-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-3">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
@@ -312,21 +305,21 @@
               <p>{m.public.commandsTrySearchingFor()}</p>
               <div class="flex flex-wrap gap-2 justify-center">
                 <button
-                  class="px-3 py-1 rounded-full transition-all hover:scale-[1.02]"
+                  class="px-3 py-1 rounded-full"
                   style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30;"
                   onclick={() => searchValue = 'music'}
                 >
                   {m.public.commandsMusic()}
                 </button>
                 <button
-                  class="px-3 py-1 rounded-full transition-all hover:scale-[1.02]"
+                  class="px-3 py-1 rounded-full"
                   style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30;"
                   onclick={() => searchValue = 'moderation'}
                 >
                   {m.public.commandsModeration()}
                 </button>
                 <button
-                  class="px-3 py-1 rounded-full transition-all hover:scale-[1.02]"
+                  class="px-3 py-1 rounded-full"
                   style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30;"
                   onclick={() => searchValue = 'fun'}
                 >
@@ -379,9 +372,9 @@
                   onkeydown={(e) => handleTabKeydown(e, index)}
                 >
                   <div
-                    class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center mr-2 text-xs font-bold group-hover:scale-110 transition-transform "
+                    class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center mr-2 text-xs font-bold"
                     style="{index === activeTabIndex
-                         ? `background: linear-gradient(135deg, ${$colorStore.gradientStart}40, ${$colorStore.gradientMid}50); color: ${$colorStore.text};` 
+                         ? `background: ${$colorStore.primary}30; color: ${$colorStore.text};`
                          : `background: ${$colorStore.primary}20; color: ${$colorStore.text};`}">
                     {module.Name?.charAt(0)?.toUpperCase()}
                   </div>
@@ -412,9 +405,8 @@
               <div class="mb-6">
                 <div class="flex items-center space-x-4 mb-4">
                   <div
-                    class="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg "
-                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}40, {$colorStore.gradientMid}50);
-                              border: 1px solid {$colorStore.primary}30;">
+                    class="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
+                    style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
                     <span class="text-xl font-bold" style="color: {$colorStore.text}">
                       {activeModule.Name?.charAt(0)?.toUpperCase()}
                     </span>
@@ -461,7 +453,7 @@
                     <!-- Usage Examples -->
                     {#if command.Example && command.Example.length > 0}
                       <div class="mb-4">
-                        <h4 class="text-xs font-semibold uppercase tracking-wide mb-2"
+                        <h4 class="text-xs font-semibold mb-2"
                             style="color: {$colorStore.muted};">
                           {m.public.commandsUsageExamples()}
                         </h4>
@@ -488,7 +480,7 @@
                     <footer class="flex flex-wrap gap-2 mt-auto">
                       {#if command.BotVersion && command.BotVersion.length > 0 && command.BotVersion.at(0) !== ""}
                         <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md"
-                              style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
+                              style="background: {$colorStore.primary}10; color: {$colorStore.text};">
                           <i class="fa-solid fa-lightbulb mr-1" style="font-size: 12px;"></i>
                           {command.BotVersion}
                         </span>
@@ -498,8 +490,7 @@
                         <details class="group/perms">
                           <summary
                             class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md cursor-pointer transition-all "
-                            style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}25);
-                                          color: {$colorStore.text};
+                            style="background: {$colorStore.primary}10; color: {$colorStore.text};
                                           border: 1px solid {$colorStore.primary}30;">
                             <i class="fa-solid fa-lock mr-1" style="font-size: 12px;"></i>
                             {m.common.permissions()}
@@ -541,8 +532,7 @@
 
                       {#if command.ListOptions && command.ListOptions.length > 0 && command.ListOptions.at(0) !== ""}
                         <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md"
-                              style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                                     color: {$colorStore.text};
+                              style="background: {$colorStore.primary}10; color: {$colorStore.text};
                                      border: 1px solid {$colorStore.primary}20;"
                               title={m.public.commandsHasSelectableOptions()}>
                           <i class="fa-solid fa-terminal mr-1" style="font-size: 12px;"></i>
@@ -580,10 +570,8 @@
     }
 
     .command-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        background: var(--color-primary, rgba(255, 255, 255, 0.15));
-        border-color: var(--color-primary, rgba(255, 255, 255, 0.3));
+        background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+        border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
     }
 
     /* Improved prose styling for dynamic theme */

@@ -372,7 +372,7 @@
       {@const active = source?.id === option.id}
       <button
         type="button"
-        class="flex flex-col items-center justify-center gap-2 p-4 rounded-xl min-h-[88px] transition-all hover:scale-[1.02]"
+        class="flex flex-col items-center justify-center gap-2 p-4 rounded-xl min-h-[88px] transition-all"
         style="background: {active ? $colorStore.primary + '20' : $colorStore.primary + '08'};
                border: 1px solid {active ? $colorStore.primary : $colorStore.primary + '20'};"
         aria-pressed={active}
@@ -460,7 +460,7 @@
       <div class="flex items-center gap-3">
         <button
           type="button"
-          class="px-5 rounded-lg min-h-[44px] text-sm font-medium flex items-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50"
+          class="px-5 rounded-lg min-h-[44px] text-sm font-medium flex items-center gap-2 transition-all disabled:opacity-50"
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
           disabled={!canRead}
           onclick={read}
@@ -511,7 +511,7 @@
       <div class="flex items-center gap-3">
         <button
           type="button"
-          class="px-5 rounded-lg min-h-[44px] text-sm font-medium flex items-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50"
+          class="px-5 rounded-lg min-h-[44px] text-sm font-medium flex items-center gap-2 transition-all disabled:opacity-50"
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
           disabled={writing || chosenSections.length === 0}
           onclick={write}
@@ -659,7 +659,7 @@
       <div class="flex items-center gap-3">
         <button
           type="button"
-          class="px-5 rounded-lg min-h-[44px] text-sm font-medium flex items-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50"
+          class="px-5 rounded-lg min-h-[44px] text-sm font-medium flex items-center gap-2 transition-all disabled:opacity-50"
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
           disabled={writing}
           onclick={write}

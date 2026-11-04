@@ -2,6 +2,7 @@
   import AntiRaidCard from "../protection/AntiRaidCard.svelte";
   import AntiSpamCard from "../protection/AntiSpamCard.svelte";
   import AntiAltCard from "../protection/AntiAltCard.svelte";
+  import JoinRoleTimeoutCard from "../protection/JoinRoleTimeoutCard.svelte";
   import AntiPatternCard from "../protection/AntiPatternCard.svelte";
   import AntiMassMentionCard from "../protection/AntiMassMentionCard.svelte";
   import AntiMassPostCard from "../protection/AntiMassPostCard.svelte";
@@ -23,10 +24,10 @@
     textChannels,
     availableRoles,
     saving,
+    autoSave,
+    notify,
     toggleProtection,
     toggleProtectionCard,
-    cancelProtectionEdit,
-    saveProtectionConfig,
     saveHoneypotChannels,
     saveIgnoredRoles,
     addIgnoredUser,
@@ -42,11 +43,8 @@
     {actionOptions}
     bind:expandedProtectionCard
     bind:tempProtectionConfig
-    {cancelProtectionEdit}
     {formatAction}
     {protectionStatus}
-    {saveProtectionConfig}
-    {saving}
     {toggleProtection}
     {toggleProtectionCard}
   />
@@ -55,26 +53,28 @@
     {actionOptions}
     bind:expandedProtectionCard
     bind:tempProtectionConfig
-    {cancelProtectionEdit}
     {fetchAllData}
     {formatAction}
     {protectionStatus}
-    {saveProtectionConfig}
     {saving}
     {textChannels}
     {toggleProtection}
     {toggleProtectionCard}
   />
 
+  <JoinRoleTimeoutCard
+    {autoSave}
+    {availableRoles}
+    {notify}
+    {textChannels}
+  />
+
   <AntiAltCard
     {actionOptions}
     bind:expandedProtectionCard
     bind:tempProtectionConfig
-    {cancelProtectionEdit}
     {formatAction}
     {protectionStatus}
-    {saveProtectionConfig}
-    {saving}
     {toggleProtection}
     {toggleProtectionCard}
   />
@@ -87,11 +87,9 @@
     bind:newPattern
     bind:showPatternManagement
     bind:tempProtectionConfig
-    {cancelProtectionEdit}
     {formatAction}
     {protectionStatus}
     {removeAntiPatternPattern}
-    {saveProtectionConfig}
     {saving}
     {toggleProtection}
     {toggleProtectionCard}
@@ -101,11 +99,8 @@
     {actionOptions}
     bind:expandedProtectionCard
     bind:tempProtectionConfig
-    {cancelProtectionEdit}
     {formatAction}
     {protectionStatus}
-    {saveProtectionConfig}
-    {saving}
     {toggleProtection}
     {toggleProtectionCard}
   />
@@ -114,10 +109,7 @@
     {actionOptions}
     bind:expandedProtectionCard
     bind:tempProtectionConfig
-    {cancelProtectionEdit}
     {protectionStatus}
-    {saveProtectionConfig}
-    {saving}
     {toggleProtection}
     {toggleProtectionCard}
   />
@@ -131,12 +123,10 @@
     bind:selectedIgnoredRoles
     bind:selectedIgnoredUsers
     bind:tempProtectionConfig
-    {cancelProtectionEdit}
     {fetchAllData}
     {protectionStatus}
     {saveHoneypotChannels}
     {saveIgnoredRoles}
-    {saveProtectionConfig}
     {saving}
     {textChannels}
     {toggleProtection}
@@ -146,11 +136,8 @@
   <AntiImageHashCard
     bind:expandedProtectionCard
     bind:tempProtectionConfig
-    {cancelProtectionEdit}
     {fetchAllData}
     {protectionStatus}
-    {saveProtectionConfig}
-    {saving}
     {toggleProtection}
     {toggleProtectionCard}
   />
@@ -158,11 +145,8 @@
   <AntiExternalAppCard
     bind:expandedProtectionCard
     bind:tempProtectionConfig
-    {cancelProtectionEdit}
     {formatAction}
     {protectionStatus}
-    {saveProtectionConfig}
-    {saving}
     {toggleProtection}
     {toggleProtectionCard}
   />

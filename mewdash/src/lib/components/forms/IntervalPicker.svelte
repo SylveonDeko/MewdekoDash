@@ -84,18 +84,11 @@
 
 <div
   class=" rounded-xl border p-6 relative overflow-hidden"
-  style="background: linear-gradient(135deg, var(--color-primary)08, var(--color-secondary)08);
-         border-color: var(--color-primary)20;"
+  style="border-color: var(--color-primary)20;"
   transition:fade
   aria-labelledby="{fieldsetId}-legend"
   role="group"
 >
-  <!-- Background decoration -->
-  <div
-    class="absolute -right-20 -top-20 w-40 h-40 rounded-full blur-3xl opacity-10"
-    style="background: var(--color-primary);"
-  ></div>
-
   <div class="relative space-y-6">
     <!-- Live region for duration updates -->
     <div aria-atomic="true" aria-live="polite" class="sr-only" id="{liveRegionId}">
@@ -112,7 +105,7 @@
         { label: m.widgets.intervalSeconds(), value: seconds, unit: 'seconds', icon: 'fa-hourglass', max: 59 }
       ] as { label, value, unit, icon, max }}
         <div class="group relative">
-          <div class="absolute inset-0 rounded-lg transition-transform group-focus-within:scale-95"
+          <div class="absolute inset-0 rounded-lg "
                style="background: var(--color-primary)10;"></div>
           <div class="relative space-y-1.5">
             <label

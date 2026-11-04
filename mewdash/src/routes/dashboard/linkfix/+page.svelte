@@ -8,6 +8,7 @@
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import SettingToggle from "$lib/components/forms/SettingToggle.svelte";
   import SettingField from "$lib/components/forms/SettingField.svelte";
@@ -21,7 +22,6 @@
   let hosts = $state<Record<string, string>>({});
   let loading = $state(false);
   let error = $state<string | null>(null);
-  let saving = $state(false);
   let notificationMessage = $state("");
   let notificationType = $state<"success" | "error">("success");
 
@@ -30,6 +30,10 @@
     notificationType = type;
     setTimeout(() => (notificationMessage = ""), 4000);
   }
+
+  const autoSave = createAutoSave({
+    onError: () => notify(m.linkfix.errorSave(), "error")
+  });
 
   function apply(next: LinkFixSettings) {
     settings = next;
@@ -50,27 +54,41 @@
     }
   }
 
-  async function update(request: Parameters<typeof linkFixApi.update>[1], announce = false) {
-    if (!$currentGuild?.id) return;
+  async function update(request: Parameters<typeof linkFixApi.update>[1]) {
+    if (!$currentGuild?.id || !settings) return;
+    const previous = settings;
     try {
-      apply(await linkFixApi.update($currentGuild.id, request));
-      if (announce) notify(m.linkfix.notifySaved(), "success");
+      const next = await linkFixApi.update($currentGuild.id, request);
+      settings = next;
     } catch (err) {
-      logger.error("Failed to save link fixing settings", err);
-      notify(err instanceof Error ? err.message : m.linkfix.errorSave(), "error");
+      settings = previous;
+      throw err;
     }
   }
 
-  async function saveHosts() {
-    if (!settings) return;
-    const invalid = settings.platforms.find((p) => hosts[p.name]?.trim() && !HOST_PATTERN.test(hosts[p.name].trim()));
-    if (invalid) {
-      notify(m.linkfix.errorInvalidHost({ site: invalid.displayName }), "error");
+  function hostInvalid(name: string) {
+    const host = hosts[name]?.trim();
+    return !!host && !HOST_PATTERN.test(host);
+  }
+
+  function saveHost(name: string) {
+    if (!settings || hostInvalid(name)) return;
+    const host = hosts[name]?.trim() || null;
+    autoSave.schedule(`host:${name}`, () => update({ platforms: [{ name, host }] }));
+  }
+
+  function finishHost(platform: { name: string; displayName: string }) {
+    if (hostInvalid(platform.name)) {
+      notify(m.linkfix.errorInvalidHost({ site: platform.displayName }), "error");
       return;
     }
-    saving = true;
-    await update({ platforms: settings.platforms.map((p) => ({ name: p.name, host: hosts[p.name]?.trim() || null })) }, true);
-    saving = false;
+    void autoSave.flush(`host:${platform.name}`);
+  }
+
+  function resetHost(platform: { name: string; defaultHost: string }) {
+    hosts[platform.name] = platform.defaultHost;
+    saveHost(platform.name);
+    void autoSave.flush(`host:${platform.name}`);
   }
 
   let loadedFor = $state("");
@@ -103,6 +121,7 @@
   subtitle={m.linkfix.pageSubtitle()}
   icon="fa-link"
   guildName={$currentGuild?.name || "Dashboard"}
+  {autoSave}
   bind:notificationMessage
   {notificationType}
 >
@@ -110,7 +129,7 @@
     {#if settings}
       <div class="space-y-6">
         <Card title={m.features.linkfixName()}>
-          <SettingToggle id="lf-enabled" label={m.linkfix.enabledLabel()} hint={m.linkfix.enabledHint()} checked={settings.enabled} onchange={(v) => update({ enabled: v })} />
+          <SettingToggle id="lf-enabled" label={m.linkfix.enabledLabel()} hint={m.linkfix.enabledHint()} checked={settings.enabled} onchange={(v) => autoSave.now("enabled", () => update({ enabled: v }))} />
         </Card>
 
         <section>
@@ -119,20 +138,17 @@
             {#each settings.platforms as platform (platform.name)}
               <Card title={platform.displayName}>
                 <div class="space-y-4">
-                  <SettingToggle id="lf-{platform.name}" label={platform.displayName} hint={m.linkfix.siteHint({ site: platform.displayName })} checked={platform.enabled} disabled={!settings.enabled} onchange={(v) => update({ platforms: [{ name: platform.name, enabled: v, host: platform.host }] })} />
+                  <SettingToggle id="lf-{platform.name}" label={platform.displayName} hint={m.linkfix.siteHint({ site: platform.displayName })} checked={platform.enabled} disabled={!settings.enabled} onchange={(v) => autoSave.now(`enabled:${platform.name}`, () => update({ platforms: [{ name: platform.name, enabled: v, host: platform.host }] }))} />
                   <SettingField label={m.linkfix.hostLabel()} hint={m.linkfix.hostHint({ host: platform.defaultHost })} id="lf-host-{platform.name}">
                     <div class="flex gap-2">
-                      <input id="lf-host-{platform.name}" type="text" bind:value={hosts[platform.name]} placeholder={platform.defaultHost} class="w-full rounded-lg p-2 min-h-[44px]" style={inputStyle} />
-                      <button type="button" class="px-3 min-h-[44px] rounded-lg text-sm font-medium whitespace-nowrap" style="background: {$colorStore.primary}20; color: {$colorStore.primary};" onclick={() => (hosts[platform.name] = platform.defaultHost)}>{m.linkfix.hostReset()}</button>
+                      <input id="lf-host-{platform.name}" type="text" bind:value={hosts[platform.name]} oninput={() => saveHost(platform.name)} onblur={() => finishHost(platform)} placeholder={platform.defaultHost} class="w-full rounded-lg p-2 min-h-[44px]" style={inputStyle} />
+                      <button type="button" class="px-3 min-h-[44px] rounded-lg text-sm font-medium whitespace-nowrap" style="background: {$colorStore.primary}20; color: {$colorStore.primary};" onclick={() => resetHost(platform)}>{m.linkfix.hostReset()}</button>
                     </div>
                   </SettingField>
                 </div>
               </Card>
             {/each}
           </div>
-          <button type="button" class="mt-4 w-full sm:w-auto px-6 min-h-[48px] rounded-xl font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={saveHosts} disabled={saving}>
-            {saving ? m.common.saving() : m.linkfix.save()}
-          </button>
         </section>
       </div>
     {/if}

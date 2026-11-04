@@ -318,10 +318,10 @@
 
 {#if popup && suggestions.length}
   <Portal>
-    <div class="fixed z-[10000] w-64 py-1 rounded-lg border shadow-2xl backdrop-blur-md overflow-hidden" role="listbox"
+    <div class="fixed z-[10000] w-64 py-1 rounded-lg border overflow-hidden" role="listbox"
          style="left: {popup.x}px; top: {popup.y}px;
-                background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,0,0,0.8)), linear-gradient(135deg, {$colorStore.gradientStart}25, {$colorStore.gradientMid}30, {$colorStore.gradientEnd}25);
-                border-color: {$colorStore.primary}50; box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 0 0 1px {$colorStore.primary}20;">
+                background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background});
+                border-color: {$colorStore.primary}50; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
       {#each suggestions as suggestion, i (suggestion.token)}
         <button type="button" role="option" aria-selected={i === active}
                 class="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-left"

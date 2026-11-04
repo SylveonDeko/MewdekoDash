@@ -12,11 +12,8 @@
     protectionStatus,
     expandedProtectionCard = $bindable(),
     tempProtectionConfig = $bindable(),
-    saving,
     toggleProtection,
     toggleProtectionCard,
-    cancelProtectionEdit,
-    saveProtectionConfig,
     fetchAllData
   } = $props();
 
@@ -225,15 +222,15 @@
   }
 </script>
 
-<div class="rounded-2xl border p-6 shadow-2xl transition-all"
+<div class="rounded-2xl border p-6 transition-all"
      in:fly={{ y: 20, duration: 300, delay: 700 }}
-     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+     style="background: {$colorStore.primary}0c;
             border-color: {$colorStore.primary}30;">
 
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div class="flex items-center gap-4">
       <div class="p-3 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+           style="background: {$colorStore.primary}20;">
         <i class="fa-utility-duo fa-regular fa-image"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
@@ -245,7 +242,7 @@
 
     <div class="flex flex-wrap items-center gap-2">
       <button
-        class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+        class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
         onclick={() => toggleProtection('antiImageHash')}
         style="background: {protectionStatus.antiImageHash.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'};
                color: {protectionStatus.antiImageHash.enabled ? $colorStore.accent : $colorStore.secondary};
@@ -262,7 +259,7 @@
 
       {#if protectionStatus.antiImageHash.enabled}
         <button
-          class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+          class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
           onclick={() => toggleProtectionCard('antiImageHash')}
         >
@@ -325,7 +322,7 @@
         </div>
 
         <button
-          class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px] flex-shrink-0"
+          class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px] flex-shrink-0"
           onclick={togglePreset}
           disabled={togglingPreset}
           style="background: {protectionStatus.antiImageHash.usePresetList ? $colorStore.accent + '20' : $colorStore.secondary + '20'};
@@ -393,7 +390,7 @@
             </span>
 
             <button
-              class="px-3 py-2 rounded-lg transition-all hover:scale-110 min-h-[44px] flex-shrink-0"
+              class="px-3 py-2 rounded-lg transition-all min-h-[44px] flex-shrink-0"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
               aria-label={m.administration.protectionImagehashRemoveBlockedImage()}
               onclick={() => removeHash(entry.id)}
@@ -424,7 +421,7 @@
 
         <div class="flex-1 space-y-2">
           <button
-            class="w-full px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.01] flex items-center justify-center gap-2 min-h-[44px]"
+            class="w-full px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 min-h-[44px]"
             style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
             onclick={() => fileInput?.click()}
             disabled={hashing}
@@ -454,7 +451,7 @@
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
             />
             <button
-              class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+              class="px-4 py-2 rounded-lg font-medium transition-all min-h-[44px]"
               style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={computeHash}
               disabled={hashing || (!pendingUrl.trim() && !pendingBase64)}
@@ -513,14 +510,14 @@
 
           <div class="flex justify-end gap-2">
             <button
-              class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+              class="px-4 py-2 rounded-lg font-medium transition-all min-h-[44px]"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={resetPending}
             >
               {m.common.cancel()}
             </button>
             <button
-              class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+              class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 min-h-[44px]"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
               onclick={blockImage}
               disabled={blocking}
@@ -631,31 +628,7 @@
               </span>
             </span>
           </label>
-        </div>
-
-        <div class="flex justify-end gap-2 pt-4">
-          <button
-            class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
-            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-            onclick={cancelProtectionEdit}
-          >
-            {m.common.cancel()}
-          </button>
-          <button
-            class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
-            style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-            onclick={saveProtectionConfig}
-            disabled={saving}
-          >
-            {#if saving}
-              <i class="fa-solid fa-spinner fa-spin" style="font-size: 14px;"></i>
-            {:else}
-              <i class="fa-solid fa-save" style="font-size: 14px;"></i>
-            {/if}
-            <span>{m.common.save()}</span>
-          </button>
-        </div>
-      </div>
+        </div>      </div>
     {/if}
   {:else}
     <div class="text-center py-8">

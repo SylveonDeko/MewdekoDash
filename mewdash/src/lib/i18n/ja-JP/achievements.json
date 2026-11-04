@@ -432,7 +432,6 @@
   "settings_reveal_hint": "メンバーは、解除前に非公開の実績の名前と目標を見ることができます。",
   "settings_reveal_title": "解除前に表示する",
   "settings_secret_title": "非公開の実績",
-  "settings_unsaved": "保存されていない変更があります。",
   "settings_xp_per_point": "ポイントあたりのXP",
   "settings_xp_per_point_hint": "実績のランクとXPレベルは別々です。設定すると、解除ごとにXPも付与されます。例：ゴールドの解除は50ポイントなので、ここで2を設定すると100 XPになります。0で無効になります。",
   "tab_cards": "カード"

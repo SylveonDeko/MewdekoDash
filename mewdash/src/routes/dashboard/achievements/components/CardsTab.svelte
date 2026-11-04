@@ -279,8 +279,8 @@
   {/key}
 {:else if card}
   <div class="space-y-6" in:fade={{ duration: 200 }}>
-    <div class="rounded-2xl border p-5 md:p-6 shadow-2xl"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+    <div class="rounded-2xl border p-5 md:p-6"
+         style="background: {$colorStore.primary}0c;
                 border-color: {$colorStore.primary}30;">
       <div class="flex flex-col md:flex-row md:items-center gap-4">
         <div class="flex-1 min-w-0">
@@ -292,7 +292,7 @@
             {@html m.achievements.cardsTabIntro({ name: `<strong style="color: ${$colorStore.text}">${escapeHtml(defaultName)}</strong>` })}
           </p>
         </div>
-        <button type="button" class="px-4 h-[44px] rounded-xl text-sm font-medium shrink-0 transition-all hover:scale-[1.02] disabled:opacity-50"
+        <button type="button" class="px-4 h-[44px] rounded-xl text-sm font-medium shrink-0 transition-all disabled:opacity-50"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 disabled={busy} onclick={() => startNew(nextName(), card!.builtIn)}>
           <i class="fa-solid fa-plus mr-2" aria-hidden="true"></i>{m.achievements.cardsTabNewDesign()}
@@ -325,8 +325,8 @@
     </div>
 
     {#if card.designs.length > 0}
-      <div class="rounded-2xl border p-5 md:p-6 shadow-2xl"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="rounded-2xl border p-5 md:p-6"
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <h3 class="flex items-center gap-2 font-semibold mb-1" style="color: {$colorStore.text}">
           <DuoIcon icon="fa-layer-group" />

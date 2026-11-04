@@ -269,7 +269,7 @@
   });
 </script>
 
-<div class=" rounded-xl p-4 md:p-6 transition-all hover:shadow-lg hover:-translate-y-px border"
+<div class=" rounded-xl p-4 md:p-6 transition-all border"
      style="background: {$colorStore.primary}05;
             border-color: {$colorStore.primary}15;"
      in:fly={{ y: 20, duration: 300 }}>
@@ -277,7 +277,7 @@
   <!-- Header -->
   <div class="flex items-center gap-3 mb-4">
     <div class="p-2 rounded-lg"
-         style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+         style="background: {$colorStore.primary}20;">
       <i class="fa-utility-duo fa-regular fa-user-circle text-xl"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
     </div>
@@ -287,7 +287,7 @@
     </div>
     {#if !loading && hasCustomProfile}
       <button
-        class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+        class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all disabled:opacity-50"
         style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
         disabled={saving}
         onclick={() => pendingReset = "all"}>
@@ -353,7 +353,7 @@
           {#if !editingAvatar}
             <div class="flex gap-2">
               <button
-                class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02]"
+                class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                 onclick={() => avatarFileInput?.click()}>
                 <span class="flex items-center gap-1.5">
@@ -363,7 +363,7 @@
                 </span>
               </button>
               <button
-                class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02]"
+                class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                 onclick={() => editingAvatar = true}>
                 <span class="flex items-center gap-1.5">
@@ -374,7 +374,7 @@
               </button>
               {#if profile.avatarUrl}
                 <button
-                  class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+                  class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all disabled:opacity-50"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                   disabled={saving}
                   onclick={() => pendingReset = "avatar"}>
@@ -407,14 +407,14 @@
               style="background: {$colorStore.background}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;" />
             <div class="flex gap-2">
               <button
-                class="flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+                class="flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                 onclick={saveAvatar}
                 disabled={saving || !avatarInput.trim()}>
                 {saving ? m.common.saving() : m.common.save()}
               </button>
               <button
-                class="px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
+                class="px-3 py-1.5 rounded-lg text-sm transition-all"
                 style="background: {$colorStore.primary}10; color: {$colorStore.muted};"
                 onclick={() => cancelEdit('avatar')}>
                 {m.common.cancel()}
@@ -436,7 +436,7 @@
             {#if !editingBanner}
               <div class="flex gap-2">
                 <button
-                  class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02]"
+                  class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                   onclick={() => bannerFileInput?.click()}>
                   <span class="flex items-center gap-1.5">
@@ -446,7 +446,7 @@
                   </span>
                 </button>
                 <button
-                  class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02]"
+                  class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all"
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                   onclick={() => editingBanner = true}>
                   <span class="flex items-center gap-1.5">
@@ -457,7 +457,7 @@
                 </button>
                 {#if profile.bannerUrl}
                   <button
-                    class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+                    class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all disabled:opacity-50"
                     style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                     disabled={saving}
                     onclick={() => pendingReset = "banner"}>
@@ -499,14 +499,14 @@
               style="background: {$colorStore.background}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;" />
             <div class="flex gap-2">
               <button
-                class="flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+                class="flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                 onclick={saveBanner}
                 disabled={saving || !bannerInput.trim()}>
                 {saving ? m.common.saving() : m.common.save()}
               </button>
               <button
-                class="px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
+                class="px-3 py-1.5 rounded-lg text-sm transition-all"
                 style="background: {$colorStore.primary}10; color: {$colorStore.muted};"
                 onclick={() => cancelEdit('banner')}>
                 {m.common.cancel()}
@@ -527,14 +527,14 @@
           {#if !editingBio}
             <div class="flex gap-2">
               <button
-                class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02]"
+                class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                 onclick={() => editingBio = true}>
                 {m.common.edit()}
               </button>
               {#if profile.bio}
                 <button
-                  class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+                  class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all disabled:opacity-50"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                   disabled={saving}
                   onclick={() => pendingReset = "bio"}>
@@ -560,14 +560,14 @@
             ></textarea>
             <div class="flex gap-2">
               <button
-                class="flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+                class="flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                 onclick={saveBio}
                 disabled={saving}>
                 {saving ? m.common.saving() : m.common.save()}
               </button>
               <button
-                class="px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
+                class="px-3 py-1.5 rounded-lg text-sm transition-all"
                 style="background: {$colorStore.primary}10; color: {$colorStore.muted};"
                 onclick={() => cancelEdit('bio')}>
                 {m.common.cancel()}

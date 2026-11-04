@@ -194,11 +194,11 @@
             {m.analytics.tabServersChurnBounced({ count: n(churn.bounced), rate: pct((churn.bounceRate ?? 0) * 100) })}
           </p>
           <div>
-            <p class="text-xs uppercase tracking-wide mb-1" style="color: {$colorStore.muted}">{m.analytics.tabServersJoinsBySize()}</p>
+            <p class="text-xs mb-1" style="color: {$colorStore.muted}">{m.analytics.tabServersJoinsBySize()}</p>
             <BreakdownBar rows={churn.joinsBySize} color={GOOD} max={6} />
           </div>
           <div>
-            <p class="text-xs uppercase tracking-wide mb-1" style="color: {$colorStore.muted}">{m.analytics.tabServersLeavesBySize()}</p>
+            <p class="text-xs mb-1" style="color: {$colorStore.muted}">{m.analytics.tabServersLeavesBySize()}</p>
             <BreakdownBar rows={churn.leavesBySize} color={CRIT} max={6} />
           </div>
         </div>

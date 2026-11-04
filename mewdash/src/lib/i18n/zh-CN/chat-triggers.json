@@ -137,7 +137,6 @@
   "page_announce_auto_delete_disabled": "已禁用自动删除，无法与“对触发消息添加表情回应”同时使用",
   "page_announce_cards_collapsed": "已折叠所有卡片",
   "page_announce_create_failed": "创建触发器失败",
-  "page_announce_created": "触发器创建成功",
   "page_announce_delete_cancelled": "已取消删除",
   "page_announce_delete_failed": "删除触发器失败",
   "page_announce_deleted": "触发器 {name} 已删除",

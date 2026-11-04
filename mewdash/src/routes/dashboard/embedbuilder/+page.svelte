@@ -1646,12 +1646,12 @@
       loading: false
     },
     {
-      label: jsonCopied ? m.embedbuilder.pageActionCopied() : m.embedbuilder.pageActionCopyJson(),
+      label: jsonCopied ? m.common.copied() : m.embedbuilder.pageActionCopyJson(),
       icon: "fa-copy",
       action: copyJson,
       disabled: !canCopyJson,
       loading: false,
-      style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text};`
+      style: `background: ${$colorStore.primary}; color: ${$colorStore.text};`
     }
     ]);
 </script>
@@ -1678,8 +1678,8 @@
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full w-full">
     <!-- Editor Side -->
     <section
-      class="rounded-2xl border shadow-2xl min-w-0"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      class="rounded-2xl border min-w-0"
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
     >
       <div class="p-4 sm:p-6 lg:min-h-[600px]">
@@ -1700,7 +1700,7 @@
             <div class="text-center pt-6 border-t" style="border-color: {$colorStore.primary}20;">
               <button
                 aria-label={m.embedbuilder.pageStartFromScratch()}
-                class="px-6 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2 mx-auto"
+                class="px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 mx-auto"
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.primary};
                        border: 1px solid {$colorStore.primary}30;"
@@ -1750,7 +1750,7 @@
                 </h3>
                 <button
                   aria-label={m.embedbuilder.fullscreenAddEmbed()}
-                  class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2 disabled:opacity-50"
+                  class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 disabled:opacity-50"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   disabled={embeds.length >= 10}
                   onclick={addEmbed}
@@ -1789,7 +1789,7 @@
 
               <button
                 aria-label={m.embedbuilder.fullscreenAddRow()}
-                class="px-2 sm:px-4 py-1 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-base font-medium transition-all hover:scale-[1.02] flex items-center gap-1 sm:gap-2 disabled:opacity-50"
+                class="px-2 sm:px-4 py-1 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2 disabled:opacity-50"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 disabled={componentRows.length >= 5 || getTotalComponentCount() >= 25}
                 onclick={addRow}
@@ -1882,7 +1882,7 @@
                       <div class="flex gap-1 sm:gap-2">
                         <button
                           aria-label={m.embedbuilder.pageRowDuplicateAria()}
-                          class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all hover:scale-[1.02] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                          class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                           disabled={row.components.length === 0}
                           onclick={(e) => {
@@ -1895,7 +1895,7 @@
                         </button>
                         <button
                           aria-label={m.embedbuilder.pageRowRemoveAria()}
-                          class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all hover:scale-[1.02] font-medium"
+                          class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all font-medium"
                           style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                           onclick={(e) => {
                             e.stopPropagation();
@@ -1917,7 +1917,7 @@
                         <div class="flex gap-1 sm:gap-2 justify-center">
                           <button
                             aria-label={m.common.addButton()}
-                            class="px-2 sm:px-3 py-1 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-1 sm:gap-2"
+                            class="px-2 sm:px-3 py-1 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center gap-1 sm:gap-2"
                             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                             onclick={(e) => {
                               e.stopPropagation();
@@ -1929,7 +1929,7 @@
                           </button>
                           <button
                             aria-label={m.embedbuilder.fullscreenAddSelect()}
-                            class="px-2 sm:px-3 py-1 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-1 sm:gap-2"
+                            class="px-2 sm:px-3 py-1 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center gap-1 sm:gap-2"
                             style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                             onclick={(e) => {
                               e.stopPropagation();
@@ -1967,7 +1967,7 @@
                                style="border-color: {$colorStore.secondary}20;">
                             <button
                               aria-label={m.common.cancel()}
-                              class="px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-base rounded-md sm:rounded-lg font-medium transition-all hover:scale-[1.02]"
+                              class="px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-base rounded-md sm:rounded-lg font-medium transition-all"
                               style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                               onclick={(e) => {
                                 e.stopPropagation();
@@ -1978,7 +1978,7 @@
                             </button>
                             <button
                               aria-label={m.common.done()}
-                              class="px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-base rounded-md sm:rounded-lg font-medium transition-all hover:scale-[1.02]"
+                              class="px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-base rounded-md sm:rounded-lg font-medium transition-all"
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                               onclick={(e) => {
                                 e.stopPropagation();
@@ -2062,7 +2062,7 @@
                              style="border-color: {$colorStore.primary}20;">
                           <button
                             aria-label={m.embedbuilder.pageRowAddButtonAria()}
-                            class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium transition-all hover:scale-[1.02] flex items-center gap-1"
+                            class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium transition-all flex items-center gap-1"
                             style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}25;"
                             onclick={(e) => {
                               e.stopPropagation();
@@ -2102,7 +2102,7 @@
               <div class="flex gap-2">
                 <button
                   aria-label={m.embedbuilder.pageJsonRefreshAria()}
-                  class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+                  class="px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   onclick={refreshJsonPreview}
                 >
@@ -2111,7 +2111,7 @@
                 </button>
                 <button
                   aria-label={m.embedbuilder.pageJsonApplyAria()}
-                  class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+                  class="px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   onclick={applyJsonText}
                 >
@@ -2158,7 +2158,7 @@
                 />
                 <button
                   aria-label={m.common.saveEmbed()}
-                  class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
+                  class="px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   disabled={savingEmbed || !saveEmbedName.trim()}
                   onclick={saveCurrentEmbed}
@@ -2197,7 +2197,7 @@
                       <div class="flex gap-2 shrink-0">
                         <button
                           aria-label={m.embedbuilder.pageSavedLoadAria()}
-                          class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                          class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                           onclick={() => loadSavedEmbed(saved)}
                         >
@@ -2205,7 +2205,7 @@
                         </button>
                         <button
                           aria-label={m.embedbuilder.pageSavedDeleteAria()}
-                          class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                          class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
                           style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                           onclick={() => requestDeleteSavedEmbed(saved)}
                         >
@@ -2241,7 +2241,7 @@
                     <div class="flex gap-2 shrink-0">
                       <button
                         aria-label={m.embedbuilder.pageSavedLoadAria()}
-                        class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                        class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                         onclick={() => loadSavedEmbed(saved)}
                       >
@@ -2249,7 +2249,7 @@
                       </button>
                       <button
                         aria-label={m.embedbuilder.pageSavedDeleteAria()}
-                        class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                        class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
                         style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                         onclick={() => requestDeleteSavedEmbed(saved)}
                       >
@@ -2443,7 +2443,7 @@
               <!-- Send button -->
               <button
                 aria-label={m.embedbuilder.pageSendButton()}
-                class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
+                class="w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 disabled={sending || !selectedSendChannelId || !canCopyJson || !!embedPermissionBlock || validationErrors.length > 0}
                 onclick={() => (showSendConfirm = true)}
@@ -2504,8 +2504,8 @@
 
     <!-- Preview Side -->
     <section
-      class="rounded-2xl border shadow-2xl lg:sticky lg:top-4 self-start min-w-0"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      class="rounded-2xl border lg:sticky lg:top-4 self-start min-w-0"
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
     >
       <div class="p-4">

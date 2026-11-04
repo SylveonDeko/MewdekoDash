@@ -511,14 +511,13 @@
   <title>{m.me.mySettingsMewdeko()}</title>
 </svelte:head>
 
-<div class="min-h-screen p-4 md:p-6"
-     style="background: radial-gradient(circle at top, {$colorStore.gradientStart}15 0%, {$colorStore.gradientMid}10 50%, {$colorStore.gradientEnd}05 100%);">
+<div class="min-h-screen p-4 md:p-6">
 
   <!-- Header -->
   <div class="max-w-6xl mx-auto">
     <div class="flex items-center gap-4 mb-8">
       <div class="p-4 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+           style="background: {$colorStore.primary}15;">
         <i class="fa-utility-duo fa-regular fa-user text-3xl"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
       </div>
@@ -535,9 +534,8 @@
     <div class="space-y-6 mb-12">
       <!-- Personal Information -->
       <div class="rounded-2xl p-6 border "
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                  border-color: {$colorStore.primary}30;
-                  box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+           style="background: {$colorStore.primary}0c;
+                  border-color: {$colorStore.primary}30;">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-xl font-bold flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-utility-duo fa-regular fa-user text-xl"
@@ -546,7 +544,7 @@
           </h2>
           {#if !editingProfile}
             <button
-              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] border"
+              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all border"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
               onclick={() => editingProfile = true}
             >
@@ -706,9 +704,8 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Privacy Settings -->
         <div class="rounded-2xl p-6 border "
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                    border-color: {$colorStore.primary}30;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+             style="background: {$colorStore.primary}0c;
+                    border-color: {$colorStore.primary}30;">
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-utility-duo fa-regular fa-shield text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
@@ -792,9 +789,8 @@
 
         <!-- Preferences -->
         <div class="rounded-2xl p-6 border "
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                    border-color: {$colorStore.primary}30;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+             style="background: {$colorStore.primary}0c;
+                    border-color: {$colorStore.primary}30;">
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-utility-duo fa-regular fa-gear text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
@@ -906,7 +902,7 @@
                     <div class="text-xs" style="color: {$colorStore.muted}">{m.me.seeSetupGuidesAgainFor()}</div>
                   </div>
                   <button
-                    class="px-3 py-1.5 rounded-lg text-sm border transition-all hover:scale-[1.02]"
+                    class="px-3 py-1.5 rounded-lg text-sm border transition-all"
                     style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;"
                     onclick={resetWizard}
                     disabled={saving}
@@ -921,9 +917,8 @@
 
         <!-- Last.fm Integration -->
         <div class="md:col-span-2 rounded-2xl p-6 border"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                    border-color: {$colorStore.primary}30;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+             style="background: {$colorStore.primary}0c;
+                    border-color: {$colorStore.primary}30;">
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-brands fa-lastfm text-xl" style="color: #d51007;"></i>
             {m.me.lastFmScrobbling()}
@@ -941,7 +936,7 @@
               </div>
               <div class="flex gap-2 w-full sm:w-auto">
                 <button
-                  class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm border transition-all hover:scale-[1.02]"
+                  class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm border transition-all"
                   style="background: {lastFmStatus?.scrobblingEnabled ? $colorStore.accent : $colorStore.primary}20;
                          color: {lastFmStatus?.scrobblingEnabled ? $colorStore.accent : $colorStore.primary};
                          border-color: {lastFmStatus?.scrobblingEnabled ? $colorStore.accent : $colorStore.primary}30;"
@@ -962,7 +957,7 @@
                   {lastFmStatus?.scrobblingEnabled ? m.common.disable() : m.common.enable()}
                 </button>
                 <button
-                  class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm border transition-all hover:scale-[1.02]"
+                  class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm border transition-all"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;"
                   onclick={async () => {
                     if (await requestConfirmation({ message: m.me.lastfmUnlinkConfirm(), confirmText: m.common.unlink() })) {
@@ -990,7 +985,7 @@
                 {m.me.linkYourLastFmAccount()}
               </p>
               <button
-                class="w-full sm:w-auto px-4 py-2 rounded-lg transition-all hover:scale-[1.02]"
+                class="w-full sm:w-auto px-4 py-2 rounded-lg transition-all"
                 style="background: #d51007; color: white;"
                 onclick={async () => {
                   try {
@@ -1017,9 +1012,8 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Recent Tracks -->
         <div class="rounded-2xl p-6 border"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                        border-color: {$colorStore.primary}30;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+             style="background: {$colorStore.primary}0c;
+                        border-color: {$colorStore.primary}30;">
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-utility-duo fa-regular fa-music text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
@@ -1054,7 +1048,7 @@
                     </div>
                     {#if track.isNowPlaying}
                       <div class="text-xs flex items-center gap-1" style="color: #10b981;">
-                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
                         {m.common.nowPlaying()}
                       </div>
                     {/if}
@@ -1071,9 +1065,8 @@
 
         <!-- Top Artists -->
         <div class="rounded-2xl p-6 border"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                        border-color: {$colorStore.primary}30;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+             style="background: {$colorStore.primary}0c;
+                        border-color: {$colorStore.primary}30;">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-bold flex items-center gap-2" style="color: {$colorStore.text}">
               <i class="fa-utility-duo fa-regular fa-headphones text-xl"
@@ -1129,9 +1122,8 @@
 
         <!-- Last.fm Profile Stats -->
         <div class="rounded-2xl p-6 border md:col-span-2"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                        border-color: {$colorStore.primary}30;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+             style="background: {$colorStore.primary}0c;
+                        border-color: {$colorStore.primary}30;">
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-utility-duo fa-regular fa-star text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
@@ -1183,7 +1175,7 @@
     <div class="border-t pt-8" style="border-color: {$colorStore.primary}20;">
       <div class="flex items-center gap-3 mb-6">
         <div class="p-3 rounded-xl"
-             style="background: linear-gradient(135deg, {$colorStore.secondary}20, {$colorStore.accent}20);">
+             style="background: {$colorStore.secondary}15;">
           <i class="fa-utility-duo fa-regular fa-server text-2xl"
              style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
         </div>
@@ -1196,7 +1188,7 @@
       {#if !selectedGuild}
         <!-- Server Selection -->
         <div class="text-center p-8 rounded-2xl border"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
           <i class="fa-utility-duo fa-regular fa-server text-6xl mx-auto mb-4 block"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
@@ -1208,7 +1200,7 @@
           {#if availableGuilds.length > 0}
               <div class="relative max-w-md mx-auto" use:clickOutside onclickoutside={() => showGuildDropdown = false}>
               <button
-                class="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
+                class="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all"
                 style="background: {$colorStore.primary}; color: white;"
                 onclick={() => showGuildDropdown = !showGuildDropdown}
               >
@@ -1218,8 +1210,8 @@
               </button>
 
               {#if showGuildDropdown}
-                <div class="absolute bottom-full mb-2 w-full rounded-xl shadow-2xl border z-50"
-                     style="background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(0,0,0,0.9)); border-color: {$colorStore.primary}30;"
+                <div class="absolute bottom-full mb-2 w-full rounded-xl shadow-lg border z-50"
+                     style="background: rgba(0,0,0,0.95); border-color: {$colorStore.primary}30;"
                      in:fade={{ duration: 200 }}>
                   
                   <!-- Search -->
@@ -1270,9 +1262,8 @@
       {:else}
         <!-- Selected Server Header (Improved) -->
         <div class="mb-8 p-6 rounded-2xl border "
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                    border-color: {$colorStore.primary}40;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+             style="background: {$colorStore.primary}0c;
+                    border-color: {$colorStore.primary}40;">
           <div class="flex flex-col sm:flex-row items-center gap-4">
             <div class="flex items-center gap-4 flex-1">
               <img
@@ -1295,7 +1286,7 @@
             
             <div class="flex gap-3">
               <button
-                class="px-6 py-3 rounded-xl font-medium border transition-all hover:scale-[1.02] flex items-center gap-2"
+                class="px-6 py-3 rounded-xl font-medium border transition-all flex items-center gap-2"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border-color: {$colorStore.secondary}40;"
                 onclick={changeServer}
               >
@@ -1306,7 +1297,7 @@
               <!-- Guild Wizard Reset (only for admins with completed/skipped wizard) -->
               {#if selectedGuild.hasAdminAccess && (guildConfig?.wizardCompleted || guildConfig?.wizardSkipped)}
                 <button
-                  class="px-4 py-3 rounded-xl font-medium border transition-all hover:scale-[1.02] flex items-center gap-2"
+                  class="px-4 py-3 rounded-xl font-medium border transition-all flex items-center gap-2"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;"
                   onclick={resetGuildWizard}
                   disabled={saving}
@@ -1366,9 +1357,8 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Highlights -->
             <div class="rounded-2xl p-6 border "
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                        border-color: {$colorStore.primary}30;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+                 style="background: {$colorStore.primary}0c;
+                        border-color: {$colorStore.primary}30;">
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-lightbulb text-xl"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
@@ -1386,7 +1376,7 @@
                   onkeydown={(e) => e.key === 'Enter' && addHighlight()}
                 >
                 <button aria-label={m.common.add()}
-                        class="px-4 py-2 rounded-lg transition-all hover:scale-[1.02]"
+                        class="px-4 py-2 rounded-lg transition-all"
                   style="background: {$colorStore.primary}; color: white;"
                   onclick={addHighlight}
                   disabled={!newHighlightWord.trim()}
@@ -1402,7 +1392,7 @@
                        style="background: {$colorStore.primary}08;">
                     <span class="text-sm" style="color: {$colorStore.text}">{highlight.word}</span>
                     <button aria-label={m.common.delete()}
-                            class="p-1 rounded-sm transition-all hover:scale-110"
+                            class="p-1 rounded-sm transition-all"
                       style="color: {$colorStore.accent};"
                       onclick={() => removeHighlight(highlight.id)}
                     >
@@ -1419,9 +1409,8 @@
 
             <!-- Suggestions Activity -->
             <div class="rounded-2xl p-6 border "
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                        border-color: {$colorStore.primary}30;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+                 style="background: {$colorStore.primary}0c;
+                        border-color: {$colorStore.primary}30;">
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-list-numeric text-xl"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
@@ -1464,9 +1453,8 @@
 
             <!-- Currency & Transactions -->
             <div class="rounded-2xl p-6 border "
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                        border-color: {$colorStore.primary}30;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+                 style="background: {$colorStore.primary}0c;
+                        border-color: {$colorStore.primary}30;">
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-star text-xl"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
@@ -1497,9 +1485,8 @@
 
             <!-- AFK Status Management -->
             <div class="rounded-2xl p-6 border "
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                        border-color: {$colorStore.primary}30;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+                 style="background: {$colorStore.primary}0c;
+                        border-color: {$colorStore.primary}30;">
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-clock text-xl"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
@@ -1510,7 +1497,7 @@
                 <div class="p-3 rounded-lg mb-4 border"
                      style="background: {$colorStore.accent}15; border-color: {$colorStore.accent}30;">
                   <div class="flex items-center gap-2 mb-2">
-                    <div class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
+                    <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
                     <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.currentlyAfk()}</span>
                   </div>
                   {#if serverData.afkStatus.message}
@@ -1559,9 +1546,8 @@
 
             <!-- Activity Summary -->
             <div class="rounded-2xl p-6 border "
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                        border-color: {$colorStore.primary}30;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+                 style="background: {$colorStore.primary}0c;
+                        border-color: {$colorStore.primary}30;">
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-bell text-xl"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>

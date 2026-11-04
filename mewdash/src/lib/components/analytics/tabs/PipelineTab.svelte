@@ -112,7 +112,7 @@
 
   {#if health?.lastError}
     <div class="rounded-xl border p-3 text-xs font-mono whitespace-pre-wrap break-words" style="border-color: #f8717140; background: #f8717112; color: {$colorStore.text}">
-      <p class="uppercase tracking-wide mb-1" style="color: #f87171">{m.analytics.tabPipelineLastFlushError()}</p>
+      <p class="mb-1" style="color: #f87171">{m.analytics.tabPipelineLastFlushError()}</p>
       {health.lastError}
     </div>
   {/if}

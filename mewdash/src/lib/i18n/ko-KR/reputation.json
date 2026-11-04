@@ -21,8 +21,6 @@
   "min_server_time_label": "최소 서버 체류 시간 (시간)",
   "notification_channel_label": "알림 채널 (선택 사항)",
   "notification_channel_placeholder": "알림 없음",
-  "notify_reward_added": "역할 보상을 추가했어요!",
-  "notify_reward_removed": "역할 보상을 삭제했어요!",
   "page_subtitle": "서버의 평판과 보상을 관리해요",
   "page_title": "평판 시스템",
   "remove_on_drop_label": "평판이 기준값 아래로 떨어지면 역할 제거",

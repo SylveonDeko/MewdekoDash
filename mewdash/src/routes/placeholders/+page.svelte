@@ -469,17 +469,12 @@
            --color-secondary: {$colorStore.secondary};
            --color-accent: {$colorStore.accent};
            --color-text: {$colorStore.text};
-           --color-muted: {$colorStore.muted};
-           background: radial-gradient(circle at center,
-             {$colorStore.gradientStart}15 0%,
-             {$colorStore.gradientEnd}10 50%,
-             {$colorStore.gradientEnd}05 100%
-           );"
+           --color-muted: {$colorStore.muted};"
     in:fade
   >
     <!-- Header Section -->
-    <div class="py-4 border-b shadow-lg"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%); border-color: {$colorStore.primary}30;">
+    <div class="py-4 border-b"
+         style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
       <div class="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
@@ -544,7 +539,7 @@
       <!-- Introduction -->
       <div class="max-w-4xl mx-auto mb-12">
         <div class="rounded-2xl p-6 "
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
+             style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}20;">
           <div class="grid md:grid-cols-3 gap-6">
             <div class="text-center">
               <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
@@ -577,7 +572,7 @@
       <!-- Important Note -->
       <div class="max-w-4xl mx-auto mb-8">
         <div class="rounded-xl p-4 "
-             style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30); border: 1px solid {$colorStore.accent}40;">
+             style="background: {$colorStore.accent}20; border: 1px solid {$colorStore.accent}40;">
           <div class="flex items-start gap-3">
             <div class="shrink-0">
               <i class="fa-solid fa-triangle-exclamation text-2xl" style="color: {$colorStore.accent};"></i>
@@ -605,7 +600,7 @@
               {m.placeholders.pageNoResults({ query: searchQuery })}
             </p>
             <button
-              class="px-4 py-2 rounded-xl transition-all hover:scale-[1.02]"
+              class="px-4 py-2 rounded-xl transition-all"
               style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
               onclick={() => { searchQuery = ''; selectedCategory = 'all'; }}
             >
@@ -629,8 +624,8 @@
                   <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {#each category.placeholders as placeholder, placeholderIndex}
                       <div
-                        class="placeholder-card group rounded-xl p-4  transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
-                        style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12); border: 1px solid {$colorStore.primary}20;"
+                        class="placeholder-card group rounded-xl p-4 transition-all duration-300 cursor-pointer"
+                        style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}20;"
                         in:fly={{ y: 10, duration: 200, delay: placeholderIndex * 50 }}
                         onclick={() => copyToClipboard(placeholder.code)}
                         tabindex="0"
@@ -645,13 +640,13 @@
                       >
                         <div class="flex items-start justify-between mb-3">
                           <code
-                            class="text-sm font-mono px-3 py-2 rounded-lg flex-1 mr-3 transition-all duration-300 group-hover:scale-[1.02]"
+                            class="text-sm font-mono px-3 py-2 rounded-lg flex-1 mr-3"
                             style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}25;"
                           >
                             {placeholder.code}
                           </code>
                           <button
-                                  class="shrink-0 p-2 rounded-lg transition-all duration-300 hover:scale-110 active:scale-95"
+                                  class="shrink-0 p-2 rounded-lg transition-all duration-300"
                             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;"
                                   onclick={(e) => { e.stopPropagation(); copyToClipboard(placeholder.code); }}
                             aria-label={m.common.copyToClipboard()}
@@ -685,31 +680,9 @@
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .placeholder-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
-
     .placeholder-card:focus {
         outline: 2px solid var(--color-accent);
         outline-offset: 2px;
-    }
-
-    /* Copy feedback animation */
-    @keyframes copy-success {
-        0% {
-            transform: scale(1);
-        }
-        50% {
-            transform: scale(1.1);
-        }
-        100% {
-            transform: scale(1);
-        }
-    }
-
-    .placeholder-card:active {
-        animation: copy-success 0.2s ease-in-out;
     }
 
     /* Category section animations */

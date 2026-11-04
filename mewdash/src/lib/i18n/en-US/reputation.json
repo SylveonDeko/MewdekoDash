@@ -21,8 +21,6 @@
   "min_server_time_label": "Min Server Time (hours)",
   "notification_channel_label": "Notification Channel (optional)",
   "notification_channel_placeholder": "No notifications",
-  "notify_reward_added": "Role reward added successfully!",
-  "notify_reward_removed": "Role reward removed!",
   "page_subtitle": "Manage server reputation and rewards",
   "page_title": "Reputation System",
   "remove_on_drop_label": "Remove role if rep drops below threshold",

@@ -40,7 +40,7 @@ Shows when enabling one feature would benefit from enabling another
 {#if suggestions.length > 0}
   <div
     class="rounded-xl border-2 overflow-hidden"
-    style="background: linear-gradient(135deg, {$colorStore.accent}08, {$colorStore.secondary}08);
+    style="background: {$colorStore.accent}0c;
            border-color: {$colorStore.accent}30;"
   >
     <!-- Header -->
@@ -114,7 +114,7 @@ Shows when enabling one feature would benefit from enabling another
               <!-- Actions -->
               <div class="flex items-center gap-2">
                 <button
-                  class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                  class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                   onclick={() => acceptSuggestion(suggestion.feature)}
                 >

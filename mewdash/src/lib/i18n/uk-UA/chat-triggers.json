@@ -139,7 +139,6 @@
   "page_announce_auto_delete_disabled": "Автовидалення вимкнено — не можна використовувати з реакцією на тригер",
   "page_announce_cards_collapsed": "Усі картки згорнуто",
   "page_announce_create_failed": "Не вдалося створити тригер",
-  "page_announce_created": "Тригер успішно створено",
   "page_announce_delete_cancelled": "Видалення скасовано",
   "page_announce_delete_failed": "Не вдалося видалити тригер",
   "page_announce_deleted": "Тригер {name} видалено",

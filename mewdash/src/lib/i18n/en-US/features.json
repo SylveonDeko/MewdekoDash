@@ -323,7 +323,7 @@
   "wizard_rolegreets_benefit_2": "Celebrate staff promotions",
   "wizard_rolegreets_benefit_3": "Reduce spam from unverified users",
   "wizard_rolegreets_benefit_4": "Announce achievement roles",
-  "wizard_rolegreets_description": "Greet members when they get roles (perfect for verification)",
+  "wizard_rolegreets_description": "Greet members when they get roles (useful for verification)",
   "wizard_rolegreets_name": "Role Messages",
   "wizard_rolegreets_step_channel_description": "Where should the message be sent?",
   "wizard_rolegreets_step_channel_title": "Choose Channel",

@@ -523,7 +523,7 @@
 
 <main
   class="min-h-screen py-8 px-4"
-  style="background: linear-gradient(135deg, {$colorStore.primary}08 0%, {$colorStore.secondary}05 100%);"
+  style="background: {$colorStore.primary}08;"
 >
   <div class="container mx-auto max-w-5xl">
     {#if loading}
@@ -551,7 +551,7 @@
         <p class="text-lg mb-6" style="color: {$colorStore.text};">{error}</p>
         <button
           onclick={() => goto("/dashboard")}
-          class="px-6 py-3 rounded-lg font-medium transition-all hover:scale-[1.02]"
+          class="px-6 py-3 rounded-lg font-medium transition-all"
           style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
         >
           {m.common.returnToDashboard()}
@@ -569,7 +569,7 @@
             <div class="flex items-center gap-3">
               <div
                 class="p-3 rounded-xl"
-                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);"
+                style="background: {$colorStore.primary}20;"
               >
                 <i class="fa-solid fa-file-lines" style="color: {$colorStore.primary}; font-size: 24px;"></i>
               </div>
@@ -586,7 +586,7 @@
             <div class="flex gap-2">
               <button
                 class="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 min-h-[44px]"
-                style="background: linear-gradient(to right, {$colorStore.primary}30, {$colorStore.secondary}30);
+                style="background: {$colorStore.primary}30;
                       color: {$colorStore.text};"
                 onclick={exportAsHTML}
               >
@@ -599,8 +599,8 @@
 
         <!-- Messages -->
         <div
-          class="rounded-2xl border p-6 shadow-2xl"
-          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+          class="rounded-2xl border p-6"
+          style="background: {$colorStore.primary}0c;
                 border-color: {$colorStore.primary}30;"
         >
           {#each messagesByDate() as [date, messagesOnDate]}

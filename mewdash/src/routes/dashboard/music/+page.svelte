@@ -633,15 +633,15 @@
         <!-- Current Playback Section -->
         {#if musicStatus?.currentTrack}
           <div
-            class=" rounded-2xl border p-6 shadow-2xl transition-all"
-            style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+            class="rounded-2xl border p-6 transition-all"
+            style="background: {colors.primary}0c;
                    border-color: {colors.primary}30;"
             transition:fade
           >
             <div class="flex items-center gap-3 mb-6">
               <div
                 class="p-3 rounded-xl"
-                style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
+                style="background: {colors.primary}20;
                        color: {colors.primary};"
               >
                 <i class="fa-utility-duo fa-regular fa-music" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
@@ -673,7 +673,7 @@
             <!-- Queue tools -->
             <div class="flex flex-wrap items-center gap-2 mt-5 pt-5 border-t" style="border-color: {colors.primary}20;">
               <button
-                class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] disabled:opacity-50"
                 style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
                 disabled={queueBusy || musicStatus.queue.length < 2}
                 onclick={shuffleQueue}
@@ -682,7 +682,7 @@
                 {m.music.queueShuffle()}
               </button>
               <button
-                class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] disabled:opacity-50"
                 style="background: {colors.accent}20; color: {colors.accent}; border: 1px solid {colors.accent}30;"
                 disabled={queueBusy || musicStatus.queue.length === 0}
                 onclick={clearQueue}
@@ -694,7 +694,7 @@
                 <span class="text-xs mr-1" style="color: {colors.muted}">{m.common.repeat()}</span>
                 {#each liveRepeatModes as mode}
                   <button
-                    class="px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[36px]"
+                    class="px-3 py-2 rounded-lg text-xs font-medium transition-all min-h-[36px]"
                     style="background: {(musicStatus.repeatMode ?? settings.playerRepeat) === mode.value ? colors.primary + '30' : colors.primary + '08'}; color: {(musicStatus.repeatMode ?? settings.playerRepeat) === mode.value ? colors.primary : colors.muted}; border: 1px solid {(musicStatus.repeatMode ?? settings.playerRepeat) === mode.value ? colors.primary + '40' : 'transparent'};"
                     onclick={() => setLiveRepeat(mode.id, mode.value)}
                     aria-pressed={(musicStatus.repeatMode ?? settings.playerRepeat) === mode.value}
@@ -716,7 +716,7 @@
                 {#each audioFilters as filter}
                   {@const active = isFilterActive(filter.key)}
                   <button
-                    class="px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[36px] disabled:opacity-50"
+                    class="px-3 py-2 rounded-lg text-xs font-medium transition-all min-h-[36px] disabled:opacity-50"
                     style="background: {active ? colors.secondary + '30' : colors.primary + '08'}; color: {active ? colors.secondary : colors.muted}; border: 1px solid {active ? colors.secondary + '40' : 'transparent'};"
                     disabled={queueBusy}
                     onclick={() => toggleAudioFilter(filter.key, !active)}
@@ -733,14 +733,14 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <!-- General Settings -->
           <div
-            class=" rounded-2xl border p-6 shadow-2xl transition-all"
-            style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+            class="rounded-2xl border p-6 transition-all"
+            style="background: {colors.primary}0c;
                    border-color: {colors.primary}30;"
           >
             <div class="flex items-center gap-3 mb-6">
               <div
                 class="p-3 rounded-xl"
-                style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
+                style="background: {colors.primary}20;
                        color: {colors.primary};"
               >
                 <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
@@ -830,14 +830,14 @@
 
           <!-- Advanced Settings -->
           <div
-            class=" rounded-2xl border p-6 shadow-2xl transition-all"
-            style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+            class="rounded-2xl border p-6 transition-all"
+            style="background: {colors.primary}0c;
                    border-color: {colors.primary}30;"
           >
             <div class="flex items-center gap-3 mb-6">
               <div
                 class="p-3 rounded-xl"
-                style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
+                style="background: {colors.primary}20;
                        color: {colors.secondary};"
               >
                 <i class="fa-utility-duo fa-regular fa-sliders" style="--fa-primary-color: {colors.secondary}; --fa-secondary-color: {colors.primary}; font-size: 24px;"></i>
@@ -941,15 +941,15 @@
 
         <!-- Music Link Conversion Channels -->
         <div
-          class="rounded-2xl border p-6 shadow-2xl transition-all mt-8"
-          style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+          class="rounded-2xl border p-6 transition-all mt-8"
+          style="background: {colors.primary}0c;
                  border-color: {colors.primary}30;"
         >
           <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-3">
               <div
                 class="p-3 rounded-xl"
-                style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
+                style="background: {colors.primary}20;
                        color: {colors.primary};"
               >
                 <i class="fa-utility-duo fa-regular fa-link" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
@@ -1028,14 +1028,14 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <!-- Guild-wide TTS Settings -->
           <div
-            class="rounded-2xl border p-6 shadow-2xl transition-all"
-            style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+            class="rounded-2xl border p-6 transition-all"
+            style="background: {colors.primary}0c;
                    border-color: {colors.primary}30;"
           >
             <div class="flex items-center gap-3 mb-6">
               <div
                 class="p-3 rounded-xl"
-                style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
+                style="background: {colors.primary}20;
                        color: {colors.primary};"
               >
                 <i class="fa-utility-duo fa-regular fa-microphone" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
@@ -1143,14 +1143,14 @@
 
           <!-- TTS Behavior Toggles -->
           <div
-            class="rounded-2xl border p-6 shadow-2xl transition-all"
-            style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+            class="rounded-2xl border p-6 transition-all"
+            style="background: {colors.primary}0c;
                    border-color: {colors.primary}30;"
           >
             <div class="flex items-center gap-3 mb-6">
               <div
                 class="p-3 rounded-xl"
-                style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
+                style="background: {colors.primary}20;
                        color: {colors.secondary};"
               >
                 <i class="fa-utility-duo fa-regular fa-sliders" style="--fa-primary-color: {colors.secondary}; --fa-secondary-color: {colors.primary}; font-size: 24px;"></i>
@@ -1222,7 +1222,7 @@
               <div class="flex items-center gap-3 mb-4">
                 <div
                   class="p-2 rounded-lg"
-                  style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);"
+                  style="background: {colors.primary}20;"
                 >
                   <i class="fa-solid fa-magnifying-glass" style="color: {colors.primary}; font-size: 16px;"></i>
                 </div>
@@ -1271,15 +1271,15 @@
 
         <!-- Voice Channel TTS Settings -->
         <div
-          class="rounded-2xl border p-6 shadow-2xl transition-all mt-8"
-          style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+          class="rounded-2xl border p-6 transition-all mt-8"
+          style="background: {colors.primary}0c;
                  border-color: {colors.primary}30;"
         >
           <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-3">
               <div
                 class="p-3 rounded-xl"
-                style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
+                style="background: {colors.primary}20;
                        color: {colors.primary};"
               >
                 <i class="fa-utility-duo fa-regular fa-headphones" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
@@ -1458,14 +1458,14 @@
 
         <!-- Blocked Users -->
         <div
-          class="rounded-2xl border p-6 shadow-2xl transition-all mt-8"
-          style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+          class="rounded-2xl border p-6 transition-all mt-8"
+          style="background: {colors.primary}0c;
                  border-color: {colors.primary}30;"
         >
           <div class="flex items-center gap-3 mb-6">
             <div
               class="p-3 rounded-xl"
-              style="background: linear-gradient(135deg, {colors.accent}20, {colors.primary}20);
+              style="background: {colors.accent}20;
                      color: {colors.accent};"
             >
               <i class="fa-utility-duo fa-regular fa-user-xmark" style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary}; font-size: 24px;"></i>

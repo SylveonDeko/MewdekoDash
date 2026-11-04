@@ -219,7 +219,7 @@
         <!-- Done/Close Button -->
         <button
           aria-label={m.common.doneEditing()}
-          class="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all hover:scale-[1.02] font-medium"
+          class="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all font-medium"
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
           onclick={() => onedit?.({ component })}
         >
@@ -230,7 +230,7 @@
         <!-- Duplicate Button -->
         <button
           aria-label={m.embedbuilder.componentsDuplicateComponent()}
-          class="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all hover:scale-[1.02] font-medium"
+          class="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all font-medium"
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
           onclick={() => onduplicate?.({ componentKey: component.componentKey })}
         >
@@ -241,7 +241,7 @@
         <!-- Delete Button -->
         <button
           aria-label={m.embedbuilder.componentsDeleteComponent()}
-          class="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all hover:scale-[1.02] font-medium"
+          class="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all font-medium"
           style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
           onclick={() => onremove?.({ componentKey: component.componentKey })}
         >
@@ -429,7 +429,7 @@
             </label>
             <button
               aria-label={m.common.addOption()}
-              class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-1 disabled:opacity-50"
+              class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center gap-1 disabled:opacity-50"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               disabled={(component.options?.length || 0) >= 25}
               onclick={addOption}
@@ -599,7 +599,7 @@
 
 {:else}
   <!-- Display Mode - Clickable to Edit -->
-  <div class="group relative cursor-pointer transition-all hover:scale-[1.02]"
+  <div class="group relative cursor-pointer transition-all"
        onclick={() => onedit?.({ component })}
        role="button"
        tabindex="0"

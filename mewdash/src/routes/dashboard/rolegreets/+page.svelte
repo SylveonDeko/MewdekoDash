@@ -398,7 +398,7 @@
         </div>
 
         <button
-          class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+          class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
           disabled={!selectedRoleId || !selectedChannelId}
           onclick={addRoleGreet}
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary}; opacity: {!selectedRoleId || !selectedChannelId ? '0.5' : '1'};"
@@ -615,10 +615,8 @@
                   </div>
 
                   <!-- Action Buttons -->
-                  <div class="flex items-center justify-end gap-3 mt-4 flex-wrap">
-                    <span class="text-xs" style="color: {$colorStore.muted}">{m.common.changesSaveAutomatically()}</span>
-                    <button
-                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] font-medium"
+                  <div class="flex items-center justify-end gap-3 mt-4 flex-wrap">                    <button
+                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all min-h-[44px] font-medium"
                       onclick={stopEditing}
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     >

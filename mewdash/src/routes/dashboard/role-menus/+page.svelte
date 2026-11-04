@@ -386,8 +386,8 @@
         <span class="sr-only">{m.roleMenus.listLoading()}</span>
       </div>
     {:else if menus.length === 0}
-      <div class="rounded-2xl border p-8 md:p-12 shadow-2xl text-center"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="rounded-2xl border p-8 md:p-12 text-center"
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;"
            in:fade={{ duration: 200 }}>
         <i class="fa-solid fa-list-check"
@@ -398,7 +398,7 @@
         </p>
         <button
           type="button"
-          class="mt-6 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] font-medium"
+          class="mt-6 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl transition-all min-h-[44px] font-medium"
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
           onclick={startNew}
         >
@@ -412,7 +412,7 @@
           </p>
           <button
             type="button"
-            class="mt-3 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] font-medium"
+            class="mt-3 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl transition-all min-h-[44px] font-medium"
             style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
             onclick={() => { activeTab = "move"; }}
           >
@@ -428,8 +428,8 @@
         {#each menus as menu (menu.id)}
           {@const notPosted = menu.status === "not_posted"}
           {@const rest = menu.options.length - MAX_CHIPS}
-          <div class="rounded-2xl border p-5 md:p-6 shadow-2xl space-y-4"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+          <div class="rounded-2xl border p-5 md:p-6 space-y-4"
+               style="background: {$colorStore.primary}0c;
                       border-color: {$colorStore.primary}30;">
             <div class="flex flex-wrap items-center gap-3">
               <h2 class="text-lg font-bold min-w-0 truncate" style="color: {$colorStore.text}">{menu.name}</h2>
@@ -487,7 +487,7 @@
             <div class="flex flex-wrap gap-2">
               <button
                 type="button"
-                class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] text-sm font-medium"
+                class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all min-h-[44px] text-sm font-medium"
                 style={notPosted
                   ? `background: ${$colorStore.primary}08; color: ${$colorStore.text}; border: 1px solid ${$colorStore.primary}20;`
                   : `background: ${$colorStore.primary}20; color: ${$colorStore.primary}; border: 1px solid ${$colorStore.primary}30;`}
@@ -498,7 +498,7 @@
               </button>
               <button
                 type="button"
-                class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] text-sm font-medium disabled:opacity-50"
+                class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all min-h-[44px] text-sm font-medium disabled:opacity-50"
                 style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
                 onclick={() => toggleEnabled(menu)}
                 disabled={busy[menu.id]}
@@ -508,7 +508,7 @@
               </button>
               <button
                 type="button"
-                class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] text-sm font-medium disabled:opacity-50"
+                class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all min-h-[44px] text-sm font-medium disabled:opacity-50"
                 style={notPosted
                   ? `background: ${$colorStore.primary}20; color: ${$colorStore.primary}; border: 1px solid ${$colorStore.primary}30;`
                   : `background: ${$colorStore.primary}08; color: ${$colorStore.text}; border: 1px solid ${$colorStore.primary}20;`}
@@ -522,15 +522,14 @@
                 <a href={menu.jumpUrl}
                    target="_blank"
                    rel="noopener noreferrer"
-                   class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] text-sm font-medium"
+                   class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all min-h-[44px] text-sm font-medium"
                    style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;">
-                  <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
                   {m.roleMenus.menuOpenInDiscord()}
                 </a>
               {/if}
               <button
                 type="button"
-                class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] text-sm font-medium sm:ml-auto disabled:opacity-50"
+                class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all min-h-[44px] text-sm font-medium sm:ml-auto disabled:opacity-50"
                 style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
                 onclick={() => deleteMenu(menu)}
                 disabled={busy[menu.id]}

@@ -233,13 +233,9 @@
       tabindex="-1"
     >
       <div
-        class="w-full max-w-2xl rounded-xl md:rounded-2xl shadow-2xl border overflow-hidden backdrop-blur-xl max-h-[calc(100vh-6rem)] md:max-h-[90vh] flex flex-col"
-        style="background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(0,0,0,0.9)), linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
-               backdrop-filter: blur(20px);
-               border: 1px solid {$colorStore.primary}30;
-               box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8),
-                          0 0 0 1px {$colorStore.primary}10,
-                          inset 0 1px 0 {$colorStore.primary}15;"
+        class="w-full max-w-2xl rounded-xl md:rounded-2xl shadow-lg border overflow-hidden max-h-[calc(100vh-6rem)] md:max-h-[90vh] flex flex-col"
+        style="background: rgba(0,0,0,0.95);
+               border: 1px solid {$colorStore.primary}30;"
         in:fly={{ y: -30, duration: 300, delay: 50 }}
         out:fly={{ y: -30, duration: 200 }}
         onclick={(e) => e.stopPropagation()}
@@ -253,7 +249,7 @@
       <div class="flex items-center gap-2 md:gap-4 p-3 md:p-6 border-b" style="border-color: {$colorStore.primary}20;">
         <div class="flex items-center gap-2 md:gap-4 flex-1">
           <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center"
-               style="background: linear-gradient(135deg, {$colorStore.primary}40, {$colorStore.secondary}40);">
+               style="background: {$colorStore.primary}40;">
             <i class="fa-utility-duo fa-regular fa-magnifying-glass text-base md:text-xl"
                style="--fa-primary-color: {$colorStore.text}; --fa-secondary-color: {$colorStore.text};"></i>
           </div>
@@ -283,7 +279,7 @@
       <div class="flex items-center gap-1 md:gap-2 px-3 md:px-6 py-2 md:py-3 border-b overflow-x-auto shrink-0" style="border-color: {$colorStore.primary}15;">
         {#each categories as category}
           <button
-            class="shrink-0 px-2 md:px-4 py-2 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all hover:scale-[1.02]"
+            class="shrink-0 px-2 md:px-4 py-2 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all"
             class:active={activeCategory === category}
             style="background: {activeCategory === category ? $colorStore.primary + '25' : $colorStore.primary + '08'};
                    color: {activeCategory === category ? $colorStore.primary : $colorStore.muted};
@@ -341,7 +337,7 @@
                   onclick={() => selectResult(feature)}
                 >
                   <div class="w-10 h-10 rounded-xl flex items-center justify-center"
-                       style="background: linear-gradient(135deg, {$colorStore.primary}40, {$colorStore.secondary}40);">
+                       style="background: {$colorStore.primary}40;">
                     <i class={feature.icon}
                        style="--fa-primary-color: {$colorStore.text}; --fa-secondary-color: {$colorStore.text};"></i>
                   </div>
@@ -361,7 +357,7 @@
                 class="search-result-item flex items-center gap-2 md:gap-4 w-full p-2 md:p-4 rounded-lg md:rounded-xl transition-all duration-200 ease-in-out mb-2 border border-transparent relative group"
                 class:selected={index === selectedIndex}
                 style="background: {index === selectedIndex
-                  ? `linear-gradient(135deg, ${$colorStore.primary}20, ${$colorStore.secondary}20)`
+                  ? `${$colorStore.primary}20`
                   : $colorStore.primary + '03'};
                        border-color: {index === selectedIndex ? $colorStore.primary + '30' : 'transparent'};"
                 onclick={() => selectResult(result)}
@@ -369,8 +365,8 @@
                 <!-- Icon -->
                   <div class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl flex items-center justify-center shrink-0"
                      style="background: {index === selectedIndex
-                       ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)`
-                       : `linear-gradient(135deg, ${$colorStore.primary}25, ${$colorStore.secondary}25)`};">
+                       ? `${$colorStore.primary}40`
+                       : `${$colorStore.primary}25`};">
                   <i class="{result.icon} text-sm md:text-xl"
                      style="--fa-primary-color: {$colorStore.text}; --fa-secondary-color: {$colorStore.text};"></i>
                 </div>
@@ -470,7 +466,7 @@
     top: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(90deg, var(--primary-color)10, transparent);
+    background: var(--primary-color)10;
     opacity: 0;
     transition: opacity 0.2s ease-out;
   }
@@ -480,25 +476,10 @@
     opacity: 1;
   }
 
-  /* Subtle scale on hover */
-  .search-result-item:hover {
-    transform: scale(1.02);
-  }
-
-  .search-result-item:active {
-    transform: scale(0.98);
-  }
-
   /* Smooth focus outline */
   .search-result-item:focus-visible {
     outline: 2px solid rgba(255, 255, 255, 0.3);
     outline-offset: -2px;
-  }
-
-  /* Selected state enhancement */
-  .search-result-item.selected {
-    transform: scale(1.02);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   }
 
   /* Smooth scrollbar */

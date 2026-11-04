@@ -305,7 +305,7 @@
 </svelte:head>
 
 <div class="min-h-screen p-4 md:p-6"
-     style="background: radial-gradient(circle at top, {$colorStore.gradientStart}15 0%, {$colorStore.gradientMid}10 50%, {$colorStore.gradientEnd}05 100%);">
+     style="background: {$colorStore.primary}08;">
 
   <div class="max-w-6xl mx-auto">
     {#if showLoadingState}
@@ -328,16 +328,16 @@
       <!-- Not Logged In -->
       <div class="text-center py-16">
         <div class="p-6 rounded-2xl border max-w-md mx-auto"
-             style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.primary}10);
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
-          <div class="text-6xl mb-4">🔐</div>
+          <i class="fa-solid fa-lock text-5xl mb-4 block" style="color: {$colorStore.primary};"></i>
           <h2 class="text-2xl font-bold mb-2" style="color: {$colorStore.text}">{m.common.loginRequired()}</h2>
           <p class="text-lg mb-4" style="color: {$colorStore.muted}">
             {m.public.leaderboardPleaseLogInWithDiscord()}
           </p>
           <a
             href="/api/discord/login?redirect_to={encodeURIComponent($page.url.pathname)}"
-            class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-opacity hover:opacity-90"
             style="background: {$colorStore.primary}; color: white;"
           >
             {m.common.loginWithDiscord()}
@@ -349,9 +349,9 @@
       <!-- No Instances Found -->
       <div class="text-center py-16">
         <div class="p-6 rounded-2xl border max-w-md mx-auto"
-             style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.accent}10);
+             style="background: {$colorStore.accent}0c;
                     border-color: {$colorStore.accent}30;">
-          <div class="text-6xl mb-4">🤖</div>
+          <i class="fa-solid fa-robot text-5xl mb-4 block" style="color: {$colorStore.accent};"></i>
           <h2 class="text-2xl font-bold mb-2" style="color: {$colorStore.text}">{m.public.leaderboardServerNotFound()}</h2>
           <p class="text-lg" style="color: {$colorStore.muted}">
             {m.public.leaderboardThisServerDoesntAppearTo()}
@@ -363,9 +363,9 @@
       <!-- Not a Member -->
       <div class="text-center py-16">
         <div class="p-6 rounded-2xl border max-w-md mx-auto"
-             style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.accent}10);
+             style="background: {$colorStore.accent}0c;
                     border-color: {$colorStore.accent}30;">
-          <div class="text-6xl mb-4">🚫</div>
+          <i class="fa-solid fa-ban text-5xl mb-4 block" style="color: {$colorStore.accent};"></i>
           <h2 class="text-2xl font-bold mb-2" style="color: {$colorStore.text}">{m.public.leaderboardMemberAccessOnly()}</h2>
           <p class="text-lg" style="color: {$colorStore.muted}">
             {m.public.leaderboardMustBeMember({ server: guildInfo?.guildName || m.common.thisServer() })}
@@ -377,10 +377,10 @@
       <!-- Error State -->
       <div class="text-center py-16">
         <div class="p-6 rounded-2xl border max-w-md mx-auto"
-             style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.accent}10);
+             style="background: {$colorStore.accent}0c;
                     border-color: {$colorStore.accent}30;">
-          <div class="text-6xl mb-4">😅</div>
-          <h2 class="text-2xl font-bold mb-2" style="color: {$colorStore.text}">{m.public.leaderboardOops()}</h2>
+          <i class="fa-solid fa-triangle-exclamation text-5xl mb-4 block" style="color: {$colorStore.accent};"></i>
+          <h2 class="text-2xl font-bold mb-2" style="color: {$colorStore.text}">{m.common.somethingWentWrong()}</h2>
           <p class="text-lg" style="color: {$colorStore.muted}">{error}</p>
         </div>
       </div>
@@ -444,9 +444,8 @@
       <!-- Server Stats -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" in:fly={{ y: 20, duration: 400, delay: 100 }}>
         <div class="p-6 rounded-2xl text-center border "
-             style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}15);
-                    border-color: {$colorStore.primary}30;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+             style="background: {$colorStore.primary}0c;
+                    border-color: {$colorStore.primary}30;">
             <i class="fa-solid fa-users"
                style="color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">{serverStats.totalUsers?.toLocaleString() || 0}</div>
@@ -454,29 +453,26 @@
         </div>
 
         <div class="p-6 rounded-2xl text-center border "
-             style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.accent}15);
-                    border-color: {$colorStore.secondary}30;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+             style="background: {$colorStore.primary}0c;
+                    border-color: {$colorStore.primary}30;">
             <i class="fa-solid fa-bolt"
-               style="color: {$colorStore.secondary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
+               style="color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">{serverStats.totalXp?.toLocaleString() || 0}</div>
           <div class="text-sm" style="color: {$colorStore.muted}">{m.common.totalXp()}</div>
         </div>
 
         <div class="p-6 rounded-2xl text-center border "
-             style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.primary}15);
-                    border-color: {$colorStore.accent}30;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+             style="background: {$colorStore.primary}0c;
+                    border-color: {$colorStore.primary}30;">
             <i class="fa-solid fa-arrow-trend-up"
-               style="color: {$colorStore.accent}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
+               style="color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">{serverStats.averageLevel || 0}</div>
           <div class="text-sm" style="color: {$colorStore.muted}">{m.public.leaderboardAvgLevel()}</div>
         </div>
 
         <div class="p-6 rounded-2xl text-center border "
-             style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}15);
-                    border-color: {$colorStore.primary}30;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+             style="background: {$colorStore.primary}0c;
+                    border-color: {$colorStore.primary}30;">
             <i class="fa-solid fa-crown"
                style="color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">{serverStats.highestLevel || 0}</div>
@@ -486,9 +482,8 @@
 
       <!-- Leaderboard -->
       <div class="rounded-2xl border  overflow-hidden"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-                  border-color: {$colorStore.primary}30;
-                  box-shadow: 0 8px 32px rgba(0,0,0,0.3);"
+           style="background: {$colorStore.primary}0c;
+                  border-color: {$colorStore.primary}30;"
            in:fly={{ y: 20, duration: 400, delay: 200 }}>
         
         <div class="p-6 border-b" style="border-color: {$colorStore.primary}20;">
@@ -502,7 +497,7 @@
             {#if leaderboard.length >= pageSize}
               <div class="flex gap-2">
                 <button
-                  class="px-3 py-1.5 rounded-lg border transition-all hover:scale-[1.02] text-sm min-h-[36px] flex items-center justify-center"
+                  class="px-3 py-1.5 rounded-lg border transition-opacity hover:opacity-80 text-sm min-h-[36px] flex items-center justify-center"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
                   onclick={() => goToPage(currentPage - 1)}
                   disabled={currentPage <= 1 || paginationLoading}
@@ -521,7 +516,7 @@
                 </div>
                 
                 <button
-                  class="px-3 py-1.5 rounded-lg border transition-all hover:scale-[1.02] text-sm min-h-[36px] flex items-center justify-center"
+                  class="px-3 py-1.5 rounded-lg border transition-opacity hover:opacity-80 text-sm min-h-[36px] flex items-center justify-center"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
                   onclick={() => goToPage(currentPage + 1)}
                   disabled={leaderboard.length < pageSize || paginationLoading}
@@ -581,7 +576,7 @@
                   <div class="w-full bg-gray-600 rounded-full h-2">
                     <div
                       class="h-2 rounded-full transition-all duration-500"
-                      style="background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.secondary});
+                      style="background: {$colorStore.primary};
                              width: {Math.min((user.levelXp / user.requiredXp) * 100, 100)}%;"
                     ></div>
                   </div>
@@ -615,7 +610,7 @@
         {#if leaderboard.length >= pageSize}
           <div class="p-4 border-t flex justify-center gap-2" style="border-color: {$colorStore.primary}20;">
             <button
-              class="px-4 py-2 rounded-lg border transition-all hover:scale-[1.02] min-h-[40px] flex items-center justify-center"
+              class="px-4 py-2 rounded-lg border transition-opacity hover:opacity-80 min-h-[40px] flex items-center justify-center"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
               onclick={() => goToPage(currentPage - 1)}
               disabled={currentPage <= 1 || paginationLoading}
@@ -634,7 +629,7 @@
             </div>
             
             <button
-              class="px-4 py-2 rounded-lg border transition-all hover:scale-[1.02] min-h-[40px] flex items-center justify-center"
+              class="px-4 py-2 rounded-lg border transition-opacity hover:opacity-80 min-h-[40px] flex items-center justify-center"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
               onclick={() => goToPage(currentPage + 1)}
               disabled={leaderboard.length < pageSize || paginationLoading}
@@ -652,7 +647,7 @@
 
       <!-- Footer -->
       <div class="text-center mt-8 p-6 rounded-2xl border"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}20;">
         <p class="text-sm" style="color: {$colorStore.muted}">
           {@html m.public.leaderboardPoweredBy({ color: $colorStore.primary })}

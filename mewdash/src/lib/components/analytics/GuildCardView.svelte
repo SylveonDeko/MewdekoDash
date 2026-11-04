@@ -117,7 +117,7 @@
       </div>
     {/if}
     <div>
-      <p class="text-xs uppercase tracking-wide mb-1" style="color: {$colorStore.muted}">
+      <p class="text-xs mb-1" style="color: {$colorStore.muted}">
         {m.analytics.guildFeaturesConfigured({ configured: card.configuredFeatures.length, enabled: card.enabledFeatures.length })}
       </p>
       {#if card.configuredFeatures.length === 0}
@@ -131,13 +131,13 @@
       {/if}
     </div>
     <div>
-      <p class="text-xs uppercase tracking-wide mb-1" style="color: {$colorStore.muted}">
+      <p class="text-xs mb-1" style="color: {$colorStore.muted}">
         {m.analytics.guildFeaturesUsed({ uses: n(featureUses), rate: pct(featureUses ? (featureErrors / featureUses) * 100 : 0) })}
       </p>
       <BreakdownBar rows={featureRows} max={12} empty={m.analytics.guildNoFeatureUse()} />
     </div>
     <div>
-      <p class="text-xs uppercase tracking-wide mb-1" style="color: {$colorStore.muted}">{m.analytics.guildTopCommands()}</p>
+      <p class="text-xs mb-1" style="color: {$colorStore.muted}">{m.analytics.guildTopCommands()}</p>
       <BreakdownBar rows={commandRows} max={10} empty={m.analytics.guildNoCommands()} />
     </div>
   </div>

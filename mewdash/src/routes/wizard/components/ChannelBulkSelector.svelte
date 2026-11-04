@@ -132,7 +132,7 @@ Supports single, multiple, category-based, and pattern-based selection
             {detectedMessage}
           </p>
           <button
-            class="text-xs font-medium px-2 py-1 rounded-sm transition-all hover:scale-[1.02]"
+            class="text-xs font-medium px-2 py-1 rounded-sm transition-all"
             style="background: {$colorStore.accent}; color: white;"
             onclick={applyDetected}
           >
@@ -183,7 +183,7 @@ Supports single, multiple, category-based, and pattern-based selection
               placeholder={m.wizard.channelSelectorCategoryPlaceholder()}
             />
             <button
-              class="px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all hover:scale-[1.02]"
+              class="px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
               style="background: {$colorStore.primary}; color: white;"
               onclick={applyCategory}
               disabled={!selectedCategory}
@@ -209,7 +209,7 @@ Supports single, multiple, category-based, and pattern-based selection
             bind:value={patternFilter}
           />
           <button
-            class="px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all hover:scale-[1.02]"
+            class="px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
             style="background: {$colorStore.primary}; color: white;"
             onclick={applyPattern}
             disabled={!patternFilter}
@@ -221,7 +221,7 @@ Supports single, multiple, category-based, and pattern-based selection
 
       <!-- Select All -->
       <button
-        class="w-full px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02]"
+        class="w-full px-3 py-2 rounded-lg text-xs font-medium transition-all"
         style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
         onclick={selectAll}
       >

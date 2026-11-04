@@ -432,7 +432,6 @@
   "settings_reveal_hint": "I membri vedono nomi e obiettivi degli achievement segreti prima di sbloccarli.",
   "settings_reveal_title": "Mostrali prima dello sblocco",
   "settings_secret_title": "Achievement segreti",
-  "settings_unsaved": "Hai modifiche non salvate.",
   "settings_xp_per_point": "XP per punto",
   "settings_xp_per_point_hint": "I gradi degli achievement e i livelli XP sono separati. Imposta questo valore se vuoi che ogni sblocco dia anche XP: uno sblocco Oro vale 50 punti, quindi 2 qui danno 100 XP. 0 lo disattiva.",
   "tab_cards": "Schede"

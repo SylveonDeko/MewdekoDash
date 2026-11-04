@@ -39,9 +39,9 @@ Setup suggestion banner for experienced users with unconfigured guilds
 
 {#if visible}
   <div
-    class="setup-suggestion-banner relative overflow-hidden  rounded-xl border p-4 shadow-lg mb-6"
+    class="setup-suggestion-banner relative overflow-hidden  rounded-xl border p-4 mb-6"
     style="
-      background: linear-gradient(135deg, {$colorStore.secondary}12, {$colorStore.primary}08);
+      background: {$colorStore.secondary}0c;
       border-color: {$colorStore.secondary}30;
     "
     transition:slide={{ duration: 300 }}
@@ -84,7 +84,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
             <span>{m.dashboard.setupBannerBenefitDefaults()}</span>
           </div>
           <div class="flex items-center gap-1">
-            <i class="fa-solid fa-arrow-right" style="color: {$colorStore.secondary}; font-size: 12px;"></i>
+            <i class="fa-solid fa-forward" style="color: {$colorStore.secondary}; font-size: 12px;"></i>
             <span>{m.dashboard.setupBannerBenefitSkip()}</span>
           </div>
         </div>
@@ -92,16 +92,15 @@ Setup suggestion banner for experienced users with unconfigured guilds
         <!-- Actions -->
         <div class="flex items-center gap-3 flex-wrap">
           <button
-            class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2 text-sm min-h-[36px]"
+            class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 text-sm min-h-[36px]"
             style="background: {$colorStore.secondary}; color: white;"
             onclick={handleStartSetup}
           >
             {m.common.quickSetup()}
-            <i class="fa-solid fa-arrow-right" style="font-size: 12px;"></i>
           </button>
           
           <button
-            class="px-3 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] text-sm min-h-[36px]"
+            class="px-3 py-2 rounded-lg font-medium transition-all text-sm min-h-[36px]"
             style="background: {$colorStore.muted}15; color: {$colorStore.muted};"
             onclick={handleDismiss}
           >
@@ -112,7 +111,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
 
       <!-- Dismiss button -->
       <button aria-label={m.common.dismiss()}
-              class="flex items-center justify-center w-8 h-8 rounded-lg transition-all hover:scale-110 shrink-0"
+              class="flex items-center justify-center w-8 h-8 rounded-lg transition-all shrink-0"
         style="
           background: {$colorStore.muted}15;
           color: {$colorStore.muted};

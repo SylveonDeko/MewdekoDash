@@ -7,9 +7,7 @@
   "host_hint": "Default: {host}",
   "host_label": "Fixing host",
   "host_reset": "Use default",
-  "notify_saved": "Link fixing settings saved",
   "page_subtitle": "Reply to social media links with a copy that embeds properly",
-  "save": "Save hosts",
   "site_hint": "Reply to {site} links with the fixed link",
   "sites_subtitle": "Turn sites on or off, and pick the embed fixing service each one uses",
   "sites_title": "Sites"

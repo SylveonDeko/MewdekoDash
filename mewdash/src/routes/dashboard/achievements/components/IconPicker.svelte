@@ -250,7 +250,7 @@
               {@const stored = GLYPH_PREFIX + glyph.name}
               {@const picked = value === stored}
               <button type="button" title={glyph.name} aria-label={glyph.name} aria-pressed={picked}
-                      class="aspect-square rounded-lg flex items-center justify-center transition-all hover:scale-110"
+                      class="aspect-square rounded-lg flex items-center justify-center transition-all"
                       style="background: {picked ? color + '30' : $colorStore.primary + '08'};
                              border: 1px solid {picked ? color : 'transparent'};"
                       onclick={() => pick(stored)}>
@@ -286,7 +286,7 @@
             {#each filteredEmojis as emoji (emoji.id.toString())}
               {@const picked = value === emoji.formatted}
               <button type="button" title={emoji.name} aria-label={emoji.name} aria-pressed={picked}
-                      class="aspect-square rounded-lg flex items-center justify-center transition-all hover:scale-110"
+                      class="aspect-square rounded-lg flex items-center justify-center transition-all"
                       style="background: {picked ? color + '30' : $colorStore.primary + '08'};
                              border: 1px solid {picked ? color : 'transparent'};"
                       onclick={() => pick(emoji.formatted)}>

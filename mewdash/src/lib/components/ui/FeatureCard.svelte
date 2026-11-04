@@ -38,8 +38,6 @@
     <a
             {href}
             class="block p-3 rounded-xl transition-all duration-300 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-            class:hover:scale-[1.02]={isActive}
-      class:hover:shadow-lg={isActive}
       class:ring-2={isActive}
       class:ring-transparent={!isActive}
       style="background: {isActive ? $colorStore.primary + '15' : $colorStore.primary + '08'};

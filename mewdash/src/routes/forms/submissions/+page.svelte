@@ -110,7 +110,7 @@
 
 <main
   class="min-h-screen py-8 px-4"
-  style="background: linear-gradient(135deg, {$colorStore.primary}08 0%, {$colorStore.secondary}05 100%);"
+  style="background: {$colorStore.primary}0c;"
 >
   <div class="container mx-auto max-w-3xl space-y-6">
     <div>
@@ -253,7 +253,6 @@
                 class="inline-block mt-3 px-4 py-2 rounded-lg text-sm font-medium transition-all"
                 style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
               >
-                <i class="fa-solid fa-arrow-up-right-from-square mr-2"></i>
                 {m.forms.submissionsViewStatus()}
               </a>
             {/if}

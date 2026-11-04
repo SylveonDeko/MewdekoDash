@@ -93,7 +93,7 @@
 <div class="flex items-center gap-3 mb-6">
   <div
     class="p-3 rounded-xl"
-    style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+    style="background: {$colorStore.primary}20;
            color: {$colorStore.primary};"
   >
     <i aria-hidden="true"
@@ -169,7 +169,7 @@
             </div>
             {#if onAdjust}
               <button
-                class="p-2 rounded-lg transition-all hover:scale-[1.05] shrink-0 min-h-[40px] min-w-[40px]"
+                class="p-2 rounded-lg transition-all shrink-0 min-h-[40px] min-w-[40px]"
                 style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                 onclick={() => openAdjust(user)}
                 aria-label={m.xp.leaderboardAdjustFor({ name: user.username })}
@@ -224,7 +224,7 @@
        onkeydown={(e) => { if (e.key === "Escape") closeAdjust(); }}
        in:fade={{ duration: 150 }}>
     <div class="rounded-2xl shadow-2xl w-full max-w-md border"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); border-color: {$colorStore.primary}30;"
+         style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background}); border-color: {$colorStore.primary}30;"
          role="dialog"
          aria-modal="true"
          aria-labelledby="xp-adjust-title"
@@ -277,12 +277,12 @@
 
           <div class="flex flex-col sm:flex-row gap-3 pt-2">
             <button type="button" onclick={closeAdjust}
-                    class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                    class="flex-1 px-4 py-3 rounded-lg font-medium transition-all min-h-[44px]"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};">
               {m.common.cancel()}
             </button>
             <button type="submit" disabled={adjustSaving}
-                    class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
+                    class="flex-1 px-4 py-3 rounded-lg font-medium transition-all min-h-[44px] disabled:opacity-50"
                     style="background: {adjustMode === 'reset' ? '#ef444420' : $colorStore.primary + '20'}; color: {adjustMode === 'reset' ? '#ef4444' : $colorStore.primary}; border: 1px solid {adjustMode === 'reset' ? '#ef444430' : $colorStore.primary + '30'};">
               {#if adjustSaving}<i class="fa-solid fa-spinner fa-spin mr-2"></i>{/if}
               {adjustMode === "reset" ? m.xp.leaderboardResetXp() : m.common.apply()}

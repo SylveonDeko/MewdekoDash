@@ -137,7 +137,6 @@
   "page_announce_auto_delete_disabled": "自動削除は無効です。リアクショントリガーとは併用できません",
   "page_announce_cards_collapsed": "すべてのカードを折りたたみました",
   "page_announce_create_failed": "トリガーの作成に失敗しました",
-  "page_announce_created": "トリガーを作成しました",
   "page_announce_delete_cancelled": "削除をキャンセルしました",
   "page_announce_delete_failed": "トリガーの削除に失敗しました",
   "page_announce_deleted": "トリガー {name} を削除しました",

@@ -154,7 +154,7 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {#each blocks as block (block.label)}
                   <div>
-                    <p class="text-xs uppercase tracking-wide mb-1" style="color: {$colorStore.muted}">{block.label}</p>
+                    <p class="text-xs mb-1" style="color: {$colorStore.muted}">{block.label}</p>
                     <BreakdownBar rows={block.rows} max={8} onSelect={(name) => narrow(block.label, name)} />
                   </div>
                 {/each}

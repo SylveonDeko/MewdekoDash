@@ -15,15 +15,15 @@
   } = $props();
 </script>
 
-<div class=" rounded-2xl border p-6 shadow-2xl transition-all"
+<div class=" rounded-2xl border p-6 transition-all"
      in:fly={{ y: 20, duration: 300, delay: 300 }}
-     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+     style="background: {$colorStore.primary}0c;
             border-color: {$colorStore.primary}30;">
 
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div class="flex items-center gap-4">
       <div class="p-3 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+           style="background: {$colorStore.primary}20;">
         <i class="fa-utility-duo fa-regular fa-clock"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
@@ -32,7 +32,7 @@
 
     <div class="flex flex-wrap items-center gap-2">
       <button
-        class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+        class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
         onclick={() => expandedRoleCard = expandedRoleCard === 'commandCooldown' ? null : 'commandCooldown'}
         style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
       >
@@ -57,7 +57,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {#each commandCooldowns as cooldown, index (cooldown.commandName ?? cooldown.command ?? index)}
         <div
-          class="group relative p-4 rounded-lg transition-all duration-200 hover:shadow-lg  border"
+          class="group relative p-4 rounded-lg transition-all duration-200 border"
           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
 
           <div class="pr-16">
@@ -70,7 +70,7 @@
           </div>
 
           <button
-            class="absolute top-3 right-3 px-3 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] opacity-60 group-hover:opacity-100 min-h-[36px] min-w-[80px]"
+            class="absolute top-3 right-3 px-3 py-2 rounded-xl text-sm font-medium transition-all opacity-60 group-hover:opacity-100 min-h-[36px] min-w-[80px]"
             style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
             onclick={() => removeCommandCooldown(cooldown.commandName || cooldown.command)}
             aria-label={m.administration.automationCommandCooldownsRemoveAria({ command: cooldown.commandName || cooldown.command })}
@@ -121,14 +121,14 @@
 
         <div class="flex flex-col sm:flex-row gap-3 mt-4">
           <button
-            class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
+            class="px-4 py-2 rounded-lg font-medium transition-all"
             style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
             onclick={() => { expandedRoleCard = null; newCommandCooldown = { command: "", seconds: 5 }; }}
           >
             {m.common.cancel()}
           </button>
           <button
-            class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+            class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2"
             style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
             onclick={addCommandCooldown}
             disabled={!newCommandCooldown.command || newCommandCooldown.seconds <= 0 || saving}

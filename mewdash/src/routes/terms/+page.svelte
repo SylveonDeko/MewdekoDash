@@ -6,7 +6,7 @@
 </script>
 
 <div
-        class="min-h-[calc(105vh-5.5rem)] w-screen bg-mewd-light-grey p-6 rounded-sm shadow-md flex justify-center items-center text-white"
+        class="min-h-[calc(105vh-5.5rem)] w-screen bg-mewd-light-grey p-6 rounded-sm flex justify-center items-center text-white"
 >
   <div class="space-y-5 text-center">
     <h1 class="text-3xl font-semibold">{m.legal.termsTermsOfServiceForMewdeko()}</h1>

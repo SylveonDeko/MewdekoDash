@@ -16,13 +16,17 @@
     type AutoPublishChannel,
     type CommandAlias,
     type GuildQuote,
-    type RoleMonitorConfig,
-    type StreamRoleSettings
+    type RoleMonitorConfig
   } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
+
+  const autoSave = createAutoSave({
+    onError: () => showMessage(m.utility.aiSaveFailed(), "error")
+  });
 
   let activeTab = $state("aliases");
   let message = $state("");
@@ -37,7 +41,6 @@
     { id: "aliases", label: m.utility.tabAliases(), icon: "fa-terminal" },
     { id: "quotes", label: m.common.quotes(), icon: "fa-quote-left" },
     { id: "autopublish", label: m.utility.tabAutopublish(), icon: "fa-bullhorn" },
-    { id: "streamrole", label: m.utility.tabStreamrole(), icon: "fa-video" },
     { id: "ai", label: m.utility.tabAi(), icon: "fa-robot" },
     { id: "nsfw", label: m.utility.tabNsfw(), icon: "fa-eye-slash" },
     { id: "rolemonitor", label: m.utility.rmCardTitle(), icon: "fa-user-shield" }
@@ -240,63 +243,6 @@
   }
 
   // ============================================
-  // Stream role
-  // ============================================
-  let streamRole: StreamRoleSettings | null = $state(null);
-  let streamFromRole = $state<string | null>(null);
-  let streamAddRole = $state<string | null>(null);
-  let streamKeyword = $state("");
-  let streamListUser = $state("");
-  let streamListType = $state<"whitelist" | "blacklist">("whitelist");
-
-  async function loadStreamRole() {
-    if (!$currentGuild?.id) return;
-    try {
-      streamRole = await utilityApi.getStreamRole($currentGuild.id);
-      streamFromRole = streamRole.fromRoleId && streamRole.fromRoleId.toString() !== "0" ? streamRole.fromRoleId.toString() : null;
-      streamAddRole = streamRole.addRoleId && streamRole.addRoleId.toString() !== "0" ? streamRole.addRoleId.toString() : null;
-      streamKeyword = streamRole.keyword ?? "";
-    } catch (err) {
-      logger.error("Failed to load stream role:", err);
-    }
-  }
-
-  async function saveStreamRole() {
-    if (!$currentGuild?.id || !streamFromRole || !streamAddRole) {
-      showMessage(m.utility.streamrolePickBoth(), "error");
-      return;
-    }
-    if (await run(() => utilityApi.setStreamRole($currentGuild!.id, BigInt(streamFromRole!), BigInt(streamAddRole!)), m.utility.streamroleEnableFailed())) await loadStreamRole();
-  }
-
-  async function stopStreamRole() {
-    if (!$currentGuild?.id) return;
-    if (!(await requestConfirmation({ message: m.utility.streamroleDisableConfirm(), confirmText: m.common.disable(), variant: "warning" }))) return;
-    if (await run(() => utilityApi.stopStreamRole($currentGuild!.id), m.utility.streamroleDisableFailed())) await loadStreamRole();
-  }
-
-  async function saveStreamKeyword() {
-    if (!$currentGuild?.id) return;
-    if (await run(() => utilityApi.setStreamRoleKeyword($currentGuild!.id, streamKeyword.trim() || null), m.utility.streamroleKeywordFailed())) await loadStreamRole();
-  }
-
-  async function addStreamListUser() {
-    if (!$currentGuild?.id || !/^\d{15,22}$/.test(streamListUser.trim())) {
-      showMessage(m.common.invalidUserId(), "error");
-      return;
-    }
-    if (await run(() => utilityApi.addStreamRoleListUser($currentGuild!.id, streamListType, BigInt(streamListUser.trim())), m.utility.streamroleListFailed())) {
-      streamListUser = "";
-      await loadStreamRole();
-    }
-  }
-
-  async function removeStreamListUser(list: "whitelist" | "blacklist", uid: bigint) {
-    if (!$currentGuild?.id) return;
-    if (await run(() => utilityApi.removeStreamRoleListUser($currentGuild!.id, list, uid), m.utility.streamroleListFailed())) await loadStreamRole();
-  }
-
-  // ============================================
   // AI assistant
   // ============================================
   let ai: AiConfigResponse | null = $state(null);
@@ -330,13 +276,16 @@
     }
   }
 
-  async function saveAi() {
-    if (!$currentGuild?.id) return;
-    if (aiForm.enabled && !aiForm.channelId) {
-      showMessage(m.utility.aiChannelRequired(), "error");
-      return;
-    }
-    const ok = await run(() => utilityApi.updateAiConfig($currentGuild!.id, {
+  type AiField = "enabled" | "channelId" | "provider" | "webSearchEnabled" | "hideWebSearchMessages";
+
+  /** Sends the whole AI form. Skipped while the assistant is on without a channel. */
+  async function sendAi() {
+    const guildId = $currentGuild?.id;
+    if (!guildId) return;
+    if (aiForm.enabled && !aiForm.channelId) return;
+    const sentKey = aiForm.apiKey;
+    const sentWebhook = aiForm.webhookUrl;
+    await utilityApi.updateAiConfig(guildId, {
       enabled: aiForm.enabled,
       channelId: aiForm.channelId ? BigInt(aiForm.channelId) : 0n,
       provider: parseInt(aiForm.provider),
@@ -344,13 +293,35 @@
       systemPrompt: aiForm.systemPrompt,
       webSearchEnabled: aiForm.webSearchEnabled,
       hideWebSearchMessages: aiForm.hideWebSearchMessages,
-      apiKey: aiForm.apiKey.trim() || null,
-      webhookUrl: aiForm.webhookUrl.trim() ? aiForm.webhookUrl.trim() : null
-    }), m.utility.aiSaveFailed());
-    if (ok) {
-      showMessage(m.utility.aiSaved(), "success");
-      await loadAi();
+      apiKey: sentKey.trim() || null,
+      webhookUrl: sentWebhook.trim() ? sentWebhook.trim() : null
+    });
+    if (aiForm.apiKey === sentKey) aiForm.apiKey = "";
+    if (aiForm.webhookUrl === sentWebhook) aiForm.webhookUrl = "";
+    if ($currentGuild?.id === guildId) ai = await utilityApi.getAiConfig(guildId);
+  }
+
+  /** Saves a toggle or picker straight away and puts the field back if the save fails. */
+  function saveAiNow<K extends AiField>(field: K, value: (typeof aiForm)[K]) {
+    const previous = aiForm[field];
+    aiForm[field] = value;
+    if (field === "enabled" && value && !aiForm.channelId) {
+      showMessage(m.utility.aiChannelRequired(), "error");
+      return;
     }
+    void autoSave.now("ai", async () => {
+      try {
+        await sendAi();
+      } catch (err) {
+        aiForm[field] = previous;
+        throw err;
+      }
+    });
+  }
+
+  /** Saves a typed field once it has been still. */
+  function saveAiLater() {
+    autoSave.schedule("ai", sendAi);
   }
 
   async function clearAiKey() {
@@ -505,7 +476,6 @@
       case "aliases": await loadAliases(); break;
       case "quotes": await loadQuotes(1); break;
       case "autopublish": await loadAutoPublish(); break;
-      case "streamrole": await loadStreamRole(); break;
       case "ai": await loadAi(); break;
       case "nsfw": await loadNsfw(); break;
       case "rolemonitor": await loadRoleMonitor(); break;
@@ -550,8 +520,8 @@
 {/snippet}
 
 {#snippet card(title: string, icon: string, subtitle: string, body: import("svelte").Snippet)}
-  <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
+  <div class=" rounded-2xl border p-6 md:p-8 transition-all"
+       style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
     <div class="flex items-center gap-3 mb-1">
       <i class="fa-utility-duo fa-regular {icon}" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
       <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{title}</h2>
@@ -573,6 +543,7 @@
 
 <DashboardPageLayout
   {actionButtons}
+  {autoSave}
   bind:activeTab
   guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-wrench"
@@ -590,7 +561,7 @@
           <input type="text" bind:value={aliasMapping} placeholder={m.utility.aliasesMappingPlaceholder()} aria-label={m.utility.aliasesMappingAria()} maxlength="500"
                  class="p-3 rounded-xl border min-h-[44px]" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           <button type="submit" disabled={busy || !aliasTrigger.trim() || !aliasMapping.trim()}
-                  class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
+                  class="px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
             <i class="fa-solid fa-plus"></i>{m.common.add()}
           </button>
@@ -614,7 +585,7 @@
               </div>
             {/each}
           </div>
-          <button class="mt-4 px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
+          <button class="mt-4 px-4 py-2 rounded-xl text-sm font-medium transition-all min-h-[44px] disabled:opacity-50"
                   style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;" disabled={busy} onclick={clearAliases}>
             <i class="fa-solid fa-trash mr-1"></i>{m.utility.aliasesClearAll()}
           </button>
@@ -632,7 +603,7 @@
           <input type="text" bind:value={quoteText} placeholder={m.common.quoteText()} aria-label={m.common.quoteText()} maxlength="2000"
                  class="p-3 rounded-xl border min-h-[44px]" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           <button type="submit" disabled={busy || !quoteKeyword.trim() || !quoteText.trim()}
-                  class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
+                  class="px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
             <i class="fa-solid fa-plus"></i>{m.common.add()}
           </button>
@@ -748,93 +719,17 @@
       {@render card(m.utility.tabAutopublish(), "fa-newspaper", m.utility.autopublishCardSubtitle(), autoPublishBody)}
     </div>
 
-  {:else if activeTab === 'streamrole'}
-    <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
-      {#snippet streamRoleBody()}
-        {#if streamRole}
-          <div class="flex items-center gap-2 mb-4">
-            <span class="px-3 py-1 rounded-full text-xs font-medium" style="background: {streamRole.enabled ? '#10b98120' : $colorStore.muted + '20'}; color: {streamRole.enabled ? '#10b981' : $colorStore.muted};">
-              {streamRole.enabled ? m.common.enabled() : m.common.disabled()}
-            </span>
-            {#if streamRole.enabled}
-              <span class="text-sm" style="color: {$colorStore.muted}">{m.utility.streamroleSummary({ from: roleName(streamRole.fromRoleId), to: roleName(streamRole.addRoleId) })}</span>
-            {/if}
-          </div>
-        {/if}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <span id="stream-from-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.utility.streamroleEligible()}</span>
-            <DiscordSelector type="role" options={roles} selected={streamFromRole} placeholder={m.utility.streamroleEligiblePlaceholder()} ariaLabelledby="stream-from-label"
-                             onchange={(e) => { streamFromRole = typeof e.selected === "string" ? e.selected : null; }} />
-          </div>
-          <div>
-            <span id="stream-add-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.utility.streamroleAdded()}</span>
-            <DiscordSelector type="role" options={roles} selected={streamAddRole} placeholder={m.common.roleToAdd()} ariaLabelledby="stream-add-label"
-                             onchange={(e) => { streamAddRole = typeof e.selected === "string" ? e.selected : null; }} />
-          </div>
-        </div>
-        <div class="flex flex-wrap gap-3 mb-6">
-          <button class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50" style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;" disabled={busy || !streamFromRole || !streamAddRole} onclick={saveStreamRole}>
-            <i class="fa-solid fa-check mr-1"></i>{streamRole?.enabled ? m.utility.streamroleUpdateRoles() : m.common.enabled()}
-          </button>
-          {#if streamRole?.enabled}
-            <button class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50" style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;" disabled={busy} onclick={stopStreamRole}>
-              <i class="fa-solid fa-power-off mr-1"></i>{m.common.disable()}
-            </button>
-          {/if}
-        </div>
-        <div>
-          <label for="stream-keyword" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.utility.streamroleKeyword()}</label>
-          <p class="text-xs mb-2" style="color: {$colorStore.muted}">{m.utility.streamroleKeywordHint()}</p>
-          <form class="flex gap-2" onsubmit={(e) => { e.preventDefault(); saveStreamKeyword(); }}>
-            <input id="stream-keyword" type="text" bind:value={streamKeyword} maxlength="100" placeholder={m.utility.streamroleKeywordPlaceholder()}
-                   class="flex-1 p-3 rounded-xl border min-h-[44px]" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-            <button type="submit" disabled={busy} class="px-4 py-3 rounded-xl min-h-[44px] disabled:opacity-50" style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">{m.common.save()}</button>
-          </form>
-        </div>
-      {/snippet}
-      {@render card(m.utility.tabStreamrole(), "fa-video", m.utility.streamroleCardSubtitle(), streamRoleBody)}
-
-      {#snippet streamListBody()}
-        <form class="flex flex-col sm:flex-row gap-2 mb-4" onsubmit={(e) => { e.preventDefault(); addStreamListUser(); }}>
-          <div class="sm:w-44">
-            <DiscordSelector type="custom" options={[{ id: "whitelist", name: m.common.whitelist() }, { id: "blacklist", name: m.common.blacklist() }]} selected={streamListType} searchable={false} ariaLabel={m.utility.streamroleListTypeAria()}
-                             onchange={(e) => { if (e.selected === "whitelist" || e.selected === "blacklist") streamListType = e.selected; }} />
-          </div>
-          <input type="text" inputmode="numeric" bind:value={streamListUser} placeholder={m.common.userId()} aria-label={m.common.userId()}
-                 class="flex-1 p-3 rounded-xl border min-h-[44px]" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-          <button type="submit" disabled={busy || !streamListUser.trim()} class="px-6 py-3 rounded-xl font-medium min-h-[44px] disabled:opacity-50" style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{m.common.add()}</button>
-        </form>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {#each [{ key: "whitelist", title: m.common.whitelist(), hint: m.utility.streamroleWhitelistHint() }, { key: "blacklist", title: m.common.blacklist(), hint: m.utility.streamroleBlacklistHint() }] as list}
-            <div class="p-4 rounded-xl" style="background: {$colorStore.primary}05;">
-              <div class="font-medium" style="color: {$colorStore.text}">{list.title}</div>
-              <div class="text-xs mb-3" style="color: {$colorStore.muted}">{list.hint}</div>
-              <div class="flex flex-wrap gap-2">
-                {#each (list.key === "whitelist" ? streamRole?.whitelist : streamRole?.blacklist) ?? [] as entry (entry.userId.toString())}
-                  {@render chip(entry.username ?? entry.userId.toString(), () => removeStreamListUser(list.key as "whitelist" | "blacklist", entry.userId), m.utility.streamroleRemoveAria({ user: entry.username ?? entry.userId.toString() }))}
-                {:else}
-                  <span class="text-sm" style="color: {$colorStore.muted}">{m.common.empty()}</span>
-                {/each}
-              </div>
-            </div>
-          {/each}
-        </div>
-      {/snippet}
-      {@render card(m.utility.streamroleExceptionsTitle(), "fa-user-check", m.utility.streamroleExceptionsSubtitle(), streamListBody)}
-    </div>
-
   {:else if activeTab === 'ai'}
     <div class="w-full" in:fade={{ duration: 200 }}>
       {#snippet aiBody()}
-        <form class="space-y-5" onsubmit={(e) => { e.preventDefault(); saveAi(); }}>
+        <div class="space-y-5">
           <div class="flex items-center justify-between gap-4 p-4 rounded-xl border" style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
             <div>
               <div class="font-medium" style="color: {$colorStore.text}">{m.utility.aiEnabled()}</div>
               <div class="text-sm" style="color: {$colorStore.muted}">{ai?.tokensUsed ? m.utility.aiEnabledHintTokens({ count: ai.tokensUsed.toLocaleString() }) : m.utility.aiEnabledHint()}</div>
             </div>
             <button type="button" class="p-2 rounded-lg min-h-[44px] min-w-[44px]" role="switch" aria-checked={aiForm.enabled} aria-label={m.utility.aiEnabled()}
-                    style="color: {aiForm.enabled ? $colorStore.secondary : $colorStore.muted}" onclick={() => aiForm.enabled = !aiForm.enabled}>
+                    style="color: {aiForm.enabled ? $colorStore.secondary : $colorStore.muted}" onclick={() => saveAiNow("enabled", !aiForm.enabled)}>
               <i class="fa-solid {aiForm.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}" style="font-size: 26px;"></i>
             </button>
           </div>
@@ -843,19 +738,19 @@
             <div>
               <span id="ai-channel-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.channel()}</span>
               <DiscordSelector type="channel" options={textChannels} selected={aiForm.channelId} placeholder={m.utility.aiChannelPlaceholder()} ariaLabelledby="ai-channel-label"
-                               onchange={(e) => { aiForm.channelId = typeof e.selected === "string" ? e.selected : null; }} />
+                               onchange={(e) => saveAiNow("channelId", typeof e.selected === "string" ? e.selected : null)} />
             </div>
             <div>
               <span id="ai-provider-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.provider()}</span>
               <DiscordSelector type="custom" options={providerOptions} selected={aiForm.provider} searchable={false} ariaLabelledby="ai-provider-label"
-                               onchange={(e) => { if (typeof e.selected === "string") { aiForm.provider = e.selected; aiModels = []; } }} />
+                               onchange={(e) => { if (typeof e.selected === "string") { aiModels = []; saveAiNow("provider", e.selected); } }} />
             </div>
           </div>
 
           <div>
             <label for="ai-key" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.utility.aiApiKey()}</label>
             <div class="flex flex-col sm:flex-row gap-2">
-              <input id="ai-key" type="password" bind:value={aiForm.apiKey} autocomplete="off"
+              <input id="ai-key" type="password" bind:value={aiForm.apiKey} autocomplete="off" oninput={saveAiLater} onblur={() => autoSave.flush("ai")}
                      placeholder={ai?.hasApiKey ? m.utility.aiApiKeyStored({ hint: ai.apiKeyHint ?? m.utility.aiApiKeyHidden() }) : m.utility.aiApiKeyPlaceholder()}
                      class="flex-1 p-3 rounded-xl border min-h-[44px]" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
               {#if ai?.hasApiKey}
@@ -871,10 +766,10 @@
               {#if aiModels.length > 0}
                 <div class="flex-1">
                   <DiscordSelector type="custom" options={aiModels.map(md => ({ id: md.id, name: md.name, label: `${md.name} (${md.id})` }))} selected={aiForm.model || null} placeholder={m.utility.aiModelPlaceholder()} ariaLabel={m.common.model()}
-                                   onchange={(e) => { if (typeof e.selected === "string") aiForm.model = e.selected; }} />
+                                   onchange={(e) => { if (typeof e.selected === "string") { aiForm.model = e.selected; saveAiLater(); void autoSave.flush("ai"); } }} />
                 </div>
               {:else}
-                <input id="ai-model" type="text" bind:value={aiForm.model} placeholder={m.utility.aiModelIdPlaceholder()}
+                <input id="ai-model" type="text" bind:value={aiForm.model} oninput={saveAiLater} onblur={() => autoSave.flush("ai")} placeholder={m.utility.aiModelIdPlaceholder()}
                        class="flex-1 p-3 rounded-xl border min-h-[44px]" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
               {/if}
               <button type="button" class="px-4 py-3 rounded-xl text-sm min-h-[44px] disabled:opacity-50" style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};" disabled={aiModelsLoading || !ai?.hasApiKey} onclick={loadAiModels}>
@@ -885,33 +780,27 @@
 
           <div>
             <label for="ai-prompt" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.utility.aiSystemPrompt()}</label>
-            <textarea id="ai-prompt" rows="4" bind:value={aiForm.systemPrompt} placeholder={m.utility.aiSystemPromptPlaceholder()}
+            <textarea id="ai-prompt" rows="4" bind:value={aiForm.systemPrompt} oninput={saveAiLater} onblur={() => autoSave.flush("ai")} placeholder={m.utility.aiSystemPromptPlaceholder()}
                       class="w-full p-3 rounded-xl border resize-y" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"></textarea>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer min-h-[44px]" style="background: {$colorStore.primary}08; color: {$colorStore.text};">
-              <input type="checkbox" bind:checked={aiForm.webSearchEnabled} class="w-4 h-4 rounded" style="accent-color: {$colorStore.primary};">
+              <input type="checkbox" checked={aiForm.webSearchEnabled} onchange={(e) => saveAiNow("webSearchEnabled", e.currentTarget.checked)} class="w-4 h-4 rounded" style="accent-color: {$colorStore.primary};">
               <span class="text-sm">{m.utility.aiWebSearch()}</span>
             </label>
             <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer min-h-[44px]" style="background: {$colorStore.primary}08; color: {$colorStore.text};">
-              <input type="checkbox" bind:checked={aiForm.hideWebSearchMessages} class="w-4 h-4 rounded" style="accent-color: {$colorStore.primary};">
+              <input type="checkbox" checked={aiForm.hideWebSearchMessages} onchange={(e) => saveAiNow("hideWebSearchMessages", e.currentTarget.checked)} class="w-4 h-4 rounded" style="accent-color: {$colorStore.primary};">
               <span class="text-sm">{m.utility.aiHideWebSearch()}</span>
             </label>
           </div>
 
           <div>
             <label for="ai-webhook" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{ai?.hasWebhook ? m.utility.aiWebhookSet() : m.common.webhookUrlOptional()}</label>
-            <input id="ai-webhook" type="url" bind:value={aiForm.webhookUrl} placeholder={ai?.hasWebhook ? m.utility.aiWebhookPlaceholderSet() : m.utility.aiWebhookPlaceholder()}
+            <input id="ai-webhook" type="url" bind:value={aiForm.webhookUrl} oninput={saveAiLater} onblur={() => autoSave.flush("ai")} placeholder={ai?.hasWebhook ? m.utility.aiWebhookPlaceholderSet() : m.utility.aiWebhookPlaceholder()}
                    class="w-full p-3 rounded-xl border min-h-[44px]" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           </div>
-
-          <button type="submit" disabled={busy} class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] flex items-center gap-2 disabled:opacity-50"
-                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-            {#if busy}<i class="fa-solid fa-spinner fa-spin"></i>{:else}<i class="fa-solid fa-floppy-disk"></i>{/if}
-            {m.utility.aiSave()}
-          </button>
-        </form>
+        </div>
       {/snippet}
       {@render card(m.utility.tabAi(), "fa-microchip", m.utility.aiCardSubtitle(), aiBody)}
     </div>

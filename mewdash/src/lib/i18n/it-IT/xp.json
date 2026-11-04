@@ -156,8 +156,6 @@
   "page_notify_currency_reward_removed": "Ricompensa in valuta rimossa con successo",
   "page_notify_role_excluded": "Ruolo escluso con successo",
   "page_notify_role_included": "Ruolo incluso con successo",
-  "page_notify_role_reward_added": "Ricompensa con ruolo aggiunta con successo",
-  "page_notify_role_reward_removed": "Ricompensa con ruolo rimossa con successo",
   "page_notify_template_updated": "Modello XP aggiornato con successo",
   "page_reset_changes": "Ripristina modifiche",
   "page_save_template": "Salva modifiche al modello",

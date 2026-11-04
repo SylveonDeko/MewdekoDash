@@ -604,22 +604,6 @@
         class="min-h-screen overflow-x-hidden w-full transition-all duration-500 relative"
         style="{colorStore.getCssVars()}"
 >
-    <!-- Subtle mesh gradient background using colorStore -->
-    <div class="fixed inset-0 -z-10"
-         style="background: {$colorStore.primary}03;">
-        <!-- Subtle color accents -->
-        <div class="absolute inset-0"
-             style="background-image: radial-gradient(circle at 20% 30%, {$colorStore.primary}08 0%, transparent 40%),
-                radial-gradient(circle at 80% 60%, {$colorStore.secondary}06 0%, transparent 40%),
-                radial-gradient(circle at 50% 90%, {$colorStore.accent}04 0%, transparent 40%);">
-        </div>
-        <!-- Very subtle grid pattern -->
-        <div class="absolute inset-0 opacity-30"
-             style="background-image: linear-gradient(0deg, {$colorStore.primary}05 1px, transparent 1px),
-                linear-gradient(90deg, {$colorStore.primary}05 1px, transparent 1px);
-                background-size: 50px 50px;">
-        </div>
-    </div>
     <div class="w-full p-4 md:p-6">
         <div class="space-y-8">
             {#if loading}
@@ -688,7 +672,7 @@
                 <!-- Refresh button -->
                 <div class="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-30" class:hidden={refreshing}>
                     <button aria-label={m.dashboard.pageRefreshAria()}
-                            class="flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all hover:scale-[1.02]"
+                            class="flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all"
                             style="background: {$colorStore.primary}; color: white"
                             onclick={() => fetchAllData(true)}
 
@@ -703,8 +687,8 @@
                 <!-- Music Started Notification -->
                 {#if showMusicNotification}
                     <div
-                            class="fixed top-20 right-4 z-50 max-w-sm p-4 rounded-xl shadow-2xl border backdrop-blur-sm transition-all"
-                            style="background: linear-gradient(135deg, {$colorStore.gradientStart}95, {$colorStore.gradientMid}95);
+                            class="fixed top-20 right-4 z-50 max-w-sm p-4 rounded-xl shadow-lg border transition-all"
+                            style="background: {$colorStore.background};
                  border-color: {$colorStore.primary}40;"
                             in:fly={{ x: 300, duration: 500 }}
                             out:fly={{ x: 300, duration: 400 }}
@@ -735,7 +719,7 @@
                         <div class="mt-3 flex gap-2">
                             <button
                               aria-label={m.dashboard.pageOpenMusicPlayer()}
-                              class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                              class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                                     onclick={() => {
                 showMusicNotification = false;
@@ -746,7 +730,7 @@
                             </button>
                             <button
                               aria-label={m.common.ariaDismissNotification()}
-                              class="flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                              class="flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px]"
                               style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                                     onclick={() => showMusicNotification = false}
                             >
@@ -802,10 +786,9 @@
       class="fixed top-24 left-1/2 transform -translate-x-1/2 z-[200] pointer-events-none"
       style="animation: fadeInOut 3s ease-in-out forwards;"
     >
-      <div class="bg-purple-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3">
-        <span class="text-2xl">🎃</span>
+      <div class="px-6 py-3 rounded-full shadow-lg border flex items-center gap-3"
+           style="background: {$colorStore.background}; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
         <span class="font-medium">{witchMessage}</span>
-        <span class="text-2xl">🎃</span>
       </div>
     </div>
   {/if}

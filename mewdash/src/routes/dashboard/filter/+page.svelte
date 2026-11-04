@@ -219,8 +219,8 @@
           <StatCard icon="fa-list-ul" label={m.common.channelOverrides()} value={settings.channelSettings.wordFilterChannels.length + settings.channelSettings.inviteFilterChannels.length + settings.channelSettings.linkFilterChannels.length} subtitle={m.filter.statChannelOverridesSubtitle()} iconColor="secondary" animationDelay={200} />
         </div>
 
-        <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
+        <div class=" rounded-2xl border p-6 md:p-8 transition-all"
+             style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
           <div class="flex items-center gap-3 mb-2">
             <i class="fa-utility-duo fa-regular fa-filter" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.filter.serverWideTitle()}</h2>
@@ -242,7 +242,7 @@
                     <div class="text-sm" style="color: {$colorStore.muted}">{meta.hint}</div>
                   </div>
                 </div>
-                <button class="p-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] min-w-[44px] disabled:opacity-50"
+                <button class="p-2 rounded-lg transition-all min-h-[44px] min-w-[44px] disabled:opacity-50"
                         role="switch" aria-checked={enabled} aria-label={meta.title}
                         disabled={saving}
                         style="color: {enabled ? $colorStore.secondary : $colorStore.muted}"
@@ -254,8 +254,8 @@
           </div>
         </div>
 
-        <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
+        <div class=" rounded-2xl border p-6 md:p-8 transition-all"
+             style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
           <div class="flex items-center gap-3 mb-2">
             <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.warnings()}</h2>
@@ -267,7 +267,7 @@
               <div class="flex items-center justify-between gap-4 p-4 rounded-xl border"
                    style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                 <div class="font-medium" style="color: {$colorStore.text}">{item.title}</div>
-                <button class="p-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] min-w-[44px] disabled:opacity-50"
+                <button class="p-2 rounded-lg transition-all min-h-[44px] min-w-[44px] disabled:opacity-50"
                         role="switch" aria-checked={enabled} aria-label={item.title}
                         disabled={saving}
                         style="color: {enabled ? $colorStore.secondary : $colorStore.muted}"
@@ -284,15 +284,15 @@
       {@const autoBan = activeTab === 'autoban'}
       {@const list = autoBan ? settings.autoBanWords : filteredWordList}
       <div class="w-full" in:fade={{ duration: 200 }}>
-        <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
+        <div class=" rounded-2xl border p-6 md:p-8 transition-all"
+             style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
           <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
             <div class="flex items-center gap-3">
               <i class="fa-utility-duo fa-regular {autoBan ? 'fa-xmark' : 'fa-comment-slash'}" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
               <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{autoBan ? m.filter.listAutobanHeading({ count: list.length }) : m.filter.listFilteredHeading({ count: list.length })}</h2>
             </div>
             {#if !autoBan && settings.filteredWords.length > 0}
-              <button class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
+              <button class="px-4 py-2 rounded-xl text-sm font-medium transition-all min-h-[44px] disabled:opacity-50"
                       style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
                       disabled={saving} onclick={clearWords}>
                 <i class="fa-solid fa-trash mr-1"></i>{m.common.clearAll()}
@@ -319,7 +319,7 @@
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             {/if}
             <button type="submit" disabled={saving || !(autoBan ? newAutoBanWord : newWord).trim()}
-                    class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
+                    class="px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
               <i class="fa-solid fa-plus"></i>
               {m.common.add()}
@@ -359,8 +359,8 @@
         {#each (["word", "invite", "link"] as FilterKind[]) as kind}
           {@const meta = filterMeta[kind]}
           {@const channels = settings.channelSettings[meta.listKey]}
-          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10); border-color: {$colorStore.primary}30;">
+          <div class=" rounded-2xl border p-6 md:p-8 transition-all"
+               style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
             <div class="flex items-center gap-3 mb-2">
               <i class="fa-utility-duo fa-regular {meta.icon}" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
               <h2 id="channel-filter-{kind}" class="text-xl font-bold" style="color: {$colorStore.text}">{meta.channelsTitle}</h2>

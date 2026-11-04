@@ -18,7 +18,7 @@
 <div class="flex items-center gap-3 mb-6">
   <div
     class="p-3 rounded-xl"
-    style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+    style="background: {$colorStore.primary}20;
            color: {$colorStore.primary};"
   >
     <i aria-hidden="true"

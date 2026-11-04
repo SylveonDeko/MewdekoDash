@@ -207,7 +207,7 @@
            --color-accent: {$colorStore.accent};
            --color-text: {$colorStore.text};
            --color-muted: {$colorStore.muted};
-           background: linear-gradient(135deg, {$colorStore.primary}08 0%, {$colorStore.secondary}05 100%);"
+           background: {$colorStore.primary}08;"
     in:fade
   >
     <div class="container mx-auto px-4 py-8 max-w-4xl">
@@ -251,7 +251,7 @@
         </div>
       {:else if error}
         <div class="rounded-2xl p-8 text-center  border"
-             style="background: linear-gradient(135deg, #DC262620, #B9131930); border-color: #DC2626;"
+             style="background: #DC26260c; border-color: #DC262640;"
              in:fly={{ y: 20, duration: 300 }}>
           <div class="mb-4">
             <svg class="h-16 w-16 mx-auto text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -259,10 +259,10 @@
                     d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 15c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h2 class="text-2xl font-bold mb-4 text-red-400">{m.public.giveawaysOopsSomethingWentWrong()}</h2>
+          <h2 class="text-2xl font-bold mb-4 text-red-400">{m.common.somethingWentWrong()}</h2>
           <p class="text-lg" style="color: {$colorStore.text};">{error}</p>
           <button
-            class="mt-6 px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02]"
+            class="mt-6 px-6 py-3 rounded-xl font-medium transition-colors duration-200"
             style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
             onclick={() => window.location.reload()}
           >
@@ -272,15 +272,15 @@
       {:else if giveaway}
         <div class="space-y-8">
           <!-- Giveaway Details Card -->
-          <div class="rounded-2xl p-8  shadow-xl border"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20); border-color: {$colorStore.primary}30;"
+          <div class="rounded-2xl p-8 border"
+               style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;"
                in:fly={{ y: 20, duration: 300 }}>
 
             <!-- Prize -->
             <div class="text-center mb-8">
               <div class="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center text-4xl"
-                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}30, {$colorStore.gradientMid}40);">
-                🎁
+                   style="background: {$colorStore.primary}20;">
+                <i class="fa-solid fa-gift" style="color: {$colorStore.primary};"></i>
               </div>
               <h2 class="text-3xl font-bold mb-4" style="color: {$colorStore.text};">
                 {giveaway.item}
@@ -290,7 +290,7 @@
               <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full"
                    style="background: {isGiveawayActive ? '#10B98120' : '#EF444420'}; border: 1px solid {isGiveawayActive ? '#10B981' : '#EF4444'};">
                 <div
-                  class="w-2 h-2 rounded-full {isGiveawayActive ? 'bg-green-400' : 'bg-red-400'} animate-pulse"></div>
+                  class="w-2 h-2 rounded-full {isGiveawayActive ? 'bg-green-400' : 'bg-red-400'}"></div>
                 <span class="font-medium" style="color: {isGiveawayActive ? '#10B981' : '#EF4444'};">
                   {isGiveawayActive ? 'Active' : 'Ended'}
                 </span>
@@ -302,7 +302,7 @@
               <div class="text-center p-4 rounded-xl " style="background: {$colorStore.primary}08;">
                 <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                      style="background: {$colorStore.primary}20;">
-                  <span class="text-2xl">👥</span>
+                  <i class="fa-solid fa-users text-xl" style="color: {$colorStore.primary};"></i>
                 </div>
                 <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">{m.public.giveawaysWinners()}</h3>
                 <p class="text-2xl font-bold" style="color: {$colorStore.primary};">{giveaway.winners}</p>
@@ -311,7 +311,7 @@
               <div class="text-center p-4 rounded-xl " style="background: {$colorStore.primary}08;">
                 <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                      style="background: {$colorStore.primary}20;">
-                  <span class="text-2xl">⏰</span>
+                  <i class="fa-solid fa-clock text-xl" style="color: {$colorStore.primary};"></i>
                 </div>
                 <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">{m.public.giveawaysTimeRemaining()}</h3>
                 <p class="text-xl font-bold" style="color: {isGiveawayActive ? $colorStore.primary : '#EF4444'};">
@@ -322,7 +322,7 @@
               <div class="text-center p-4 rounded-xl " style="background: {$colorStore.primary}08;">
                 <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                      style="background: {$colorStore.primary}20;">
-                  <span class="text-2xl">📅</span>
+                  <i class="fa-solid fa-calendar text-xl" style="color: {$colorStore.primary};"></i>
                 </div>
                 <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">{m.public.giveawaysEndsOn()}</h3>
                 <p class="text-sm font-medium" style="color: {$colorStore.muted};">
@@ -334,8 +334,8 @@
 
           {#if isGiveawayActive}
             <!-- Entry Section -->
-            <div class="rounded-2xl p-8  shadow-xl border"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;"
+            <div class="rounded-2xl p-8 border"
+                 style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}20;"
                  in:fly={{ y: 20, duration: 300, delay: 100 }}>
 
               <div class="text-center mb-8">
@@ -363,8 +363,8 @@
                 <button
                   onclick={enterGiveaway}
                   disabled={!turnstileToken || !isGiveawayActive || isSubmitting}
-                  class="px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 min-w-[200px]"
-                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}90); color: white; border: 1px solid {$colorStore.primary}50; box-shadow: 0 4px 20px {$colorStore.primary}30;"
+                  class="px-8 py-4 rounded-xl font-bold text-lg transition-opacity duration-300 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px]"
+                  style="background: {$colorStore.primary}; color: white; border: 1px solid {$colorStore.primary};"
                 >
                   {#if isSubmitting}
                     <div class="flex items-center justify-center gap-2">
@@ -393,11 +393,11 @@
           {:else}
             <!-- Giveaway Ended -->
             <div class="rounded-2xl p-8 text-center  border"
-                 style="background: linear-gradient(135deg, #6B728020, #4B556330); border-color: #6B7280;"
+                 style="background: #6B72800c; border-color: #6B728040;"
                  in:fly={{ y: 20, duration: 300, delay: 100 }}>
               <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
                    style="background: #6B728020;">
-                <span class="text-3xl">⏰</span>
+                <i class="fa-solid fa-clock text-2xl" style="color: #6B7280;"></i>
               </div>
               <h3 class="text-2xl font-bold mb-4" style="color: {$colorStore.text};">
                 {m.public.giveawaysGiveawayHasEnded()}
@@ -411,15 +411,12 @@
           <!-- Message Display -->
           {#if message}
             <div class="rounded-2xl p-6  border transition-all duration-300"
-                 style="background: {message.includes('🎉') || message.includes('Successfully') 
-                   ? 'linear-gradient(135deg, #10B98120, #059669t30)' 
-                   : 'linear-gradient(135deg, #DC262620, #B9131930)'}; 
-                 border-color: {message.includes('🎉') || message.includes('Successfully') ? '#10B981' : '#DC2626'};"
+                 style="background: {message.includes('🎉') || message.includes('Successfully') ? '#10B9810c' : '#DC26260c'};
+                 border-color: {message.includes('🎉') || message.includes('Successfully') ? '#10B98140' : '#DC262640'};"
                  in:fly={{ y: 20, duration: 300 }}>
               <div class="flex items-center justify-center gap-3">
-                <span class="text-2xl">
-                  {message.includes('🎉') || message.includes('Successfully') ? '✅' : '❌'}
-                </span>
+                <i class="fa-solid {message.includes('🎉') || message.includes('Successfully') ? 'fa-circle-check' : 'fa-circle-xmark'} text-2xl"
+                   style="color: {message.includes('🎉') || message.includes('Successfully') ? '#10B981' : '#DC2626'};"></i>
                 <p class="text-lg font-medium text-center"
                    style="color: {message.includes('🎉') || message.includes('Successfully') ? '#10B981' : '#DC2626'};">
                   {message}
@@ -430,11 +427,11 @@
         </div>
       {:else}
         <div class="rounded-2xl p-8 text-center  border"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;"
+             style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}20;"
              in:fly={{ y: 20, duration: 300 }}>
           <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
                style="background: {$colorStore.primary}20;">
-            <span class="text-3xl">🎁</span>
+            <i class="fa-solid fa-gift text-2xl" style="color: {$colorStore.primary};"></i>
           </div>
           <h2 class="text-2xl font-bold mb-4" style="color: {$colorStore.text};">
             {m.public.giveawaysNoGiveawayFound()}

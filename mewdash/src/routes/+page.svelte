@@ -187,11 +187,6 @@
   <header
           class="py-12 sm:py-16 px-4 sm:px-12 flex flex-col items-center relative"
     in:fade={{ duration: 300 }}
-    style="background: radial-gradient(circle at top,
-      {$colorStore.gradientStart}15 0%,
-      {$colorStore.gradientEnd}10 50%,
-      {$colorStore.gradientEnd}05 100%
-    );"
   >
     <HomeHero stats={data.stats} />
 
@@ -219,16 +214,11 @@
                  aria-label={m.home.landingTopServerCommunities()}>
                     {#each guilds.slice(0, 8) as guild, index (guild.Name)}
                 <div
-                        class="group relative rounded-xl border transition-all duration-300 hover:scale-[1.02] overflow-hidden w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)] xl:w-[calc(25%-0.75rem)]"
-                        style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}10);
-                         border-color: {$colorStore.primary}20;
-                         box-shadow: 0 2px 12px {$colorStore.primary}05;"
+                        class="group relative rounded-xl border transition-colors duration-300 hover:bg-white/5 overflow-hidden w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)] xl:w-[calc(25%-0.75rem)]"
+                        style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;"
                   in:fly={{ y: 20, duration: 300, delay: index * 50 }}
                   role="listitem"
                 >
-                    <!-- Hover gradient overlay -->
-                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                         style="background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}08);"></div>
 
                     <div class="relative p-4">
                         <div class="flex items-center gap-3">
@@ -240,11 +230,7 @@
                                         loading="lazy"
                                         class="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover ring-2 ring-opacity-20"
                                         style="ring-color: {$colorStore.primary};"
-                                >
-                                <!-- Online indicator -->
-                              <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full ring-2"
-                                   style="ring-color: {$colorStore.gradientStart};"></div>
-                            </div>
+                                >                            </div>
 
                             <!-- Server info -->
                             <div class="flex-1 min-w-0">
@@ -282,11 +268,10 @@
                         <div class="animate-pulse w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)] xl:w-[calc(25%-0.75rem)]"
                              in:fly={{ y: 20, duration: 300, delay: index * 50 }}>
                             <div class="rounded-xl border p-4"
-                                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}05, {$colorStore.gradientMid}08);
-                              border-color: {$colorStore.primary}15;">
+                                 style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r opacity-30"
-                                         style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);"></div>
+                                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full opacity-30"
+                                         style="background: {$colorStore.primary}20;"></div>
                                     <div class="flex-1">
                                         <div class="h-4 rounded-lg mb-2 opacity-20"
                                              style="background: {$colorStore.text}; width: 70%;"></div>
@@ -322,34 +307,17 @@
 
   <section
     aria-labelledby="features-heading"
-    class="py-24  relative overflow-hidden"
-    style="background: radial-gradient(circle at center,
-      {$colorStore.gradientStart}15 0%,
-      {$colorStore.gradientEnd}10 50%,
-      {$colorStore.gradientEnd}05 100%
-    );"
+    class="py-24 relative overflow-hidden"
   >
-    <!-- Floating background elements -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute top-1/4 left-1/4 w-64 h-64 rounded-full opacity-10 animate-float-slow"
-           style="background: radial-gradient(circle, {$colorStore.primary}40, transparent);"></div>
-      <div class="absolute bottom-1/4 right-1/4 w-48 h-48 rounded-full opacity-15 animate-float-slower"
-           style="background: radial-gradient(circle, {$colorStore.secondary}40, transparent);"></div>
-      <div class="absolute top-1/2 right-1/3 w-32 h-32 rounded-full opacity-20 animate-float"
-           style="background: radial-gradient(circle, {$colorStore.accent}40, transparent);"></div>
-    </div>
-
     <div class="container mx-auto px-4 max-w-7xl relative z-10">
       <div class="text-center mb-16">
         <h2
-          class="text-4xl lg:text-5xl font-extrabold mb-4 bg-gradient-to-r bg-clip-text text-transparent leading-tight scroll-mt-28"
+          class="text-4xl lg:text-5xl font-extrabold mb-4 leading-tight scroll-mt-28"
           id="features-heading"
-          style="background-image: linear-gradient(135deg, {$colorStore.text}, {$colorStore.primary}, {$colorStore.secondary});"
+          style="color: {$colorStore.text}"
         >
           {m.home.landingSeeItForYourself()}
         </h2>
-        <div class="w-24 h-1 mx-auto rounded-full mb-6"
-             style="background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.secondary}, {$colorStore.accent});"></div>
         <p class="text-lg lg:text-xl max-w-3xl mx-auto leading-relaxed" style="color: {$colorStore.muted}">
           {m.home.landingAFewOfTheThingsIt()}
         </p>
@@ -360,17 +328,12 @@
         <div class="max-w-6xl mx-auto space-y-12">
 
           <!-- Forms Builder Showcase -->
-          <div class="rounded-2xl border overflow-hidden shadow-2xl"
+          <div class="rounded-2xl border overflow-hidden"
                in:fly={{ y: 20, duration: 400, delay: 100 }}
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
-                      border-color: {$colorStore.primary}30;">
+               style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
               <!-- Text side -->
               <div class="p-6 sm:p-8 flex flex-col justify-center order-2 lg:order-1">
-                <div class="inline-block px-3 py-1 rounded-full mb-3 self-start"
-                     style="background: {$colorStore.primary}15; border: 1px solid {$colorStore.primary}30;">
-                  <span class="text-xs font-semibold" style="color: {$colorStore.primary}">{m.features.formsName()}</span>
-                </div>
                 <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-3" style="color: {$colorStore.text}">
                   {m.home.landingFormBuilder()}
                 </h3>
@@ -379,46 +342,40 @@
                 </p>
                 <ul class="space-y-2 mb-6">
                   <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
-                    <span style="color: {$colorStore.primary}">•</span>
+                    <span style="color: {$colorStore.muted}">•</span>
                     <span>{@html m.home.landingFormsBulletAppeals()}</span>
                   </li>
                   <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
-                    <span style="color: {$colorStore.primary}">•</span>
+                    <span style="color: {$colorStore.muted}">•</span>
                     <span>{@html m.home.landingFormsBulletJoins()}</span>
                   </li>
                   <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
-                    <span style="color: {$colorStore.primary}">•</span>
+                    <span style="color: {$colorStore.muted}">•</span>
                     <span>{m.home.landingCaptchaAndQuestionsThatDependOn()}</span>
                   </li>
                 </ul>
-                <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-[1.02] self-start"
+                <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-colors hover:bg-white/5 self-start"
                    href="/dashboard/forms"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 20px {$colorStore.primary}10;">
-                  {m.home.landingSeeItInAction()}
-                  <span>→</span>
-                </a>
+                   style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;">
+                  {m.home.landingSeeItInAction()}                </a>
               </div>
 
               <!-- Screenshot side -->
-              <div class="order-1 lg:order-2 relative bg-gradient-to-br p-4 sm:p-6 flex items-center justify-center"
-                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}05, {$colorStore.gradientMid}08);">
+              <div class="order-1 lg:order-2 relative p-4 sm:p-6 flex items-center justify-center">
                 <img
                   alt={m.home.landingMewdekoFormsBuilderInterface()}
                   class="w-full h-auto"
                   loading="lazy"
                   src="/img/feature-forms-builder.png"
                 />
-                <div class="absolute inset-0 opacity-10 pointer-events-none"
-                     style="background: radial-gradient(circle at center, {$colorStore.primary}40, transparent 70%);"></div>
               </div>
             </div>
           </div>
 
           <!-- XP Leaderboard Showcase -->
-          <div class="rounded-2xl border overflow-hidden shadow-2xl"
+          <div class="rounded-2xl border overflow-hidden"
                in:fly={{ y: 20, duration: 400, delay: 200 }}
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
-                      border-color: {$colorStore.secondary}30;">
+               style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
               <!-- Screenshot side (left on desktop) -->
               <div class="relative">
@@ -428,16 +385,10 @@
                   loading="lazy"
                   src="/img/feature-xp-leaderboard.png"
                 />
-                <div class="absolute inset-0 opacity-10 pointer-events-none"
-                     style="background: radial-gradient(circle at center, {$colorStore.secondary}40, transparent 70%);"></div>
               </div>
 
               <!-- Text side (right on desktop) -->
               <div class="p-6 sm:p-8 flex flex-col justify-center">
-                <div class="inline-block px-3 py-1 rounded-full mb-3 self-start"
-                     style="background: {$colorStore.secondary}15; border: 1px solid {$colorStore.secondary}30;">
-                  <span class="text-xs font-semibold" style="color: {$colorStore.secondary}">{m.home.landingEngagement()}</span>
-                </div>
                 <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-3" style="color: {$colorStore.text}">
                   {m.home.landingXpAndLeveling()}
                 </h3>
@@ -446,36 +397,29 @@
                 </p>
                 <ul class="space-y-2 mb-6">
                   <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
-                    <span style="color: {$colorStore.secondary}">•</span>
+                    <span style="color: {$colorStore.muted}">•</span>
                     <span>{m.home.landingCompetitionsWithRewardsAndACountdown()}</span>
                   </li>
                   <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
-                    <span style="color: {$colorStore.secondary}">•</span>
+                    <span style="color: {$colorStore.muted}">•</span>
                     <span>{m.home.landingRolesHandedOutWhenMembersReach()}</span>
                   </li>
                 </ul>
-                <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-[1.02] self-start"
+                <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-colors hover:bg-white/5 self-start"
                    href="/dashboard/xp"
-                   style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.accent}10); color: {$colorStore.text}; border: 1px solid {$colorStore.secondary}30; box-shadow: 0 4px 20px {$colorStore.secondary}10;">
-                  {m.home.landingViewDashboard()}
-                  <span>→</span>
-                </a>
+                   style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;">
+                  {m.home.landingViewDashboard()}                </a>
               </div>
             </div>
           </div>
 
           <!-- Bot Customization Showcase -->
-          <div class="rounded-2xl border overflow-hidden shadow-2xl"
+          <div class="rounded-2xl border overflow-hidden"
                in:fly={{ y: 20, duration: 400, delay: 300 }}
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
-                      border-color: {$colorStore.accent}30;">
+               style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
               <!-- Text side -->
               <div class="p-6 sm:p-8 flex flex-col justify-center order-2 lg:order-1">
-                <div class="inline-block px-3 py-1 rounded-full mb-3 self-start"
-                     style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30;">
-                  <span class="text-xs font-semibold" style="color: {$colorStore.accent}">{m.home.landingPerServer()}</span>
-                </div>
                 <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-3" style="color: {$colorStore.text}">
                   {m.home.landingPerServerBotProfile()}
                 </h3>
@@ -484,29 +428,24 @@
                 </p>
                 <ul class="space-y-2 mb-6">
                   <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
-                    <span style="color: {$colorStore.accent}">•</span>
+                    <span style="color: {$colorStore.muted}">•</span>
                     <span>{m.home.landingCompletelyFreeOthersChargeForThis()}</span>
                   </li>
                 </ul>
-                <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-[1.02] self-start"
+                <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-colors hover:bg-white/5 self-start"
                    href="/dashboard/settings"
-                   style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.primary}10); color: {$colorStore.text}; border: 1px solid {$colorStore.accent}30; box-shadow: 0 4px 20px {$colorStore.accent}10;">
-                  {m.home.landingCustomizeNow()}
-                  <span>→</span>
-                </a>
+                   style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;">
+                  {m.home.landingCustomizeNow()}                </a>
               </div>
 
               <!-- Screenshot side -->
-              <div class="order-1 lg:order-2 relative bg-gradient-to-br p-4 sm:p-6 flex items-center justify-center"
-                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}05, {$colorStore.gradientMid}08);">
+              <div class="order-1 lg:order-2 relative p-4 sm:p-6 flex items-center justify-center">
                 <img
                   alt={m.home.landingMewdekoBotCustomization()}
                   class="w-full h-auto"
                   loading="lazy"
                   src="/img/feature-bot-customization.png"
                 />
-                <div class="absolute inset-0 opacity-10 pointer-events-none"
-                     style="background: radial-gradient(circle at center, {$colorStore.accent}40, transparent 70%);"></div>
               </div>
             </div>
           </div>
@@ -517,16 +456,10 @@
       <!-- Commands Showcase - BIG CTA -->
       <div class="mb-16 px-4">
         <div class="max-w-4xl mx-auto">
-          <div class="rounded-2xl border p-8 sm:p-12 text-center shadow-2xl"
+          <div class="rounded-2xl border p-8 sm:p-12 text-center"
                in:fly={{ y: 20, duration: 400 }}
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}12, {$colorStore.gradientMid}18);
-                      border-color: {$colorStore.primary}30;">
-            <div class="mb-6">
-              <div
-                class="text-6xl sm:text-7xl lg:text-8xl font-extrabold mb-4 bg-gradient-to-r bg-clip-text text-transparent"
-                style="background-image: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary}, {$colorStore.accent});">
-                {siteStatParams(data.stats).commands}
-              </div>
+               style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;">
+            <div class="mb-8">
               <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3" style="color: {$colorStore.text}">
                 {m.common.commandReference()}
               </h3>
@@ -536,36 +469,11 @@
               </p>
             </div>
 
-            <!-- Mini module breakdown -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8 max-w-2xl mx-auto">
-              <div class="p-3 rounded-lg" style="background: {$colorStore.primary}15;">
-                <div class="text-xl sm:text-2xl font-bold" style="color: {$colorStore.primary}">34</div>
-                <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.common.modules()}</div>
-              </div>
-              <div class="p-3 rounded-lg" style="background: {$colorStore.secondary}15;">
-                <div class="text-xl sm:text-2xl font-bold" style="color: {$colorStore.secondary}">200+</div>
-                <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.common.settings()}</div>
-              </div>
-              <div class="p-3 rounded-lg" style="background: {$colorStore.accent}15;">
-                <div class="text-xl sm:text-2xl font-bold" style="color: {$colorStore.accent}">7</div>
-                <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.common.protection()}</div>
-              </div>
-              <div class="p-3 rounded-lg" style="background: {$colorStore.primary}15;">
-                <div class="text-xl sm:text-2xl font-bold" style="color: {$colorStore.primary}">35+</div>
-                <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingLogEvents()}</div>
-              </div>
-            </div>
-
-            <a class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02]"
+            <a class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-colors hover:bg-white/5"
                href="/commands"
-               style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}12); color: {$colorStore.text}; border: 1px solid {$colorStore.secondary}30; box-shadow: 0 8px 32px {$colorStore.secondary}10;">
+               style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;">
               {m.home.landingBrowseAllCommands(siteStatParams(data.stats))}
-              <i class="fa-solid fa-arrow-right"></i>
             </a>
-
-            <p class="text-xs sm:text-sm mt-4" style="color: {$colorStore.muted}">
-              {m.home.landingWeDocumentedEverySingleOneOf()}
-            </p>
           </div>
         </div>
       </div>
@@ -585,190 +493,188 @@
 
           <div class="text-center">
             <button
-              class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] mb-8"
+              class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-colors hover:bg-white/5 mb-8"
               onclick={() => showAllFeatures = !showAllFeatures}
-              style="background: {$colorStore.accent}15; color: {$colorStore.accent}; border: 2px solid {$colorStore.accent}30;">
+              style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;">
               {showAllFeatures ? m.home.landingHideAllModules() : m.home.landingShowAllModules()}
-              <span class="transform transition-transform {showAllFeatures ? 'rotate-180' : ''}">↓</span>
             </button>
           </div>
           
           {#if showAllFeatures}
-            <div class="rounded-2xl border p-8 shadow-lg" 
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}06, {$colorStore.gradientMid}10);
-                        border-color: {$colorStore.primary}20;"
+            <div class="rounded-2xl border p-8"
+                 style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;"
                  in:fly={{ y: 20, duration: 300 }}>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <!-- Protection & Moderation -->
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.home.landingServerLogging()}
                   </div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landing35TrackedEvents()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.placeholders.categoryChatTrigger()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingCustomRepliesAndCommands()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.common.embedBuilder()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingBuildEmbedsWithoutWritingJson()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.wizardTicketsName()}
                   </div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingPrivateChannelsForSupport()}</div>
                 </div>
 
                 <!-- Engagement Features -->
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.giveawaysName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingTimedWithRandomWinners()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.home.landingVotingSystem()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingPollsWithButtons()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.suggestionsName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingFeedbackWithVoting()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.starboardName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingRepostsTheMostStarredMessages()}</div>
                 </div>
 
                 <!-- Community Tools -->
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.home.landingMultiGreets()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landing30WelcomeMessages()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.rolegreetsName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingAMessageWhenSomeoneGetsA()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.home.landingBirthdayTracking()}
                   </div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingAnnouncesMembersBirthdays()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.reputationName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingMembersThankEachOther()}</div>
                 </div>
 
                 <!-- Automation -->
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.repeatersName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingScheduledMessages()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.wizardFeedsName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingPostsNewItemsFromAFeed()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.streamsName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingTwitchYoutube()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.statusrolesName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingRolesFromCustomStatuses()}</div>
                 </div>
 
                 <!-- User Management -->
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.rolestatesName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingRolesComeBackOnRejoin()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.wizardInvitetrackingName()}
                   </div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingSeeWhoInvitedWhom()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.afkName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingTellsPeopleYouReAway()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.highlightsName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingADmWhenYourWordIs()}</div>
                 </div>
 
                 <!-- Content & Social -->
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.todoName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingSharedAndPersonalLists()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.confessionsName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingAnonymousPosts()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.chatsaverName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingExportConversations()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.messagestatsName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingWhoTalksAndWhere()}</div>
                 </div>
 
                 <!-- Fun & Games -->
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.home.landingEconomyGames()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landing20GamblingGames()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.common.games()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingTriviaHangmanTictactoe()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.common.countingGames()}
                   </div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingCountUpOneNumberEach()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.home.landingMusicBot()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingYoutubeSpotifyAndSoundcloud()}</div>
                 </div>
 
                 <!-- Voice & Channels -->
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.customvoiceName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingMembersGetTheirOwnVoiceChannel()}</div>
                 </div>
 
                 <!-- And More -->
-                <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
-                     style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                <div class="p-3 sm:p-4 rounded-lg"
+                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.home.landingAnd10More()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingSeeFullList()}</div>
                 </div>
@@ -776,8 +682,8 @@
               
               <div class="text-center mt-8">
                 <a href="/commands"
-                   class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02]"
-                   style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10); color: {$colorStore.text}; border: 1px solid {$colorStore.secondary}30; box-shadow: 0 8px 32px {$colorStore.secondary}10;">
+                   class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-colors hover:bg-white/5"
+                   style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;">
                   {m.home.landingViewCompleteFeatureList()}
                 </a>
               </div>
@@ -792,36 +698,19 @@
 
   <section
     class="py-16 relative overflow-hidden"
-    style="background: radial-gradient(circle at center,
-      {$colorStore.gradientStart}15 0%,
-      {$colorStore.gradientEnd}10 50%,
-      {$colorStore.gradientEnd}05 100%
-    );"
   >
     <div class="container mx-auto px-4 max-w-7xl relative z-10">
       <div class="mb-16 px-4">
         <div class="max-w-4xl mx-auto">
           <div class="rounded-2xl border p-6 sm:p-8"
                in:fly={{ y: 20, duration: 400 }}
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
-                      border-color: {$colorStore.primary}30;">
+               style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;">
             <div class="flex flex-col md:flex-row items-center gap-6 md:gap-8">
-              <!-- Icon -->
-              <div class="flex-shrink-0">
-                <div class="w-20 h-20 rounded-2xl flex items-center justify-center"
-                     style="background: {$colorStore.primary}15; border: 2px solid {$colorStore.primary}30;">
-                  <i class="fa-brands fa-github text-4xl" style="color: {$colorStore.primary};"></i>
-                </div>
-              </div>
-
               <!-- Content -->
               <div class="flex-1 text-center md:text-left">
                 <h3 class="text-xl sm:text-2xl font-bold mb-3" style="color: {$colorStore.text}">
                   {m.home.landingFullyOpenSourceSince2020()}
                 </h3>
-                <p class="text-base sm:text-lg mb-4" style="color: {$colorStore.muted}">
-                  {m.home.landingYouCanReadAllOfIt()}
-                </p>
                 <div class="flex flex-wrap gap-3 sm:gap-4 justify-center md:justify-start text-xs sm:text-sm"
                      style="color: {$colorStore.muted}">
                   <span class="flex items-center gap-2">
@@ -845,15 +734,13 @@
 
               <!-- CTA -->
               <div class="flex-shrink-0">
-                <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-[1.02]"
+                <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-colors hover:bg-white/5"
                    href="https://github.com/SylveonDeko/Mewdeko"
                    rel="noreferrer"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 20px {$colorStore.primary}10;"
+                   style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                    target="_blank">
                   <i class="fa-brands fa-github"></i>
-                  {m.home.landingViewSource()}
-                  <i class="fa-solid fa-arrow-up-right-from-square text-sm"></i>
-                </a>
+                  {m.home.landingViewSource()}                </a>
               </div>
             </div>
           </div>
@@ -863,15 +750,10 @@
       <!-- Feature Request & Community Section -->
       <div class="px-4 mb-16">
         <div class="max-w-4xl mx-auto">
-          <div class="rounded-2xl border p-8 sm:p-10 shadow-2xl"
+          <div class="rounded-2xl border p-8 sm:p-10"
                in:fly={{ y: 20, duration: 400 }}
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
-                      border-color: {$colorStore.primary}30;">
+               style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;">
             <div class="text-center mb-8">
-              <div class="inline-block px-4 py-2 rounded-full mb-4"
-                   style="background: {$colorStore.secondary}15; border: 1px solid {$colorStore.secondary}30;">
-                <span class="text-sm font-semibold" style="color: {$colorStore.secondary}">{m.home.landingWeUseOurOwnTools()}</span>
-              </div>
               <h3 class="text-2xl sm:text-3xl font-bold mb-3" style="color: {$colorStore.text}">
                 {m.features.featureRequestsName()}
               </h3>
@@ -881,16 +763,16 @@
             </div>
 
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-              <a class="group relative px-8 py-4 rounded-xl font-bold transition-all hover:scale-[1.02] flex items-center justify-center gap-3 overflow-hidden"
+              <a class="group relative px-8 py-4 rounded-xl font-bold transition-colors hover:bg-white/5 flex items-center justify-center gap-3 overflow-hidden"
                  href="/forms/0lIoQGzMlMBj"
-                 style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10); color: {$colorStore.text}; border: 1px solid {$colorStore.secondary}30; box-shadow: 0 4px 20px {$colorStore.secondary}10;">
+                 style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;">
                 <i class="fa-solid fa-lightbulb"></i>
                 {m.common.suggestAFeature()}
               </a>
-              <a class="group relative px-8 py-4 rounded-xl font-bold transition-all hover:scale-[1.02] flex items-center justify-center gap-3 overflow-hidden"
+              <a class="group relative px-8 py-4 rounded-xl font-bold transition-colors hover:bg-white/5 flex items-center justify-center gap-3 overflow-hidden"
                  href="https://discord.gg/twQw45rBjN"
                  rel="noreferrer"
-                 style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20; box-shadow: 0 2px 12px {$colorStore.primary}05;"
+                 style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                  target="_blank">
                 <i class="fa-brands fa-discord"></i>
                 {m.home.landingJoinDiscord()}
@@ -906,66 +788,3 @@
     </div>
   </section>
 </main>
-
-<style>
-    @keyframes pulse-border {
-        0%, 100% {
-            opacity: 0.5;
-            transform: scale(1);
-        }
-        50% {
-            opacity: 0.8;
-            transform: scale(1.01);
-        }
-    }
-
-    .animate-float {
-        animation: float 20s ease-in-out infinite;
-    }
-
-    .animate-float-slow {
-        animation: float 25s ease-in-out infinite;
-    }
-
-    .animate-float-slower {
-        animation: float 30s ease-in-out infinite;
-    }
-
-    @keyframes float {
-        0%, 100% {
-            transform: translate(0, 0);
-        }
-        25% {
-            transform: translate(-20px, -20px);
-        }
-        50% {
-            transform: translate(20px, -10px);
-        }
-        75% {
-            transform: translate(-10px, 20px);
-        }
-    }
-
-    @keyframes gradient-shift {
-        0% {
-            background-position: 0 50%;
-        }
-        50% {
-            background-position: 100% 50%;
-        }
-        100% {
-            background-position: 0 50%;
-        }
-    }
-
-    @keyframes fade-in {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-</style>

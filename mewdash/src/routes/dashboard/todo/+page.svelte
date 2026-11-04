@@ -512,7 +512,7 @@
         label: m.todo.pageActionCreateList(),
         icon: "fa-plus",
         action: () => showNewListModal = true,
-        style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
+        style: `background: ${$colorStore.primary}; color: ${$colorStore.text};`
       },
       {
         label: m.common.filters(),
@@ -537,18 +537,18 @@
           placeholder={m.todo.pageSearchPlaceholder()}
           bind:value={searchQuery}
           class="w-full pl-12 pr-4 py-4 rounded-2xl border text-lg"
-          style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}40; color: {$colorStore.text};"
+          style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}40; color: {$colorStore.text};"
         >
       </div>
     </div>
 
     <!-- Filters -->
     {#if showFilters}
-      <div class="mb-8 p-6 rounded-2xl" style="background: linear-gradient(135deg, {$colorStore.primary}08, {$colorStore.secondary}08);" 
+      <div class="mb-8 p-6 rounded-2xl" style="background: {$colorStore.primary}08;" 
            in:fly={{ y: -20, duration: 300 }}>
         <div class="flex flex-wrap items-center gap-4">
           <span id="input-typecheckbox-bindcheckedincludecompleted-cla-label"
-                class="flex items-center gap-3 px-4 py-2 rounded-xl cursor-pointer transition-all hover:scale-[1.02]"
+                class="flex items-center gap-3 px-4 py-2 rounded-xl cursor-pointer transition-all"
                  style="background: {includeCompleted ? $colorStore.primary + '20' : 'transparent'};">
               <input type="checkbox" bind:checked={includeCompleted} class="rounded-sm w-5 h-5">
             <span style="color: {$colorStore.text}" class="font-medium">{m.todo.pageShowCompleted()}</span>
@@ -599,7 +599,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {#each Array(6).fill(0) as _, index (index)}
           <div class="p-6 rounded-2xl animate-pulse" 
-               style="background: linear-gradient(135deg, {$colorStore.primary}08, {$colorStore.secondary}08);"
+               style="background: {$colorStore.primary}08;"
                in:scale={{ duration: 300, delay: index * 100 }}>
             <div class="space-y-4">
               <div class="h-6 rounded-xl" style="background: {$colorStore.primary}20; width: 70%;"></div>
@@ -614,7 +614,7 @@
       <!-- Beautiful Empty State -->
       <div class="text-center py-20">
         <div class="inline-flex p-6 rounded-3xl mb-6" 
-             style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}15);">
+             style="background: {$colorStore.primary}12;">
           <i class="fa-utility-duo fa-regular fa-list-ul"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px;"></i>
         </div>
@@ -626,12 +626,12 @@
         </p>
         {#if !searchQuery}
           <button
-            class="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg"
+            class="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-semibold transition-all duration-300 bg-white/10 border border-white/20"
             style="color: {$colorStore.text};"
             onclick={() => showNewListModal = true}
           >
             <span class="p-2 rounded-lg flex items-center justify-center"
-                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); color: white;">
+                  style="background: {$colorStore.primary}; color: white;">
               <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
             </span>
             <span>{m.todo.pageCreateFirstList()}</span>
@@ -647,9 +647,9 @@
           
           <div class="group relative" in:scale={{ duration: 300, delay: index * 50 }}>
             <!-- Todo List Card -->
-            <div class="relative p-6 rounded-2xl transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-xl"
+            <div class="relative p-6 rounded-2xl transition-all duration-300 cursor-pointer"
                  class:ring-2={list.id === selectedListId}
-                 style="background: linear-gradient(135deg, {$colorStore.primary}08, {$colorStore.primary}15);
+                 style="background: {$colorStore.primary}10;
                         ring-color: {list.id === selectedListId ? $colorStore.primary : 'transparent'};"
                  onclick={() => handleSelectList({ detail: { listId: list.id } })}
                  onkeydown={(e) => e.key === 'Enter' && handleSelectList({ detail: { listId: list.id } })}
@@ -680,8 +680,8 @@
                 <div class="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300">
                   {#if listPermissions.canView}
                     <button aria-label={m.common.permissions()}
-                      class="p-3 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px]"
-                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
+                      class="p-3 rounded-lg transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                      style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                             onclick={(e) => { e.stopPropagation(); handleShowPermissions({ detail: { listId: list.id } }); }}
                       title={m.todo.permissionsManageTitle()}
                     >
@@ -691,8 +691,8 @@
 
                   {#if listPermissions.canManage}
                     <button aria-label={m.todo.pageListSettingsAria()}
-                      class="p-3 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px]"
-                      style="background: linear-gradient(135deg, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}20); color: {$colorStore.secondary};"
+                      class="p-3 rounded-lg transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                      style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                             onclick={(e) => e.stopPropagation()}
                       title={m.todo.pageListSettingsAria()}
                     >
@@ -747,7 +747,7 @@
                     </div>
                     <div class="w-full rounded-full h-2" style="background: {$colorStore.primary}20;">
                       <div class="h-2 rounded-full transition-all duration-1000"
-                           style="background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.secondary});
+                           style="background: {$colorStore.primary};
                                   width: {listStats.completionRate}%"></div>
                     </div>
                   </div>
@@ -779,8 +779,8 @@
             <div class="flex flex-wrap items-center gap-2">
               {#if currentPermissions.canAdd}
                 <button
-                  class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-[1.02] min-h-[44px]"
-                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
+                  class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 min-h-[44px]"
+                  style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                   onclick={() => showQuickAdd = !showQuickAdd}
                 >
                   <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
@@ -789,7 +789,7 @@
               {/if}
               {#if currentPermissions.canManage}
                 <button
-                  class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-[1.02] min-h-[44px]"
+                  class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 min-h-[44px]"
                   style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
                   onclick={handleDeleteList}
                 >
@@ -803,7 +803,7 @@
           <!-- Quick Add Form -->
           {#if showQuickAdd && currentPermissions.canAdd}
             <div class="mb-6 p-6 rounded-2xl" 
-                 style="background: linear-gradient(135deg, {$colorStore.primary}08, {$colorStore.secondary}08);"
+                 style="background: {$colorStore.primary}08;"
                  in:fly={{ y: -20, duration: 300 }}>
               <div class="space-y-4">
                 <input
@@ -811,14 +811,14 @@
                   placeholder={m.todo.pageQuickTitlePlaceholder()}
                   bind:value={newItemTitle}
                   class="w-full px-4 py-3 rounded-xl border text-lg "
-                  style="background: linear-gradient(135deg, {$colorStore.primary}12, {$colorStore.secondary}08); border-color: {$colorStore.primary}40; color: {$colorStore.text};"
+                  style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}40; color: {$colorStore.text};"
                 >
                 <textarea
                   placeholder={m.todo.pageQuickDescriptionPlaceholder()}
                   bind:value={newItemDescription}
                   rows="2"
                   class="w-full px-4 py-3 rounded-xl border resize-none "
-                  style="background: linear-gradient(135deg, {$colorStore.primary}12, {$colorStore.secondary}08); border-color: {$colorStore.primary}40; color: {$colorStore.text};"
+                  style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}40; color: {$colorStore.text};"
                 ></textarea>
                 <div class="flex items-center justify-between">
                   <DiscordSelector
@@ -838,7 +838,7 @@
                   <div class="flex flex-col sm:flex-row gap-3">
                     <button
                       aria-label={m.todo.pageAddItemAria()}
-                      class="w-full sm:flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                      class="w-full sm:flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                       onclick={async () => {
                         if (newItemTitle.trim() && selectedListId && $userStore?.id) {
@@ -865,7 +865,7 @@
                       <span>{m.common.addItem()}</span>
                     </button>
                     <button
-                      class="w-full sm:w-auto px-6 py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] font-medium flex items-center justify-center"
+                      class="w-full sm:w-auto px-6 py-3 rounded-xl transition-all duration-300 font-medium flex items-center justify-center"
                       style="color: {$colorStore.muted}; border: 1px solid {$colorStore.primary}30;"
                       onclick={() => showQuickAdd = false}
                     >
@@ -896,9 +896,9 @@
               </div>
             {:else}
               {#each filteredItems as item, index (item.id)}
-                <div class="p-4 rounded-xl transition-all hover:scale-[1.01]" 
+                <div class="p-4 rounded-xl transition-all" 
                      class:opacity-60={item.isCompleted}
-                     style="background: linear-gradient(135deg, {$colorStore.primary}05, {$colorStore.secondary}05);"
+                     style="background: {$colorStore.primary}08;"
                      in:scale={{ duration: 200, delay: index * 30 }}>
                   <div class="flex items-start gap-4">
                     <!-- Completion Checkbox -->
@@ -962,8 +962,8 @@
                           <div class="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
                             {#if currentPermissions.canEdit}
                               <button aria-label={m.todo.pageItemEdit()}
-                                class="p-2 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[36px] min-h-[36px]"
-                                style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
+                                class="p-2 rounded-lg transition-all flex items-center justify-center min-w-[36px] min-h-[36px]"
+                                style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                 title={m.todo.pageItemEdit()}
                                 onclick={() => openEditItem(item)}
                               >
@@ -973,8 +973,8 @@
 
                             {#if currentPermissions.canDelete}
                               <button aria-label={m.todo.pageItemDelete()}
-                                class="p-2 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[36px] min-h-[36px]"
-                                style="background: linear-gradient(135deg, #ef444420, #dc262620); color: #ef4444;"
+                                class="p-2 rounded-lg transition-all flex items-center justify-center min-w-[36px] min-h-[36px]"
+                                style="background: #ef444420; color: #ef4444;"
                                 onclick={() => handleDeleteItem({ detail: { itemId: item.id } })}
                                 title={m.todo.pageItemDelete()}
                               >
@@ -1003,7 +1003,7 @@
          onkeydown={(e) => { if (e.key === "Escape") closeEditItem(); }}
          in:fly={{ opacity: 0, duration: 200 }}>
       <div class="rounded-2xl shadow-2xl w-full max-w-lg border"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); border-color: {$colorStore.primary}30;"
+           style="background: {$colorStore.background}; border-color: {$colorStore.primary}30;"
            role="dialog"
            aria-modal="true"
            aria-labelledby="edit-item-title"
@@ -1024,13 +1024,13 @@
               <label for="edit-item-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.todo.pageEditFieldTitle()}</label>
               <input id="edit-item-name" type="text" bind:value={editForm.title}
                      class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
-                     style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};">
+                     style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}50; color: {$colorStore.text};">
             </div>
             <div>
               <label for="edit-item-description" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.description()}</label>
               <textarea id="edit-item-description" rows="3" bind:value={editForm.description}
                         class="w-full px-4 py-3 rounded-lg border resize-none"
-                        style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};"></textarea>
+                        style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}50; color: {$colorStore.text};"></textarea>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -1044,7 +1044,7 @@
                 <label for="edit-item-due" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.todo.pageEditDueDate()}</label>
                 <input id="edit-item-due" type="date" bind:value={editForm.dueDate}
                        class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
-                       style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};">
+                       style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}50; color: {$colorStore.text};">
               </div>
             </div>
 
@@ -1058,12 +1058,12 @@
 
             <div class="flex flex-col sm:flex-row gap-3 pt-2">
               <button type="button" onclick={closeEditItem}
-                      class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                      class="flex-1 px-4 py-3 rounded-lg font-medium transition-all min-h-[44px]"
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted};">
                 {m.common.cancel()}
               </button>
               <button type="submit" disabled={editSaving}
-                      class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
+                      class="flex-1 px-4 py-3 rounded-lg font-medium transition-all min-h-[44px] disabled:opacity-50"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
                 {#if editSaving}<i class="fa-solid fa-spinner fa-spin mr-2"></i>{/if}
                 {m.common.saveChanges()}
@@ -1107,7 +1107,7 @@
                 placeholder={m.todo.pageNewListNamePlaceholder()}
                 bind:value={newListName}
                      class="w-full px-4 py-3 rounded-lg border "
-                style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};"
+                style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}50; color: {$colorStore.text};"
                 required
               >
             </div>
@@ -1121,14 +1121,14 @@
                 bind:value={newListDescription}
                 rows="3"
                         class="w-full px-4 py-3 rounded-lg border resize-none "
-                style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};"
+                style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}50; color: {$colorStore.text};"
               ></textarea>
             </div>
 
             <div class="flex flex-col sm:flex-row gap-3 pt-4">
               <button
                 aria-label={m.todo.pageNewListCreateAria()}
-                class="w-full sm:flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                class="w-full sm:flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                 onclick={handleCreateList}
                 disabled={!newListName.trim()}
@@ -1137,7 +1137,7 @@
                 {m.todo.pageActionCreateList()}
               </button>
               <button
-                class="w-full sm:w-auto px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center min-h-[44px]"
+                class="w-full sm:w-auto px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center min-h-[44px]"
                 style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
                 onclick={() => showNewListModal = false}
               >
@@ -1187,21 +1187,5 @@
       line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-  }
-
-  /* Smooth hover animations */
-  .group:hover {
-    transform: translateY(-1px);
-  }
-
-  /* Beautiful gradient animations */
-  @keyframes gradient-shift {
-      0% {
-          background-position: 0 50%;
-      }
-    50% { background-position: 100% 50%; }
-      100% {
-          background-position: 0 50%;
-      }
   }
 </style>

@@ -156,8 +156,6 @@
   "page_notify_currency_reward_removed": "Recompensa em moeda removida com sucesso",
   "page_notify_role_excluded": "Cargo excluído com sucesso",
   "page_notify_role_included": "Cargo incluído com sucesso",
-  "page_notify_role_reward_added": "Recompensa de cargo adicionada com sucesso",
-  "page_notify_role_reward_removed": "Recompensa de cargo removida com sucesso",
   "page_notify_template_updated": "Modelo de XP atualizado com sucesso",
   "page_reset_changes": "Redefinir alterações",
   "page_save_template": "Salvar alterações do modelo",

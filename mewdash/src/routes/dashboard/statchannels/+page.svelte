@@ -516,13 +516,13 @@
         <div class="w-full space-y-4" in:fade={{ duration: 200 }}>
             {#if statChannels.length === 0}
                 <div class="rounded-2xl border p-12 text-center"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <i class="fa-utility-duo fa-regular fa-chart-simple"
                        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
                     <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">{m.statchannels.listEmptyTitle()}</p>
                     <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.statchannels.listEmptyText()}</p>
-                    <button class="mt-4 flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] mx-auto"
+                    <button class="mt-4 flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all mx-auto"
                             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                             onclick={() => { activeTab = 'add'; }}>
                         <i class="fa-solid fa-plus" style="font-size: 14px;"></i>
@@ -531,8 +531,8 @@
                 </div>
             {:else}
                 {#each statChannels as sc (sc.id)}
-                    <div class="rounded-2xl border p-5 shadow-2xl transition-all"
-                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                    <div class="rounded-2xl border p-5 transition-all"
+                         style="background: {$colorStore.primary}0c;
                                 border-color: {$colorStore.primary}30;">
                         <div class="flex flex-col md:flex-row md:items-start justify-between gap-3">
                             <div class="flex items-start gap-4 min-w-0">
@@ -572,13 +572,13 @@
 
                             <div class="flex items-center gap-2 shrink-0">
                                 {#if editingId !== sc.id}
-                                    <button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all hover:scale-[1.02] text-sm"
+                                    <button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all text-sm"
                                             style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                                             onclick={() => startEditing(sc)}>
                                         <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
                                         <span class="md:hidden">{m.common.edit()}</span>
                                     </button>
-                                    <button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all hover:scale-[1.02] text-sm"
+                                    <button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all text-sm"
                                             style="background: #ef444410; color: #ef4444;"
                                             onclick={() => confirmRemove(sc)}>
                                         <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
@@ -598,7 +598,7 @@
                                     <input id="edit-template-{sc.id}" type="text" bind:value={editForm.template}
                                            oninput={() => saveChannel(sc)}
                                            onblur={() => autoSave.flush(channelKey(sc.id))}
-                                           class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                           class="w-full p-2.5 rounded-xl border focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 46px;" />
                                 </div>
 
@@ -634,12 +634,12 @@
                                            max="1440" bind:value={editForm.updateIntervalMinutes}
                                            oninput={() => saveChannel(sc)}
                                            onblur={() => autoSave.flush(channelKey(sc.id))}
-                                           class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                           class="w-full p-2.5 rounded-xl border focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 46px;" />
                                 </div>
 
                                 <div class="md:col-span-2 flex flex-col sm:flex-row sm:items-center gap-2">
-                                    <button class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                                    <button class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all min-h-[44px]"
                                             style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                                             onclick={stopEditing}>
                                         <i class="fa-solid fa-check" style="font-size: 13px;"></i>
@@ -658,8 +658,8 @@
 
     {:else if activeTab === 'add'}
         <div class="w-full" in:fade={{ duration: 200 }}>
-            <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+            <div class="rounded-2xl border p-6 md:p-8"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fa-utility-duo fa-regular fa-circle-plus"
@@ -738,7 +738,7 @@
                                    style="color: {$colorStore.text}">{m.statchannels.addTargetDate()}</label>
                             <input id="f-date" type="datetime-local" bind:value={addForm.countdownDate}
                                    oninput={refreshPreview}
-                                   class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                   class="w-full p-2.5 rounded-xl border focus:outline-none"
                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                         </div>
                     {/if}
@@ -749,7 +749,7 @@
                                    style="color: {$colorStore.text}">{m.statchannels.addGoal()}</label>
                             <input id="f-goal" type="number" min="1" bind:value={addForm.goalTarget}
                                    oninput={refreshPreview}
-                                   class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                   class="w-full p-2.5 rounded-xl border focus:outline-none"
                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                         </div>
                     {/if}
@@ -760,7 +760,7 @@
                                    style="color: {$colorStore.text}">{m.statchannels.addTwitchCounter()}</label>
                             <input id="f-counter-name" type="text" bind:value={addForm.targetName}
                                    oninput={refreshPreview} placeholder={m.statchannels.addTwitchCounterPlaceholder()}
-                                   class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                   class="w-full p-2.5 rounded-xl border focus:outline-none"
                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                             <p class="text-xs mt-1" style="color: {$colorStore.muted}">
                                 {m.statchannels.addTwitchCounterHint()}
@@ -792,13 +792,13 @@
                         <label for="f-template" class="block text-sm font-medium mb-2"
                                style="color: {$colorStore.text}">{m.common.template()}</label>
                         <input id="f-template" type="text" bind:value={addForm.template} oninput={refreshPreview}
-                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
 
                         <div class="flex flex-wrap gap-1.5 mt-2">
                             {#each availablePlaceholders as placeholder}
                                 <button type="button"
-                                        class="px-2 py-0.5 rounded-md text-xs font-mono transition-all hover:scale-[1.05]"
+                                        class="px-2 py-0.5 rounded-md text-xs font-mono transition-all"
                                         style="background: {$colorStore.primary}10; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}20;"
                                         onclick={() => { addForm.template += placeholder; refreshPreview(); }}>
                                     {placeholder}
@@ -868,7 +868,7 @@
                                style="color: {$colorStore.text}">{m.statchannels.editInterval()}</label>
                         <input id="f-interval" type="number" min={minimumInterval} max="1440"
                                bind:value={addForm.updateIntervalMinutes}
-                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted}">
                             {(minimumInterval === 1 ? m.statchannels.addMinIntervalOne : m.statchannels.addMinIntervalOther)({ count: minimumInterval })}
@@ -879,7 +879,7 @@
                     </div>
                 </div>
 
-                <button class="mt-6 flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
+                <button class="mt-6 flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                         onclick={addStatChannel}
                         disabled={saving}>
@@ -891,8 +891,8 @@
 
     {:else if activeTab === 'settings'}
         <div class="w-full" in:fade={{ duration: 200 }}>
-            <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+            <div class="rounded-2xl border p-6 md:p-8"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-2">
                     <i class="fa-utility-duo fa-regular fa-sliders"
@@ -929,15 +929,15 @@
                                bind:value={settings.defaultIntervalMinutes}
                                oninput={saveDefaultInterval}
                                onblur={() => autoSave.flush("defaultIntervalMinutes")}
-                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               class="w-full p-2.5 rounded-xl border focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                 </div>
             </div>
 
             {#if metadata}
-                <div class="rounded-2xl border p-6 md:p-8 shadow-2xl mt-6"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                <div class="rounded-2xl border p-6 md:p-8 mt-6"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">{m.statchannels.stylesTitle()}</h2>
                     <p class="text-sm mb-5" style="color: {$colorStore.muted}">
@@ -956,8 +956,8 @@
                     </div>
                 </div>
 
-                <div class="rounded-2xl border p-6 md:p-8 shadow-2xl mt-6"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                <div class="rounded-2xl border p-6 md:p-8 mt-6"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">{m.statchannels.countersTitle()}</h2>
                     <p class="text-sm mb-5" style="color: {$colorStore.muted}">
@@ -966,7 +966,7 @@
 
                     {#each [...new Set(metadata.statTypes.map((t) => t.category))] as category}
                         <div class="mb-5 last:mb-0">
-                            <h3 class="text-sm font-bold uppercase tracking-wide mb-2"
+                            <h3 class="text-sm font-bold mb-2"
                                 style="color: {$colorStore.primary}">{category}</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                                 {#each metadata.statTypes.filter((t) => t.category === category) as definition}

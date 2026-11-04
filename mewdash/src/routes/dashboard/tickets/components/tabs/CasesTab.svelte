@@ -294,7 +294,7 @@
       <div class="flex items-center gap-2 w-full sm:w-auto">
         {#if isClosed}
           <button
-            class="flex-1 sm:flex-none px-3 py-2 rounded-lg transition-all hover:scale-[1.02] text-sm font-medium min-h-[44px]"
+            class="flex-1 sm:flex-none px-3 py-2 rounded-lg transition-all text-sm font-medium min-h-[44px]"
             style="background: #10b98120; color: #10b981; border: 1px solid #10b98130;"
             onclick={() => reopenCase(selectedCase.id)}
           >
@@ -303,7 +303,7 @@
           </button>
         {:else}
           <button
-            class="flex-1 sm:flex-none px-3 py-2 rounded-lg transition-all hover:scale-[1.02] text-sm font-medium min-h-[44px]"
+            class="flex-1 sm:flex-none px-3 py-2 rounded-lg transition-all text-sm font-medium min-h-[44px]"
             style="background: #f59e0b20; color: #f59e0b; border: 1px solid #f59e0b30;"
             onclick={() => showConfirm(
               m.tickets.casesCloseTitle(),
@@ -451,7 +451,7 @@
             {@const isArchived = ticket.isArchived}
             {@const isClosed = !!ticket.closedAt}
             <div class="p-4 rounded-xl transition-all"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                 style="background: {$colorStore.primary}0c;
                         border: 1px solid {$colorStore.primary}20;">
               <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div class="flex-1 min-w-0">
@@ -533,7 +533,7 @@
   </div>
 {:else}
   <div class="text-center py-24 rounded-xl"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px dashed {$colorStore.primary}20;">
+       style="background: {$colorStore.primary}0c; border: 1px dashed {$colorStore.primary}20;">
     <i class="fa-solid fa-hand-pointer" style="color: {$colorStore.muted}; font-size: 64px; opacity: 0.2;"></i>
     <p class="mt-6 text-lg font-medium" style="color: {$colorStore.text}">{m.tickets.casesSelectPrompt()}</p>
     <p class="text-sm mt-2" style="color: {$colorStore.muted}">{m.tickets.casesSelectPromptHint()}</p>

@@ -307,7 +307,7 @@
     {#if settings}
       <div
         class="rounded-2xl border p-4 sm:p-5 mb-6"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        style="background: {$colorStore.primary}0c;
                border-color: {$colorStore.primary}30;"
         in:fly={{ y: 20, duration: 300 }}
       >
@@ -421,7 +421,7 @@
 
       <div
         class="rounded-2xl border p-4 sm:p-5 mb-6"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        style="background: {$colorStore.primary}0c;
                border-color: {$colorStore.primary}30;"
         in:fly={{ y: 20, duration: 300 }}
       >
@@ -443,7 +443,7 @@
       {#each statTiles as tile (tile.label)}
         <div
           class="rounded-2xl border p-4"
-          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+          style="background: {$colorStore.primary}0c;
                  border-color: {$colorStore.primary}30;"
         >
           <div class="flex items-center gap-2 text-xs font-medium" style="color: {$colorStore.muted}">
@@ -473,7 +473,7 @@
     <!-- Toolbar -->
     <div
       class="rounded-2xl border p-4 sm:p-5 mb-6 flex flex-col lg:flex-row lg:items-end gap-4"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
       in:fly={{ y: 20, duration: 300 }}
     >
@@ -667,7 +667,7 @@
         {#each visible as entry (entry.guildId.toString())}
           <div
             class="rounded-2xl border p-4"
-            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+            style="background: {$colorStore.primary}0c;
                    border-color: {isSelected(entry) ? $colorStore.primary : `${$colorStore.primary}30`};"
           >
             <div class="flex items-center justify-between gap-2">

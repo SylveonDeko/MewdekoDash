@@ -276,8 +276,8 @@
     {#if activeTab === 'list'}
         <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
             <!-- Feeds List -->
-            <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+            <div class=" rounded-2xl border p-6 md:p-8 transition-all relative z-20"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fa-utility-duo fa-regular fa-newspaper"
@@ -317,7 +317,7 @@
                                         </div>
                                     </div>
                                     <button aria-label={m.feeds.pageFeedDeleteAria()}
-                                            class="p-2 rounded-lg transition-all hover:scale-110"
+                                            class="p-2 rounded-lg transition-all"
                                             style="background: #ef444420; color: #ef4444;"
                                             onclick={() => removeFeed(feed.index)}
                                     >
@@ -342,7 +342,7 @@
                                         <div class="flex gap-2">
                                             <button
                                               aria-label={m.common.doneEditing()}
-                                              class="flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                                              class="flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px]"
                                                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                                                     onclick={() => finishEditing(feed)}
                                             >
@@ -367,7 +367,7 @@
 
                                 {#if editingFeed !== feed.id}
                                     <button
-                                      class="mt-2 text-sm px-3 py-1 rounded-lg transition-all hover:scale-[1.02]"
+                                      class="mt-2 text-sm px-3 py-1 rounded-lg transition-all"
                                             style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                             onclick={() => startEditing(feed)}
                                     >
@@ -384,8 +384,8 @@
     {:else if activeTab === 'add'}
         <div class="w-full" in:fade={{ duration: 200 }}>
             <!-- Add New Feed -->
-            <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+            <div class=" rounded-2xl border p-6 md:p-8 transition-all relative z-20"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fa-utility-duo fa-regular fa-circle-plus" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -430,7 +430,7 @@
 
                   <button aria-label={m.feeds.pageAddAria()}
                           aria-busy={saving}
-                          class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                          class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                             onclick={addFeed}
                             disabled={saving || !newFeed.channelId || !newFeed.url.trim()}
@@ -476,8 +476,8 @@
 
                 <!-- Feeds by Channel -->
                 {#if Object.keys(feedStats.feedsByChannel).length > 0}
-                    <div class="mt-6  rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                    <div class="mt-6  rounded-2xl border p-6 md:p-8 transition-all"
+                         style="background: {$colorStore.primary}0c;
                                 border-color: {$colorStore.primary}30;">
                         <div class="flex items-center gap-3 mb-6">
                             <i class="fa-utility-duo fa-regular fa-newspaper"

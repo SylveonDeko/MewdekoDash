@@ -21,8 +21,6 @@
   "min_server_time_label": "Tempo mín. no servidor (horas)",
   "notification_channel_label": "Canal de notificações (opcional)",
   "notification_channel_placeholder": "Sem notificações",
-  "notify_reward_added": "Recompensa de cargo adicionada com sucesso!",
-  "notify_reward_removed": "Recompensa de cargo removida!",
   "page_subtitle": "Gerencie a reputação e as recompensas do servidor",
   "page_title": "Sistema de reputação",
   "remove_on_drop_label": "Remover o cargo se a reputação cair abaixo do limite",

@@ -208,7 +208,7 @@
   <button
     type="button"
     onclick={() => showMobileModal = true}
-    class="w-full py-3 px-4 rounded-lg font-medium transition-all hover:scale-[1.02] border flex items-center justify-between"
+    class="w-full py-3 px-4 rounded-lg font-medium transition-all border flex items-center justify-between"
     style="background: {$colorStore.primary}10; color: {$colorStore.text}; border-color: {$colorStore.primary}40;"
   >
     <div class="flex items-center gap-2">
@@ -217,7 +217,6 @@
         {conditionGroups.length === 0 ? m.forms.multiConditionAddConditions() : m.forms.multiConditionCount({ count: conditionGroups.flat().length })}
       </span>
     </div>
-    <i class="fa-solid fa-arrow-up-right-from-square" style="color: {$colorStore.muted}; font-size: 14px;"></i>
   </button>
 
   {#if showMobileModal}
@@ -231,7 +230,7 @@
       >
         <div
           class="w-full h-full flex flex-col"
-          style="background: linear-gradient(135deg, {$colorStore.gradientStart}95, {$colorStore.gradientMid}98); max-width: 100vw;"
+          style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background}); max-width: 100vw;"
           onclick={(e) => e.stopPropagation()}
           onkeydown={(e) => e.stopPropagation()}
           role="dialog"
@@ -251,7 +250,7 @@
             <button
               type="button"
               onclick={() => showMobileModal = false}
-              class="p-2 rounded-lg transition-all hover:scale-110"
+              class="p-2 rounded-lg transition-all"
               style="background: {$colorStore.primary}20; color: {$colorStore.text};"
               aria-label={m.forms.multiConditionCloseModal()}
             >
@@ -266,7 +265,7 @@
                 <button
                   type="button"
                   onclick={addConditionGroup}
-                  class="w-full py-3 rounded-lg font-medium transition-all hover:scale-[1.02] border-2 border-dashed"
+                  class="w-full py-3 rounded-lg font-medium transition-all border-2 border-dashed"
                   style="background: {$colorStore.primary}05; color: {$colorStore.text}; border-color: {$colorStore.primary}40;"
                 >
                   <i class="fa-solid fa-plus mr-2"></i>
@@ -310,7 +309,7 @@
                           <button
                             type="button"
                             onclick={() => deleteCondition(groupIndex, conditionIndex)}
-                            class="ml-auto p-2 rounded-lg transition-all hover:scale-110 shrink-0"
+                            class="ml-auto p-2 rounded-lg transition-all shrink-0"
                             style="background: #ef444420; color: #ef4444;"
                             disabled={isLoading}
                             aria-label={m.forms.multiConditionDeleteCondition()}
@@ -509,8 +508,8 @@
             <button
               type="button"
               onclick={() => showMobileModal = false}
-              class="w-full py-3 rounded-lg font-medium transition-all hover:scale-[1.02]"
-              style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 20px {$colorStore.primary}10;"
+              class="w-full py-3 rounded-lg font-medium transition-all"
+              style="background: {$colorStore.primary}18; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
             >
               <i class="fa-solid fa-check mr-2"></i>
               {m.common.done()}
@@ -527,7 +526,7 @@
       <button
         type="button"
         onclick={addConditionGroup}
-        class="w-full py-3 rounded-lg font-medium transition-all hover:scale-[1.02] border-2 border-dashed"
+        class="w-full py-3 rounded-lg font-medium transition-all border-2 border-dashed"
         style="background: {$colorStore.primary}05; color: {$colorStore.text}; border-color: {$colorStore.primary}40;"
       >
         <i class="fa-solid fa-plus mr-2"></i>
@@ -714,7 +713,7 @@
             <button
               type="button"
               onclick={() => deleteCondition(groupIndex, conditionIndex)}
-              class="flex-shrink-0 p-2.5 rounded-lg transition-all hover:scale-110"
+              class="flex-shrink-0 p-2.5 rounded-lg transition-all"
               style="background: #ef444420; color: #ef4444;"
               disabled={isLoading}
               aria-label={m.forms.multiConditionDeleteCondition()}
@@ -730,7 +729,7 @@
         <button
           type="button"
           onclick={() => addConditionToGroup(conditionGroups.length - 1)}
-          class="flex-1 py-2.5 rounded-lg text-sm font-medium border transition-all hover:scale-[1.01]"
+          class="flex-1 py-2.5 rounded-lg text-sm font-medium border transition-all"
           style="background: {$colorStore.primary}10; color: {$colorStore.text}; border-color: {$colorStore.primary}40;"
         >
           <i class="fa-solid fa-plus mr-2"></i>
@@ -739,7 +738,7 @@
         <button
           type="button"
           onclick={addConditionGroup}
-          class="flex-1 py-2.5 rounded-lg text-sm font-medium border transition-all hover:scale-[1.01]"
+          class="flex-1 py-2.5 rounded-lg text-sm font-medium border transition-all"
           style="background: {$colorStore.accent}15; color: {$colorStore.text}; border-color: {$colorStore.accent}50;"
         >
           <i class="fa-solid fa-code-merge mr-2"></i>

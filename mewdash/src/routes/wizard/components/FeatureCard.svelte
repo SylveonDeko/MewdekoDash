@@ -51,12 +51,12 @@ Feature card for selecting features during wizard setup
 </script>
 
 <button
-        class="feature-card group w-full text-left p-4 sm:p-6 rounded-xl border-2 transition-all duration-200 hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 min-h-[160px] sm:min-h-[180px] relative overflow-hidden"
+        class="feature-card group w-full text-left p-4 sm:p-6 rounded-xl border-2 transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-offset-2 min-h-[160px] sm:min-h-[180px] relative overflow-hidden"
   class:disabled
   style="
     background: {selected 
-      ? `linear-gradient(135deg, ${$colorStore.primary}15, ${$colorStore.secondary}15)` 
-      : `linear-gradient(135deg, ${$colorStore.gradientStart}05, ${$colorStore.gradientMid}08)`};
+      ? `${$colorStore.primary}18`
+      : `${$colorStore.primary}08`};
     border-color: {selected ? $colorStore.primary + '60' : disabled ? $colorStore.muted + '20' : $colorStore.primary + '25'};
     focus:ring-color: {$colorStore.primary};
   "
@@ -143,8 +143,8 @@ Feature card for selecting features during wizard setup
 
   <!-- Hover effect overlay -->
   <span
-    class="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-200 pointer-events-none block"
-    style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary});"></span>
+    class="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-200 pointer-events-none block"
+    style="background: {$colorStore.primary};"></span>
 </button>
 
 <style>

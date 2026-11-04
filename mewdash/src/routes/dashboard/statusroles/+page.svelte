@@ -355,8 +355,8 @@
     {#if activeTab === 'list'}
         <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
             <!-- Status Roles List -->
-          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+          <div class=" rounded-2xl border p-6 md:p-8 transition-all relative z-20"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-utility-duo fa-regular fa-user-check"
@@ -393,14 +393,14 @@
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <button
-                                                class="p-2 rounded-lg transition-all hover:scale-110"
+                                                class="p-2 rounded-lg transition-all"
                                                 style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                                 onclick={() => expandedRole = expandedRole === role.id ? null : role.id}
                                         >
                                             {expandedRole === role.id ? "▼" : "▶"}
                                         </button>
                                       <button aria-label={m.common.delete()}
-                                                class="p-2 rounded-lg transition-all hover:scale-110"
+                                                class="p-2 rounded-lg transition-all"
                                               style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                                 onclick={() => removeStatusRole(role.id)}
                                         >
@@ -491,17 +491,13 @@
 
                                                 <div class="flex items-center gap-3 flex-wrap">
                                                     <button
-                                                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                                                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all min-h-[44px]"
                                                       style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                                       onclick={stopEditing}
                                                     >
                                                       <i class="fa-solid fa-check" style="font-size: 14px;" aria-hidden="true"></i>
                                                       {m.common.done()}
-                                                    </button>
-                                                    <span class="text-xs" style="color: {$colorStore.muted}">
-                                                      {m.common.changesSaveAutomatically()}
-                                                    </span>
-                                                </div>
+                                                    </button>                                                </div>
                                             </div>
                                         {:else}
                                             <!-- View Mode -->
@@ -533,7 +529,7 @@
                                                 </div>
 
                                                 <button
-                                                  class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
+                                                  class="w-full px-4 py-2 rounded-lg font-medium transition-all"
                                                         style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                                         onclick={() => startEditing(role)}
                                                 >
@@ -553,8 +549,8 @@
     {:else if activeTab === 'add'}
         <div class="w-full" in:fade={{ duration: 200 }}>
             <!-- Add New Status Role -->
-          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+          <div class=" rounded-2xl border p-6 md:p-8 transition-all relative z-20"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-utility-duo fa-regular fa-circle-plus"
@@ -580,7 +576,7 @@
                     </div>
 
                   <button
-                    class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                    class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                     onclick={addStatusRole}
                     disabled={saving || !newStatusRole.status.trim()}

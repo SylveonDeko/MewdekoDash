@@ -49,24 +49,15 @@
     fetchAllData
   }: Props = $props();
 
-  let tempTranscriptChannel = $state(transcriptChannelId?.toString() || null);
-  let tempLogChannel = $state(logChannelId?.toString() || null);
-
-  async function saveTranscriptChannel() {
-    const channelId = tempTranscriptChannel ? BigInt(tempTranscriptChannel) : null;
-    await setTranscriptChannel(channelId);
-  }
-
-  async function saveLogChannel() {
-    const channelId = tempLogChannel ? BigInt(tempLogChannel) : null;
-    await setLogChannel(channelId);
+  function pickedChannel(detail: { selected: unknown }): bigint | null {
+    return typeof detail.selected === "string" && detail.selected ? BigInt(detail.selected) : null;
   }
 </script>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
   <!-- Priorities Section -->
-  <div class="rounded-2xl border p-6 shadow-2xl transition-all"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;">
+  <div class="rounded-2xl border p-6 transition-all"
+       style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
 
     <div class="flex items-center justify-between mb-6">
       <h3 class="text-lg font-semibold flex items-center gap-2" style="color: {$colorStore.text}">
@@ -74,7 +65,7 @@
         {m.tickets.configPrioritiesTitle({ count: priorities.length })}
       </h3>
       <button
-        class="px-3 py-2 rounded-lg transition-all hover:scale-[1.02] text-sm font-medium"
+        class="px-3 py-2 rounded-lg transition-all text-sm font-medium"
         onclick={() => showPriorityCreator = true}
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
       >
@@ -112,7 +103,7 @@
                 </div>
               </div>
               <button
-                class="px-2 py-1 rounded transition-all hover:scale-110 text-sm"
+                class="px-2 py-1 rounded transition-all text-sm"
                 style="background: #ef444420; color: #ef4444;"
                 aria-label={m.tickets.configDeletePriorityAria({ name: priority.name })}
                 onclick={() => showConfirm(
@@ -132,8 +123,8 @@
   </div>
 
   <!-- Tags Section -->
-  <div class="rounded-2xl border p-6 shadow-2xl transition-all"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;">
+  <div class="rounded-2xl border p-6 transition-all"
+       style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
 
     <div class="flex items-center justify-between mb-6">
       <h3 class="text-lg font-semibold flex items-center gap-2" style="color: {$colorStore.text}">
@@ -141,7 +132,7 @@
         {m.tickets.configTagsTitle({ count: tags.length })}
       </h3>
       <button
-        class="px-3 py-2 rounded-lg transition-all hover:scale-[1.02] text-sm font-medium"
+        class="px-3 py-2 rounded-lg transition-all text-sm font-medium"
         onclick={() => showTagCreator = true}
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
       >
@@ -172,7 +163,7 @@
                 {/if}
               </div>
               <button
-                class="px-2 py-1 rounded transition-all hover:scale-110 text-sm"
+                class="px-2 py-1 rounded transition-all text-sm"
                 style="background: #ef444420; color: #ef4444;"
                 aria-label={m.tickets.configDeleteTagAria({ name: tag.name })}
                 onclick={() => showConfirm(
@@ -195,56 +186,40 @@
 <!-- Channels Configuration -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
   <!-- Transcript Channel -->
-  <div class="rounded-2xl border p-6 shadow-2xl transition-all"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;">
+  <div class="rounded-2xl border p-6 transition-all"
+       style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
     <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
       <i class="fa-solid fa-file-lines" style="color: {$colorStore.secondary};"></i>
       {m.tickets.configTranscriptChannel()}
     </h3>
     <div class="space-y-4">
       <DiscordSelector
-        bind:selected={tempTranscriptChannel}
+        selected={transcriptChannelId ? transcriptChannelId.toString() : null}
         multiple={false}
         options={textChannels}
         placeholder={m.tickets.configTranscriptChannelPlaceholder()}
         type="channel"
+        onchange={(detail) => setTranscriptChannel(pickedChannel(detail))}
       />
-      <button
-        class="w-full px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] flex items-center justify-center gap-2"
-        disabled={saving}
-        onclick={saveTranscriptChannel}
-        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-      >
-        <i class="fa-solid fa-floppy-disk"></i>
-        {m.common.saveChannel()}
-      </button>
     </div>
   </div>
 
   <!-- Log Channel -->
-  <div class="rounded-2xl border p-6 shadow-2xl transition-all"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;">
+  <div class="rounded-2xl border p-6 transition-all"
+       style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
     <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
       <i class="fa-solid fa-clipboard-list" style="color: {$colorStore.accent};"></i>
       {m.common.logChannel()}
     </h3>
     <div class="space-y-4">
       <DiscordSelector
-        bind:selected={tempLogChannel}
+        selected={logChannelId ? logChannelId.toString() : null}
         multiple={false}
         options={textChannels}
         placeholder={m.tickets.configLogChannelPlaceholder()}
         type="channel"
+        onchange={(detail) => setLogChannel(pickedChannel(detail))}
       />
-      <button
-        class="w-full px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] flex items-center justify-center gap-2"
-        disabled={saving}
-        onclick={saveLogChannel}
-        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-      >
-        <i class="fa-solid fa-floppy-disk"></i>
-        {m.common.saveChannel()}
-      </button>
     </div>
   </div>
 </div>
@@ -255,8 +230,8 @@
        role="dialog" aria-modal="true" tabindex="-1"
        onclick={(e) => { if (e.target === e.currentTarget) showPriorityCreator = false; }}
        onkeydown={(e) => { if (e.key === 'Escape') showPriorityCreator = false; }}>
-    <div class="w-full max-w-2xl rounded-2xl border p-6 shadow-2xl"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;">
+    <div class="w-full max-w-2xl rounded-2xl border p-6 shadow-lg"
+         style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
 
       <h3 class="text-xl font-bold mb-6 flex items-center gap-3" style="color: {$colorStore.text}">
         <i class="fa-solid fa-flag" style="color: {$colorStore.primary};"></i>
@@ -346,14 +321,14 @@
         <!-- Actions -->
         <div class="flex justify-end gap-3 pt-4 border-t" style="border-color: {$colorStore.primary}20;">
           <button
-            class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+            class="px-4 py-3 rounded-xl font-medium transition-all min-h-[44px]"
             style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
             onclick={() => showPriorityCreator = false}
           >
             {m.common.cancel()}
           </button>
           <button
-            class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] flex items-center gap-2"
+            class="px-4 py-3 rounded-xl font-medium transition-all min-h-[44px] flex items-center gap-2"
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
             disabled={saving || !newPriority.id || !newPriority.name}
             onclick={createPriority}
@@ -377,8 +352,8 @@
        role="dialog" aria-modal="true" tabindex="-1"
        onclick={(e) => { if (e.target === e.currentTarget) showTagCreator = false; }}
        onkeydown={(e) => { if (e.key === 'Escape') showTagCreator = false; }}>
-    <div class="w-full max-w-2xl rounded-2xl border p-6 shadow-2xl"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;">
+    <div class="w-full max-w-2xl rounded-2xl border p-6 shadow-lg"
+         style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
 
       <h3 class="text-xl font-bold mb-6 flex items-center gap-3" style="color: {$colorStore.text}">
         <i class="fa-solid fa-tags" style="color: {$colorStore.accent};"></i>
@@ -433,14 +408,14 @@
         <!-- Actions -->
         <div class="flex justify-end gap-3 pt-4 border-t" style="border-color: {$colorStore.primary}20;">
           <button
-            class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+            class="px-4 py-3 rounded-xl font-medium transition-all min-h-[44px]"
             style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
             onclick={() => showTagCreator = false}
           >
             {m.common.cancel()}
           </button>
           <button
-            class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] flex items-center gap-2"
+            class="px-4 py-3 rounded-xl font-medium transition-all min-h-[44px] flex items-center gap-2"
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
             disabled={saving || !newTag.id || !newTag.name}
             onclick={createTag}

@@ -76,20 +76,20 @@
 </script>
 
 <div class="w-full">
-  <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+  <div class=" rounded-2xl border p-6 md:p-8"
+       style="background: {$colorStore.primary}0c;
               border-color: {$colorStore.primary}30;">
     <div class="flex justify-between items-center mb-6">
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg"
-             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+             style="background: {$colorStore.primary}20;">
           <i class="fa-utility-duo fa-regular fa-circle"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
         </div>
         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.monitoring.systemInfoTitle()}</h2>
       </div>
       <button aria-label={m.common.refresh()}
-              class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+              class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
         disabled={refreshInProgress}
         onclick={fetchSystemInfo}
@@ -116,7 +116,7 @@
     {:else if systemInfo}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <!-- CPU Usage -->
-        <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
+        <div class=" rounded-xl p-4 transition-all"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-utility-duo fa-regular fa-circle"
@@ -134,7 +134,7 @@
         </div>
 
         <!-- Memory Usage -->
-        <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
+        <div class=" rounded-xl p-4 transition-all"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-utility-duo fa-regular fa-square"
@@ -154,7 +154,7 @@
         </div>
 
         <!-- Uptime -->
-        <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
+        <div class=" rounded-xl p-4 transition-all"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-utility-duo fa-regular fa-clock"
@@ -167,7 +167,7 @@
         </div>
 
         <!-- Thread Count -->
-        <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
+        <div class=" rounded-xl p-4 transition-all"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-utility-duo fa-regular fa-square"
@@ -180,7 +180,7 @@
         </div>
 
         <!-- Top Methods -->
-        <div class=" rounded-xl p-4 transition-all hover:scale-[1.01] md:col-span-2"
+        <div class=" rounded-xl p-4 transition-all md:col-span-2"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-4">
             <i class="fa-utility-duo fa-regular fa-bell"

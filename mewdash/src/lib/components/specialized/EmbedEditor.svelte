@@ -190,7 +190,7 @@
 
     <div class="flex items-center gap-1.5 sm:gap-2">
       <button
-        class="p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:scale-[1.02]"
+        class="p-1.5 sm:p-2 rounded-lg transition-all duration-200"
         style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
         onclick={() => onduplicate?.({ index })}
         title={m.embedbuilder.editorDuplicateEmbed()}
@@ -200,7 +200,7 @@
       </button>
 
       <button
-        class="p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:scale-[1.02]"
+        class="p-1.5 sm:p-2 rounded-lg transition-all duration-200"
         style="background: #ED424515; color: #ED4245;"
         onclick={() => onremove?.({ index })}
         title={m.embedbuilder.editorRemoveEmbed()}

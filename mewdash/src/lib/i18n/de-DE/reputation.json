@@ -21,8 +21,6 @@
   "min_server_time_label": "Min. Zeit auf dem Server (Stunden)",
   "notification_channel_label": "Benachrichtigungskanal (optional)",
   "notification_channel_placeholder": "Keine Benachrichtigungen",
-  "notify_reward_added": "Rollenbelohnung erfolgreich hinzugefügt!",
-  "notify_reward_removed": "Rollenbelohnung entfernt!",
   "page_subtitle": "Verwalte Server-Reputation und Belohnungen",
   "page_title": "Reputationssystem",
   "remove_on_drop_label": "Rolle entfernen, wenn die Reputation unter die Schwelle fällt",

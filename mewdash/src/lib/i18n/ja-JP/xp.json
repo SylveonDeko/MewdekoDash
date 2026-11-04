@@ -156,8 +156,6 @@
   "page_notify_currency_reward_removed": "通貨報酬を削除しました",
   "page_notify_role_excluded": "ロールを除外しました",
   "page_notify_role_included": "ロールを対象に含めました",
-  "page_notify_role_reward_added": "ロール報酬を追加しました",
-  "page_notify_role_reward_removed": "ロール報酬を削除しました",
   "page_notify_template_updated": "XPテンプレートを更新しました",
   "page_reset_changes": "変更をリセット",
   "page_save_template": "テンプレートの変更を保存",

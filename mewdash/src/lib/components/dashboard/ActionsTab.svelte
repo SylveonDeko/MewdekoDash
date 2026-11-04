@@ -116,12 +116,12 @@
     <div class="lg:col-span-6 space-y-4">
       <!-- Recent Activity -->
       <div
-        class=" rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+        class=" rounded-xl p-4 transition-all border"
               style="background: {$colorStore.primary}05;
                border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
-               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+               style="background: {$colorStore.primary}20;">
             <i class="fa-utility-duo fa-regular fa-chart-simple text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
@@ -154,7 +154,7 @@
           </div>
         {:else}
           {#each recentGreetings as greeting (greeting.id)}
-            <div class="flex items-center gap-3 p-2 rounded-lg transition-all hover:scale-[1.01]"
+            <div class="flex items-center gap-3 p-2 rounded-lg transition-all"
                  style="background: {$colorStore.primary}08;">
 
               <!-- Action Icon -->
@@ -184,7 +184,7 @@
 
           <!-- View More Button -->
           <a
-            class="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all hover:scale-[1.02] text-sm"
+            class="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all text-sm"
              href="/dashboard/rolegreets"
              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
             <i class="fa-utility-duo fa-regular fa-user-check text-sm"
@@ -198,7 +198,7 @@
       <!-- Feature Status List -->
       <div class="space-y-3">
         <!-- Multi Greets Status -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -216,7 +216,7 @@
                 {actionsStats.activeGreets > 0 ? m.dashboard.actionsActiveGreetings({ count: actionsStats.activeGreets }) : m.dashboard.actionsNoGreetings()}
               </div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all"
                href="/dashboard/multigreets"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               {m.common.configure()}
@@ -225,7 +225,7 @@
         </div>
 
         <!-- Role States Status -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -243,7 +243,7 @@
                 {actionsStats.totalRoleStates > 0 ? m.dashboard.actionsConfiguredStates({ count: actionsStats.totalRoleStates }) : m.dashboard.actionsNoStates()}
               </div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all"
                href="/dashboard/rolestates"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               {m.common.configure()}
@@ -252,7 +252,7 @@
         </div>
 
         <!-- AFK System Status -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -270,7 +270,7 @@
                 {actionsStats.afkEnabled ? m.dashboard.actionsChannelConfigured() : m.common.notConfigured()}
               </div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all"
                href="/dashboard/afk"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               {m.common.configure()}
@@ -285,7 +285,7 @@
       <!-- Action Tools -->
       <div class="space-y-3">
         <!-- Chat Triggers -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -301,7 +301,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsChatTriggersDesc()}</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all"
                href="/dashboard/chat-triggers"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               {m.common.manage()}
@@ -310,7 +310,7 @@
         </div>
 
         <!-- Embed Builder -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -326,7 +326,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsEmbedBuilderDesc()}</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all"
                href="/dashboard/embedbuilder"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               {m.common.open()}
@@ -335,7 +335,7 @@
         </div>
 
         <!-- Message Repeaters -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -351,7 +351,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsRepeatersDesc()}</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all"
                href="/dashboard/repeaters"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               {m.common.manage()}
@@ -360,7 +360,7 @@
         </div>
 
         <!-- RSS Feeds -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -376,7 +376,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsRssFeedsDesc()}</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all"
                href="/dashboard/feeds"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               {m.common.manage()}
@@ -385,7 +385,7 @@
         </div>
 
         <!-- Status Roles -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -401,7 +401,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsStatusRolesDesc()}</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all"
                href="/dashboard/statusroles"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               {m.common.manage()}
@@ -410,7 +410,7 @@
         </div>
 
         <!-- Vote System -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -426,7 +426,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsVoteRewardsDesc()}</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all"
                href="/dashboard/votes"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               {m.common.manage()}

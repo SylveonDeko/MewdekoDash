@@ -290,7 +290,7 @@
   <section class="min-w-0 space-y-4">
     {#if currentCategory}
       <div class="rounded-2xl border p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-3"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <span class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
               style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30;" aria-hidden="true">
@@ -378,7 +378,7 @@
 
     {#if shown.length === 0}
       <div class="rounded-2xl border p-10 text-center"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <DuoIcon icon="fa-crown" size={40} />
         <h3 class="text-lg font-semibold mt-4" style="color: {$colorStore.text}">
@@ -402,7 +402,7 @@
         {@const groupCategory = categoryOf(group.key)}
         <div class="space-y-2">
           {#if category === "all" && groupCategory}
-            <h3 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide pt-2" style="color: {$colorStore.muted}">
+            <h3 class="flex items-center gap-2 text-sm font-semibold pt-2" style="color: {$colorStore.muted}">
               <AchievementIcon icon={groupCategory.icon} iconUrl={groupCategory.iconUrl} color={$colorStore.primary}
                                size={14} bare />{groupCategory.name}
               {#if !groupCategory.enabled}<span class="normal-case font-normal" style="color: {$colorStore.accent}">{m.achievements.libraryGroupInactive()}</span>{/if}

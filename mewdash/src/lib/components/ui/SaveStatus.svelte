@@ -19,7 +19,7 @@
   let status = $derived(autoSave.status);
 </script>
 
-<div class="flex items-center gap-2 text-sm min-h-[44px]" role="status" aria-live="polite">
+<div class={status === "idle" ? "sr-only" : "flex items-center gap-2 text-sm min-h-[44px]"} role="status" aria-live="polite">
   {#if status === "pending" || status === "saving"}
     <span class="flex items-center gap-2" style="color: {$colorStore.muted};" in:fade={{ duration: 120 }}>
       <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
@@ -41,11 +41,6 @@
       >
         {m.common.retry()}
       </button>
-    </span>
-  {:else}
-    <span class="flex items-center gap-2" style="color: {$colorStore.muted};">
-      <i class="fa-solid fa-cloud" aria-hidden="true"></i>
-      {m.common.changesSaveAutomatically()}
     </span>
   {/if}
 </div>

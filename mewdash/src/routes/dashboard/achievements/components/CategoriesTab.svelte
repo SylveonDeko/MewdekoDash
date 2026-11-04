@@ -178,8 +178,8 @@
 </script>
 
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start" in:fade={{ duration: 200 }}>
-  <div class="xl:col-span-2 rounded-2xl border p-5 md:p-6 shadow-2xl"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+  <div class="xl:col-span-2 rounded-2xl border p-5 md:p-6"
+       style="background: {$colorStore.primary}0c;
               border-color: {$colorStore.primary}30;">
     <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
       <DuoIcon icon="fa-layer-group" />
@@ -284,8 +284,8 @@
     </ol>
   </div>
 
-  <div class="rounded-2xl border p-5 md:p-6 shadow-2xl xl:sticky xl:top-4"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+  <div class="rounded-2xl border p-5 md:p-6 xl:sticky xl:top-4"
+       style="background: {$colorStore.primary}0c;
               border-color: {$colorStore.primary}30;">
     <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
       <DuoIcon icon="fa-folder-plus" />

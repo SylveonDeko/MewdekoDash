@@ -290,17 +290,14 @@
 </svelte:head>
 
 <div class="min-h-screen p-4 md:p-6 overflow-x-hidden w-full transition-all duration-500 relative z-10"
-     style="background: radial-gradient(circle at top,
-       {$colorStore.gradientStart}15 0%,
-       {$colorStore.gradientMid}10 50%,
-       {$colorStore.gradientEnd}05 100%);"
+     style="background: {$colorStore.primary}08;"
      in:fade={{ duration: 300 }}>
   
   <!-- Page Header -->
   <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8">
     <div class="flex items-center gap-4">
       <div class="p-4 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+           style="background: {$colorStore.primary}20;">
         {#if icon.includes("fa-brands")}
           <i class="{icon} text-3xl" style="color: {$colorStore.primary};"></i>
         {:else}
@@ -318,10 +315,8 @@
 
     {#if actionButtons.length > 0 || wikiArticle || autoSave}
       <!--
-        On phones the row keeps one line: the wiki button collapses to its icon,
-        and the action buttons share the remaining width, truncating their labels
-        or, past two buttons, dropping them. From the sm breakpoint up every
-        button shows its full label.
+        On phones the wiki button collapses to its icon and the action buttons grow
+        to fill the row, wrapping onto a second line when their labels don't fit.
       -->
       <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full lg:w-auto lg:shrink-0">
         {#if autoSave}
@@ -329,7 +324,7 @@
         {/if}
         {#if wikiArticle}
           <button
-            class="flex items-center justify-center gap-3 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] min-w-[44px] shrink-0 sm:flex-initial font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+            class="flex items-center justify-center gap-3 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all min-h-[44px] sm:min-h-[52px] min-w-[44px] shrink-0 sm:flex-initial font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
             style="background: {$colorStore.primary}10; color: {$colorStore.primary}; border: 1px dashed {$colorStore.primary}40;"
             onclick={() => (wikiOpen = true)}
             aria-label={m.layout.pageLayoutWikiAria({ title })}
@@ -341,7 +336,7 @@
         {/if}
         {#each actionButtons as button}
           <button
-            class="flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] flex-1 sm:flex-initial min-w-0 whitespace-nowrap font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+            class="flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all min-h-[44px] sm:min-h-[52px] flex-auto sm:flex-initial whitespace-nowrap font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
             disabled={button.loading || button.disabled}
             onclick={button.action}
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
@@ -352,7 +347,7 @@
             <i class="fa-solid {button.icon} {button.loading ? 'fa-spin' : ''} shrink-0"
                style="font-size: 18px;"
                aria-hidden="true"></i>
-            <span class="text-sm sm:text-base {actionButtons.length > 2 ? 'hidden sm:inline' : 'min-w-0 truncate'}">{button.label}</span>
+            <span class="text-sm sm:text-base">{button.label}</span>
           </button>
         {/each}
       </div>
@@ -380,8 +375,8 @@
         <!-- Left scroll button -->
         {#if tabsOverflow}
           <button
-            class="shrink-0 p-2 rounded-lg transition-all hover:scale-[1.02] "
-            style="background: rgba(15, 23, 42, 0.9); border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
+            class="shrink-0 p-2 rounded-lg transition-all "
+            style="background: rgba(15, 23, 42, 0.9); border: 1px solid {$colorStore.primary}30;"
             onclick={() => scrollTabs('left', tabContainer)}
             aria-label={m.layout.pageLayoutScrollTabsLeft()}
           >
@@ -399,7 +394,7 @@
         >
           {#each tabs as tab, index}
             <button
-                    class="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3 rounded-lg sm:rounded-xl transition-all font-medium whitespace-nowrap shrink-0 focus:outline-hidden focus:ring-2 focus:ring-offset-2 hover:scale-[1.02]"
+                    class="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3 rounded-lg sm:rounded-xl transition-all font-medium whitespace-nowrap shrink-0 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
               class:active={activeTab === tab.id}
               style="color: {activeTab === tab.id ? $colorStore.primary : $colorStore.muted};
                      background: {activeTab === tab.id ? $colorStore.primary + '20' : 'transparent'};
@@ -422,8 +417,8 @@
         <!-- Right scroll button -->
         {#if tabsOverflow}
           <button
-            class="shrink-0 p-2 rounded-lg transition-all hover:scale-[1.02] "
-            style="background: rgba(15, 23, 42, 0.9); border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
+            class="shrink-0 p-2 rounded-lg transition-all "
+            style="background: rgba(15, 23, 42, 0.9); border: 1px solid {$colorStore.primary}30;"
             onclick={() => scrollTabs('right', tabContainer)}
             aria-label={m.layout.pageLayoutScrollTabsRight()}
           >
@@ -482,7 +477,7 @@
             >
             {#each currentSubTabs as subTab, index}
               <button
-                class="relative flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium whitespace-nowrap focus:outline-hidden focus:ring-2 focus:ring-offset-1 transition-all duration-200 rounded-lg hover:scale-[1.02]"
+                class="relative flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium whitespace-nowrap focus:outline-hidden focus:ring-2 focus:ring-offset-1 transition-all duration-200 rounded-lg"
                 class:active={activeSubTab === subTab.id}
                 style="color: {activeSubTab === subTab.id ? $colorStore.text : $colorStore.muted};
                        background: {activeSubTab === subTab.id ? $colorStore.primary + '25' : 'transparent'};

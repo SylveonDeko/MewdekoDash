@@ -14,7 +14,7 @@
 </svelte:head>
 
 <div
-  class="min-h-[calc(105vh-5.5rem)] w-screen bg-mewd-light-grey text-white p-6 rounded-sm shadow-md flex justify-center items-center"
+  class="min-h-[calc(105vh-5.5rem)] w-screen bg-mewd-light-grey text-white p-6 rounded-sm flex justify-center items-center"
 >
   <div class="space-y-5 text-left max-w-3xl">
     <h1 class="text-3xl font-semibold">{m.public.deleteAccountTitle()}</h1>

@@ -340,11 +340,11 @@
         bind:this={containerRef}
         use:clickOutside
         onclickoutside={() => close()}
-        class="fixed border rounded-xl shadow-2xl max-h-96 overflow-hidden placeholder-menu backdrop-blur-md"
+        class="fixed border rounded-xl shadow-lg max-h-96 overflow-hidden placeholder-menu"
         style="top: {inlinePosition.y}px;
                left: {inlinePosition.x}px;
                width: {inlinePosition.width}px;
-               background: linear-gradient(135deg, {$colorStore.gradientStart}30, {$colorStore.gradientMid}30);
+               background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background});
                border-color: {$colorStore.primary}30;
                z-index: 9999;"
         role="dialog"
@@ -393,7 +393,7 @@
               <div class="px-3 py-2 border-b border-opacity-20" style="border-color: {$colorStore.primary}20;">
                 <div class="flex items-center gap-2">
                   <i class="fa-solid {getCategoryIcon(category)}" style="color: {$colorStore.primary}; font-size: 14px;"></i>
-                  <span class="text-xs font-semibold uppercase tracking-wide"
+                  <span class="text-xs font-semibold"
                         style="color: {$colorStore.primary};">
                     {category}
                   </span>
@@ -470,10 +470,10 @@
       bind:this={containerRef}
       use:clickOutside
       onclickoutside={() => close()}
-      class="fixed border rounded-xl shadow-2xl max-h-96 w-80 overflow-hidden placeholder-menu backdrop-blur-md"
+      class="fixed border rounded-xl shadow-lg max-h-96 w-80 overflow-hidden placeholder-menu"
       style="top: {clampedPosition.y}px;
              left: {clampedPosition.x}px;
-             background: linear-gradient(135deg, {$colorStore.gradientStart}30, {$colorStore.gradientMid}30);
+             background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background});
              border-color: {$colorStore.primary}30;
              z-index: 9999;"
       role="dialog"
@@ -521,7 +521,7 @@
             <div class="px-3 py-2 border-b border-opacity-20" style="border-color: {$colorStore.primary}20;">
               <div class="flex items-center gap-2">
                 <i class="fa-solid {getCategoryIcon(category)}" style="color: {$colorStore.primary}; font-size: 14px;"></i>
-                <span class="text-xs font-semibold uppercase tracking-wide"
+                <span class="text-xs font-semibold"
                       style="color: {$colorStore.primary};">
                   {category}
                 </span>

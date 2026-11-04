@@ -45,33 +45,27 @@
     transition:fly={{ y: -10, duration: 200 }}
   >
     <!-- More prominent top progress bar -->
-    <div class="absolute top-0 left-0 right-0 h-2 overflow-hidden shadow-lg">
+    <div class="absolute top-0 left-0 right-0 h-2 overflow-hidden">
       <div 
         class="h-full transition-all duration-300 ease-out relative"
         style="
-          background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.accent});
+          background: {$colorStore.primary};
           width: {hasProgress ? progressValue : 100}%;
           animation: {hasProgress ? 'none' : 'loading-shimmer 2s infinite ease-in-out'};
-          box-shadow: 0 0 15px {$colorStore.primary}40;
         "
-      >
-        {#if !hasProgress}
-          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
-        {/if}
-      </div>
+      ></div>
     </div>
 
     <!-- Subtle backdrop for better contrast -->
-    <div class="absolute inset-0 bg-black/5 backdrop-blur-[0.5px]"></div>
+    <div class="absolute inset-0 bg-black/5"></div>
 
     <!-- More prominent loading indicator -->
     <div class="absolute top-6 right-6 pointer-events-auto">
       <div
-        class="flex items-center gap-3 px-5 py-3 rounded-2xl backdrop-blur-md border shadow-2xl transform hover:scale-[1.02] transition-transform"
+        class="flex items-center gap-3 px-5 py-3 rounded-2xl border shadow-lg"
         style="
-          background: linear-gradient(135deg, rgba(0,0,0,0.85), rgba(0,0,0,0.95));
+          background: rgba(0,0,0,0.9);
           border-color: {$colorStore.primary}50;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 20px {$colorStore.primary}20;
         "
       >
         <!-- Spinner -->

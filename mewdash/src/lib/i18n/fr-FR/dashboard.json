@@ -104,8 +104,6 @@
   "settings_tab_auto_assign_desc": "Rôles attribués automatiquement aux nouveaux membres",
   "settings_tab_auto_assign_roles_desc": "Rôles attribués aux nouveaux membres",
   "settings_tab_bot_settings_desc": "Paramètres principaux du bot",
-  "settings_tab_configure_arrow": "Configurer →",
-  "settings_tab_greets_arrow": "Messages →",
   "settings_tab_integrations": "Intégrations",
   "settings_tab_logging_desc": "Journalisation des événements et historiques d'audit",
   "settings_tab_multigreets_desc": "Plusieurs salons et messages de bienvenue",

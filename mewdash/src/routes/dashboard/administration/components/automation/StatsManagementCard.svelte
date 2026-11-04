@@ -42,14 +42,14 @@
   }
 </script>
 
-<div class=" rounded-2xl border p-6 shadow-2xl transition-all"
+<div class=" rounded-2xl border p-6 transition-all"
      in:fly={{ y: 20, duration: 300, delay: 700 }}
-     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+     style="background: {$colorStore.primary}0c;
             border-color: {$colorStore.primary}30;">
 
   <div class="flex items-center gap-4 mb-6">
     <div class="p-3 rounded-xl"
-         style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+         style="background: {$colorStore.primary}20;">
       <i class="fa-utility-duo fa-regular fa-chart-simple"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
     </div>
@@ -69,7 +69,7 @@
           <p class="text-xs" style="color: {$colorStore.muted}">{m.administration.automationStatsCollectionHint()}</p>
         </div>
         <button
-          class="px-4 py-2 rounded-xl font-medium transition-all hover:scale-[1.02]"
+          class="px-4 py-2 rounded-xl font-medium transition-all"
           disabled={saving}
           onclick={toggleStatsOptOut}
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
@@ -91,7 +91,7 @@
           <p class="text-xs" style="color: {$colorStore.muted}">{m.administration.automationStatsDeleteHint()}</p>
         </div>
         <button
-          class="px-4 py-2 rounded-xl font-medium transition-all hover:scale-[1.02] min-w-[120px]"
+          class="px-4 py-2 rounded-xl font-medium transition-all min-w-[120px]"
           disabled={saving}
           onclick={() => showConfirm(m.administration.automationStatsDeleteConfirmTitle(), m.administration.automationStatsDeleteConfirm(), deleteAllStats, "danger")}
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"

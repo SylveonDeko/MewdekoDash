@@ -327,7 +327,7 @@
     </div>
   {:else}
     <div class="mb-6 p-6 rounded-xl"
-         style="background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10); border: 1px solid {$colorStore.primary}30;"
+         style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30;"
          in:fade={{ duration: 300 }}>
       <div class="flex items-start gap-4">
         <i class="fa-utility-duo fa-regular fa-file"
@@ -374,7 +374,7 @@
       <div class="flex flex-wrap items-center gap-2 mb-2">
         {#each categories as category}
           <button
-            class="px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-all hover:scale-[1.02] touch-manipulation"
+            class="px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-all touch-manipulation"
             style="background: {selectedCategory === category.id ? `${$colorStore.primary}` : `${$colorStore.primary}15`};
                    color: {selectedCategory === category.id ? 'white' : $colorStore.text};
                    border: 1px solid {selectedCategory === category.id ? $colorStore.primary : `${$colorStore.primary}30`};"
@@ -388,7 +388,7 @@
 
         {#if selectedCategory === "all"}
           <button
-            class="px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-all hover:scale-[1.02] touch-manipulation ml-auto"
+            class="px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-all touch-manipulation ml-auto"
             style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
             onclick={clearAllChannels}
             aria-label={m.logging.pageClearAllAria()}
@@ -398,7 +398,7 @@
           </button>
         {:else if selectedCategory !== "popular"}
           <button
-            class="px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-all hover:scale-[1.02] touch-manipulation ml-auto"
+            class="px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-all touch-manipulation ml-auto"
             style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
             onclick={() => clearCategory(selectedCategory)}
             aria-label={m.logging.pageClearCategoryAria({ name: categories.find(c => c.id === selectedCategory)?.name ?? selectedCategory })}
@@ -491,7 +491,7 @@
                   </div>
 
                     <button
-                      class="flex items-center gap-1 px-3 py-2 rounded-lg text-xs sm:text-sm transition-all hover:scale-[1.02] touch-manipulation"
+                      class="flex items-center gap-1 px-3 py-2 rounded-lg text-xs sm:text-sm transition-all touch-manipulation"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     onclick={() => removeFromIgnored(channel.id)}
                       aria-label={m.logging.pageEnableLoggingAria({ name: channel.name })}
@@ -544,7 +544,7 @@
                   </div>
 
                     <button
-                      class="flex items-center gap-1 px-3 py-2 rounded-lg text-xs sm:text-sm transition-all hover:scale-[1.02] touch-manipulation"
+                      class="flex items-center gap-1 px-3 py-2 rounded-lg text-xs sm:text-sm transition-all touch-manipulation"
                     style="background: #ef444420; color: #ef4444;"
                     onclick={() => addToIgnored(channel.id)}
                       aria-label={m.logging.pageIgnoreLoggingAria({ name: channel.name })}

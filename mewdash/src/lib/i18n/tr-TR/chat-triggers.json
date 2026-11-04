@@ -137,7 +137,6 @@
   "page_announce_auto_delete_disabled": "Otomatik silme kapalı - tepki verme tetikleyicisiyle kullanılamaz",
   "page_announce_cards_collapsed": "Tüm kartlar daraltıldı",
   "page_announce_create_failed": "Tetikleyici oluşturulamadı",
-  "page_announce_created": "Tetikleyici başarıyla oluşturuldu",
   "page_announce_delete_cancelled": "Silme iptal edildi",
   "page_announce_delete_failed": "Tetikleyici silinemedi",
   "page_announce_deleted": "{name} tetikleyicisi silindi",

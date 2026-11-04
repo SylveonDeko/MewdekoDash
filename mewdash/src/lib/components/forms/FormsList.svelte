@@ -82,8 +82,8 @@
       </p>
       <button
         onclick={onCreateNew}
-        class="px-6 py-3 rounded-lg font-medium transition-all hover:scale-[1.02]"
-        style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary}); color: white;"
+        class="px-6 py-3 rounded-lg font-medium transition-all"
+        style="background: {$colorStore.primary}; color: white;"
       >
         <i class="fa-solid fa-plus mr-2"></i>
         {m.forms.listCreateFirst()}
@@ -94,7 +94,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {#each forms as form, index (form.id)}
         <div
-          class=" rounded-xl border overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1"
+          class=" rounded-xl border overflow-hidden transition-all"
           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
           in:fly={{ y: 20, duration: 300, delay: index * 50 }}
         >
@@ -259,7 +259,7 @@
             <div class="grid grid-cols-2 gap-2">
               <button
                 onclick={() => onEdit(form.id)}
-                class="px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+                class="px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                 style="background: {$colorStore.primary}15; color: {$colorStore.text};"
               >
                 <i class="fa-solid fa-edit mr-2"></i>
@@ -267,7 +267,7 @@
               </button>
               <button
                 onclick={() => onViewResponses(form.id)}
-                class="px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+                class="px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                 style="background: {$colorStore.secondary}15; color: {$colorStore.text};"
               >
                 <i class="fa-solid fa-chart-bar mr-2"></i>
@@ -279,7 +279,7 @@
             <div class="grid grid-cols-3 gap-2">
               <button
                 onclick={() => onPreview(form.id)}
-                class="px-2 py-2.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+                class="px-2 py-2.5 rounded-lg text-sm font-medium transition-all"
                 style="background: #f59e0b15; color: #f59e0b;"
               >
                 <i class="fa-solid fa-eye mr-1.5"></i>
@@ -287,7 +287,7 @@
               </button>
               <button
                 onclick={() => onCopyLink(form.id)}
-                class="px-2 py-2.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+                class="px-2 py-2.5 rounded-lg text-sm font-medium transition-all"
                 style="background: {$colorStore.accent}15; color: {$colorStore.text};"
               >
                 <i class="fa-solid fa-link mr-1.5"></i>
@@ -295,7 +295,7 @@
               </button>
               <button
                 onclick={() => onDuplicate(form)}
-                class="px-2 py-2.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+                class="px-2 py-2.5 rounded-lg text-sm font-medium transition-all"
                 style="background: {$colorStore.secondary}15; color: {$colorStore.text};"
               >
                 <i class="fa-solid fa-copy mr-1.5"></i>
@@ -309,7 +309,7 @@
               {#if form.isDraft}
                 <button
                   onclick={() => onPublish(form)}
-                  class="px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  class="px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                   style="background: #10B98115; color: #10B981;"
                 >
                   <i class="fa-solid fa-rocket mr-1.5"></i>
@@ -319,7 +319,7 @@
               {#if form.formType !== 0 && form.pendingCount && form.pendingCount > 0 && onReview}
                 <button
                   onclick={() => onReview?.(form.id)}
-                  class="px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  class="px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                   style="background: #f59e0b15; color: #f59e0b;"
                 >
                   <i class="fa-solid fa-clipboard-check mr-1.5"></i>
@@ -328,7 +328,7 @@
               {/if}
               <button
                 onclick={() => onToggleStatus(form)}
-                class="px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+                class="px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                 style="background: {form.isActive ? '#ef444415' : '#10B98115'}; color: {form.isActive ? '#ef4444' : '#10B981'};"
               >
                 <i class="fa-solid {form.isActive ? 'fa-pause' : 'fa-play'} mr-1.5"></i>
@@ -336,7 +336,7 @@
               </button>
               <button
                 onclick={() => onDelete(form)}
-                class="px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+                class="px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                 style="background: #ef444415; color: #ef4444;"
               >
                 <i class="fa-solid fa-trash mr-1.5"></i>

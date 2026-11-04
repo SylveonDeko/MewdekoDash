@@ -647,7 +647,6 @@
       <button
         type="button"
         class="flex-1 py-2 px-4 rounded-lg font-medium"
-        class:shadow-md={activeTab === 'discord'}
         disabled={isLoadingTab}
         style="background: {activeTab === 'discord' ? $colorStore.primary + '40' : $colorStore.primary + '10'};
                color: {$colorStore.text};"
@@ -659,7 +658,6 @@
       <button
         type="button"
         class="flex-1 py-2 px-4 rounded-lg font-medium"
-        class:shadow-md={activeTab === 'unicode'}
         disabled={isLoadingTab}
         style="background: {activeTab === 'unicode' ? $colorStore.primary + '40' : $colorStore.primary + '10'};
                color: {$colorStore.text};"
@@ -739,7 +737,7 @@
     <!-- Loading skeleton (position absolute to prevent size changes) -->
     {#if isLoadingTab}
       <div
-        class="absolute inset-0 grid gap-2 p-4 bg-gradient-to-b from-transparent via-black/20 to-transparent"
+        class="absolute inset-0 grid gap-2 p-4"
         class:grid-cols-6={isMobile}
         class:grid-cols-12={!isMobile}
         in:fly={{ y: 0, opacity: 0, duration: 150 }}
@@ -914,7 +912,7 @@
       <button
         type="button"
         onclick={handleDone}
-        class="w-full py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02]"
+        class="w-full py-3 rounded-xl font-medium transition-all duration-200"
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
       >
         <i class="fa-solid fa-check inline mr-2" style="font-size: 14px;"></i>
@@ -940,7 +938,7 @@
   <!-- Main selector button -->
   <button
     aria-label={m.common.selectEmojiPlaceholder()}
-    class="group w-full p-2.5 rounded-xl border transition-all duration-200 text-left flex items-center backdrop-blur-md relative overflow-hidden"
+    class="group w-full p-2.5 rounded-xl border transition-all duration-200 text-left flex items-center relative overflow-hidden"
     class:cursor-not-allowed={disabled}
     class:opacity-50={disabled}
     {disabled}
@@ -1091,8 +1089,8 @@
       <div
         bind:this={dropdownRef}
         id={dropdownId}
-        class="fixed inset-0 z-[9999] flex flex-col backdrop-blur-md"
-        style="background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(0,0,0,0.9)), linear-gradient(135deg, {$colorStore.gradientStart}25, {$colorStore.gradientMid}30, {$colorStore.gradientEnd}25);"
+        class="fixed inset-0 z-[9999] flex flex-col"
+        style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background});"
         role="listbox"
         aria-multiselectable={multiple}
         in:fly={{ y: 300, duration: 300 }}
@@ -1122,14 +1120,13 @@
     <div
       bind:this={dropdownRef}
       id={dropdownId}
-      class="absolute left-0 right-0 rounded-lg flex flex-col shadow-2xl border backdrop-blur-md z-[9999] overflow-hidden"
+      class="absolute left-0 right-0 rounded-lg flex flex-col shadow-lg border z-[9999] overflow-hidden"
       class:bottom-full={dropdownPosition === 'above'}
       class:mb-1={dropdownPosition === 'above'}
       class:top-full={dropdownPosition === 'below'}
       class:mt-1={dropdownPosition === 'below'}
-      style="background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,0,0,0.8)), linear-gradient(135deg, {$colorStore.gradientStart}25, {$colorStore.gradientMid}30, {$colorStore.gradientEnd}25);
+      style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background});
              border-color: {$colorStore.primary}50;
-             box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 0 0 1px {$colorStore.primary}20;
              max-height: min(600px, 80vh);
              transform-origin: {dropdownPosition === 'above' ? 'bottom' : 'top'};"
       role="listbox"

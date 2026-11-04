@@ -847,7 +847,7 @@ A comprehensive music player component for Discord bot music functionality.
 </script>
 
 <div
-  class="w-full relative rounded-2xl border p-4 md:p-6 shadow-2xl overflow-hidden transition-all duration-500"
+  class="w-full relative rounded-2xl border p-4 md:p-6 overflow-hidden transition-all duration-500"
   aria-label={m.common.musicPlayer()}
   class:State-2={musicStatus?.State === 2}
   role="region"
@@ -887,7 +887,7 @@ A comprehensive music player component for Discord bot music functionality.
   <!-- Skin switch: the classic window has its own in the title bar -->
   <button
     type="button"
-    class="absolute top-3 right-3 z-20 px-2 py-1 rounded-md text-[10px] font-semibold tracking-wider uppercase transition-opacity opacity-60 hover:opacity-100 focus:opacity-100 focus:outline-hidden"
+    class="absolute top-3 right-3 z-20 px-2 py-1 rounded-md text-[10px] font-semibold transition-opacity opacity-60 hover:opacity-100 focus:opacity-100 focus:outline-hidden"
     style="background: var(--music-foreground)25; color: var(--music-text); border: 1px solid var(--music-foreground)40;"
     onclick={() => musicSkinStore.toggle()}
     title={m.music.playerSwitchClassic()}
@@ -909,10 +909,6 @@ A comprehensive music player component for Discord bot music functionality.
         <i class="fa-solid fa-record-vinyl" style="font-size: 16px;"></i>
       </button>
 
-      <div class="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-           style="background: radial-gradient(circle at center, var(--music-foreground)30 0%, transparent 70%);">
-      </div>
-
       <div
         class={`relative overflow-hidden transition-all duration-300 ${isRotationEnabled ? "rounded-full" : "rounded-xl"} ${musicStatus?.State === 2 && isRotationEnabled ? "album-rotation" : ""}`}>
         <!-- Circular overlay for vinyl-like appearance -->
@@ -925,12 +921,12 @@ A comprehensive music player component for Discord bot music functionality.
         {#if musicStatus?.CurrentTrack?.Track?.ArtworkUri}
           <img
                   alt={m.music.playerArtworkAlt({ title: musicStatus.CurrentTrack.Track.Title, author: musicStatus.CurrentTrack.Track.Author })}
-                  class={`w-full h-full lg:w-[160px] lg:h-[160px] object-cover transition-transform duration-300 group-hover:scale-[1.02] ${isRotationEnabled ? "rounded-full" : "rounded-xl"} ${isTransitioning ? "track-image-transition" : ""}`}
+                  class={`w-full h-full lg:w-[160px] lg:h-[160px] object-cover transition-transform duration-300 ${isRotationEnabled ? "rounded-full" : "rounded-xl"} ${isTransitioning ? "track-image-transition" : ""}`}
                   src={musicStatus.CurrentTrack.Track.ArtworkUri}
           >
         {:else}
           <div
-            class={`w-full h-full lg:w-[160px] lg:h-[160px] flex items-center justify-center transition-transform duration-300 group-hover:scale-[1.02] ${isRotationEnabled ? "rounded-full" : "rounded-xl"}`}
+            class={`w-full h-full lg:w-[160px] lg:h-[160px] flex items-center justify-center transition-transform duration-300 ${isRotationEnabled ? "rounded-full" : "rounded-xl"}`}
                   style="background: linear-gradient(135deg, var(--music-foreground)20, var(--music-accent)20);"
           >
             <i class="fa-solid fa-record-vinyl" style="color: var(--music-foreground)50; font-size: 64px;"></i>
@@ -1034,18 +1030,9 @@ A comprehensive music player component for Discord bot music functionality.
               <div class="liquid-animation"></div>
             </div>
 
-            <!-- Gradient overlay on progress bar -->
-            <div
-              class="absolute top-0 left-0 h-full w-full opacity-30 pointer-events-none progress-bar-glow"
-              style="background: linear-gradient(90deg, transparent, var(--music-controls-highlight)40);
-                     width: {progressPercentage}%"
-            ></div>
-
-            <!-- Pulsating position indicator -->
             <div
               class="absolute top-50% w-3 h-3 rounded-full transform -translate-y-1/2 progress-indicator group-hover:w-4 group-hover:h-4 transition-all duration-200"
-              style="background: var(--music-accent); left: calc({progressPercentage}% - 6px);
-                     box-shadow: 0 0 8px var(--music-accent);"
+              style="background: var(--music-accent); left: calc({progressPercentage}% - 6px);"
             ></div>
 
             <!-- Progress preview tooltip -->
@@ -1074,7 +1061,7 @@ A comprehensive music player component for Discord bot music functionality.
           <!-- Main playback controls -->
           <div class="flex items-center justify-center gap-2 sm:gap-3 w-full">
             <button
-                    class="p-2 sm:p-2.5 rounded-full transition-all duration-200 hover:scale-110 focus:scale-110 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--music-foreground)"
+                    class="p-2 sm:p-2.5 rounded-full transition-all duration-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--music-foreground)"
               style="color: var(--music-text)80;"
               onmouseover={(e) => {
                 e.currentTarget.style.color = 'var(--music-foreground)';
@@ -1100,17 +1087,13 @@ A comprehensive music player component for Discord bot music functionality.
             </button>
 
             <button
-              class="p-3 sm:p-4 rounded-full transition-all duration-300 transform hover:scale-[1.02] focus:scale-105 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--music-accent) relative overflow-hidden control-pulse"
+              class="p-3 sm:p-4 rounded-full transition-all duration-300 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--music-accent) relative overflow-hidden"
               style="background: var(--music-controls-highlight); color: var(--music-text);"
               onclick={togglePlayPause}
               aria-label={musicStatus?.State === 2 ? m.common.pause() : m.music.playerPlay()}
               aria-pressed={musicStatus?.State === 2}
               title={musicStatus?.State === 2 ? m.music.playerPauseTitle() : m.music.playerPlayTitle()}
             >
-              <!-- Button glow effect -->
-              <div class="absolute inset-0 opacity-40 rounded-full"
-                   style="background: radial-gradient(circle at center, var(--music-foreground)80 0%, transparent 70%);"></div>
-
               {#if musicStatus?.State === 2}
                 <i class="fa-solid fa-pause" style="font-size: 24px;"></i>
               {:else}
@@ -1119,7 +1102,7 @@ A comprehensive music player component for Discord bot music functionality.
             </button>
 
             <button
-                    class="p-2 sm:p-3 rounded-full transition-all duration-200 hover:scale-110 focus:scale-110 focus:outline-hidden focus-visible:ring-2"
+                    class="p-2 sm:p-3 rounded-full transition-all duration-200 focus:outline-hidden focus-visible:ring-2"
               style="color: var(--music-text)80; --ring-color: var(--music-foreground);"
               onmouseover={(e) => {
                 e.currentTarget.style.color = 'var(--music-foreground)';
@@ -1245,7 +1228,7 @@ A comprehensive music player component for Discord bot music functionality.
 
         <!-- Add Music button -->
         <button
-          class="flex items-center gap-2 p-2 rounded-lg transition-all duration-200 hover:scale-[1.02] focus:outline-hidden focus:ring-2"
+          class="flex items-center gap-2 p-2 rounded-lg transition-all duration-200 focus:outline-hidden focus:ring-2"
           style="background: var(--music-accent)20; color: var(--music-accent); --ring-color: var(--music-accent);"
           onclick={openSearchModal}
           aria-label={m.music.playerAddMusicAria()}
@@ -1315,7 +1298,7 @@ A comprehensive music player component for Discord bot music functionality.
       >
         {#each musicStatus.Queue as track, i}
           <div
-            class="group relative flex w-full items-center gap-4 p-3 rounded-xl transition-all duration-200 queue-item text-left cursor-pointer hover:scale-[1.01]"
+            class="group relative flex w-full items-center gap-4 p-3 rounded-xl transition-all duration-200 queue-item text-left cursor-pointer"
             style="background: {isCurrentlyPlaying(track) ? 'var(--music-accent)40' : selectedQueueItem === i ? 'var(--music-accent)20' : 'var(--music-foreground)10'};
                    border-left: {isCurrentlyPlaying(track) ? '4px solid var(--music-accent)' : selectedQueueItem === i ? '4px solid var(--music-accent)' : 'none'};"
             onclick={() => playQueueItem(i)}
@@ -1469,7 +1452,7 @@ A comprehensive music player component for Discord bot music functionality.
   {#if contextMenuVisible}
     <div
       bind:this={contextMenuElement}
-      class="fixed z-50 bg-gray-800 rounded-lg shadow-2xl border py-1 min-w-48"
+      class="fixed z-50 bg-gray-800 rounded-lg shadow-lg border py-1 min-w-48"
       style="left: {contextMenuX}px; top: {contextMenuY}px; 
              background: linear-gradient(135deg, {colors.gradientStart}90, {colors.gradientEnd}90);
              border-color: {colors.foreground}40;"
@@ -1665,18 +1648,6 @@ A comprehensive music player component for Discord bot music functionality.
         position: relative;
         will-change: width;
         transition: width 0.1s linear;
-        box-shadow: 0 0 8px 1px var(--music-accent);
-    }
-
-    .progress-bar-fill::after {
-        content: "";
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 8px;
-        height: 100%;
-        background: inherit;
-        filter: blur(4px);
     }
 
     /* When playing, ensure width transitions are instantaneous to avoid laggy feeling */
@@ -1685,47 +1656,13 @@ A comprehensive music player component for Discord bot music functionality.
     }
 
     .progress-indicator {
-        animation: pulse 1.5s infinite;
         will-change: transform, left;
         transition: left 0.1s linear;
-        box-shadow: 0 0 10px 2px var(--music-accent);
     }
 
     /* When playing, ensure left transitions are instantaneous to avoid laggy feeling */
     :global(.State-2) .progress-indicator {
         transition: none;
-    }
-
-    @keyframes pulse {
-        0% {
-            transform: translateY(-50%) scale(1);
-            opacity: 0.8;
-        }
-        50% {
-            transform: translateY(-50%) scale(1.2);
-            opacity: 1;
-        }
-        100% {
-            transform: translateY(-50%) scale(1);
-            opacity: 0.8;
-        }
-    }
-
-    /* Control button pulse */
-    .control-pulse {
-        animation: controlPulse 2s infinite;
-    }
-
-    @keyframes controlPulse {
-        0% {
-            box-shadow: 0 0 0 0 rgba(var(--music-accent-rgb, 255, 255, 255), 0.4);
-        }
-        70% {
-            box-shadow: 0 0 0 10px rgba(var(--music-accent-rgb, 255, 255, 255), 0);
-        }
-        100% {
-            box-shadow: 0 0 0 0 rgba(var(--music-accent-rgb, 255, 255, 255), 0);
-        }
     }
 
     /* Album art styling with vinyl appearance */
@@ -1813,8 +1750,6 @@ A comprehensive music player component for Discord bot music functionality.
 
     .queue-item:hover, .queue-card:hover {
         background-color: var(--music-accent) 30 !important;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     .queue-position {
@@ -1944,12 +1879,6 @@ A comprehensive music player component for Discord bot music functionality.
 
     /* Queue styling */
     .queue-card {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         transition: all 0.2s ease;
-    }
-
-    .queue-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 </style>

@@ -21,8 +21,6 @@
   "min_server_time_label": "最低サーバー滞在時間（時間）",
   "notification_channel_label": "通知チャンネル（任意）",
   "notification_channel_placeholder": "通知しない",
-  "notify_reward_added": "ロール報酬を追加しました！",
-  "notify_reward_removed": "ロール報酬を削除しました！",
   "page_subtitle": "サーバーのレピュテーションと報酬を管理します",
   "page_title": "レピュテーションシステム",
   "remove_on_drop_label": "レピュテーションが基準値を下回ったらロールを削除する",

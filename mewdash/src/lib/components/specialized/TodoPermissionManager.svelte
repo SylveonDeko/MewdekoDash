@@ -159,7 +159,7 @@
         </div>
 
         <button aria-label={m.common.close()}
-          class="p-2 rounded-lg transition-all hover:scale-110"
+          class="p-2 rounded-lg transition-all"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
           onclick={closeModal}
           onkeydown={handleKeydown}
@@ -188,7 +188,7 @@
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.todo.permissionsCurrent()}</h3>
               <button
-                class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02]"
+                class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all"
                 style="background: {$colorStore.primary}; color: white;"
                 onclick={() => showAddUser = !showAddUser}
               >
@@ -296,7 +296,7 @@
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-2">
                   <button
-                    class="flex-1 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="flex-1 px-4 py-2 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     style="background: {$colorStore.primary}; color: white;"
                     onclick={grantPermissions}
                     disabled={!selectedUserId || !newPermissions.canView}
@@ -305,7 +305,7 @@
                   </button>
                   
                   <button
-                    class="px-4 py-2 rounded-lg transition-all hover:scale-[1.02]"
+                    class="px-4 py-2 rounded-lg transition-all"
                     style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
                     onclick={() => showAddUser = false}
                   >
@@ -330,7 +330,7 @@
             {:else}
               {#each permissions as permission, index}
                 {@const member = guildMembers.find(gm => gm.id === permission.userId.toString())}
-                <div class="flex items-center justify-between p-4 rounded-xl transition-all hover:scale-[1.02]"
+                <div class="flex items-center justify-between p-4 rounded-xl transition-all"
                      style="background: {$colorStore.primary}08;"
                      in:fly={{ y: 20, duration: 200, delay: index * 50 }}>
                   <div class="flex items-center gap-4">
@@ -362,7 +362,7 @@
 
                     <!-- Revoke Button -->
                     <button aria-label={m.todo.permissionsRevokeAria()}
-                      class="p-2 rounded-lg transition-all hover:scale-110"
+                      class="p-2 rounded-lg transition-all"
                       style="color: #ef4444; background: #ef444415;"
                       onclick={() => revokePermissions(permission.userId)}
                       title={m.todo.permissionsRevoke()}
@@ -380,7 +380,7 @@
       <!-- Footer -->
       <div class="flex items-center justify-end gap-3 p-6 border-t" style="border-color: {$colorStore.primary}20;">
         <button
-          class="px-6 py-2 rounded-lg transition-all hover:scale-[1.02]"
+          class="px-6 py-2 rounded-lg transition-all"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
           onclick={closeModal}
         >

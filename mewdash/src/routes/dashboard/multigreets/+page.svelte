@@ -17,12 +17,18 @@
   import { logger } from "$lib/logger.ts";
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
   import { serializeMessage, toBuilderValue } from "$lib/utils/embedMessage";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
   interface Props {
         data: PageData;
     }
 
     let {data}: Props = $props();
+
+    const autoSave = createAutoSave({
+      onError: () => showNotificationMessage(m.common.failedToSaveTheSettings(), "error")
+    });
+
     let channels: Array<{ id: string; name: string }> = $state([]);
 
     let greets: MultiGreet[] = $state([]);
@@ -57,9 +63,9 @@
     }
   }
 
-  async function fetchGreets() {
+  async function fetchGreets(quiet = false) {
     try {
-      loading = true;
+      if (!quiet) loading = true;
       error = null;
       if (!$currentGuild?.id) {
         throw new Error(m.common.noGuildSelected());
@@ -141,55 +147,42 @@
     }
   }
 
-  async function updateMessage(id: number, message: any) {
-    try {
-      if (!$currentGuild?.id) {
-        throw new Error(m.common.noGuildSelected());
+  /** Runs a greet update, then refreshes quietly. A failed update refreshes too, which puts the controls back. */
+  function saveGreet(key: string, send: (guildId: bigint) => Promise<unknown>, quiet = false) {
+    if (!$currentGuild?.id) return Promise.resolve();
+    const guildId = BigInt($currentGuild.id);
+    return autoSave.now(key, async () => {
+      try {
+        await send(guildId);
+      } catch (err) {
+        await fetchGreets(true);
+        throw err;
       }
-      const messageToSend = serializeMessage(message);
-      await multiGreetApi.updateMultiGreetMessage(BigInt($currentGuild.id), id, messageToSend);
-      showNotificationMessage(m.multigreets.notifyMessageUpdated());
-      editMessage = null;
-      await fetchGreets();
-    } catch (error) {
-      showNotificationMessage(
-        error instanceof Error ? error.message : m.multigreets.errorUpdateMessage(),
-        "error"
-      );
-    }
+      if (!quiet) await fetchGreets(true);
+    });
   }
 
-  async function updateDeleteTime(id: number, time: string) {
-    try {
-      if (!$currentGuild?.id) {
-        throw new Error(m.common.noGuildSelected());
-      }
-      await multiGreetApi.updateMultiGreetDeleteTime(BigInt($currentGuild.id), id, time);
-      showNotificationMessage(m.multigreets.notifyDeleteTimeUpdated());
-      editDeleteTime = null;
-      await fetchGreets();
-    } catch (error) {
-      showNotificationMessage(
-        error instanceof Error ? error.message : m.multigreets.errorUpdateDeleteTime(),
-        "error"
-      );
-    }
+  function updateMessage(id: number, message: any) {
+    const messageToSend = serializeMessage(message);
+    return saveGreet(`message:${id}`, (guildId) => multiGreetApi.updateMultiGreetMessage(guildId, id, messageToSend));
   }
 
-  async function updateGreetBots(id: number, enabled: boolean) {
-    try {
-      if (!$currentGuild?.id) {
-        throw new Error(m.common.noGuildSelected());
-      }
-      await multiGreetApi.updateMultiGreetGreetBots(BigInt($currentGuild.id), id, enabled);
-      showNotificationMessage(m.multigreets.notifyGreetBotsUpdated());
-      await fetchGreets();
-    } catch (error) {
-      showNotificationMessage(
-        error instanceof Error ? error.message : m.multigreets.errorUpdateGreetBots(),
-        "error"
-      );
-    }
+  function queueDeleteTime(id: number) {
+    autoSave.schedule(`deleteTime:${id}`, async () => {
+      if (!$currentGuild?.id || editDeleteTime?.id !== id) return;
+      const guildId = BigInt($currentGuild.id);
+      await multiGreetApi.updateMultiGreetDeleteTime(guildId, id, editDeleteTime.time);
+    });
+  }
+
+  async function finishDeleteTime() {
+    await autoSave.flush();
+    editDeleteTime = null;
+    await fetchGreets(true);
+  }
+
+  function updateGreetBots(id: number, enabled: boolean) {
+    return saveGreet(`greetBots:${id}`, (guildId) => multiGreetApi.updateMultiGreetGreetBots(guildId, id, enabled));
   }
 
   async function updateWebhook(id: number) {
@@ -212,36 +205,23 @@
     }
   }
 
-  async function updateDisabled(id: number, disabled: boolean) {
-    try {
-      if (!$currentGuild?.id) {
-        throw new Error(m.common.noGuildSelected());
-      }
-      await multiGreetApi.updateMultiGreetDisabled(BigInt($currentGuild.id), id, disabled);
-      showNotificationMessage(m.multigreets.notifyStatusUpdated());
-      await fetchGreets();
-    } catch (error) {
-      showNotificationMessage(
-        error instanceof Error ? error.message : m.common.failedToUpdateStatus(),
-        "error"
-      );
-    }
+  function updateDisabled(id: number, disabled: boolean) {
+    return saveGreet(`disabled:${id}`, (guildId) => multiGreetApi.updateMultiGreetDisabled(guildId, id, disabled));
   }
 
-  async function updateGreetType(type: MultiGreetType) {
-    try {
-      if (!$currentGuild?.id) {
-        throw new Error(m.common.noGuildSelected());
+  function updateGreetType(type: MultiGreetType) {
+    if (!$currentGuild?.id || type === greetType) return;
+    const guildId = BigInt($currentGuild.id);
+    const previous = greetType;
+    greetType = type;
+    void autoSave.now("greetType", async () => {
+      try {
+        await multiGreetApi.setMultiGreetType(guildId, type);
+      } catch (err) {
+        greetType = previous;
+        throw err;
       }
-      await multiGreetApi.setMultiGreetType(BigInt($currentGuild.id), type);
-      greetType = type;
-      showNotificationMessage(m.multigreets.notifyTypeUpdated());
-    } catch (error) {
-      showNotificationMessage(
-        error instanceof Error ? error.message : m.multigreets.errorUpdateType(),
-        "error"
-      );
-    }
+    });
   }
 
   $effect(() => {
@@ -274,6 +254,7 @@
 
 <DashboardPageLayout
   statusMessages={statusMessages}
+  {autoSave}
   subtitle={m.multigreets.pageSubtitle()}
   icon="fa-comment"
   guildName={$currentGuild?.name || "Dashboard"}
@@ -292,7 +273,7 @@
     <!-- Greet Type Section -->
     <section
       class="mb-8 rounded-xl border p-6"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
       transition:fade
     >
@@ -349,7 +330,7 @@
       <!-- Add New Greet Section -->
       <section
         class="mb-8  rounded-xl border p-6 transition-all"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        style="background: {$colorStore.primary}0c;
                border-color: {$colorStore.primary}30;"
       >
         <h2 class="text-xl font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
@@ -373,7 +354,7 @@
       {#if !greets.length}
         <div
           class="text-center p-8  rounded-xl border transition-all"
-          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+          style="background: {$colorStore.primary}0c;
                  border-color: {$colorStore.primary}30;"
           transition:fade
         >
@@ -387,15 +368,15 @@
         <div class="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
           {#each sortedGreets as greet (greet.id)}
             <div
-              class=" rounded-xl border shadow-lg overflow-hidden transition-all duration-200"
-              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+              class=" rounded-xl border overflow-hidden transition-all duration-200"
+              style="background: {$colorStore.primary}0c;
                      border-color: {$colorStore.primary}30;"
               transition:fade
             >
               <!-- Card Header -->
               <div
                 class="p-4 border-b"
-                style="background: linear-gradient(to bottom, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20);
+                style="background: {$colorStore.primary}20;
                        border-color: {$colorStore.primary}30;"
               >
                 <div class="flex justify-between items-start">
@@ -458,6 +439,8 @@
                         <input
                           type="text"
                           bind:value={editDeleteTime.time}
+                          oninput={() => queueDeleteTime(greet.id)}
+                          onblur={() => autoSave.flush(`deleteTime:${greet.id}`)}
                           placeholder={m.multigreets.deleteTimePlaceholder()}
                           class="w-full p-3 rounded-lg border focus:ring-2"
                           style="background: {$colorStore.primary}10;
@@ -468,20 +451,12 @@
                       </div>
                       <div class="flex gap-2">
                         <button
-                          class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2 min-h-[44px]"
-                          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-                          onclick={() => editDeleteTime && updateDeleteTime(greet.id, editDeleteTime.time)}
-                        >
-                          <i class="fa-solid fa-check" style="font-size: 16px;"></i>
-                          {m.common.save()}
-                        </button>
-                        <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
                           style="background: {$colorStore.primary}20; color: {$colorStore.text}"
-                          onclick={() => editDeleteTime = null}
+                          onclick={finishDeleteTime}
                         >
-                          <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
-                          {m.common.cancel()}
+                          <i class="fa-solid fa-check" style="font-size: 16px;"></i>
+                          {m.common.done()}
                         </button>
                       </div>
                     </div>

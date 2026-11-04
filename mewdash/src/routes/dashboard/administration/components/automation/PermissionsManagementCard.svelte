@@ -252,15 +252,15 @@
   });
 </script>
 
-<div class=" rounded-2xl border p-6 shadow-2xl transition-all"
+<div class=" rounded-2xl border p-6 transition-all"
      in:fly={{ y: 20, duration: 300, delay: 600 }}
-     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+     style="background: {$colorStore.primary}0c;
             border-color: {$colorStore.primary}30;">
 
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div class="flex items-center gap-4">
       <div class="p-3 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+           style="background: {$colorStore.primary}20;">
         <i class="fa-utility-duo fa-regular fa-shield-halved"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
@@ -272,7 +272,7 @@
 
     <div class="flex flex-wrap items-center gap-2">
       <button
-        class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+        class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
         onclick={() => expandedCard = !expandedCard}
         style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
       >
@@ -282,7 +282,7 @@
 
       {#if sortedRules.length > 1}
         <button
-          class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+          class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
           onclick={() => showConfirm(m.administration.automationPermissionsManagementResetTitle(), m.administration.automationPermissionsManagementResetConfirm(), resetAllPermissions, "danger")}
         >
@@ -319,7 +319,7 @@
             <div class="text-xs" style="color: {$colorStore.muted}">{m.administration.automationPermissionsManagementVerboseHint()}</div>
           </div>
           <button
-            class="p-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] min-w-[44px]"
+            class="p-2 rounded-lg transition-all min-h-[44px] min-w-[44px]"
             style="color: {verboseMode ? $colorStore.secondary : $colorStore.muted}"
             onclick={toggleVerboseMode}
             role="switch"
@@ -350,7 +350,7 @@
           <div class="flex flex-wrap items-center justify-between gap-3">
             <h4 class="font-medium" style="color: {$colorStore.text}">{m.administration.automationPermissionsManagementRulesHeading()}</h4>
             <button
-              class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+              class="px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 min-h-[44px]"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={() => { showAddForm = !showAddForm; formError = ""; }}
             >
@@ -444,7 +444,7 @@
               {/if}
 
               <button type="submit" disabled={saving}
-                      class="px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50 flex items-center gap-2"
+                      class="px-4 py-3 rounded-lg font-medium transition-all min-h-[44px] disabled:opacity-50 flex items-center gap-2"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
                 {#if saving}<i class="fa-solid fa-spinner fa-spin"></i>{:else}<i class="fa-solid fa-plus"></i>{/if}
                 {m.administration.automationPermissionsManagementAddRule()}
@@ -467,7 +467,7 @@
                      style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                   <span class="text-xs font-mono px-2 py-1 rounded-sm shrink-0"
                         style="background: {$colorStore.primary}15; color: {$colorStore.muted};">#{rule.index}</span>
-                  <span class="px-2 py-1 rounded-sm text-xs font-semibold uppercase shrink-0"
+                  <span class="px-2 py-1 rounded-sm text-xs font-semibold shrink-0"
                         style="background: {rule.state ? '#10b98120' : '#ef444420'}; color: {rule.state ? '#10b981' : '#ef4444'};">
                     {rule.state ? m.administration.automationPermissionsManagementStateAllow() : m.common.deny()}
                   </span>
@@ -485,14 +485,14 @@
                     </span>
                   {:else}
                     <div class="flex items-center gap-1 shrink-0">
-                      <button class="p-2 rounded-lg transition-all hover:scale-[1.05] min-h-[36px] min-w-[36px] disabled:opacity-30"
+                      <button class="p-2 rounded-lg transition-all min-h-[36px] min-w-[36px] disabled:opacity-30"
                               style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                               disabled={rule.index <= 1}
                               onclick={() => movePermission(rule.index, rule.index - 1)}
                               aria-label={m.administration.automationPermissionsManagementMoveUp()}>
                         <i class="fa-solid fa-arrow-up" style="font-size: 12px;"></i>
                       </button>
-                      <button class="p-2 rounded-lg transition-all hover:scale-[1.05] min-h-[36px] min-w-[36px] disabled:opacity-30"
+                      <button class="p-2 rounded-lg transition-all min-h-[36px] min-w-[36px] disabled:opacity-30"
                               style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                               disabled={position >= sortedRules.length - 1}
                               onclick={() => movePermission(rule.index, rule.index + 1)}
@@ -500,7 +500,7 @@
                         <i class="fa-solid fa-arrow-down" style="font-size: 12px;"></i>
                       </button>
                       <button
-                        class="px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02] min-h-[36px]"
+                        class="px-3 py-2 rounded-lg text-sm transition-all min-h-[36px]"
                         style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                         onclick={() => showConfirm(m.administration.automationPermissionsManagementRemoveTitle(), rule.state ? m.administration.automationPermissionsManagementRemoveConfirmAllow({ index: rule.index, summary: m.administration.automationPermissionsManagementRuleSummary({ target: info.target, scope: info.scope }) }) : m.administration.automationPermissionsManagementRemoveConfirmDeny({ index: rule.index, summary: m.administration.automationPermissionsManagementRuleSummary({ target: info.target, scope: info.scope }) }), () => removePermission(rule.index))}
                       >

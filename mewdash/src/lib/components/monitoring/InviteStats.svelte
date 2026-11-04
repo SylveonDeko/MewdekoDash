@@ -15,12 +15,12 @@
 </script>
 
 {#if stats && stats !== undefined && stats.averageJoins !== undefined}
-  <div class=" rounded-2xl border p-6 shadow-2xl"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+  <div class=" rounded-2xl border p-6"
+       style="background: {$colorStore.primary}0c;
                 border-color: {$colorStore.primary}30;">
     <div class="flex items-center gap-4 mb-6">
       <div class="p-3 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+           style="background: {$colorStore.primary}20;">
         <i class="fa-utility-duo fa-regular fa-link text-2xl"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
       </div>

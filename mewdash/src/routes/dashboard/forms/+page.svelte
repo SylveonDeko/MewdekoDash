@@ -434,8 +434,8 @@
       transition:fade
     >
       <div
-        class="w-full max-w-lg backdrop-blur-md rounded-xl border p-6 shadow-2xl"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}95, {$colorStore.gradientMid}98); border-color: {$colorStore.primary}30;"
+        class="w-full max-w-lg rounded-xl border p-6 shadow-lg"
+        style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background}); border-color: {$colorStore.primary}30;"
         onclick={(e) => e.stopPropagation()}
         onkeydown={(e) => e.stopPropagation()}
         role="dialog"
@@ -449,7 +449,7 @@
           </h2>
           <button
             onclick={() => (showShareLinkModal = false)}
-            class="p-2 rounded-lg transition-all hover:scale-110"
+            class="p-2 rounded-lg transition-all"
             style="background: {$colorStore.primary}20; color: {$colorStore.text};"
             aria-label={m.forms.pageShareCloseAria()}
           >
@@ -483,15 +483,15 @@
         <div class="flex gap-3">
           <button
             onclick={copyToClipboard}
-            class="flex-1 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] border"
-            style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border-color: {$colorStore.primary}30; box-shadow: 0 4px 20px {$colorStore.primary}10;"
+            class="flex-1 py-3 rounded-lg font-medium transition-all border"
+            style="background: {$colorStore.primary}18; color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
           >
             <i class="fa-solid fa-copy mr-2"></i>
             {m.common.copyToClipboard()}
           </button>
           <button
             onclick={() => (showShareLinkModal = false)}
-            class="px-6 py-3 rounded-lg font-medium transition-all hover:scale-[1.02]"
+            class="px-6 py-3 rounded-lg font-medium transition-all"
             style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
           >
             {m.common.close()}

@@ -82,7 +82,6 @@
   let isMobile = $state(false);
   let showQuestionTypeMenu = $state(false);
   let loading = $state(true);
-  let buttonMousePositions = $state<{ [key: string]: { x: number, y: number } }>({});
 
   // Mobile full-screen question editor
   let showMobileQuestionEditor = $state(false);
@@ -105,19 +104,6 @@
 
   function checkMobile() {
     isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-  }
-
-  function handleButtonMouseMove(e: MouseEvent, buttonId: string) {
-    const target = e.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    buttonMousePositions[buttonId] = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    };
-  }
-
-  function handleButtonMouseLeave(buttonId: string) {
-    delete buttonMousePositions[buttonId];
   }
 
   async function loadChannels() {
@@ -550,24 +536,10 @@
         </button>
         <button
           onclick={() => (showQuestionTypeMenu = !showQuestionTypeMenu)}
-          onmousemove={(e) => !isMobile && handleButtonMouseMove(e, 'add-question')}
-          onmouseleave={() => !isMobile && handleButtonMouseLeave('add-question')}
-          class="group px-3 sm:px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] relative overflow-hidden"
+          class="group px-3 sm:px-4 py-2 rounded-lg font-medium transition-all relative overflow-hidden"
           style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
           type="button"
         >
-          <!-- Mouse spotlight -->
-          {#if buttonMousePositions['add-question'] && !isMobile}
-            <div
-              class="pointer-events-none absolute w-24 h-24 rounded-full opacity-30 transition-all duration-100 ease-out"
-              style="background: radial-gradient(circle at center, {$colorStore.primary}60, transparent 70%);
-                       left: {buttonMousePositions['add-question'].x}px;
-                       top: {buttonMousePositions['add-question'].y}px;
-                       transform: translate(-50%, -50%);
-                       filter: blur(20px);"
-            ></div>
-          {/if}
-
           <!-- Hover gradient overlay -->
           <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                style="background: {$colorStore.primary}25;"></div>
@@ -597,25 +569,11 @@
             {#each QUESTION_TYPES.filter((t) => t.type !== "section_break") as qType, qIndex}
               <button
                 onclick={() => addQuestion(qType.type)}
-                onmousemove={(e) => !isMobile && handleButtonMouseMove(e, `qtype-${qType.type}`)}
-                onmouseleave={() => !isMobile && handleButtonMouseLeave(`qtype-${qType.type}`)}
-                class="group p-3 rounded-lg transition-all hover:scale-[1.02] text-left relative overflow-hidden"
+                class="group p-3 rounded-lg transition-all text-left relative overflow-hidden"
                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;"
                 in:fly={{ y: 20, duration: 400, delay: qIndex * 50 }}
                 type="button"
               >
-                <!-- Mouse spotlight -->
-                {#if buttonMousePositions[`qtype-${qType.type}`] && !isMobile}
-                  <div
-                    class="pointer-events-none absolute w-24 h-24 rounded-full opacity-25 transition-all duration-100 ease-out"
-                    style="background: radial-gradient(circle at center, {$colorStore.primary}50, transparent 70%);
-                             left: {buttonMousePositions[`qtype-${qType.type}`].x}px;
-                             top: {buttonMousePositions[`qtype-${qType.type}`].y}px;
-                             transform: translate(-50%, -50%);
-                             filter: blur(15px);"
-                  ></div>
-                {/if}
-
                 <!-- Hover gradient overlay -->
                 <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                      style="background: {$colorStore.primary}12;"></div>
@@ -679,7 +637,7 @@
               ondragover={(e) => !isMobile && handleDragOver(e, index)}
               ondragend={() => !isMobile && handleDragEnd()}
               role="listitem"
-              class=" rounded-lg border p-3 transition-all {draggedQuestionIndex === index ? 'opacity-50' : 'hover:shadow-md'}"
+              class=" rounded-lg border p-3 transition-all {draggedQuestionIndex === index ? 'opacity-50' : ''}"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}25; cursor: {isMobile ? 'default' : 'move'};"
               transition:slide
             >
@@ -729,7 +687,7 @@
                     <button
                       onclick={() => moveQuestion(index, "up")}
                       disabled={index === 0}
-                      class="p-2 rounded transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
+                      class="p-2 rounded transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                       style="background: {$colorStore.primary}15; color: {$colorStore.text};"
                       title={m.common.moveUp()}
                       aria-label={m.forms.editMoveQuestionUpLabel()}
@@ -739,7 +697,7 @@
                     <button
                       onclick={() => moveQuestion(index, "down")}
                       disabled={index === questions.length - 1}
-                      class="p-2 rounded transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
+                      class="p-2 rounded transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                       style="background: {$colorStore.primary}15; color: {$colorStore.text};"
                       title={m.common.moveDown()}
                       aria-label={m.forms.editMoveQuestionDownLabel()}
@@ -749,7 +707,7 @@
                   {/if}
                   <button
                     onclick={() => duplicateQuestion(index)}
-                    class="p-2 rounded transition-all hover:scale-110"
+                    class="p-2 rounded transition-all"
                     style="background: {$colorStore.secondary}15; color: {$colorStore.text};"
                     title={m.common.duplicate()}
                     aria-label={m.forms.editDuplicateQuestionLabel()}
@@ -758,7 +716,7 @@
                   </button>
                   <button
                     onclick={() => deleteQuestion(index)}
-                    class="p-2 rounded transition-all hover:scale-110"
+                    class="p-2 rounded transition-all"
                     style="background: #ef444415; color: #ef4444;"
                     title={m.common.delete()}
                     aria-label={m.forms.editDeleteQuestionLabel()}
@@ -773,7 +731,7 @@
                 <button
                   onclick={() => openMobileQuestionEditor(index)}
                   class="w-full mt-2 p-2 rounded text-sm transition-all"
-                  style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+                  style="background: {$colorStore.primary}18; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                   type="button"
                 >
                   <i class="fa-solid fa-edit mr-2"></i>
@@ -923,7 +881,7 @@
                           <span class="text-sm" style="color: {$colorStore.muted};">{m.common.options()}</span>
                           <button
                             onclick={() => addOption(index)}
-                            class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-[1.02]"
+                            class="px-3 py-1 rounded text-xs font-medium transition-all"
                             style="background: {$colorStore.primary}20; color: {$colorStore.text};"
                           >
                             <i class="fa-solid fa-plus mr-1"></i>
@@ -944,7 +902,7 @@
                                 />
                                 <button
                                   onclick={() => deleteOption(index, optIndex)}
-                                  class="px-3 py-2 rounded transition-all hover:scale-[1.02]"
+                                  class="px-3 py-2 rounded transition-all"
                                   style="background: #ef444415; color: #ef4444;"
                                   aria-label={m.common.deleteOption()}
                                 >
@@ -974,7 +932,7 @@
                     <div class="flex justify-end">
                       <button
                         onclick={() => (editingQuestionId = null)}
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all"
                         style="background: {$colorStore.primary}20; color: {$colorStore.text};"
                       >
                         <i class="fa-solid fa-check mr-2"></i>
@@ -986,7 +944,7 @@
                   <!-- Collapsed View - Click to expand -->
                   <button
                     onclick={() => (editingQuestionId = question.id)}
-                    class="w-full mt-2 p-2 rounded text-sm transition-all hover:scale-[1.01]"
+                    class="w-full mt-2 p-2 rounded text-sm transition-all"
                     style="background: {$colorStore.primary}05; color: {$colorStore.muted};"
                   >
                     <i class="fa-solid fa-edit mr-2"></i>
@@ -1035,8 +993,8 @@
       <div class="sticky bottom-4">
         <button
           onclick={saveForm}
-          class="w-full py-4 rounded-lg font-bold text-lg transition-all hover:scale-[1.02] shadow-lg border"
-          style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border-color: {$colorStore.primary}30; box-shadow: 0 4px 20px {$colorStore.primary}10;"
+          class="w-full py-4 rounded-lg font-bold text-lg transition-all border"
+          style="background: {$colorStore.primary}18; color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
           type="button"
         >
           <i class="fa-solid fa-check mr-2"></i>
@@ -1060,7 +1018,7 @@
     >
       <div
         class="w-full h-full flex flex-col"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}95, {$colorStore.gradientMid}98);"
+        style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background});"
         onclick={(e) => e.stopPropagation()}
         onkeydown={(e) => e.stopPropagation()}
         role="dialog"
@@ -1087,7 +1045,7 @@
           <button
             type="button"
             onclick={closeMobileQuestionEditor}
-            class="p-2 rounded-lg transition-all hover:scale-110 flex-shrink-0"
+            class="p-2 rounded-lg transition-all flex-shrink-0"
             style="background: {$colorStore.primary}20; color: {$colorStore.text};"
             aria-label={m.common.ariaCloseEditor()}
           >
@@ -1293,8 +1251,8 @@
           <button
             type="button"
             onclick={closeMobileQuestionEditor}
-            class="w-full py-3 rounded-lg font-medium transition-all hover:scale-[1.02]"
-            style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 20px {$colorStore.primary}10;"
+            class="w-full py-3 rounded-lg font-medium transition-all"
+            style="background: {$colorStore.primary}18; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
           >
             <i class="fa-solid fa-check mr-2"></i>
             {m.common.done()}

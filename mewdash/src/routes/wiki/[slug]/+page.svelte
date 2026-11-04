@@ -101,12 +101,12 @@
         <div class="min-w-0">
           <header
             class="rounded-2xl p-6 sm:p-8 mb-8"
-            style="background: linear-gradient(135deg, {$colorStore.gradientStart}18, {$colorStore.gradientEnd}10);
+            style="background: {$colorStore.primary}0c;
                    border: 1px solid {$colorStore.primary}30;"
           >
             <div class="flex flex-col sm:flex-row sm:items-center gap-5">
               <div class="p-4 rounded-2xl w-fit"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);">
+                   style="background: {$colorStore.primary}1a;">
                 <i class="{wikiIconClass(data.article.icon)} text-4xl"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
               </div>
@@ -131,7 +131,7 @@
               {#if dashboardLink}
                 <a
                   href={dashboardLink}
-                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all hover:scale-[1.02]"
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-colors hover:brightness-110"
                   style="background: {$colorStore.primary}; color: #0f172a;"
                 >
                   <i class="fa-solid fa-sliders shrink-0"></i>
@@ -141,7 +141,7 @@
               {#if data.article.module}
                 <a
                   href="/commands"
-                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all hover:scale-[1.02]"
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-colors hover:brightness-110"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 >
                   <i class="fa-solid fa-terminal"></i>
@@ -163,7 +163,7 @@
                 {#each data.related as r (r.slug)}
                   <a
                     href="/wiki/{r.slug}"
-                    class="flex items-center gap-3 rounded-xl p-4 transition-all hover:scale-[1.02]"
+                    class="flex items-center gap-3 rounded-xl p-4 transition-colors hover:brightness-110"
                     style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}25;"
                   >
                     <i class="{wikiIconClass(r.icon)} text-xl"
@@ -181,7 +181,7 @@
           <nav class="mt-10 flex flex-col sm:flex-row gap-3 justify-between" aria-label={m.wiki.articlePagination()}>
             {#if data.previous}
               <a href="/wiki/{data.previous.slug}"
-                 class="flex-1 rounded-xl p-4 transition-all hover:scale-[1.01]"
+                 class="flex-1 rounded-xl p-4 transition-colors hover:brightness-110"
                  style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}25;">
                 <div class="text-xs" style="color: {$colorStore.muted}"><i class="fa-solid fa-arrow-left mr-1"></i>{m.common.previous()}</div>
                 <div class="font-semibold" style="color: {$colorStore.text}">{data.previous.title}</div>
@@ -191,7 +191,7 @@
             {/if}
             {#if data.next}
               <a href="/wiki/{data.next.slug}"
-                 class="flex-1 rounded-xl p-4 text-right transition-all hover:scale-[1.01]"
+                 class="flex-1 rounded-xl p-4 text-right transition-colors hover:brightness-110"
                  style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}25;">
                 <div class="text-xs" style="color: {$colorStore.muted}">{m.common.next()}<i class="fa-solid fa-arrow-right ml-1"></i></div>
                 <div class="font-semibold" style="color: {$colorStore.text}">{data.next.title}</div>
@@ -203,7 +203,7 @@
         <aside class="hidden xl:block">
           {#if data.article.headings.length > 0}
             <div class="sticky top-24">
-              <p class="text-xs uppercase tracking-widest font-semibold mb-3" style="color: {$colorStore.muted}">
+              <p class="text-sm font-medium mb-3" style="color: {$colorStore.muted}">
                 {m.wiki.onThisPage()}
               </p>
               <ul class="space-y-1 border-l" style="border-color: {$colorStore.primary}25;">

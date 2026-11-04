@@ -19,6 +19,7 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
   import { userStore } from "$lib/stores/userStore";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
 
   interface Props {
@@ -32,6 +33,10 @@
     let notificationMessage = $state("");
     let notificationType: "success" | "error" = $state("success");
     let patreonStatus: PatreonOAuthStatusResponse | null = $state(null);
+
+  const autoSave = createAutoSave({
+    onError: () => showNotificationMessage(m.patreon.notifyConfigFailed(), "error")
+  });
 
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
     notificationMessage = message;
@@ -48,7 +53,6 @@
     let isConnecting = $state(false);
     let isRefreshing = $state(false);
     let isSyncing = $state(false);
-    let isUpdatingConfig = $state(false);
     let showNotification = $state(false);
 
   type PatreonConfigForm = Omit<PatreonConfigUpdateRequest, "message"> & {
@@ -326,32 +330,42 @@
     }
   }
 
-  async function updateConfig() {
+  /** Sends the whole announcement config. Skipped while the day is outside 1 to 28. */
+  async function sendConfig() {
     if (!$currentGuild) return;
+    const day = configForm.announcementDay;
+    if (day !== undefined && day !== null && !(Number.isInteger(day) && day >= 1 && day <= 28)) return;
 
-    try {
-      isUpdatingConfig = true;
+    const messageToSend = typeof configForm.message === "object" && configForm.message !== null && Object.keys(configForm.message).length > 0
+      ? JSON.stringify(configForm.message)
+      : (typeof configForm.message === "string" ? configForm.message : undefined);
 
-      // Serialize message if it's an object
-      const messageToSend = typeof configForm.message === "object" && configForm.message !== null && Object.keys(configForm.message).length > 0
-        ? JSON.stringify(configForm.message)
-        : (typeof configForm.message === "string" ? configForm.message : undefined);
+    const configToSave = {
+      ...configForm,
+      // 0 clears the announcement channel (undefined would be dropped from the payload)
+      channelId: configForm.channelId ?? BigInt(0),
+      message: messageToSend
+    };
 
-      const configToSave = {
-        ...configForm,
-        // 0 clears the announcement channel (undefined would be dropped from the payload)
-        channelId: configForm.channelId ?? BigInt(0),
-        message: messageToSend
-      };
+    patreonConfig = await patreonApi.updatePatreonConfig(BigInt($currentGuild.id), configToSave);
+  }
 
-      patreonConfig = await patreonApi.updatePatreonConfig(BigInt($currentGuild.id), configToSave);
-      showNotificationMessage(m.patreon.notifyConfigUpdated(), "success");
-    } catch (err) {
-      logger.error("Failed to update config:", err);
-      showNotificationMessage(m.patreon.notifyConfigFailed(), "error");
-    } finally {
-      isUpdatingConfig = false;
-    }
+  /** Saves a toggle or picker straight away and puts the field back if the save fails. */
+  function saveConfigNow<K extends keyof PatreonConfigForm>(field: K, value: PatreonConfigForm[K]) {
+    const previous = configForm[field];
+    configForm[field] = value;
+    void autoSave.now("config", async () => {
+      try {
+        await sendConfig();
+      } catch (err) {
+        configForm[field] = previous;
+        throw err;
+      }
+    });
+  }
+
+  function saveConfigLater() {
+    autoSave.schedule("config", sendConfig);
   }
 
   async function mapTierToRole() {
@@ -422,7 +436,7 @@
     }
 
     function handleChannelChange(detail: any) {
-      configForm.channelId = detail.selected && typeof detail.selected === "string" ? BigInt(detail.selected) : undefined;
+      saveConfigNow("channelId", detail.selected && typeof detail.selected === "string" ? BigInt(detail.selected) : undefined);
     }
 
     function getTierOptions() {
@@ -466,13 +480,14 @@
   tabs={tabs}
   bind:activeTab
   statusMessages={statusMessages}
+  {autoSave}
   title={m.patreon.pageTitle()}
 >
 
     {#if loading}
       <div
-        class=" rounded-2xl border p-8 shadow-2xl transition-all text-center"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        class="rounded-2xl border p-8 transition-all text-center"
+        style="background: {$colorStore.primary}0c;
                border-color: {$colorStore.primary}30;"
         in:fade
       >
@@ -482,8 +497,8 @@
       </div>
     {:else if error}
       <div
-        class=" rounded-2xl border p-6 shadow-2xl"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        class="rounded-2xl border p-6"
+        style="background: {$colorStore.primary}0c;
                border-color: {$colorStore.accent}30;"
         in:fade
       >
@@ -505,8 +520,8 @@
     {:else if !patreonStatus?.isConfigured}
       <!-- Connection Setup -->
       <div
-        class=" rounded-2xl border p-8 shadow-2xl transition-all text-center"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        class="rounded-2xl border p-8 transition-all text-center"
+        style="background: {$colorStore.primary}0c;
                border-color: {$colorStore.primary}30;"
         in:fade
       >
@@ -518,8 +533,8 @@
         </p>
 
         <button
-          class="px-8 py-4 rounded-xl font-semibold transition-all transform hover:scale-[1.02] flex items-center gap-3 mx-auto text-lg"
-          style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary}); color: {$colorStore.text};"
+          class="px-8 py-4 rounded-xl font-semibold transition-all flex items-center gap-3 mx-auto text-lg"
+          style="background: {$colorStore.primary}; color: {$colorStore.text};"
           onclick={connectPatreon}
           disabled={isConnecting}
         >
@@ -534,8 +549,8 @@
 
         <!-- Information Card -->
         <div
-          class="mt-8  rounded-2xl border p-6 text-left transition-all"
-          style="background: linear-gradient(135deg, {$colorStore.gradientStart}05, {$colorStore.gradientMid}10);
+          class="mt-8 rounded-2xl border p-6 text-left transition-all"
+          style="background: {$colorStore.primary}08;
                  border-color: {$colorStore.primary}20;"
         >
           <h4 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.common.howItWorks()}</h4>
@@ -583,8 +598,8 @@
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" in:fly={{ y: 20, duration: 300 }}>
             <!-- Status Card -->
             <div
-              class=" rounded-2xl border p-6 shadow-2xl"
-              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+              class="rounded-2xl border p-6"
+              style="background: {$colorStore.primary}0c;
                      border-color: {$colorStore.primary}30;"
             >
               <div class="flex items-center gap-3 mb-4">
@@ -612,8 +627,8 @@
             <!-- Analytics Cards -->
             {#if patreonAnalytics}
               <div
-                class=" rounded-2xl border p-6 shadow-2xl transition-all"
-                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                class="rounded-2xl border p-6 transition-all"
+                style="background: {$colorStore.primary}0c;
                        border-color: {$colorStore.primary}30;"
               >
                 <div class="flex items-center gap-3 mb-4">
@@ -628,8 +643,8 @@
               </div>
 
               <div
-                class=" rounded-2xl border p-6 shadow-2xl transition-all"
-                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                class="rounded-2xl border p-6 transition-all"
+                style="background: {$colorStore.primary}0c;
                        border-color: {$colorStore.primary}30;"
               >
                 <div class="flex items-center gap-3 mb-4">
@@ -646,8 +661,8 @@
             <!-- Creator Card -->
             {#if patreonCreator}
               <div
-                class=" rounded-2xl border p-4 md:p-6 shadow-2xl transition-all col-span-1 md:col-span-2 lg:col-span-1"
-                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                class="rounded-2xl border p-4 md:p-6 transition-all col-span-1 md:col-span-2 lg:col-span-1"
+                style="background: {$colorStore.primary}0c;
                        border-color: {$colorStore.primary}30;"
               >
                 <div class="flex items-center gap-3 mb-4">
@@ -708,8 +723,8 @@
 
           <!-- Quick Actions -->
           <div
-            class=" rounded-2xl border p-6 shadow-2xl"
-            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+            class="rounded-2xl border p-6"
+            style="background: {$colorStore.primary}0c;
                    border-color: {$colorStore.primary}30;"
           >
             <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.common.quickActions()}</h3>
@@ -759,8 +774,8 @@
         {:else if activeTab === "supporters"}
           <!-- Supporters Tab -->
           <div
-            class=" rounded-2xl border p-6 shadow-2xl"
-            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+            class="rounded-2xl border p-6"
+            style="background: {$colorStore.primary}0c;
                    border-color: {$colorStore.primary}30;"
             in:fly={{ y: 20, duration: 300 }}
           >
@@ -827,8 +842,8 @@
           <div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
             <!-- Tier Mapping -->
             <div
-              class=" rounded-2xl border p-6 shadow-2xl"
-              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+              class="rounded-2xl border p-6"
+              style="background: {$colorStore.primary}0c;
                      border-color: {$colorStore.primary}30;"
             >
               <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.patreon.tiersMapTitle()}</h3>
@@ -877,8 +892,8 @@
 
             <!-- Tiers List -->
             <div
-              class=" rounded-2xl border p-6 shadow-2xl"
-              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+              class="rounded-2xl border p-6"
+              style="background: {$colorStore.primary}0c;
                      border-color: {$colorStore.primary}30;"
             >
               <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.patreon.tiersAvailableTitle()}</h3>
@@ -918,12 +933,12 @@
           <!-- Settings Tab -->
           <div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
             <div
-              class=" rounded-2xl border p-6 shadow-2xl"
-              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+              class="rounded-2xl border p-6"
+              style="background: {$colorStore.primary}0c;
                      border-color: {$colorStore.primary}30;"
             >
               <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.common.configuration()}</h3>
-              <form onsubmit={(e) => { e.preventDefault(); updateConfig(); }} class="space-y-4">
+              <div class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label for="announcement-channel" class="block text-sm font-medium mb-2"
@@ -946,6 +961,8 @@
                       min="1"
                       max="28"
                       bind:value={configForm.announcementDay}
+                      oninput={saveConfigLater}
+                      onblur={() => autoSave.flush("config")}
                       class="w-full px-3 py-2 rounded-lg border"
                       style="background: {$colorStore.primary}10; color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
                       placeholder={m.patreon.settingsDayPlaceholder()}
@@ -961,6 +978,7 @@
 
                   <FullscreenEmbedBuilder id="f-+page-custom-announcement-message-957"
                     bind:value={configForm.message}
+                    onclose={() => autoSave.now("config", sendConfig)}
                     previewTitle={m.patreon.settingsPreviewTitle()}
                     previewDescription={m.patreon.settingsPreviewDescription()}
                     icon="fa-heart"
@@ -1000,7 +1018,8 @@
                   <label class="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      bind:checked={configForm.toggleAnnouncements}
+                      checked={!!configForm.toggleAnnouncements}
+                      onchange={(e) => saveConfigNow("toggleAnnouncements", e.currentTarget.checked)}
                       class="rounded-sm"
                       style="accent-color: {$colorStore.primary};"
                     >
@@ -1010,31 +1029,15 @@
                   <label class="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      bind:checked={configForm.toggleRoleSync}
+                      checked={!!configForm.toggleRoleSync}
+                      onchange={(e) => saveConfigNow("toggleRoleSync", e.currentTarget.checked)}
                       class="rounded-sm"
                       style="accent-color: {$colorStore.primary};"
                     >
                     <span style="color: {$colorStore.text};">{m.patreon.settingsEnableRoleSync()}</span>
                   </label>
                 </div>
-
-                <div class="flex gap-3">
-                  <button
-                    type="submit"
-                    class="px-6 py-2 rounded-lg transition-colors flex items-center gap-2"
-                    style="background: {$colorStore.primary}; color: {$colorStore.text};"
-                    disabled={isUpdatingConfig}
-                  >
-                    {#if isUpdatingConfig}
-                      <div class="animate-spin rounded-full h-4 w-4 border-b-2"
-                           style="border-color: {$colorStore.text};"></div>
-                    {:else}
-                      <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-                    {/if}
-                    {m.common.saveConfiguration()}
-                  </button>
-                </div>
-              </form>
+              </div>
             </div>
           </div>
         {/if}

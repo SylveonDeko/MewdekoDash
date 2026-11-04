@@ -357,7 +357,7 @@
   class:max-lg:translate-x-full={!mobileOpen}
   class:sidebar-switching={$switchingServer}
   style="width: {isMobile ? 'min(85vw, 320px)' : collapsed ? '68px' : '280px'};
-         background: linear-gradient(180deg, {$colorStore.primary}15, {$colorStore.secondary}10, {$colorStore.accent}08);
+         background: color-mix(in srgb, {$colorStore.primary} 5%, {$colorStore.background});
          border-color: {$colorStore.primary}15;"
   aria-label={m.layout.sidebarAria()}
 >
@@ -379,7 +379,7 @@
     {#if !collapsed}
       <a
         href="/"
-        class="flex items-center justify-center w-8 h-8 rounded-lg transition-transform duration-200 hover:scale-[1.05] shrink-0"
+        class="flex items-center justify-center w-8 h-8 rounded-lg transition-transform duration-200 shrink-0"
         style="color: {$colorStore.muted}; background: {$colorStore.primary}08;"
         title={m.layout.sidebarBackToHome()}
         aria-label={m.layout.sidebarBackToHome()}
@@ -454,7 +454,7 @@
 
         <div class="relative z-10 p-3">
           <button
-            class="flex items-center gap-3 rounded-xl p-2 transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.02] min-w-0 w-full overflow-hidden text-left"
+            class="flex items-center gap-3 rounded-xl p-2 transition-[color,background-color,border-color,transform] duration-200 min-w-0 w-full overflow-hidden text-left"
             class:justify-center={collapsed}
             style="background: {bannerUrl && !collapsed ? 'rgba(0,0,0,0.3)' : $colorStore.primary + '08'};
                    border: 1px solid {bannerUrl && !collapsed ? 'rgba(255,255,255,0.15)' : $colorStore.primary + '15'};
@@ -496,13 +496,12 @@
           {#if !collapsed}
             <div class="flex items-center gap-2 mt-2 px-1">
               <button
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.02] flex-1"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-[color,background-color,border-color,transform] duration-200 flex-1"
                 style="background: {bannerUrl ? 'rgba(255,255,255,0.1)' : $colorStore.primary + '15'};
                        color: {$colorStore.primary};
                        border: 1px solid {bannerUrl ? 'rgba(255,255,255,0.1)' : $colorStore.primary + '20'};"
                 onclick={() => window.open(`https://discord.com/channels/${$currentGuild?.id}`, '_blank')}
               >
-                <i class="fa-solid fa-external-link text-[10px]" aria-hidden="true"></i>
                 {m.layout.sidebarViewServer()}
               </button>
             </div>
@@ -529,10 +528,9 @@
 
     {#if showServerPicker && !collapsed}
       <div
-        class="absolute left-2 right-2 top-full mt-1 rounded-xl shadow-2xl border overflow-hidden z-50"
+        class="absolute left-2 right-2 top-full mt-1 rounded-xl shadow-lg border overflow-hidden z-50"
         style="border-color: {$colorStore.primary}30;
-               background: linear-gradient(135deg, {$colorStore.background}f8, {$colorStore.background}f0);
-               backdrop-filter: blur(12px);"
+               background: {$colorStore.background};"
         transition:slide={{ duration: 200, axis: 'y' }}
         use:clickOutside
         onclickoutside={() => { showServerPicker = false; serverSearchTerm = ''; }}
@@ -603,7 +601,7 @@
       >
       {#if searchTerm}
         <button
-          class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded transition-[color,background-color,border-color,transform] hover:scale-110"
+          class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded transition-[color,background-color,border-color,transform]"
           style="color: {$colorStore.muted};"
           onclick={() => { searchTerm = ""; }}
           aria-label={m.common.ariaClearSearch()}
@@ -630,9 +628,7 @@
         {#if !isDashboardHome}
         <a
           href={noGuild ? undefined : "/dashboard"}
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group"
-          class:hover:scale-[1.01]={!noGuild}
-          class:opacity-40={noGuild}
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group"          class:opacity-40={noGuild}
           class:pointer-events-none={noGuild}
           style="background: transparent;
                  color: {$colorStore.muted};
@@ -654,9 +650,7 @@
 
         <a
           href={noGuild ? undefined : "/dashboard/access"}
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group"
-          class:hover:scale-[1.01]={!noGuild}
-          class:opacity-40={noGuild}
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group"          class:opacity-40={noGuild}
           class:pointer-events-none={noGuild}
           style="background: {isActive('/dashboard/access') ? $colorStore.primary + '12' : 'transparent'};
                  color: {isActive('/dashboard/access') ? $colorStore.text : $colorStore.muted};
@@ -680,7 +674,7 @@
         {#if isOwner}
           <a
             href="/owner"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] group"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group"
             style="background: transparent; color: {$colorStore.muted}; border: 1px solid transparent;"
             onmouseenter={(e) => showTooltip(e, m.layout.ownerSidebarTitle())}
             onmouseleave={hideTooltip}
@@ -693,14 +687,13 @@
                aria-hidden="true"></i>
             {#if !collapsed}
               <span class="text-[15px] font-medium flex-1">{m.layout.ownerSidebarTitle()}</span>
-              <i class="fa-solid fa-arrow-right text-[10px]" style="color: {$colorStore.muted};" aria-hidden="true"></i>
             {/if}
           </a>
         {/if}
 
         <button
           type="button"
-          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] group"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group"
           style="background: transparent; color: {$colorStore.muted}; border: 1px solid transparent;"
           onclick={() => openProductUpdates()}
           onmouseenter={(e) => showTooltip(e, m.layout.sidebarWhatsNew())}
@@ -731,7 +724,7 @@
         {@const letter = collapsed || searchTerm.trim() ? null : letterFor(index)}
 
         {#if letter}
-          <div class="px-3 pt-2 pb-0.5 text-[11px] font-semibold uppercase tracking-wider"
+          <div class="px-3 pt-2 pb-0.5 text-[11px] font-semibold"
                style="color: {$colorStore.muted}; opacity: 0.5;"
                aria-hidden="true">
             {letter}
@@ -741,9 +734,7 @@
         <a
           href={noGuild ? undefined : feature.href}
                   class="flex items-center gap-3 px-3 py-2 max-lg:py-3 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group relative"
-                  class:justify-center={collapsed}
-                  class:hover:scale-[1.01]={!noGuild}
-                  class:opacity-40={noGuild}
+                  class:justify-center={collapsed}                  class:opacity-40={noGuild}
                   class:pointer-events-none={noGuild}
                   style="background: {active ? $colorStore.primary + '12' : 'transparent'};
                          color: {active ? $colorStore.text : $colorStore.muted};
@@ -755,7 +746,7 @@
                 >
                   {#if active}
                     <div class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                         style="background: linear-gradient(180deg, {$colorStore.primary}, {$colorStore.secondary});"
+                         style="background: {$colorStore.primary};"
                          transition:fade={{ duration: 150 }}></div>
                   {/if}
 
@@ -807,7 +798,7 @@
         <!-- Instance selector -->
         {#if visibleInstances.length > 1 || instancesLoading || stillCheckingInstances}
           <div class="px-2 py-1.5">
-            <div class="text-[11px] font-semibold uppercase tracking-wider mb-1.5" style="color: {$colorStore.muted}; opacity: 0.7;">{m.layout.sidebarBotInstance()}</div>
+            <div class="text-[11px] font-semibold mb-1.5" style="color: {$colorStore.muted}; opacity: 0.7;">{m.layout.sidebarBotInstance()}</div>
             {#if instancesLoading || stillCheckingInstances}
               <div class="flex items-center gap-2 px-2 py-1 text-xs" style="color: {$colorStore.muted};">
                 <div class="animate-spin h-3 w-3 border-2 rounded-full"
@@ -837,7 +828,7 @@
         <!-- My Settings -->
         <a
           href="/me"
-          class="flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] group"
+          class="flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group"
           style="color: {$colorStore.text};"
         >
           <i class="fa-solid fa-gear text-sm shrink-0" style="color: {$colorStore.primary}; width: 20px; text-align: center;" aria-hidden="true"></i>
@@ -847,7 +838,7 @@
         <!-- Dyslexia-friendly font -->
         <button
           type="button"
-          class="w-full flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] group"
+          class="w-full flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group"
           style="color: {$colorStore.text};"
           onclick={() => dyslexicFontStore.toggle()}
           aria-pressed={$dyslexicFontStore}
@@ -866,7 +857,7 @@
         <!-- Frutiger Aero theme -->
         <button
           type="button"
-          class="w-full flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] group"
+          class="w-full flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group"
           style="color: {$colorStore.text};"
           onclick={() => themeStore.toggleAero()}
           aria-pressed={$themeStore === "aero"}
@@ -886,7 +877,7 @@
         <form action="/api/discord/logout" method="GET" class="w-full">
           <button
             type="submit"
-            class="w-full flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] group"
+            class="w-full flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group"
             style="color: {$colorStore.accent};"
           >
             <i class="fa-solid fa-right-from-bracket text-sm shrink-0" style="width: 20px; text-align: center;" aria-hidden="true"></i>
@@ -906,7 +897,7 @@
       <!-- User profile button -->
       {#if $userStore}
         <button
-          class="flex items-center gap-3 px-2 py-2 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] min-w-0"
+          class="flex items-center gap-3 px-2 py-2 rounded-xl transition-[color,background-color,border-color,transform] duration-200 min-w-0"
           class:flex-1={!collapsed}
           class:justify-center={collapsed}
           style="background: {showUserMenu ? $colorStore.primary + '10' : 'transparent'}; color: {$colorStore.text};"
@@ -953,7 +944,7 @@
 
         <!-- Collapse toggle (desktop only) -->
         <button
-          class="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.05] shrink-0"
+          class="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-[color,background-color,border-color,transform] duration-200 shrink-0"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}08;"
           onclick={toggleSidebar}
           title={m.layout.sidebarCollapseTitle()}
@@ -964,7 +955,7 @@
 
         <!-- Close (mobile only) -->
         <button
-          class="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.05] shrink-0"
+          class="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg transition-[color,background-color,border-color,transform] duration-200 shrink-0"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}08;"
           onclick={closeMobile}
           aria-label={m.layout.sidebarClose()}
@@ -995,8 +986,7 @@
            transform: translateY(-50%);
            background: {$colorStore.gradientStart}f5;
            color: {$colorStore.text};
-           border: 1px solid {$colorStore.primary}25;
-           backdrop-filter: blur(8px);"
+           border: 1px solid {$colorStore.primary}25;"
     transition:fade={{ duration: 100 }}
   >
     {hoveringItem}

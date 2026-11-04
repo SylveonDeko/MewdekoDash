@@ -432,7 +432,6 @@
   "settings_reveal_hint": "Mitglieder sehen Namen und Ziele geheimer Erfolge, bevor sie sie freischalten.",
   "settings_reveal_title": "Vor der Freischaltung anzeigen",
   "settings_secret_title": "Geheime Erfolge",
-  "settings_unsaved": "Du hast ungespeicherte Änderungen.",
   "settings_xp_per_point": "XP pro Punkt",
   "settings_xp_per_point_hint": "Erfolgsränge und XP-Level sind getrennt. Stelle das ein, damit jede Freischaltung auch XP auszahlt: Eine Gold-Freischaltung bringt 50 Punkte, also ergeben 2 hier 100 XP. 0 schaltet es aus.",
   "tab_cards": "Karten"

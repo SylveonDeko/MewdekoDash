@@ -205,7 +205,7 @@
 
         {#if collapsible}
           <div class="transform transition-transform duration-200" class:rotate-180={collapsed}>
-            <i class="fa-solid fa-arrow-right" style="color: {getColors(severityLevel).text}; font-size: 16px;"></i>
+            <i class="fa-solid fa-chevron-down" style="color: {getColors(severityLevel).text}; font-size: 16px;"></i>
           </div>
         {/if}
       </div>
@@ -219,7 +219,7 @@
         {#if localErrors.length > 0}
           <div class="space-y-2">
             {#if localWarnings.length > 0 || localSuggestions.length > 0}
-              <h4 class="text-xs font-semibold uppercase tracking-wide flex items-center gap-1"
+              <h4 class="text-xs font-semibold flex items-center gap-1"
                   style="color: {getColors('error').text};">
                 <i class="fa-solid fa-circle-exclamation" style="font-size: 12px;"></i>
                 {m.embedbuilder.validationHeadingErrors({ count: localErrors.length })}
@@ -250,9 +250,7 @@
                       style="color: {getColors('error').text}; border: 1px solid {getColors('error').text}30;"
                       onclick={() => error.action && executeAction('error', error.id, error.action.handler)}
                     >
-                      {error.action.label}
-                      <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 10px;"></i>
-                    </button>
+                      {error.action.label}                    </button>
                   {/if}
                 </div>
 
@@ -275,7 +273,7 @@
         {#if localWarnings.length > 0}
           <div class="space-y-2">
             {#if (localErrors.length > 0 || localSuggestions.length > 0)}
-              <h4 class="text-xs font-semibold uppercase tracking-wide flex items-center gap-1"
+              <h4 class="text-xs font-semibold flex items-center gap-1"
                   style="color: {getColors('warning').text};">
                 <i class="fa-solid fa-triangle-exclamation" style="font-size: 12px;"></i>
                 {m.embedbuilder.validationHeadingWarnings({ count: localWarnings.length })}
@@ -306,9 +304,7 @@
                       style="color: {getColors('warning').text}; border: 1px solid {getColors('warning').text}30;"
                       onclick={() => warning.action && executeAction('warning', warning.id, warning.action.handler)}
                     >
-                      {warning.action.label}
-                      <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 10px;"></i>
-                    </button>
+                      {warning.action.label}                    </button>
                   {/if}
                 </div>
 
@@ -331,7 +327,7 @@
         {#if localSuggestions.length > 0}
           <div class="space-y-2">
             {#if (localErrors.length > 0 || localWarnings.length > 0)}
-              <h4 class="text-xs font-semibold uppercase tracking-wide flex items-center gap-1"
+              <h4 class="text-xs font-semibold flex items-center gap-1"
                   style="color: {getColors('suggestion').text};">
                 <i class="fa-solid fa-lightbulb" style="font-size: 12px;"></i>
                 {m.common.suggestionsCount({ count: localSuggestions.length })}
@@ -357,9 +353,7 @@
                       style="color: {getColors('suggestion').text}; border: 1px solid {getColors('suggestion').text}30;"
                       onclick={() => suggestion.action && executeAction('suggestion', suggestion.id, suggestion.action.handler)}
                     >
-                      {suggestion.action.label}
-                      <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 10px;"></i>
-                    </button>
+                      {suggestion.action.label}                    </button>
                   {/if}
                 </div>
 

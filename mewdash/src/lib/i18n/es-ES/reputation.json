@@ -21,8 +21,6 @@
   "min_server_time_label": "Mín. de tiempo en el servidor (horas)",
   "notification_channel_label": "Canal de notificaciones (opcional)",
   "notification_channel_placeholder": "Sin notificaciones",
-  "notify_reward_added": "¡Recompensa de rol añadida correctamente!",
-  "notify_reward_removed": "¡Recompensa de rol quitada!",
   "page_subtitle": "Gestiona la reputación del servidor y sus recompensas",
   "page_title": "Sistema de reputación",
   "remove_on_drop_label": "Quitar el rol si la rep baja del umbral",

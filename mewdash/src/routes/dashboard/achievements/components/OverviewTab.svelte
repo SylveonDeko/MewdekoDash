@@ -139,8 +139,8 @@
 </script>
 
 {#snippet rarityList(title: string, icon: string, items: AchievementRarity[], empty: string)}
-  <div class="rounded-2xl border p-5 md:p-6 shadow-2xl"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+  <div class="rounded-2xl border p-5 md:p-6"
+       style="background: {$colorStore.primary}0c;
               border-color: {$colorStore.primary}30;">
     <h3 class="flex items-center gap-2 font-semibold mb-4" style="color: {$colorStore.text}">
       <DuoIcon {icon} />
@@ -153,7 +153,7 @@
         {#each items as item (item.key)}
           <li>
             <button type="button"
-                    class="w-full flex items-center gap-3 p-3 rounded-xl text-left min-h-[44px] transition-all hover:scale-[1.01]"
+                    class="w-full flex items-center gap-3 p-3 rounded-xl text-left min-h-[44px] transition-all"
                     style="background: {$colorStore.primary}08;"
                     onclick={() => onopen(item.key)}>
               <AchievementIcon icon={item.icon} iconUrl={item.iconUrl} color={gradeColor(item.grade)} size={36} />
@@ -170,8 +170,8 @@
 {/snippet}
 
 <div class="space-y-6" in:fade={{ duration: 200 }}>
-  <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+  <div class="rounded-2xl border p-6 md:p-8"
+       style="background: {$colorStore.primary}0c;
               border-color: {$colorStore.primary}30;">
     <div class="flex flex-col md:flex-row md:items-center gap-6">
       <div class="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0"
@@ -207,10 +207,10 @@
 
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
     {#each stats as stat (stat.label)}
-      <div class="rounded-2xl border p-4 md:p-5 shadow-xl"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="rounded-2xl border p-4 md:p-5"
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
-        <div class="flex items-center gap-2 text-xs font-medium uppercase tracking-wide" style="color: {$colorStore.muted}">
+        <div class="flex items-center gap-2 text-xs font-medium" style="color: {$colorStore.muted}">
           <DuoIcon icon={stat.icon} />
           {stat.label}
         </div>
@@ -220,8 +220,8 @@
     {/each}
   </div>
 
-  <div class="rounded-2xl border p-5 md:p-6 shadow-2xl"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+  <div class="rounded-2xl border p-5 md:p-6"
+       style="background: {$colorStore.primary}0c;
               border-color: {problems.length > 0 ? $colorStore.accent : $colorStore.primary}30;">
     <h3 class="flex items-center gap-2 font-semibold mb-1" style="color: {$colorStore.text}">
       <DuoIcon icon="fa-link" />
@@ -265,8 +265,8 @@
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div class="lg:col-span-2 rounded-2xl border p-5 md:p-6 shadow-2xl"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+    <div class="lg:col-span-2 rounded-2xl border p-5 md:p-6"
+         style="background: {$colorStore.primary}0c;
                 border-color: {$colorStore.primary}30;">
       <div class="flex items-center justify-between gap-3 mb-4">
         <h3 class="flex items-center gap-2 font-semibold" style="color: {$colorStore.text}">

@@ -62,7 +62,7 @@
     <AnalyticsTile label={m.analytics.tabOverviewRestReqS()} metric="rest.count" agg="sum" per="second" format="float" filters={["bot"]} />
     <AnalyticsTile label={m.analytics.tabLatencyUnhandledErrors()} metric="err.count" agg="sum" format="int" filters={["bot", "shard"]}>
       {#snippet drillContent()}
-        <p class="text-xs uppercase tracking-wide" style="color: {$colorStore.muted}">{m.analytics.tabLatencyExceptionGroups()}</p>
+        <p class="text-xs" style="color: {$colorStore.muted}">{m.analytics.tabLatencyExceptionGroups()}</p>
         <ErrorsPanel limit={15} />
       {/snippet}
     </AnalyticsTile>

@@ -30,6 +30,8 @@
     if (browser) {
       // Global error handler for unhandled JavaScript errors
       const handleError = (event: ErrorEvent) => {
+        if (!event.error && event.message?.startsWith("ResizeObserver loop")) return;
+
         logger.error("Global error caught:", event.error);
 
         // Prevent error propagation to avoid page freeze

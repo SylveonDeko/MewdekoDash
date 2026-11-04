@@ -98,7 +98,7 @@
 </script>
 
 <div class="min-h-screen py-8 px-4"
-     style="background: linear-gradient(135deg, {$colorStore.primary}08 0%, {$colorStore.secondary}05 100%);">
+     style="background: {$colorStore.primary}0c;">
   <div class="container mx-auto max-w-2xl">
     {#if loading && !status}
       <div
@@ -132,7 +132,7 @@
         >
           <div
             class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-            style="background: linear-gradient(135deg, {$colorStore.primary}30, {$colorStore.secondary}40);"
+            style="background: {$colorStore.primary}30;"
           >
             <i class="fa-solid fa-clipboard-check" style="color: {$colorStore.primary}; font-size: 32px;"></i>
           </div>
@@ -262,7 +262,7 @@
 
             <a
               href="/forms/{status.shareCode}?edit={token}"
-              class="inline-block px-4 py-2.5 rounded-lg font-medium transition-all hover:scale-[1.02]"
+              class="inline-block px-4 py-2.5 rounded-lg font-medium transition-all"
               style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
             >
               <i class="fa-solid fa-pen-to-square mr-2"></i>
@@ -331,7 +331,7 @@
             <div class="flex gap-3">
               <button
                 onclick={copyInviteToClipboard}
-                class="flex-1 py-3 rounded-lg font-medium transition-all hover:scale-[1.02]"
+                class="flex-1 py-3 rounded-lg font-medium transition-all"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
               >
                 <i class="fa-solid fa-copy mr-2"></i>
@@ -339,8 +339,8 @@
               </button>
               <button
                 onclick={openInvite}
-                class="flex-1 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] border"
-                style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.accent}10); color: {$colorStore.text}; border-color: {$colorStore.secondary}30; box-shadow: 0 4px 20px {$colorStore.secondary}10;"
+                class="flex-1 py-3 rounded-lg font-medium transition-all border"
+                style="background: {$colorStore.secondary}18; color: {$colorStore.text}; border-color: {$colorStore.secondary}30;"
               >
                 <i class="fa-brands fa-discord mr-2"></i>
                 {m.forms.statusCheckerJoinServer()}
@@ -412,7 +412,7 @@
         <div class="text-center">
           <button
             onclick={loadStatus}
-            class="px-6 py-3 rounded-lg font-medium transition-all hover:scale-[1.02]"
+            class="px-6 py-3 rounded-lg font-medium transition-all"
             style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
           >
             <i class="fa-solid fa-sync mr-2"></i>

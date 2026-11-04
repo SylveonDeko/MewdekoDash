@@ -108,7 +108,7 @@
           type="button"
           onclick={() => handleConditionalTypeChange(condType.value)}
           class="p-3 rounded-lg border transition-all text-left"
-          style="background: {conditionalType === condType.value ? `linear-gradient(135deg, ${$colorStore.primary}20, ${$colorStore.secondary}15)` : $colorStore.primary + '08'};
+          style="background: {conditionalType === condType.value ? $colorStore.primary + '1a' : $colorStore.primary + '08'};
                  border-color: {conditionalType === condType.value ? $colorStore.primary : $colorStore.primary + '20'};"
         >
           <div class="flex items-start gap-2">

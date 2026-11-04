@@ -341,16 +341,13 @@
     {:else if !$currentGuild}
       <div
         class="h-screen overflow-hidden p-4 md:p-6 w-full flex flex-col"
-        style="background: radial-gradient(circle at top,
-          {$colorStore.gradientStart}15 0%,
-          {$colorStore.gradientMid}10 50%,
-          {$colorStore.gradientEnd}05 100%);"
+        style="background: {$colorStore.primary}08;"
       >
         <div class="max-w-5xl mx-auto w-full flex flex-col min-h-0 gap-4 md:gap-6">
           <div
             class="text-center px-4 py-5 md:py-6 rounded-2xl border shrink-0"
             in:fly={{ y: 20, duration: 300 }}
-            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+            style="background: {$colorStore.primary}0c;
                    border-color: {$colorStore.primary}30;"
           >
             <h1 class="text-xl md:text-2xl font-bold mb-1" style="color: {$colorStore.text}">{m.dashboard.layoutSelectServerTitle()}</h1>
@@ -376,8 +373,8 @@
               {#each filteredGuilds as guild (guild.id)}
                 <button
                   onclick={() => selectGuild(guild)}
-                  class="flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 hover:scale-[1.02] focus:outline-hidden text-left"
-                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
+                  class="flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 focus:outline-hidden text-left"
+                  style="background: {$colorStore.primary}0a;
                          border-color: {$colorStore.primary}20;"
                 >
                   <img

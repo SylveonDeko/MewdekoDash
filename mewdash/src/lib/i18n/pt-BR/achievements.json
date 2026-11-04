@@ -432,7 +432,6 @@
   "settings_reveal_hint": "Os membros veem os nomes e as metas das conquistas secretas antes de desbloqueá-las.",
   "settings_reveal_title": "Mostrar antes de desbloquearem",
   "settings_secret_title": "Conquistas secretas",
-  "settings_unsaved": "Você tem alterações não salvas.",
   "settings_xp_per_point": "XP por ponto",
   "settings_xp_per_point_hint": "Os ranks de conquistas e os níveis de XP são separados. Defina isto para que cada desbloqueio também pague XP: um desbloqueio Ouro vale 50 pontos, então 2 aqui dá 100 XP. 0 desativa.",
   "tab_cards": "Cartões"

@@ -104,8 +104,6 @@
   "settings_tab_auto_assign_desc": "Cargos atribuídos automaticamente a novos membros",
   "settings_tab_auto_assign_roles_desc": "Cargos dados a novos membros",
   "settings_tab_bot_settings_desc": "Configurações principais do bot",
-  "settings_tab_configure_arrow": "Configurar →",
-  "settings_tab_greets_arrow": "Boas-vindas →",
   "settings_tab_integrations": "Integrações",
   "settings_tab_logging_desc": "Registro de eventos e trilhas de auditoria",
   "settings_tab_multigreets_desc": "Vários canais e mensagens de boas-vindas",

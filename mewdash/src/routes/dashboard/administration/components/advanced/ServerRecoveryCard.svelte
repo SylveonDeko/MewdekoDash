@@ -96,15 +96,15 @@
   });
 </script>
 
-<div class=" rounded-2xl border p-6 shadow-2xl transition-all"
+<div class=" rounded-2xl border p-6 transition-all"
      in:fly={{ y: 20, duration: 300, delay: 300 }}
-     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+     style="background: {$colorStore.primary}0c;
             border-color: {$colorStore.primary}30;">
 
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div class="flex items-center gap-4">
       <div class="p-3 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+           style="background: {$colorStore.primary}20;">
         <i class="fa-utility-duo fa-regular fa-life-ring"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
@@ -137,13 +137,13 @@
             {showKey ? status.recoveryKey : "•".repeat(Math.min(status.recoveryKey?.length ?? 24, 32))}
           </code>
           <div class="flex gap-2">
-            <button class="px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02] min-h-[44px]"
+            <button class="px-3 py-2 rounded-lg text-sm transition-all min-h-[44px]"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                     onclick={() => showKey = !showKey}
                     aria-label={showKey ? m.administration.advancedRecoveryHideKey() : m.administration.advancedRecoveryShowKey()}>
               <i class="fa-solid {showKey ? 'fa-eye-slash' : 'fa-eye'}"></i>
             </button>
-            <button class="px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02] min-h-[44px]"
+            <button class="px-3 py-2 rounded-lg text-sm transition-all min-h-[44px]"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     onclick={copyKey}
                     aria-label={m.administration.advancedRecoveryCopyKey()}>
@@ -156,7 +156,7 @@
         </p>
       </div>
 
-      <button class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+      <button class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
               disabled={saving}
               onclick={() => showConfirm(m.administration.advancedRecoveryRemoveTitle(), m.administration.advancedRecoveryRemoveMessage(), clearRecovery, "danger")}>
@@ -173,7 +173,7 @@
           <p class="text-sm mt-3 mb-4" style="color: {$colorStore.muted}">
             {m.administration.advancedRecoveryEmpty()}
           </p>
-          <button class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] inline-flex items-center gap-2 min-h-[44px]"
+          <button class="px-4 py-3 rounded-xl font-medium transition-all inline-flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   onclick={() => { showSetup = true; if (!recoveryKey) generateKey(); }}>
             <i class="fa-solid fa-key"></i>
@@ -188,7 +188,7 @@
               <input id="recovery-key" type="text" bind:value={recoveryKey} autocomplete="off" spellcheck="false"
                      class="flex-1 px-4 py-3 rounded-lg border font-mono text-sm min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-              <button type="button" class="px-4 py-3 rounded-lg text-sm transition-all hover:scale-[1.02] min-h-[44px]"
+              <button type="button" class="px-4 py-3 rounded-lg text-sm transition-all min-h-[44px]"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                       onclick={generateKey}>
                 <i class="fa-solid fa-dice mr-1"></i>{m.administration.advancedRecoveryGenerate()}
@@ -212,13 +212,13 @@
           {/if}
 
           <div class="flex flex-col sm:flex-row gap-3">
-            <button type="button" class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+            <button type="button" class="flex-1 px-4 py-3 rounded-lg font-medium transition-all min-h-[44px]"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                     onclick={() => { showSetup = false; formError = ""; }}>
               {m.common.cancel()}
             </button>
             <button type="submit" disabled={saving}
-                    class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
+                    class="flex-1 px-4 py-3 rounded-lg font-medium transition-all min-h-[44px] disabled:opacity-50"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
               {#if saving}<i class="fa-solid fa-spinner fa-spin mr-2"></i>{/if}
               {m.administration.advancedRecoverySave()}

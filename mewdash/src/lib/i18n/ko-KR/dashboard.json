@@ -104,8 +104,6 @@
   "settings_tab_auto_assign_desc": "새 멤버에게 자동으로 부여되는 역할",
   "settings_tab_auto_assign_roles_desc": "새 멤버에게 부여되는 역할",
   "settings_tab_bot_settings_desc": "핵심 봇 설정",
-  "settings_tab_configure_arrow": "설정 →",
-  "settings_tab_greets_arrow": "인사 →",
   "settings_tab_integrations": "연동",
   "settings_tab_logging_desc": "이벤트 로깅 및 감사 기록",
   "settings_tab_multigreets_desc": "여러 인사 채널과 메시지",

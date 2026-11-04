@@ -630,8 +630,8 @@
         </div>
 
         <!-- Supply over time -->
-        <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+        <div class="rounded-2xl border p-6 md:p-8"
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
           <div class="flex items-center gap-3 mb-2">
             <i class="fa-utility-duo fa-regular fa-clock"
@@ -652,8 +652,8 @@
         </div>
 
         <!-- Wallet vs bank -->
-        <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+        <div class="rounded-2xl border p-6 md:p-8"
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
           <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.currency.whereTitle()}</h2>
           <div class="flex h-8 rounded-full overflow-hidden mb-3" style="background: {$colorStore.primary}10;">
@@ -679,8 +679,8 @@
         <!-- Faucets and sinks -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {#each [{ title: m.currency.flowFaucets(), note: m.currency.flowFaucetsNote(), data: faucets, color: $colorStore.primary }, { title: m.currency.flowSinks(), note: m.currency.flowSinksNote(), data: sinks, color: $colorStore.accent }] as panel}
-            <div class="rounded-2xl border p-6 shadow-2xl"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+            <div class="rounded-2xl border p-6"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
               <h3 class="text-lg font-bold" style="color: {$colorStore.text}">{panel.title}</h3>
               <p class="text-sm mb-4" style="color: {$colorStore.muted}">{panel.note}</p>
@@ -717,8 +717,8 @@
         {/if}
 
         <!-- Game performance -->
-        <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+        <div class="rounded-2xl border p-6 md:p-8"
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
           <div class="flex items-center gap-3 mb-2">
             <i class="fa-utility-duo fa-regular fa-gamepad-modern"
@@ -803,8 +803,8 @@
         {/snippet}
 
         <!-- Betting -->
-        <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+        <div class="rounded-2xl border p-6 md:p-8"
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
           <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.currency.configBetting()}</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -818,8 +818,8 @@
         </div>
 
         <!-- Earning -->
-        <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+        <div class="rounded-2xl border p-6 md:p-8"
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
           <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.currency.configEarning()}</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -838,8 +838,8 @@
         </div>
 
         <!-- Bank -->
-        <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+        <div class="rounded-2xl border p-6 md:p-8"
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
           <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">{m.currency.configBank()}</h2>
           <p class="text-sm mb-6" style="color: {$colorStore.muted}">
@@ -854,8 +854,8 @@
         </div>
 
         <!-- Transfers -->
-        <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+        <div class="rounded-2xl border p-6 md:p-8"
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
           <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">{m.currency.configTransfers()}</h2>
           <p class="text-sm mb-6" style="color: {$colorStore.muted}">
@@ -870,8 +870,8 @@
         </div>
 
         <!-- Robbery -->
-        <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+        <div class="rounded-2xl border p-6 md:p-8"
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
           <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">{m.currency.configRobbery()}</h2>
           <p class="text-sm mb-6" style="color: {$colorStore.muted}">
@@ -888,8 +888,8 @@
         </div>
 
         <!-- Daily -->
-        <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+        <div class="rounded-2xl border p-6 md:p-8"
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
           <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.currency.configDaily()}</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -936,8 +936,8 @@
       {:else}
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {#each shopItems as item}
-            <div class="rounded-2xl border p-5 shadow-xl transition-all"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+            <div class="rounded-2xl border p-5 transition-all"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30; opacity: {item.enabled ? 1 : 0.55};">
               <div class="flex items-start justify-between gap-3 mb-2">
                 <div>
@@ -985,8 +985,8 @@
       {/if}
 
       {#if showShopEditor}
-        <div class="rounded-2xl border p-6 md:p-8 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+        <div class="rounded-2xl border p-6 md:p-8"
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 200 }}>
           <h3 class="text-lg font-bold mb-6" style="color: {$colorStore.text}">
@@ -1101,8 +1101,8 @@
     <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
 
       <!-- Balance adjustment -->
-      <div class="rounded-2xl border p-6 shadow-2xl"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="rounded-2xl border p-6"
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <h2 class="text-lg font-bold mb-4" style="color: {$colorStore.text}">{m.currency.adjustTitle()}</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1136,8 +1136,8 @@
       </div>
 
       <!-- Leaderboard -->
-      <div class="rounded-2xl border p-6 shadow-2xl"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="rounded-2xl border p-6"
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h2 class="text-lg font-bold" style="color: {$colorStore.text}">{m.currency.boardTitle()}</h2>

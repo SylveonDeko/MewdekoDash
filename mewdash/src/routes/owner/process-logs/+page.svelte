@@ -586,7 +586,7 @@
             <div class="flex items-center gap-3">
               {#if follow}
                 <span class="flex items-center gap-1.5">
-                  <span class="inline-block w-2 h-2 rounded-full animate-pulse" style="background: #4ade80;"></span>
+                  <span class="inline-block w-2 h-2 rounded-full" style="background: #4ade80;"></span>
                   {m.common.live()}
                 </span>
               {/if}

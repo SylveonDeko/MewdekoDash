@@ -437,7 +437,6 @@
   "settings_reveal_hint": "Members see the names and goals of secret achievements before unlocking them.",
   "settings_reveal_title": "Show them before they unlock",
   "settings_secret_title": "Secret achievements",
-  "settings_unsaved": "You have unsaved changes.",
   "settings_xp_per_point": "XP per point",
   "settings_xp_per_point_hint": "Achievement ranks and XP levels are separate. Set this to have every unlock also pay XP: a Gold unlock is 50 points, so 2 here gives 100 XP. 0 turns it off.",
   "tab_cards": "Cards"

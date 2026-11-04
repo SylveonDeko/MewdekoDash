@@ -609,7 +609,7 @@
 
       await xpApi.addXpRoleReward($currentGuild.id, level, BigInt(roleId));
 
-      showNotificationMessage(m.xp.pageNotifyRoleRewardAdded(), "success");
+      showNotificationMessage(m.common.roleRewardAdded(), "success");
       await fetchRewards();
     } catch (err) {
       logger.error("Failed to add role reward:", err);
@@ -622,7 +622,7 @@
       if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
 
       await xpApi.removeXpRoleReward($currentGuild.id, level);
-      showNotificationMessage(m.xp.pageNotifyRoleRewardRemoved(), "success");
+      showNotificationMessage(m.common.roleRewardRemoved(), "success");
       await fetchRewards();
     } catch (err) {
       logger.error("Failed to remove role reward:", err);
@@ -1187,11 +1187,11 @@
 
   <!-- Tab Content -->
   <div
-    class=" border shadow-2xl"
+    class=" border"
     class:rounded-2xl={activeTab !== 'template'}
     class:p-6={activeTab !== 'template'}
     class:h-[calc(100vh-200px)]={activeTab === 'template'}
-    style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}10, {$colorStore.gradientEnd}20);
+    style="background: {$colorStore.primary}0c;
            border-color: {$colorStore.primary}30;"
   >
     <!-- Settings Panel -->
@@ -1299,12 +1299,12 @@
 
                 <!-- Preview Container -->
                 <div
-                        class="relative rounded-2xl overflow-hidden shadow-2xl {isMobile ? 'max-w-full mx-4' : ''}"
+                        class="relative rounded-2xl overflow-hidden {isMobile ? 'max-w-full mx-4' : ''}"
                         style="width: {isMobile ? '100%' : Math.min(localTemplate.outputSizeX, 600) + 'px'};
                      max-width: {isMobile ? 'calc(100vw - 2rem)' : '600px'};
                      height: auto;
                      aspect-ratio: {localTemplate.outputSizeX} / {localTemplate.outputSizeY};
-                     background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10);
+                     background: {$colorStore.primary}10;
                      border: 2px solid {$colorStore.primary}30;"
                 >
                     <canvas
@@ -1318,12 +1318,12 @@
                     {#if isMobile}
                         <!-- Tap-to-edit overlay -->
                         <button
-                                class="absolute inset-0 flex items-end justify-end p-3 transition-transform active:scale-[0.99]"
+                                class="absolute inset-0 flex items-end justify-end p-3"
                                 onclick={() => { showTemplateEditor = true; }}
                                 aria-label={m.xp.pageEditTemplateAria()}
                         >
                             <span
-                                    class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium shadow-lg"
+                                    class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium"
                                     style="background: {$colorStore.primary}; color: white;"
                             >
                                 <i class="fa-solid fa-pen" style="font-size: 14px;"></i>
@@ -1336,8 +1336,8 @@
                 {#if !isMobile}
                     <!-- Edit Button -->
                     <button
-                      class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 text-base"
-                            style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary});
+                      class="px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2 text-base"
+                            style="background: {$colorStore.primary};
                          color: white;"
                             onclick={() => { showTemplateEditor = true; }}
                     >
@@ -1395,7 +1395,7 @@
             <button
               class="px-6 py-2 rounded-lg font-medium transition-all duration-200 min-h-[44px]"
               onclick={updateXpTemplate}
-              style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
+              style="background: {$colorStore.primary};
                color: {$colorStore.text};"
               aria-label={m.xp.pageSaveTemplate()}
             >

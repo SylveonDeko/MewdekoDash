@@ -7,7 +7,6 @@
   let {
     banMessage = $bindable(),
     textChannels,
-    saving,
     saveBanMessage,
     showConfirm,
     fetchAllData,
@@ -20,7 +19,6 @@
   <BanMessageCard
     bind:banMessage
     {saveBanMessage}
-    {saving}
     {guildId}
     {user}
   />

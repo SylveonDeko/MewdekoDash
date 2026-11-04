@@ -787,7 +787,7 @@
             <span class="text-sm" style="color: {$colorStore.muted}">{m.customvoice.cleanupHours()}</span>
           </div>
           <button disabled={maintenanceBusy}
-                  class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[40px] disabled:opacity-50"
+                  class="px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 min-h-[40px] disabled:opacity-50"
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                   onclick={cleanupInactive}>
             <i class="fa-solid fa-broom"></i>
@@ -795,7 +795,7 @@
           </button>
           {#if config?.enabled}
             <button disabled={maintenanceBusy}
-                    class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[40px] disabled:opacity-50 ml-auto"
+                    class="px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 min-h-[40px] disabled:opacity-50 ml-auto"
                     style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
                     onclick={disableCustomVoice}>
               <i class="fa-solid fa-power-off"></i>
@@ -880,7 +880,7 @@
                    class="flex-1 p-3 rounded-lg border min-h-[44px]"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
             <button type="submit" disabled={prefLoading || !prefUserId.trim()}
-                    class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
+                    class="px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
               {#if prefLoading}<i class="fa-solid fa-spinner fa-spin"></i>{:else}<i class="fa-solid fa-magnifying-glass"></i>{/if}
               {m.common.load()}

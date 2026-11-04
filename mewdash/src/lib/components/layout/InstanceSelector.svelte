@@ -174,16 +174,13 @@
 
 <div
   class="min-h-screen p-4 md:p-6 overflow-x-hidden w-full transition-all duration-500"
-  style="background: radial-gradient(circle at top,
-    {$colorStore.gradientStart}15 0%,
-    {$colorStore.gradientMid}10 50%,
-    {$colorStore.gradientEnd}05 100%);"
+  style="background: {$colorStore.primary}08;"
 >
   <div class="max-w-4xl mx-auto space-y-8">
     <div
       class="text-center p-8 rounded-2xl  border"
       in:fly={{ y: 20, duration: 300 }}
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
     >
       <h1 class="text-3xl font-bold mb-2" id="instance-selector-title" style="color: {$colorStore.text}">{m.layout.instanceTitle()}</h1>
@@ -193,7 +190,7 @@
   {#if showLoading}
     <div
       class="flex flex-col items-center justify-center py-12 rounded-2xl  border"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
       role="status"
       aria-live="polite"
@@ -214,7 +211,7 @@
   {:else if error}
     <div
       class="rounded-2xl border p-6 "
-      style="background: linear-gradient(135deg, {$colorStore.accent}10, {$colorStore.accent}15);
+      style="background: {$colorStore.accent}0c;
              border-color: {$colorStore.accent}30;"
       role="alert"
       aria-live="assertive"
@@ -224,7 +221,7 @@
   {:else if instances.length === 0}
     <div
       class="text-center py-12 rounded-2xl  border"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
       role="status"
     >
@@ -234,7 +231,7 @@
   {:else if visibleInstances.length === 0}
     <div
       class="text-center py-12 rounded-2xl  border"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
       role="status"
     >
@@ -253,8 +250,8 @@
         <button
           onclick={() => handleInstanceSelect(instance)}
           onkeydown={(e) => handleKeydown(e, instance)}
-          class="flex items-center p-6 rounded-2xl  border transition-all duration-300 hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+          class="flex items-center p-6 rounded-2xl  border transition-all duration-300 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+          style="background: {$colorStore.primary}0c;
                  border-color: {$colorStore.primary}30;
                  focus:ring-color: {$colorStore.primary};
                  focus:ring-offset-color: {$colorStore.gradientStart};"

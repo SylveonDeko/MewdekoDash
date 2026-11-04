@@ -156,8 +156,6 @@
   "page_notify_currency_reward_removed": "Nagroda w walucie została usunięta",
   "page_notify_role_excluded": "Rola została wykluczona",
   "page_notify_role_included": "Rola została przywrócona",
-  "page_notify_role_reward_added": "Nagroda w postaci roli została dodana",
-  "page_notify_role_reward_removed": "Nagroda w postaci roli została usunięta",
   "page_notify_template_updated": "Szablon XP został zaktualizowany",
   "page_reset_changes": "Resetuj zmiany",
   "page_save_template": "Zapisz zmiany szablonu",

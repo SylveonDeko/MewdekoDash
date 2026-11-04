@@ -403,16 +403,12 @@
            --color-accent: {$colorStore.accent};
            --color-text: {$colorStore.text};
            --color-muted: {$colorStore.muted};
-           background: radial-gradient(circle at center,
-             {$colorStore.gradientStart}15 0%,
-             {$colorStore.gradientEnd}10 50%,
-             {$colorStore.gradientEnd}05 100%
-           );"
+           background: {$colorStore.primary}08;"
     in:fade
   >
     <!-- Header -->
-    <div class="py-4 backdrop-blur-lg border-b shadow-lg"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%); border-color: {$colorStore.primary}30;">
+    <div class="py-4 border-b"
+         style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;">
       <div class="container mx-auto px-3 sm:px-4 lg:px-4 py-2 sm:py-3">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
@@ -438,7 +434,7 @@
                  style="background: {$colorStore.primary}20;">
               <div
                 class="h-2 rounded-full transition-all duration-500 ease-out"
-                style="width: {progress}%; background: linear-gradient(90deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});"
+                style="width: {progress}%; background: {$colorStore.primary};"
               ></div>
             </div>
           </div>
@@ -474,7 +470,7 @@
                   <button
                     class="w-full text-left p-3 rounded-xl transition-all duration-200 border group"
                     style="{index === currentStep 
-                      ? `background: linear-gradient(135deg, ${$colorStore.gradientStart}20, ${$colorStore.gradientMid}25); border-color: ${$colorStore.primary}; color: ${$colorStore.text};` 
+                      ? `background: ${$colorStore.primary}20; border-color: ${$colorStore.primary}; color: ${$colorStore.text};` 
                       : `background: ${$colorStore.primary}10; border-color: ${$colorStore.primary}20; color: ${$colorStore.muted};`}"
                     onclick={() => goToStep(index)}
                   >
@@ -507,7 +503,7 @@
                 <h4 class="font-medium mb-3" style="color: {$colorStore.text};">{m.common.quickActions()}</h4>
                 <div class="space-y-2">
                   <button
-                    class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02] flex items-center gap-2"
+                    class="w-full text-left px-3 py-2 rounded-lg text-sm transition-opacity hover:opacity-80 flex items-center gap-2"
                     style="background: {$colorStore.primary}15; color: {$colorStore.text};"
                     onclick={() => showAllSteps = !showAllSteps}
                   >
@@ -515,7 +511,7 @@
                     {showAllSteps ? m.public.credguideShowWizard() : m.public.credguideShowAllSteps()}
                   </button>
                   <button
-                    class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02] flex items-center gap-2"
+                    class="w-full text-left px-3 py-2 rounded-lg text-sm transition-opacity hover:opacity-80 flex items-center gap-2"
                     style="background: {$colorStore.primary}15; color: {$colorStore.text};"
                     onclick={() => completedSteps = new Set()}
                   >
@@ -535,7 +531,7 @@
             <div class="space-y-8" in:fade={{ duration: 300 }}>
               {#each steps as step, index}
                 <div class="rounded-2xl p-6  border"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;">
+                     style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}20;">
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="text-2xl font-bold flex items-center gap-3" style="color: {$colorStore.text};">
                       <i class="fa-solid {step.icon} text-3xl" style="color: {$colorStore.primary};"></i>
@@ -603,13 +599,13 @@
             <!-- Wizard Step View -->
             <div class="wizard-content" in:fade={{ duration: 300 }}>
               <div class="rounded-2xl p-6 sm:p-8  border"
-                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;">
+                   style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}20;">
 
                 <!-- Step Header -->
                 <div class="flex items-center justify-between mb-6">
                   <div class="flex items-center gap-4">
                     <div class="w-16 h-16 rounded-full flex items-center justify-center"
-                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}30, {$colorStore.gradientMid}40);">
+                         style="background: {$colorStore.primary}20;">
                       <i class="fa-solid {currentStepData.icon} text-3xl" style="color: {$colorStore.text};"></i>
                     </div>
                     <div>
@@ -635,7 +631,7 @@
                     </div>
                   </div>
                   <button
-                    class="px-4 py-2 rounded-lg transition-all hover:scale-[1.02] flex items-center gap-2"
+                    class="px-4 py-2 rounded-lg transition-opacity hover:opacity-80 flex items-center gap-2"
                     style="background: {completedSteps.has(currentStep) ? $colorStore.secondary : $colorStore.primary + '20'}; color: {$colorStore.text};"
                     onclick={() => completedSteps.has(currentStep) ? markStepIncomplete(currentStep) : markStepComplete(currentStep)}
                   >
@@ -703,7 +699,7 @@
                         <h3 class="text-xl font-semibold mb-4" style="color: {$colorStore.text};">{m.public.credguideSelectYourOperatingSystem()}</h3>
                         <div class="flex flex-col sm:flex-row gap-4 mb-6">
                           <button
-                            class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
+                            class="px-6 py-3 rounded-xl font-medium transition-opacity duration-200 hover:opacity-80 flex items-center justify-center gap-2"
                             style="background: {selectedOS === 'linux' ? $colorStore.primary : $colorStore.primary + '20'}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                             onclick={() => selectedOS = 'linux'}
                           >
@@ -711,7 +707,7 @@
                             {m.public.credguideLinuxUbuntuDebian()}
                           </button>
                           <button
-                            class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
+                            class="px-6 py-3 rounded-xl font-medium transition-opacity duration-200 hover:opacity-80 flex items-center justify-center gap-2"
                             style="background: {selectedOS === 'windows' ? $colorStore.primary : $colorStore.primary + '20'}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                             onclick={() => selectedOS = 'windows'}
                           >
@@ -911,18 +907,18 @@
                 <div class="flex items-center justify-between mt-8 pt-6 border-t"
                      style="border-color: {$colorStore.primary}20;">
                   <button
-                    class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="px-6 py-3 rounded-xl font-medium transition-opacity duration-200 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
                     style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                     disabled={currentStep === 0}
                     onclick={prevStep}
                   >
-                    {m.public.credguidePrevious()}
+                    {m.common.previous()}
                   </button>
 
                   <div class="flex items-center gap-2">
                     {#each steps as _, index}
                       <button
-                        class="w-3 h-3 rounded-full transition-all duration-200 hover:scale-125"
+                        class="w-3 h-3 rounded-full transition-opacity duration-200 hover:opacity-80"
                         style="background: {index === currentStep ? $colorStore.primary : $colorStore.primary + '30'};"
                         onclick={() => goToStep(index)}
                         aria-label={m.public.credguideGoToStep({ number: index + 1 })}
@@ -931,12 +927,12 @@
                   </div>
 
                   <button
-                    class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="px-6 py-3 rounded-xl font-medium transition-opacity duration-200 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
                     style="background: {$colorStore.primary}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                     disabled={currentStep === steps.length - 1}
                     onclick={nextStep}
                   >
-                    {currentStep === steps.length - 1 ? m.common.complete() : m.public.credguideNext()}
+                    {currentStep === steps.length - 1 ? m.common.complete() : m.common.next()}
                   </button>
                 </div>
               </div>

@@ -136,8 +136,8 @@
     <!-- Modal -->
     <div
       bind:this={dialogEl}
-      class="rounded-2xl border shadow-2xl max-w-md w-full"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;"
+      class="rounded-2xl border shadow-lg max-w-md w-full"
+      style="background-color: {$colorStore.background}; border-color: {$colorStore.primary}30;"
       in:fly={{ y: 20, duration: 200 }}
       out:fly={{ y: -20, duration: 150 }}
       role="dialog"

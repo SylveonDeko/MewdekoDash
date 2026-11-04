@@ -100,8 +100,8 @@
   </p>
 
   {#if sources.length === 0}
-    <div class="rounded-2xl border p-6 md:p-8 shadow-2xl text-center"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+    <div class="rounded-2xl border p-6 md:p-8 text-center"
+         style="background: {$colorStore.primary}0c;
                 border-color: {$colorStore.primary}30;">
       <i class="fa-utility-duo fa-regular fa-arrow-right-arrow-left"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5;"></i>
@@ -113,8 +113,8 @@
   {:else}
     {#each sources as source, index (source.id)}
       {@const entry = settings[source.id]}
-      <div class="relative rounded-2xl border p-6 md:p-8 shadow-2xl"
-           style="z-index: {sources.length - index}; background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="relative rounded-2xl border p-6 md:p-8"
+           style="z-index: {sources.length - index}; background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <div class="flex flex-wrap items-center gap-3 mb-4">
           <i class="fa-utility-duo fa-regular fa-comment"
@@ -129,9 +129,8 @@
           <a href={source.jumpUrl}
              target="_blank"
              rel="noopener noreferrer"
-             class="ml-auto flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium min-h-[44px] transition-all hover:scale-[1.02]"
+             class="ml-auto flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium min-h-[44px] transition-all"
              style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;">
-            <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
             {m.roleMenus.menuOpenInDiscord()}
           </a>
         </div>
@@ -164,7 +163,7 @@
                 {#each [{ value: RoleMenuStyle.Dropdown, label: m.common.dropdown(), icon: "fa-square-caret-down" }, { value: RoleMenuStyle.Buttons, label: m.common.buttons(), icon: "fa-grip" }] as choice (choice.value)}
                   <button
                     type="button"
-                    class="flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium min-h-[44px] transition-all hover:scale-[1.02]"
+                    class="flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium min-h-[44px] transition-all"
                     style="background: {entry.style === choice.value ? $colorStore.primary + '20' : $colorStore.primary + '08'};
                            border-color: {entry.style === choice.value ? $colorStore.primary : $colorStore.primary + '30'};
                            color: {entry.style === choice.value ? $colorStore.primary : $colorStore.text};"
@@ -231,7 +230,7 @@
 
             <button
               type="button"
-              class="flex items-center justify-center gap-3 px-6 py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] font-medium disabled:opacity-50 disabled:hover:scale-100"
+              class="flex items-center justify-center gap-3 px-6 py-3 rounded-xl transition-all min-h-[44px] font-medium disabled:opacity-50"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={() => move(source)}
               disabled={entry.busy}

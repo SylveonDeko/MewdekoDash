@@ -30,8 +30,8 @@
   "page_field_roles_placeholder": "Select required roles",
   "page_field_winners": "Number of Winners",
   "page_loading_fetch": "Loading giveaways...",
-  "page_notify_created": "Giveaway created successfully",
-  "page_notify_ended": "Giveaway ended successfully",
+  "page_notify_created": "Giveaway created",
+  "page_notify_ended": "Giveaway ended",
   "page_subtitle": "Manage server giveaways and prizes",
   "page_tab_create": "Create Giveaway",
   "page_tab_ended": "Ended Giveaways"

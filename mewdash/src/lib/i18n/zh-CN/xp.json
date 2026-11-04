@@ -156,8 +156,6 @@
   "page_notify_currency_reward_removed": "已成功移除货币奖励",
   "page_notify_role_excluded": "已成功排除身份组",
   "page_notify_role_included": "已成功纳入身份组",
-  "page_notify_role_reward_added": "已成功添加身份组奖励",
-  "page_notify_role_reward_removed": "已成功移除身份组奖励",
   "page_notify_template_updated": "经验值模板已成功更新",
   "page_reset_changes": "撤销更改",
   "page_save_template": "保存模板更改",

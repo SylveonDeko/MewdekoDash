@@ -110,8 +110,8 @@
 </script>
 
 <div class="rounded-2xl p-6 border"
-     style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-            border-color: {$colorStore.primary}30; box-shadow: 0 8px 32px rgba(0,0,0,0.2);"
+     style="background: {$colorStore.primary}0c;
+            border-color: {$colorStore.primary}30;"
      in:fly={{ y: 20, duration: 300 }}>
   <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
     <i class="fa-utility-duo fa-regular fa-crown text-xl"

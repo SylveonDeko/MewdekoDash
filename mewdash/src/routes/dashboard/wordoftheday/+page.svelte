@@ -663,8 +663,8 @@
     <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
 
       <!-- Posting -->
-      <div class="relative z-30 rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="relative z-30 rounded-2xl border p-6 md:p-8 transition-all"
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-paper-plane"
@@ -752,8 +752,8 @@
       </div>
 
       <!-- Word source -->
-      <div class="relative z-20 rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="relative z-20 rounded-2xl border p-6 md:p-8 transition-all"
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-filter"
@@ -837,8 +837,8 @@
       </div>
 
       <!-- Discussion thread -->
-      <div class="relative z-[15] rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="relative z-[15] rounded-2xl border p-6 md:p-8 transition-all"
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-comments"
@@ -897,8 +897,8 @@
       </div>
 
       <!-- Message template -->
-      <div class="relative z-10 rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
+      <div class="relative z-10 rounded-2xl border p-6 md:p-8 transition-all"
+           style="background: {$colorStore.primary}15;
                   border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-comment"
@@ -929,7 +929,7 @@
 
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-2">
         <button
-          class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+          class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
           style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30;"
           onclick={resetConfig}
           disabled={saving}
@@ -940,8 +940,8 @@
       </div>
 
       <!-- Current configuration -->
-      <div class="rounded-2xl border p-6 shadow-2xl transition-all"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="rounded-2xl border p-6 transition-all"
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-circle-exclamation"
@@ -1001,8 +1001,8 @@
       </p>
 
       {#each [{ title: m.wordoftheday.scheduleWeekdays(), icon: "fa-calendar", drafts: dayDrafts }, { title: m.wordoftheday.scheduleMonths(), icon: "fa-calendar", drafts: monthDrafts }] as group}
-        <div class="rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+        <div class="rounded-2xl border p-6 md:p-8 transition-all"
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
           <div class="flex items-center gap-3 mb-6">
             <i class="fa-utility-duo fa-regular {group.icon}"
@@ -1055,7 +1055,7 @@
 
                 <div class="lg:col-span-2 flex gap-2 justify-end">
                   <button
-                    class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] text-sm font-medium"
+                    class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all min-h-[44px] text-sm font-medium"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                     onclick={() => saveRule(draft)}
                     disabled={draft.saving}
@@ -1066,7 +1066,7 @@
                   </button>
                   {#if draft.exists}
                     <button
-                      class="flex items-center justify-center px-3 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] min-w-[44px] text-sm"
+                      class="flex items-center justify-center px-3 py-2 rounded-lg transition-all min-h-[44px] min-w-[44px] text-sm"
                       style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
                       onclick={() => clearRule(draft)}
                       disabled={draft.saving}
@@ -1085,8 +1085,8 @@
 
   {:else if activeTab === 'words'}
     <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
-      <div class="rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="rounded-2xl border p-6 md:p-8 transition-all"
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-wand-magic-sparkles"
@@ -1114,7 +1114,7 @@
                  onkeydown={(e) => e.key === 'Enter' && addWord()}
           >
           <button
-            class="md:col-span-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] font-medium"
+            class="md:col-span-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all min-h-[44px] font-medium"
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
             onclick={addWord}
             disabled={addingWord || !newWord.trim()}
@@ -1126,8 +1126,8 @@
         </div>
       </div>
 
-      <div class="rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="rounded-2xl border p-6 md:p-8 transition-all"
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-book"
@@ -1167,7 +1167,7 @@
                   </div>
                 </div>
                 <button
-                  class="flex items-center justify-center rounded-lg transition-all hover:scale-[1.05] min-h-[44px] min-w-[44px]"
+                  class="flex items-center justify-center rounded-lg transition-all min-h-[44px] min-w-[44px]"
                   style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
                   onclick={() => removeWord(word)}
                   aria-label={m.common.ariaRemoveWord({ word: word.word })}
@@ -1183,8 +1183,8 @@
 
   {:else if activeTab === 'history'}
     <div class="w-full" in:fade={{ duration: 200 }}>
-      <div class="rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="rounded-2xl border p-6 md:p-8 transition-all"
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <div class="flex items-center gap-3 mb-6">
           <i class="fa-utility-duo fa-regular fa-clock"

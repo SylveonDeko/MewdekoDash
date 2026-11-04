@@ -109,12 +109,12 @@
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 
     <!-- Bot Status Column -->
-    <div class=" rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+    <div class=" rounded-2xl p-6 transition-all border"
          style="background: {$colorStore.primary}05;
                 border-color: {$colorStore.primary}15;">
       <div class="flex items-center gap-4 mb-6">
         <div class="p-3 rounded-xl"
-             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+             style="background: {$colorStore.primary}20;">
           <i class="fa-utility-duo fa-regular fa-circle text-2xl"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         </div>
@@ -143,12 +143,12 @@
     </div>
 
     <!-- Server Stats Column -->
-    <div class=" rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+    <div class=" rounded-2xl p-6 transition-all border"
          style="background: {$colorStore.primary}05;
                 border-color: {$colorStore.primary}15;">
       <div class="flex items-center gap-4 mb-6">
         <div class="p-3 rounded-xl"
-             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+             style="background: {$colorStore.primary}20;">
           <i class="fa-utility-duo fa-regular fa-server text-2xl"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         </div>
@@ -181,12 +181,12 @@
     </div>
 
     <!-- Bot Info Column -->
-    <div class=" rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+    <div class=" rounded-2xl p-6 transition-all border"
          style="background: {$colorStore.primary}05;
                 border-color: {$colorStore.primary}15;">
       <div class="flex items-center gap-4 mb-6">
         <div class="p-3 rounded-xl"
-             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+             style="background: {$colorStore.primary}20;">
           <i class="fa-utility-duo fa-regular fa-info-circle text-2xl"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         </div>
@@ -219,12 +219,12 @@
     </div>
 
     <!-- Quick Actions Column -->
-    <div class=" rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+    <div class=" rounded-2xl p-6 transition-all border"
          style="background: {$colorStore.primary}05;
                 border-color: {$colorStore.primary}15;">
       <div class="flex items-center gap-4 mb-6">
         <div class="p-3 rounded-xl"
-             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+             style="background: {$colorStore.primary}20;">
           <i class="fa-utility-duo fa-regular fa-bolt text-2xl"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         </div>
@@ -233,7 +233,7 @@
 
       <div class="space-y-4">
         <button aria-label={m.dashboard.pageRefreshAria()}
-                class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-[1.02]"
+                class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all"
           disabled={refreshing}
           onclick={onRefresh}
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -244,7 +244,7 @@
         </button>
 
         <a
-          class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-[1.02]"
+          class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all"
           href="/dashboard/music"
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
         >
@@ -254,7 +254,7 @@
         </a>
 
         <a
-          class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-[1.02]"
+          class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all"
           href="/dashboard/moderation"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
         >
@@ -273,7 +273,7 @@
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     {#if joinStats}
       <div
-        class=" rounded-2xl border p-6 transition-all hover:shadow-lg hover:translate-y-[-2px]"
+        class=" rounded-2xl border p-6 transition-all"
               style="background: {$colorStore.primary}05;
               border-color: {$colorStore.primary}15;"
         in:fly={{ y: 20, duration: 300, delay: 400 }}
@@ -284,7 +284,7 @@
 
     {#if leaveStats}
       <div
-        class=" rounded-2xl border p-6 transition-all hover:shadow-lg hover:translate-y-[-2px]"
+        class=" rounded-2xl border p-6 transition-all"
               style="background: {$colorStore.primary}05;
               border-color: {$colorStore.primary}15;"
         in:fly={{ y: 20, duration: 300, delay: 500 }}

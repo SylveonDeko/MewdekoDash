@@ -19,8 +19,6 @@
     saving,
     toggleProtection,
     toggleProtectionCard,
-    cancelProtectionEdit,
-    saveProtectionConfig,
     saveHoneypotChannels,
     saveIgnoredRoles,
     addIgnoredUser,
@@ -28,15 +26,15 @@
   } = $props();
 </script>
 
-<div class=" rounded-2xl border p-6 shadow-2xl transition-all"
+<div class=" rounded-2xl border p-6 transition-all"
      in:fly={{ y: 20, duration: 300, delay: 600 }}
-     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+     style="background: {$colorStore.primary}0c;
             border-color: {$colorStore.primary}30;">
 
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div class="flex items-center gap-4">
       <div class="p-3 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+           style="background: {$colorStore.primary}20;">
         <i class="fa-utility-duo fa-regular fa-hand"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
@@ -48,7 +46,7 @@
 
     <div class="flex flex-wrap items-center gap-2">
       <button
-        class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+        class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
         onclick={() => toggleProtection('antiPostChannel')}
         style="background: {protectionStatus.antiPostChannel.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'};
                color: {protectionStatus.antiPostChannel.enabled ? $colorStore.accent : $colorStore.secondary};
@@ -65,7 +63,7 @@
 
       {#if protectionStatus.antiPostChannel.enabled}
         <button
-          class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+          class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
           onclick={() => toggleProtectionCard('antiPostChannel')}
         >
@@ -133,20 +131,8 @@
               bind:selected={selectedHoneypotChannels}
               multiple={true}
               placeholder={m.administration.protectionPostchannelSelectHoneypotChannels()}
+              onchange={(d: any) => saveHoneypotChannels(Array.isArray(d.selected) ? d.selected : [])}
             />
-            <button
-              class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
-              style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-              onclick={saveHoneypotChannels}
-              disabled={saving}
-            >
-              {#if saving}
-                <i class="fa-solid fa-spinner fa-spin"></i>
-              {:else}
-                <i class="fa-solid fa-save"></i>
-              {/if}
-              <span>{m.administration.protectionPostchannelSaveChannels()}</span>
-            </button>
           </div>
 
           <!-- Ignored Roles -->
@@ -161,20 +147,8 @@
               bind:selected={selectedIgnoredRoles}
               multiple={true}
               placeholder={m.administration.protectionPostchannelSelectIgnoredRoles()}
+              onchange={(d: any) => saveIgnoredRoles(Array.isArray(d.selected) ? d.selected : [])}
             />
-            <button
-              class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
-              style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-              onclick={saveIgnoredRoles}
-              disabled={saving}
-            >
-              {#if saving}
-                <i class="fa-solid fa-spinner fa-spin"></i>
-              {:else}
-                <i class="fa-solid fa-save"></i>
-              {/if}
-              <span>{m.administration.protectionPostchannelSaveRoles()}</span>
-            </button>
           </div>
 
           <!-- Ignored Users -->
@@ -194,7 +168,7 @@
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
               />
               <button
-                class="px-6 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+                class="px-6 py-2 rounded-lg font-medium transition-all flex items-center gap-2"
                 style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 onclick={addIgnoredUser}
                 disabled={!selectedIgnoredUsers || saving}
@@ -214,7 +188,7 @@
                        style="background: {$colorStore.primary}08;">
                     <span class="text-sm" style="color: {$colorStore.text}">{userId.toString()}</span>
                     <button
-                      class="px-2 py-1 rounded transition-all hover:scale-110"
+                      class="px-2 py-1 rounded transition-all"
                       style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                       aria-label={m.administration.protectionPostchannelRemoveIgnoredUser()}
                       onclick={() => $currentGuild && administrationApi.toggleAntiPostChannelIgnoredUser($currentGuild.id, userId).then(() => fetchAllData())}
@@ -226,33 +200,7 @@
               </div>
             {/if}
           </div>
-        </div>
-
-        <div class="flex justify-end gap-2 pt-4">
-          <button
-            class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
-            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-            onclick={cancelProtectionEdit}
-          >
-            {m.common.cancel()}
-          </button>
-          <button
-            class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
-            style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-            onclick={saveProtectionConfig}
-            disabled={saving}
-          >
-            <div class="flex items-center justify-center gap-2">
-              {#if saving}
-                <i class="fa-solid fa-spinner fa-spin" style="font-size: 14px;"></i>
-              {:else}
-                <i class="fa-solid fa-save" style="font-size: 14px;"></i>
-              {/if}
-              <span>{m.common.save()}</span>
-            </div>
-          </button>
-        </div>
-      </div>
+        </div>      </div>
     {/if}
   {:else}
     <div class="text-center py-8">

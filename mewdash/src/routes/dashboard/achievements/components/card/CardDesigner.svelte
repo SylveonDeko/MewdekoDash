@@ -532,12 +532,12 @@
 {/snippet}
 
 {#snippet section(title: string)}
-  <h4 class="text-xs font-semibold uppercase tracking-wide pt-2" style="color: {$colorStore.muted}">{title}</h4>
+  <h4 class="text-xs font-semibold pt-2" style="color: {$colorStore.muted}">{title}</h4>
 {/snippet}
 
 <div class="space-y-4" in:fade={{ duration: 150 }}>
   <div class="rounded-2xl border p-3 md:p-4 flex flex-col lg:flex-row lg:items-center gap-3"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+       style="background: {$colorStore.primary}0c;
               border-color: {$colorStore.primary}30;">
     <div class="flex items-center gap-2 flex-1 min-w-0">
       <button type="button" class="w-[44px] h-[44px] rounded-xl flex items-center justify-center shrink-0"
@@ -696,9 +696,9 @@
                                    color: {shown ? resolveToken(el.color, card.palette, gradeColor) ?? $colorStore.text : 'transparent'};
                                    caret-color: {$colorStore.primary}; background: transparent;" />
               {#if editing}
-              <div class="absolute left-0 top-full mt-3 w-[min(340px,80vw)] p-2 rounded-lg border shadow-2xl backdrop-blur-md space-y-2"
-                   style="background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,0,0,0.8)), linear-gradient(135deg, {$colorStore.gradientStart}25, {$colorStore.gradientMid}30, {$colorStore.gradientEnd}25);
-                          border-color: {$colorStore.primary}50; box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 0 0 1px {$colorStore.primary}20;"
+              <div class="absolute left-0 top-full mt-3 w-[min(340px,80vw)] p-2 rounded-lg border space-y-2"
+                   style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background});
+                          border-color: {$colorStore.primary}50; box-shadow: 0 8px 32px rgba(0,0,0,0.4);"
                    transition:fly={{ y: -8, duration: 200 }}>
                 <CardTextTools placeholders={card.placeholders} {guildEmojis} {onerror} oninsert={(t) => inlineEditor?.insert(t)} />
                 <div class="flex justify-end gap-1.5">

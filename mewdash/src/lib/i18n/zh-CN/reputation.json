@@ -21,8 +21,6 @@
   "min_server_time_label": "最短服务器时长（小时）",
   "notification_channel_label": "通知频道（可选）",
   "notification_channel_placeholder": "不发送通知",
-  "notify_reward_added": "身份组奖励添加成功！",
-  "notify_reward_removed": "身份组奖励已移除！",
   "page_subtitle": "管理服务器声望和奖励",
   "page_title": "声望系统",
   "remove_on_drop_label": "声望低于阈值时移除身份组",

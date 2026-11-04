@@ -71,12 +71,12 @@
     <div class="lg:col-span-6 space-y-4">
 
       <!-- Main Music Player -->
-      <div class=" rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+      <div class=" rounded-xl p-4 transition-all border"
            style="background: {$colorStore.primary}05;
                   border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
-               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+               style="background: {$colorStore.primary}20;">
             <i class="fa-utility-duo fa-regular fa-music text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
@@ -89,7 +89,7 @@
           <!-- No Music State -->
           <div class="text-center py-12">
             <div class="w-20 h-20 rounded-full mb-6 flex items-center justify-center mx-auto"
-                 style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+                 style="background: {$colorStore.primary}20;">
               <i class="fa-utility-duo fa-regular fa-music text-5xl"
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
@@ -100,8 +100,8 @@
               {m.dashboard.entertainmentNoMusicHint()}
             </p>
             <a href="/dashboard/music"
-               class="inline-flex items-center gap-2 py-3 px-6 rounded-xl transition-all hover:scale-[1.02]"
-               style="background: {$colorStore.primary}; color: white; box-shadow: 0 4px 12px {$colorStore.primary}30;">
+               class="inline-flex items-center gap-2 py-3 px-6 rounded-xl transition-all"
+               style="background: {$colorStore.primary}; color: white;">
               <i class="fa-utility-duo fa-regular fa-play"
                  style="--fa-primary-color: white; --fa-secondary-color: white; --fa-secondary-opacity: 0.7;"></i>
               {m.common.openMusicDashboard()}
@@ -112,7 +112,7 @@
 
       <!-- Music Queue Preview (if music is playing) -->
       {#if hasActiveMusic && musicStatus?.Queue?.length > 0}
-        <div class=" rounded-lg p-4 transition-all hover:shadow-md border"
+        <div class=" rounded-lg p-4 transition-all border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <h3 class="text-lg font-semibold mb-3" style="color: {$colorStore.text}">{m.dashboard.entertainmentComingUp()}</h3>
@@ -153,7 +153,7 @@
       <!-- Entertainment Features -->
       <div class="space-y-3">
         <!-- Custom Voice Channels -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -171,7 +171,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.entertainmentCustomVoiceDesc()}</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all"
                href="/dashboard/customvoice"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               {m.common.configure()}
@@ -180,7 +180,7 @@
         </div>
 
         <!-- Giveaways -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -198,7 +198,7 @@
                 {giveaways.length > 0 ? m.dashboard.entertainmentParticipants({ count: giveaways[0]?.participants || 0 }) : m.dashboard.entertainmentGiveawaysDesc()}
               </div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all"
                href="/dashboard/giveaways"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               {m.common.manage()}
@@ -209,7 +209,7 @@
 
       <!-- Active Giveaways Details -->
       {#if giveaways.length > 0}
-        <div class=" rounded-lg p-4 transition-all hover:shadow-md border"
+        <div class=" rounded-lg p-4 transition-all border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text}">{m.common.activeGiveaways()}</h3>

@@ -139,7 +139,6 @@
   "page_announce_auto_delete_disabled": "Auto-usuwanie wyłączone - nie można używać z reagowaniem na wyzwalacz",
   "page_announce_cards_collapsed": "Zwinięto wszystkie karty",
   "page_announce_create_failed": "Nie udało się utworzyć wyzwalacza",
-  "page_announce_created": "Wyzwalacz został utworzony",
   "page_announce_delete_cancelled": "Anulowano usuwanie",
   "page_announce_delete_failed": "Nie udało się usunąć wyzwalacza",
   "page_announce_deleted": "Usunięto wyzwalacz {name}",

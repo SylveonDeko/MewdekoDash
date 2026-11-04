@@ -106,8 +106,6 @@
   "settings_tab_auto_assign_desc": "Role automatycznie nadawane nowym członkom",
   "settings_tab_auto_assign_roles_desc": "Role nadawane nowym członkom",
   "settings_tab_bot_settings_desc": "Podstawowe ustawienia bota",
-  "settings_tab_configure_arrow": "Skonfiguruj →",
-  "settings_tab_greets_arrow": "Powitania →",
   "settings_tab_integrations": "Integracje",
   "settings_tab_logging_desc": "Logowanie zdarzeń i ślady audytu",
   "settings_tab_multigreets_desc": "Wiele kanałów i wiadomości powitalnych",

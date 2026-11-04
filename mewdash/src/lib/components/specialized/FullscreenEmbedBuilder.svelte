@@ -457,7 +457,7 @@
     const outputData = cleanOutput();
     value = outputData;
     onchange?.(outputData);
-    showNotificationMessage(m.embedbuilder.fullscreenNotifySaved());
+    showNotificationMessage(m.common.saved());
     close();
   }
 
@@ -1216,7 +1216,7 @@
 <button
   {id}
   aria-labelledby={ariaLabelledby}
-  class="w-full text-left rounded-xl border transition-all hover:shadow-lg hover:scale-[1.01] cursor-pointer p-4"
+  class="w-full text-left rounded-xl border transition-all cursor-pointer p-4"
   onclick={open}
   style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
   type="button"
@@ -1279,7 +1279,7 @@
       <!-- Modal Content -->
       <div
         class="relative flex-1 flex flex-col m-0 md:m-4 rounded-none md:rounded-2xl overflow-hidden"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}98, {$colorStore.gradientMid}99);"
+        style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background});"
         transition:slide={{ duration: 300 }}
       >
         <!-- Header -->
@@ -1298,7 +1298,7 @@
 
           <div class="flex items-center gap-2">
             <button
-              class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] disabled:opacity-50"
+              class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all disabled:opacity-50"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={undo}
               disabled={historyIndex <= 0}
@@ -1309,7 +1309,7 @@
               <span class="hidden sm:inline ml-1">{m.common.undo()}</span>
             </button>
             <button
-              class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] disabled:opacity-50"
+              class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all disabled:opacity-50"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={redo}
               disabled={historyIndex >= editHistory.length - 1}
@@ -1320,7 +1320,7 @@
               <span class="hidden sm:inline ml-1">{m.common.redo()}</span>
             </button>
             <button
-              class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02]"
+              class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all"
               style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
               onclick={clearAll}
               type="button"
@@ -1330,7 +1330,7 @@
               <span class="hidden sm:inline ml-1">{m.common.clearAll()}</span>
             </button>
             <button
-              class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02]"
+              class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={cancel}
               type="button"
@@ -1338,7 +1338,7 @@
               {m.common.cancel()}
             </button>
             <button
-              class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02]"
+              class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all"
               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
               onclick={save}
               type="button"
@@ -1356,7 +1356,7 @@
             <div class="flex gap-2 mb-4 flex-wrap">
               {#if allowContent || embeds.length > 0}
                 <button
-                  class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                  class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; {activeTab === 'editor' ? 'filter: brightness(0.9);' : ''}"
                   onclick={() => activeTab = 'editor'}
                   type="button"
@@ -1368,7 +1368,7 @@
 
               {#if allowComponents && !restrictedComponentTypes.includes('all')}
                 <button
-                  class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                  class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; {activeTab === 'components' ? 'filter: brightness(0.9);' : ''}"
                   onclick={() => activeTab = 'components'}
                   type="button"
@@ -1379,7 +1379,7 @@
               {/if}
 
               <button
-                class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; {activeTab === 'json' ? 'filter: brightness(0.9);' : ''}"
                 onclick={() => { activeTab = 'json'; refreshJsonPreview(); }}
                 type="button"
@@ -1390,7 +1390,7 @@
 
               {#if user?.id}
                 <button
-                  class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                  class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; {activeTab === 'saved' ? 'filter: brightness(0.9);' : ''}"
                   onclick={() => { activeTab = 'saved'; loadSavedEmbeds(); }}
                   type="button"
@@ -1453,7 +1453,7 @@
                     <div class="flex gap-2">
                       {#if embeds.length > 1}
                         <button
-                          class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] flex items-center gap-2"
+                          class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2"
                           style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                           onclick={clearAllEmbeds}
                           type="button"
@@ -1464,7 +1464,7 @@
                       {/if}
                       {#if allowMultipleEmbeds}
                         <button
-                          class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] flex items-center gap-2 disabled:opacity-50"
+                          class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2 disabled:opacity-50"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                           disabled={embeds.length >= maxEmbeds}
                           onclick={addEmbed}
@@ -1487,7 +1487,7 @@
                         {m.embedbuilder.fullscreenEmbedsEmptyHint()}
                       </p>
                       <button
-                        class="px-4 py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] flex items-center gap-2 mx-auto"
+                        class="px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2 mx-auto"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                         onclick={addEmbed}
                         type="button"
@@ -1524,7 +1524,7 @@
                     </div>
 
                     <button
-                      class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2 disabled:opacity-50"
+                      class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 disabled:opacity-50"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                       disabled={componentRows.length >= 5 || getTotalComponentCount() >= 25}
                       onclick={addRow}
@@ -1554,7 +1554,7 @@
                             {row.components.length === 1 ? m.embedbuilder.fullscreenRowHeaderOne({ number: rowIndex + 1, count: 1 }) : m.embedbuilder.fullscreenRowHeaderOther({ number: rowIndex + 1, count: row.components.length })}
                           </span>
                           <button
-                            class="px-2 py-1 text-xs rounded-lg transition-all hover:scale-[1.02] font-medium"
+                            class="px-2 py-1 text-xs rounded-lg transition-all font-medium"
                             style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                             onclick={() => removeRow(row.rowKey)}
                             type="button"
@@ -1573,7 +1573,7 @@
                             <div class="flex gap-2 justify-center flex-wrap">
                               {#if !restrictedComponentTypes.includes('button')}
                                 <button
-                                  class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+                                  class="px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
                                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                                   onclick={() => addComponentToRow(row.rowKey, 'button')}
                                   type="button"
@@ -1584,7 +1584,7 @@
                               {/if}
                               {#if !restrictedComponentTypes.includes('select')}
                                 <button
-                                  class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+                                  class="px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
                                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                                   onclick={() => addComponentToRow(row.rowKey, 'select')}
                                   type="button"
@@ -1615,7 +1615,7 @@
                             <div class="flex justify-center pt-3 mt-3 border-t"
                                  style="border-color: {$colorStore.primary}20;">
                               <button
-                                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] flex items-center gap-1"
+                                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
                                 style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}25;"
                                 onclick={() => addComponentToRow(row.rowKey, 'button')}
                                 type="button"
@@ -1642,7 +1642,7 @@
                     </div>
                     <div class="flex gap-2">
                       <button
-                        class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+                        class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                         onclick={refreshJsonPreview}
                         type="button"
@@ -1651,7 +1651,7 @@
                         {m.common.refresh()}
                       </button>
                       <button
-                        class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+                        class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                         onclick={applyJsonText}
                         type="button"
@@ -1699,7 +1699,7 @@
                         bind:value={saveEmbedName}
                       />
                       <button
-                        class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
+                        class="px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                         disabled={savingEmbed || !saveEmbedName.trim()}
                         onclick={saveCurrentEmbed}
@@ -1735,7 +1735,7 @@
                             </span>
                             <div class="flex gap-2 shrink-0">
                               <button
-                                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
                                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                                 onclick={() => loadSavedEmbed(saved)}
                                 type="button"
@@ -1743,7 +1743,7 @@
                                 {m.common.load()}
                               </button>
                               <button
-                                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
                                 style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                                 onclick={() => requestDeleteSavedEmbed(saved)}
                                 type="button"
@@ -1774,7 +1774,7 @@
                           </span>
                           <div class="flex gap-2 shrink-0">
                             <button
-                              class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                              class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                               onclick={() => loadSavedEmbed(saved)}
                               type="button"
@@ -1782,7 +1782,7 @@
                               {m.common.load()}
                             </button>
                             <button
-                              class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                              class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
                               style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                               onclick={() => requestDeleteSavedEmbed(saved)}
                               type="button"
@@ -1837,8 +1837,8 @@
         <!-- Mobile Floating Preview Button -->
         {#if isMobile && !showMobilePreview}
           <button
-            class="fixed bottom-4 right-4 z-[9999] px-4 py-3 rounded-full shadow-lg transition-all hover:scale-[1.05] flex items-center gap-2 backdrop-blur-md"
-            style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; box-shadow: 0 4px 12px {$colorStore.secondary}40; border: 2px solid {$colorStore.secondary}30;"
+            class="fixed bottom-4 right-4 z-[9999] px-4 py-3 rounded-full transition-all flex items-center gap-2"
+            style="background: color-mix(in srgb, {$colorStore.secondary} 10%, {$colorStore.background}); color: {$colorStore.secondary}; border: 2px solid {$colorStore.secondary}30;"
             onclick={() => showMobilePreview = true}
             type="button"
           >
@@ -1870,7 +1870,7 @@
         <!-- Preview Modal -->
         <div
           class="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl flex flex-col"
-          style="background: linear-gradient(135deg, {$colorStore.gradientStart}98, {$colorStore.gradientMid}99);"
+          style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background});"
         >
           <!-- Header -->
           <div
@@ -1879,7 +1879,7 @@
           >
             <h3 class="text-lg font-semibold" style="color: {$colorStore.primary};">{m.common.preview()}</h3>
             <button
-              class="p-2 rounded-lg transition-all hover:scale-[1.02]"
+              class="p-2 rounded-lg transition-all"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
               onclick={() => showMobilePreview = false}
               type="button"
@@ -1921,7 +1921,7 @@
             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;"
           >
             <button
-              class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
+              class="w-full px-4 py-2 rounded-lg font-medium transition-all"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={() => showMobilePreview = false}
               type="button"

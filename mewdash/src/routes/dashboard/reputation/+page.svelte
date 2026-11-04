@@ -318,7 +318,7 @@
                 announceDM: newRoleReward.announceDM,
             xpReward: newRoleReward.xpReward || 0
             });
-            showMessage(m.reputation.notifyRewardAdded(), "success");
+            showMessage(m.common.roleRewardAdded(), "success");
             newRoleReward = {
                 roleId: null,
                 repRequired: 100,
@@ -344,7 +344,7 @@
         saving = true;
         try {
           await reputationApi.removeRoleReward($currentGuild.id, roleId);
-            showMessage(m.reputation.notifyRewardRemoved(), "success");
+            showMessage(m.common.roleRewardRemoved(), "success");
             await loadAllReputationData();
         } catch (err) {
             logger.error("Failed to remove role reward:", err);
@@ -482,8 +482,8 @@
         <div class="w-full" in:fade={{ duration: 200 }}>
             <div class="space-y-6 md:space-y-8">
                 <!-- Basic Settings -->
-              <div class="relative z-20  rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+              <div class="relative z-20 rounded-2xl border p-6 md:p-8 transition-all"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                       <i class="fa-utility-duo fa-regular fa-gear"
@@ -681,8 +681,8 @@
     {:else if activeTab === 'rewards'}
         <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
             <!-- Add Role Reward -->
-          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+          <div class="rounded-2xl border p-6 md:p-8 transition-all relative z-20"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-solid fa-plus" style="color: {$colorStore.primary}; font-size: 20px;"></i>
@@ -771,7 +771,7 @@
                 <button
                   aria-label={m.common.addRoleReward()}
                   aria-busy={saving}
-                  class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                  class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                         onclick={addRoleReward}
                         disabled={saving || !newRoleReward.roleId}
@@ -782,8 +782,8 @@
             </div>
 
             <!-- Role Rewards List -->
-          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-10"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+          <div class="rounded-2xl border p-6 md:p-8 transition-all relative z-10"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-solid fa-crown" style="color: {$colorStore.primary}; font-size: 20px;"></i>
@@ -817,7 +817,7 @@
                                     </div>
                                 </div>
                               <button aria-label={m.common.delete()}
-                                        class="p-2 rounded-lg transition-all hover:scale-110"
+                                        class="p-2 rounded-lg transition-all"
                                       style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                         onclick={() => removeRoleReward(reward.roleId)}
                                 >
@@ -831,8 +831,8 @@
 
     {:else if activeTab === 'leaderboard'}
         <div class="w-full" in:fade={{ duration: 200 }}>
-          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+          <div class="rounded-2xl border p-6 md:p-8 transition-all"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-utility-duo fa-regular fa-star"
@@ -852,7 +852,7 @@
                         </div>
                     {:else}
                         {#each leaderboard as entry}
-                            <div class="flex items-center gap-4 p-4 rounded-xl transition-all hover:scale-[1.02]"
+                            <div class="flex items-center gap-4 p-4 rounded-xl transition-all"
                                  style="background: {$colorStore.primary}08;">
                                 <div class="flex items-center justify-center w-8 h-8 rounded-full"
                                      style="background: {entry.rank <= 3 ? $colorStore.accent : $colorStore.primary}20; color: {entry.rank <= 3 ? $colorStore.accent : $colorStore.primary};">
@@ -883,7 +883,7 @@
                                 {:else if entry.rank === 3}
                                   <i class="fa-solid fa-star" style="color: {$colorStore.accent}; font-size: 24px;"></i>
                                 {/if}
-                                <button class="p-2 rounded-lg transition-all hover:scale-[1.05] shrink-0 min-h-[40px] min-w-[40px]"
+                                <button class="p-2 rounded-lg transition-all shrink-0 min-h-[40px] min-w-[40px]"
                                         style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                                         aria-label={m.reputation.viewHistoryAria({ username: entry.username })}
                                         title={m.reputation.viewHistory()}
@@ -903,8 +903,8 @@
                  onclick={closeHistory}
                  onkeydown={(e) => { if (e.key === "Escape") closeHistory(); }}
                  in:fade={{ duration: 150 }}>
-                <div class="rounded-2xl shadow-2xl w-full max-w-2xl border max-h-[85vh] flex flex-col"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); border-color: {$colorStore.primary}30;"
+                <div class="rounded-2xl shadow-lg w-full max-w-2xl border max-h-[85vh] flex flex-col"
+                     style="background: {$colorStore.background}; border-color: {$colorStore.primary}30;"
                      role="dialog"
                      aria-modal="true"
                      aria-labelledby="rep-history-title"

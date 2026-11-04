@@ -432,7 +432,6 @@
   "settings_reveal_hint": "Les membres voient les noms et objectifs des succès secrets avant de les débloquer.",
   "settings_reveal_title": "Les afficher avant le déblocage",
   "settings_secret_title": "Succès secrets",
-  "settings_unsaved": "Vous avez des modifications non enregistrées.",
   "settings_xp_per_point": "XP par point",
   "settings_xp_per_point_hint": "Les rangs de succès et les niveaux d'XP sont séparés. Réglez ceci pour que chaque déblocage rapporte aussi de l'XP : un déblocage Or vaut 50 points, donc 2 ici donne 100 XP. 0 désactive.",
   "tab_cards": "Cartes"

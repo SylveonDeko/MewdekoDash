@@ -307,8 +307,8 @@
     {#if activeTab === 'create'}
       <!-- Create New Giveaway Section -->
       <section
-        class="rounded-2xl border p-6 md:p-8 mb-8 shadow-2xl transition-all"
-        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15, {colors.gradientEnd}10);
+        class="rounded-2xl border p-6 md:p-8 mb-8 transition-all"
+        style="background: {colors.primary}0c;
               border-color: {colors.primary}30;"
         transition:fade
       >
@@ -463,7 +463,7 @@
                 <button
                   type="button"
                   aria-label={m.giveaways.pageEntrySelectAria({ method: method.label })}
-                  class="flex items-center gap-2 px-4 py-3 rounded-xl transition-all hover:scale-[1.02] font-medium"
+                  class="flex items-center gap-2 px-4 py-3 rounded-xl transition-all font-medium"
                   style="background: {entryMethod === method.id ? `${colors.primary}20` : 'transparent'};
                         color: {entryMethod === method.id ? colors.primary : colors.muted};
                         border: 1px solid {entryMethod === method.id ? `${colors.primary}30` : `${colors.primary}15`};"
@@ -479,7 +479,7 @@
           <button
             type="submit"
             aria-label={m.giveaways.pageTabCreate()}
-            class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px] w-full"
+            class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all min-h-[52px] w-full"
             style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
           >
             <i class="fa-solid fa-trophy" style="font-size: 20px;"></i>
@@ -492,8 +492,8 @@
     {#if activeTab === 'active'}
       <!-- Active Giveaways -->
       <section
-        class="rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15, {colors.gradientEnd}10);
+        class="rounded-2xl border p-6 md:p-8 transition-all"
+        style="background: {colors.primary}0c;
               border-color: {colors.primary}30;"
       >
         <h2 class="text-xl font-semibold mb-6 flex items-center gap-2" style="color: {colors.text}">
@@ -580,8 +580,7 @@
                     {#if !giveaway.ended}
                       <button
                         aria-label={m.giveaways.pageEndAria()}
-                        class="mt-6 w-full px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]
-                              flex items-center justify-center gap-2"
+                        class="mt-6 w-full px-4 py-3 rounded-xl font-medium transition-all                              flex items-center justify-center gap-2"
                         style="background: {colors.accent}20;
                               color: {colors.accent};
                               border: 1px solid {colors.accent}30;"
@@ -603,8 +602,8 @@
     {#if activeTab === 'ended'}
       <!-- Ended Giveaways would go here -->
       <section
-        class="rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15, {colors.gradientEnd}10);
+        class="rounded-2xl border p-6 md:p-8 transition-all"
+        style="background: {colors.primary}0c;
                border-color: {colors.primary}30;"
       >
         <h2 class="text-xl font-semibold mb-6 flex items-center gap-2" style="color: {colors.text}">

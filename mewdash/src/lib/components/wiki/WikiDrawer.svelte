@@ -95,15 +95,15 @@
   <Portal>
     <div class="fixed inset-0 z-[200] flex {isMobile ? 'items-end' : 'justify-end'}">
       <button
-        class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        class="absolute inset-0 bg-black/60"
         aria-label={m.wiki.closeWikiPanel()}
         onclick={close}
         transition:fade={{ duration: 200 }}
       ></button>
 
       <div
-        class="relative flex flex-col shadow-2xl w-full {isMobile ? 'h-[92dvh] rounded-t-2xl border-t' : 'h-full max-w-2xl border-l'}"
-        style="background: linear-gradient(180deg, {$colorStore.background}, #0f172a);
+        class="relative flex flex-col shadow-lg w-full {isMobile ? 'h-[92dvh] rounded-t-2xl border-t' : 'h-full max-w-2xl border-l'}"
+        style="background: {$colorStore.background};
                border-color: {$colorStore.primary}30;
                transform: translateY({dragOffset}px);
                transition: {dragStartY === null ? 'transform 150ms ease-out' : 'none'};"
@@ -119,19 +119,19 @@
         <header
           class="flex items-start gap-4 p-5 border-b shrink-0 {isMobile ? 'pt-3' : ''}"
           style="border-color: {$colorStore.primary}20;
-                 background: linear-gradient(135deg, {$colorStore.gradientStart}18, {$colorStore.gradientEnd}10);"
+                 background: {$colorStore.primary}0c;"
         >
           {#if isMobile}
             <div class="absolute left-1/2 top-2 -translate-x-1/2 h-1.5 w-12 rounded-full"
                  style="background: {$colorStore.primary}50;" aria-hidden="true"></div>
           {/if}
           <div class="p-3 rounded-xl shrink-0 {isMobile ? 'mt-3' : ''}"
-               style="background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);">
+               style="background: {$colorStore.primary}25;">
             <i class="{wikiIconClass(article.icon)} text-2xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
           <div class="min-w-0 flex-1 {isMobile ? 'mt-3' : ''}">
-            <p class="text-xs uppercase tracking-widest font-semibold" style="color: {$colorStore.muted}">
+            <p class="text-xs" style="color: {$colorStore.muted}">
               {m.wiki.guide()}
             </p>
             <h2 id="wiki-drawer-title" class="text-xl font-bold truncate" style="color: {$colorStore.text}">
@@ -140,7 +140,7 @@
             <p class="text-sm mt-1 {isMobile ? 'line-clamp-2' : ''}" style="color: {$colorStore.muted}">{article.summary}</p>
           </div>
           <button
-            class="p-2 rounded-lg transition-all hover:scale-105 shrink-0 min-h-[44px] min-w-[44px] {isMobile ? 'mt-3' : ''}"
+            class="p-2 rounded-lg transition-all shrink-0 min-h-[44px] min-w-[44px] {isMobile ? 'mt-3' : ''}"
             style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
             aria-label={m.common.close()}
             onclick={close}
@@ -170,7 +170,7 @@
           {/if}
           <a
             href="/wiki/{article.slug}"
-            class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] {isMobile ? 'w-full text-center' : ''}"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all {isMobile ? 'w-full text-center' : ''}"
             style="color: {$colorStore.primary}; {isMobile ? '' : `background: ${$colorStore.primary}20; border: 1px solid ${$colorStore.primary}30;`}"
             title={m.wiki.readThisGuideOnIts()}
           >

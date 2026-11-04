@@ -680,7 +680,7 @@
               { label: m.owner.dockerTileImages(), value: formatNumber(overview.images), hint: overview.composeAvailable ? m.owner.dockerTileComposeAvailable() : m.owner.dockerTileComposeUnavailable() },
             ] as tile (tile.label)}
               <div class="rounded-xl border p-4" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
-                <div class="text-xs uppercase tracking-wider" style="color: {$colorStore.muted};">{tile.label}</div>
+                <div class="text-xs" style="color: {$colorStore.muted};">{tile.label}</div>
                 <div class="text-2xl font-bold mt-1 truncate" style="color: {$colorStore.text};">{tile.value}</div>
                 <div class="text-xs mt-0.5 truncate" style="color: {$colorStore.muted};">{tile.hint}</div>
               </div>
@@ -1127,7 +1127,7 @@
               <div class="flex items-center gap-3">
                 {#if follow}
                   <span class="flex items-center gap-1.5">
-                    <span class="inline-block w-2 h-2 rounded-full animate-pulse" style="background: #4ade80;"></span>
+                    <span class="inline-block w-2 h-2 rounded-full" style="background: #4ade80;"></span>
                     {m.common.live()}
                   </span>
                 {/if}

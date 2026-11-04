@@ -441,12 +441,12 @@
     <!-- Today's Birthdays Alert -->
     {#if todaysBirthdays.length > 0}
         <div class="mb-6 p-4 rounded-xl flex items-center gap-3"
-             style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.primary}20); border: 1px solid {$colorStore.accent}30;"
+             style="background: {$colorStore.accent}20; border: 1px solid {$colorStore.accent}30;"
              in:fly={{ x: -20, duration: 300 }}>
             <i class="fa-utility-duo fa-regular fa-gift"
                style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
             <span style="color: {$colorStore.text}">
-        🎉 {todaysBirthdays.length === 1 ? m.birthday.alertTodayOne({ count: todaysBirthdays.length }) : m.birthday.alertTodayOther({ count: todaysBirthdays.length })}
+        {todaysBirthdays.length === 1 ? m.birthday.alertTodayOne({ count: todaysBirthdays.length }) : m.birthday.alertTodayOther({ count: todaysBirthdays.length })}
       </span>
         </div>
     {/if}
@@ -471,8 +471,8 @@
             <!-- Configuration Form -->
             <div class="space-y-6 md:space-y-8">
                 <!-- Basic Settings -->
-                <div class="relative z-20  rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                <div class="relative z-20  rounded-2xl border p-6 md:p-8 transition-all"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -580,8 +580,8 @@
                 </div>
 
                 <!-- Custom Message -->
-                <div class="relative z-10  rounded-2xl p-6 md:p-8 shadow-2xl transition-all border"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
+                <div class="relative z-10  rounded-2xl p-6 md:p-8 transition-all border"
+                     style="background: {$colorStore.primary}12;
                     border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -628,7 +628,7 @@
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-4">
                     <button
-                      class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                      class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
                             onclick={resetConfig}
                             disabled={saving}
@@ -642,8 +642,8 @@
             <!-- Feature Toggles & Preview -->
             <div class="space-y-6">
                 <!-- Feature Controls -->
-                <div class=" rounded-2xl border p-6 shadow-2xl transition-all"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                <div class=" rounded-2xl border p-6 transition-all"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fa-utility-duo fa-regular fa-gift" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -769,8 +769,8 @@
                 </div>
 
                 <!-- Configuration Preview -->
-                <div class=" rounded-2xl border p-6 shadow-2xl transition-all"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                <div class=" rounded-2xl border p-6 transition-all"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -809,8 +809,8 @@
         <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
                 <!-- Upcoming Birthdays -->
-                <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                <div class=" rounded-2xl border p-6 md:p-8 transition-all relative z-20"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center justify-between mb-6">
                         <div class="flex items-center gap-3">
@@ -856,7 +856,7 @@
                             </div>
                         {:else}
                             {#each upcomingBirthdays as user}
-                                <div class="flex items-center gap-4 p-3 rounded-xl transition-all hover:scale-[1.02]"
+                                <div class="flex items-center gap-4 p-3 rounded-xl transition-all"
                                      style="background: {$colorStore.primary}08;">
                                     <img src={user.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
                                          alt="" class="w-12 h-12 rounded-full" />
@@ -870,7 +870,7 @@
                                     </div>
                                     <div class="text-right">
                                         <div class="text-sm font-medium" style="color: {$colorStore.primary}">
-                                            {user.daysUntil === 0 ? m.birthday.usersToday() :
+                                            {user.daysUntil === 0 ? m.common.today() :
                                                 user.daysUntil === 1 ? m.birthday.usersTomorrow() :
                                                     m.common.daysCount({ count: user.daysUntil ?? 0 })}
                                         </div>
@@ -885,8 +885,8 @@
                 </div>
 
                 <!-- All Users with Birthdays -->
-                <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-10"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                <div class=" rounded-2xl border p-6 md:p-8 transition-all relative z-10"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -904,7 +904,7 @@
                             </div>
                         {:else}
                             {#each birthdayUsers as user}
-                                <div class="flex items-center gap-4 p-3 rounded-xl transition-all hover:scale-[1.02]"
+                                <div class="flex items-center gap-4 p-3 rounded-xl transition-all"
                                      style="background: {$colorStore.primary}08;">
                                     <img src={user.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
                                          alt="" class="w-10 h-10 rounded-full" />

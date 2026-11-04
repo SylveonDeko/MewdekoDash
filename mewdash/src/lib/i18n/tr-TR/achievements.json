@@ -432,7 +432,6 @@
   "settings_reveal_hint": "Üyeler, gizli başarıların adlarını ve hedeflerini açmadan önce görür.",
   "settings_reveal_title": "Açmadan önce göster",
   "settings_secret_title": "Gizli başarılar",
-  "settings_unsaved": "Kaydedilmemiş değişikliklerin var.",
   "settings_xp_per_point": "Puan başına XP",
   "settings_xp_per_point_hint": "Başarı seviyeleri ve XP seviyeleri ayrıdır. Her kilit açmanın XP de vermesi için bunu ayarla: Altın bir kilit açma 50 puandır, yani buraya 2 yazarsan 100 XP verir. 0 kapatır.",
   "tab_cards": "Kartlar"

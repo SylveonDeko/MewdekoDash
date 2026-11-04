@@ -1073,7 +1073,7 @@
 
 <main
   class="min-h-screen py-8 px-4"
-  style="background: linear-gradient(135deg, {$colorStore.primary}08 0%, {$colorStore.secondary}05 100%);"
+  style="background: {$colorStore.primary}0c;"
 >
   <div class="container mx-auto max-w-3xl">
     {#if showLoginPrompt}
@@ -1084,7 +1084,7 @@
       >
         <div
           class="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center"
-          style="background: linear-gradient(135deg, {$colorStore.primary}30, {$colorStore.secondary}40);"
+          style="background: {$colorStore.primary}30;"
         >
           <i class="fa-brands fa-discord" style="color: {$colorStore.primary}; font-size: 40px;"></i>
         </div>
@@ -1127,8 +1127,8 @@
 
         <button
           onclick={() => goto(`/api/discord/login?redirect_to=${encodeURIComponent($page.url.pathname)}`)}
-          class="px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] shadow-lg border"
-          style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border-color: {$colorStore.primary}30; box-shadow: 0 4px 20px {$colorStore.primary}10;"
+          class="px-8 py-4 rounded-xl font-bold text-lg transition-all border"
+          style="background: {$colorStore.primary}18; color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
         >
           <i class="fa-brands fa-discord mr-2"></i>
           {m.common.loginWithDiscord()}
@@ -1192,7 +1192,7 @@
             <i class="fa-solid fa-check-circle" style="color: #10B981; font-size: 48px;"></i>
           </div>
           <h2 class="text-2xl font-bold mb-4" style="color: #10B981;">
-            {isEditing ? m.forms.publicSuccessUpdated() : m.forms.publicSuccessTitle()}
+            {isEditing ? m.forms.publicSuccessUpdated() : m.common.success()}
           </h2>
           <p class="text-lg mb-6" style="color: {$colorStore.text};">
             {#if isEditing}
@@ -1262,14 +1262,14 @@
               </p>
               <a
                 href={statusCheckUrl}
-                class="block p-3 rounded-lg font-mono text-sm text-center mb-3 transition-all hover:scale-[1.02]"
+                class="block p-3 rounded-lg font-mono text-sm text-center mb-3 transition-all"
                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.primary}; text-decoration: none;"
               >
                 {window.location.origin}{statusCheckUrl}
               </a>
               <button
                 onclick={() => navigator.clipboard.writeText(window.location.origin + statusCheckUrl)}
-                class="w-full py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
+                class="w-full py-2 rounded-lg font-medium transition-all"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text};"
               >
                 <i class="fa-solid fa-copy mr-2"></i>
@@ -1280,7 +1280,7 @@
 
           <button
             onclick={() => goto("/dashboard")}
-            class="px-6 py-3 rounded-lg font-medium transition-all hover:scale-[1.02]"
+            class="px-6 py-3 rounded-lg font-medium transition-all"
             style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
           >
             {m.common.returnToDashboard()}
@@ -1426,7 +1426,7 @@
           {:else}
             <div
               class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-              style="background: linear-gradient(135deg, {$colorStore.primary}30, {$colorStore.secondary}40);"
+              style="background: {$colorStore.primary}30;"
             >
               <i class="fa-solid fa-clipboard-list" style="color: {$colorStore.primary}; font-size: 32px;"></i>
             </div>
@@ -1568,7 +1568,7 @@
             >
               <div
                 class="h-full transition-all duration-500 ease-out"
-                style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary}); width: {progressPercentage}%;"
+                style="background: {$colorStore.primary}; width: {progressPercentage}%;"
               ></div>
             </div>
           </div>
@@ -1650,7 +1650,7 @@
             <div class="flex gap-4">
               <button
                 onclick={backToEditing}
-                class="flex-1 py-3 rounded-lg font-medium transition-all hover:scale-[1.02]"
+                class="flex-1 py-3 rounded-lg font-medium transition-all"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
               >
                 <i class="fa-solid fa-arrow-left mr-2"></i>
@@ -1659,8 +1659,8 @@
               <button
                 onclick={submitForm}
                 disabled={submitting || (form.requireCaptcha && !turnstileToken)}
-                class="flex-1 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50 border"
-                style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10); color: {$colorStore.text}; border-color: {$colorStore.secondary}30; box-shadow: 0 4px 20px {$colorStore.secondary}10;"
+                class="flex-1 py-3 rounded-lg font-medium transition-all disabled:opacity-50 border"
+                style="background: {$colorStore.secondary}18; color: {$colorStore.text}; border-color: {$colorStore.secondary}30;"
               >
                 {#if submitting}
                   <i class="fa-solid fa-spinner fa-spin mr-2"></i>
@@ -1810,7 +1810,7 @@
                         {#if question.options}
                           {#each question.options as option}
                             <label
-                              class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01]"
+                              class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all"
                               style="background: {$colorStore.primary}08; border: 1px solid {answers[question.id] === option.optionValue ? $colorStore.primary : 'transparent'};"
                             >
                               <input
@@ -1833,7 +1833,7 @@
                           {#each question.options as option}
                             {@const checkboxAnswers = Array.isArray(answers[question.id]) ? answers[question.id] : []}
                             <label
-                              class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01]"
+                              class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all"
                               style="background: {$colorStore.primary}08; border: 1px solid {checkboxAnswers.includes(option.optionValue) ? $colorStore.primary : 'transparent'};"
                             >
                               <input
@@ -1924,8 +1924,8 @@
                 <button
                   type="button"
                   onclick={goToNextPage}
-                  class="px-5 py-3 rounded-xl font-bold transition-all hover:scale-[1.02] border"
-                  style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10); color: {$colorStore.text}; border-color: {$colorStore.secondary}30;"
+                  class="px-5 py-3 rounded-xl font-bold transition-all border"
+                  style="background: {$colorStore.secondary}18; color: {$colorStore.text}; border-color: {$colorStore.secondary}30;"
                 >
                   {m.common.next()}
                   <i class="fa-solid fa-arrow-right ml-2"></i>
@@ -1958,8 +1958,8 @@
                 <button
                   type="submit"
                   disabled={submitting || (form.requireCaptcha && !turnstileToken)}
-                  class="w-full py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 border"
-                  style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10); color: {$colorStore.text}; border-color: {$colorStore.secondary}30; box-shadow: 0 4px 20px {$colorStore.secondary}10;"
+                  class="w-full py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed border"
+                  style="background: {$colorStore.secondary}18; color: {$colorStore.text}; border-color: {$colorStore.secondary}30;"
                 >
                   {#if submitting}
                     <i class="fa-solid fa-spinner fa-spin mr-2"></i>

@@ -432,7 +432,6 @@
   "settings_reveal_hint": "成员在解锁前即可看到保密成就的名称和目标。",
   "settings_reveal_title": "解锁前即可显示",
   "settings_secret_title": "保密成就",
-  "settings_unsaved": "你有未保存的更改。",
   "settings_xp_per_point": "每点数对应的 XP",
   "settings_xp_per_point_hint": "成就等级与 XP 等级是分开的。设置后，每次解锁还会获得 XP：金牌成就为 50 点，此处设为 2 则获得 100 XP。设为 0 即关闭。",
   "tab_cards": "卡片"

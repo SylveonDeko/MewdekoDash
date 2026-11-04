@@ -270,8 +270,8 @@
         <div class="w-full" in:fade={{ duration: 200 }}>
             <div class="space-y-6 md:space-y-8">
                 <!-- Basic Settings -->
-                <div class="relative z-20  rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                <div class="relative z-20  rounded-2xl border p-6 md:p-8 transition-all"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -319,8 +319,8 @@
                 </div>
 
                 <!-- Role Blacklist -->
-                <div class="relative z-10  rounded-2xl p-6 md:p-8 shadow-2xl transition-all border"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
+                <div class="relative z-10  rounded-2xl p-6 md:p-8 transition-all border"
+                     style="background: {$colorStore.primary}14;
                     border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fa-utility-duo fa-regular fa-lock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -334,7 +334,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                         {#each guildRoles as role}
                             <button
-                              class="p-3 rounded-lg transition-all hover:scale-[1.02] text-left flex items-center gap-2"
+                              class="p-3 rounded-lg transition-all text-left flex items-center gap-2"
                                     style="background: {isRoleBlacklisted(role.id) ? '#ef444420' : $colorStore.primary + '10'};
                                    border: 1px solid {isRoleBlacklisted(role.id) ? '#ef4444' : $colorStore.primary}30;"
                                     onclick={() => toggleRoleBlacklist(role.id)}
@@ -357,8 +357,8 @@
     {:else if activeTab === 'confessions'}
         <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
             <!-- Confessions List -->
-            <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+            <div class=" rounded-2xl border p-6 md:p-8 transition-all relative z-20"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -396,7 +396,7 @@
                                         </div>
                                         <div class="flex items-center gap-2">
                                             <button
-                                                    class="p-2 rounded-lg transition-all hover:scale-110"
+                                                    class="p-2 rounded-lg transition-all"
                                                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                                     onclick={() => toggleConfessionVisibility(confession.id)}
                                                     aria-label={showConfessionContent.has(confession.id) ? m.confessions.pageHideContentAria() : m.confessions.pageShowContentAria()}
@@ -408,7 +408,7 @@
                                                 {/if}
                                             </button>
                                             <button aria-label={m.confessions.pageDeleteAria()}
-                                                    class="p-2 rounded-lg transition-all hover:scale-110"
+                                                    class="p-2 rounded-lg transition-all"
                                                     style="background: #ef444420; color: #ef4444;"
                                                     onclick={() => deleteConfession(confession.confessNumber)}
                                             >

@@ -433,7 +433,7 @@
 
 {#if hasTrack || botInChannel}
   <div
-    class=" rounded-2xl border shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px] w-full"
+    class=" rounded-2xl border transition-all w-full"
     style="background: linear-gradient(135deg, {colors.gradientStart}, {colors.gradientEnd});
            border-color: {colors.accent}30;"
           in:fly={{ y: 10, duration: 400, delay: 100 }}
@@ -446,7 +446,7 @@
         <!-- Album Art -->
           <div class="relative shrink-0">
           <div
-            class="w-16 h-16 rounded-xl overflow-hidden shadow-lg ring-2 ring-opacity-30"
+            class="w-16 h-16 rounded-xl overflow-hidden ring-2 ring-opacity-30"
             style="ring-color: {colors.accent};"
           >
             {#if currentTrack?.Track?.ArtworkUri}
@@ -469,7 +469,7 @@
           <!-- Playing indicator -->
           {#if isPlaying}
             <div
-                    class="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-xs animate-pulse"
+                    class="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white"
               style="background: {colors.accent};"
             ></div>
           {/if}
@@ -512,7 +512,7 @@
 
             <!-- Previous Button -->
             <button aria-label={m.common.previous()}
-              class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+              class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all"
               style="background: {colors.foreground}20; color: {colors.foreground};"
               onclick={previousTrack}
 
@@ -523,7 +523,7 @@
 
             <!-- Play/Pause Button -->
             <button
-              class="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-lg"
+              class="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all"
               style="background: {colors.controlsHighlight}; color: {colors.text};"
               onclick={togglePlayPause}
               aria-label={isPlaying ? m.common.pause() : m.music.playerPlay()}
@@ -539,7 +539,7 @@
 
             <!-- Skip Button -->
             <button aria-label={m.common.next()}
-              class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+              class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all"
               style="background: {colors.foreground}20; color: {colors.foreground};"
               onclick={skipTrack}
 
@@ -550,7 +550,7 @@
 
             <!-- Desktop: Expand/Collapse Button -->
             <button
-              class="hidden md:flex w-10 h-10 rounded-full items-center justify-center transition-all hover:scale-110 active:scale-95 ml-2"
+              class="hidden md:flex w-10 h-10 rounded-full items-center justify-center transition-all ml-2"
               style="background: {colors.accent}20; color: {colors.accent};"
               onclick={toggleExpanded}
               aria-label={isExpanded ? m.common.collapse() : m.music.playerExpand()}
@@ -566,7 +566,7 @@
 
             <!-- Open Full Player Button -->
             <button aria-label={m.common.openMusicDashboard()}
-              class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+              class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all"
               style="background: {colors.accent}20; color: {colors.accent};"
               onclick={openMusicDashboard}
 
@@ -582,7 +582,7 @@
             <div class="flex items-center gap-4">
                 <div class="relative shrink-0">
                     <div
-                            class="w-16 h-16 rounded-xl overflow-hidden shadow-lg ring-2 ring-opacity-30 flex items-center justify-center"
+                            class="w-16 h-16 rounded-xl overflow-hidden ring-2 ring-opacity-30 flex items-center justify-center"
                             style="ring-color: {colors.accent}; background: {colors.primary}20;"
                     >
                         <i class="fa-utility-duo fa-regular fa-music text-2xl"
@@ -608,7 +608,7 @@
                 <!-- Open Full Player Button -->
                 <div class="flex items-center gap-2 shrink-0">
                   <button aria-label={m.common.openMusicDashboard()}
-                            class="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                            class="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all"
                             style="background: {colors.accent}20; color: {colors.accent};"
                             onclick={openMusicDashboard}
 
@@ -718,7 +718,7 @@
         {m.music.playerNotInVoiceHint()}
     </p>
     <button
-      class="mt-4 px-4 py-2 rounded-lg transition-all hover:scale-[1.02]"
+      class="mt-4 px-4 py-2 rounded-lg transition-all"
       style="background: {colors.foreground}20; color: {colors.foreground}; border: 1px solid {colors.foreground}30;"
       onclick={openMusicDashboard}
     >

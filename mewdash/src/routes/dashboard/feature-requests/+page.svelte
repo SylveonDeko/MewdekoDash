@@ -385,7 +385,7 @@
 {#snippet requestCard(entry: FeatureRequestEntry, showOwnerActions: boolean)}
   <div
     class="rounded-2xl border overflow-hidden"
-    style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+    style="background: {$colorStore.primary}0c;
            border-color: {$colorStore.primary}30;"
   >
     <div class="flex gap-3 p-4">
@@ -491,7 +491,7 @@
   {#if activeTab === "submit"}
     <div
       class="rounded-2xl border p-4 sm:p-6 max-w-3xl"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
       in:fly={{ y: 20, duration: 300 }}
     >
@@ -603,7 +603,7 @@
     {#if settings}
       <div
         class="rounded-2xl border p-4 sm:p-5 mb-6 max-w-3xl"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        style="background: {$colorStore.primary}0c;
                border-color: {$colorStore.primary}30;"
         in:fly={{ y: 20, duration: 300 }}
       >
@@ -653,7 +653,7 @@
         {#each statTiles as tile (tile.label)}
           <div
             class="rounded-2xl border p-4"
-            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+            style="background: {$colorStore.primary}0c;
                    border-color: {$colorStore.primary}30;"
           >
             <div class="flex items-center gap-2 text-xs font-medium" style="color: {$colorStore.muted}">
@@ -668,7 +668,7 @@
 
     <div
       class="rounded-2xl border p-4 sm:p-5 mb-6 flex flex-col lg:flex-row lg:items-end gap-4"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
       in:fly={{ y: 20, duration: 300 }}
     >
@@ -779,8 +779,8 @@
     onclick={(e) => { if (e.target === e.currentTarget) statusTarget = null; }}
   >
     <div
-      class="rounded-2xl border shadow-2xl max-w-md w-full p-6"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;"
+      class="rounded-2xl border shadow-lg max-w-md w-full p-6"
+      style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;"
       role="dialog"
       aria-modal="true"
       aria-labelledby="fr-status-title"

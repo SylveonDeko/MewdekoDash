@@ -20,10 +20,7 @@
 
 <main
   class="min-h-screen"
-  style="background: radial-gradient(circle at top,
-           {$colorStore.gradientStart}15 0%,
-           {$colorStore.gradientMid}10 50%,
-           {$colorStore.gradientEnd}05 100%);"
+  style="background: {$colorStore.primary}06;"
 >
   <div class="w-full px-4 md:px-6 xl:px-10 py-8 lg:py-10">
     <div class="grid gap-8 lg:grid-cols-[minmax(220px,16%)_minmax(0,1fr)]">

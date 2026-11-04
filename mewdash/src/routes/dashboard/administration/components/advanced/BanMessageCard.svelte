@@ -6,21 +6,20 @@
 
   let {
     banMessage = $bindable(),
-    saving,
     saveBanMessage,
     guildId = null,
     user = null
   } = $props();
 </script>
 
-<div class=" rounded-2xl border p-6 shadow-2xl transition-all"
+<div class=" rounded-2xl border p-6 transition-all"
      in:fly={{ y: 20, duration: 300, delay: 100 }}
-     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+     style="background: {$colorStore.primary}0c;
             border-color: {$colorStore.primary}30;">
 
   <div class="flex items-center gap-4 mb-6">
     <div class="p-3 rounded-xl"
-         style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+         style="background: {$colorStore.primary}20;">
       <i class="fa-utility-duo fa-regular fa-comment"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
     </div>
@@ -36,6 +35,7 @@
 
       <FullscreenEmbedBuilder id="f-BanMessageCard-custom-ban-message-31"
         bind:value={banMessage}
+        onchange={saveBanMessage}
         allowComponents={true}
         allowContent={true}
         allowMultipleEmbeds={true}
@@ -51,18 +51,5 @@
       <p class="text-xs mt-3" style="color: {$colorStore.muted}">
         {m.administration.advancedBanMessageHint()}
       </p>
-    </div>
-
-    <div class="flex justify-end">
-      <button
-        class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-        disabled={saving}
-        onclick={saveBanMessage}
-        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-      >
-        <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-        {m.common.saveMessage()}
-      </button>
-    </div>
-  </div>
+    </div>  </div>
 </div>

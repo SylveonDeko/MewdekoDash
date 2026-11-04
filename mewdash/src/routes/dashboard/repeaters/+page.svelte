@@ -1071,8 +1071,8 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <!-- Trigger Mode Distribution -->
         {#if repeaterStats?.triggerModeDistribution}
-          <div class="rounded-2xl p-4 md:p-6 shadow-lg"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="rounded-2xl p-4 md:p-6"
+               style="background: {$colorStore.primary}0c;">
             <div class="flex items-center gap-2 mb-4">
               <i class="fa-solid fa-gear" style="color: {$colorStore.primary}; font-size: 18px;"></i>
               <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.repeaters.pageOverviewModes()}</h3>
@@ -1092,8 +1092,8 @@
 
         <!-- Most Active Repeater -->
         {#if repeaterStats?.mostActiveRepeater}
-          <div class="rounded-2xl p-4 md:p-6 shadow-lg"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="rounded-2xl p-4 md:p-6"
+               style="background: {$colorStore.primary}0c;">
             <div class="flex items-center gap-2 mb-4">
               <i class="fa-solid fa-star" style="color: {$colorStore.secondary}; font-size: 18px;"></i>
               <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.common.mostActive()}</h3>
@@ -1130,7 +1130,7 @@
           <p class="mb-6" style="color: {$colorStore.muted}">{m.repeaters.pageEmptyHint()}</p>
           <div class="flex justify-center">
             <button
-              class="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-[1.02]"
+              class="px-6 py-3 rounded-lg font-medium transition-all duration-200"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={() => activeTab = 'create'}
             >
@@ -1146,7 +1146,7 @@
           <!-- Selection Controls -->
           <div class="flex flex-wrap items-center gap-2">
             <button
-              class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
+              class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
               onclick={selectAllRepeaters}
               disabled={repeaters.length === 0}
@@ -1157,7 +1157,7 @@
 
             {#if selectedRepeaterIds.length > 0}
               <button
-                class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
+                class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200"
                 style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                 onclick={clearSelection}
               >
@@ -1175,7 +1175,7 @@
               </span>
 
               <button
-                class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
+                class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                 onclick={() => bulkToggleRepeaters(true)}
               >
@@ -1184,7 +1184,7 @@
               </button>
 
               <button
-                class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
+                class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200"
                 style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                 onclick={() => bulkToggleRepeaters(false)}
               >
@@ -1199,8 +1199,8 @@
         <div class="space-y-4">
           {#each repeaters as repeater, index}
             {@const parsedMessage = parseRepeaterMessage(repeater.message)}
-            <div class="rounded-2xl p-4 md:p-6 border shadow-lg transition-all duration-200 hover:scale-[1.01]"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+            <div class="rounded-2xl p-4 md:p-6 border transition-all duration-200"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {repeater.isEnabled ? $colorStore.primary + '30' : $colorStore.muted + '20'};"
                  in:fly={{ y: 20, duration: 300, delay: index * 50 }}>
               
@@ -1209,7 +1209,7 @@
                 <div class="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
                   <!-- Selection Checkbox -->
                   <label for="repeater-select-{repeater.id}"
-                         class="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-sm border-2 cursor-pointer transition-all duration-200 hover:scale-110 flex-shrink-0 mt-1"
+                         class="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-sm border-2 cursor-pointer transition-all duration-200 flex-shrink-0 mt-1"
                          style="border-color: {selectedRepeaterIds.includes(repeater.id) ? $colorStore.primary : $colorStore.muted};
                                 background: {selectedRepeaterIds.includes(repeater.id) ? $colorStore.primary : 'transparent'};">
                     <input
@@ -1407,7 +1407,7 @@
                 <!-- Primary Actions -->
                 <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <button
-                    class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
+                    class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     onclick={() => editRepeater(repeater)}
                     aria-label={m.common.edit()}
@@ -1417,7 +1417,7 @@
                   </button>
 
                   <button
-                    class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
+                    class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200"
                     style="background: {repeater.isEnabled ? $colorStore.accent + '20' : $colorStore.primary + '20'};
                            color: {repeater.isEnabled ? $colorStore.accent : $colorStore.primary};"
                     onclick={() => toggleRepeater(repeater.id)}
@@ -1427,7 +1427,7 @@
                   </button>
 
                   <button
-                    class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
+                    class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                     onclick={() => triggerRepeater(repeater.id)}
                     disabled={!repeater.isEnabled}
@@ -1440,7 +1440,7 @@
                   <!-- Queue Position Controls -->
                   <div class="flex items-center">
                     <button aria-label={m.repeaters.pageActionMoveUpAria()}
-                            class="flex items-center gap-1 px-1.5 sm:px-2 py-1.5 sm:py-2 rounded-l-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
+                            class="flex items-center gap-1 px-1.5 sm:px-2 py-1.5 sm:py-2 rounded-l-lg text-xs sm:text-sm font-medium transition-all duration-200"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                       onclick={() => moveRepeaterUp(repeater.id)}
                       disabled={repeater.queuePosition <= 1}
@@ -1448,7 +1448,7 @@
                       <i class="fa-solid fa-arrow-up" style="font-size: 12px;"></i>
                     </button>
                     <button aria-label={m.repeaters.pageActionMoveDownAria()}
-                            class="flex items-center gap-1 px-1.5 sm:px-2 py-1.5 sm:py-2 rounded-r-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
+                            class="flex items-center gap-1 px-1.5 sm:px-2 py-1.5 sm:py-2 rounded-r-lg text-xs sm:text-sm font-medium transition-all duration-200"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                       onclick={() => moveRepeaterDown(repeater.id)}
                     >
@@ -1457,7 +1457,7 @@
                   </div>
 
                   <button
-                    class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
+                    class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200"
                     style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                     onclick={() => deleteRepeater(repeater.id)}
                   >
@@ -1471,7 +1471,7 @@
                 <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <!-- Quick Property Updates -->
                   <button
-                    class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
+                    class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 min-h-[32px]"
                     style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                     onclick={() => openQuickEdit(repeater, "interval")}
                     aria-label={m.repeaters.pageActionEditIntervalAria()}
@@ -1482,7 +1482,7 @@
                   </button>
 
                   <button
-                    class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
+                    class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 min-h-[32px]"
                     style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                     onclick={() => openQuickEdit(repeater, "startTime")}
                     aria-label={m.repeaters.pageActionEditStartAria()}
@@ -1494,7 +1494,7 @@
 
                   {#if repeater.conversationDetection}
                     <button
-                      class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
+                      class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 min-h-[32px]"
                       style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                       onclick={() => openQuickEdit(repeater, "threshold")}
                       aria-label={m.repeaters.pageActionEditThresholdAria()}
@@ -1505,7 +1505,7 @@
                   {/if}
 
                   <button
-                    class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
+                    class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 min-h-[32px]"
                     style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
                     onclick={() => openQuickEdit(repeater, "expiry")}
                     aria-label={m.repeaters.pageActionEditExpiryAria()}
@@ -1517,7 +1517,7 @@
                   <!-- Advanced Features open the full editor -->
                   {#if repeater.forumTagConditions}
                     <button
-                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
+                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 min-h-[32px]"
                       style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                       onclick={() => editRepeater(repeater)}
                     >
@@ -1528,7 +1528,7 @@
 
                   {#if repeater.timeConditions}
                     <button
-                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
+                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 min-h-[32px]"
                       style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                       onclick={() => editRepeater(repeater)}
                     >
@@ -1539,7 +1539,7 @@
 
                   {#if repeater.threadAutoSticky || repeater.threadOnlyMode}
                     <button
-                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
+                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200"
                       style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
                       onclick={() => {
                         selectedRepeater = repeater;
@@ -1561,8 +1561,8 @@
   {:else if activeTab === 'create'}
     <div class="w-full" in:fade={{ duration: 200 }}>
       <!-- Create Repeater Form -->
-      <div class="rounded-2xl border shadow-2xl"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      <div class="rounded-2xl border"
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
 
         <!-- Header Section -->
@@ -1616,7 +1616,7 @@
                     {#if selectedForumTags.required.length > 0 || selectedForumTags.excluded.length > 0}
                       <button
                         type="button"
-                        class="text-sm px-3 py-1.5 rounded-lg transition-all hover:scale-[1.02]"
+                        class="text-sm px-3 py-1.5 rounded-lg transition-all"
                         style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                         onclick={() => selectedForumTags = {required: [], excluded: []}}
                       >
@@ -1637,7 +1637,7 @@
                       <div class="space-y-2.5">
                         {#each availableForumTags as tag}
                           <label for="required-tag-{tag.id}"
-                                 class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 hover:scale-[1.01]"
+                                 class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200"
                                  style="background: {selectedForumTags.required.includes(tag.id) ? $colorStore.primary + '15' : $colorStore.primary + '05'};
                                           border: 1px solid {selectedForumTags.required.includes(tag.id) ? $colorStore.primary + '40' : 'transparent'};">
                             <input
@@ -1680,7 +1680,7 @@
                       <div class="space-y-2.5">
                         {#each availableForumTags as tag}
                           <label for="excluded-tag-{tag.id}"
-                                 class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 hover:scale-[1.01]"
+                                 class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200"
                                  style="background: {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent + '15' : $colorStore.accent + '05'};
                                           border: 1px solid {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent + '40' : 'transparent'};">
                             <input
@@ -1812,7 +1812,7 @@
                   { value: "1.00:00:00", label: m.common.daily() }
                 ] as preset}
                   <label for="interval-preset-{preset.value}"
-                         class="flex items-center justify-center rounded-lg p-2 sm:p-2.5 border cursor-pointer transition-all duration-200 hover:scale-[1.02] text-center"
+                         class="flex items-center justify-center rounded-lg p-2 sm:p-2.5 border cursor-pointer transition-all duration-200 text-center"
                          style="background: {formData.interval === preset.value ? $colorStore.primary + '20' : $colorStore.primary + '08'};
                                 border-color: {formData.interval === preset.value ? $colorStore.primary : $colorStore.primary + '30'};">
                     <input
@@ -2009,7 +2009,7 @@
                   <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {#each TIME_SCHEDULE_PRESETS as preset}
                       <label for="time-schedule-{preset.value}"
-                             class="flex items-center gap-2 rounded-lg p-2 border cursor-pointer transition-all duration-200 hover:scale-[1.02] text-sm"
+                             class="flex items-center gap-2 rounded-lg p-2 border cursor-pointer transition-all duration-200 text-sm"
                              style="background: {formData.timeSchedulePreset === preset.value ? $colorStore.primary + '20' : $colorStore.primary + '08'};
                                     border-color: {formData.timeSchedulePreset === preset.value ? $colorStore.primary : $colorStore.primary + '30'};">
                         <input
@@ -2109,7 +2109,7 @@
 
                 <button
                   type="submit"
-                  class="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-[1.02] disabled:opacity-50"
+                  class="px-6 py-3 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   disabled={saving || !formData.channelId || Object.keys(repeaterMessage).length === 0}
                 >
@@ -2141,8 +2141,8 @@
        onclick={closeQuickEdit}
        onkeydown={(e) => { if (e.key === "Escape") closeQuickEdit(); }}
        in:fade={{ duration: 150 }}>
-    <div class="rounded-2xl shadow-2xl w-full max-w-md border"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); border-color: {$colorStore.primary}30;"
+    <div class="rounded-2xl shadow-lg w-full max-w-md border"
+         style="background: {$colorStore.background}; border-color: {$colorStore.primary}30;"
          role="dialog"
          aria-modal="true"
          aria-labelledby="quick-edit-title"
@@ -2209,12 +2209,12 @@
 
           <div class="flex flex-col sm:flex-row gap-3 pt-2">
             <button type="button" onclick={closeQuickEdit}
-                    class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                    class="flex-1 px-4 py-3 rounded-lg font-medium transition-all min-h-[44px]"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};">
               {m.common.cancel()}
             </button>
             <button type="submit" disabled={quickEditSaving}
-                    class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
+                    class="flex-1 px-4 py-3 rounded-lg font-medium transition-all min-h-[44px] disabled:opacity-50"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
               {#if quickEditSaving}
                 <i class="fa-solid fa-arrows-rotate fa-spin mr-2"></i>{m.common.savingPlain()}

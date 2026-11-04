@@ -137,7 +137,6 @@
   "page_announce_auto_delete_disabled": "자동 삭제가 꺼졌어요. 반응 트리거와 함께 사용할 수 없어요",
   "page_announce_cards_collapsed": "모든 카드를 접었어요",
   "page_announce_create_failed": "트리거를 만들지 못했어요",
-  "page_announce_created": "트리거를 만들었어요",
   "page_announce_delete_cancelled": "삭제를 취소했어요",
   "page_announce_delete_failed": "트리거를 삭제하지 못했어요",
   "page_announce_deleted": "트리거 {name}을(를) 삭제했어요",

@@ -109,7 +109,7 @@ Replaces the binary enable/disable pattern with progressive options
   class:full={setupState === 'full'}
   class:quick={setupState === 'quick'}
   style="background: {setupState !== 'skip'
-      ? `linear-gradient(135deg, ${stateConfig[setupState].color}10, ${stateConfig[setupState].color}05)`
+      ? `${stateConfig[setupState].color}0c`
       : `${$colorStore.primary}05`};
          border-color: {setupState !== 'skip' ? stateConfig[setupState].color + '40' : $colorStore.primary + '20'};"
 >
@@ -150,7 +150,7 @@ Replaces the binary enable/disable pattern with progressive options
           {/if}
           {#if benefits.length > 0}
             <button
-              class="p-1 rounded-full transition-all hover:scale-110"
+              class="p-1 rounded-full transition-all"
               style="background: {setupState !== 'skip' ? stateConfig[setupState].color + '20' : $colorStore.primary + '20'}; color: {setupState !== 'skip' ? stateConfig[setupState].color : $colorStore.primary};"
               onclick={toggleBenefits}
               aria-label={m.wizard.setupCardShowBenefits()}
@@ -183,7 +183,7 @@ Replaces the binary enable/disable pattern with progressive options
     <!-- State Selection Buttons -->
     <div class="grid grid-cols-3 gap-2">
       <button
-        class="state-button px-3 py-3 rounded-lg transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 text-left"
+        class="state-button px-3 py-3 rounded-lg transition-all focus:outline-hidden focus:ring-2 text-left"
         class:active={setupState === 'full'}
         disabled={disabled}
         onclick={() => setState('full')}
@@ -210,7 +210,7 @@ Replaces the binary enable/disable pattern with progressive options
       </button>
 
       <button
-        class="state-button px-3 py-3 rounded-lg transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 text-left"
+        class="state-button px-3 py-3 rounded-lg transition-all focus:outline-hidden focus:ring-2 text-left"
         class:active={setupState === 'quick'}
         disabled={disabled}
         onclick={() => setState('quick')}
@@ -231,7 +231,7 @@ Replaces the binary enable/disable pattern with progressive options
       </button>
 
       <button
-        class="state-button px-3 py-3 rounded-lg transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 text-left"
+        class="state-button px-3 py-3 rounded-lg transition-all focus:outline-hidden focus:ring-2 text-left"
         class:active={setupState === 'skip'}
         disabled={disabled}
         onclick={() => setState('skip')}
@@ -256,8 +256,8 @@ Replaces the binary enable/disable pattern with progressive options
   <!-- Benefits Popup (Click/Tap to Toggle) -->
   {#if benefits.length > 0 && showBenefits}
     <div
-      class="absolute left-0 right-0 top-full mt-2 z-50 rounded-xl border-2 shadow-2xl"
-      style="background: linear-gradient(135deg, {stateConfig[setupState !== 'skip' ? setupState : 'full'].color}20, {stateConfig[setupState !== 'skip' ? setupState : 'full'].color}10); border-color: {stateConfig[setupState !== 'skip' ? setupState : 'full'].color}60; backdrop-filter: blur(10px);"
+      class="absolute left-0 right-0 top-full mt-2 z-50 rounded-xl border-2 shadow-lg"
+      style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background}); border-color: {stateConfig[setupState !== 'skip' ? setupState : 'full'].color}60;"
       in:fly={{ y: -10, duration: 250, opacity: 0 }}
       out:fly={{ y: -5, duration: 150, opacity: 0 }}
     >

@@ -209,7 +209,7 @@
     </div>
 
     <div class="rounded-2xl border overflow-hidden"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+         style="background: {$colorStore.primary}0c;
                 border-color: {$colorStore.primary}30;">
       {#if loading && members.length === 0}
         <div class="p-10 text-center" style="color: {$colorStore.muted}"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i></div>
@@ -268,14 +268,14 @@
       <div class="p-10 text-center" style="color: {$colorStore.muted}"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i></div>
     {:else if !detail}
       <div class="rounded-2xl border p-10 text-center"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <DuoIcon icon="fa-user" size={36} />
         <p class="text-sm mt-4" style="color: {$colorStore.muted}">{m.achievements.membersPickPrompt()}</p>
       </div>
     {:else}
-      <div class="relative rounded-2xl border p-5 md:p-6 shadow-2xl space-y-5" style="z-index: 10;
-           background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="relative rounded-2xl border p-5 md:p-6 space-y-5" style="z-index: 10;
+           background: {$colorStore.primary}0c;
            border-color: {$colorStore.primary}30;"
            in:fly={{ x: 20, duration: 200 }}>
         <div class="flex items-center gap-4">

@@ -277,7 +277,7 @@
   <div class="flex flex-wrap gap-2 mt-3">
     {#each feature.commands as command (command)}
       <span class="font-mono text-xs sm:text-sm px-2.5 py-1.5 rounded-lg"
-            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;">
+            style="background: {$colorStore.primary}06; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;">
         {command}
       </span>
     {:else}
@@ -286,9 +286,7 @@
   </div>
   <a href={feature.href} class="inline-flex items-center gap-2 min-h-[44px] mt-1 text-sm font-semibold"
      style="color: {$colorStore.primary}">
-    {m.home.tailsReadGuide()}
-    <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
-  </a>
+    {m.home.tailsReadGuide()}  </a>
 {/snippet}
 
 <section bind:this={section} aria-labelledby="tails-heading" class="relative"
@@ -323,7 +321,7 @@
                   class="travel absolute flex items-center gap-[0.7cqw] rounded-[1cqw] border text-left"
                   style="left: {across(card.cardX)}%; top: {down(card.cardY)}%; opacity: {visible};
                          pointer-events: {visible > 0.5 ? 'auto' : 'none'};
-                         background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
+                         background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;"
                   onclick={() => go(card.feature)}>
             <svg viewBox={TOOL_VIEWBOX[item.tool]} class="icon shrink-0" aria-hidden="true">
               <MascotTool tool={item.tool} />
@@ -334,7 +332,7 @@
 
         <div class="absolute rounded-2xl border p-4 xl:p-5"
              style="left: {across(240)}%; top: {down(-196)}%; width: 40%; transform: translate(-50%, -100%);
-                    background: {$colorStore.primary}12; border-color: {$colorStore.primary}50;"
+                    background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;"
              aria-live="polite">
           {#key active}
             <div in:fade={{ duration: 250 }}>
@@ -346,7 +344,7 @@
     {:else}
       <div class="w-full max-w-xl mx-auto">
         <div class="min-h-[214px] rounded-2xl border p-4 mt-1"
-             style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}50;" aria-live="polite">
+             style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;" aria-live="polite">
           {#key active}
             <div in:fade={{ duration: 250 }}>
               {@render details()}
@@ -358,7 +356,7 @@
         </div>
         <div class="flex items-center justify-center gap-3">
           <button type="button" class="w-[44px] h-[44px] rounded-xl flex items-center justify-center"
-                  style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                  style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                   aria-label={m.home.tailsPrevious()} onclick={() => go(active - 1)}>
             <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
           </button>
@@ -366,7 +364,7 @@
             {m.common.currentOfTotal({ current: active + 1, total: features.length })}
           </span>
           <button type="button" class="w-[44px] h-[44px] rounded-xl flex items-center justify-center"
-                  style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                  style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                   aria-label={m.home.tailsNext()} onclick={() => go(active + 1)}>
             <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
           </button>

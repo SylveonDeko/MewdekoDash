@@ -939,11 +939,6 @@
         "icon": "fa-bullhorn"
       },
       {
-        "id": "streamrole",
-        "label": "Stream role",
-        "icon": "fa-video"
-      },
-      {
         "id": "ai",
         "label": "AI assistant",
         "icon": "fa-robot"

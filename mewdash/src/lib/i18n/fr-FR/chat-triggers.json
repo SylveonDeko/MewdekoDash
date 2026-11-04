@@ -137,7 +137,6 @@
   "page_announce_auto_delete_disabled": "Suppression automatique désactivée - incompatible avec la réaction au déclencheur",
   "page_announce_cards_collapsed": "Toutes les cartes réduites",
   "page_announce_create_failed": "Échec de la création du déclencheur",
-  "page_announce_created": "Déclencheur créé avec succès",
   "page_announce_delete_cancelled": "Suppression annulée",
   "page_announce_delete_failed": "Échec de la suppression du déclencheur",
   "page_announce_deleted": "Déclencheur {name} supprimé",

@@ -166,15 +166,15 @@
   }
 </script>
 
-<div class=" rounded-2xl border p-6 shadow-2xl transition-all"
+<div class=" rounded-2xl border p-6 transition-all"
      in:fly={{ y: 20, duration: 300, delay: 300 }}
-     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+     style="background: {$colorStore.primary}0c;
             border-color: {$colorStore.primary}30;">
 
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div class="flex items-center gap-4">
       <div class="p-3 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+           style="background: {$colorStore.primary}20;">
         <i class="fa-utility-duo fa-regular fa-user-check"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
@@ -193,7 +193,7 @@
         <button aria-label={m.administration.rolesSelfAssignableToggleExclusive()}
                 role="switch"
                 aria-checked={selfAssignableRoles.exclusive}
-                class="p-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] min-w-[44px]"
+                class="p-2 rounded-lg transition-all min-h-[44px] min-w-[44px]"
                 onclick={toggleSelfAssignableRolesExclusive}
                 style="color: {selfAssignableRoles.exclusive ? $colorStore.secondary : $colorStore.muted}">
           <i class="fa-solid {selfAssignableRoles.exclusive ? 'fa-toggle-on' : 'fa-toggle-off'}" style="font-size: 24px;"></i>
@@ -207,7 +207,7 @@
           </div>
         </div>
         <button aria-label={m.administration.rolesSelfAssignableToggleAutoDelete()}
-                class="p-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] min-w-[44px] disabled:opacity-50"
+                class="p-2 rounded-lg transition-all min-h-[44px] min-w-[44px] disabled:opacity-50"
                 disabled={busy}
                 onclick={toggleAutoDelete}
                 style="color: {autoDeleteState ? $colorStore.secondary : $colorStore.muted}">
@@ -262,7 +262,7 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {#each group.roles as role (role.model.roleId)}
-              <div class="flex items-center justify-between gap-2 p-3 rounded-lg transition-all duration-200 hover:shadow-lg border"
+              <div class="flex items-center justify-between gap-2 p-3 rounded-lg transition-all duration-200 border"
                    style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                 <div class="min-w-0">
                   <div class="font-medium truncate" style="color: {$colorStore.text}">

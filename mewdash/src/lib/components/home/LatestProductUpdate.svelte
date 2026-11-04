@@ -42,21 +42,18 @@
 
 <section aria-labelledby="latest-update-heading" class="px-4 py-12 sm:py-16">
   <div class="mx-auto max-w-5xl">
-    <div class="update-rule mb-5" style="background: {$colorStore.primary}45;"></div>
-
     <article
       class="grid grid-cols-[minmax(0,1fr)] overflow-hidden border md:grid-cols-[11rem_minmax(0,1fr)]"
-      style="background: linear-gradient(110deg, {$colorStore.gradientStart}0c, {$colorStore.gradientMid}08);
-             border-color: {$colorStore.primary}35;"
+      style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;"
       onmouseenter={() => (paused = true)}
       onmouseleave={() => (paused = false)}
       onfocusin={() => (paused = true)}
       onfocusout={() => (paused = false)}
     >
       <div class="relative flex min-h-44 flex-col justify-between p-6 sm:p-8"
-           style="background: {$colorStore.primary}10; border-right: 1px solid {$colorStore.primary}25;">
+           style="border-right: 1px solid {$colorStore.primary}20;">
         {#key update.id}
-          <div class="font-mono text-[0.68rem] font-bold uppercase tracking-[0.16em]"
+          <div class="font-mono text-sm font-bold"
                style="color: {$colorStore.primary}" in:fade={{ duration: 220 }}>
             {update.label}
           </div>
@@ -69,9 +66,6 @@
       </div>
 
       <div class="min-w-0 p-6 sm:p-8 md:p-10">
-        <p class="mb-3 text-xs font-semibold uppercase tracking-[0.14em]" style="color: {$colorStore.muted}">
-          {m.home.updateEyebrow()}
-        </p>
         {#key update.id}
           <div in:fade={{ duration: 220 }}>
             <h2 id="latest-update-heading" class="text-2xl font-bold sm:text-3xl" style="color: {$colorStore.text}">
@@ -83,7 +77,7 @@
 
             <ul class="mt-6 grid max-w-2xl gap-3 text-sm" style="color: {$colorStore.text}">
               {#each update.details as detail}
-                <li class="border-l-2 pl-3 leading-relaxed" style="border-color: {$colorStore.secondary}75;">
+                <li class="border-l-2 pl-3 leading-relaxed" style="border-color: {$colorStore.primary}30;">
                   {detail}
                 </li>
               {/each}
@@ -92,11 +86,9 @@
             <a
               class="mt-7 inline-flex items-center gap-2 border-b pb-1 text-sm font-semibold transition-opacity hover:opacity-70 focus:outline-hidden focus:ring-2 focus:ring-offset-4"
               href={update.href}
-              style="color: {$colorStore.primary}; border-color: {$colorStore.primary}80; --tw-ring-color: {$colorStore.primary}; --tw-ring-offset-color: {$colorStore.gradientStart};"
+              style="color: {$colorStore.primary}; border-color: {$colorStore.primary}80; --tw-ring-color: {$colorStore.primary};"
             >
-              {update.action}
-              <span aria-hidden="true">→</span>
-            </a>
+              {update.action}            </a>
           </div>
         {/key}
 
@@ -105,7 +97,7 @@
             <button
               type="button"
               class="flex h-11 w-11 items-center justify-center rounded-xl focus:outline-hidden focus:ring-2"
-              style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;
+              style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;
                      --tw-ring-color: {$colorStore.primary};"
               aria-label={m.home.updatePrevious()}
               onclick={() => step(-1)}
@@ -118,7 +110,7 @@
             <button
               type="button"
               class="flex h-11 w-11 items-center justify-center rounded-xl focus:outline-hidden focus:ring-2"
-              style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;
+              style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;
                      --tw-ring-color: {$colorStore.primary};"
               aria-label={m.home.updateNext()}
               onclick={() => step(1)}
@@ -133,11 +125,6 @@
 </section>
 
 <style>
-  .update-rule {
-    height: 2px;
-    width: min(11rem, 35%);
-  }
-
   .hash-grid {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));

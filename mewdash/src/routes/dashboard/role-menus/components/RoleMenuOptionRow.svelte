@@ -91,7 +91,7 @@
     </span>
     <button
       type="button"
-      class="flex items-center justify-center rounded-lg min-h-[44px] min-w-[44px] transition-all hover:scale-[1.05] disabled:opacity-40 disabled:hover:scale-100"
+      class="flex items-center justify-center rounded-lg min-h-[44px] min-w-[44px] transition-all disabled:opacity-40"
       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
       onclick={onmoveup}
       disabled={index === 0}
@@ -101,7 +101,7 @@
     </button>
     <button
       type="button"
-      class="flex items-center justify-center rounded-lg min-h-[44px] min-w-[44px] transition-all hover:scale-[1.05] disabled:opacity-40 disabled:hover:scale-100"
+      class="flex items-center justify-center rounded-lg min-h-[44px] min-w-[44px] transition-all disabled:opacity-40"
       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
       onclick={onmovedown}
       disabled={index === count - 1}
@@ -111,7 +111,7 @@
     </button>
     <button
       type="button"
-      class="flex items-center justify-center rounded-lg min-h-[44px] min-w-[44px] transition-all hover:scale-[1.05]"
+      class="flex items-center justify-center rounded-lg min-h-[44px] min-w-[44px] transition-all"
       style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
       onclick={onremove}
       aria-label={m.common.ariaRemoveNamed({ name: displayName })}

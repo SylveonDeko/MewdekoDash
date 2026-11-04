@@ -312,8 +312,8 @@
   <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
     {#each filteredTemplates as template}
       <div
-        class="group cursor-pointer rounded-lg border transition-all duration-200 hover:shadow-lg overflow-hidden"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}05, {$colorStore.gradientMid}10);
+        class="group cursor-pointer rounded-lg border transition-all duration-200 overflow-hidden"
+        style="background: {$colorStore.primary}08;
                border-color: {$colorStore.primary}20;"
         onclick={() => selectTemplate(template)}
         onkeydown={(e) => handleKeydown(e, template)}

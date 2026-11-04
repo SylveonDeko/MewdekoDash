@@ -18,12 +18,12 @@
 </svelte:head>
 
 <div class="min-h-screen p-4 md:p-6 lg:p-8"
-     style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientMid}10 50%, {$colorStore.gradientEnd}05 100%);">
+     style="background: {$colorStore.primary}06;">
   <div class="max-w-5xl mx-auto space-y-6">
     <header
       class="rounded-2xl border px-5 py-6 md:px-7"
       in:fly={{ y: 16, duration: 300 }}
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
     >
       <div class="flex items-center gap-4">
@@ -46,9 +46,9 @@
       {#each features as feature, index (feature.href)}
         <a
           href={feature.href}
-          class="flex items-start gap-4 p-4 md:p-5 rounded-2xl border transition-all duration-200 hover:scale-[1.01] min-h-[44px]"
+          class="flex items-start gap-4 p-4 md:p-5 rounded-2xl border transition-colors duration-200 hover:brightness-125 min-h-[44px]"
           in:fly={{ y: 16, duration: 300, delay: 50 + index * 40 }}
-          style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
+          style="background: {$colorStore.primary}0c;
                  border-color: {$colorStore.primary}20;"
         >
           <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"

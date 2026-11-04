@@ -374,7 +374,7 @@
       </div>
 
       <button
-        class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+        class="w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
         style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
         onclick={addReactionRole}
         disabled={!messageId.trim() || !channelId || reactions.filter(r => r.emoji && r.roleId).length === 0 || saving || !!errorMessage}
@@ -391,7 +391,7 @@
   </div>
 {:else}
   <button
-    class="w-full mb-4 px-4 py-2 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+    class="w-full mb-4 px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2"
     style="background: {$colorStore.secondary}10; color: {$colorStore.secondary}; border: 2px dashed {$colorStore.secondary}40;"
     onclick={() => expanded = true}
   >

@@ -895,14 +895,14 @@
   {#if activeTab === 'fetch'}
     <!-- Fetch Messages Tab -->
     <section
-      class=" rounded-2xl border p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      class=" rounded-2xl border p-6"
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
     >
       <div class="flex items-center gap-3 mb-6">
         <div
           class="p-3 rounded-xl"
-          style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+          style="background: {$colorStore.primary}20;
                  color: {$colorStore.primary};"
         >
           <i class="fa-solid fa-envelope" style="font-size: 24px;"></i>
@@ -975,9 +975,8 @@
           class="px-6 py-3 rounded-lg font-medium transition-all duration-200  flex items-center gap-2 min-h-[44px] w-full sm:w-auto"
           disabled={loading}
           onclick={fetchMessages}
-          style="background: linear-gradient(to right, {$colorStore.primary}40, {$colorStore.secondary}40);
-                 color: {$colorStore.text};
-                 box-shadow: 0 0 20px {$colorStore.primary}20;"
+          style="background: {$colorStore.primary}40;
+                 color: {$colorStore.text};"
         >
           <i class="fa-solid fa-search" style="font-size: 20px;"></i>
           {loading ? m.common.loading() : m.chatsaver.saverLoadMessages()}
@@ -990,14 +989,14 @@
     <!-- Saved Logs Tab -->
     {#if savedLogs.length > 0}
       <section
-        class=" rounded-2xl border p-6 shadow-2xl"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        class=" rounded-2xl border p-6"
+        style="background: {$colorStore.primary}0c;
                border-color: {$colorStore.primary}30;"
       >
         <div class="flex items-center gap-3 mb-6">
           <div
             class="p-3 rounded-xl"
-            style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+            style="background: {$colorStore.primary}20;
                    color: {$colorStore.primary};"
           >
             <i class="fa-solid fa-folder" style="font-size: 24px;"></i>
@@ -1100,15 +1099,15 @@
     <!-- Message Display Tab -->
     {#if messages.length > 0}
       <section
-        class=" rounded-2xl border p-6 shadow-2xl"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        class=" rounded-2xl border p-6"
+        style="background: {$colorStore.primary}0c;
                border-color: {$colorStore.primary}30;"
       >
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div class="flex items-center gap-3">
             <div
               class="p-3 rounded-xl"
-              style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+              style="background: {$colorStore.primary}20;
                     color: {$colorStore.primary};"
             >
               <i class="fa-solid fa-envelope" style="font-size: 24px;"></i>
@@ -1122,7 +1121,7 @@
             {#if !currentLogId}
               <button
                 class="px-4 py-2 rounded-lg font-medium transition-all duration-200  flex items-center gap-2 min-h-[44px] justify-center"
-                style="background: linear-gradient(to right, {$colorStore.primary}30, {$colorStore.secondary}30);
+                style="background: {$colorStore.primary}30;
                       color: {$colorStore.text};"
                 onclick={saveLog}
               >
@@ -1133,7 +1132,7 @@
 
             <button
               class="px-4 py-2 rounded-lg font-medium transition-all duration-200  flex items-center gap-2 min-h-[44px] justify-center"
-              style="background: linear-gradient(to right, {$colorStore.primary}30, {$colorStore.secondary}30);
+              style="background: {$colorStore.primary}30;
                     color: {$colorStore.text};"
               onclick={exportAsHTML}
             >

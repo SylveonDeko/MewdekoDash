@@ -33,7 +33,9 @@
 
     const autoSave = createAutoSave({
       onError: (_err, key) => showNotificationMessage(
-        TYPED_SETTINGS.has(key.slice(key.indexOf(":") + 1) as SettingKey)
+        key.startsWith("customMessage:")
+          ? m.common.failedToSaveMessage()
+          : TYPED_SETTINGS.has(key.slice(key.indexOf(":") + 1) as SettingKey)
           ? m.counting.notifySaveFailed()
           : m.counting.notifySaveFailedUndone(),
         "error"
@@ -533,18 +535,13 @@
     }
   }
 
-  async function saveCustomMessage() {
-    if (!selectedChannel || !$currentGuild) return;
-    managementBusy = true;
-    try {
-      await countingApi.setCustomMessage($currentGuild.id, selectedChannel.channelId, { message: customMessage });
-      showNotificationMessage(m.counting.notifyMilestoneMessageSaved(), "success");
-    } catch (err) {
-      logger.error("Failed to save custom message:", err);
-      showNotificationMessage(m.common.failedToSaveMessage(), "error");
-    } finally {
-      managementBusy = false;
-    }
+  function saveCustomMessage() {
+    if (!selectedChannel || !$currentGuild || !customMessage.trim()) return;
+    const guildId = $currentGuild.id;
+    const channelId = selectedChannel.channelId;
+    autoSave.schedule(`customMessage:${channelId}`, async () => {
+      await countingApi.setCustomMessage(guildId, channelId, { message: customMessage });
+    });
   }
 
   async function purgeChannel() {
@@ -724,7 +721,7 @@
         </div>
         
         <button
-          class="mt-4 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+          class="mt-4 px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2"
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
           onclick={setupChannel}
           disabled={!setupChannelId}
@@ -745,7 +742,7 @@
         <div class="grid gap-4">
           {#each countingChannels as channel (channel.id)}
               <div
-                class=" rounded-xl border p-4 cursor-pointer transition-all hover:scale-[1.02]"
+                class=" rounded-xl border p-4 cursor-pointer transition-all"
               style="border-color: {selectedChannel?.id === channel.id ? $colorStore.primary : $colorStore.primary + '30'}; background: {selectedChannel?.id === channel.id ? $colorStore.primary + '15' : $colorStore.primary + '05'};"
                       role="button"
                       tabindex="0"
@@ -1272,7 +1269,7 @@
         </div>
         
         <button
-          class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+          class="px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2"
           style="background: #f59e0b20; color: #f59e0b; border: 1px solid #f59e0b30;"
           onclick={resetChannel}
         >
@@ -1297,7 +1294,7 @@
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             >
             <button
-              class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+              class="px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2"
               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
               onclick={createSavePoint}
             >
@@ -1338,7 +1335,7 @@
                 
                 <div class="flex items-center gap-2">
                   <button aria-label={m.counting.savePointRestoreAria()}
-                          class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px] disabled:opacity-50"
+                          class="px-3 py-2 rounded-lg text-sm font-medium transition-all min-h-[40px] disabled:opacity-50"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                     disabled={managementBusy}
                     onclick={async () => {
@@ -1351,7 +1348,7 @@
                   </button>
 
                   <button aria-label={m.counting.savePointDeleteAria()}
-                          class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px] disabled:opacity-50"
+                          class="px-3 py-2 rounded-lg text-sm font-medium transition-all min-h-[40px] disabled:opacity-50"
                     style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
                     disabled={managementBusy}
                     onclick={async () => {
@@ -1401,7 +1398,7 @@
                  class="flex-1 p-3 rounded-lg border min-h-[44px]"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           <button type="submit" disabled={managementBusy || !newMilestone}
-                  class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
+                  class="px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
             <i class="fa-solid fa-plus"></i>
             {m.common.add()}
@@ -1411,18 +1408,11 @@
         <div class="mt-6">
           <label for="milestone-message" class="block mb-2 font-medium" style="color: {$colorStore.text}">{m.counting.milestoneMessageLabel()}</label>
           <p class="text-xs mb-2" style="color: {$colorStore.muted}">{m.counting.milestoneMessageHint()}</p>
-          <div class="flex flex-col sm:flex-row gap-3">
-            <input id="milestone-message" type="text" bind:value={customMessage} placeholder={m.counting.milestoneMessagePlaceholder()}
-                   class="flex-1 p-3 rounded-lg border min-h-[44px]"
-                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-            <button disabled={managementBusy || !customMessage.trim()}
-                    class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
-                    style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    onclick={saveCustomMessage}>
-              <i class="fa-solid fa-floppy-disk"></i>
-              {m.common.save()}
-            </button>
-          </div>
+          <input id="milestone-message" type="text" bind:value={customMessage} placeholder={m.counting.milestoneMessagePlaceholder()}
+                 oninput={saveCustomMessage}
+                 onblur={() => selectedChannel && autoSave.flush(`customMessage:${selectedChannel.channelId}`)}
+                 class="w-full p-3 rounded-lg border min-h-[44px]"
+                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
         </div>
       </div>
 
@@ -1446,7 +1436,7 @@
                  class="p-3 rounded-lg border min-h-[44px]"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           <button type="submit" disabled={managementBusy || !banUserId.trim()}
-                  class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
+                  class="px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
                   style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;">
             <i class="fa-solid fa-ban"></i>
             {m.common.actionBan()}
@@ -1481,7 +1471,7 @@
                     {/if}
                   </div>
                 </div>
-                <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px] disabled:opacity-50"
+                <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all min-h-[40px] disabled:opacity-50"
                         style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                         disabled={managementBusy}
                         onclick={() => unbanCountingUser(ban.userId)}>
@@ -1506,7 +1496,7 @@
                  class="flex-1 p-3 rounded-lg border min-h-[44px]"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
           <button disabled={managementBusy}
-                  class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
+                  class="px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
                   style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
                   onclick={purgeChannel}>
             <i class="fa-solid fa-trash"></i>

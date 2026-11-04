@@ -21,7 +21,7 @@
     <AnalyticsTile label={m.analytics.tabLatencyShardReconnects()} metric="shard.reconnects" agg="sum" format="int" filters={["bot", "shard"]} />
     <AnalyticsTile label={m.analytics.tabLatencyUnhandledErrors()} metric="err.count" agg="sum" format="int" filters={["bot", "shard"]}>
       {#snippet drillContent()}
-        <p class="text-xs uppercase tracking-wide" style="color: {$colorStore.muted}">{m.analytics.tabLatencyExceptionGroups()}</p>
+        <p class="text-xs" style="color: {$colorStore.muted}">{m.analytics.tabLatencyExceptionGroups()}</p>
         <ErrorsPanel limit={15} />
       {/snippet}
     </AnalyticsTile>

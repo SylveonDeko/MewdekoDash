@@ -528,8 +528,8 @@
       <!-- Stats Overview -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" in:fly={{ y: 20, duration: 300, delay: 100 }}>
         <!-- Total Warnings -->
-        <div class=" rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
+        <div class="rounded-2xl p-6"
+             style="background: {$colorStore.primary}0c;">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm font-medium" style="color: {$colorStore.muted}">{m.common.totalWarnings()}</p>
@@ -543,8 +543,8 @@
         </div>
 
         <!-- Active Warnings -->
-        <div class=" rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
+        <div class="rounded-2xl p-6"
+             style="background: {$colorStore.primary}0c;">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm font-medium" style="color: {$colorStore.muted}">{m.moderation.statActive()}</p>
@@ -558,8 +558,8 @@
         </div>
 
         <!-- Forgiven Warnings -->
-        <div class=" rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
+        <div class="rounded-2xl p-6"
+             style="background: {$colorStore.primary}0c;">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm font-medium" style="color: {$colorStore.muted}">{m.moderation.statForgiven()}</p>
@@ -575,18 +575,18 @@
     
     {#if activeTab === 'warnings'}
       <!-- All Warnings Section -->
-      <section class=" rounded-2xl border p-6 shadow-2xl transition-all"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      <section class="rounded-2xl border p-6 transition-all"
+               style="background: {$colorStore.primary}0c;
                       border-color: {$colorStore.primary}30;"
                in:fly={{ y: 20, duration: 300, delay: 200 }}>
         <div class="flex items-center gap-4 mb-6">
           <div class="p-3 rounded-xl"
-               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+               style="background: {$colorStore.primary}20;">
             <i class="fa-utility-duo fa-regular fa-bell"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
           <h2 class="text-xl font-bold flex-1" style="color: {$colorStore.text}">{m.moderation.warningsTitle()}</h2>
-          <button class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+          <button class="px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                   onclick={() => { showWarnForm = !showWarnForm; warnError = ""; }}>
             <i class="fa-solid {showWarnForm ? 'fa-xmark' : 'fa-plus'}"></i>
@@ -606,7 +606,7 @@
                      class="p-3 rounded-lg border min-h-[44px]"
                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
               <button type="submit" disabled={warningBusy}
-                      class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
+                      class="px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
                       style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;">
                 <i class="fa-solid fa-triangle-exclamation"></i>
                 {m.common.warn()}
@@ -663,7 +663,7 @@
                     </span>
                   </div>
                   {#if group.active > 0}
-                    <button class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[36px] disabled:opacity-50"
+                    <button class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[36px] disabled:opacity-50"
                             style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                             disabled={warningBusy}
                             onclick={() => pendingForgiveAllUser = group.userId}>
@@ -700,7 +700,7 @@
                       </div>
                       <div class="flex items-center gap-1 shrink-0">
                         {#if !warning.forgiven}
-                          <button class="p-2 rounded-lg transition-all hover:scale-[1.05] min-h-[36px] min-w-[36px] disabled:opacity-50"
+                          <button class="p-2 rounded-lg transition-all min-h-[36px] min-w-[36px] disabled:opacity-50"
                                   style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                                   disabled={warningBusy}
                                   aria-label={m.moderation.warningsForgiveLabel()} title={m.moderation.warningsForgive()}
@@ -708,7 +708,7 @@
                             <i class="fa-solid fa-check" style="font-size: 12px;"></i>
                           </button>
                         {/if}
-                        <button class="p-2 rounded-lg transition-all hover:scale-[1.05] min-h-[36px] min-w-[36px] disabled:opacity-50"
+                        <button class="p-2 rounded-lg transition-all min-h-[36px] min-w-[36px] disabled:opacity-50"
                                 style="background: #ef444415; color: #ef4444;"
                                 disabled={warningBusy}
                                 aria-label={m.moderation.warningsDeleteLabel()} title={m.moderation.warningsDeleteTitle()}
@@ -728,12 +728,12 @@
 
     {#if activeTab === 'punishments'}
       <section class="space-y-6" in:fly={{ y: 20, duration: 300, delay: 200 }}>
-        <div class=" rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        <div class="rounded-2xl border p-6 transition-all"
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
           <div class="flex items-center gap-4 mb-2">
             <div class="p-3 rounded-xl"
-                 style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+                 style="background: {$colorStore.primary}20;">
               <i class="fa-utility-duo fa-regular fa-shield-halved"
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
@@ -784,7 +784,7 @@
               </div>
             {/if}
             <button type="submit" disabled={punishmentBusy}
-                    class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px] disabled:opacity-50"
+                    class="px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px] disabled:opacity-50"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
               <i class="fa-solid fa-plus"></i>
               {m.moderation.punishAddToLadder()}
@@ -804,13 +804,13 @@
                     <div class="w-12 h-12 rounded-full flex flex-col items-center justify-center shrink-0"
                          style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
                       <span class="text-lg font-bold leading-none">{p.count}</span>
-                      <span class="text-[10px] uppercase">{p.count === 1 ? m.moderation.punishUnitOne() : m.moderation.punishUnitOther()}</span>
+                      <span class="text-[10px]">{p.count === 1 ? m.moderation.punishUnitOne() : m.moderation.punishUnitOther()}</span>
                     </div>
                     <div class="flex-1 min-w-0">
                       <div class="font-medium" style="color: {$colorStore.text}">{describePunishment(p)}</div>
                       <div class="text-xs" style="color: {$colorStore.muted}">{(p.count === 1 ? m.moderation.punishAppliedOne : m.moderation.punishAppliedOther)({ count: p.count })}</div>
                     </div>
-                    <button class="px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02] min-h-[40px] disabled:opacity-50"
+                    <button class="px-3 py-2 rounded-lg text-sm transition-all min-h-[40px] disabled:opacity-50"
                             style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
                             disabled={punishmentBusy}
                             onclick={() => pendingRemovePunishment = p.count}>
@@ -823,12 +823,12 @@
           </div>
         </div>
 
-        <div class=" rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        <div class="rounded-2xl border p-6 transition-all"
+             style="background: {$colorStore.primary}0c;
                     border-color: {$colorStore.primary}30;">
           <div class="flex items-center gap-4 mb-4">
             <div class="p-3 rounded-xl"
-                 style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+                 style="background: {$colorStore.primary}20;">
               <i class="fa-utility-duo fa-regular fa-list-ul"
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
@@ -846,14 +846,14 @@
     
     {#if activeTab === 'activity'}
       <!-- Recent Activity -->
-      <section class=" rounded-2xl border p-6 shadow-2xl transition-all"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      <section class="rounded-2xl border p-6 transition-all"
+               style="background: {$colorStore.primary}0c;
                       border-color: {$colorStore.primary}30;"
                in:fly={{ y: 20, duration: 300, delay: 200 }}>
 
         <div class="flex items-center gap-4 mb-6">
           <div class="p-3 rounded-xl"
-               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+               style="background: {$colorStore.primary}20;">
             <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.moderation.activityTitle()}</h2>
@@ -869,7 +869,7 @@
           <div class="space-y-4 max-h-96 overflow-y-auto">
             {#each recentActivity as warning (warning.id)}
               <div
-                class="flex items-start gap-4 p-4 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/20  border hover:border-opacity-40"
+                class="flex items-start gap-4 p-4 rounded-xl transition-all duration-200 border hover:border-opacity-40"
                 style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
                 in:fade={{ duration: 200 }}>
 
@@ -915,13 +915,13 @@
 
     {#if activeTab === 'banpurge'}
       <!-- Server defaults -->
-      <section class="rounded-2xl border p-6 shadow-2xl transition-all mb-8"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      <section class="rounded-2xl border p-6 transition-all mb-8"
+               style="background: {$colorStore.primary}0c;
                       border-color: {$colorStore.primary}30;"
                in:fly={{ y: 20, duration: 300, delay: 100 }}>
         <div class="flex items-center gap-4 mb-2">
           <div class="p-3 rounded-xl"
-               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+               style="background: {$colorStore.primary}20;">
             <i class="fa-utility-duo fa-regular fa-trash"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
@@ -1016,13 +1016,13 @@
       </section>
 
       <!-- Overrides -->
-      <section class="rounded-2xl border p-6 shadow-2xl transition-all"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      <section class="rounded-2xl border p-6 transition-all"
+               style="background: {$colorStore.primary}0c;
                       border-color: {$colorStore.primary}30;"
                in:fly={{ y: 20, duration: 300, delay: 200 }}>
         <div class="flex items-center gap-4 mb-2">
           <div class="p-3 rounded-xl"
-               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+               style="background: {$colorStore.primary}20;">
             <i class="fa-utility-duo fa-regular fa-layer-group"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>

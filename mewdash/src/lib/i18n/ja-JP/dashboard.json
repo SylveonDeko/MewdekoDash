@@ -104,8 +104,6 @@
   "settings_tab_auto_assign_desc": "新しいメンバーに自動で付与されるロール",
   "settings_tab_auto_assign_roles_desc": "新しいメンバーに付与されるロール",
   "settings_tab_bot_settings_desc": "ボットの基本設定",
-  "settings_tab_configure_arrow": "設定 →",
-  "settings_tab_greets_arrow": "挨拶 →",
   "settings_tab_integrations": "連携",
   "settings_tab_logging_desc": "イベントのログと監査証跡",
   "settings_tab_multigreets_desc": "複数の挨拶チャンネルとメッセージ",

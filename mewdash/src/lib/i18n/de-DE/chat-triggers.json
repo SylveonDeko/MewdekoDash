@@ -137,7 +137,6 @@
   "page_announce_auto_delete_disabled": "Automatisches Löschen deaktiviert – kann nicht mit „Auf Trigger reagieren“ verwendet werden",
   "page_announce_cards_collapsed": "Alle Karten eingeklappt",
   "page_announce_create_failed": "Trigger konnte nicht erstellt werden",
-  "page_announce_created": "Trigger erfolgreich erstellt",
   "page_announce_delete_cancelled": "Löschen abgebrochen",
   "page_announce_delete_failed": "Trigger konnte nicht gelöscht werden",
   "page_announce_deleted": "Trigger {name} gelöscht",

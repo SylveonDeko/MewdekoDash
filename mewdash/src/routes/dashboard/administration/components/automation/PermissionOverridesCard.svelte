@@ -20,15 +20,15 @@
   } = $props();
 </script>
 
-<div class=" rounded-2xl border p-6 shadow-2xl transition-all"
+<div class=" rounded-2xl border p-6 transition-all"
      in:fly={{ y: 20, duration: 300, delay: 400 }}
-     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+     style="background: {$colorStore.primary}0c;
             border-color: {$colorStore.primary}30;">
 
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div class="flex items-center gap-4">
       <div class="p-3 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+           style="background: {$colorStore.primary}20;">
         <i class="fa-utility-duo fa-regular fa-key"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
@@ -37,7 +37,7 @@
 
     <div class="flex flex-wrap items-center gap-2">
       <button
-        class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+        class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
         onclick={() => expandedRoleCard = expandedRoleCard === 'permissionOverride' ? null : 'permissionOverride'}
         style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
       >
@@ -51,7 +51,7 @@
 
       {#if selectedPermissionOverrides.length > 0}
         <button
-          class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+          class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
           onclick={() => showConfirm(m.administration.automationPermissionOverridesDeleteSelectedTitle(), selectedPermissionOverrides.length > 1 ? m.administration.automationPermissionOverridesDeleteSelectedConfirmOther({ count: selectedPermissionOverrides.length }) : m.administration.automationPermissionOverridesDeleteSelectedConfirmOne({ count: selectedPermissionOverrides.length }), deleteSelectedPermissionOverrides)}
         >
@@ -62,7 +62,7 @@
 
       {#if permissionOverrides.length > 0}
         <button
-          class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+          class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
           onclick={() => showConfirm(m.administration.automationPermissionOverridesClearAllTitle(), m.administration.automationPermissionOverridesClearAllConfirm(), resetPermissionOverrides)}
         >
@@ -95,7 +95,7 @@
               <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.automationPermissionOverridesRequires({ permission: override.permission })}</p>
             </div>
             <button
-              class="px-3 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02]"
+              class="px-3 py-2 rounded-xl text-sm font-medium transition-all"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
               onclick={() => removePermissionOverride(override.command, override.permission)}
             >
@@ -146,14 +146,14 @@
 
           <div class="flex flex-col sm:flex-row gap-3 mt-4">
             <button
-              class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
+              class="px-4 py-2 rounded-lg font-medium transition-all"
               style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
               onclick={() => { expandedRoleCard = null; newPermissionOverride = { command: "", permission: "Administrator" }; }}
             >
               {m.common.cancel()}
             </button>
             <button
-              class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+              class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2"
               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
               onclick={addPermissionOverride}
               disabled={!newPermissionOverride.command || saving}

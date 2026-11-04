@@ -21,8 +21,6 @@
   "min_server_time_label": "Minimum Sunucu Süresi (saat)",
   "notification_channel_label": "Bildirim Kanalı (isteğe bağlı)",
   "notification_channel_placeholder": "Bildirim yok",
-  "notify_reward_added": "Rol ödülü başarıyla eklendi!",
-  "notify_reward_removed": "Rol ödülü kaldırıldı!",
   "page_subtitle": "Sunucu itibarını ve ödüllerini yönet",
   "page_title": "İtibar Sistemi",
   "remove_on_drop_label": "İtibar eşiğin altına düşerse rolü kaldır",

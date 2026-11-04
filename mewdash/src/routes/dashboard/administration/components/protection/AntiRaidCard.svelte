@@ -9,24 +9,21 @@
     expandedProtectionCard = $bindable(),
     tempProtectionConfig = $bindable(),
     actionOptions,
-    saving,
     toggleProtection,
     toggleProtectionCard,
-    cancelProtectionEdit,
-    saveProtectionConfig,
     formatAction
   } = $props();
 </script>
 
-<div class=" rounded-2xl border p-6 shadow-2xl transition-all"
+<div class=" rounded-2xl border p-6 transition-all"
      in:fly={{ y: 20, duration: 300, delay: 100 }}
-     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+     style="background: {$colorStore.primary}0c;
             border-color: {$colorStore.primary}30;">
 
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div class="flex items-center gap-4">
       <div class="p-3 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+           style="background: {$colorStore.primary}20;">
         <i class="fa-utility-duo fa-regular fa-shield"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
@@ -38,7 +35,7 @@
 
     <div class="flex flex-wrap items-center gap-2">
       <button
-        class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+        class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
         onclick={() => toggleProtection('antiRaid')}
         style="background: {protectionStatus.antiRaid.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'};
                color: {protectionStatus.antiRaid.enabled ? $colorStore.accent : $colorStore.secondary};
@@ -55,7 +52,7 @@
 
       {#if protectionStatus.antiRaid.enabled}
         <button
-          class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+          class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
           onclick={() => toggleProtectionCard('antiRaid')}
         >
@@ -147,33 +144,7 @@
                    max="10080"
             >
           </div>
-        </div>
-
-        <div class="flex flex-col sm:flex-row gap-3 justify-end">
-          <button
-            class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
-            style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-            onclick={cancelProtectionEdit}
-          >
-            {m.common.cancel()}
-          </button>
-          <button
-            class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
-            style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-            onclick={saveProtectionConfig}
-            disabled={saving}
-          >
-            <div class="flex items-center justify-center gap-2">
-              {#if saving}
-                <i class="fa-solid fa-rotate-right animate-spin" style="font-size: 16px;"></i>
-              {:else}
-                <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-              {/if}
-              <span>{m.common.saveConfiguration()}</span>
-            </div>
-          </button>
-        </div>
-      </div>
+        </div>      </div>
     {/if}
   {:else}
     <div class="text-center py-8">

@@ -110,7 +110,7 @@
     </div>
   {:else}
   <div
-    class="flex items-center gap-2 p-2 rounded-xl  shadow-lg transition-all duration-300 hover:shadow-xl border"
+    class="flex items-center gap-2 p-2 rounded-xl transition-all duration-300 border"
           style="background: linear-gradient(135deg, {colors.gradientStart}, {colors.gradientEnd});
            border-color: {colors.accent}30;
            max-width: 320px;"
@@ -143,7 +143,7 @@
           <!-- Playing/Connected indicator -->
       {#if isPlaying}
         <div
-                class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-white shadow-xs animate-pulse"
+                class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-white"
           style="background: {colors.accent};"
         ></div>
       {:else if botInChannel && !hasTrack}
@@ -196,7 +196,7 @@
           <div class="flex items-center gap-0.5 shrink-0">
               <!-- Previous Button -->
             <button aria-label={m.common.previous()}
-                      class="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                      class="w-7 h-7 rounded-full flex items-center justify-center transition-all"
                       style="background: {colors.foreground}20; color: {colors.foreground};"
                       onclick={previousTrack}
 
@@ -207,7 +207,7 @@
 
               <!-- Play/Pause Button -->
       <button
-              class="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
+              class="w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-md"
               style="background: {colors.controlsHighlight}; color: {colors.text};"
         onclick={togglePlayPause}
         aria-label={isPlaying ? m.common.pause() : m.music.playerPlay()}
@@ -223,7 +223,7 @@
 
       <!-- Skip Button -->
             <button aria-label={m.common.next()}
-              class="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+              class="w-7 h-7 rounded-full flex items-center justify-center transition-all"
               style="background: {colors.foreground}20; color: {colors.foreground};"
         onclick={skipTrack}
 
@@ -236,7 +236,7 @@
           <!-- When bot is idle in channel, just show an arrow to open dashboard -->
           <div class="shrink-0">
             <button aria-label={m.common.openMusicDashboard()}
-                      class="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                      class="w-8 h-8 rounded-full flex items-center justify-center transition-all"
                       style="background: {colors.accent}20; color: {colors.accent};"
                       onclick={openMusicDashboard}
 
@@ -371,19 +371,5 @@
         .wa-shade-scroll {
             animation: none;
         }
-    }
-
-    /* Add subtle animation for playing indicator */
-    @keyframes pulse {
-        0%, 100% {
-            opacity: 1;
-        }
-        50% {
-            opacity: 0.5;
-        }
-    }
-
-    .animate-pulse {
-        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
 </style>

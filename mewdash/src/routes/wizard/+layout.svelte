@@ -54,14 +54,10 @@ Wizard layout - minimal layout for focused setup experience
 </svelte:head>
 
 <!-- Minimal wizard layout with brand header -->
-<div class="min-h-screen w-full overflow-y-auto md:overflow-hidden" style="background: linear-gradient(135deg, 
-  {$colorStore?.gradientStart}08, 
-  {$colorStore?.gradientMid}12, 
-  {$colorStore?.gradientEnd}08
-);">
+<div class="min-h-screen w-full overflow-y-auto md:overflow-hidden" style="background: {$colorStore?.gradientMid}12;">
   <!-- Simple header with logo -->
   <header class="py-3 px-4 sm:py-4 sm:px-6 border-b border-opacity-20"
-          style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05; backdrop-filter: blur(10px);">
+          style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
     <div class="flex items-center justify-center max-w-6xl mx-auto">
       <div class="flex items-center gap-2 sm:gap-3">
         <Mascot variant="head" label={null} class="h-8 w-8 sm:h-10 sm:w-10 shrink-0" />

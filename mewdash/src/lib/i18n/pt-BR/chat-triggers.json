@@ -137,7 +137,6 @@
   "page_announce_auto_delete_disabled": "Exclusão automática desativada - não pode ser usada com reagir ao gatilho",
   "page_announce_cards_collapsed": "Todos os cartões recolhidos",
   "page_announce_create_failed": "Falha ao criar o gatilho",
-  "page_announce_created": "Gatilho criado com sucesso",
   "page_announce_delete_cancelled": "Exclusão cancelada",
   "page_announce_delete_failed": "Falha ao excluir o gatilho",
   "page_announce_deleted": "Gatilho {name} excluído",

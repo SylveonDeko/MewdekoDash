@@ -316,8 +316,8 @@
         <div class="w-full" in:fade={{ duration: 200 }}>
             <div class="space-y-6 md:space-y-8">
                 <!-- Basic Settings -->
-              <div class="relative z-20  rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+              <div class="relative z-20 rounded-2xl border p-6 md:p-8 transition-all"
+                     style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                       <i class="fa-utility-duo fa-regular fa-gear"
@@ -379,8 +379,8 @@
                 </div>
 
                 <!-- Custom Message -->
-              <div class="relative z-10  rounded-2xl p-6 md:p-8 shadow-2xl transition-all border"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
+              <div class="relative z-10 rounded-2xl p-6 md:p-8 transition-all border"
+                     style="background: {$colorStore.primary}15;
                     border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                       <i class="fa-utility-duo fa-regular fa-comment"
@@ -413,8 +413,8 @@
     {:else if activeTab === 'roles'}
         <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
             <!-- Add New Vote Role -->
-          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+          <div class="rounded-2xl border p-6 md:p-8 transition-all relative z-20"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-utility-duo fa-regular fa-circle-plus"
@@ -459,7 +459,7 @@
                 <button
                   aria-label={m.votes.pageRoleAddAria()}
                   aria-busy={saving}
-                  class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                  class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                         onclick={addVoteRole}
                         disabled={saving || !newVoteRole.roleId}
@@ -470,8 +470,8 @@
             </div>
 
             <!-- Vote Roles List -->
-          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-10"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+          <div class="rounded-2xl border p-6 md:p-8 transition-all relative z-10"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center gap-3">
@@ -481,7 +481,7 @@
                     </div>
                     {#if voteRoles.length > 0}
                         <button
-                          class="px-4 py-2 rounded-lg text-sm transition-all hover:scale-[1.02]"
+                          class="px-4 py-2 rounded-lg text-sm transition-all"
                                 style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                                 onclick={clearAllVoteRoles}
                         >
@@ -502,7 +502,7 @@
                         </div>
                     {:else}
                       {#each voteRoles as voteRole (voteRole.roleId)}
-                            <div class="flex items-center justify-between p-4 rounded-xl transition-all hover:scale-[1.02]"
+                            <div class="flex items-center justify-between p-4 rounded-xl transition-all"
                                  style="background: {$colorStore.primary}08;">
                                 <div class="flex items-center gap-3">
                                   <i class="fa-utility-duo fa-regular fa-crown"
@@ -517,7 +517,7 @@
                                     </div>
                                 </div>
                               <button aria-label={m.common.delete()}
-                                        class="p-2 rounded-lg transition-all hover:scale-110"
+                                        class="p-2 rounded-lg transition-all"
                                         style="background: #ef444420; color: #ef4444;"
                                         onclick={() => removeVoteRole(voteRole.roleId)}
                                 >
@@ -562,8 +562,8 @@
             </div>
 
             <!-- Leaderboard -->
-          <div class="mt-6  rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+          <div class="mt-6 rounded-2xl border p-6 md:p-8 transition-all"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-utility-duo fa-regular fa-chart-simple"
@@ -583,7 +583,7 @@
                         </div>
                     {:else}
                       {#each leaderboard as entry, index (entry.userId)}
-                            <div class="flex items-center gap-4 p-4 rounded-xl transition-all hover:scale-[1.02]"
+                            <div class="flex items-center gap-4 p-4 rounded-xl transition-all"
                                  style="background: {$colorStore.primary}08;">
                                 <div class="flex items-center justify-center w-8 h-8 rounded-full"
                                      style="background: {index < 3 ? $colorStore.accent : $colorStore.primary}20; color: {index < 3 ? $colorStore.accent : $colorStore.primary};">

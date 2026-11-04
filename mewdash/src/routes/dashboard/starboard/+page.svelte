@@ -387,7 +387,7 @@
       action: createStarboard,
       loading: creatingStarboard,
       disabled: !newStarboard.channelId || creatingStarboard,
-      style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
+      style: `background: ${$colorStore.primary}; color: ${$colorStore.text};`
     }
   ]}
   statusMessages={statusMessages}
@@ -399,14 +399,14 @@
 
     <!-- Create New Starboard Section -->
     <div
-      class=" rounded-2xl border p-4 md:p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      class=" rounded-2xl border p-4 md:p-6"
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
     >
       <div class="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
         <div
           class="p-2 md:p-3 rounded-xl"
-          style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+          style="background: {$colorStore.primary}20;
                  color: {$colorStore.primary};"
         >
           <i aria-hidden="true"
@@ -538,14 +538,14 @@
 
     <!-- Existing Starboards Section -->
     <div
-      class=" rounded-2xl border p-4 md:p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+      class=" rounded-2xl border p-4 md:p-6"
+      style="background: {$colorStore.primary}0c;
              border-color: {$colorStore.primary}30;"
     >
       <div class="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
         <div
           class="p-2 md:p-3 rounded-xl"
-          style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+          style="background: {$colorStore.primary}20;
                  color: {$colorStore.primary};"
         >
           <i aria-hidden="true"
@@ -594,7 +594,7 @@
         <div class="space-y-6">
           {#each starboards as starboard (starboard.id)}
             <div
-              class="rounded-xl border p-4 hover:shadow-lg transition-all duration-200"
+              class="rounded-xl border p-4 transition-all duration-200"
               style="background: {$colorStore.primary}10;
                      border-color: {$colorStore.primary}30;"
             >
@@ -725,7 +725,7 @@
       transition:fade={{ duration: 200 }}
     >
       <div
-        class="bg-gray-900/90 rounded-xl p-6 max-w-md w-full mx-4 border shadow-2xl"
+        class="bg-gray-900/90 rounded-xl p-6 max-w-md w-full mx-4 border shadow-lg"
         style="border-color: {$colorStore.accent}30;"
       >
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.common.confirmDelete()}</h3>
@@ -762,7 +762,7 @@
       transition:fade={{ duration: 200 }}
     >
       <div
-        class="bg-gray-900/90 rounded-xl p-6 max-w-xl w-full mx-4 border shadow-2xl overflow-y-auto max-h-[90vh]"
+        class="bg-gray-900/90 rounded-xl p-6 max-w-xl w-full mx-4 border shadow-lg overflow-y-auto max-h-[90vh]"
         style="border-color: {$colorStore.primary}30;"
       >
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.starboard.settingsAria()}</h3>
@@ -1020,7 +1020,7 @@
       transition:fade={{ duration: 200 }}
     >
       <div
-        class="bg-gray-900/90 rounded-xl p-6 max-w-xl w-full mx-4 border shadow-2xl overflow-y-auto max-h-[90vh]"
+        class="bg-gray-900/90 rounded-xl p-6 max-w-xl w-full mx-4 border shadow-lg overflow-y-auto max-h-[90vh]"
         style="border-color: {$colorStore.primary}30;"
       >
         <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">{m.common.permManageChannels()}</h3>
@@ -1053,7 +1053,6 @@
                        color: {$colorStore.text};
                        opacity: {!selectedChannelId ? '0.5' : '1'};"
               >
-                <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 16px;"></i>
                 <span>{m.common.toggle()}</span>
               </button>
             </div>

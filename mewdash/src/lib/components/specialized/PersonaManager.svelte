@@ -222,7 +222,7 @@
 
       <div
         class="relative rounded-2xl border shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background});
                border-color: {$colorStore.primary}30;"
         transition:fly={{ y: 12, duration: 200 }}
       >
@@ -265,7 +265,7 @@
 
               <button
                 aria-label={m.embedbuilder.personaCreateAria()}
-                class="w-full px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.01] flex items-center justify-center gap-2 min-h-[44px]"
+                class="w-full px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 min-h-[44px]"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 onclick={startCreate}
               >
@@ -414,7 +414,7 @@
                   />
                   <button
                     aria-label={m.embedbuilder.personaChooseFileAria()}
-                    class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.01] flex items-center justify-center gap-2 min-h-[44px]"
+                    class="w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 min-h-[44px]"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                     onclick={() => fileInput?.click()}
                   >
@@ -456,7 +456,7 @@
             </button>
             <button
               aria-label={m.embedbuilder.personaSaveAria()}
-              class="flex-1 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.01] disabled:opacity-50 min-h-[44px]"
+              class="flex-1 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 min-h-[44px]"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               disabled={!canSave}
               onclick={save}

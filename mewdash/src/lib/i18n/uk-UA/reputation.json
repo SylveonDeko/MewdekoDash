@@ -21,8 +21,6 @@
   "min_server_time_label": "Мін. час на сервері (години)",
   "notification_channel_label": "Канал сповіщень (необов’язково)",
   "notification_channel_placeholder": "Без сповіщень",
-  "notify_reward_added": "Нагороду-роль додано!",
-  "notify_reward_removed": "Нагороду-роль видалено!",
   "page_subtitle": "Керуй репутацією та нагородами сервера",
   "page_title": "Система репутації",
   "remove_on_drop_label": "Прибирати роль, якщо репутація падає нижче порогу",

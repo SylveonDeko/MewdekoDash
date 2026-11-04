@@ -55,7 +55,7 @@
     >
       <div
         class="w-full max-w-lg rounded-2xl border shadow-2xl"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+        style="background: {$colorStore.primary}0c;
                border-color: {$colorStore.primary}30;"
         onclick={(e) => e.stopPropagation()}
         onkeydown={(e) => e.stopPropagation()}
@@ -82,8 +82,8 @@
                 {m.dashboard.productUpdateEverythingNew()}
               </h2>
             {:else}
-              <span class="block text-xs font-semibold uppercase tracking-[0.12em]"
-                    style="color: {$colorStore.primary}">
+              <span class="block text-xs"
+                    style="color: {$colorStore.muted}">
                 {current.label}
               </span>
               <h2 id="product-update-title" class="text-lg font-semibold" style="color: {$colorStore.text}">
@@ -105,8 +105,8 @@
           <div class="max-h-[55vh] space-y-5 overflow-y-auto p-6">
             {#each productUpdates as update (update.id)}
               <div class="border-b pb-5 last:border-0 last:pb-0" style="border-color: {$colorStore.primary}15;">
-                <span class="block text-xs font-semibold uppercase tracking-[0.12em]"
-                      style="color: {$colorStore.primary}">
+                <span class="block text-xs"
+                      style="color: {$colorStore.muted}">
                   {update.label}
                 </span>
                 <h3 class="mt-0.5 text-base font-semibold" style="color: {$colorStore.text}">{update.title}</h3>

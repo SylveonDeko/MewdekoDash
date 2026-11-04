@@ -156,8 +156,6 @@
   "page_notify_currency_reward_removed": "화폐 보상을 제거했어요",
   "page_notify_role_excluded": "역할을 제외했어요",
   "page_notify_role_included": "역할을 포함했어요",
-  "page_notify_role_reward_added": "역할 보상을 추가했어요",
-  "page_notify_role_reward_removed": "역할 보상을 제거했어요",
   "page_notify_template_updated": "XP 템플릿을 업데이트했어요",
   "page_reset_changes": "변경 사항 초기화",
   "page_save_template": "템플릿 변경 사항 저장",

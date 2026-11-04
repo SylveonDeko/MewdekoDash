@@ -159,12 +159,12 @@
     <div class="lg:col-span-6 space-y-4">
 
       <!-- General Server Settings -->
-      <div class=" rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+      <div class=" rounded-xl p-4 transition-all border"
              style="background: {$colorStore.primary}05;
                   border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
-               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+               style="background: {$colorStore.primary}20;">
             <i class="fa-utility-duo fa-regular fa-gear text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
@@ -225,12 +225,12 @@
       </div>
 
       <!-- Role Management -->
-      <div class=" rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+      <div class=" rounded-xl p-4 transition-all border"
              style="background: {$colorStore.primary}05;
                   border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
-               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+               style="background: {$colorStore.primary}20;">
             <i class="fa-utility-duo fa-regular fa-users text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
@@ -239,7 +239,7 @@
 
         <div class="grid grid-cols-1 gap-3">
           <!-- Auto-Assign Roles -->
-          <div class="p-4 rounded-xl border transition-all hover:scale-[1.02]"
+          <div class="p-4 rounded-xl border transition-all"
                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
             <div class="flex items-center gap-3 mb-3">
               <i class="fa-utility-duo fa-regular fa-shield text-xl"
@@ -254,12 +254,12 @@
             </div>
             <a class="text-xs mt-2 inline-block"
                href="/dashboard/administration" style="color: {$colorStore.primary}">
-              {m.dashboard.settingsTabConfigureArrow()}
+              {m.common.configure()}
             </a>
           </div>
 
           <!-- Self-Assignable Roles -->
-          <div class="p-4 rounded-xl border transition-all hover:scale-[1.02]"
+          <div class="p-4 rounded-xl border transition-all"
                style="background: {$colorStore.secondary}08; border-color: {$colorStore.secondary}20;">
             <div class="flex items-center gap-3 mb-3">
               <i class="fa-utility-duo fa-regular fa-users text-xl"
@@ -274,12 +274,12 @@
             </div>
             <a class="text-xs mt-2 inline-block"
                href="/dashboard/administration" style="color: {$colorStore.secondary}">
-              {m.dashboard.settingsTabConfigureArrow()}
+              {m.common.configure()}
             </a>
           </div>
 
           <!-- Role Features -->
-          <div class="p-4 rounded-xl border transition-all hover:scale-[1.02]"
+          <div class="p-4 rounded-xl border transition-all"
                style="background: {$colorStore.accent}08; border-color: {$colorStore.accent}20;">
             <div class="flex items-center gap-3 mb-3">
               <i class="fa-utility-duo fa-regular fa-star text-xl"
@@ -299,7 +299,7 @@
               </a>
               <a class="text-xs"
                  href="/dashboard/rolegreets" style="color: {$colorStore.accent}">
-                {m.dashboard.settingsTabGreetsArrow()}
+                {m.features.multigreetsName()}
               </a>
             </div>
           </div>
@@ -307,12 +307,12 @@
       </div>
 
       <!-- Integration Settings -->
-      <div class=" rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+      <div class=" rounded-2xl p-6 transition-all border"
              style="background: {$colorStore.primary}05;
                   border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-4 mb-6">
           <div class="p-3 rounded-xl"
-               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+               style="background: {$colorStore.primary}20;">
             <i class="fa-utility-duo fa-regular fa-database text-2xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
@@ -349,7 +349,7 @@
       <!-- Configuration Summary -->
       <div class="space-y-3">
         <!-- Auto-Assign Roles -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -365,7 +365,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.settingsTabAutoAssignRolesDesc()}</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all"
                  href="/dashboard/administration"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               {m.common.configure()}
@@ -374,7 +374,7 @@
         </div>
 
         <!-- Self-Assign Roles -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -390,7 +390,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.settingsTabSelfAssignRolesDesc()}</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all"
                  href="/dashboard/administration"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               {m.common.configure()}
@@ -399,7 +399,7 @@
         </div>
 
         <!-- Role Features -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -419,7 +419,7 @@
         </div>
 
         <!-- Integrations -->
-        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -435,7 +435,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{integrationSettings.patreonEnabled ? m.dashboard.settingsTabPatreonActive() : m.dashboard.settingsTabNoneActive()}</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all"
                  href="/dashboard/patreon"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               {m.common.manage()}
@@ -445,7 +445,7 @@
       </div>
 
       <!-- Quick Actions -->
-      <div class=" rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+      <div class=" rounded-2xl p-6 transition-all border"
              style="background: {$colorStore.primary}05;
                   border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
@@ -455,19 +455,19 @@
         </div>
 
         <div class="space-y-3">
-          <a class="block w-full text-center py-2 px-4 rounded-xl transition-all hover:scale-[1.02]"
+          <a class="block w-full text-center py-2 px-4 rounded-xl transition-all"
              href="/dashboard/settings"
              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
             {m.common.generalSettings()}
           </a>
 
-          <a class="block w-full text-center py-2 px-4 rounded-xl transition-all hover:scale-[1.02]"
+          <a class="block w-full text-center py-2 px-4 rounded-xl transition-all"
              href="/dashboard/administration"
              style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;">
             {m.dashboard.settingsTabRoleManagement()}
           </a>
 
-          <a class="block w-full text-center py-2 px-4 rounded-xl transition-all hover:scale-[1.02]"
+          <a class="block w-full text-center py-2 px-4 rounded-xl transition-all"
              href="/dashboard/administration"
              style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;">
             {m.common.permissions()}

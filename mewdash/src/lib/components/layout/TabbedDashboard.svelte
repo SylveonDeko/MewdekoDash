@@ -343,8 +343,8 @@
     <div class="w-full px-4 md:px-6">
 
         <div class="hidden md:flex items-center justify-center py-3">
-            <div class="relative flex items-center p-1.5 rounded-2xl pointer-events-auto backdrop-blur-lg shadow-lg"
-                 style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
+            <div class="relative flex items-center p-1.5 rounded-2xl pointer-events-auto"
+                 style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background}); border: 1px solid {$colorStore.primary}15;">
 
                 {#if activeTab && tabElements.length > 0}
                     {@const activeIndex = tabs.findIndex(tab => tab.id === activeTab)}
@@ -353,9 +353,8 @@
                         <div class="absolute h-[calc(100%-12px)] rounded-xl transition-all duration-300 ease-out pointer-events-none"
                              style="width: {activeElement.offsetWidth}px;
                               transform: translateX({activeElement.offsetLeft - 6}px);
-                              background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}20);
-                              border: 1px solid {$colorStore.primary}30;
-                              box-shadow: 0 2px 8px {$colorStore.primary}15;">
+                              background: {$colorStore.primary}25;
+                              border: 1px solid {$colorStore.primary}30;">
                         </div>
                     {/if}
                 {/if}
@@ -369,7 +368,7 @@
                             onclick={() => switchTab(tab.id)}
                             disabled={isChangingTab}
                     >
-                        <i class="{tab.icon} text-lg transition-all duration-200 {isActive ? 'fa-beat' : ''}"
+                        <i class="{tab.icon} text-lg transition-all duration-200"
                            style="--fa-primary-color: {isActive ? $colorStore.primary : $colorStore.muted};
                             --fa-secondary-color: {isActive ? $colorStore.secondary : $colorStore.muted};
                             --fa-secondary-opacity: {isActive ? 0.5 : 0.3};
@@ -419,17 +418,16 @@
                         {@const isActive = activeTab === tab.id}
                         <button
                                 class="shrink-0 relative flex items-center gap-2 px-4 py-2.5 rounded-full tab-press min-w-fit"
-                                class:scale-105={isActive}
                                 aria-pressed={isActive}
                                 style="background: {isActive
-                       ? `linear-gradient(135deg, ${$colorStore.primary}25, ${$colorStore.secondary}20)`
+                       ? $colorStore.primary + '25'
                        : $colorStore.primary + '08'};
                        border: 1px solid {isActive ? $colorStore.primary + '30' : 'transparent'};
                        color: {isActive ? $colorStore.text : $colorStore.muted};"
                                 onclick={() => switchTab(tab.id)}
                                 disabled={isChangingTab}
                         >
-                            <i class="{tab.icon} text-sm {isActive ? 'fa-beat' : ''}"
+                            <i class="{tab.icon} text-sm"
                                style="--fa-primary-color: {isActive ? $colorStore.primary : $colorStore.muted};
                           --fa-secondary-color: {isActive ? $colorStore.secondary : $colorStore.muted};
                           --fa-secondary-opacity: {isActive ? 0.5 : 0.3};
@@ -499,11 +497,6 @@
 
     .tab-press {
         transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .tab-press:active {
-        transform: scale(0.95) translateY(1px);
-        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     @keyframes bounceLeft {

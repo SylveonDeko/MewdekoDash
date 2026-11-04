@@ -299,7 +299,7 @@ A modal music search component for finding and adding tracks to the music queue.
     aria-label={m.music.searchCloseDialog()}
   >
     <div
-      class="w-full h-full sm:h-auto sm:max-w-2xl bg-gray-800 sm:rounded-xl shadow-2xl overflow-hidden"
+      class="w-full h-full sm:h-auto sm:max-w-2xl bg-gray-800 sm:rounded-xl shadow-lg overflow-hidden"
       transition:fly={{ y: 20, duration: 200 }}
       role="dialog"
       aria-modal="true"
@@ -342,7 +342,7 @@ A modal music search component for finding and adding tracks to the music queue.
         <div class="flex gap-3 sm:gap-2 mt-3 sm:mt-2 overflow-x-auto py-1 no-scrollbar">
           {#each platforms as platform}
             <button
-              class="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-xl sm:rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 sm:gap-1 shrink-0 hover:scale-[1.02] active:scale-95"
+              class="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-xl sm:rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 sm:gap-1 shrink-0"
               class:active-platform={selectedPlatform === platform.id}
               onclick={() => {
               selectedPlatform = platform.id;
@@ -413,7 +413,7 @@ A modal music search component for finding and adding tracks to the music queue.
           <div class="space-y-3 sm:space-y-2">
             {#each searchResults as track, i}
               <div
-                class="flex items-center gap-4 sm:gap-3 p-4 sm:p-3 rounded-xl sm:rounded-lg transition-all duration-200 hover:scale-[1.01] cursor-pointer group active:scale-[0.98]"
+                class="flex items-center gap-4 sm:gap-3 p-4 sm:p-3 rounded-xl sm:rounded-lg transition-all duration-200 cursor-pointer group"
                 style="background: {colors.foreground}15; min-height: 80px;"
                 onclick={() => addToQueue(track)}
                 role="button"
@@ -441,13 +441,13 @@ A modal music search component for finding and adding tracks to the music queue.
                     class="absolute -top-1 -right-1 w-5 h-5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center text-xs"
                     style="background: {colors.accent};">
                     {#if track.uri && track.uri.includes('spotify')}
-                      🟢
+                      <i class="fa-brands fa-spotify" style="font-size: 10px;"></i>
                     {:else if track.uri && track.uri.includes('youtube')}
-                      🎬
+                      <i class="fa-brands fa-youtube" style="font-size: 10px;"></i>
                     {:else if track.uri && track.uri.includes('soundcloud')}
-                      🔊
+                      <i class="fa-brands fa-soundcloud" style="font-size: 10px;"></i>
                     {:else}
-                      🎵
+                      <i class="fa-solid fa-music" style="font-size: 10px;"></i>
                     {/if}
                   </div>
                 </div>

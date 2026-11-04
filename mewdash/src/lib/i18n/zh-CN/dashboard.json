@@ -104,8 +104,6 @@
   "settings_tab_auto_assign_desc": "自动分配给新成员的身份组",
   "settings_tab_auto_assign_roles_desc": "授予新成员的身份组",
   "settings_tab_bot_settings_desc": "机器人核心设置",
-  "settings_tab_configure_arrow": "设置 →",
-  "settings_tab_greets_arrow": "问候 →",
   "settings_tab_integrations": "集成",
   "settings_tab_logging_desc": "事件日志与审计记录",
   "settings_tab_multigreets_desc": "多个问候频道和消息",

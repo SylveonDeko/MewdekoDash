@@ -448,8 +448,8 @@
       </div>
 
       <!-- Create a gate -->
-      <div class="rounded-2xl border p-6 shadow-2xl"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="rounded-2xl border p-6"
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.channelAccess.createTitle()}</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -520,8 +520,8 @@
         </div>
       {:else}
         {#each gates as gate (gate.id)}
-          <div class="rounded-2xl border p-6 shadow-2xl"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+          <div class="rounded-2xl border p-6"
+               style="background: {$colorStore.primary}0c;
                       border-color: {$colorStore.primary}30;">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -849,7 +849,7 @@
       {:else}
         {#each applications as application (application.id)}
           <div class="rounded-2xl border p-6"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+               style="background: {$colorStore.primary}0c;
                       border-color: {statusColor(application.status)}40;">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div class="flex items-center gap-3">
@@ -939,7 +939,7 @@
   {#if activeTab === 'blacklist'}
     <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
       <div class="rounded-2xl border p-6"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+           style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.channelAccess.blockTitle()}</h2>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">

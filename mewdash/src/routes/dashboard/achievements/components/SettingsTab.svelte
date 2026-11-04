@@ -12,6 +12,7 @@
     type AchievementSettings
   } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
+  import type { AutoSave } from "$lib/utils/autoSave.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
   import DuoIcon from "./DuoIcon.svelte";
@@ -21,62 +22,71 @@
     settings: AchievementSettings;
     catalog: AchievementCatalog;
     lookups: AchievementLookups | null;
+    autoSave: AutoSave;
     onsaved: (settings: AchievementSettings) => void;
     onreset: () => Promise<void>;
     onerror: (text: string) => void;
     onsuccess: (text: string) => void;
   }
 
-  let { settings, lookups, onsaved, onreset, onerror, onsuccess }: Props = $props();
+  let { settings, lookups, autoSave, onsaved, onreset, onerror, onsuccess }: Props = $props();
 
   let excludedRoles = $state<string[]>(untrack(() => settings.excludedRoleIds.map((id) => id.toString())));
   let excludedChannels = $state<string[]>(untrack(() => settings.excludedChannelIds.map((id) => id.toString())));
   let xpPerPoint = $state(untrack(() => settings.xpPerPoint));
   let revealHidden = $state(untrack(() => settings.revealHidden));
-  let saving = $state(false);
   let working = $state(false);
-
-  let baseline = $state(untrack(() => snapshot()));
-  let dirty = $derived(snapshot() !== baseline);
 
   let roleOptions = $derived((lookups?.roles ?? []).map((r) => ({ id: r.id.toString(), name: r.name, color: r.color })));
   let channelOptions = $derived(
     (lookups?.channels ?? []).map((c) => ({ id: c.id.toString(), name: c.name, type: c.type }))
   );
 
-  /** The form state as text, for change tracking. */
-  function snapshot(): string {
-    return JSON.stringify([[...excludedRoles].sort(), [...excludedChannels].sort(), xpPerPoint, revealHidden]);
+  /** Whether the XP field holds a whole number the bot accepts. */
+  function xpValid(): boolean {
+    const value: unknown = xpPerPoint;
+    if (value === null || value === undefined || value === "") return false;
+    const n = Number(value);
+    return Number.isFinite(n) && n >= 0 && n <= 1000;
   }
 
-  /** Saves the settings. */
-  async function save() {
-    if (!$currentGuild?.id || saving) return;
-    saving = true;
-    try {
-      const saved = await achievementsApi.updateSettings($currentGuild.id, {
-        excludedRoleIds: excludedRoles,
-        excludedChannelIds: excludedChannels,
-        xpPerPoint: Math.max(0, Math.min(1000, Math.round(Number(xpPerPoint) || 0))),
-        revealHidden
-      });
-      onsaved(saved);
-      baseline = snapshot();
-    } catch (err: any) {
-      logger.error("Failed to save achievement settings:", err);
-      onerror(err?.message || m.achievements.settingsErrorSave());
-    } finally {
-      saving = false;
-    }
-  }
-
-  /** Puts the form back to the saved settings. */
-  function discard() {
+  /** Puts the form back to the last saved settings. */
+  function restore() {
     excludedRoles = settings.excludedRoleIds.map((id) => id.toString());
     excludedChannels = settings.excludedChannelIds.map((id) => id.toString());
     xpPerPoint = settings.xpPerPoint;
     revealHidden = settings.revealHidden;
-    baseline = snapshot();
+  }
+
+  /**
+   * Saves the settings through the page's auto-save. An invalid XP value is left out until it is valid.
+   * @param instant True for pickers and toggles, false for the typed XP field
+   */
+  function queue(instant: boolean) {
+    const guildId = $currentGuild?.id;
+    if (!guildId) return;
+    if (!instant && !xpValid()) {
+      autoSave.cancel("achievementSettings");
+      return;
+    }
+    const save = async () => {
+      try {
+        const saved = await achievementsApi.updateSettings(guildId, {
+          excludedRoleIds: excludedRoles,
+          excludedChannelIds: excludedChannels,
+          ...(xpValid() ? { xpPerPoint: Math.round(Number(xpPerPoint)) } : {}),
+          revealHidden
+        });
+        onsaved(saved);
+      } catch (err: any) {
+        logger.error("Failed to save achievement settings:", err);
+        restore();
+        onerror(err?.message || m.achievements.settingsErrorSave());
+        throw err;
+      }
+    };
+    if (instant) void autoSave.now("achievementSettings", save);
+    else autoSave.schedule("achievementSettings", save);
   }
 
   /** Asks the bot to check every member again. */
@@ -119,8 +129,8 @@
 </script>
 
 <div class="space-y-6" in:fade={{ duration: 200 }}>
-  <div class="relative rounded-2xl border p-5 md:p-6 shadow-2xl" style="z-index: 30;
-       background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+  <div class="relative rounded-2xl border p-5 md:p-6" style="z-index: 30;
+       background: {$colorStore.primary}0c;
        border-color: {$colorStore.primary}30;">
     <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
       <DuoIcon icon="fa-filter" />
@@ -134,19 +144,19 @@
         <span id="ach-ex-roles" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.roles()}</span>
         <DiscordSelector type="role" multiple={true} options={roleOptions} selected={excludedRoles}
                          placeholder={m.common.noRoles()} ariaLabelledby="ach-ex-roles"
-                         onchange={(d) => { excludedRoles = Array.isArray(d.selected) ? d.selected : []; }} />
+                         onchange={(d) => { excludedRoles = Array.isArray(d.selected) ? d.selected : []; queue(true); }} />
       </div>
       <div>
         <span id="ach-ex-channels" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.channels()}</span>
         <DiscordSelector type="channel" multiple={true} options={channelOptions} selected={excludedChannels}
                          placeholder={m.achievements.settingsNoChannels()} ariaLabelledby="ach-ex-channels"
-                         onchange={(d) => { excludedChannels = Array.isArray(d.selected) ? d.selected : []; }} />
+                         onchange={(d) => { excludedChannels = Array.isArray(d.selected) ? d.selected : []; queue(true); }} />
       </div>
     </div>
   </div>
 
-  <div class="relative rounded-2xl border p-5 md:p-6 shadow-2xl" style="z-index: 20;
-       background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+  <div class="relative rounded-2xl border p-5 md:p-6" style="z-index: 20;
+       background: {$colorStore.primary}0c;
        border-color: {$colorStore.primary}30;">
     <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
       <DuoIcon icon="fa-sliders" />
@@ -156,6 +166,8 @@
       <div>
         <label for="ach-xp-per-point" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.achievements.settingsXpPerPoint()}</label>
         <input id="ach-xp-per-point" type="number" min="0" max="1000" bind:value={xpPerPoint}
+               oninput={() => queue(false)} onblur={() => autoSave.flush("achievementSettings")}
+               aria-invalid={!xpValid()}
                class="w-full px-3 h-[44px] rounded-xl border text-sm"
                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
         <p class="text-xs mt-2" style="color: {$colorStore.muted}">
@@ -165,7 +177,7 @@
       <div>
         <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.achievements.settingsSecretTitle()}</span>
         <ToggleRow checked={revealHidden} title={m.achievements.settingsRevealTitle()}
-                   colors={$colorStore} onchange={(v) => { revealHidden = v; }} />
+                   colors={$colorStore} onchange={(v) => { revealHidden = v; queue(true); }} />
         <p class="text-xs mt-2" style="color: {$colorStore.muted}">
           {m.achievements.settingsRevealHint()}
         </p>
@@ -173,8 +185,8 @@
     </div>
   </div>
 
-  <div class="rounded-2xl border p-5 md:p-6 shadow-2xl"
-       style="background: linear-gradient(135deg, #ef444408, {$colorStore.gradientMid}10), #1a202c; border-color: #ef444430;">
+  <div class="rounded-2xl border p-5 md:p-6"
+       style="background: #ef444410; border-color: #ef444430;">
     <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
       <DuoIcon icon="fa-circle-exclamation" color="#ef4444" />
       {m.common.maintenance()}
@@ -200,20 +212,4 @@
       </div>
     </div>
   </div>
-
-  {#if dirty}
-    <div class="sticky bottom-4 z-40 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 rounded-2xl border shadow-2xl"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20), #1a202c; border-color: {$colorStore.primary}40;"
-         in:fade={{ duration: 150 }}>
-      <span class="flex-1 text-sm" style="color: {$colorStore.text}">{m.achievements.settingsUnsaved()}</span>
-      <button type="button" class="px-4 py-2.5 rounded-xl min-h-[44px]"
-              style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
-              onclick={discard}>{m.common.discard()}</button>
-      <button type="button" class="px-5 py-2.5 rounded-xl min-h-[44px] font-semibold disabled:opacity-50"
-              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-              disabled={saving} onclick={save}>
-        {#if saving}<i class="fa-solid fa-spinner fa-spin mr-2" aria-hidden="true"></i>{/if}{m.common.save()}
-      </button>
-    </div>
-  {/if}
 </div>

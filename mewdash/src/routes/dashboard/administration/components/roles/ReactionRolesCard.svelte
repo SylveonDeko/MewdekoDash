@@ -57,14 +57,14 @@
   }
 </script>
 
-<div class=" rounded-2xl border p-6 shadow-2xl transition-all"
+<div class=" rounded-2xl border p-6 transition-all"
      in:fly={{ y: 20, duration: 300, delay: 500 }}
-     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+     style="background: {$colorStore.primary}0c;
             border-color: {$colorStore.primary}30;">
 
   <div class="flex items-center gap-4 mb-6">
     <div class="p-3 rounded-xl"
-         style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+         style="background: {$colorStore.primary}20;">
       <i class="fa-utility-duo fa-regular fa-face-smile"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
     </div>
@@ -96,7 +96,7 @@
       <div class="space-y-4">
         {#each reactionRoles.reactionRoles as rr, index (`${rr.messageId}-${index}`)}
           <div
-            class="p-4 rounded-lg transition-all duration-200 hover:shadow-lg  border"
+            class="p-4 rounded-lg transition-all duration-200  border"
             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
             <div class="flex items-center justify-between mb-3">
               <div>

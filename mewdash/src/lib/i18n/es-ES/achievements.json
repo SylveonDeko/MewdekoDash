@@ -432,7 +432,6 @@
   "settings_reveal_hint": "Los miembros ven los nombres y metas de los logros secretos antes de desbloquearlos.",
   "settings_reveal_title": "Mostrarlos antes de desbloquearlos",
   "settings_secret_title": "Logros secretos",
-  "settings_unsaved": "Tienes cambios sin guardar.",
   "settings_xp_per_point": "XP por punto",
   "settings_xp_per_point_hint": "Los rangos de logros y los niveles de XP son independientes. Configúralo para que cada desbloqueo también dé XP: un desbloqueo Oro vale 50 puntos, así que un 2 aquí da 100 XP. 0 lo desactiva.",
   "tab_cards": "Tarjetas"

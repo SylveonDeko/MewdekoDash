@@ -156,8 +156,6 @@
   "page_notify_currency_reward_removed": "Recompensa de moneda quitada correctamente",
   "page_notify_role_excluded": "Rol excluido correctamente",
   "page_notify_role_included": "Rol incluido correctamente",
-  "page_notify_role_reward_added": "Recompensa de rol añadida correctamente",
-  "page_notify_role_reward_removed": "Recompensa de rol quitada correctamente",
   "page_notify_template_updated": "Plantilla de XP actualizada correctamente",
   "page_reset_changes": "Restablecer cambios",
   "page_save_template": "Guardar cambios de la plantilla",

@@ -1,7 +1,7 @@
 <!-- routes/dashboard/administration/+page.svelte -->
 <script lang="ts">
   import { m } from "$lib/i18n";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { page } from "$app/state";
   import { administrationApi, clientApi, protectionApi, type TimezoneInfo } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -21,13 +21,19 @@
 
   let { data } = $props();
 
-  // Auto-assign roles and self-assignable group names/levels save as they change. Failures show in the
-  // header (Couldn't save · Retry); this page has no toast system. Protection cards keep explicit Save.
+  // Settings save as they change. Failures show in the header (Couldn't save · Retry).
   const autoSave = createAutoSave();
 
   let loading = $state(true);
   let error: string | null = $state(null);
   let saving = $state(false);
+  let notificationMessage = $state("");
+  let notificationType = $state<"success" | "error">("success");
+
+  function notify(message: string, type: "success" | "error" = "error") {
+    notificationMessage = message;
+    notificationType = type;
+  }
 
   // Layout state
   let activeTab = $state("overview");
@@ -147,6 +153,8 @@
 
   // Protection form data
   let tempProtectionConfig: any = $state({});
+  let protectionBaseline: any = {};
+  const invalidProtectionInputs = new Set<HTMLInputElement>();
 
   // Anti-pattern specific state
   let antiPatternPatterns: Array<{
@@ -210,6 +218,7 @@
 
   // Advanced Operations
   let banMessage: any = $state({});
+  let savedBanMessage: any = {};
 
   // Available data
   let availableRoles: any[] = $state([]);
@@ -383,6 +392,7 @@
         } catch {
           banMessage = banMessageStr ? { content: banMessageStr } : {};
         }
+        savedBanMessage = $state.snapshot(banMessage);
 
         // Process commands and modules data
         if (commandsAndModulesData) {
@@ -528,39 +538,57 @@
     };
   }
 
-  async function saveServerSettings() {
-    if (!$currentGuild?.id) return;
-
-    try {
-      saving = true;
-
-      const promises = [];
-
-      if (newStaffRole && newStaffRole !== (staffRole?.toString() || null)) {
-        promises.push(administrationApi.setStaffRole($currentGuild.id, BigInt(newStaffRole)));
+  /** Saves the staff role as soon as it is picked, restoring the saved one if the bot rejects it. */
+  function saveStaffRole(value: string | null) {
+    if (!$currentGuild?.id || !value || value === (staffRole?.toString() ?? null)) return;
+    const guildId = $currentGuild.id;
+    autoSave.now("staffRole", async () => {
+      try {
+        await administrationApi.setStaffRole(guildId, BigInt(value));
+        if ($currentGuild?.id === guildId) staffRole = BigInt(value);
+      } catch (err) {
+        if ($currentGuild?.id === guildId) newStaffRole = staffRole?.toString() ?? null;
+        throw err;
       }
+    });
+  }
 
-      if (newMemberRole && newMemberRole !== (memberRole?.toString() || null)) {
-        promises.push(administrationApi.setMemberRole($currentGuild.id, BigInt(newMemberRole)));
+  /** Saves the member role as soon as it is picked, restoring the saved one if the bot rejects it. */
+  function saveMemberRole(value: string | null) {
+    if (!$currentGuild?.id || !value || value === (memberRole?.toString() ?? null)) return;
+    const guildId = $currentGuild.id;
+    autoSave.now("memberRole", async () => {
+      try {
+        await administrationApi.setMemberRole(guildId, BigInt(value));
+        if ($currentGuild?.id === guildId) memberRole = BigInt(value);
+      } catch (err) {
+        if ($currentGuild?.id === guildId) newMemberRole = memberRole?.toString() ?? null;
+        throw err;
       }
+    });
+  }
 
-      if (newTimezone && newTimezone !== guildTimezone) {
-        promises.push(administrationApi.setGuildTimezone($currentGuild.id, { timezoneId: newTimezone }));
+  /** The timezone option that matches a saved timezone name. */
+  function timezoneOptionId(timezone: string): string {
+    const option = availableTimezones.find((tz) =>
+      tz.id === timezone || (tz.displayName && tz.displayName.includes(timezone)) || tz.id.includes(timezone)
+    );
+    return option ? option.id : (timezone || "UTC");
+  }
+
+  /** Saves the server timezone as soon as it is picked, restoring the saved one if the bot rejects it. */
+  function saveTimezone(value: string | null) {
+    if (!$currentGuild?.id || !value || value === timezoneOptionId(guildTimezone)) return;
+    const guildId = $currentGuild.id;
+    autoSave.now("timezone", async () => {
+      try {
+        await administrationApi.setGuildTimezone(guildId, { timezoneId: value });
+        if ($currentGuild?.id === guildId) guildTimezone = value;
+      } catch (err) {
+        if ($currentGuild?.id === guildId) newTimezone = timezoneOptionId(guildTimezone);
+        throw err;
       }
-
-      await Promise.all(promises);
-      await fetchAllData();
-
-      // Reset form
-      newStaffRole = null;
-      newMemberRole = null;
-      newTimezone = "";
-
-    } catch (err) {
-      logger.error("Failed to save server settings:", err);
-    } finally {
-      saving = false;
-    }
+    });
   }
 
   async function toggleGameVoiceChannel(channelId: bigint) {
@@ -654,7 +682,7 @@
   }
 
   // Protection Configuration Functions
-  async function configureProtection(type: string, config: any) {
+  async function configureProtection(type: string, config: any, throwOnError = false) {
     if (!$currentGuild?.id) return;
 
     try {
@@ -688,9 +716,10 @@
           await protectionApi.configureAntiExternalApp($currentGuild.id, config);
           break;
       }
-      await fetchAllData();
+      if (!throwOnError) await fetchAllData();
     } catch (err) {
       logger.error(`Failed to configure ${type}:`, err);
+      if (throwOnError) throw err;
     } finally {
       saving = false;
     }
@@ -812,6 +841,8 @@
   }
 
   function toggleProtectionCard(type: string) {
+    void autoSave.flush("protectionConfig");
+    invalidProtectionInputs.clear();
     if (expandedProtectionCard === type) {
       expandedProtectionCard = null;
       tempProtectionConfig = {};
@@ -820,83 +851,135 @@
       tempProtectionConfig = { ...protectionStatus[type] };
       // Convert action to string for DiscordSelector
       tempProtectionConfig.action = tempProtectionConfig.action?.toString() || "0";
+      protectionBaseline = $state.snapshot(tempProtectionConfig);
     }
   }
 
-  function cancelProtectionEdit() {
-    expandedProtectionCard = null;
-    tempProtectionConfig = {};
+  /** The config as text, with bigints made printable, for change tracking. */
+  function configText(config: unknown): string {
+    return JSON.stringify(config, (_key, value) => (typeof value === "bigint" ? value.toString() : value));
   }
 
-  function saveProtectionConfig() {
-    if (!expandedProtectionCard) return;
-    // Convert action back to number for API
-    const config = { ...tempProtectionConfig };
-    config.action = parseInt(config.action) || 0;
-    configureProtection(expandedProtectionCard, config);
-    expandedProtectionCard = null;
+  /** Notes whether a number field the user just edited is out of range, so it is not saved until fixed. */
+  function trackProtectionInput(event: Event) {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement)) return;
+    const { rangeUnderflow, rangeOverflow, badInput } = input.validity;
+    if (rangeUnderflow || rangeOverflow || badInput) invalidProtectionInputs.add(input);
+    else invalidProtectionInputs.delete(input);
   }
 
-  async function saveHoneypotChannels() {
-    if (!$currentGuild?.id) return;
+  /** Whether the open protection card holds values that can be sent. */
+  function protectionConfigValid(type: string, config: Record<string, unknown>): boolean {
+    const saved = protectionStatus[type] ?? {};
+    for (const [key, value] of Object.entries(config)) {
+      if (key !== "action" && typeof saved[key] === "number" && (typeof value !== "number" || !Number.isFinite(value))) {
+        return false;
+      }
+    }
+    for (const input of invalidProtectionInputs) {
+      if (input.isConnected) return false;
+      invalidProtectionInputs.delete(input);
+    }
+    return true;
+  }
 
+  /** Puts the open protection card back to what the bot has. */
+  function resetProtectionForm(type: string) {
+    tempProtectionConfig = { ...protectionStatus[type], action: protectionStatus[type]?.action?.toString() || "0" };
+    protectionBaseline = $state.snapshot(tempProtectionConfig);
+  }
+
+  /** Sends the open protection card's settings, restoring the card if the bot rejects them. */
+  async function persistProtection(type: string, sent: Record<string, any>) {
+    if (!$currentGuild?.id || !protectionConfigValid(type, sent)) return;
+    const guildId = $currentGuild.id;
+    const config = { ...sent, action: parseInt(sent.action) || 0 };
     try {
-      saving = true;
-      // Get current channels from backend
-      const currentChannels = protectionStatus.antiPostChannel.channels || [];
-      const selectedIds = selectedHoneypotChannels.map(c => BigInt(c));
-
-      // Add new channels
-      for (const channelId of selectedIds) {
-        if (!currentChannels.some((c: any) => c === channelId)) {
-          await administrationApi.addAntiPostChannel($currentGuild.id, channelId);
-        }
-      }
-
-      // Remove deselected channels
-      for (const channelId of currentChannels) {
-        if (!selectedIds.some(id => id === channelId)) {
-          await administrationApi.removeAntiPostChannel($currentGuild.id, channelId);
-        }
-      }
-
-      await fetchAllData();
+      await configureProtection(type, config, true);
     } catch (err) {
-      logger.error("Failed to save honeypot channels:", err);
-    } finally {
-      saving = false;
+      if ($currentGuild?.id === guildId && expandedProtectionCard === type) resetProtectionForm(type);
+      throw err;
+    }
+    if ($currentGuild?.id !== guildId) return;
+    protectionStatus = { ...protectionStatus, [type]: { ...protectionStatus[type], ...config } };
+    if (expandedProtectionCard === type) protectionBaseline = sent;
+  }
+
+  $effect(() => {
+    const type = expandedProtectionCard;
+    const current = $state.snapshot(tempProtectionConfig);
+    untrack(() => {
+      if (!type || configText(current) === configText(protectionBaseline)) return;
+      autoSave.schedule("protectionConfig", () => persistProtection(type, current));
+    });
+  });
+
+  /** Records anti-post-channel lists the bot confirmed, without refetching the page. */
+  function applyPostChannelLists(patch: Record<string, unknown>) {
+    protectionStatus = { ...protectionStatus, antiPostChannel: { ...protectionStatus.antiPostChannel, ...patch } };
+    if (expandedProtectionCard === "antiPostChannel") {
+      tempProtectionConfig = { ...tempProtectionConfig, ...patch };
+      protectionBaseline = { ...protectionBaseline, ...patch };
     }
   }
 
-  async function saveIgnoredRoles() {
+  /** Saves the honeypot channel list as soon as it changes, restoring the confirmed list on failure. */
+  function saveHoneypotChannels(selection: string[]) {
     if (!$currentGuild?.id) return;
-
-    try {
-      saving = true;
-      // Get current roles from backend
-      const currentRoles = protectionStatus.antiPostChannel.ignoredRoles || [];
-      const selectedIds = selectedIgnoredRoles.map(r => BigInt(r));
-
-      // Add new roles
-      for (const roleId of selectedIds) {
-        if (!currentRoles.some((r: any) => r === roleId)) {
-          await administrationApi.toggleAntiPostChannelIgnoredRole($currentGuild.id, roleId);
+    const guildId = $currentGuild.id;
+    autoSave.now("honeypotChannels", async () => {
+      const applied: bigint[] = [...(protectionStatus.antiPostChannel.channels || [])];
+      const selectedIds = selection.map(c => BigInt(c));
+      try {
+        for (const channelId of selectedIds) {
+          if (!applied.some(c => c === channelId)) {
+            await administrationApi.addAntiPostChannel(guildId, channelId);
+            applied.push(channelId);
+          }
         }
-      }
-
-      // Remove deselected roles
-      for (const roleId of currentRoles) {
-        if (!selectedIds.some(id => id === roleId)) {
-          await administrationApi.toggleAntiPostChannelIgnoredRole($currentGuild.id, roleId);
+        for (const channelId of [...applied]) {
+          if (!selectedIds.some(id => id === channelId)) {
+            await administrationApi.removeAntiPostChannel(guildId, channelId);
+            applied.splice(applied.indexOf(channelId), 1);
+          }
         }
+      } catch (err) {
+        if ($currentGuild?.id === guildId) selectedHoneypotChannels = applied.map(id => id.toString());
+        throw err;
+      } finally {
+        if ($currentGuild?.id === guildId) applyPostChannelLists({ channels: applied });
       }
+    });
+  }
 
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to save ignored roles:", err);
-    } finally {
-      saving = false;
-    }
+  /** Saves the ignored role list as soon as it changes, restoring the confirmed list on failure. */
+  function saveIgnoredRoles(selection: string[]) {
+    if (!$currentGuild?.id) return;
+    const guildId = $currentGuild.id;
+    autoSave.now("ignoredRoles", async () => {
+      const applied: bigint[] = [...(protectionStatus.antiPostChannel.ignoredRoles || [])];
+      const selectedIds = selection.map(r => BigInt(r));
+      try {
+        for (const roleId of selectedIds) {
+          if (!applied.some(r => r === roleId)) {
+            await administrationApi.toggleAntiPostChannelIgnoredRole(guildId, roleId);
+            applied.push(roleId);
+          }
+        }
+        for (const roleId of [...applied]) {
+          if (!selectedIds.some(id => id === roleId)) {
+            await administrationApi.toggleAntiPostChannelIgnoredRole(guildId, roleId);
+            applied.splice(applied.indexOf(roleId), 1);
+          }
+        }
+      } catch (err) {
+        if ($currentGuild?.id === guildId) selectedIgnoredRoles = applied.map(id => id.toString());
+        throw err;
+      } finally {
+        if ($currentGuild?.id === guildId) applyPostChannelLists({ ignoredRoles: applied });
+      }
+    });
   }
 
   async function addIgnoredUser() {
@@ -985,21 +1068,23 @@
   }
 
   // Advanced Operations Functions
-  async function saveBanMessage() {
+  /** Saves the ban message when the editor applies a change, restoring the saved one if the bot rejects it. */
+  function saveBanMessage(value: any) {
     if (!$currentGuild?.id) return;
-
-    try {
-      saving = true;
-      const messageToSend = typeof banMessage === "object" && Object.keys(banMessage).length > 0
-        ? JSON.stringify(banMessage)
-        : (typeof banMessage === "string" ? banMessage : "");
-      await administrationApi.setBanMessage($currentGuild.id, { message: messageToSend });
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to save ban message:", err);
-    } finally {
-      saving = false;
-    }
+    const guildId = $currentGuild.id;
+    const messageToSend = value && typeof value === "object" && Object.keys(value).length > 0
+      ? JSON.stringify(value)
+      : (typeof value === "string" ? value : "");
+    const sent = $state.snapshot(value);
+    autoSave.now("banMessage", async () => {
+      try {
+        await administrationApi.setBanMessage(guildId, { message: messageToSend });
+        savedBanMessage = sent;
+      } catch (err) {
+        if ($currentGuild?.id === guildId) banMessage = $state.snapshot(savedBanMessage);
+        throw err;
+      }
+    });
   }
 
 
@@ -1078,6 +1163,8 @@
   tabs={tabs}
   bind:activeTab
   {autoSave}
+  bind:notificationMessage
+  {notificationType}
 >
 
   {#if loading}
@@ -1115,6 +1202,7 @@
     {/if}
 
     {#if activeTab === 'protection'}
+      <div oninput={trackProtectionInput} onfocusout={() => autoSave.flush("protectionConfig")}>
       <ProtectionTab
         {protectionStatus}
         bind:expandedProtectionCard
@@ -1129,10 +1217,10 @@
         {textChannels}
         {availableRoles}
         {saving}
+        {autoSave}
+        {notify}
         {toggleProtection}
         {toggleProtectionCard}
-        {cancelProtectionEdit}
-        {saveProtectionConfig}
         {saveHoneypotChannels}
         {saveIgnoredRoles}
         {addIgnoredUser}
@@ -1141,6 +1229,7 @@
         {addAntiPatternPattern}
         {removeAntiPatternPattern}
       />
+      </div>
     {/if}
 
     {#if activeTab === 'roles'}
@@ -1176,11 +1265,8 @@
 
     {#if activeTab === 'automation'}
       <AutomationTab
-        {staffRole}
-        {memberRole}
         bind:newStaffRole
         bind:newMemberRole
-        {guildTimezone}
         bind:newTimezone
         {availableTimezones}
         {gameVoiceChannel}
@@ -1198,7 +1284,9 @@
         {availableCommands}
         {availablePermissions}
         {saving}
-        {saveServerSettings}
+        {saveStaffRole}
+        {saveMemberRole}
+        {saveTimezone}
         {removeCommandCooldown}
         {addCommandCooldown}
         {showConfirm}
@@ -1215,7 +1303,6 @@
       <AdvancedTab
         bind:banMessage
         {textChannels}
-        {saving}
         {saveBanMessage}
         {showConfirm}
         {fetchAllData}

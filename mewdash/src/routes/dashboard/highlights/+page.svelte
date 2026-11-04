@@ -204,8 +204,8 @@
 
     {#if activeTab === 'highlights'}
         <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
-            <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+            <div class=" rounded-2xl border p-6 md:p-8 transition-all relative z-20"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -238,7 +238,7 @@
                                         </div>
                                     </div>
                                     <button
-                                      class="px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02]"
+                                      class="px-3 py-2 rounded-lg text-sm transition-all"
                                             style="background: #ef444420; color: #ef4444;"
                                             onclick={() => deleteUserHighlights(userGroup.userId, userGroup.username)}
                                     >
@@ -271,8 +271,8 @@
 
     {:else if activeTab === 'search'}
         <div class="w-full" in:fade={{ duration: 200 }}>
-            <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+            <div class=" rounded-2xl border p-6 md:p-8 transition-all relative z-20"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fa-utility-duo fa-regular fa-magnifying-glass" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -290,7 +290,7 @@
                                 onkeydown={(e) => e.key === 'Enter' && searchHighlights()}
                         >
                       <button aria-label={m.highlights.pageSearchAria()}
-                              class="flex items-center justify-center px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                              class="flex items-center justify-center px-6 py-3 rounded-xl font-medium transition-all min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                                 onclick={searchHighlights}
                         >
@@ -324,7 +324,7 @@
                                     </div>
                                 </div>
                               <button aria-label={m.highlights.pageDeleteWordAria()}
-                                        class="p-2 rounded-lg transition-all hover:scale-110"
+                                        class="p-2 rounded-lg transition-all"
                                         style="background: #ef444420; color: #ef4444;"
                                         onclick={() => deleteHighlight(highlight.id)}
                                 >
@@ -346,8 +346,8 @@
 
     {:else if activeTab === 'disabled'}
         <div class="w-full" in:fade={{ duration: 200 }}>
-            <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+            <div class=" rounded-2xl border p-6 md:p-8 transition-all relative z-20"
+                 style="background: {$colorStore.primary}0c;
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fa-utility-duo fa-regular fa-eye-slash" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -427,8 +427,8 @@
                 </div>
 
                 {#if stats.topHighlightedWords.length > 0}
-                    <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all mb-6"
-                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                    <div class=" rounded-2xl border p-6 md:p-8 transition-all mb-6"
+                         style="background: {$colorStore.primary}0c;
                                 border-color: {$colorStore.primary}30;">
                         <div class="flex items-center gap-3 mb-6">
                             <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -451,8 +451,8 @@
                 {/if}
 
                 {#if stats.recentHighlights.length > 0}
-                    <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                    <div class=" rounded-2xl border p-6 md:p-8 transition-all"
+                         style="background: {$colorStore.primary}0c;
                                 border-color: {$colorStore.primary}30;">
                         <div class="flex items-center gap-3 mb-6">
                             <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>

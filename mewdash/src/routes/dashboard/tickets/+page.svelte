@@ -9,6 +9,7 @@
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import { loadingStore } from "$lib/stores/loadingStore";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
 
   // Import tab components
   import OverviewTab from "./components/tabs/OverviewTab.svelte";
@@ -19,6 +20,8 @@
   import AdvancedTab from "./components/tabs/AdvancedTab.svelte";
 
   let { data } = $props();
+
+  const autoSave = createAutoSave();
 
   let loading = $state(true);
   let error: string | null = $state(null);
@@ -960,24 +963,32 @@
 
   async function setTranscriptChannel(channelId: bigint | null) {
     if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.setTicketTranscriptChannel($currentGuild.id, { channelId: channelId || BigInt(0) });
-      transcriptChannelId = channelId;
-    } catch (err) {
-      logger.error("Failed to set transcript channel:", err);
-    }
+    const guildId = $currentGuild.id;
+    const previous = transcriptChannelId;
+    transcriptChannelId = channelId;
+    await autoSave.now("transcriptChannel", async () => {
+      try {
+        await ticketApi.setTicketTranscriptChannel(guildId, { channelId: channelId || BigInt(0) });
+      } catch (err) {
+        transcriptChannelId = previous;
+        throw err;
+      }
+    });
   }
 
   async function setLogChannel(channelId: bigint | null) {
     if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.setTicketLogChannel($currentGuild.id, { channelId: channelId || BigInt(0) });
-      logChannelId = channelId;
-    } catch (err) {
-      logger.error("Failed to set log channel:", err);
-    }
+    const guildId = $currentGuild.id;
+    const previous = logChannelId;
+    logChannelId = channelId;
+    await autoSave.now("logChannel", async () => {
+      try {
+        await ticketApi.setTicketLogChannel(guildId, { channelId: channelId || BigInt(0) });
+      } catch (err) {
+        logChannelId = previous;
+        throw err;
+      }
+    });
   }
 
   function resetButtonForm() {
@@ -1035,6 +1046,7 @@
   icon="fa-ticket"
   tabs={tabs}
   title={m.tickets.pageTitle()}
+  {autoSave}
   bind:activeTab
 >
 

@@ -1704,7 +1704,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         <h2 class="text-xl font-bold mb-2">{m.wizard.errorLoadingTitle()}</h2>
         <p class="mb-4">{dataError}</p>
         <button
-          class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
+          class="px-4 py-2 rounded-lg font-medium transition-all"
           style="background: {$colorStore.primary}; color: white;"
           onclick={() => goto('/dashboard')}
         >
@@ -1778,7 +1778,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         <!-- Action buttons -->
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-4 sm:pt-6">
           <button
-            class="w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center justify-center gap-2 min-h-[44px]"
+            class="w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center justify-center gap-2 min-h-[44px]"
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
             onclick={nextStep}
           >
@@ -1787,7 +1787,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           </button>
 
           <button
-            class="w-full sm:w-auto px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center justify-center gap-2 min-h-[44px]"
+            class="w-full sm:w-auto px-4 py-3 rounded-xl font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center justify-center gap-2 min-h-[44px]"
             style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
             onclick={skipWizard}
             disabled={wizardLoading}
@@ -1885,7 +1885,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
               {#if permissionData.permissionResults.length > 4}
                 <div class="lg:hidden absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 rounded-md text-xs"
-                     style="background: {$colorStore.primary}15; color: {$colorStore.muted}; backdrop-filter: blur(4px);">
+                     style="background: {$colorStore.primary}15; color: {$colorStore.muted};">
                   <span>{m.wizard.permsScrollMore()}</span>
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1905,11 +1905,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                 <a
                   href={permissionData.suggestedInviteUrl}
                   target="_blank"
-                  class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all"
                   style="background: #f59e0b; color: white;"
                 >
                   {m.wizard.permsFixButton()}
-                  <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 16px;"></i>
                 </a>
               </div>
             {/if}
@@ -1917,7 +1916,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
           <div class="flex items-center justify-between pt-6">
             <button
-              class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2"
+              class="px-4 py-3 rounded-xl font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2"
               style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
               onclick={previousStep}
             >
@@ -1926,7 +1925,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             </button>
 
             <button
-              class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50"
+              class="px-6 py-3 rounded-xl font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
               onclick={nextStep}
               disabled={!canProceed}
@@ -2016,7 +2015,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
         <div class="flex items-center justify-between gap-3 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
           <button
-            class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
+            class="px-4 py-3 rounded-xl font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
             style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
             onclick={previousStep}
           >
@@ -2025,7 +2024,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           </button>
 
           <button
-            class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50 min-h-[44px]"
+            class="px-6 py-3 rounded-xl font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50 min-h-[44px]"
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
             onclick={handleBasicsNext}
             disabled={wizardLoading}
@@ -2052,7 +2051,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
         <div class="flex items-center justify-between gap-3 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
           <button
-            class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
+            class="px-4 py-3 rounded-xl font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
             style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30;"
             onclick={previousStep}
           >
@@ -2061,7 +2060,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           </button>
 
           <button
-            class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
+            class="px-6 py-3 rounded-xl font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
             onclick={nextStep}
           >
@@ -2086,9 +2085,9 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
              features from the shortlist view would undo the shortlist -->
         {#if browsingAllFeatures || spotlightFeatures.length === 0}
         <div class="flex flex-col sm:flex-row flex-wrap gap-3 justify-center p-4 rounded-xl border"
-             style="background: linear-gradient(135deg, {$colorStore.primary}05, {$colorStore.secondary}08); border-color: {$colorStore.secondary}30;">
+             style="background: {$colorStore.primary}08; border-color: {$colorStore.secondary}30;">
           <button
-            class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 w-full sm:w-auto"
+            class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 w-full sm:w-auto"
             style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30; focus:ring-color: {$colorStore.secondary};"
             onclick={() => {
               allFeatures.forEach(f => {
@@ -2104,7 +2103,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           </button>
 
           <button
-            class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 w-full sm:w-auto"
+            class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 w-full sm:w-auto"
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
             onclick={() => {
               allFeatures.forEach(f => {
@@ -2120,7 +2119,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           </button>
 
           <button
-            class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 w-full sm:w-auto"
+            class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 w-full sm:w-auto"
             style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
             onclick={() => {
               allFeatures.forEach(f => {
@@ -2191,7 +2190,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
             <div class="mt-6 text-center">
               <button
-                class="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium min-h-[44px] transition-all hover:scale-[1.02]"
+                class="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium min-h-[44px] transition-all"
                 style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                 onclick={() => (browsingAllFeatures = true)}
               >
@@ -2244,7 +2243,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
               {#if expandedFeatureCategories[category.name]}
                 <div class="flex gap-2 px-4 pb-3 border-t pt-3" style="border-color: {$colorStore.primary}20;">
                   <button
-                    class="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                    class="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30; focus:ring-color: {$colorStore.secondary};"
                     onclick={(e) => {
                       e.stopPropagation();
@@ -2260,7 +2259,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     {m.wizard.featuresFullSetupAll()}
                   </button>
                   <button
-                    class="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                    class="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                     onclick={(e) => {
                       e.stopPropagation();
@@ -2314,7 +2313,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                in:fly={{ y: 20, duration: 300 }}>
             <div class="text-center">
               <div class="mb-4">
-                <span class="text-4xl font-bold animate-pulse" style="color: {$colorStore.primary};">
+                <span class="text-4xl font-bold" style="color: {$colorStore.primary};">
                   {allEnabledFeatures.length}
                 </span>
                 <p class="text-sm mt-1" style="color: {$colorStore.text};">
@@ -2372,7 +2371,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         <!-- Navigation -->
         <div class="flex items-center justify-between gap-3 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
           <button
-            class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
+            class="px-4 py-3 rounded-xl font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
             style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
             onclick={previousStep}
           >
@@ -2381,7 +2380,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           </button>
 
           <button
-            class="px-4 sm:px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50 min-h-[44px]"
+            class="px-4 sm:px-6 py-3 rounded-xl font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50 min-h-[44px]"
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
             onclick={() => {
               nextStep();
@@ -2513,7 +2512,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
                         {#if config.roleRewards.length === 0}
                           <button
-                            class="w-full px-4 py-3 rounded-lg border-2 border-dashed transition-all hover:scale-[1.01]"
+                            class="w-full px-4 py-3 rounded-lg border-2 border-dashed transition-all"
                             style="border-color: {$colorStore.primary}30; color: {$colorStore.primary};"
                             onclick={() => config.roleRewards = [{ level: 5, roleId: null }, { level: 10, roleId: null }, { level: 25, roleId: null }]}
                           >
@@ -2542,7 +2541,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                                   />
                             </div>
                                 <button
-                                  class="p-2 rounded-lg transition-all hover:scale-[1.02]"
+                                  class="p-2 rounded-lg transition-all"
                                   style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                   onclick={() => removeRoleReward(config, index)}
                                   aria-label={m.wizard.configXpRemoveReward()}
@@ -2552,7 +2551,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                               </div>
                             {/each}
                             <button
-                              class="w-full px-3 py-2 rounded-lg transition-all hover:scale-[1.01]"
+                              class="w-full px-3 py-2 rounded-lg transition-all"
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                               onclick={() => addRoleReward(config)}
                             >
@@ -2585,7 +2584,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                           {m.wizard.configStarboardTitle()}
                         </h4>
                         <button
-                          class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02]"
+                          class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                           onclick={() => {
                         config.starboards = [...config.starboards, { channelId: null, threshold: 3, emoji: "⭐" }];
@@ -2605,7 +2604,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         </span>
                             {#if config.starboards.length > 1}
                               <button
-                                class="px-2 py-1 rounded text-xs transition-all hover:scale-[1.05]"
+                                class="px-2 py-1 rounded text-xs transition-all"
                                 style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                 aria-label={m.wizard.configStarboardRemoveAria({ number: index + 1 })}
                                 onclick={() => {
@@ -3493,7 +3492,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                               {m.wizard.configFeedsItemTitle({ number: index + 1 })}
                             </span>
                             {#if config.entries.length > 1}
-                              <button class="px-2 py-1 rounded text-xs transition-all hover:scale-[1.05]"
+                              <button class="px-2 py-1 rounded text-xs transition-all"
                                       style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                       aria-label={m.wizard.configFeedsRemoveAria({ number: index + 1 })}
                                       onclick={() => config.entries = config.entries.filter((_: unknown, i: number) => i !== index)}>
@@ -3515,7 +3514,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                           />
                         </div>
                       {/each}
-                      <button class="w-full px-3 py-2 rounded-lg transition-all hover:scale-[1.01] min-h-[44px]"
+                      <button class="w-full px-3 py-2 rounded-lg transition-all min-h-[44px]"
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                               onclick={() => config.entries = [...config.entries, { url: '', channelId: null }]}>
                         <i class="fa-solid fa-plus" style="font-size: 12px;"></i>
@@ -3532,7 +3531,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                               {m.wizard.configStreamsItemTitle({ number: index + 1 })}
                             </span>
                             {#if config.entries.length > 1}
-                              <button class="px-2 py-1 rounded text-xs transition-all hover:scale-[1.05]"
+                              <button class="px-2 py-1 rounded text-xs transition-all"
                                       style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                       aria-label={m.wizard.configStreamsRemoveAria({ number: index + 1 })}
                                       onclick={() => config.entries = config.entries.filter((_: unknown, i: number) => i !== index)}>
@@ -3554,7 +3553,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                           />
                         </div>
                       {/each}
-                      <button class="w-full px-3 py-2 rounded-lg transition-all hover:scale-[1.01] min-h-[44px]"
+                      <button class="w-full px-3 py-2 rounded-lg transition-all min-h-[44px]"
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                               onclick={() => config.entries = [...config.entries, { url: '', channelId: null }]}>
                         <i class="fa-solid fa-plus" style="font-size: 12px;"></i>
@@ -3833,7 +3832,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
           <div class="flex items-center justify-between gap-3 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
             <button
-              class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
+              class="px-4 py-3 rounded-xl font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
               style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
               onclick={previousStep}
             >
@@ -3842,7 +3841,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             </button>
 
             <button
-              class="px-4 sm:px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50 min-h-[44px]"
+              class="px-4 sm:px-6 py-3 rounded-xl font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50 min-h-[44px]"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
               onclick={completeWizard}
               disabled={wizardLoading}
@@ -3867,7 +3866,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
     >
       <div class="text-center space-y-6">
         <div class="flex justify-center">
-          <div class="w-20 h-20 rounded-full flex items-center justify-center animate-pulse"
+          <div class="w-20 h-20 rounded-full flex items-center justify-center"
                style="background: {$colorStore.accent}20;">
             <i class="fa-solid fa-circle-check" style="color: {$colorStore.accent}; font-size: 48px;"></i>
           </div>

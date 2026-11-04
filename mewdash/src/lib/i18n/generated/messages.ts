@@ -191,8 +191,6 @@ export const m = {
     category: () => t("_common", "category", "Category"),
     /** Category (optional) */
     categoryOptional: () => t("_common", "category_optional", "Category (optional)"),
-    /** Changes save automatically. */
-    changesSaveAutomatically: () => t("_common", "changes_save_automatically", "Changes save automatically."),
     /** Channel */
     channel: () => t("_common", "channel", "Channel"),
     /** Channel {id} */
@@ -971,6 +969,10 @@ export const m = {
     roleIdLabel: (p: { id: P }) => t("_common", "role_id_label", "Role ID: {id}", p),
     /** @Role */
     roleMention: () => t("_common", "role_mention", "@Role"),
+    /** Role reward added */
+    roleRewardAdded: () => t("_common", "role_reward_added", "Role reward added"),
+    /** Role reward removed */
+    roleRewardRemoved: () => t("_common", "role_reward_removed", "Role reward removed"),
     /** Role to add */
     roleToAdd: () => t("_common", "role_to_add", "Role to add"),
     /** Roles */
@@ -997,8 +999,6 @@ export const m = {
     saveEmbed: () => t("_common", "save_embed", "Save embed"),
     /** Couldn't save that. */
     saveFailedInline: () => t("_common", "save_failed_inline", "Couldn't save that."),
-    /** Save Message */
-    saveMessage: () => t("_common", "save_message", "Save Message"),
     /** Saved */
     saved: () => t("_common", "saved", "Saved"),
     /** Saving... */
@@ -2261,8 +2261,6 @@ export const m = {
     settingsRevealTitle: () => t("achievements", "settings_reveal_title", "Show them before they unlock"),
     /** Secret achievements */
     settingsSecretTitle: () => t("achievements", "settings_secret_title", "Secret achievements"),
-    /** You have unsaved changes. */
-    settingsUnsaved: () => t("achievements", "settings_unsaved", "You have unsaved changes."),
     /** XP per point */
     settingsXpPerPoint: () => t("achievements", "settings_xp_per_point", "XP per point"),
     /** Achievement ranks and XP levels are separate. Set this to have every unlock also pay XP... */
@@ -2587,8 +2585,6 @@ export const m = {
     automationTimezoneHint: () => t("administration", "automation_timezone_hint", "Timezone used for time-based features and logging"),
     /** Select server timezone... */
     automationTimezonePlaceholder: () => t("administration", "automation_timezone_placeholder", "Select server timezone..."),
-    /** Save Timezone */
-    automationTimezoneSave: () => t("administration", "automation_timezone_save", "Save Timezone"),
     /** Timezone Settings */
     automationTimezoneTitle: () => t("administration", "automation_timezone_title", "Timezone Settings"),
     /** Active Rules */
@@ -2889,8 +2885,6 @@ export const m = {
     protectionPostchannelIgnoredUsersHint: () => t("administration", "protection_postchannel_ignored_users_hint", "Specific users who can post in honeypot channels"),
     /** Remove ignored user */
     protectionPostchannelRemoveIgnoredUser: () => t("administration", "protection_postchannel_remove_ignored_user", "Remove ignored user"),
-    /** Save Channels */
-    protectionPostchannelSaveChannels: () => t("administration", "protection_postchannel_save_channels", "Save Channels"),
     /** Save Roles */
     protectionPostchannelSaveRoles: () => t("administration", "protection_postchannel_save_roles", "Save Roles"),
     /** Select honeypot channels... */
@@ -2933,12 +2927,12 @@ export const m = {
     rolesAddReactionRoleEmojiCount: (p: { max: P; total: P }) => t("administration", "roles_add_reaction_role_emoji_count", "({total} / {max} emojis on message)", p),
     /** Failed to add reaction roles. Please check that the message and channel IDs are correct... */
     rolesAddReactionRoleErrorAddFailed: () => t("administration", "roles_add_reaction_role_error_add_failed", "Failed to add reaction roles. Please check that the message and channel IDs are correct and the bot has access."),
-    /** Cannot add more than {max} reactions! */
-    rolesAddReactionRoleErrorMaxReactions: (p: { max: P }) => t("administration", "roles_add_reaction_role_error_max_reactions", "Cannot add more than {max} reactions!", p),
+    /** Cannot add more than {max} reactions */
+    rolesAddReactionRoleErrorMaxReactions: (p: { max: P }) => t("administration", "roles_add_reaction_role_error_max_reactions", "Cannot add more than {max} reactions", p),
     /** Please select at least one emoji and role pair. */
     rolesAddReactionRoleErrorNeedPair: () => t("administration", "roles_add_reaction_role_error_need_pair", "Please select at least one emoji and role pair."),
-    /** Total emoji count ({total}) exceeds Discord's limit of {max} reactions per message! */
-    rolesAddReactionRoleErrorTotalExceeds: (p: { max: P; total: P }) => t("administration", "roles_add_reaction_role_error_total_exceeds", "Total emoji count ({total}) exceeds Discord's limit of {max} reactions per message!", p),
+    /** Total emoji count ({total}) exceeds Discord's limit of {max} reactions per message */
+    rolesAddReactionRoleErrorTotalExceeds: (p: { max: P; total: P }) => t("administration", "roles_add_reaction_role_error_total_exceeds", "Total emoji count ({total}) exceeds Discord's limit of {max} reactions per message", p),
     /** Cannot add reactions: total would exceed Discord's {max} emoji limit. */
     rolesAddReactionRoleErrorWouldExceed: (p: { max: P }) => t("administration", "roles_add_reaction_role_error_would_exceed", "Cannot add reactions: total would exceed Discord's {max} emoji limit.", p),
     /** Exclusive (users can only have one role from this message) */
@@ -3151,12 +3145,12 @@ export const m = {
     noMessage: () => t("afk", "no_message", "No message"),
     /** Failed to remove AFK status from user(s): {error} */
     notifyBulkRemoveFailed: (p: { error: P }) => t("afk", "notify_bulk_remove_failed", "Failed to remove AFK status from user(s): {error}", p),
-    /** Successfully removed AFK status from {count} user(s) */
-    notifyBulkRemoved: (p: { count: P }) => t("afk", "notify_bulk_removed", "Successfully removed AFK status from {count} user(s)", p),
+    /** Removed AFK status from {count} user(s) */
+    notifyBulkRemoved: (p: { count: P }) => t("afk", "notify_bulk_removed", "Removed AFK status from {count} user(s)", p),
     /** Failed to clear AFK status: {error} */
     notifyClearFailed: (p: { error: P }) => t("afk", "notify_clear_failed", "Failed to clear AFK status: {error}", p),
-    /** Successfully cleared AFK status for {name} */
-    notifyCleared: (p: { name: P }) => t("afk", "notify_cleared", "Successfully cleared AFK status for {name}", p),
+    /** Cleared AFK status for {name} */
+    notifyCleared: (p: { name: P }) => t("afk", "notify_cleared", "Cleared AFK status for {name}", p),
     /** Couldn't save AFK settings. Your last change was undone. */
     notifySaveFailed: () => t("afk", "notify_save_failed", "Couldn't save AFK settings. Your last change was undone."),
     /** AFK timeout must be between 1 second and 2 hours */
@@ -4007,10 +4001,10 @@ export const m = {
     sectionWebhook: () => t("auditlog", "section_webhook", "Webhooks"),
   },
   birthday: {
-    /** {count} birthday today! */
-    alertTodayOne: (p: { count: P }) => t("birthday", "alert_today_one", "{count} birthday today!", p),
-    /** {count} birthdays today! */
-    alertTodayOther: (p: { count: P }) => t("birthday", "alert_today_other", "{count} birthdays today!", p),
+    /** {count} birthday today */
+    alertTodayOne: (p: { count: P }) => t("birthday", "alert_today_one", "{count} birthday today", p),
+    /** {count} birthdays today */
+    alertTodayOther: (p: { count: P }) => t("birthday", "alert_today_other", "{count} birthdays today", p),
     /** Birthday Channel */
     configChannel: () => t("birthday", "config_channel", "Birthday Channel"),
     /** Ping Role (notifies when announcing) */
@@ -4119,8 +4113,6 @@ export const m = {
     usersPrivate: () => t("birthday", "users_private", "Private"),
     /** Public */
     usersPublic: () => t("birthday", "users_public", "Public"),
-    /** Today! */
-    usersToday: () => t("birthday", "users_today", "Today!"),
     /** Tomorrow */
     usersTomorrow: () => t("birthday", "users_tomorrow", "Tomorrow"),
     /** No birthdays in the next {days} days. */
@@ -4597,8 +4589,6 @@ export const m = {
     pageAnnounceCardsCollapsed: () => t("chat-triggers", "page_announce_cards_collapsed", "Collapsed all cards"),
     /** Failed to create trigger */
     pageAnnounceCreateFailed: () => t("chat-triggers", "page_announce_create_failed", "Failed to create trigger"),
-    /** Trigger created successfully */
-    pageAnnounceCreated: () => t("chat-triggers", "page_announce_created", "Trigger created successfully"),
     /** Delete cancelled */
     pageAnnounceDeleteCancelled: () => t("chat-triggers", "page_announce_delete_cancelled", "Delete cancelled"),
     /** Failed to delete trigger */
@@ -4723,8 +4713,8 @@ export const m = {
     pageNoMatches: () => t("chat-triggers", "page_no_matches", "No triggers match your search."),
     /** Failed to add trigger: {error} */
     pageNotifyAddFailed: (p: { error: P }) => t("chat-triggers", "page_notify_add_failed", "Failed to add trigger: {error}", p),
-    /** Trigger added successfully */
-    pageNotifyAdded: () => t("chat-triggers", "page_notify_added", "Trigger added successfully"),
+    /** Trigger added */
+    pageNotifyAdded: () => t("chat-triggers", "page_notify_added", "Trigger added"),
     /** Both trigger text and response are required */
     pageNotifyBothRequired: () => t("chat-triggers", "page_notify_both_required", "Both trigger text and response are required"),
     /** Failed to update category. */
@@ -4739,12 +4729,12 @@ export const m = {
     pageNotifyCounterSaveFailed: () => t("chat-triggers", "page_notify_counter_save_failed", "Failed to save counter."),
     /** Failed to create trigger: {error} */
     pageNotifyCreateFailed: (p: { error: P }) => t("chat-triggers", "page_notify_create_failed", "Failed to create trigger: {error}", p),
-    /** Trigger created successfully! */
-    pageNotifyCreated: () => t("chat-triggers", "page_notify_created", "Trigger created successfully!"),
+    /** Trigger created */
+    pageNotifyCreated: () => t("chat-triggers", "page_notify_created", "Trigger created"),
     /** Failed to delete trigger: {error} */
     pageNotifyDeleteFailed: (p: { error: P }) => t("chat-triggers", "page_notify_delete_failed", "Failed to delete trigger: {error}", p),
-    /** Trigger deleted successfully */
-    pageNotifyDeleted: () => t("chat-triggers", "page_notify_deleted", "Trigger deleted successfully"),
+    /** Trigger deleted */
+    pageNotifyDeleted: () => t("chat-triggers", "page_notify_deleted", "Trigger deleted"),
     /** Invalid regex pattern */
     pageNotifyInvalidRegex: () => t("chat-triggers", "page_notify_invalid_regex", "Invalid regex pattern"),
     /** Trigger and Response are required */
@@ -4753,8 +4743,8 @@ export const m = {
     pageNotifyTestFailed: () => t("chat-triggers", "page_notify_test_failed", "Failed to test trigger."),
     /** Failed to update trigger: {error} */
     pageNotifyUpdateFailed: (p: { error: P }) => t("chat-triggers", "page_notify_update_failed", "Failed to update trigger: {error}", p),
-    /** Trigger updated successfully */
-    pageNotifyUpdated: () => t("chat-triggers", "page_notify_updated", "Trigger updated successfully"),
+    /** Trigger updated */
+    pageNotifyUpdated: () => t("chat-triggers", "page_notify_updated", "Trigger updated"),
     /** Regular Expression Pattern */
     pagePatternRegex: () => t("chat-triggers", "page_pattern_regex", "Regular Expression Pattern"),
     /** Normal Text Pattern */
@@ -4767,8 +4757,8 @@ export const m = {
     pageQuickCreate: () => t("chat-triggers", "page_quick_create", "Create Trigger"),
     /** Creates a simple trigger that responds when users type your trigger text */
     pageQuickCreateHint: () => t("chat-triggers", "page_quick_create_hint", "Creates a simple trigger that responds when users type your trigger text"),
-    /** More Options → */
-    pageQuickMoreOptions: () => t("chat-triggers", "page_quick_more_options", "More Options →"),
+    /** More options */
+    pageQuickMoreOptions: () => t("chat-triggers", "page_quick_more_options", "More options"),
     /** Bot's response to the trigger */
     pageQuickPreviewDescription: () => t("chat-triggers", "page_quick_preview_description", "Bot's response to the trigger"),
     /** Quick Response */
@@ -4909,8 +4899,8 @@ export const m = {
     saverNotifyChannelsFailed: () => t("chatsaver", "saver_notify_channels_failed", "Failed to load channels"),
     /** Failed to delete log */
     saverNotifyDeleteFailed: () => t("chatsaver", "saver_notify_delete_failed", "Failed to delete log"),
-    /** Log deleted successfully */
-    saverNotifyDeleted: () => t("chatsaver", "saver_notify_deleted", "Log deleted successfully"),
+    /** Log deleted */
+    saverNotifyDeleted: () => t("chatsaver", "saver_notify_deleted", "Log deleted"),
     /** Failed to fetch messages */
     saverNotifyFetchFailed: () => t("chatsaver", "saver_notify_fetch_failed", "Failed to fetch messages"),
     /** Failed to load log */
@@ -4923,12 +4913,12 @@ export const m = {
     saverNotifyNoMessages: () => t("chatsaver", "saver_notify_no_messages", "No messages found in the selected time range"),
     /** Failed to rename log */
     saverNotifyRenameFailed: () => t("chatsaver", "saver_notify_rename_failed", "Failed to rename log"),
-    /** Log renamed successfully */
-    saverNotifyRenamed: () => t("chatsaver", "saver_notify_renamed", "Log renamed successfully"),
+    /** Log renamed */
+    saverNotifyRenamed: () => t("chatsaver", "saver_notify_renamed", "Log renamed"),
     /** Failed to save log */
     saverNotifySaveFailed: () => t("chatsaver", "saver_notify_save_failed", "Failed to save log"),
-    /** Log saved successfully */
-    saverNotifySaved: () => t("chatsaver", "saver_notify_saved", "Log saved successfully"),
+    /** Log saved */
+    saverNotifySaved: () => t("chatsaver", "saver_notify_saved", "Log saved"),
     /** Maximum time is {max} {unit} */
     saverNotifyTimeMax: (p: { max: P; unit: P }) => t("chatsaver", "saver_notify_time_max", "Maximum time is {max} {unit}", p),
     /** Time amount must be greater than 0 */
@@ -4987,8 +4977,8 @@ export const m = {
     pageListTitle: (p: { count: P }) => t("confessions", "page_list_title", "All Confessions ({count})", p),
     /** No content */
     pageNoContent: () => t("confessions", "page_no_content", "No content"),
-    /** Confession deleted successfully! */
-    pageNotifyDeleted: () => t("confessions", "page_notify_deleted", "Confession deleted successfully!"),
+    /** Confession deleted */
+    pageNotifyDeleted: () => t("confessions", "page_notify_deleted", "Confession deleted"),
     /** Show confession content */
     pageShowContentAria: () => t("confessions", "page_show_content_aria", "Show confession content"),
     /** Show more */
@@ -5121,12 +5111,12 @@ export const m = {
     milestonesTitle: () => t("counting", "milestones_title", "Milestones"),
     /** Failed to ban user */
     notifyBanFailed: () => t("counting", "notify_ban_failed", "Failed to ban user"),
-    /** Channel disabled successfully! */
-    notifyChannelDisabled: () => t("counting", "notify_channel_disabled", "Channel disabled successfully!"),
-    /** Channel reset to {number} successfully! */
-    notifyChannelReset: (p: { number: P }) => t("counting", "notify_channel_reset", "Channel reset to {number} successfully!", p),
-    /** Counting channel setup successfully! */
-    notifyChannelSetup: () => t("counting", "notify_channel_setup", "Counting channel setup successfully!"),
+    /** Channel disabled */
+    notifyChannelDisabled: () => t("counting", "notify_channel_disabled", "Channel disabled"),
+    /** Channel reset to {number} */
+    notifyChannelReset: (p: { number: P }) => t("counting", "notify_channel_reset", "Channel reset to {number}", p),
+    /** Counting channel set up */
+    notifyChannelSetup: () => t("counting", "notify_channel_setup", "Counting channel set up"),
     /** Failed to setup counting channel */
     notifyChannelSetupFailed: () => t("counting", "notify_channel_setup_failed", "Failed to setup counting channel"),
     /** Failed to delete save point */
@@ -5153,8 +5143,8 @@ export const m = {
     notifySaveFailed: () => t("counting", "notify_save_failed", "Couldn't save counting settings."),
     /** Couldn't save counting settings. Your last change was undone. */
     notifySaveFailedUndone: () => t("counting", "notify_save_failed_undone", "Couldn't save counting settings. Your last change was undone."),
-    /** Save point created successfully! */
-    notifySavePointCreated: () => t("counting", "notify_save_point_created", "Save point created successfully!"),
+    /** Save point created */
+    notifySavePointCreated: () => t("counting", "notify_save_point_created", "Save point created"),
     /** Failed to create save point */
     notifySavePointFailed: () => t("counting", "notify_save_point_failed", "Failed to create save point"),
     /** Save point restored */
@@ -5649,18 +5639,18 @@ export const m = {
     notifyCleanupFailed: () => t("customvoice", "notify_cleanup_failed", "Failed to clean up channels"),
     /** Failed to delete channel */
     notifyDeleteFailed: () => t("customvoice", "notify_delete_failed", "Failed to delete channel"),
-    /** Channel deleted successfully! */
-    notifyDeleted: () => t("customvoice", "notify_deleted", "Channel deleted successfully!"),
+    /** Channel deleted */
+    notifyDeleted: () => t("customvoice", "notify_deleted", "Channel deleted"),
     /** Failed to disable custom voice */
     notifyDisableFailed: () => t("customvoice", "notify_disable_failed", "Failed to disable custom voice"),
     /** Failed to load custom voice data */
     notifyLoadFailed: () => t("customvoice", "notify_load_failed", "Failed to load custom voice data"),
-    /** Channel locked successfully! */
-    notifyLocked: () => t("customvoice", "notify_locked", "Channel locked successfully!"),
+    /** Channel locked */
+    notifyLocked: () => t("customvoice", "notify_locked", "Channel locked"),
     /** Couldn't save custom voice settings. */
     notifySaveFailed: () => t("customvoice", "notify_save_failed", "Couldn't save custom voice settings."),
-    /** Channel unlocked successfully! */
-    notifyUnlocked: () => t("customvoice", "notify_unlocked", "Channel unlocked successfully!"),
+    /** Channel unlocked */
+    notifyUnlocked: () => t("customvoice", "notify_unlocked", "Channel unlocked"),
     /** Failed to update channel */
     notifyUpdateFailed: () => t("customvoice", "notify_update_failed", "Failed to update channel"),
     /** Custom Voice Channels - Dashboard */
@@ -5791,8 +5781,8 @@ export const m = {
     communityNoTickets: () => t("dashboard", "community_no_tickets", "No tickets yet"),
     /** No XP Data */
     communityNoXpData: () => t("dashboard", "community_no_xp_data", "No XP Data"),
-    /** No members have earned XP yet. Get active in the server! */
-    communityNoXpDataHint: () => t("dashboard", "community_no_xp_data_hint", "No members have earned XP yet. Get active in the server!"),
+    /** No members have earned XP yet. Be the first. */
+    communityNoXpDataHint: () => t("dashboard", "community_no_xp_data_hint", "No members have earned XP yet. Be the first."),
     /** +{count} other channel */
     communityOtherChannelsOne: (p: { count: P }) => t("dashboard", "community_other_channels_one", "+{count} other channel", p),
     /** +{count} other channels */
@@ -5869,8 +5859,8 @@ export const m = {
     pageLastUpdated: (p: { time: P }) => t("dashboard", "page_last_updated", "Last updated: {time}", p),
     /** Now playing music in your server */
     pageMusicStartedBody: () => t("dashboard", "page_music_started_body", "Now playing music in your server"),
-    /** Music Started Playing! */
-    pageMusicStartedTitle: () => t("dashboard", "page_music_started_title", "Music Started Playing!"),
+    /** Music started */
+    pageMusicStartedTitle: () => t("dashboard", "page_music_started_title", "Music started"),
     /** Open Music Player */
     pageOpenMusicPlayer: () => t("dashboard", "page_open_music_player", "Open Music Player"),
     /** (Press {key} to refresh) */
@@ -5887,8 +5877,8 @@ export const m = {
     pageWitchMessage4: () => t("dashboard", "page_witch_message_4", "Color swap spell cast! ✨"),
     /** Boo! 🦇 */
     pageWitchMessage5: () => t("dashboard", "page_witch_message_5", "Boo! 🦇"),
-    /** {action} → */
-    productUpdateActionArrow: (p: { action: P }) => t("dashboard", "product_update_action_arrow", "{action} →", p),
+    /** {action} */
+    productUpdateActionArrow: (p: { action: P }) => t("dashboard", "product_update_action_arrow", "{action}", p),
     /** Dismiss updates */
     productUpdateDismiss: () => t("dashboard", "product_update_dismiss", "Dismiss updates"),
     /** Everything that's new */
@@ -5899,8 +5889,8 @@ export const m = {
     securityActiveProtections: () => t("dashboard", "security_active_protections", "Active Protections"),
     /** All Clear */
     securityAllClear: () => t("dashboard", "security_all_clear", "All Clear"),
-    /** No recent moderation actions. Your server is running smoothly! */
-    securityAllClearHint: () => t("dashboard", "security_all_clear_hint", "No recent moderation actions. Your server is running smoothly!"),
+    /** No recent moderation actions. Nothing needs attention. */
+    securityAllClearHint: () => t("dashboard", "security_all_clear_hint", "No recent moderation actions. Nothing needs attention."),
     /** {count} event types */
     securityEventTypes: (p: { count: P }) => t("dashboard", "security_event_types", "{count} event types", p),
     /** Full Moderation Dashboard */
@@ -5927,10 +5917,6 @@ export const m = {
     settingsTabAutoAssignRolesDesc: () => t("dashboard", "settings_tab_auto_assign_roles_desc", "Roles given to new members"),
     /** Core bot settings */
     settingsTabBotSettingsDesc: () => t("dashboard", "settings_tab_bot_settings_desc", "Core bot settings"),
-    /** Configure → */
-    settingsTabConfigureArrow: () => t("dashboard", "settings_tab_configure_arrow", "Configure →"),
-    /** Greets → */
-    settingsTabGreetsArrow: () => t("dashboard", "settings_tab_greets_arrow", "Greets →"),
     /** Integrations */
     settingsTabIntegrations: () => t("dashboard", "settings_tab_integrations", "Integrations"),
     /** Event logging and audit trails */
@@ -5965,8 +5951,8 @@ export const m = {
     settingsTabServerInfo: () => t("dashboard", "settings_tab_server_info", "Server Info"),
     /** Highlight popular messages */
     settingsTabStarboardDesc: () => t("dashboard", "settings_tab_starboard_desc", "Highlight popular messages"),
-    /** States → */
-    settingsTabStatesArrow: () => t("dashboard", "settings_tab_states_arrow", "States →"),
+    /** States */
+    settingsTabStatesArrow: () => t("dashboard", "settings_tab_states_arrow", "States"),
     /** User suggestion voting system */
     settingsTabSuggestionsDesc: () => t("dashboard", "settings_tab_suggestions_desc", "User suggestion voting system"),
     /** Smart defaults */
@@ -6247,8 +6233,6 @@ export const m = {
     fullscreenNotifyRowRemoved: () => t("embedbuilder", "fullscreen_notify_row_removed", "Row removed"),
     /** Failed to save embed. The name may already be in use. */
     fullscreenNotifySaveFailed: () => t("embedbuilder", "fullscreen_notify_save_failed", "Failed to save embed. The name may already be in use."),
-    /** Saved successfully! */
-    fullscreenNotifySaved: () => t("embedbuilder", "fullscreen_notify_saved", "Saved successfully!"),
     /** Saved "{name}" */
     fullscreenNotifySavedNamed: (p: { name: P }) => t("embedbuilder", "fullscreen_notify_saved_named", "Saved \"{name}\"", p),
     /** Select menu added */
@@ -6307,8 +6291,6 @@ export const m = {
     fullscreenValidationTitleTooLong: (p: { number: P }) => t("embedbuilder", "fullscreen_validation_title_too_long", "Embed {number} title exceeds 256 characters", p),
     /** Cancel edits */
     pageActionCancelEdits: () => t("embedbuilder", "page_action_cancel_edits", "Cancel edits"),
-    /** Copied! */
-    pageActionCopied: () => t("embedbuilder", "page_action_copied", "Copied!"),
     /** Copy JSON */
     pageActionCopyJson: () => t("embedbuilder", "page_action_copy_json", "Copy JSON"),
     /** Row */
@@ -6339,8 +6321,8 @@ export const m = {
     pageNotifyCopyFailed: () => t("embedbuilder", "page_notify_copy_failed", "Failed to copy JSON"),
     /** Cannot duplicate select menu in same row */
     pageNotifyDuplicateSelect: () => t("embedbuilder", "page_notify_duplicate_select", "Cannot duplicate select menu in same row"),
-    /** JSON copied to clipboard! */
-    pageNotifyJsonCopied: () => t("embedbuilder", "page_notify_json_copied", "JSON copied to clipboard!"),
+    /** JSON copied */
+    pageNotifyJsonCopied: () => t("embedbuilder", "page_notify_json_copied", "JSON copied"),
     /** Maximum 5 rows allowed */
     pageNotifyMaxRows: () => t("embedbuilder", "page_notify_max_rows", "Maximum 5 rows allowed"),
     /** Nothing to send yet */
@@ -6575,8 +6557,8 @@ export const m = {
     templatesAnnouncementBasicName: () => t("embedbuilder", "templates_announcement_basic_name", "Basic Announcement"),
     /** 📢 Server Announcement */
     templatesAnnouncementBasicTitle: () => t("embedbuilder", "templates_announcement_basic_title", "📢 Server Announcement"),
-    /** Join us for an exciting community event! */
-    templatesAnnouncementEventBody: () => t("embedbuilder", "templates_announcement_event_body", "Join us for an exciting community event!"),
+    /** Join us for a community event. */
+    templatesAnnouncementEventBody: () => t("embedbuilder", "templates_announcement_event_body", "Join us for a community event."),
     /** Announce upcoming events */
     templatesAnnouncementEventDescription: () => t("embedbuilder", "templates_announcement_event_description", "Announce upcoming events"),
     /** 📅 Date & Time */
@@ -6615,8 +6597,8 @@ export const m = {
     templatesFieldCountOther: (p: { count: P }) => t("embedbuilder", "templates_field_count_other", "{count} fields", p),
     /** Achievement Unlocked! */
     templatesFunCelebrationAuthor: () => t("embedbuilder", "templates_fun_celebration_author", "Achievement Unlocked!"),
-    /** Let's celebrate this amazing achievement! */
-    templatesFunCelebrationBody: () => t("embedbuilder", "templates_fun_celebration_body", "Let's celebrate this amazing achievement!"),
+    /** Congratulations on the achievement. */
+    templatesFunCelebrationBody: () => t("embedbuilder", "templates_fun_celebration_body", "Congratulations on the achievement."),
     /** Celebrate achievements and milestones */
     templatesFunCelebrationDescription: () => t("embedbuilder", "templates_fun_celebration_description", "Celebrate achievements and milestones"),
     /** Celebration */
@@ -6633,8 +6615,8 @@ export const m = {
     templatesInfoBasicName: () => t("embedbuilder", "templates_info_basic_name", "Information Card"),
     /** ℹ️ Information */
     templatesInfoBasicTitle: () => t("embedbuilder", "templates_info_basic_title", "ℹ️ Information"),
-    /** Vote on this important community decision! */
-    templatesInteractivePollBody: () => t("embedbuilder", "templates_interactive_poll_body", "Vote on this important community decision!"),
+    /** Vote on this community decision. */
+    templatesInteractivePollBody: () => t("embedbuilder", "templates_interactive_poll_body", "Vote on this community decision."),
     /** Interactive poll with reactions */
     templatesInteractivePollDescription: () => t("embedbuilder", "templates_interactive_poll_description", "Interactive poll with reactions"),
     /** ✅ Option A */
@@ -6705,8 +6687,8 @@ export const m = {
     templatesWelcomeDetailedFooter: () => t("embedbuilder", "templates_welcome_detailed_footer", "You are member #%server.membercount%"),
     /** Detailed Welcome */
     templatesWelcomeDetailedName: () => t("embedbuilder", "templates_welcome_detailed_name", "Detailed Welcome"),
-    /** Welcome to %server.name%! ✨ */
-    templatesWelcomeDetailedTitle: () => t("embedbuilder", "templates_welcome_detailed_title", "Welcome to %server.name%! ✨"),
+    /** Welcome to %server.name%! */
+    templatesWelcomeDetailedTitle: () => t("embedbuilder", "templates_welcome_detailed_title", "Welcome to %server.name%!"),
     /** Dismiss error */
     validationDismissError: () => t("embedbuilder", "validation_dismiss_error", "Dismiss error"),
     /** Dismiss suggestion */
@@ -6821,8 +6803,8 @@ export const m = {
     submitAnother: () => t("feature-requests", "submit_another", "Submit another"),
     /** Your request "{title}" was sent to the developers. You can follow it under the Mine tab. */
     submittedMessage: (p: { title: P }) => t("feature-requests", "submitted_message", "Your request \"{title}\" was sent to the developers. You can follow it under the Mine tab.", p),
-    /** Thanks! */
-    submittedThanks: () => t("feature-requests", "submitted_thanks", "Thanks!"),
+    /** Thanks */
+    submittedThanks: () => t("feature-requests", "submitted_thanks", "Thanks"),
     /** Browse */
     tabBrowse: () => t("feature-requests", "tab_browse", "Browse"),
     /** Mine */
@@ -7483,8 +7465,8 @@ export const m = {
     wizardRolegreetsBenefit3: () => t("features", "wizard_rolegreets_benefit_3", "Reduce spam from unverified users"),
     /** Announce achievement roles */
     wizardRolegreetsBenefit4: () => t("features", "wizard_rolegreets_benefit_4", "Announce achievement roles"),
-    /** Greet members when they get roles (perfect for verification) */
-    wizardRolegreetsDescription: () => t("features", "wizard_rolegreets_description", "Greet members when they get roles (perfect for verification)"),
+    /** Greet members when they get roles (useful for verification) */
+    wizardRolegreetsDescription: () => t("features", "wizard_rolegreets_description", "Greet members when they get roles (useful for verification)"),
     /** Role Messages */
     wizardRolegreetsName: () => t("features", "wizard_rolegreets_name", "Role Messages"),
     /** Where should the message be sent? */
@@ -7779,10 +7761,10 @@ export const m = {
     pageListEmptyTitle: () => t("feeds", "page_list_empty_title", "No RSS Feeds"),
     /** RSS Feeds ({count}) */
     pageListTitle: (p: { count: P }) => t("feeds", "page_list_title", "RSS Feeds ({count})", p),
-    /** RSS feed added successfully! */
-    pageNotifyAdded: () => t("feeds", "page_notify_added", "RSS feed added successfully!"),
-    /** Feed removed successfully! */
-    pageNotifyRemoved: () => t("feeds", "page_notify_removed", "Feed removed successfully!"),
+    /** RSS feed added */
+    pageNotifyAdded: () => t("feeds", "page_notify_added", "RSS feed added"),
+    /** Feed removed */
+    pageNotifyRemoved: () => t("feeds", "page_notify_removed", "Feed removed"),
     /** with feeds */
     pageStatChannelsSub: () => t("feeds", "page_stat_channels_sub", "with feeds"),
     /** Total Feeds */
@@ -7959,8 +7941,6 @@ export const m = {
     conditionalTitle: () => t("forms", "conditional_title", "Conditional Logic (Optional)"),
     /** User must have: */
     conditionalUserMustHave: () => t("forms", "conditional_user_must_have", "User must have:"),
-    /** Form created successfully! */
-    createCreated: () => t("forms", "create_created", "Form created successfully!"),
     /** Creating form... */
     createCreating: () => t("forms", "create_creating", "Creating form..."),
     /** Failed to create form */
@@ -8041,8 +8021,8 @@ export const m = {
     editRequiredQuestion: () => t("forms", "edit_required_question", "Required question"),
     /** Form restored */
     editRestored: () => t("forms", "edit_restored", "Form restored"),
-    /** Form updated successfully! */
-    editSaved: () => t("forms", "edit_saved", "Form updated successfully!"),
+    /** Form updated */
+    editSaved: () => t("forms", "edit_saved", "Form updated"),
     /** Section description */
     editSectionDescription: () => t("forms", "edit_section_description", "Section description"),
     /** Shown under the section heading */
@@ -8299,22 +8279,22 @@ export const m = {
     pageLoadingShareLink: () => t("forms", "page_loading_share_link", "Getting share link..."),
     /** Updating form... */
     pageLoadingStatus: () => t("forms", "page_loading_status", "Updating form..."),
-    /** Form activated successfully */
-    pageNotifyActivated: () => t("forms", "page_notify_activated", "Form activated successfully"),
-    /** Form created successfully */
-    pageNotifyCreated: () => t("forms", "page_notify_created", "Form created successfully"),
-    /** Form deactivated successfully */
-    pageNotifyDeactivated: () => t("forms", "page_notify_deactivated", "Form deactivated successfully"),
-    /** Form deleted successfully */
-    pageNotifyDeleted: () => t("forms", "page_notify_deleted", "Form deleted successfully"),
+    /** Form activated */
+    pageNotifyActivated: () => t("forms", "page_notify_activated", "Form activated"),
+    /** Form created */
+    pageNotifyCreated: () => t("forms", "page_notify_created", "Form created"),
+    /** Form deactivated */
+    pageNotifyDeactivated: () => t("forms", "page_notify_deactivated", "Form deactivated"),
+    /** Form deleted */
+    pageNotifyDeleted: () => t("forms", "page_notify_deleted", "Form deleted"),
     /** Form duplicated as "{name}" */
     pageNotifyDuplicated: (p: { name: P }) => t("forms", "page_notify_duplicated", "Form duplicated as \"{name}\"", p),
-    /** Responses exported successfully */
-    pageNotifyExported: () => t("forms", "page_notify_exported", "Responses exported successfully"),
-    /** Link copied to clipboard! */
-    pageNotifyLinkCopied: () => t("forms", "page_notify_link_copied", "Link copied to clipboard!"),
-    /** Form published successfully! */
-    pageNotifyPublished: () => t("forms", "page_notify_published", "Form published successfully!"),
+    /** Responses exported */
+    pageNotifyExported: () => t("forms", "page_notify_exported", "Responses exported"),
+    /** Link copied */
+    pageNotifyLinkCopied: () => t("forms", "page_notify_link_copied", "Link copied"),
+    /** Form published */
+    pageNotifyPublished: () => t("forms", "page_notify_published", "Form published"),
     /** Close share modal */
     pageShareCloseAria: () => t("forms", "page_share_close_aria", "Close share modal"),
     /** This link is permanent and reusable. Share it anywhere - clicking "Copy" again won't in... */
@@ -8485,10 +8465,8 @@ export const m = {
     publicSuccessApplication: () => t("forms", "public_success_application", "Your join application has been submitted and is now pending review."),
     /** Your changes have been saved and the reviewers can see them. */
     publicSuccessEdit: () => t("forms", "public_success_edit", "Your changes have been saved and the reviewers can see them."),
-    /** Your response has been submitted successfully. */
-    publicSuccessResponse: () => t("forms", "public_success_response", "Your response has been submitted successfully."),
-    /** Success! */
-    publicSuccessTitle: () => t("forms", "public_success_title", "Success!"),
+    /** Your response has been submitted. */
+    publicSuccessResponse: () => t("forms", "public_success_response", "Your response has been submitted."),
     /** Answers updated */
     publicSuccessUpdated: () => t("forms", "public_success_updated", "Answers updated"),
     /** The reviewers keep a copy of what you wrote before, so they can see what changed. */
@@ -9045,10 +9023,10 @@ export const m = {
     pageFieldWinners: () => t("giveaways", "page_field_winners", "Number of Winners"),
     /** Loading giveaways... */
     pageLoadingFetch: () => t("giveaways", "page_loading_fetch", "Loading giveaways..."),
-    /** Giveaway created successfully */
-    pageNotifyCreated: () => t("giveaways", "page_notify_created", "Giveaway created successfully"),
-    /** Giveaway ended successfully */
-    pageNotifyEnded: () => t("giveaways", "page_notify_ended", "Giveaway ended successfully"),
+    /** Giveaway created */
+    pageNotifyCreated: () => t("giveaways", "page_notify_created", "Giveaway created"),
+    /** Giveaway ended */
+    pageNotifyEnded: () => t("giveaways", "page_notify_ended", "Giveaway ended"),
     /** Manage server giveaways and prizes */
     pageSubtitle: () => t("giveaways", "page_subtitle", "Manage server giveaways and prizes"),
     /** Create Giveaway */
@@ -9089,10 +9067,10 @@ export const m = {
     pageErrorLoad: () => t("highlights", "page_error_load", "Failed to load highlight data"),
     /** Search failed */
     pageErrorSearch: () => t("highlights", "page_error_search", "Search failed"),
-    /** Highlight deleted successfully! */
-    pageNotifyDeleted: () => t("highlights", "page_notify_deleted", "Highlight deleted successfully!"),
-    /** Deleted {count} highlight(s)! */
-    pageNotifyDeletedCount: (p: { count: P }) => t("highlights", "page_notify_deleted_count", "Deleted {count} highlight(s)!", p),
+    /** Highlight deleted */
+    pageNotifyDeleted: () => t("highlights", "page_notify_deleted", "Highlight deleted"),
+    /** Deleted {count} highlight(s) */
+    pageNotifyDeletedCount: (p: { count: P }) => t("highlights", "page_notify_deleted_count", "Deleted {count} highlight(s)", p),
     /** "{word}" by {username} */
     pageRecentLine: (p: { username: P; word: P }) => t("highlights", "page_recent_line", "\"{word}\" by {username}", p),
     /** Recent Highlights */
@@ -9151,16 +9129,12 @@ export const m = {
     errorTitle: (p: { status: P }) => t("home", "error_title", "Error {status} - Mewdeko", p),
     /** Add to Discord */
     heroAddToDiscord: () => t("home", "hero_add_to_discord", "Add to Discord"),
-    /** Mewdeko, the free and open source Discord bot */
-    heroEyebrow: () => t("home", "hero_eyebrow", "Mewdeko, the free and open source Discord bot"),
     /** Open dashboard */
     heroOpenDashboard: () => t("home", "hero_open_dashboard", "Open dashboard"),
-    /** In {servers}+ servers, with every feature free. */
-    heroServers: (p: { servers: P }) => t("home", "hero_servers", "In {servers}+ servers, with every feature free.", p),
     /** Moderation, tickets, XP, achievements, music, forms, giveaways and about a thousand oth... */
     heroSubtitle: () => t("home", "hero_subtitle", "Moderation, tickets, XP, achievements, music, forms, giveaways and about a thousand other things. We might have gone a little overboard."),
-    /** One bot.<br />Way too many <span style="color: {color}">tails.</span> */
-    heroTitle: (p: { color: P }) => t("home", "hero_title", "One bot.<br />Way too many <span style=\"color: {color}\">tails.</span>", p),
+    /** One bot.<br />Way too many tails. */
+    heroTitle: () => t("home", "hero_title", "One bot.<br />Way too many tails."),
     /** 20+ gambling games */
     landing20GamblingGames: () => t("home", "landing_20_gambling_games", "20+ gambling games"),
     /** 30 welcome messages */
@@ -9207,8 +9181,6 @@ export const m = {
     landingEconomyGames: () => t("home", "landing_economy_games", "Economy Games"),
     /** {commands} commands across {modules} modules: forms, XP, economy, music, protection, lo... */
     landingEmbedSummary: (p: { commands: P; modules: P; servers: P }) => t("home", "landing_embed_summary", "{commands} commands across {modules} modules: forms, XP, economy, music, protection, logging and more. Trusted by {servers}+ servers. Free and open source since 2020.", p),
-    /** Engagement */
-    landingEngagement: () => t("home", "landing_engagement", "Engagement"),
     /** Every command, with examples and the permissions it needs. */
     landingEveryCommandWithExamplesAndThe: () => t("home", "landing_every_command_with_examples_and_the", "Every command, with examples and the permissions it needs."),
     /** Every module has its own wiki page. */
@@ -9241,14 +9213,12 @@ export const m = {
     landingLevelsForChattingAndVoiceWith: () => t("home", "landing_levels_for_chatting_and_voice_with", "Levels for chatting and voice, with a rank card you can redesign."),
     /** Loading servers... */
     landingLoadingServers: () => t("home", "landing_loading_servers", "Loading servers..."),
-    /** Log Events */
-    landingLogEvents: () => t("home", "landing_log_events", "Log Events"),
     /** Members get their own voice channel */
     landingMembersGetTheirOwnVoiceChannel: () => t("home", "landing_members_get_their_own_voice_channel", "Members get their own voice channel"),
     /** Members thank each other */
     landingMembersThankEachOther: () => t("home", "landing_members_thank_each_other", "Members thank each other"),
-    /** {commands} commands across {modules} modules - Forms, XP/Leveling, Economy, Music, Prot... */
-    landingMetaDescription: (p: { commands: P; modules: P; servers: P }) => t("home", "landing_meta_description", "{commands} commands across {modules} modules - Forms, XP/Leveling, Economy, Music, Protection, Logging, and more. Trusted by {servers}+ servers. Completely free and open source since 2020.", p),
+    /** {commands} commands across {modules} modules: forms, XP, economy, music, protection, lo... */
+    landingMetaDescription: (p: { commands: P; modules: P; servers: P }) => t("home", "landing_meta_description", "{commands} commands across {modules} modules: forms, XP, economy, music, protection, logging and more. Used in {servers}+ servers. Free and open source since 2020.", p),
     /** Discord bot, free Discord bot, open source Discord bot, forms builder, ban appeals, XP ... */
     landingMetaKeywords: () => t("home", "landing_meta_keywords", "Discord bot, free Discord bot, open source Discord bot, forms builder, ban appeals, XP leveling bot, Discord economy bot, Discord music bot, Discord moderation bot, anti-raid protection, anti-spam, server logging, chat triggers, embed builder, ticket system, giveaway bot, suggestion bot, starboard, custom commands, role states, multi-purpose bot, Discord reputation system, stream alerts, invite tracking, automated moderation, Mewdeko"),
     /** Mewdeko - {commands} Commands. Free & Open Source Discord Bot */
@@ -9269,8 +9239,6 @@ export const m = {
     landingOrJustHopInDiscordFor: () => t("home", "landing_or_just_hop_in_discord_for", "Or just hop in Discord for quick questions and help"),
     /** Our Top Servers */
     landingOurTopServers: () => t("home", "landing_our_top_servers", "Our Top Servers"),
-    /** Per-Server */
-    landingPerServer: () => t("home", "landing_per_server", "Per-Server"),
     /** Per-Server Bot Profile */
     landingPerServerBotProfile: () => t("home", "landing_per_server_bot_profile", "Per-Server Bot Profile"),
     /** Polls with buttons */
@@ -9289,8 +9257,8 @@ export const m = {
     landingRolesHandedOutWhenMembersReach: () => t("home", "landing_roles_handed_out_when_members_reach", "Roles handed out when members reach a level"),
     /** Scheduled messages */
     landingScheduledMessages: () => t("home", "landing_scheduled_messages", "Scheduled messages"),
-    /** See full list → */
-    landingSeeFullList: () => t("home", "landing_see_full_list", "See full list →"),
+    /** See full list */
+    landingSeeFullList: () => t("home", "landing_see_full_list", "See full list"),
     /** See It For Yourself */
     landingSeeItForYourself: () => t("home", "landing_see_it_for_yourself", "See It For Yourself"),
     /** See It In Action */
@@ -9319,8 +9287,8 @@ export const m = {
     landingTriviaHangmanTictactoe: () => t("home", "landing_trivia_hangman_tictactoe", "Trivia, hangman, TicTacToe"),
     /** Twitch/YouTube */
     landingTwitchYoutube: () => t("home", "landing_twitch_youtube", "Twitch/YouTube"),
-    /** Free & open source Discord bot with {commands} commands. Forms builder, XP/leveling, ec... */
-    landingTwitterDescription: (p: { commands: P }) => t("home", "landing_twitter_description", "Free & open source Discord bot with {commands} commands. Forms builder, XP/leveling, economy, music, protection systems, and more. No limitations, no subscriptions.", p),
+    /** Free and open source Discord bot with {commands} commands, including forms, XP, economy... */
+    landingTwitterDescription: (p: { commands: P }) => t("home", "landing_twitter_description", "Free and open source Discord bot with {commands} commands, including forms, XP, economy, music and protection.", p),
     /** Mewdeko - {commands} Commands. Ridiculously Over-Engineered. */
     landingTwitterTitle: (p: { commands: P }) => t("home", "landing_twitter_title", "Mewdeko - {commands} Commands. Ridiculously Over-Engineered.", p),
     /** View Complete Feature List */
@@ -9331,16 +9299,10 @@ export const m = {
     landingViewSource: () => t("home", "landing_view_source", "View Source"),
     /** Voting System */
     landingVotingSystem: () => t("home", "landing_voting_system", "Voting System"),
-    /** We documented every single one of them */
-    landingWeDocumentedEverySingleOneOf: () => t("home", "landing_we_documented_every_single_one_of", "We documented every single one of them"),
-    /** We Use Our Own Tools */
-    landingWeUseOurOwnTools: () => t("home", "landing_we_use_our_own_tools", "We Use Our Own Tools"),
     /** Who talks, and where */
     landingWhoTalksAndWhere: () => t("home", "landing_who_talks_and_where", "Who talks, and where"),
     /** XP and Leveling */
     landingXpAndLeveling: () => t("home", "landing_xp_and_leveling", "XP and Leveling"),
-    /** You can read all of it on GitHub. */
-    landingYouCanReadAllOfIt: () => t("home", "landing_you_can_read_all_of_it", "You can read all of it on GitHub."),
     /** YouTube, Spotify and SoundCloud */
     landingYoutubeSpotifyAndSoundcloud: () => t("home", "landing_youtube_spotify_and_soundcloud", "YouTube, Spotify and SoundCloud"),
     /** About */
@@ -9419,8 +9381,6 @@ export const m = {
     tailsWrenchText: () => t("home", "tails_wrench_text", "Write your own commands and replies, and change how the bot looks in your server."),
     /** Make it yours */
     tailsWrenchTitle: () => t("home", "tails_wrench_title", "Make it yours"),
-    /** What Mewdeko has been working on */
-    updateEyebrow: () => t("home", "update_eyebrow", "What Mewdeko has been working on"),
     /** Next update */
     updateNext: () => t("home", "update_next", "Next update"),
     /** Previous update */
@@ -9850,6 +9810,68 @@ export const m = {
     /** {regular} regular · {left} left · {fake} fake */
     topInviterDetail: (p: { fake: P; left: P; regular: P }) => t("invites", "top_inviter_detail", "{regular} regular · {left} left · {fake} fake", p),
   },
+  joinRoleTimeout: {
+    /** Give a role */
+    actionAddRole: () => t("join-role-timeout", "action_add_role", "Give a role"),
+    /** Sent to the member when the action is taken. Leave empty for the default message. */
+    actionMessageHint: () => t("join-role-timeout", "action_message_hint", "Sent to the member when the action is taken. Leave empty for the default message."),
+    /** Action message */
+    actionMessageLabel: () => t("join-role-timeout", "action_message_label", "Action message"),
+    /** You were removed from %server.name% because you did not get a role in time. */
+    actionMessagePlaceholder: () => t("join-role-timeout", "action_message_placeholder", "You were removed from %server.name% because you did not get a role in time."),
+    /** Role to give */
+    actionRoleLabel: () => t("join-role-timeout", "action_role_label", "Role to give"),
+    /** Time out */
+    actionTimeout: () => t("join-role-timeout", "action_timeout", "Time out"),
+    /** Members who do not get one of the required roles in time have the action applied to them. */
+    enabledHint: () => t("join-role-timeout", "enabled_hint", "Members who do not get one of the required roles in time have the action applied to them."),
+    /** The timeout has to be between 1 minute and 30 days */
+    errorInvalidTimeout: () => t("join-role-timeout", "error_invalid_timeout", "The timeout has to be between 1 minute and 30 days"),
+    /** The warning has to be at least 1 minute and shorter than the timeout */
+    errorInvalidWarn: () => t("join-role-timeout", "error_invalid_warn", "The warning has to be at least 1 minute and shorter than the timeout"),
+    /** Pick the role to give */
+    errorMissingActionRole: () => t("join-role-timeout", "error_missing_action_role", "Pick the role to give"),
+    /** Pick at least one required role */
+    errorMissingRequiredRoles: () => t("join-role-timeout", "error_missing_required_roles", "Pick at least one required role"),
+    /** Couldn't save the join role timeout */
+    errorSave: () => t("join-role-timeout", "error_save", "Couldn't save the join role timeout"),
+    /** Members with any of these roles are never acted on. */
+    exemptRolesHint: () => t("join-role-timeout", "exempt_roles_hint", "Members with any of these roles are never acted on."),
+    /** Exempt roles */
+    exemptRolesLabel: () => t("join-role-timeout", "exempt_roles_label", "Exempt roles"),
+    /** Members already here without a required role start counting down when this is turned on. */
+    includeExistingHint: () => t("join-role-timeout", "include_existing_hint", "Members already here without a required role start counting down when this is turned on."),
+    /** Include existing members */
+    includeExistingLabel: () => t("join-role-timeout", "include_existing_label", "Include existing members"),
+    /** {count} counting down */
+    pendingCount: (p: { count: P }) => t("join-role-timeout", "pending_count", "{count} counting down", p),
+    /** Next due */
+    pendingNext: () => t("join-role-timeout", "pending_next", "Next due"),
+    /** Nobody is counting down */
+    pendingNone: () => t("join-role-timeout", "pending_none", "Nobody is counting down"),
+    /** Any one of these roles is enough to stop the countdown. */
+    requiredRolesHint: () => t("join-role-timeout", "required_roles_hint", "Any one of these roles is enough to stop the countdown."),
+    /** Required roles */
+    requiredRolesLabel: () => t("join-role-timeout", "required_roles_label", "Required roles"),
+    /** Select roles */
+    rolesPlaceholder: () => t("join-role-timeout", "roles_placeholder", "Select roles"),
+    /** Act on members who do not get a role within a set time of joining */
+    subtitle: () => t("join-role-timeout", "subtitle", "Act on members who do not get a role within a set time of joining"),
+    /** Time to get a role */
+    timeoutLabel: () => t("join-role-timeout", "timeout_label", "Time to get a role"),
+    /** Join role timeout */
+    title: () => t("join-role-timeout", "title", "Join role timeout"),
+    /** Optional. Leave empty to send no warning. */
+    warnBeforeHint: () => t("join-role-timeout", "warn_before_hint", "Optional. Leave empty to send no warning."),
+    /** Warn before */
+    warnBeforeLabel: () => t("join-role-timeout", "warn_before_label", "Warn before"),
+    /** Sent to the member before the timeout. Leave empty for the default message. */
+    warnMessageHint: () => t("join-role-timeout", "warn_message_hint", "Sent to the member before the timeout. Leave empty for the default message."),
+    /** Warning message */
+    warnMessageLabel: () => t("join-role-timeout", "warn_message_label", "Warning message"),
+    /** Get a role in %server.name% soon or you will be removed. */
+    warnMessagePlaceholder: () => t("join-role-timeout", "warn_message_placeholder", "Get a role in %server.name% soon or you will be removed."),
+  },
   layout: {
     /** Close dialog */
     confirmClose: () => t("layout", "confirm_close", "Close dialog"),
@@ -10249,12 +10271,8 @@ export const m = {
     hostLabel: () => t("linkfix", "host_label", "Fixing host"),
     /** Use default */
     hostReset: () => t("linkfix", "host_reset", "Use default"),
-    /** Link fixing settings saved */
-    notifySaved: () => t("linkfix", "notify_saved", "Link fixing settings saved"),
     /** Reply to social media links with a copy that embeds properly */
     pageSubtitle: () => t("linkfix", "page_subtitle", "Reply to social media links with a copy that embeds properly"),
-    /** Save hosts */
-    save: () => t("linkfix", "save", "Save hosts"),
     /** Reply to {site} links with the fixed link */
     siteHint: (p: { site: P }) => t("linkfix", "site_hint", "Reply to {site} links with the fixed link", p),
     /** Turn sites on or off, and pick the embed fixing service each one uses */
@@ -10571,10 +10589,10 @@ export const m = {
     afkSince: (p: { time: P }) => t("me", "afk_since", "Since {time}", p),
     /** AFK Status */
     afkStatus: () => t("me", "afk_status", "AFK Status"),
-    /** AFK status removed! */
-    afkStatusRemoved: () => t("me", "afk_status_removed", "AFK status removed!"),
-    /** AFK status set! */
-    afkStatusSet: () => t("me", "afk_status_set", "AFK status set!"),
+    /** AFK status removed */
+    afkStatusRemoved: () => t("me", "afk_status_removed", "AFK status removed"),
+    /** AFK status set */
+    afkStatusSet: () => t("me", "afk_status_set", "AFK status set"),
     /** Allow birthday celebrations */
     allowBirthdayCelebrations: () => t("me", "allow_birthday_celebrations", "Allow birthday celebrations"),
     /** Announce my unlocks in servers */
@@ -10653,10 +10671,10 @@ export const m = {
     failedToUpdatePreference: () => t("me", "failed_to_update_preference", "Failed to update preference"),
     /** Guided Setup */
     guidedSetup: () => t("me", "guided_setup", "Guided Setup"),
-    /** Highlight added! */
-    highlightAdded: () => t("me", "highlight_added", "Highlight added!"),
-    /** Highlight removed! */
-    highlightRemoved: () => t("me", "highlight_removed", "Highlight removed!"),
+    /** Highlight added */
+    highlightAdded: () => t("me", "highlight_added", "Highlight added"),
+    /** Highlight removed */
+    highlightRemoved: () => t("me", "highlight_removed", "Highlight removed"),
     /** Last.fm account unlinked */
     lastFmAccountUnlinked: () => t("me", "last_fm_account_unlinked", "Last.fm account unlinked"),
     /** Last.fm Scrobbling */
@@ -10727,8 +10745,8 @@ export const m = {
     profileBadges: () => t("me", "profile_badges", "Profile badges"),
     /** Profile Color */
     profileColor: () => t("me", "profile_color", "Profile Color"),
-    /** Profile updated! */
-    profileUpdated: () => t("me", "profile_updated", "Profile updated!"),
+    /** Profile updated */
+    profileUpdated: () => t("me", "profile_updated", "Profile updated"),
     /** Pronouns: */
     pronouns2: () => t("me", "pronouns_2", "Pronouns:"),
     /** Recent Tracks */
@@ -10767,36 +10785,36 @@ export const m = {
     theseApplyInEveryServer: () => t("me", "these_apply_in_every_server", "These apply in every server."),
     /** they/them, she/her, he/him... */
     theyThemSheHerHe: () => t("me", "they_them_she_her_he", "they/them, she/her, he/him..."),
-    /** Birthday announcements disabled! */
-    toastBirthdayAnnouncementsDisabled: () => t("me", "toast_birthday_announcements_disabled", "Birthday announcements disabled!"),
-    /** Birthday announcements enabled! */
-    toastBirthdayAnnouncementsEnabled: () => t("me", "toast_birthday_announcements_enabled", "Birthday announcements enabled!"),
-    /** Guided setup disabled! */
-    toastGuidedSetupDisabled: () => t("me", "toast_guided_setup_disabled", "Guided setup disabled!"),
-    /** Guided setup enabled! */
-    toastGuidedSetupEnabled: () => t("me", "toast_guided_setup_enabled", "Guided setup enabled!"),
-    /** Setup wizard reset for {server}! */
-    toastGuildWizardReset: (p: { server: P }) => t("me", "toast_guild_wizard_reset", "Setup wizard reset for {server}!", p),
-    /** Level-up pings disabled! */
-    toastLevelUpPingsDisabled: () => t("me", "toast_level_up_pings_disabled", "Level-up pings disabled!"),
-    /** Level-up pings enabled! */
-    toastLevelUpPingsEnabled: () => t("me", "toast_level_up_pings_enabled", "Level-up pings enabled!"),
-    /** Pronoun fetching disabled! */
-    toastPronounFetchingDisabled: () => t("me", "toast_pronoun_fetching_disabled", "Pronoun fetching disabled!"),
-    /** Pronoun fetching enabled! */
-    toastPronounFetchingEnabled: () => t("me", "toast_pronoun_fetching_enabled", "Pronoun fetching enabled!"),
+    /** Birthday announcements disabled */
+    toastBirthdayAnnouncementsDisabled: () => t("me", "toast_birthday_announcements_disabled", "Birthday announcements disabled"),
+    /** Birthday announcements enabled */
+    toastBirthdayAnnouncementsEnabled: () => t("me", "toast_birthday_announcements_enabled", "Birthday announcements enabled"),
+    /** Guided setup disabled */
+    toastGuidedSetupDisabled: () => t("me", "toast_guided_setup_disabled", "Guided setup disabled"),
+    /** Guided setup enabled */
+    toastGuidedSetupEnabled: () => t("me", "toast_guided_setup_enabled", "Guided setup enabled"),
+    /** Setup wizard reset for {server} */
+    toastGuildWizardReset: (p: { server: P }) => t("me", "toast_guild_wizard_reset", "Setup wizard reset for {server}", p),
+    /** Level-up pings disabled */
+    toastLevelUpPingsDisabled: () => t("me", "toast_level_up_pings_disabled", "Level-up pings disabled"),
+    /** Level-up pings enabled */
+    toastLevelUpPingsEnabled: () => t("me", "toast_level_up_pings_enabled", "Level-up pings enabled"),
+    /** Pronoun fetching disabled */
+    toastPronounFetchingDisabled: () => t("me", "toast_pronoun_fetching_disabled", "Pronoun fetching disabled"),
+    /** Pronoun fetching enabled */
+    toastPronounFetchingEnabled: () => t("me", "toast_pronoun_fetching_enabled", "Pronoun fetching enabled"),
     /** Scrobbling disabled */
     toastScrobblingDisabled: () => t("me", "toast_scrobbling_disabled", "Scrobbling disabled"),
     /** Scrobbling enabled */
     toastScrobblingEnabled: () => t("me", "toast_scrobbling_enabled", "Scrobbling enabled"),
-    /** Stats tracking allowed! */
-    toastStatsTrackingAllowed: () => t("me", "toast_stats_tracking_allowed", "Stats tracking allowed!"),
-    /** Stats tracking blocked! */
-    toastStatsTrackingBlocked: () => t("me", "toast_stats_tracking_blocked", "Stats tracking blocked!"),
-    /** Welcome DMs allowed! */
-    toastWelcomeDmsAllowed: () => t("me", "toast_welcome_dms_allowed", "Welcome DMs allowed!"),
-    /** Welcome DMs blocked! */
-    toastWelcomeDmsBlocked: () => t("me", "toast_welcome_dms_blocked", "Welcome DMs blocked!"),
+    /** Stats tracking allowed */
+    toastStatsTrackingAllowed: () => t("me", "toast_stats_tracking_allowed", "Stats tracking allowed"),
+    /** Stats tracking blocked */
+    toastStatsTrackingBlocked: () => t("me", "toast_stats_tracking_blocked", "Stats tracking blocked"),
+    /** Welcome DMs allowed */
+    toastWelcomeDmsAllowed: () => t("me", "toast_welcome_dms_allowed", "Welcome DMs allowed"),
+    /** Welcome DMs blocked */
+    toastWelcomeDmsBlocked: () => t("me", "toast_welcome_dms_blocked", "Welcome DMs blocked"),
     /** Wizard state reset! You'll see setup guides again. */
     toastWizardReset: () => t("me", "toast_wizard_reset", "Wizard state reset! You'll see setup guides again."),
     /** Top Albums */
@@ -11045,8 +11063,8 @@ export const m = {
     notifyDefaultSet: (p: { name: P }) => t("minecraft", "notify_default_set", "\"{name}\" set as default server", p),
     /** Failed to load history */
     notifyHistoryFailed: () => t("minecraft", "notify_history_failed", "Failed to load history"),
-    /** Key copied! */
-    notifyKeyCopied: () => t("minecraft", "notify_key_copied", "Key copied!"),
+    /** Key copied */
+    notifyKeyCopied: () => t("minecraft", "notify_key_copied", "Key copied"),
     /** Failed to generate key */
     notifyKeyGenerateFailed: () => t("minecraft", "notify_key_generate_failed", "Failed to generate key"),
     /** Plugin API key generated. Copy it now, it won't be shown again. */
@@ -11067,16 +11085,16 @@ export const m = {
     notifyRefreshFailed: () => t("minecraft", "notify_refresh_failed", "Failed to refresh statuses"),
     /** Failed to remove server */
     notifyRemoveFailed: () => t("minecraft", "notify_remove_failed", "Failed to remove server"),
-    /** Server "{name}" added successfully! */
-    notifyServerAdded: (p: { name: P }) => t("minecraft", "notify_server_added", "Server \"{name}\" added successfully!", p),
+    /** Server "{name}" added */
+    notifyServerAdded: (p: { name: P }) => t("minecraft", "notify_server_added", "Server \"{name}\" added", p),
     /** Server "{name}" removed */
     notifyServerRemoved: (p: { name: P }) => t("minecraft", "notify_server_removed", "Server \"{name}\" removed", p),
-    /** Server "{name}" updated! */
-    notifyServerUpdated: (p: { name: P }) => t("minecraft", "notify_server_updated", "Server \"{name}\" updated!", p),
+    /** Server "{name}" updated */
+    notifyServerUpdated: (p: { name: P }) => t("minecraft", "notify_server_updated", "Server \"{name}\" updated", p),
     /** Failed to update server */
     notifyUpdateFailed: () => t("minecraft", "notify_update_failed", "Failed to update server"),
-    /** URL copied! */
-    notifyUrlCopied: () => t("minecraft", "notify_url_copied", "URL copied!"),
+    /** URL copied */
+    notifyUrlCopied: () => t("minecraft", "notify_url_copied", "URL copied"),
     /** Failed to add player */
     notifyWhitelistAddFailed: () => t("minecraft", "notify_whitelist_add_failed", "Failed to add player"),
     /** Player added to whitelist */
@@ -11381,8 +11399,8 @@ export const m = {
     warningsDeleteTitle: () => t("moderation", "warnings_delete_title", "Delete permanently"),
     /** No warnings found */
     warningsEmpty: () => t("moderation", "warnings_empty", "No warnings found"),
-    /** This server has been peaceful! */
-    warningsEmptyHint: () => t("moderation", "warnings_empty_hint", "This server has been peaceful!"),
+    /** This server has been peaceful. */
+    warningsEmptyHint: () => t("moderation", "warnings_empty_hint", "This server has been peaceful."),
     /** Forgive */
     warningsForgive: () => t("moderation", "warnings_forgive", "Forgive"),
     /** Forgive all */
@@ -11553,22 +11571,22 @@ export const m = {
     loadingConfigurations: () => t("multigreets", "loading_configurations", "Loading configurations..."),
     /** Click to configure greeting message */
     messagePlaceholder: () => t("multigreets", "message_placeholder", "Click to configure greeting message"),
-    /** Greet added successfully */
-    notifyAdded: () => t("multigreets", "notify_added", "Greet added successfully"),
-    /** Delete time updated successfully */
-    notifyDeleteTimeUpdated: () => t("multigreets", "notify_delete_time_updated", "Delete time updated successfully"),
-    /** Greet bots setting updated successfully */
-    notifyGreetBotsUpdated: () => t("multigreets", "notify_greet_bots_updated", "Greet bots setting updated successfully"),
-    /** Message updated successfully */
-    notifyMessageUpdated: () => t("multigreets", "notify_message_updated", "Message updated successfully"),
-    /** Greet removed successfully */
-    notifyRemoved: () => t("multigreets", "notify_removed", "Greet removed successfully"),
-    /** Greet status updated successfully */
-    notifyStatusUpdated: () => t("multigreets", "notify_status_updated", "Greet status updated successfully"),
-    /** Greet type updated successfully */
-    notifyTypeUpdated: () => t("multigreets", "notify_type_updated", "Greet type updated successfully"),
-    /** Webhook updated successfully */
-    notifyWebhookUpdated: () => t("multigreets", "notify_webhook_updated", "Webhook updated successfully"),
+    /** Greet added */
+    notifyAdded: () => t("multigreets", "notify_added", "Greet added"),
+    /** Delete time updated */
+    notifyDeleteTimeUpdated: () => t("multigreets", "notify_delete_time_updated", "Delete time updated"),
+    /** Greet bots setting updated */
+    notifyGreetBotsUpdated: () => t("multigreets", "notify_greet_bots_updated", "Greet bots setting updated"),
+    /** Message updated */
+    notifyMessageUpdated: () => t("multigreets", "notify_message_updated", "Message updated"),
+    /** Greet removed */
+    notifyRemoved: () => t("multigreets", "notify_removed", "Greet removed"),
+    /** Greet status updated */
+    notifyStatusUpdated: () => t("multigreets", "notify_status_updated", "Greet status updated"),
+    /** Greet type updated */
+    notifyTypeUpdated: () => t("multigreets", "notify_type_updated", "Greet type updated"),
+    /** Webhook updated */
+    notifyWebhookUpdated: () => t("multigreets", "notify_webhook_updated", "Webhook updated"),
     /** Configure multiple greeting messages for your server */
     pageSubtitle: () => t("multigreets", "page_subtitle", "Configure multiple greeting messages for your server"),
     /** MultiGreets Configuration */
@@ -12559,24 +12577,24 @@ export const m = {
     howStep2: () => t("patreon", "how_step_2", "Authorize Mewdeko to access your campaign information and supporter data."),
     /** Configure automatic role rewards and exclusive perks for your supporters. */
     howStep3: () => t("patreon", "how_step_3", "Configure automatic role rewards and exclusive perks for your supporters."),
-    /** Supporters will automatically receive their Discord roles and perks! */
-    howStep4: () => t("patreon", "how_step_4", "Supporters will automatically receive their Discord roles and perks!"),
+    /** Supporters get their Discord roles and perks automatically. */
+    howStep4: () => t("patreon", "how_step_4", "Supporters get their Discord roles and perks automatically."),
     /** Loading Patreon data... */
     loading: () => t("patreon", "loading", "Loading Patreon data..."),
     /** Failed to send the announcement */
     notifyAnnounceFailed: () => t("patreon", "notify_announce_failed", "Failed to send the announcement"),
     /** Failed to update configuration */
     notifyConfigFailed: () => t("patreon", "notify_config_failed", "Failed to update configuration"),
-    /** Configuration updated successfully! */
-    notifyConfigUpdated: () => t("patreon", "notify_config_updated", "Configuration updated successfully!"),
-    /** Patreon integration configured successfully! */
-    notifyConfigured: () => t("patreon", "notify_configured", "Patreon integration configured successfully!"),
+    /** Configuration updated */
+    notifyConfigUpdated: () => t("patreon", "notify_config_updated", "Configuration updated"),
+    /** Patreon integration configured */
+    notifyConfigured: () => t("patreon", "notify_configured", "Patreon integration configured"),
     /** Failed to map tier to role */
     notifyMapFailed: () => t("patreon", "notify_map_failed", "Failed to map tier to role"),
     /** Failed to refresh data */
     notifyRefreshFailed: () => t("patreon", "notify_refresh_failed", "Failed to refresh data"),
-    /** Data refreshed successfully! */
-    notifyRefreshed: () => t("patreon", "notify_refreshed", "Data refreshed successfully!"),
+    /** Data refreshed */
+    notifyRefreshed: () => t("patreon", "notify_refreshed", "Data refreshed"),
     /** Failed to sync */
     notifySyncFailed: () => t("patreon", "notify_sync_failed", "Failed to sync"),
     /** Failed to sync roles */
@@ -12921,8 +12939,8 @@ export const m = {
     pageClearFilters: () => t("placeholders", "page_clear_filters", "Clear filters"),
     /** Copy {code} to clipboard */
     pageCopyCode: (p: { code: P }) => t("placeholders", "page_copy_code", "Copy {code} to clipboard", p),
-    /** Placeholders for commands with embeds! */
-    pageDescription: () => t("placeholders", "page_description", "Placeholders for commands with embeds!"),
+    /** Placeholders for commands with embeds */
+    pageDescription: () => t("placeholders", "page_description", "Placeholders for commands with embeds"),
     /** ## Placeholders Every placeholder Mewdeko fills in for greets, embeds, chat triggers an... */
     pageEmbedBody: () => t("placeholders", "page_embed_body", "## Placeholders Every placeholder Mewdeko fills in for greets, embeds, chat triggers and other custom messages, with examples."),
     /** Browse placeholders */
@@ -12955,8 +12973,8 @@ export const m = {
     pageSectionHeading: (p: { category: P }) => t("placeholders", "page_section_heading", "{category} Placeholders", p),
     /** Dynamic content for embeds and messages */
     pageSubheading: () => t("placeholders", "page_subheading", "Dynamic content for embeds and messages"),
-    /** Mewdeko - Placeholders for commands with embeds! */
-    pageTitle: () => t("placeholders", "page_title", "Mewdeko - Placeholders for commands with embeds!"),
+    /** Mewdeko - Placeholders for commands with embeds */
+    pageTitle: () => t("placeholders", "page_title", "Mewdeko - Placeholders for commands with embeds"),
     /** Patreon link */
     patreonLink: () => t("placeholders", "patreon_link", "Patreon link"),
     /** Highest pledging supporter's monthly pledge */
@@ -13419,8 +13437,8 @@ export const m = {
     commandsNoCommandsFor: (p: { query: P }) => t("public", "commands_no_commands_for", "No commands found for \"{query}\"", p),
     /** No commands found */
     commandsNoCommandsFound: () => t("public", "commands_no_commands_found", "No commands found"),
-    /** Mewdeko - All the commands! Searchable! */
-    commandsOgTitle: () => t("public", "commands_og_title", "Mewdeko - All the commands! Searchable!"),
+    /** Mewdeko - Searchable command list */
+    commandsOgTitle: () => t("public", "commands_og_title", "Mewdeko - Searchable command list"),
     /** Options Available */
     commandsOptionsAvailable: () => t("public", "commands_options_available", "Options Available"),
     /** Search commands and modules */
@@ -13441,12 +13459,12 @@ export const m = {
     commandsUserServer: () => t("public", "commands_user_server", "User (Server):"),
     /** Connect with Us */
     contactsConnectWithUs: () => t("public", "contacts_connect_with_us", "Connect with Us"),
-    /** Ways to contact us! */
-    contactsDescription: () => t("public", "contacts_description", "Ways to contact us!"),
+    /** Ways to contact us */
+    contactsDescription: () => t("public", "contacts_description", "Ways to contact us"),
     /** Join Our Discord */
     contactsJoinOurDiscord: () => t("public", "contacts_join_our_discord", "Join Our Discord"),
-    /** Mewdeko - Ways to contact us! */
-    contactsTitle: () => t("public", "contacts_title", "Mewdeko - Ways to contact us!"),
+    /** Mewdeko - Contact us */
+    contactsTitle: () => t("public", "contacts_title", "Mewdeko - Contact us"),
     /** Add it to your credentials.json file */
     credguideAddItToYourCredentials: () => t("public", "credguide_add_it_to_your_credentials", "Add it to your credentials.json file"),
     /** Add this to your credentials.json file: */
@@ -13589,10 +13607,8 @@ export const m = {
     credguideNavigateToPostgresqlBinDirectory: () => t("public", "credguide_navigate_to_postgresql_bin_directory", "Navigate to PostgreSQL bin directory"),
     /** Navigate to the 'Bot' tab on the left sidebar */
     credguideNavigateToTheBotTab: () => t("public", "credguide_navigate_to_the_bot_tab", "Navigate to the 'Bot' tab on the left sidebar"),
-    /** Never share your bot token with anyone. Treat it like a password! */
-    credguideNeverShareYourBotToken: () => t("public", "credguide_never_share_your_bot_token", "Never share your bot token with anyone. Treat it like a password!"),
-    /** Next → */
-    credguideNext: () => t("public", "credguide_next", "Next →"),
+    /** Never share your bot token with anyone. Treat it like a password. */
+    credguideNeverShareYourBotToken: () => t("public", "credguide_never_share_your_bot_token", "Never share your bot token with anyone. Treat it like a password."),
     /** Mewdeko - Interactive Credentials Setup Guide */
     credguideOgTitle: () => t("public", "credguide_og_title", "Mewdeko - Interactive Credentials Setup Guide"),
     /** Open Command Prompt as Administrator */
@@ -13607,8 +13623,6 @@ export const m = {
     credguideOwnerIdConfiguration: () => t("public", "credguide_owner_id_configuration", "Owner ID configuration"),
     /** Press Win+X and select 'Windows Terminal (Admin)' */
     credguidePressWinXAndSelect: () => t("public", "credguide_press_win_x_and_select", "Press Win+X and select 'Windows Terminal (Admin)'"),
-    /** ← Previous */
-    credguidePrevious: () => t("public", "credguide_previous", "← Previous"),
     /** high priority */
     credguidePriorityHigh: () => t("public", "credguide_priority_high", "high priority"),
     /** low priority */
@@ -13669,8 +13683,8 @@ export const m = {
     credguideTheCredentialsExampleJsonFile: () => t("public", "credguide_the_credentials_example_json_file", "The credentials_example.json file is located in the Mewdeko/src/Mewdeko folder. You'll need to rename it to credentials.json and configure it."),
     /** The owner ID gives you full control over your bot. You can have multiple owners. */
     credguideTheOwnerIdGivesYou: () => t("public", "credguide_the_owner_id_gives_you", "The owner ID gives you full control over your bot. You can have multiple owners."),
-    /** These API keys are optional but enable additional features like music, games, and more. */
-    credguideTheseApiKeysAreOptional: () => t("public", "credguide_these_api_keys_are_optional", "These API keys are optional but enable additional features like music, games, and more."),
+    /** These API keys are optional and add extras such as music and games. */
+    credguideTheseApiKeysAreOptional: () => t("public", "credguide_these_api_keys_are_optional", "These API keys are optional and add extras such as music and games."),
     /** Mewdeko - Credentials Setup Wizard */
     credguideTitle: () => t("public", "credguide_title", "Mewdeko - Credentials Setup Wizard"),
     /** Twitch stream notifications */
@@ -13789,8 +13803,8 @@ export const m = {
     giveawaysEndsOn: () => t("public", "giveaways_ends_on", "Ends On"),
     /** 🎯 Enter Giveaway */
     giveawaysEnterButton: () => t("public", "giveaways_enter_button", "🎯 Enter Giveaway"),
-    /** 🎉 Successfully entered the giveaway! Good luck! */
-    giveawaysEntered: () => t("public", "giveaways_entered", "🎉 Successfully entered the giveaway! Good luck!"),
+    /** You entered the giveaway. Good luck. */
+    giveawaysEntered: () => t("public", "giveaways_entered", "You entered the giveaway. Good luck."),
     /** Entering... */
     giveawaysEntering: () => t("public", "giveaways_entering", "Entering..."),
     /** Authentication error: Please log in again to enter giveaway. */
@@ -13819,14 +13833,12 @@ export const m = {
     giveawaysInvalidGiveaway: () => t("public", "giveaways_invalid_giveaway", "Invalid giveaway ID provided"),
     /** Invalid guild ID provided */
     giveawaysInvalidGuild: () => t("public", "giveaways_invalid_guild", "Invalid guild ID provided"),
-    /** Join the excitement and win amazing prizes! */
-    giveawaysJoinTheExcitementAndWin: () => t("public", "giveaways_join_the_excitement_and_win", "Join the excitement and win amazing prizes!"),
+    /** Enter to win prizes. */
+    giveawaysJoinTheExcitementAndWin: () => t("public", "giveaways_join_the_excitement_and_win", "Enter to win prizes."),
     /** Loading giveaway details... */
     giveawaysLoadingGiveawayDetails: () => t("public", "giveaways_loading_giveaway_details", "Loading giveaway details..."),
     /** No Giveaway Found */
     giveawaysNoGiveawayFound: () => t("public", "giveaways_no_giveaway_found", "No Giveaway Found"),
-    /** Oops! Something went wrong */
-    giveawaysOopsSomethingWentWrong: () => t("public", "giveaways_oops_something_went_wrong", "Oops! Something went wrong"),
     /** Please complete the captcha verification above */
     giveawaysPleaseCompleteTheCaptchaVerification: () => t("public", "giveaways_please_complete_the_captcha_verification", "Please complete the captcha verification above"),
     /** Ready to Enter? */
@@ -13857,8 +13869,8 @@ export const m = {
     leaderboardFindingBot: () => t("public", "leaderboard_finding_bot", "Finding which bot has this server..."),
     /** {server} Leaderboard */
     leaderboardHeading: (p: { server: P }) => t("public", "leaderboard_heading", "{server} Leaderboard", p),
-    /** Join this server to start earning XP and climb the leaderboard! */
-    leaderboardJoinThisServerToStart: () => t("public", "leaderboard_join_this_server_to_start", "Join this server to start earning XP and climb the leaderboard!"),
+    /** Join this server to earn XP and get on the leaderboard. */
+    leaderboardJoinThisServerToStart: () => t("public", "leaderboard_join_this_server_to_start", "Join this server to earn XP and get on the leaderboard."),
     /** Failed to load leaderboard data */
     leaderboardLoadFailed: () => t("public", "leaderboard_load_failed", "Failed to load leaderboard data"),
     /** Loading leaderboard... */
@@ -13873,8 +13885,6 @@ export const m = {
     leaderboardMustBeMember: (p: { server: P }) => t("public", "leaderboard_must_be_member", "You must be a member of {server} to view its leaderboard", p),
     /** No leaderboard data available */
     leaderboardNoLeaderboardDataAvailable: () => t("public", "leaderboard_no_leaderboard_data_available", "No leaderboard data available"),
-    /** Oops! */
-    leaderboardOops: () => t("public", "leaderboard_oops", "Oops!"),
     /** Please log in with Discord to view server leaderboards */
     leaderboardPleaseLogInWithDiscord: () => t("public", "leaderboard_please_log_in_with_discord", "Please log in with Discord to view server leaderboards"),
     /** Powered by <span style="color: {color};" class="font-semibold">Mewdeko</span> */
@@ -13927,22 +13937,22 @@ export const m = {
     reviewsSubmitFailed: () => t("public", "reviews_submit_failed", "Failed to submit review. Please try again later."),
     /** Submit Your Review */
     reviewsSubmitHeading: () => t("public", "reviews_submit_heading", "Submit Your Review"),
-    /** Thank you for your review! */
-    reviewsThanks: () => t("public", "reviews_thanks", "Thank you for your review!"),
+    /** Thank you for your review */
+    reviewsThanks: () => t("public", "reviews_thanks", "Thank you for your review"),
     /** Mewdeko - Reviews */
     reviewsTitle: () => t("public", "reviews_title", "Mewdeko - Reviews"),
     /** Write your review (supports Markdown) */
     reviewsWriteLabel: () => t("public", "reviews_write_label", "Write your review (supports Markdown)"),
     /** Write your review here... */
     reviewsWritePlaceholder: () => t("public", "reviews_write_placeholder", "Write your review here..."),
-    /** 💡 Click me! */
-    staffClickMe: () => t("public", "staff_click_me", "💡 Click me!"),
+    /** Click me */
+    staffClickMe: () => t("public", "staff_click_me", "Click me"),
     /** Click to reveal easter egg */
     staffClickToRevealEasterEgg: () => t("public", "staff_click_to_reveal_easter_egg", "Click to reveal easter egg"),
     /** Contribute on GitHub */
     staffContributeOnGithub: () => t("public", "staff_contribute_on_github", "Contribute on GitHub"),
-    /** Meet the talented team behind Mewdeko Discord bot */
-    staffDescription: () => t("public", "staff_description", "Meet the talented team behind Mewdeko Discord bot"),
+    /** The team behind the Mewdeko Discord bot */
+    staffDescription: () => t("public", "staff_description", "The team behind the Mewdeko Discord bot"),
     /** Head of evil science/Catgirl shenanigans */
     staffEggCottage: () => t("public", "staff_egg_cottage", "Head of evil science/Catgirl shenanigans"),
     /** LEEEEROY JEEEENKINS */
@@ -13957,24 +13967,22 @@ export const m = {
     staffMajorPeople: () => t("public", "staff_major_people", "Major People"),
     /** Meet Our Team */
     staffMeetOurTeam: () => t("public", "staff_meet_our_team", "Meet Our Team"),
-    /** Meet the dedicated team that makes Mewdeko possible. Each member brings unique skills a... */
-    staffMeetTheDedicatedTeamThat: () => t("public", "staff_meet_the_dedicated_team_that", "Meet the dedicated team that makes Mewdeko possible. Each member brings unique skills and passion to create the best Discord bot experience."),
+    /** The developers and supporters who keep Mewdeko running. */
+    staffMeetTheDedicatedTeamThat: () => t("public", "staff_meet_the_dedicated_team_that", "The developers and supporters who keep Mewdeko running."),
     /** Mewdeko staff members */
     staffMewdekoStaffMembers: () => t("public", "staff_mewdeko_staff_members", "Mewdeko staff members"),
-    /** Mewdeko - The people that make the bot possible. */
-    staffOgTitle: () => t("public", "staff_og_title", "Mewdeko - The people that make the bot possible."),
-    /** Our Staff */
-    staffOurStaff: () => t("public", "staff_our_staff", "Our Staff"),
-    /** Our team is driven by the amazing community that uses and supports Mewdeko. Every sugge... */
-    staffOurTeamIsDrivenBy: () => t("public", "staff_our_team_is_driven_by", "Our team is driven by the amazing community that uses and supports Mewdeko. Every suggestion, bug report, and piece of feedback helps us make the bot better for everyone."),
+    /** Mewdeko - The people behind the bot */
+    staffOgTitle: () => t("public", "staff_og_title", "Mewdeko - The people behind the bot"),
+    /** Every suggestion and bug report from the community goes into the bot. */
+    staffOurTeamIsDrivenBy: () => t("public", "staff_our_team_is_driven_by", "Every suggestion and bug report from the community goes into the bot."),
     /** Owner/Developer */
     staffRoleOwnerDeveloper: () => t("public", "staff_role_owner_developer", "Owner/Developer"),
     /** Owner/Major Supporter */
     staffRoleOwnerSupporter: () => t("public", "staff_role_owner_supporter", "Owner/Major Supporter"),
     /** Thank You for Your Support */
     staffThankYouForYourSupport: () => t("public", "staff_thank_you_for_your_support", "Thank You for Your Support"),
-    /** The passionate people behind Mewdeko */
-    staffThePassionatePeopleBehindMewdeko: () => t("public", "staff_the_passionate_people_behind_mewdeko", "The passionate people behind Mewdeko"),
+    /** The people behind Mewdeko */
+    staffThePassionatePeopleBehindMewdeko: () => t("public", "staff_the_passionate_people_behind_mewdeko", "The people behind Mewdeko"),
     /** Mewdeko - Our Team */
     staffTitle: () => t("public", "staff_title", "Mewdeko - Our Team"),
   },
@@ -14195,20 +14203,20 @@ export const m = {
     pageMessagePreviewPlaceholder: () => t("repeaters", "page_message_preview_placeholder", "No message content"),
     /** Message Preview */
     pageMessagePreviewTitle: () => t("repeaters", "page_message_preview_title", "Message Preview"),
-    /** Disabled repeaters successfully */
-    pageNotifyBulkDisabled: () => t("repeaters", "page_notify_bulk_disabled", "Disabled repeaters successfully"),
-    /** Enabled repeaters successfully */
-    pageNotifyBulkEnabled: () => t("repeaters", "page_notify_bulk_enabled", "Enabled repeaters successfully"),
+    /** Disabled repeaters */
+    pageNotifyBulkDisabled: () => t("repeaters", "page_notify_bulk_disabled", "Disabled repeaters"),
+    /** Enabled repeaters */
+    pageNotifyBulkEnabled: () => t("repeaters", "page_notify_bulk_enabled", "Enabled repeaters"),
     /** Failed to bulk toggle repeaters */
     pageNotifyBulkFailed: () => t("repeaters", "page_notify_bulk_failed", "Failed to bulk toggle repeaters"),
     /** Failed to create repeater */
     pageNotifyCreateFailed: () => t("repeaters", "page_notify_create_failed", "Failed to create repeater"),
-    /** Repeater created successfully! */
-    pageNotifyCreated: () => t("repeaters", "page_notify_created", "Repeater created successfully!"),
+    /** Repeater created */
+    pageNotifyCreated: () => t("repeaters", "page_notify_created", "Repeater created"),
     /** Failed to delete repeater */
     pageNotifyDeleteFailed: () => t("repeaters", "page_notify_delete_failed", "Failed to delete repeater"),
-    /** Repeater deleted successfully */
-    pageNotifyDeleted: () => t("repeaters", "page_notify_deleted", "Repeater deleted successfully"),
+    /** Repeater deleted */
+    pageNotifyDeleted: () => t("repeaters", "page_notify_deleted", "Repeater deleted"),
     /** Repeater disabled */
     pageNotifyDisabled: () => t("repeaters", "page_notify_disabled", "Repeater disabled"),
     /** Repeater enabled */
@@ -14217,36 +14225,36 @@ export const m = {
     pageNotifyExpiryFailed: () => t("repeaters", "page_notify_expiry_failed", "Failed to update expiry settings"),
     /** Failed to update interval */
     pageNotifyIntervalFailed: () => t("repeaters", "page_notify_interval_failed", "Failed to update interval"),
-    /** Interval updated successfully */
-    pageNotifyIntervalUpdated: () => t("repeaters", "page_notify_interval_updated", "Interval updated successfully"),
+    /** Interval updated */
+    pageNotifyIntervalUpdated: () => t("repeaters", "page_notify_interval_updated", "Interval updated"),
     /** Failed to load repeater data */
     pageNotifyLoadFailed: () => t("repeaters", "page_notify_load_failed", "Failed to load repeater data"),
     /** No changes detected */
     pageNotifyNoChanges: () => t("repeaters", "page_notify_no_changes", "No changes detected"),
     /** Failed to update queue position */
     pageNotifyQueueFailed: () => t("repeaters", "page_notify_queue_failed", "Failed to update queue position"),
-    /** Queue position updated successfully */
-    pageNotifyQueueUpdated: () => t("repeaters", "page_notify_queue_updated", "Queue position updated successfully"),
+    /** Queue position updated */
+    pageNotifyQueueUpdated: () => t("repeaters", "page_notify_queue_updated", "Queue position updated"),
     /** Failed to update start time */
     pageNotifyStartFailed: () => t("repeaters", "page_notify_start_failed", "Failed to update start time"),
     /** Failed to update forum tag conditions */
     pageNotifyTagsFailed: () => t("repeaters", "page_notify_tags_failed", "Failed to update forum tag conditions"),
-    /** Forum tag conditions updated successfully */
-    pageNotifyTagsUpdated: () => t("repeaters", "page_notify_tags_updated", "Forum tag conditions updated successfully"),
+    /** Forum tag conditions updated */
+    pageNotifyTagsUpdated: () => t("repeaters", "page_notify_tags_updated", "Forum tag conditions updated"),
     /** Failed to update conversation threshold */
     pageNotifyThresholdFailed: () => t("repeaters", "page_notify_threshold_failed", "Failed to update conversation threshold"),
-    /** Conversation threshold updated successfully */
-    pageNotifyThresholdUpdated: () => t("repeaters", "page_notify_threshold_updated", "Conversation threshold updated successfully"),
+    /** Conversation threshold updated */
+    pageNotifyThresholdUpdated: () => t("repeaters", "page_notify_threshold_updated", "Conversation threshold updated"),
     /** Failed to toggle repeater */
     pageNotifyToggleFailed: () => t("repeaters", "page_notify_toggle_failed", "Failed to toggle repeater"),
     /** Failed to trigger repeater */
     pageNotifyTriggerFailed: () => t("repeaters", "page_notify_trigger_failed", "Failed to trigger repeater"),
-    /** Repeater triggered successfully! */
-    pageNotifyTriggered: () => t("repeaters", "page_notify_triggered", "Repeater triggered successfully!"),
+    /** Repeater triggered */
+    pageNotifyTriggered: () => t("repeaters", "page_notify_triggered", "Repeater triggered"),
     /** Failed to update repeater */
     pageNotifyUpdateFailed: () => t("repeaters", "page_notify_update_failed", "Failed to update repeater"),
-    /** Repeater updated successfully! */
-    pageNotifyUpdated: () => t("repeaters", "page_notify_updated", "Repeater updated successfully!"),
+    /** Repeater updated */
+    pageNotifyUpdated: () => t("repeaters", "page_notify_updated", "Repeater updated"),
     /** Trigger Modes */
     pageOverviewModes: () => t("repeaters", "page_overview_modes", "Trigger Modes"),
     /** Stop the repeater after a time limit or a number of triggers. Leave empty for no limit. */
@@ -14359,10 +14367,6 @@ export const m = {
     notificationChannelLabel: () => t("reputation", "notification_channel_label", "Notification Channel (optional)"),
     /** No notifications */
     notificationChannelPlaceholder: () => t("reputation", "notification_channel_placeholder", "No notifications"),
-    /** Role reward added successfully! */
-    notifyRewardAdded: () => t("reputation", "notify_reward_added", "Role reward added successfully!"),
-    /** Role reward removed! */
-    notifyRewardRemoved: () => t("reputation", "notify_reward_removed", "Role reward removed!"),
     /** Manage server reputation and rewards */
     pageSubtitle: () => t("reputation", "page_subtitle", "Manage server reputation and rewards"),
     /** Reputation System */
@@ -14605,8 +14609,8 @@ export const m = {
     pageErrorToggle: () => t("rolegreets", "page_error_toggle", "Failed to update role greet state"),
     /** Should bot accounts receive this greeting? */
     pageGreetBotsHint: () => t("rolegreets", "page_greet_bots_hint", "Should bot accounts receive this greeting?"),
-    /** Role greet added successfully */
-    pageNotifyAdded: () => t("rolegreets", "page_notify_added", "Role greet added successfully"),
+    /** Role greet added */
+    pageNotifyAdded: () => t("rolegreets", "page_notify_added", "Role greet added"),
     /** Role greet deleted */
     pageNotifyDeleted: () => t("rolegreets", "page_notify_deleted", "Role greet deleted"),
     /** Role greet disabled */
@@ -14697,20 +14701,20 @@ export const m = {
     notifyRoleStatesEnabled: () => t("rolestates", "notify_role_states_enabled", "Role states enabled"),
     /** Failed to add roles to user */
     notifyRolesAddFailed: () => t("rolestates", "notify_roles_add_failed", "Failed to add roles to user"),
-    /** Roles added to user successfully */
-    notifyRolesAdded: () => t("rolestates", "notify_roles_added", "Roles added to user successfully"),
+    /** Roles added to user */
+    notifyRolesAdded: () => t("rolestates", "notify_roles_added", "Roles added to user"),
     /** Failed to remove roles from user */
     notifyRolesRemoveFailed: () => t("rolestates", "notify_roles_remove_failed", "Failed to remove roles from user"),
-    /** Roles removed from user successfully */
-    notifyRolesRemoved: () => t("rolestates", "notify_roles_removed", "Roles removed from user successfully"),
-    /** Role state applied successfully */
-    notifyStateApplied: () => t("rolestates", "notify_state_applied", "Role state applied successfully"),
+    /** Roles removed from user */
+    notifyRolesRemoved: () => t("rolestates", "notify_roles_removed", "Roles removed from user"),
+    /** Role state applied */
+    notifyStateApplied: () => t("rolestates", "notify_state_applied", "Role state applied"),
     /** Failed to apply role state */
     notifyStateApplyFailed: () => t("rolestates", "notify_state_apply_failed", "Failed to apply role state"),
     /** Failed to delete user role state */
     notifyStateDeleteFailed: () => t("rolestates", "notify_state_delete_failed", "Failed to delete user role state"),
-    /** User role state deleted successfully */
-    notifyStateDeleted: () => t("rolestates", "notify_state_deleted", "User role state deleted successfully"),
+    /** User role state deleted */
+    notifyStateDeleted: () => t("rolestates", "notify_state_deleted", "User role state deleted"),
     /** Failed to save user role states */
     notifyStatesSaveFailed: () => t("rolestates", "notify_states_save_failed", "Failed to save user role states"),
     /** Saved role states for {count} users */
@@ -15033,8 +15037,8 @@ export const m = {
     profileAvatarTitle: () => t("settings", "profile_avatar_title", "Guild Avatar"),
     /** Failed to update avatar */
     profileAvatarUpdateFailed: () => t("settings", "profile_avatar_update_failed", "Failed to update avatar"),
-    /** Avatar updated successfully! */
-    profileAvatarUpdated: () => t("settings", "profile_avatar_updated", "Avatar updated successfully!"),
+    /** Avatar updated */
+    profileAvatarUpdated: () => t("settings", "profile_avatar_updated", "Avatar updated"),
     /** Bot Banner */
     profileBannerAlt: () => t("settings", "profile_banner_alt", "Bot Banner"),
     /** Custom banner for this server */
@@ -15043,8 +15047,8 @@ export const m = {
     profileBannerTitle: () => t("settings", "profile_banner_title", "Guild Banner"),
     /** Failed to update banner */
     profileBannerUpdateFailed: () => t("settings", "profile_banner_update_failed", "Failed to update banner"),
-    /** Banner updated successfully! */
-    profileBannerUpdated: () => t("settings", "profile_banner_updated", "Banner updated successfully!"),
+    /** Banner updated */
+    profileBannerUpdated: () => t("settings", "profile_banner_updated", "Banner updated"),
     /** Custom bio for this server */
     profileBioHint: () => t("settings", "profile_bio_hint", "Custom bio for this server"),
     /** Enter bot bio for this server... */
@@ -15053,8 +15057,8 @@ export const m = {
     profileBioTitle: () => t("settings", "profile_bio_title", "Guild Bio"),
     /** Failed to update bio */
     profileBioUpdateFailed: () => t("settings", "profile_bio_update_failed", "Failed to update bio"),
-    /** Bio updated successfully! */
-    profileBioUpdated: () => t("settings", "profile_bio_updated", "Bio updated successfully!"),
+    /** Bio updated */
+    profileBioUpdated: () => t("settings", "profile_bio_updated", "Bio updated"),
     /** File too large. Maximum size is {size}. */
     profileFileTooLarge: (p: { size: P }) => t("settings", "profile_file_too_large", "File too large. Maximum size is {size}.", p),
     /** Enter image URL */
@@ -15297,10 +15301,10 @@ export const m = {
     notifyChannelRemovedBlacklist: () => t("starboard", "notify_channel_removed_blacklist", "Channel removed from blacklist"),
     /** Channel removed from whitelist */
     notifyChannelRemovedWhitelist: () => t("starboard", "notify_channel_removed_whitelist", "Channel removed from whitelist"),
-    /** Starboard created successfully */
-    notifyCreated: () => t("starboard", "notify_created", "Starboard created successfully"),
-    /** Starboard deleted successfully */
-    notifyDeleted: () => t("starboard", "notify_deleted", "Starboard deleted successfully"),
+    /** Starboard created */
+    notifyCreated: () => t("starboard", "notify_created", "Starboard created"),
+    /** Starboard deleted */
+    notifyDeleted: () => t("starboard", "notify_deleted", "Starboard deleted"),
     /** Now using blacklist mode for channels */
     notifyModeBlacklist: () => t("starboard", "notify_mode_blacklist", "Now using blacklist mode for channels"),
     /** Now using whitelist mode for channels */
@@ -15731,10 +15735,10 @@ export const m = {
     pageListEmptyTitle: () => t("statusroles", "page_list_empty_title", "No Status Roles"),
     /** Status Roles ({count}) */
     pageListTitle: (p: { count: P }) => t("statusroles", "page_list_title", "Status Roles ({count})", p),
-    /** Status role added successfully! */
-    pageNotifyAdded: () => t("statusroles", "page_notify_added", "Status role added successfully!"),
-    /** Status role removed successfully! */
-    pageNotifyRemoved: () => t("statusroles", "page_notify_removed", "Status role removed successfully!"),
+    /** Status role added */
+    pageNotifyAdded: () => t("statusroles", "page_notify_added", "Status role added"),
+    /** Status role removed */
+    pageNotifyRemoved: () => t("statusroles", "page_notify_removed", "Status role removed"),
     /** Active Configs */
     pageStatActive: () => t("statusroles", "page_stat_active", "Active Configs"),
     /** with role changes */
@@ -15767,8 +15771,8 @@ export const m = {
     confirmUnfollowButton: () => t("streams", "confirm_unfollow_button", "Unfollow"),
     /** Customize Messages */
     customizeMessages: () => t("streams", "customize_messages", "Customize Messages"),
-    /** Start following streamers to get notifications when they go live! */
-    emptyHint: () => t("streams", "empty_hint", "Start following streamers to get notifications when they go live!"),
+    /** Start following streamers to get notifications when they go live */
+    emptyHint: () => t("streams", "empty_hint", "Start following streamers to get notifications when they go live"),
     /** No Streams Followed */
     emptyTitle: () => t("streams", "empty_title", "No Streams Followed"),
     /** Failed to clear streams */
@@ -15791,18 +15795,18 @@ export const m = {
     globalMessageLabel: () => t("streams", "global_message_label", "Global Stream Message"),
     /** Global Settings */
     globalSettings: () => t("streams", "global_settings", "Global Settings"),
-    /** Custom message saved! */
-    notifyCustomSaved: () => t("streams", "notify_custom_saved", "Custom message saved!"),
-    /** Now following stream! */
-    notifyFollowed: () => t("streams", "notify_followed", "Now following stream!"),
-    /** Offline message saved! */
-    notifyOfflineSaved: () => t("streams", "notify_offline_saved", "Offline message saved!"),
-    /** Online message saved! */
-    notifyOnlineSaved: () => t("streams", "notify_online_saved", "Online message saved!"),
-    /** Removed {count} stream(s)! */
-    notifyRemoved: (p: { count: P }) => t("streams", "notify_removed", "Removed {count} stream(s)!", p),
-    /** Stream unfollowed successfully! */
-    notifyUnfollowed: () => t("streams", "notify_unfollowed", "Stream unfollowed successfully!"),
+    /** Custom message saved */
+    notifyCustomSaved: () => t("streams", "notify_custom_saved", "Custom message saved"),
+    /** Now following stream */
+    notifyFollowed: () => t("streams", "notify_followed", "Now following stream"),
+    /** Offline message saved */
+    notifyOfflineSaved: () => t("streams", "notify_offline_saved", "Offline message saved"),
+    /** Online message saved */
+    notifyOnlineSaved: () => t("streams", "notify_online_saved", "Online message saved"),
+    /** Removed {count} stream(s) */
+    notifyRemoved: (p: { count: P }) => t("streams", "notify_removed", "Removed {count} stream(s)", p),
+    /** Stream unfollowed */
+    notifyUnfollowed: () => t("streams", "notify_unfollowed", "Stream unfollowed"),
     /** Message sent when stream goes offline */
     offlineMessageDescription: () => t("streams", "offline_message_description", "Message sent when stream goes offline"),
     /** Offline Message */
@@ -16011,12 +16015,12 @@ export const m = {
     metaModifiedBy: (p: { user: P }) => t("suggestions", "meta_modified_by", "Modified by: {user}", p),
     /** Failed to delete suggestion */
     notifyDeleteFailed: () => t("suggestions", "notify_delete_failed", "Failed to delete suggestion"),
-    /** Suggestion deleted successfully */
-    notifyDeleted: () => t("suggestions", "notify_deleted", "Suggestion deleted successfully"),
+    /** Suggestion deleted */
+    notifyDeleted: () => t("suggestions", "notify_deleted", "Suggestion deleted"),
     /** Couldn't save suggestion settings. Your last change was undone. */
     notifySaveFailed: () => t("suggestions", "notify_save_failed", "Couldn't save suggestion settings. Your last change was undone."),
-    /** Status updated successfully */
-    notifyStatusUpdated: () => t("suggestions", "notify_status_updated", "Status updated successfully"),
+    /** Status updated */
+    notifyStatusUpdated: () => t("suggestions", "notify_status_updated", "Status updated"),
     /** Manage and configure server suggestions */
     pageSubtitle: () => t("suggestions", "page_subtitle", "Manage and configure server suggestions"),
     /** Reactions: */
@@ -17203,12 +17207,8 @@ export const m = {
     aiRemoveKeyConfirmButton: () => t("utility", "ai_remove_key_confirm_button", "Remove key"),
     /** Failed to remove key */
     aiRemoveKeyFailed: () => t("utility", "ai_remove_key_failed", "Failed to remove key"),
-    /** Save AI settings */
-    aiSave: () => t("utility", "ai_save", "Save AI settings"),
     /** Failed to save AI settings */
     aiSaveFailed: () => t("utility", "ai_save_failed", "Failed to save AI settings"),
-    /** AI settings saved */
-    aiSaved: () => t("utility", "ai_saved", "AI settings saved"),
     /** System prompt */
     aiSystemPrompt: () => t("utility", "ai_system_prompt", "System prompt"),
     /** You are a helpful assistant for this community... */
@@ -17487,12 +17487,12 @@ export const m = {
     pageMessagePlaceholder: () => t("votes", "page_message_placeholder", "🗳️ Thanks %user.mention% for voting! You've received your rewards!"),
     /** Vote Message */
     pageMessageTitle: () => t("votes", "page_message_title", "Vote Message"),
-    /** All vote roles cleared! */
-    pageNotifyCleared: () => t("votes", "page_notify_cleared", "All vote roles cleared!"),
-    /** Vote role added successfully! */
-    pageNotifyRoleAdded: () => t("votes", "page_notify_role_added", "Vote role added successfully!"),
-    /** Vote role removed successfully! */
-    pageNotifyRoleRemoved: () => t("votes", "page_notify_role_removed", "Vote role removed successfully!"),
+    /** All vote roles cleared */
+    pageNotifyCleared: () => t("votes", "page_notify_cleared", "All vote roles cleared"),
+    /** Vote role added */
+    pageNotifyRoleAdded: () => t("votes", "page_notify_role_added", "Vote role added"),
+    /** Vote role removed */
+    pageNotifyRoleRemoved: () => t("votes", "page_notify_role_removed", "Vote role removed"),
     /** Add Vote Role */
     pageRoleAddAria: () => t("votes", "page_role_add_aria", "Add Vote Role"),
     /** Duration: {duration} */
@@ -17731,8 +17731,8 @@ export const m = {
     completeRedirecting: () => t("wizard", "complete_redirecting", "Redirecting to dashboard..."),
     /** {guild} is now ready to go with your selected features. */
     completeSubtitle: (p: { guild: P }) => t("wizard", "complete_subtitle", "{guild} is now ready to go with your selected features.", p),
-    /** Setup Complete! */
-    completeTitle: () => t("wizard", "complete_title", "Setup Complete!"),
+    /** Setup complete */
+    completeTitle: () => t("wizard", "complete_title", "Setup complete"),
     /** Bot User Roles (Optional) */
     configAdministrationBotRoles: () => t("wizard", "config_administration_bot_roles", "Bot User Roles (Optional)"),
     /** These roles will be assigned to bots when they join (helps organize bots) */
@@ -18051,8 +18051,8 @@ export const m = {
     layoutMetaDescription: () => t("wizard", "layout_meta_description", "Set up Mewdeko for your Discord server with our guided setup wizard."),
     /** Setup Wizard - Mewdeko Dashboard */
     layoutPageTitle: () => t("wizard", "layout_page_title", "Setup Wizard - Mewdeko Dashboard"),
-    /** Get your server configured in minutes */
-    layoutSubtitle: () => t("wizard", "layout_subtitle", "Get your server configured in minutes"),
+    /** Set up your server in a few minutes */
+    layoutSubtitle: () => t("wizard", "layout_subtitle", "Set up your server in a few minutes"),
     /** Loading wizard data... */
     loadingWizardData: () => t("wizard", "loading_wizard_data", "Loading wizard data..."),
     /** Could not save server settings: {error}. You can change them later in Settings. */
@@ -18157,8 +18157,8 @@ export const m = {
     suggestionAdministrationBenefit1: () => t("wizard", "suggestion_administration_benefit_1", "Automatically assign verification roles"),
     /** Set up roles for role greets to use */
     suggestionAdministrationBenefit2: () => t("wizard", "suggestion_administration_benefit_2", "Set up roles for role greets to use"),
-    /** Streamline role management */
-    suggestionAdministrationBenefit3: () => t("wizard", "suggestion_administration_benefit_3", "Streamline role management"),
+    /** Manage roles in one place */
+    suggestionAdministrationBenefit3: () => t("wizard", "suggestion_administration_benefit_3", "Manage roles in one place"),
     /** Manage roles that trigger greets */
     suggestionAdministrationReason: () => t("wizard", "suggestion_administration_reason", "Manage roles that trigger greets"),
     /** Consider enabling {feature} */
@@ -18229,8 +18229,8 @@ export const m = {
     welcomeItemFeatures: () => t("wizard", "welcome_item_features", "Turn on the features that suit your server"),
     /** Verify bot permissions */
     welcomeItemPermissions: () => t("wizard", "welcome_item_permissions", "Verify bot permissions"),
-    /** Get your server ready to go! */
-    welcomeItemReady: () => t("wizard", "welcome_item_ready", "Get your server ready to go!"),
+    /** Review and finish */
+    welcomeItemReady: () => t("wizard", "welcome_item_ready", "Review and finish"),
     /** Ready for setup */
     welcomeReady: () => t("wizard", "welcome_ready", "Ready for setup"),
     /** You can always configure features later from the dashboard. */
@@ -18241,12 +18241,12 @@ export const m = {
     welcomeSkipTitle: () => t("wizard", "welcome_skip_title", "Skip setup?"),
     /** Skipping... */
     welcomeSkipping: () => t("wizard", "welcome_skipping", "Skipping..."),
-    /** Let's set up {guild} with essential features in just a few minutes. */
-    welcomeSubtitleFirstTime: (p: { guild: P }) => t("wizard", "welcome_subtitle_first_time", "Let's set up {guild} with essential features in just a few minutes.", p),
+    /** Set up {guild} in a few minutes. */
+    welcomeSubtitleFirstTime: (p: { guild: P }) => t("wizard", "welcome_subtitle_first_time", "Set up {guild} in a few minutes.", p),
     /** Configure essential features for your server quickly. */
     welcomeSubtitleRepeat: () => t("wizard", "welcome_subtitle_repeat", "Configure essential features for your server quickly."),
-    /** Welcome to Mewdeko! */
-    welcomeTitleFirstTime: () => t("wizard", "welcome_title_first_time", "Welcome to Mewdeko!"),
+    /** Welcome to Mewdeko */
+    welcomeTitleFirstTime: () => t("wizard", "welcome_title_first_time", "Welcome to Mewdeko"),
     /** Quick Setup for {guild} */
     welcomeTitleRepeat: (p: { guild: P }) => t("wizard", "welcome_title_repeat", "Quick Setup for {guild}", p),
     /** What we'll do: */
@@ -18761,24 +18761,20 @@ export const m = {
     pageHeadTitle: () => t("xp", "page_head_title", "XP Management - Dashboard"),
     /** No template data available */
     pageNoTemplate: () => t("xp", "page_no_template", "No template data available"),
-    /** Channel excluded successfully */
-    pageNotifyChannelExcluded: () => t("xp", "page_notify_channel_excluded", "Channel excluded successfully"),
-    /** Channel included successfully */
-    pageNotifyChannelIncluded: () => t("xp", "page_notify_channel_included", "Channel included successfully"),
-    /** Currency reward added successfully */
-    pageNotifyCurrencyRewardAdded: () => t("xp", "page_notify_currency_reward_added", "Currency reward added successfully"),
-    /** Currency reward removed successfully */
-    pageNotifyCurrencyRewardRemoved: () => t("xp", "page_notify_currency_reward_removed", "Currency reward removed successfully"),
-    /** Role excluded successfully */
-    pageNotifyRoleExcluded: () => t("xp", "page_notify_role_excluded", "Role excluded successfully"),
-    /** Role included successfully */
-    pageNotifyRoleIncluded: () => t("xp", "page_notify_role_included", "Role included successfully"),
-    /** Role reward added successfully */
-    pageNotifyRoleRewardAdded: () => t("xp", "page_notify_role_reward_added", "Role reward added successfully"),
-    /** Role reward removed successfully */
-    pageNotifyRoleRewardRemoved: () => t("xp", "page_notify_role_reward_removed", "Role reward removed successfully"),
-    /** XP template updated successfully */
-    pageNotifyTemplateUpdated: () => t("xp", "page_notify_template_updated", "XP template updated successfully"),
+    /** Channel excluded */
+    pageNotifyChannelExcluded: () => t("xp", "page_notify_channel_excluded", "Channel excluded"),
+    /** Channel included */
+    pageNotifyChannelIncluded: () => t("xp", "page_notify_channel_included", "Channel included"),
+    /** Currency reward added */
+    pageNotifyCurrencyRewardAdded: () => t("xp", "page_notify_currency_reward_added", "Currency reward added"),
+    /** Currency reward removed */
+    pageNotifyCurrencyRewardRemoved: () => t("xp", "page_notify_currency_reward_removed", "Currency reward removed"),
+    /** Role excluded */
+    pageNotifyRoleExcluded: () => t("xp", "page_notify_role_excluded", "Role excluded"),
+    /** Role included */
+    pageNotifyRoleIncluded: () => t("xp", "page_notify_role_included", "Role included"),
+    /** XP template updated */
+    pageNotifyTemplateUpdated: () => t("xp", "page_notify_template_updated", "XP template updated"),
     /** Reset changes */
     pageResetChanges: () => t("xp", "page_reset_changes", "Reset changes"),
     /** Save template changes */
@@ -18871,4 +18867,4 @@ export const m = {
 } as const;
 
 /** Module names that exist in the source locale, for loading other locales lazily later. */
-export const modules = ["_common","access","achievements","administration","afk","analytics","auditlog","birthday","brand","channel-access","chat-triggers","chatsaver","confessions","counting","currency","customvoice","dashboard","embedbuilder","feature-requests","features","feeds","filter","forms","giveaways","highlights","home","import","invites","layout","legal","linkfix","liveboards","logging","me","messagestats","minecraft","moderation","monitoring","multigreets","music","owner","patreon","placeholders","polls","public","repeaters","reputation","role-menus","rolegreets","rolestates","serverstats","settings","shared","shortcuts","starboard","statchannels","statroles","statusroles","streams","suggestions","tickets","todo","twitch","utility","votes","widgets","wiki","wizard","wordoftheday","xp"] as const;
+export const modules = ["_common","access","achievements","administration","afk","analytics","auditlog","birthday","brand","channel-access","chat-triggers","chatsaver","confessions","counting","currency","customvoice","dashboard","embedbuilder","feature-requests","features","feeds","filter","forms","giveaways","highlights","home","import","invites","join-role-timeout","layout","legal","linkfix","liveboards","logging","me","messagestats","minecraft","moderation","monitoring","multigreets","music","owner","patreon","placeholders","polls","public","repeaters","reputation","role-menus","rolegreets","rolestates","serverstats","settings","shared","shortcuts","starboard","statchannels","statroles","statusroles","streams","suggestions","tickets","todo","twitch","utility","votes","widgets","wiki","wizard","wordoftheday","xp"] as const;

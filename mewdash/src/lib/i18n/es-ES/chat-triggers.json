@@ -137,7 +137,6 @@
   "page_announce_auto_delete_disabled": "Borrado automático desactivado: no se puede usar con reaccionar al disparador",
   "page_announce_cards_collapsed": "Todas las tarjetas contraídas",
   "page_announce_create_failed": "No se pudo crear el disparador",
-  "page_announce_created": "Disparador creado correctamente",
   "page_announce_delete_cancelled": "Eliminación cancelada",
   "page_announce_delete_failed": "No se pudo eliminar el disparador",
   "page_announce_deleted": "Disparador {name} eliminado",
