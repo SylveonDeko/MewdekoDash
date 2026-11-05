@@ -1,6 +1,5 @@
 {
   "page_active_empty": "Aktif çekiliş yok",
-  "page_active_empty_hint": "Yukarıdaki formu kullanarak ilk çekilişini oluştur",
   "page_create_title": "Yeni Çekiliş Oluştur",
   "page_detail_entry_method": "Katılım Yöntemi:",
   "page_detail_message_requirement": "Mesaj Şartı:",
@@ -22,7 +21,6 @@
   "page_error_winners_min": "Kazanan sayısı en az 1 olmalı.",
   "page_field_duration": "Süre",
   "page_field_emoji": "Tepki Emojisi",
-  "page_field_emoji_hint": "Özel bir emoji seç veya Discord emoji kodunu yapıştır",
   "page_field_entry_method": "Katılım Yöntemi",
   "page_field_item": "Çekiliş Ödülü",
   "page_field_item_placeholder": "Verilecek ödülü gir",

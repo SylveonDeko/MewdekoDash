@@ -280,10 +280,10 @@
                       {#if conditionIndex === 0 && groupIndex > 0}
                         <div class="flex items-center gap-2 my-1">
                           <div class="flex-shrink-0 px-3 py-1.5 rounded-full font-bold text-xs"
-                               style="background: {$colorStore.accent}; color: white;">
+                               style="background: {$colorStore.accent}; color: {$colorStore.onAccent};">
                             {m.forms.multiConditionOr()}
                           </div>
-                          <div class="flex-1 h-0.5" style="background: {$colorStore.accent};"></div>
+                          <div class="flex-1 h-0.5" style="background: {$colorStore.accent}; color: {$colorStore.onAccent};"></div>
                         </div>
                       {/if}
 
@@ -293,7 +293,7 @@
                         <div class="flex items-start gap-2">
                           {#if conditionIndex === 0 && groupIndex === 0}
                             <div class="px-2 py-1 rounded font-bold text-xs shrink-0"
-                                 style="background: {$colorStore.primary}; color: white;">
+                                 style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};">
                               {m.forms.multiConditionIf()}
                             </div>
                           {:else if conditionIndex > 0}
@@ -540,10 +540,10 @@
           {#if conditionIndex === 0 && groupIndex > 0}
             <div class="flex items-center gap-2 my-1">
               <div class="flex-shrink-0 px-3 py-1.5 rounded-full font-bold text-xs"
-                   style="background: {$colorStore.accent}; color: white;">
+                   style="background: {$colorStore.accent}; color: {$colorStore.onAccent};">
                 {m.forms.multiConditionOr()}
               </div>
-              <div class="flex-1 h-0.5" style="background: {$colorStore.accent};"></div>
+              <div class="flex-1 h-0.5" style="background: {$colorStore.accent}; color: {$colorStore.onAccent};"></div>
             </div>
           {/if}
 
@@ -553,7 +553,7 @@
             <div class="flex-shrink-0 pt-2">
               {#if conditionIndex === 0 && groupIndex === 0}
                 <div class="px-2 py-1 rounded font-bold text-xs"
-                     style="background: {$colorStore.primary}; color: white;">
+                     style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};">
                   {m.forms.multiConditionIf()}
                 </div>
               {:else if conditionIndex > 0}

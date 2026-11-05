@@ -15,7 +15,6 @@
   "grant_button": "접근 권한 부여",
   "grant_heading_edit": "접근 권한 수정",
   "grant_heading_new": "제한된 접근 권한 부여",
-  "grant_hint": "전체 서버 관리자 권한 없이, 사용자나 역할에게 특정 대시보드 섹션의 보기 또는 관리 권한을 줄 수 있어요.",
   "grant_sections_one": "섹션 {count}개",
   "grant_sections_other": "섹션 {count}개",
   "grants_empty": "아직 제한된 접근 권한이 없어요",

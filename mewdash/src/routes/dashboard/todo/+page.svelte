@@ -512,7 +512,7 @@
         label: m.todo.pageActionCreateList(),
         icon: "fa-plus",
         action: () => showNewListModal = true,
-        style: `background: ${$colorStore.primary}; color: ${$colorStore.text};`
+        style: `background: ${$colorStore.primary}; color: ${$colorStore.onPrimary};`
       },
       {
         label: m.common.filters(),
@@ -631,7 +631,7 @@
             onclick={() => showNewListModal = true}
           >
             <span class="p-2 rounded-lg flex items-center justify-center"
-                  style="background: {$colorStore.primary}; color: white;">
+                  style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};">
               <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
             </span>
             <span>{m.todo.pageCreateFirstList()}</span>
@@ -717,11 +717,11 @@
                 <div class="flex items-center justify-between text-sm">
                   <div class="flex items-center gap-3">
                     <div class="flex items-center gap-1.5">
-                      <div class="w-2 h-2 rounded-full" style="background: {$colorStore.primary}"></div>
+                      <div class="w-2 h-2 rounded-full" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary}"></div>
                       <span style="color: {$colorStore.text}">{listStats.pendingItems}</span>
                     </div>
                     <div class="flex items-center gap-1.5">
-                      <div class="w-2 h-2 rounded-full" style="background: {$colorStore.secondary}"></div>
+                      <div class="w-2 h-2 rounded-full" style="background: {$colorStore.secondary}; color: {$colorStore.onSecondary}"></div>
                       <span style="color: {$colorStore.text}">{listStats.completedItems}</span>
                     </div>
                     {#if listStats.overdueItems > 0}
@@ -747,7 +747,7 @@
                     </div>
                     <div class="w-full rounded-full h-2" style="background: {$colorStore.primary}20;">
                       <div class="h-2 rounded-full transition-all duration-1000"
-                           style="background: {$colorStore.primary};
+                           style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};
                                   width: {listStats.completionRate}%"></div>
                     </div>
                   </div>

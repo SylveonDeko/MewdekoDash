@@ -291,9 +291,6 @@
                             <i class="fa-utility-duo fa-regular fa-newspaper"
                                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                             <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.feeds.pageListEmptyTitle()}</h3>
-                            <p class="text-sm" style="color: {$colorStore.muted}">
-                                {m.feeds.pageListEmptyHint()}
-                            </p>
                         </div>
                     {:else}
                         {#each feeds as feed}
@@ -423,9 +420,6 @@
                                 class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                         >
-                        <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-                            {m.feeds.pageAddUrlHint()}
-                        </p>
                     </div>
 
                   <button aria-label={m.feeds.pageAddAria()}
@@ -512,9 +506,6 @@
                 <div class="text-center py-12">
                     <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                     <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">{m.common.noStatisticsAvailable()}</h3>
-                    <p style="color: {$colorStore.muted}">
-                        {m.feeds.pageStatsEmptyHint()}
-                    </p>
                 </div>
             {/if}
         </div>

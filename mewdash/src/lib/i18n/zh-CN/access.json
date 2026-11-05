@@ -15,7 +15,6 @@
   "grant_button": "授予访问权限",
   "grant_heading_edit": "编辑访问授权",
   "grant_heading_new": "授予受限访问权限",
-  "grant_hint": "授予用户或身份组对特定仪表板板块的查看或管理权限，无需给予完整的服务器管理员权限。",
   "grant_sections_one": "{count} 个板块",
   "grant_sections_other": "{count} 个板块",
   "grants_empty": "暂无受限访问授权",

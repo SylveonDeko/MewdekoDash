@@ -132,7 +132,7 @@
                 <a
                   href={dashboardLink}
                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-colors hover:brightness-110"
-                  style="background: {$colorStore.primary}; color: #0f172a;"
+                  style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                 >
                   <i class="fa-solid fa-sliders shrink-0"></i>
                   <span class="truncate max-w-[18rem]">{$currentGuild ? m.wiki.openInGuild({ name: $currentGuild.name }) : m.wiki.openInDashboard()}</span>

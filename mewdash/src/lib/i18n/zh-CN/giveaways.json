@@ -1,6 +1,5 @@
 {
   "page_active_empty": "暂无进行中的抽奖",
-  "page_active_empty_hint": "使用上方表单创建你的第一个抽奖",
   "page_create_title": "创建新抽奖",
   "page_detail_entry_method": "参与方式：",
   "page_detail_message_requirement": "消息要求：",
@@ -22,7 +21,6 @@
   "page_error_winners_min": "获奖人数至少为 1。",
   "page_field_duration": "持续时间",
   "page_field_emoji": "反应表情",
-  "page_field_emoji_hint": "选择自定义表情或粘贴 Discord 表情代码",
   "page_field_entry_method": "参与方式",
   "page_field_item": "抽奖奖品",
   "page_field_item_placeholder": "输入要发放的奖品",

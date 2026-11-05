@@ -15,7 +15,6 @@
   "grant_button": "Erişim Ver",
   "grant_heading_edit": "Erişim Yetkisini Düzenle",
   "grant_heading_new": "Kısıtlı Erişim Ver",
-  "grant_hint": "Bir kullanıcıya veya role, tam sunucu yöneticiliği vermeden belirli kontrol paneli bölümlerine Görüntüleme veya Yönetme erişimi ver.",
   "grant_sections_one": "{count} bölüm",
   "grant_sections_other": "{count} bölüm",
   "grants_empty": "Henüz kısıtlı erişim yetkisi yok",

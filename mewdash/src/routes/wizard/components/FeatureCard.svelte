@@ -72,8 +72,8 @@ Feature card for selecting features during wizard setup
   <!-- Selected indicator -->
   {#if selected}
     <span class="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center block"
-         style="background: {$colorStore.primary};">
-      <i class="fa-solid fa-check text-white" style="font-size: 16px;"></i>
+         style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};">
+      <i class="fa-solid fa-check" style="font-size: 16px;"></i>
     </span>
   {/if}
 
@@ -144,7 +144,7 @@ Feature card for selecting features during wizard setup
   <!-- Hover effect overlay -->
   <span
     class="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-200 pointer-events-none block"
-    style="background: {$colorStore.primary};"></span>
+    style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"></span>
 </button>
 
 <style>

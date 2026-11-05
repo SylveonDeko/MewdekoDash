@@ -9,7 +9,7 @@
 
   interface Props {
     label: string;
-    hint: string;
+    hint?: string;
     id: string;
     checked: boolean;
     disabled?: boolean;
@@ -18,7 +18,7 @@
     onchange: (checked: boolean) => void;
   }
 
-  let { label, hint, id, checked, disabled = false, accent, onchange }: Props = $props();
+  let { label, hint = "", id, checked, disabled = false, accent, onchange }: Props = $props();
 
   let trackColor = $derived(checked ? (accent ?? $colorStore.primary) : "#4b5563");
 </script>
@@ -32,9 +32,11 @@
     <label for={id} class="block text-sm font-medium" style="color: {$colorStore.text};">
       {label}
     </label>
-    <p id="{id}-hint" class="text-xs mt-0.5" style="color: {$colorStore.muted};">
-      {hint}
-    </p>
+    {#if hint}
+      <p id="{id}-hint" class="text-xs mt-0.5" style="color: {$colorStore.muted};">
+        {hint}
+      </p>
+    {/if}
   </div>
 
   <label class="relative inline-flex items-center cursor-pointer flex-shrink-0 mt-0.5">
@@ -44,7 +46,7 @@
       class="sr-only peer"
       {checked}
       {disabled}
-      aria-describedby="{id}-hint"
+      aria-describedby={hint ? `${id}-hint` : undefined}
       onchange={(e) => onchange(e.currentTarget.checked)}
     />
     <span

@@ -6,7 +6,6 @@
   "basic_title": "Paramètres AFK de base",
   "bulk_remove_message": "Voulez-vous vraiment retirer le statut AFK de {count} utilisateur(s) ? Cette action est irréversible.",
   "bulk_remove_title": "Retirer en masse le statut AFK",
-  "channels_hint": "Salons où les messages AFK ne seront pas affichés. Sélectionnez plusieurs salons pour désactiver les notifications AFK dans ces espaces.",
   "channels_placeholder": "Sélectionnez les salons où désactiver les messages AFK",
   "channels_title": "Salons désactivés",
   "custom_hint": "Modèle d'embed personnalisé pour les notifications AFK. Utilisez « - » pour revenir à la valeur par défaut. Consultez la {link} pour les variables disponibles.",

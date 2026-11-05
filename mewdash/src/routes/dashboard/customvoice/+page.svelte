@@ -551,11 +551,7 @@
                 options={voiceChannels}
                 bind:selected={hubChannelId}
                 placeholder={m.common.selectVoiceChannelPlaceholder()}
-                onchange={handleHubChange} />
-              <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-                {m.customvoice.hubHint()}
-              </p>
-            </div>
+                onchange={handleHubChange} />            </div>
 
             <div>
               <span id="channel-category-span-stylecolor-ef4444span-label" class="block mb-2"
@@ -568,11 +564,7 @@
                 options={categories}
                 bind:selected={categoryId}
                 placeholder={m.common.selectCategoryPlaceholder()}
-                onchange={handleCategoryChange} />
-              <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-                {m.customvoice.categoryHint()}
-              </p>
-            </div>
+                onchange={handleCategoryChange} />            </div>
           </div>
         </div>
 
@@ -807,9 +799,7 @@
         {#if activeChannels === undefined || !activeChannels || activeChannels.length === 0}
           <div class="text-center py-12">
             <i class="fa-utility-duo fa-regular fa-microphone" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-            <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">{m.customvoice.emptyTitle()}</h3>
-            <p style="color: {$colorStore.muted}">{m.customvoice.emptyText()}</p>
-          </div>
+            <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">{m.customvoice.emptyTitle()}</h3>          </div>
         {:else}
           <div class="grid gap-4">
             {#each activeChannels as channel (channel.channelId.toString())}

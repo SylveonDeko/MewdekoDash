@@ -180,11 +180,7 @@
         type="number"
         min="0"
         aria-label={m.xp.settingsCooldownAria()}
-      >
-      <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-        {m.xp.settingsCooldownHint()}
-      </p>
-    </div>
+      >    </div>
 
     <!-- Voice XP Per Minute -->
     <div
@@ -272,11 +268,7 @@
         min="0.1"
         step="0.1"
         aria-label={m.xp.settingsMultiplier()}
-      >
-      <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-        {m.xp.settingsMultiplierHint()}
-      </p>
-    </div>
+      >    </div>
 
     <!-- XP Curve Type -->
     <div
@@ -301,11 +293,7 @@
             markAsChanged("xpSettings");
           }
         }}
-      />
-      <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-        {m.xp.settingsCurveHint()}
-      </p>
-    </div>
+      />    </div>
 
     <!-- Custom XP Image URL -->
     <div
@@ -361,14 +349,10 @@
           <span
             class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all block"
             style="background-color: {$colorStore.accent}30;
-                   peer-checked:background-color: {$colorStore.accent};"
+                   peer-checked:background-color: {$colorStore.accent}; color: {$colorStore.onAccent};"
             aria-hidden="true"
           ></span>
         </label>
-      </div>
-      <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-        {m.xp.settingsServerExclusionHint()}
-      </p>
-    </div>
+      </div>    </div>
   </div>
 {/if}

@@ -217,9 +217,6 @@
                         <div class="text-center py-8">
                             <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                             <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.highlights.pageAllEmptyTitle()}</h3>
-                            <p class="text-sm" style="color: {$colorStore.muted}">
-                                {m.highlights.pageAllEmptyHint()}
-                            </p>
                         </div>
                     {:else}
                         {#each groupedHighlights as userGroup}
@@ -304,9 +301,6 @@
                         <div class="text-center py-8">
                             <i class="fa-utility-duo fa-regular fa-magnifying-glass" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                             <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.highlights.pageSearchNoResultsTitle()}</h3>
-                            <p class="text-sm" style="color: {$colorStore.muted}">
-                                {m.highlights.pageSearchNoResultsHint()}
-                            </p>
                         </div>
                     {:else if searchResults.length > 0}
                         {#each searchResults as highlight}
@@ -359,9 +353,6 @@
                         <div class="text-center py-8">
                             <i class="fa-utility-duo fa-regular fa-eye" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                             <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.highlights.pageDisabledEmptyTitle()}</h3>
-                            <p class="text-sm" style="color: {$colorStore.muted}">
-                                {m.highlights.pageDisabledEmptyHint()}
-                            </p>
                         </div>
                     {:else}
                         {#each disabledUsers as user}
@@ -478,9 +469,6 @@
                 <div class="text-center py-12">
                     <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                     <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">{m.common.noStatisticsAvailable()}</h3>
-                    <p style="color: {$colorStore.muted}">
-                        {m.highlights.pageStatsEmptyHint()}
-                    </p>
                 </div>
             {/if}
         </div>

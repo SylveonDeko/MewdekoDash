@@ -138,7 +138,7 @@
             {#each settings.platforms as platform (platform.name)}
               <Card title={platform.displayName}>
                 <div class="space-y-4">
-                  <SettingToggle id="lf-{platform.name}" label={platform.displayName} hint={m.linkfix.siteHint({ site: platform.displayName })} checked={platform.enabled} disabled={!settings.enabled} onchange={(v) => autoSave.now(`enabled:${platform.name}`, () => update({ platforms: [{ name: platform.name, enabled: v, host: platform.host }] }))} />
+                  <SettingToggle id="lf-{platform.name}" label={platform.displayName} checked={platform.enabled} disabled={!settings.enabled} onchange={(v) => autoSave.now(`enabled:${platform.name}`, () => update({ platforms: [{ name: platform.name, enabled: v, host: platform.host }] }))} />
                   <SettingField label={m.linkfix.hostLabel()} hint={m.linkfix.hostHint({ host: platform.defaultHost })} id="lf-host-{platform.name}">
                     <div class="flex gap-2">
                       <input id="lf-host-{platform.name}" type="text" bind:value={hosts[platform.name]} oninput={() => saveHost(platform.name)} onblur={() => finishHost(platform)} placeholder={platform.defaultHost} class="w-full rounded-lg p-2 min-h-[44px]" style={inputStyle} />

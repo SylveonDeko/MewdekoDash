@@ -30,7 +30,6 @@
   "remove_channel_aria": "#{channel} を削除",
   "search_words_aria": "フィルター対象の単語を検索",
   "search_words_placeholder": "単語を検索",
-  "server_wide_hint": "これらはすべてのチャンネルに適用されます。特定の場所でのみフィルターを有効にする場合は、チャンネルの上書き設定を使用してください。",
   "server_wide_title": "サーバー全体のフィルター",
   "stat_autoban_words_subtitle": "直ちに BAN",
   "stat_channel_overrides_subtitle": "チャンネルごとのフィルター",

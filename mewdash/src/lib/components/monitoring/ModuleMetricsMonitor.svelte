@@ -187,7 +187,6 @@
         <i class="fa-utility-duo fa-regular fa-square"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
         <p class="font-medium mb-2" style="color: {$colorStore.text}">{m.monitoring.moduleMetricsEmpty()}</p>
-        <p class="text-sm" style="color: {$colorStore.muted}">{m.monitoring.moduleMetricsEmptyHint()}</p>
       </div>
     {:else}
       <!-- Summary Cards -->

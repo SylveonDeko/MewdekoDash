@@ -139,7 +139,7 @@
       searchTerm = "";
 
       setTimeout(() => {
-        if (searchable && searchInputRef) {
+        if (searchable && searchInputRef && window.matchMedia("(pointer: fine)").matches) {
           searchInputRef.focus();
         }
       }, 0);
@@ -433,7 +433,6 @@
       class="absolute left-0 right-0 mt-1 rounded-lg flex flex-col shadow-lg border z-[9999] overflow-hidden"
       style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background});
              border-color: {$colorStore.primary}50;
-             max-height: min(16rem, 60vh);
              transform-origin: top;"
       role="listbox"
       aria-multiselectable={multiple}
@@ -460,7 +459,8 @@
       {/if}
 
       <!-- Options list -->
-      <div class="flex-1 overflow-y-auto overflow-x-hidden">
+      <div class="overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y"
+           style="max-height: {searchable ? 'min(13rem, 45vh)' : 'min(16rem, 60vh)'}; -webkit-overflow-scrolling: touch;">
         {#if filteredOptions.length === 0}
           <div class="px-4 py-3 text-center" style="color: {$colorStore.muted}">
             {searchTerm ? m.widgets.selectorNoMatches() : m.widgets.selectorNoOptions()}
@@ -516,7 +516,7 @@
               {#if isSelected}
                 <div
                   class="w-2 h-2 rounded-full shrink-0 relative z-10"
-                  style="background: {$colorStore.primary}"
+                  style="background: {$colorStore.primary}; color: {$colorStore.onPrimary}"
                 ></div>
               {/if}
             </button>

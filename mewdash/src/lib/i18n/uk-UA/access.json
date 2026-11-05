@@ -15,7 +15,6 @@
   "grant_button": "Надати доступ",
   "grant_heading_edit": "Редагування доступу",
   "grant_heading_new": "Надання обмеженого доступу",
-  "grant_hint": "Надай користувачу або ролі доступ «Перегляд» чи «Керування» до окремих розділів панелі, не даючи повних прав адміністратора сервера.",
   "grant_sections_few": "{count} розділи",
   "grant_sections_many": "{count} розділів",
   "grant_sections_one": "{count} розділ",

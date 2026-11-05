@@ -6,7 +6,6 @@
   "basic_title": "Podstawowe ustawienia AFK",
   "bulk_remove_message": "Na pewno chcesz usunąć status AFK dla użytkowników: {count}? Tej czynności nie można cofnąć.",
   "bulk_remove_title": "Zbiorcze usunięcie statusu AFK",
-  "channels_hint": "Kanały, na których wiadomości AFK nie będą wyświetlane. Wybierz wiele kanałów, aby wyłączyć powiadomienia AFK w tych miejscach.",
   "channels_placeholder": "Wybierz kanały, na których wyłączyć wiadomości AFK",
   "channels_title": "Wyłączone kanały",
   "custom_hint": "Własny szablon embedu dla powiadomień AFK. Użyj „-”, aby przywrócić domyślny. Dostępne zmienne znajdziesz w: {link}.",

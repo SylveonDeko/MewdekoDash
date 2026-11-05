@@ -572,7 +572,7 @@
         <button
           type="button"
           class="rounded-xl px-5 min-h-[44px] font-medium disabled:opacity-40"
-          style="background: {$colorStore.primary}; color: #fff;"
+          style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
           disabled={!canSubmit}
           onclick={submit}
         >
@@ -828,7 +828,7 @@
         <button
           type="button"
           class="flex-1 px-4 py-3 rounded-xl font-medium min-h-[44px] disabled:opacity-40"
-          style="background: {$colorStore.primary}; color: #fff;"
+          style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
           disabled={savingStatus}
           onclick={saveStatus}
         >

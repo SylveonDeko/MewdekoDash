@@ -232,9 +232,7 @@
       <i class="fa-solid fa-table-cells" style="color: {$colorStore.primary}; font-size: 20px;"></i>
       <span class="font-semibold" style="color: {$colorStore.text}">{m.tickets.overviewPanels()}</span>
     </div>
-    <p class="text-2xl font-bold" style="color: {$colorStore.text}">{panels.length}</p>
-    <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.tickets.overviewPanelsHint()}</p>
-  </div>
+    <p class="text-2xl font-bold" style="color: {$colorStore.text}">{panels.length}</p>  </div>
 
   <div class="p-6 rounded-xl"
        style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}20;">
@@ -242,9 +240,7 @@
       <i class="fa-solid fa-flag" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
       <span class="font-semibold" style="color: {$colorStore.text}">{m.tickets.overviewPriorities()}</span>
     </div>
-    <p class="text-2xl font-bold" style="color: {$colorStore.text}">{priorities.length}</p>
-    <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.tickets.overviewPrioritiesHint()}</p>
-  </div>
+    <p class="text-2xl font-bold" style="color: {$colorStore.text}">{priorities.length}</p>  </div>
 
   <div class="p-6 rounded-xl"
        style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}20;">
@@ -252,9 +248,7 @@
       <i class="fa-solid fa-tags" style="color: {$colorStore.accent}; font-size: 20px;"></i>
       <span class="font-semibold" style="color: {$colorStore.text}">{m.tickets.overviewTags()}</span>
     </div>
-    <p class="text-2xl font-bold" style="color: {$colorStore.text}">{tags.length}</p>
-    <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.tickets.overviewTagsHint()}</p>
-  </div>
+    <p class="text-2xl font-bold" style="color: {$colorStore.text}">{tags.length}</p>  </div>
 
   <div class="p-6 rounded-xl"
        style="background: {$colorStore.primary}0c; border: 1px solid {$colorStore.primary}20;">
@@ -262,9 +256,7 @@
       <i class="fa-solid fa-folder-open" style="color: {$colorStore.primary}; font-size: 20px;"></i>
       <span class="font-semibold" style="color: {$colorStore.text}">{m.tickets.tabCases()}</span>
     </div>
-    <p class="text-2xl font-bold" style="color: {$colorStore.text}">{cases.length}</p>
-    <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.tickets.overviewCasesHint()}</p>
-  </div>
+    <p class="text-2xl font-bold" style="color: {$colorStore.text}">{cases.length}</p>  </div>
 </div>
 
 <!-- Quick Links -->

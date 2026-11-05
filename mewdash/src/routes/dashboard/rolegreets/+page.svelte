@@ -609,7 +609,7 @@
                       <span
                         class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all block"
                         style="background-color: {$colorStore.accent}30;
-                               peer-checked:background-color: {$colorStore.accent};"
+                               peer-checked:background-color: {$colorStore.accent}; color: {$colorStore.onAccent};"
                       ></span>
                     </label>
                   </div>

@@ -128,11 +128,7 @@
           >
             {m.xp.exclusionsExclude()}
           </button>
-        </div>
-        <p class="mt-2 text-xs" style="color: {$colorStore.muted}">
-          {m.xp.exclusionsChannelHint()}
-        </p>
-      </div>
+        </div>      </div>
 
       <!-- Excluded Channels List -->
       {#if excludedChannels.length === 0}
@@ -201,11 +197,7 @@
           >
             {m.xp.exclusionsExclude()}
           </button>
-        </div>
-        <p class="mt-2 text-xs" style="color: {$colorStore.muted}">
-          {m.xp.exclusionsRoleHint()}
-        </p>
-      </div>
+        </div>      </div>
 
       <!-- Excluded Roles List -->
       {#if excludedRoles.length === 0}

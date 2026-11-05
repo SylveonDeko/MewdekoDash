@@ -337,9 +337,6 @@
           <p class="text-sm mb-3" style="color: {$colorStore.muted}">
             {m.logging.pageSetupBody()}
           </p>
-          <p class="text-xs" style="color: {$colorStore.muted}">
-            {m.logging.pageSetupTip()}
-          </p>
         </div>
       </div>
     </div>
@@ -451,9 +448,6 @@
           <i class="fa-solid fa-xmark mt-1 flex-shrink-0" style="color: {$colorStore.primary}; font-size: 18px;"></i>
           <div class="min-w-0 flex-1">
             <h3 class="text-base sm:text-lg font-bold mb-2" style="color: {$colorStore.text}">{m.logging.pageExclusionsTitle()}</h3>
-            <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              {m.logging.pageExclusionsBody()}
-            </p>
             <div class="flex flex-wrap items-center gap-3 sm:gap-4 text-xs" style="color: {$colorStore.muted}">
               <span>{@html m.logging.pageExclusionsIgnoredCount({ count: ignoredChannelList.length })}</span>
               <span>{@html m.logging.pageExclusionsLoggedCount({ count: activeChannelList.length })}</span>

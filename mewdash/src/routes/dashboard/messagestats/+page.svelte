@@ -723,7 +723,7 @@
           <div class="mt-6">
             <button
               class="px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2"
-              style="background: {$colorStore.primary}; color: {$colorStore.text};"
+              style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
               disabled={isExporting}
               onclick={exportStats}
             >
@@ -753,7 +753,6 @@
               <div class="flex items-center justify-between p-4 rounded-lg" style="background: {$colorStore.primary}10;">
                 <div>
                   <h4 class="font-semibold" style="color: {$colorStore.text}">{m.messagestats.enableLabel()}</h4>
-                  <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.messagestats.enableHint()}</p>
                 </div>
                 <button aria-label={m.messagestats.enableAria()}
                         class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2"
@@ -793,7 +792,6 @@
               <!-- Reset Options -->
               <div class="p-4 rounded-lg border" style="border-color: #ef4444; background: #ef444410;">
                 <h4 class="font-semibold mb-3" style="color: #ef4444">{m.messagestats.resetHeading()}</h4>
-                <p class="text-sm mb-4" style="color: {$colorStore.muted}">{m.messagestats.resetHint()}</p>
                 
                 <div class="space-y-3">
                   <button

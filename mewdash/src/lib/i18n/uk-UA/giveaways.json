@@ -1,6 +1,5 @@
 {
   "page_active_empty": "Активних розіграшів немає",
-  "page_active_empty_hint": "Створи свій перший розіграш за допомогою форми вище",
   "page_create_title": "Створити новий розіграш",
   "page_detail_entry_method": "Спосіб участі:",
   "page_detail_message_requirement": "Вимога до повідомлень:",
@@ -22,7 +21,6 @@
   "page_error_winners_min": "Кількість переможців має бути не менше 1.",
   "page_field_duration": "Тривалість",
   "page_field_emoji": "Емодзі реакції",
-  "page_field_emoji_hint": "Вибери власне емодзі або встав код емодзі Discord",
   "page_field_entry_method": "Спосіб участі",
   "page_field_item": "Приз розіграшу",
   "page_field_item_placeholder": "Введи приз, який буде розіграно",

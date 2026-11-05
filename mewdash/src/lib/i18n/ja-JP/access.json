@@ -15,7 +15,6 @@
   "grant_button": "アクセス権を付与",
   "grant_heading_edit": "アクセス権を編集",
   "grant_heading_new": "制限付きのアクセス権を付与",
-  "grant_hint": "ユーザーまたはロールに、サーバーの管理者権限を与えることなく、特定のダッシュボードセクションへの閲覧または管理のアクセス権を付与します。",
   "grant_sections_one": "{count} セクション",
   "grant_sections_other": "{count} セクション",
   "grants_empty": "制限付きのアクセス権はまだ付与されていません",

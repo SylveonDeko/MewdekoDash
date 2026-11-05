@@ -664,7 +664,7 @@
                    onpointerdown={(e) => startDrag(e, element, "move")}>
                 {#if active}
                   <span class="absolute -right-2 -bottom-2 w-4 h-4 rounded-sm"
-                        style="background: {$colorStore.primary}; cursor: nwse-resize;" role="presentation"
+                        style="background: {$colorStore.primary}; color: {$colorStore.onPrimary}; cursor: nwse-resize;" role="presentation"
                         onpointerdown={(e) => startDrag(e, element, "resize")}></span>
                 {/if}
               </div>

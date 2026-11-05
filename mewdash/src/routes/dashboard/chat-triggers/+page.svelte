@@ -1110,12 +1110,8 @@
                 style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
                 placeholder={m.common.helloPlaceholder()}
                 bind:value={quickTriggerText}
-                aria-describedby="trigger-help"
                 aria-required="true"
               >
-              <div id="trigger-help" class="text-xs mt-1" style="color: {colors.muted}">
-                {m.chatTriggers.pageQuickTriggerHint()}
-              </div>
             </div>
 
             <!-- Response Input -->
@@ -1139,10 +1135,6 @@
                 user={data.user}
                 placeholder={m.chatTriggers.pageQuickResponsePlaceholder()}
               />
-
-              <div class="text-xs mt-2" style="color: {colors.muted}">
-                {m.chatTriggers.pageQuickResponseHint()}
-              </div>
             </div>
 
             <!-- Action Buttons -->
@@ -1152,7 +1144,6 @@
                 style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
                 onclick={createQuickTrigger}
                 disabled={!quickTriggerText.trim() || (typeof quickResponseText === 'object' ? Object.keys(quickResponseText).length === 0 : !quickResponseText?.trim())}
-                aria-describedby="create-help"
               >
                 <div class="flex items-center justify-center gap-2">
                   <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
@@ -1168,10 +1159,6 @@
               >
                 {m.chatTriggers.pageQuickMoreOptions()}
               </button>
-            </div>
-            
-            <div id="create-help" class="text-xs" style="color: {colors.muted}">
-              {m.chatTriggers.pageQuickCreateHint()}
             </div>
           </div>
         </div>

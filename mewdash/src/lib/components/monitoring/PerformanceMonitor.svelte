@@ -148,7 +148,6 @@
         <i class="fa-utility-duo fa-regular fa-clock"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
         <p class="font-medium mb-2" style="color: {$colorStore.text}">{m.monitoring.performanceEmpty()}</p>
-        <p class="text-sm" style="color: {$colorStore.muted}">{m.monitoring.performanceEmptyHint()}</p>
       </div>
     {:else}
       <div class="overflow-x-auto rounded-xl" style="background: {$colorStore.primary}05;">

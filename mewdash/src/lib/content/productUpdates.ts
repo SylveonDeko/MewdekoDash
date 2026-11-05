@@ -11,15 +11,37 @@ export type ProductUpdate = {
 // Keep the newest public update first. The landing page intentionally features one item at a time.
 export const productUpdates: ProductUpdate[] = [
   {
+    id: "bridges",
+    label: "New page",
+    title: "Bridge Channels With Fluxer",
+    summary: "Messages relay between a channel here and a Fluxer channel.",
+    details: [
+      "Link a Fluxer community once to connect any of its channels.",
+      "Each bridge can run one way or skip certain roles."
+    ],
+    href: "/dashboard/bridges",
+    action: "Bridge a channel"
+  },
+  {
+    id: "join-role-timeout",
+    label: "New setting",
+    title: "Remove Members Who Never Verify",
+    summary: "Kick members who still lack a verified role after a set time.",
+    details: [
+      "Ban, give a role or time them out instead.",
+      "Warn them by DM first and log each action."
+    ],
+    href: "/dashboard/administration",
+    action: "Set it up"
+  },
+  {
     id: "import-from-other-bots",
     label: "New page",
     title: "Bring Your Levels Over From Other Bots",
-    summary: "Moving to Mewdeko no longer means starting everyone at level zero. Import XP, levels, level roles and balances from the bot you used before.",
+    summary: "Import XP, levels and balances from the bot you used before.",
     details: [
-      "Works with MEE6, Lurkr, Polaris, Arcane, Amari, Tatsu and UnbelievaBoat, plus any JSON or CSV file with a user ID and XP or levels.",
-      "MEE6 needs nothing but a public leaderboard. Switch to the MEE6, Lurkr or Amari curve and every member keeps the exact same level, or keep your own curve and they keep their level and progress.",
-      "MEE6 settings come over too. Run the export from your bookmarks bar on MEE6's dashboard, upload the file, and pick which parts to bring: welcome messages, level settings, custom commands, reaction roles, filters, Twitch alerts and the shop.",
-      "You see the top members and level roles before anything is written, and an import can be undone for 24 hours. It's also a step in the setup wizard and on /import in Discord."
+      "Works with MEE6, Lurkr, Amari, Tatsu and more, or any CSV.",
+      "Preview before anything is written, and undo within a day."
     ],
     href: "/dashboard/import",
     action: "Import your data"
@@ -28,11 +50,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "nine-tailed-cat",
     label: "New look",
     title: "Meet The Nine-Tailed Cat",
-    summary: "Mewdeko has its own mascot now, a cat in goggles with a tool on every tail, and the home page has been rebuilt around her.",
+    summary: "Mewdeko has a mascot now, with a tool on every tail.",
     details: [
-      "She's the logo across the site, the dashboard and the setup wizard, and her fur takes on your server's colors.",
-      "Scroll through What each tail does on the home page for a tour of the bot, with the commands for each part and a link to its guide.",
-      "In the dashboard she blinks now and then, and closes her eyes and vibes along when your server is playing music."
+      "The home page tours the bot one tail at a time.",
+      "Her fur takes on your server's colors."
     ],
     href: "/",
     action: "See the home page"
@@ -41,12 +62,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "achievements",
     label: "New page",
     title: "Achievements For Everything Your Members Do",
-    summary: "Members unlock achievements for things they already do in your server, and wear them as badges on their profile.",
+    summary: "Members unlock achievements and wear them as badges.",
     details: [
-      "Achievements have their own ranks and leave XP levels alone. If you want unlocks to give XP, there is a setting for it.",
-      "Turning it on counts the activity Mewdeko already tracked, without announcing any of it.",
-      "You can make your own achievements, with your own icons and rewards.",
-      "Unlocks come with an image card that you can redesign. Members can see theirs in the iOS and Android apps."
+      "Make your own with custom icons and rewards.",
+      "Unlocks can give XP if you turn it on."
     ],
     href: "/dashboard/achievements",
     action: "Set up achievements"
@@ -55,11 +74,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "activity-stats",
     label: "New page",
     title: "Activity Stats For The Whole Server",
-    summary: "Messages, voice time, games and member growth over any window from a day to ninety, with charts, rankings and a per member view.",
+    summary: "Messages, voice time, games and growth over up to ninety days.",
     details: [
-      "Voice time is tracked per member and channel, with muted, deafened, AFK or alone time left out if you want. Hourly snapshots feed member count and online, idle and DND charts.",
-      "Turn on game tracking to see what your server plays, who plays it and for how long, with a whitelist or blacklist of games and a verification switch that ignores spoofed presences.",
-      "Rank members and channels by messages, voice or game time, export any ranking as CSV, ignore channels, roles or members, and let anyone opt out of tracking everywhere with one command."
+      "Rank members and channels, then export to CSV.",
+      "Members can opt out with one command."
     ],
     href: "/dashboard/serverstats",
     action: "Open activity stats"
@@ -68,11 +86,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "stat-roles",
     label: "New page",
     title: "Roles That Follow Activity",
-    summary: "Level roles are forever. Stat roles are earned by activity over a window and taken away again when it stops.",
+    summary: "Roles earned by recent activity and removed when it stops.",
     details: [
-      "Measure messages, voice minutes, minutes in a game, invites, days in the server or account age, over the last N days or all time.",
-      "Qualify by a threshold, a top rank, a top percentage, or a daily streak such as five messages on seven of the last seven days. Invert a rule to mark inactive members instead.",
-      "Limit a rule to channels or roles, ignore specific members, keep only the highest tier in a group, choose the schedule, and announce changes in a channel or by DM. Preview who gains and loses before it runs."
+      "Base them on messages, voice time, games, invites or tenure.",
+      "Preview who gains and loses before a rule runs."
     ],
     href: "/dashboard/statroles",
     action: "Create a stat role"
@@ -80,12 +97,11 @@ export const productUpdates: ProductUpdate[] = [
   {
     id: "invite-tracking-overhaul",
     label: "New in invites",
-    title: "Invite Tracking That Tells The Whole Story",
-    summary: "Every invite is now regular, left, fake or bonus, every join is attributed to a code, the vanity link or an app, and the page shows whether people stay.",
+    title: "Invite Tracking, Rebuilt",
+    summary: "Every join is tied to an invite, and you can see who stays.",
     details: [
-      "Fake detection for young accounts, self invites, rejoins and members without an avatar, with blacklisted inviters and roles that never earn credit and members you can hide from the leaderboard.",
-      "Label invite codes so campaigns show up by name, grant a role to everyone who joins through one, and give members a personal link that credits them. Greets get inviter and invite placeholders to match.",
-      "Growth analytics with retention and join sources, a leaderboard for the last day, week or month, bonus invites, a join and leave log channel, CSV exports and a mass ban for everyone one inviter brought in."
+      "Fake invites are caught and left uncounted.",
+      "Label codes and give members personal invite links."
     ],
     href: "/dashboard/invites",
     action: "Open invites"
@@ -94,11 +110,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "live-boards",
     label: "New page",
     title: "Boards That Keep Themselves Current",
-    summary: "Pin a leaderboard, chart or overview in a channel and the bot keeps editing it, and get a digest of the week or month posted on a schedule.",
+    summary: "Pin a leaderboard or chart and the bot keeps it updated.",
     details: [
-      "Invite, message, voice and game leaderboards, join, leave, growth, members and message charts, the server overview and invite analytics, each refreshed as often as every five minutes.",
-      "Daily, weekly or monthly server reports with joins, leaves, retention, top inviters, chatters, voice members, busiest channels, invite codes and games, plus a growth chart.",
-      "Stat channels gained a clock in your timezone, messages and voice hours today and this week, top chatter, top voice member, top inviter, top game, members left and net growth counters."
+      "Boards refresh as often as every five minutes.",
+      "Schedule a recurring server report."
     ],
     href: "/dashboard/liveboards",
     action: "Add a live board"
@@ -107,11 +122,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "wiki",
     label: "New everywhere",
     title: "A Wiki For Every Feature",
-    summary: "Every module now has a plain English guide, and each dashboard page can open its own guide in a side panel without leaving the page.",
+    summary: "Every feature has a guide, and each page opens its own.",
     details: [
-      "Fifty one articles covering what a feature does, why you would want it, every dashboard tab and field, and a full command table with permissions.",
-      "Press the How it works button on any dashboard page to read the matching guide beside your settings.",
-      "Search the whole wiki by title, category or tag, and jump straight from an article into the right page for your server."
+      "Press How it works on any page to read it beside your settings.",
+      "Search the wiki by title or tag."
     ],
     href: "/wiki",
     action: "Browse the wiki"
@@ -120,11 +134,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "utilities-page",
     label: "New page",
     title: "Utilities, All In One Place",
-    summary: "Seven smaller features that only lived in commands now share one dashboard page.",
+    summary: "Command-only features now share one page.",
     details: [
-      "Command aliases, server quotes with search and inline editing, and auto publishing for announcement channels with user and word blacklists.",
-      "A role that follows members while they stream, an NSFW tag blocklist, and a role monitor that punishes anyone who hands out a blacklisted role or permission.",
-      "The AI assistant: pick OpenAI, Claude or Groq, choose a model from a live list, write a system prompt, and switch on web search."
+      "Aliases, quotes, auto publishing and a streaming role.",
+      "The AI assistant, with your choice of provider and model."
     ],
     href: "/dashboard/utility",
     action: "Open utilities"
@@ -133,11 +146,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "polls-page",
     label: "New page",
     title: "Polls From The Dashboard",
-    summary: "Create, schedule, template and analyse polls without touching a command.",
+    summary: "Create and schedule polls without a command.",
     details: [
-      "Single choice, multiple choice, yes or no, anonymous or role restricted polls with up to twenty five options, a duration, and toggles for vote changes and live results.",
-      "Schedule a poll for later, or save the form as a template to reuse, then close or delete polls from the same list with their live results.",
-      "Thirty day analytics: polls created, votes cast, average votes per poll, the most used poll type, and a per day chart."
+      "Anonymous and role-limited polls with up to twenty five options.",
+      "Save a poll as a template to reuse."
     ],
     href: "/dashboard/polls",
     action: "Open polls"
@@ -146,11 +158,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "message-filters-page",
     label: "New page",
     title: "Message Filters",
-    summary: "Word, invite and link filtering now has a home on the dashboard instead of a pile of commands.",
+    summary: "Message filters have their own page now.",
     details: [
-      "Toggle the word, invite and link filters for the whole server, or turn any of them on for just the channels you pick.",
-      "Keep a filtered word list and a separate auto ban list whose posters are removed on sight.",
-      "Choose whether a filtered word or invite also warns the member on top of deleting the message."
+      "Turn each filter on everywhere or in chosen channels.",
+      "Keep a word list and an instant ban list."
     ],
     href: "/dashboard/filter",
     action: "Open message filters"
@@ -159,11 +170,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "moderation-warnings",
     label: "New in moderation",
     title: "Warnings And The Punishment Ladder",
-    summary: "Warn members, forgive them, and decide what happens at each warning count, all from the moderation page.",
+    summary: "Warn members and set what happens at each warning count.",
     details: [
-      "Issue a warning by user ID with a reason and see straight away whether a ladder punishment kicked in.",
-      "Forgive one warning, forgive everything for a member at once, or delete a record, with search across users, reasons and moderators.",
-      "Build the ladder on the new Punishments tab: mute, chat or voice mute, timeout, kick, softban, ban, add a role or strip every role, with durations for the timed ones."
+      "Forgive one warning or all of them.",
+      "Mute, kick, ban or change roles at each step."
     ],
     href: "/dashboard/moderation?tab=punishments",
     action: "Set up punishments"
@@ -172,11 +182,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "tickets-tab",
     label: "New in tickets",
     title: "Work Tickets Without Opening Discord",
-    summary: "The tickets page can now browse and act on every ticket, not just configure panels.",
+    summary: "Browse and act on every ticket.",
     details: [
-      "Filter by open, closed or archived and search by ticket, creator, channel, claimer or tag, sorted by last activity.",
-      "Claim or release a ticket as yourself, set its priority, and add or remove tags.",
-      "Close with a reason, archive, and leave staff notes that the whole team can see."
+      "Search by creator, claimer or tag.",
+      "Claim, prioritise, close and leave staff notes."
     ],
     href: "/dashboard/tickets?tab=tickets",
     action: "Open tickets"
@@ -185,11 +194,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "forms-builder",
     label: "New in forms",
     title: "A Cleaner Form Builder",
-    summary: "Pages, settings and appeals now behave the same whether you are creating a form or editing one.",
+    summary: "Creating and editing a form now work the same way.",
     details: [
-      "Add, reorder and delete pages with their questions, and give each page its own heading and intro.",
-      "Settings are grouped by who can submit, when the form is open, what happens on submit, and how reviews work, including reviewer roles and custom approve and reject emotes.",
-      "Ban appeal forms get their own rules: appeal limits, cooldowns, a waiting period after the ban, and the invite sent on approval. Leaving with unsaved edits now asks first."
+      "Give each page its own heading and intro.",
+      "Ban appeal forms get their own limits and cooldowns."
     ],
     href: "/dashboard/forms",
     action: "Open forms"
@@ -198,11 +206,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "command-permissions",
     label: "New in administration",
     title: "Command Permissions You Can Read",
-    summary: "Permission rules are built with pickers and shown as sentences instead of raw entries.",
+    summary: "Permission rules use pickers and read as sentences.",
     details: [
-      "Allow or deny a whole module or a single command for the server, a role, a channel, a category or one user.",
-      "Rules read like Deny command for role, with the protected default rule marked and up and down arrows for ordering since the first match wins.",
-      "Server recovery lives on the Advanced tab: store a recovery key and a two factor key so an owner can regain control if their account is lost."
+      "Allow or deny commands for a role, channel, category or user.",
+      "Recovery keys let an owner regain a lost server."
     ],
     href: "/dashboard/administration?tab=automation",
     action: "Open permissions"
@@ -211,11 +218,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "counting-management",
     label: "New in counting",
     title: "Counting Channel Management",
-    summary: "Bans, save points and milestones for counting channels are now on the dashboard.",
+    summary: "Manage counting channels from the dashboard.",
     details: [
-      "Ban a member from a counting channel for a set time with a reason, and see who banned whom and when in the active bans list.",
-      "Restore the count from a save point or delete old ones, and purge a channel's data entirely behind a typed confirmation.",
-      "Set custom milestone numbers and write the announcement using user, number and channel placeholders."
+      "Ban members from counting and restore from a save point.",
+      "Set milestones with your own announcement."
     ],
     href: "/dashboard/counting?tab=management",
     action: "Open counting"
@@ -224,11 +230,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "dashboard-quality-of-life",
     label: "Across the dashboard",
     title: "Smaller Things You Asked For",
-    summary: "A round of additions to pages that already existed.",
+    summary: "Additions to pages that already existed.",
     details: [
-      "Adjust, set or reset a member's XP from the leaderboard, read a member's full reputation history, and give a starboard more than one star emote.",
-      "Control the live music player: shuffle or clear the queue, switch repeat mode, and toggle eight audio filters. Server settings gained language, timezone, mute role and sniping options.",
-      "Edit todo items and delete lists, quick edit repeater intervals and expiry, clean up inactive custom voice channels, disable every log channel at once, and see thirty days of joins and leaves under Invites."
+      "Adjust a member's XP straight from the leaderboard.",
+      "Shuffle the music queue and toggle audio filters."
     ],
     href: "/dashboard/music",
     action: "Open the player"
@@ -237,11 +242,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "chat-triggers-conditions",
     label: "New in chat triggers",
     title: "Triggers That Know When To Stay Quiet",
-    summary: "Chat triggers can now read the rest of the bot, decide for themselves whether to fire, and tell you why when they don't.",
+    summary: "Triggers check conditions first and tell you why they didn't fire.",
     details: [
-      "Pull a member's level, balance, reputation or message count straight into a response, and keep your own counters that responses can read and add to.",
-      "Gate a trigger on a cooldown, an XP level, a price, active hours, an expiry date or a use limit, and let one fire on a level up, a join, a boost or a giveaway win instead of a message.",
-      "Test a trigger against a sample message before anyone sees it. If it would not fire, the dashboard names the exact rule stopping it."
+      "Use a member's level or balance in responses.",
+      "Test a trigger against a sample message."
     ],
     href: "/dashboard/chat-triggers",
     action: "Open chat triggers"
@@ -250,11 +254,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "stat-channel-counters",
     label: "New in stat channels",
     title: "Counters That Keep Up",
-    summary: "Stat channels can count almost anything now, and you pick how each one updates so Discord's rate limits stop holding them back.",
+    summary: "Nearly sixty counters, updating as often as every minute.",
     details: [
-      "Nearly sixty counters, including presence and join counts, boost tiers and emoji slots, Twitch viewers, subs and chat counters, Minecraft players, open tickets, giveaways and XP.",
-      "Choose how the number reads: grouped, compact, zero padded, ordinal, percent, progress bar, emoji digits or roman numerals.",
-      "Pick whether a channel updates by renaming or by recreating itself. Recreating sidesteps the two renames per ten minutes cap, so a live counter can refresh every minute."
+      "Pick how numbers read, from compact to roman numerals.",
+      "Recreate channels instead of renaming them to skip rate limits."
     ],
     href: "/dashboard/statchannels",
     action: "Open stat channels"
@@ -263,11 +266,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "ban-purge",
     label: "New in moderation",
     title: "Ban Purge Rules",
-    summary: "Decide up front how much of a banned member's message history gets cleared, instead of choosing it again on every ban.",
+    summary: "Set once how much history a ban clears.",
     details: [
-      "Set a default purge window for the whole server, from nothing at all up to seven days.",
-      "Override it per category or per channel when one corner of the server needs a heavier clean.",
-      "Give each moderation action its own purge, so an automated ban and a manual one can behave differently."
+      "Override the default per channel.",
+      "Give automated bans their own purge."
     ],
     href: "/dashboard/moderation?tab=banpurge",
     action: "Set up ban purge"
@@ -276,11 +278,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "channel-access",
     label: "New in server setup",
     title: "Vote People Into Locked Channels",
-    summary: "Members apply for a private channel, and the people already inside vote on whether to let them in.",
+    summary: "Members apply to a locked channel and the people inside vote.",
     details: [
-      "Post an apply button anywhere and ask up to five questions on the application form.",
-      "Approve at a threshold of votes, hand out a role or add the applicant to the channel directly, and set a deadline for the vote.",
-      "Hide the applicant's name until the vote closes, require a minimum account age, and block repeat applicants."
+      "Ask applicants up to five questions.",
+      "Hide names until the vote ends."
     ],
     href: "/dashboard/channel-access",
     action: "Set up channel access"
@@ -289,11 +290,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "currency-economy",
     label: "New in currency",
     title: "A Real Economy",
-    summary: "Currency now has somewhere to go, ways to earn it, and numbers telling you whether any of it is working.",
+    summary: "Currency has a shop and more ways to earn.",
     details: [
-      "Open a shop selling roles, collectibles, or one-off rewards, and give balances a purpose beyond the leaderboard.",
-      "Members can work, commit crimes, bank their savings out of reach of robbery, and pay each other.",
-      "Tune every payout rate, cooldown and bet limit yourself, then check the analytics to see which games are quietly printing money."
+      "Members can work and bank money away from robbers.",
+      "Tune payouts and see which games pay too much."
     ],
     href: "/dashboard/currency",
     action: "Open economy settings"
@@ -302,11 +302,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "music-link-conversion",
     label: "New in music",
     title: "Music Link Conversion",
-    summary: "Drop an Apple Music, Spotify, or YouTube link and get every other platform back automatically.",
+    summary: "Post a music link and get it on every other platform.",
     details: [
-      "Works with Apple Music, Spotify, YouTube, YouTube Music, Deezer, Tidal, and more.",
-      "Auto-searches Spotify and YouTube Music when a link doesn't already have a match.",
-      "Turn it on for any channel, not just the music channel."
+      "Works with Spotify, Apple Music, YouTube, Tidal and more.",
+      "Turn it on in any channel."
     ],
     href: "/dashboard/music",
     action: "Set up music links"
@@ -315,11 +314,10 @@ export const productUpdates: ProductUpdate[] = [
     id: "image-hash-bans",
     label: "New in protection",
     title: "Image Hash Bans",
-    summary: "Block known scam images before they spread through your server.",
+    summary: "Block known scam images before they spread.",
     details: [
-      "Turn on the maintained preset list for common scam images.",
-      "Add your own images when a specific scam targets your community.",
-      "Choose whether Mewdeko removes the post, warns, mutes, or bans."
+      "Use the shared list or add your own images.",
+      "Remove the post, warn, mute or ban."
     ],
     href: "/dashboard/administration?tab=protection",
     action: "Open protection settings"

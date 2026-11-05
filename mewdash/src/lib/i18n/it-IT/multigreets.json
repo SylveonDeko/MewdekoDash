@@ -6,7 +6,6 @@
   "delete_time_seconds": "{seconds}s",
   "edit_delete_time_aria": "Modifica tempo di eliminazione",
   "edit_webhook_aria": "Modifica webhook",
-  "empty_hint": "Aggiungi il tuo primo messaggio di saluto usando il modulo qui sopra.",
   "empty_title": "Nessun saluto configurato",
   "error_add": "Impossibile aggiungere il saluto",
   "error_fetch_greets": "Impossibile recuperare i saluti",

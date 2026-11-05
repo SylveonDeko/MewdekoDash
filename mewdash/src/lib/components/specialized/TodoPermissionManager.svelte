@@ -189,7 +189,7 @@
               <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">{m.todo.permissionsCurrent()}</h3>
               <button
                 class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all"
-                style="background: {$colorStore.primary}; color: white;"
+                style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                 onclick={() => showAddUser = !showAddUser}
               >
                 <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
@@ -297,7 +297,7 @@
                 <div class="flex items-center gap-2">
                   <button
                     class="flex-1 px-4 py-2 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    style="background: {$colorStore.primary}; color: white;"
+                    style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                     onclick={grantPermissions}
                     disabled={!selectedUserId || !newPermissions.canView}
                   >

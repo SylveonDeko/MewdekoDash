@@ -1324,7 +1324,7 @@
                         >
                             <span
                                     class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium"
-                                    style="background: {$colorStore.primary}; color: white;"
+                                    style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                             >
                                 <i class="fa-solid fa-pen" style="font-size: 14px;"></i>
                                 {m.common.edit()}
@@ -1338,7 +1338,7 @@
                     <button
                       class="px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2 text-base"
                             style="background: {$colorStore.primary};
-                         color: white;"
+                         color: {$colorStore.onPrimary};"
                             onclick={() => { showTemplateEditor = true; }}
                     >
                       <i class="fa-solid fa-image" style="font-size: 20px;"></i>
@@ -1396,7 +1396,7 @@
               class="px-6 py-2 rounded-lg font-medium transition-all duration-200 min-h-[44px]"
               onclick={updateXpTemplate}
               style="background: {$colorStore.primary};
-               color: {$colorStore.text};"
+               color: {$colorStore.onPrimary};"
               aria-label={m.xp.pageSaveTemplate()}
             >
               {m.xp.pageSaveTemplate()}

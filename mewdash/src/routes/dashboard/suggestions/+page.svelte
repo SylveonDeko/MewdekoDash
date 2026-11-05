@@ -997,7 +997,7 @@
                       <button
                         class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all focus:ring-2 disabled:opacity-60"
                         style="{suggestion.currentState === SuggestionState.Considered
-                          ? `background: ${$colorStore.secondary}; color: white; border: 1px solid ${$colorStore.secondary};`
+                          ? `background: ${$colorStore.secondary}; color: ${$colorStore.onSecondary}; border: 1px solid ${$colorStore.secondary};`
                           : `background: ${$colorStore.secondary}20; color: ${$colorStore.secondary}; border: 1px solid ${$colorStore.secondary}30;`} --tw-ring-color: {$colorStore.secondary}50;"
                         onclick={() => initiateStatusChange(suggestion, SuggestionState.Considered)}
                         disabled={suggestion.currentState === SuggestionState.Considered}
@@ -1009,7 +1009,7 @@
                       <button
                         class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all focus:ring-2 disabled:opacity-60"
                         style="{suggestion.currentState === SuggestionState.Implemented
-                          ? `background: ${$colorStore.accent}; color: white; border: 1px solid ${$colorStore.accent};`
+                          ? `background: ${$colorStore.accent}; color: ${$colorStore.onAccent}; border: 1px solid ${$colorStore.accent};`
                           : `background: ${$colorStore.accent}20; color: ${$colorStore.accent}; border: 1px solid ${$colorStore.accent}30;`} --tw-ring-color: {$colorStore.accent}50;"
                         onclick={() => initiateStatusChange(suggestion, SuggestionState.Implemented)}
                         disabled={suggestion.currentState === SuggestionState.Implemented}

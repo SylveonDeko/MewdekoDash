@@ -504,9 +504,7 @@ A modal music search component for finding and adding tracks to the music queue.
         {:else if searchQuery.trim()}
           <div class="py-12 sm:py-8 text-center px-4">
             <i class="fa-utility-duo fa-regular fa-music mx-auto mb-4 sm:mb-2 opacity-50" style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.accent}; font-size: 64px; display: block;"></i>
-            <p class="text-lg sm:text-base mb-2" style="color: {colors.text};">{m.common.noResultsFound()}</p>
-            <p class="text-sm opacity-70" style="color: {colors.text};">{m.music.searchNoResultsHint()}</p>
-          </div>
+            <p class="text-lg sm:text-base mb-2" style="color: {colors.text};">{m.common.noResultsFound()}</p>          </div>
         {:else}
           <div class="py-12 sm:py-8 text-center px-4">
             <i class="fa-utility-duo fa-regular fa-music mx-auto mb-4 sm:mb-2 opacity-50" style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.accent}; font-size: 64px; display: block;"></i>

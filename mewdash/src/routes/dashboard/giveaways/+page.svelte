@@ -446,9 +446,6 @@
                   newGiveaway.emote = typeof detail.selected === "string" ? detail.selected : "";
                 }}
               />
-              <p class="text-xs" style="color: {colors.muted}">
-                {m.giveaways.pageFieldEmojiHint()}
-              </p>
             </div>
           </div>
 
@@ -505,7 +502,6 @@
           <div class="text-center py-12" style="color: {colors.muted}">
             <i class="fa-solid fa-gift opacity-50" style="font-size: 48px; display: block; margin: 0 auto 16px;"></i>
             <p class="text-lg">{m.giveaways.pageActiveEmpty()}</p>
-            <p class="text-sm mt-2">{m.giveaways.pageActiveEmptyHint()}</p>
           </div>
         {:else}
           <div class="space-y-4">

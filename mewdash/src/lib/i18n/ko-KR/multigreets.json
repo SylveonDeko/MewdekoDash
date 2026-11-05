@@ -6,7 +6,6 @@
   "delete_time_seconds": "{seconds}초",
   "edit_delete_time_aria": "삭제 시간 편집",
   "edit_webhook_aria": "웹후크 편집",
-  "empty_hint": "위의 양식을 사용해서 첫 번째 인사 메시지를 추가하세요.",
   "empty_title": "설정된 인사가 없어요",
   "error_add": "인사를 추가하지 못했어요",
   "error_fetch_greets": "인사를 불러오지 못했어요",

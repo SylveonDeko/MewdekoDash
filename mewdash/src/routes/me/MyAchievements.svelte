@@ -175,7 +175,7 @@
               <span class="flex-1 text-sm font-medium" style="color: {$colorStore.text}">{category.name}</span>
               <span class="text-xs" style="color: {$colorStore.muted}">{done} / {items.length}</span>
               <span class="w-20 h-1.5 rounded-full overflow-hidden" style="background: {$colorStore.primary}15;">
-                <span class="block h-full" style="width: {items.length ? (done / items.length) * 100 : 0}%; background: {$colorStore.primary};"></span>
+                <span class="block h-full" style="width: {items.length ? (done / items.length) * 100 : 0}%; background: {$colorStore.primary}; color: {$colorStore.onPrimary};"></span>
               </span>
             </button>
             {#if openCategory === category.key}

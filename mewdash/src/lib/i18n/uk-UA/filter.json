@@ -30,7 +30,6 @@
   "remove_channel_aria": "Видалити #{channel}",
   "search_words_aria": "Пошук фільтрованих слів",
   "search_words_placeholder": "Пошук слів",
-  "server_wide_hint": "Це діє в кожному каналі. Використовуй винятки для каналів, щоб вмикати фільтр лише в окремих місцях.",
   "server_wide_title": "Фільтри для всього сервера",
   "stat_autoban_words_subtitle": "одразу бан",
   "stat_channel_overrides_subtitle": "фільтри для окремих каналів",

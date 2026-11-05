@@ -522,11 +522,7 @@
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
       </div>
       <div>
-        <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">{m.common.mySettings()}</h1>
-        <p class="text-lg mt-1" style="color: {$colorStore.muted}">
-          {m.me.yourProfileAndServerPreferences()}
-        </p>
-      </div>
+        <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">{m.common.mySettings()}</h1>      </div>
     </div>
 
 
@@ -655,7 +651,7 @@
               </button>
               <button aria-label={m.me.buttonAction()}
                 class="px-4 py-2 rounded-lg text-sm flex items-center gap-2"
-                style="background: {$colorStore.primary}; color: white;"
+                style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                 onclick={saveProfile}
                 disabled={saving}
               >
@@ -1180,9 +1176,7 @@
              style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
         </div>
         <div>
-          <h2 class="text-2xl font-bold" style="color: {$colorStore.text}">{m.common.serverSettings()}</h2>
-          <p class="text-sm" style="color: {$colorStore.muted}">{m.me.settingsSpecificToEachServer()}</p>
-        </div>
+          <h2 class="text-2xl font-bold" style="color: {$colorStore.text}">{m.common.serverSettings()}</h2>        </div>
       </div>
 
       {#if !selectedGuild}
@@ -1192,16 +1186,13 @@
                     border-color: {$colorStore.primary}30;">
           <i class="fa-utility-duo fa-regular fa-server text-6xl mx-auto mb-4 block"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-          <h3 class="text-xl font-semibold mb-3" style="color: {$colorStore.text}">{m.me.chooseAServer()}</h3>
-          <p class="mb-6" style="color: {$colorStore.muted}">
-            {m.me.selectAServerToManage()}
-          </p>
+          <h3 class="text-xl font-semibold mb-6" style="color: {$colorStore.text}">{m.me.chooseAServer()}</h3>
 
           {#if availableGuilds.length > 0}
               <div class="relative max-w-md mx-auto" use:clickOutside onclickoutside={() => showGuildDropdown = false}>
               <button
                 class="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all"
-                style="background: {$colorStore.primary}; color: white;"
+                style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                 onclick={() => showGuildDropdown = !showGuildDropdown}
               >
                 <i class="fa-solid fa-server" style="font-size: 20px;"></i>
@@ -1377,7 +1368,7 @@
                 >
                 <button aria-label={m.common.add()}
                         class="px-4 py-2 rounded-lg transition-all"
-                  style="background: {$colorStore.primary}; color: white;"
+                  style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                   onclick={addHighlight}
                   disabled={!newHighlightWord.trim()}
                 >
@@ -1524,7 +1515,7 @@
                 <div class="flex gap-2">
                   <button
                     class="flex-1 px-4 py-2 rounded-lg text-sm font-medium min-h-[40px]"
-                    style="background: {$colorStore.primary}; color: white;"
+                    style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                     onclick={setAfkStatus}
                     disabled={saving}
                   >

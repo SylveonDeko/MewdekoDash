@@ -6,7 +6,6 @@
   "basic_title": "Grundlegende AFK-Einstellungen",
   "bulk_remove_message": "Möchtest du den AFK-Status von {count} Nutzer(n) wirklich entfernen? Das kann nicht rückgängig gemacht werden.",
   "bulk_remove_title": "AFK-Status gesammelt entfernen",
-  "channels_hint": "Kanäle, in denen keine AFK-Nachrichten angezeigt werden. Wähle mehrere Kanäle aus, um AFK-Benachrichtigungen dort zu deaktivieren.",
   "channels_placeholder": "Kanäle auswählen, in denen AFK-Nachrichten deaktiviert sind",
   "channels_title": "Deaktivierte Kanäle",
   "custom_hint": "Eigene Embed-Nachrichtenvorlage für AFK-Benachrichtigungen. Nutze \"-\", um auf den Standard zurückzusetzen. Verfügbare Variablen findest du in der {link}.",

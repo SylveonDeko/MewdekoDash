@@ -83,7 +83,7 @@
       <button
         onclick={onCreateNew}
         class="px-6 py-3 rounded-lg font-medium transition-all"
-        style="background: {$colorStore.primary}; color: white;"
+        style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
       >
         <i class="fa-solid fa-plus mr-2"></i>
         {m.forms.listCreateFirst()}

@@ -360,9 +360,6 @@
         >
           <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
           <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.multigreets.emptyTitle()}</p>
-          <p class="text-sm mt-2" style="color: {$colorStore.muted}">
-            {m.multigreets.emptyHint()}
-          </p>
         </div>
       {:else}
         <div class="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">

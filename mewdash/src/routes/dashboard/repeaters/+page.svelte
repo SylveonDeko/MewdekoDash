@@ -1028,27 +1028,21 @@
           <StatCard
             icon="fa-bell"
             label={m.repeaters.pageStatActive()}
-            value={repeaterStats.activeRepeaters}
-            subtitle={m.repeaters.pageStatActiveHint()}
-            iconColor="secondary"
+            value={repeaterStats.activeRepeaters}            iconColor="secondary"
             animationDelay={100}
           />
 
           <StatCard
             icon="fa-star"
             label={m.repeaters.pageStatDisplays()}
-            value={repeaterStats.totalDisplays}
-            subtitle={m.repeaters.pageStatDisplaysHint()}
-            iconColor="accent"
+            value={repeaterStats.totalDisplays}            iconColor="accent"
             animationDelay={200}
           />
 
           <StatCard
             icon="fa-calendar"
             label={m.common.scheduled()}
-            value={repeaterStats.timeScheduledRepeaters}
-            subtitle={m.repeaters.pageStatScheduledHint()}
-            iconColor="primary"
+            value={repeaterStats.timeScheduledRepeaters}            iconColor="primary"
             animationDelay={300}
           />
         {:else}
@@ -1126,9 +1120,7 @@
              style="background: {$colorStore.primary}08;">
           <i class="fa-utility-duo fa-regular fa-clock"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5;"></i>
-          <h3 class="text-xl font-semibold mb-2 mt-4" style="color: {$colorStore.text}">{m.repeaters.pageEmptyTitle()}</h3>
-          <p class="mb-6" style="color: {$colorStore.muted}">{m.repeaters.pageEmptyHint()}</p>
-          <div class="flex justify-center">
+          <h3 class="text-xl font-semibold mb-2 mt-4" style="color: {$colorStore.text}">{m.repeaters.pageEmptyTitle()}</h3>          <div class="flex justify-center">
             <button
               class="px-6 py-3 rounded-lg font-medium transition-all duration-200"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -1289,11 +1281,7 @@
                     <div class="text-sm flex items-center gap-2" style="color: {$colorStore.text}">
                       <i class="fa-solid fa-bolt" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                       {m.repeaters.pageCardImmediate()}
-                    </div>
-                    <div class="text-xs mt-1" style="color: {$colorStore.muted}">
-                      {m.repeaters.pageCardImmediateHint()}
-                    </div>
-                  </div>
+                    </div>                  </div>
                 {:else}
                   <!-- Time-based modes show interval and next execution -->
                   <div>
@@ -1571,15 +1559,11 @@
             {#if isEditMode}
               <i class="fa-solid fa-pen flex-shrink-0" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
               <div class="min-w-0 flex-1">
-                <h2 class="text-lg sm:text-xl md:text-2xl font-bold truncate" style="color: {$colorStore.text}">{m.repeaters.pageFormEditTitle()}</h2>
-                <p class="text-xs sm:text-sm mt-1 break-words" style="color: {$colorStore.muted}">{m.repeaters.pageFormEditSubtitle({ id: editingRepeaterId ?? 0 })}</p>
-              </div>
+                <h2 class="text-lg sm:text-xl md:text-2xl font-bold truncate" style="color: {$colorStore.text}">{m.repeaters.pageFormEditTitle()}</h2>              </div>
             {:else}
               <i class="fa-solid fa-plus flex-shrink-0" style="color: {$colorStore.primary}; font-size: 20px;"></i>
               <div class="min-w-0 flex-1">
-                <h2 class="text-lg sm:text-xl md:text-2xl font-bold" style="color: {$colorStore.text}">{m.repeaters.pageFormCreateTitle()}</h2>
-                <p class="text-xs sm:text-sm mt-1" style="color: {$colorStore.muted}">{m.repeaters.pageFormCreateSubtitle()}</p>
-              </div>
+                <h2 class="text-lg sm:text-xl md:text-2xl font-bold" style="color: {$colorStore.text}">{m.repeaters.pageFormCreateTitle()}</h2>              </div>
             {/if}
           </div>
         </div>
@@ -1625,7 +1609,6 @@
                     {/if}
                   </div>
 
-                  <p class="text-sm mb-6" style="color: {$colorStore.muted}">{m.repeaters.pageFormTagsHint()}</p>
 
                   <!-- Required/Excluded Sections -->
                   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
@@ -1708,7 +1691,7 @@
                               <span class="text-sm" style="color: {$colorStore.text}">{tag.name}</span>
                               {#if selectedForumTags.required.includes(tag.id)}
                                   <span class="text-xs px-2 py-0.5 rounded-md"
-                                        style="background: {$colorStore.primary}; color: white;">{m.common.required()}</span>
+                                        style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};">{m.common.required()}</span>
                                 {/if}
                               </span>
                           </label>
@@ -1777,8 +1760,6 @@
                 user={data.user}
                 placeholder={m.repeaters.pageFormMessagePlaceholder()}
               />
-
-              <p class="text-sm" style="color: {$colorStore.muted}">{m.repeaters.pageFormMessageHint()}</p>
             </div>
           </div>
 

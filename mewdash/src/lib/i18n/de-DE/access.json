@@ -15,7 +15,6 @@
   "grant_button": "Zugriff erteilen",
   "grant_heading_edit": "Zugriffsfreigabe bearbeiten",
   "grant_heading_new": "Eingeschränkten Zugriff erteilen",
-  "grant_hint": "Gib einem Nutzer oder einer Rolle Ansichts- oder Verwaltungszugriff auf bestimmte Dashboard-Bereiche, ohne vollen Server-Adminzugriff zu geben.",
   "grant_sections_one": "{count} Bereich",
   "grant_sections_other": "{count} Bereiche",
   "grants_empty": "Noch keine eingeschränkten Zugriffsfreigaben",

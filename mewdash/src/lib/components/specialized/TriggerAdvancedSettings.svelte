@@ -384,7 +384,6 @@
               {colors}
               checked={trigger.replyToTrigger}
               title={m.chatTriggers.advancedReplyToMessage()}
-              subtitle={m.chatTriggers.advancedReplyToMessageHint()}
               onchange={(v) => { trigger.replyToTrigger = v; onchange?.(); }}
             />
 
@@ -392,7 +391,6 @@
               {colors}
               checked={trigger.dmResponse}
               title={m.chatTriggers.advancedSendAsDm()}
-              subtitle={m.chatTriggers.advancedSendAsDmHint()}
               onchange={(v) => { trigger.dmResponse = v; onchange?.(); }}
             />
 
@@ -401,9 +399,7 @@
               checked={trigger.autoDeleteTrigger}
               disabled={trigger.reactToTrigger}
               title={m.chatTriggers.advancedDeleteTrigger()}
-              subtitle={trigger.reactToTrigger
-                ? m.chatTriggers.advancedDeleteTriggerHintBlocked()
-                : m.chatTriggers.advancedDeleteTriggerHint()}
+              subtitle={trigger.reactToTrigger ? m.chatTriggers.advancedDeleteTriggerHintBlocked() : undefined}
               onchange={(v) => { trigger.autoDeleteTrigger = v; onchange?.(); }}
             />
 
@@ -412,9 +408,7 @@
               checked={trigger.reactToTrigger}
               disabled={trigger.autoDeleteTrigger}
               title={m.chatTriggers.advancedReactInstead()}
-              subtitle={trigger.autoDeleteTrigger
-                ? m.chatTriggers.advancedReactInsteadHintBlocked()
-                : m.chatTriggers.advancedReactInsteadHint()}
+              subtitle={trigger.autoDeleteTrigger ? m.chatTriggers.advancedReactInsteadHintBlocked() : undefined}
               onchange={(v) => { trigger.reactToTrigger = v; onchange?.(); }}
             />
 
@@ -422,7 +416,6 @@
               {colors}
               checked={trigger.noRespond}
               title={m.chatTriggers.advancedNoMessage()}
-              subtitle={m.chatTriggers.advancedNoMessageHint()}
               onchange={(v) => { trigger.noRespond = v; onchange?.(); }}
             />
 

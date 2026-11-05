@@ -277,10 +277,10 @@
 
         <Card title={m.liveboards.addTitle()}>
           <div class="space-y-4">
-            <SettingField label={m.common.channel()} hint={m.liveboards.channelHint()} id="lb-channel" required>
+            <SettingField label={m.common.channel()} id="lb-channel" required>
               <DiscordSelector id="lb-channel" type="channel" options={textChannels} bind:selected={newChannel} placeholder={m.common.pickChannelPlaceholder()} />
             </SettingField>
-            <SettingField label={m.liveboards.boardLabel()} hint={m.liveboards.boardHint()} id="lb-kind">
+            <SettingField label={m.liveboards.boardLabel()} id="lb-kind">
               <DiscordSelector id="lb-kind" type="custom" customIcon="fa-thumbtack" searchable={false} options={kindOptions} selected={String(newKind)} onchange={(e) => { if (typeof e.selected === "string") newKind = Number(e.selected); }} />
             </SettingField>
             <SettingField label={m.common.window()} hint={m.liveboards.windowHint()} id="lb-range">
@@ -295,7 +295,7 @@
               <input id="lb-interval" type="number" min="5" max="1440" bind:value={newInterval} class="w-full rounded-lg p-2 min-h-[44px]" style={inputStyle} />
             </SettingField>
             <SettingToggle id="lb-pin" label={m.liveboards.pinLabel()} hint={m.liveboards.pinHint()} checked={newPin} onchange={(v) => (newPin = v)} />
-            <button type="button" class="w-full min-h-[48px] rounded-xl font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={createBoard} disabled={creating || boards.length >= 10}>
+            <button type="button" class="w-full min-h-[48px] rounded-xl font-medium" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};" onclick={createBoard} disabled={creating || boards.length >= 10}>
               {creating ? m.liveboards.posting() : boards.length >= 10 ? m.liveboards.limitReached() : m.liveboards.addBoard()}
             </button>
           </div>
@@ -306,7 +306,7 @@
 
   {#if activeTab === "reports"}
     <section>
-      <SectionHeader icon="fa-newspaper" title={m.liveboards.tabReports()} subtitle={m.liveboards.reportsSubtitle()} />
+      <SectionHeader icon="fa-newspaper" title={m.liveboards.tabReports()} />
 
       <AsyncState loading={reportLoading} error={reportError} empty={!report}>
         {#if report}
@@ -328,9 +328,9 @@
                     onchange={(v) => updateReport({ frequency: v as 0 | 1 | 2 })}
                   />
                 </SettingField>
-                <SettingToggle id="rp-enabled" label={m.liveboards.reportsEnabledLabel()} hint={m.liveboards.reportsEnabledHint()} checked={report.enabled} disabled={!report.channelId} onchange={(v) => updateReport({ enabled: v })} />
+                <SettingToggle id="rp-enabled" label={m.liveboards.reportsEnabledLabel()} checked={report.enabled} disabled={!report.channelId} onchange={(v) => updateReport({ enabled: v })} />
                 <p class="text-sm" style="color: {$colorStore.muted}">{m.liveboards.lastSent({ when: formatAgo(report.lastSentAt) })}</p>
-                <button type="button" class="w-full min-h-[48px] rounded-xl font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={sendNow} disabled={sending || !report.channelId}>
+                <button type="button" class="w-full min-h-[48px] rounded-xl font-medium" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};" onclick={sendNow} disabled={sending || !report.channelId}>
                   {sending ? m.common.sending() : m.liveboards.sendNow()}
                 </button>
               </div>

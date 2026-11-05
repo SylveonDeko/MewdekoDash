@@ -1568,7 +1568,7 @@
             >
               <div
                 class="h-full transition-all duration-500 ease-out"
-                style="background: {$colorStore.primary}; width: {progressPercentage}%;"
+                style="background: {$colorStore.primary}; color: {$colorStore.onPrimary}; width: {progressPercentage}%;"
               ></div>
             </div>
           </div>

@@ -6,7 +6,6 @@
   "delete_time_seconds": "{seconds}s",
   "edit_delete_time_aria": "Edytuj czas usunięcia",
   "edit_webhook_aria": "Edytuj webhook",
-  "empty_hint": "Dodaj swoją pierwszą wiadomość powitalną za pomocą formularza powyżej.",
   "empty_title": "Nie skonfigurowano powitań",
   "error_add": "Nie udało się dodać powitania",
   "error_fetch_greets": "Nie udało się pobrać powitań",

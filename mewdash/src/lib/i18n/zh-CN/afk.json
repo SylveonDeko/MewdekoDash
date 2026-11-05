@@ -6,7 +6,6 @@
   "basic_title": "基本 AFK 设置",
   "bulk_remove_message": "确定要移除 {count} 名用户的 AFK 状态吗？此操作无法撤销。",
   "bulk_remove_title": "批量移除 AFK 状态",
-  "channels_hint": "不会显示 AFK 消息的频道。选择多个频道即可在这些区域关闭 AFK 通知。",
   "channels_placeholder": "选择要关闭 AFK 消息的频道",
   "channels_title": "已禁用的频道",
   "custom_hint": "AFK 通知的自定义嵌入消息模板。使用 \"-\" 可恢复默认值。可用变量请参阅 {link}。",

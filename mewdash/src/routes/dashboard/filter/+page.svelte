@@ -225,7 +225,6 @@
             <i class="fa-utility-duo fa-regular fa-filter" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.filter.serverWideTitle()}</h2>
           </div>
-          <p class="text-sm mb-6" style="color: {$colorStore.muted}">{m.filter.serverWideHint()}</p>
 
           <div class="space-y-3">
             {#each (["word", "invite", "link"] as FilterKind[]) as kind}

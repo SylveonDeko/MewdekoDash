@@ -6,7 +6,6 @@
   "delete_time_seconds": "{seconds} s",
   "edit_delete_time_aria": "Modifier le délai de suppression",
   "edit_webhook_aria": "Modifier le webhook",
-  "empty_hint": "Ajoutez votre premier message de bienvenue à l'aide du formulaire ci-dessus.",
   "empty_title": "Aucun message de bienvenue configuré",
   "error_add": "Échec de l'ajout du message",
   "error_fetch_greets": "Échec de la récupération des messages",

@@ -9,18 +9,14 @@
   "page_error_load": "Impossibile caricare i dati delle confessioni",
   "page_hide_content_aria": "Nascondi il contenuto della confessione",
   "page_item_title": "Confessione #{number}",
-  "page_list_empty_hint": "Le confessioni appariranno qui non appena gli utenti le invieranno.",
   "page_list_empty_title": "Nessuna confessione",
   "page_list_title": "Tutte le confessioni ({count})",
   "page_no_content": "Nessun contenuto",
   "page_notify_deleted": "Confessione eliminata con successo!",
   "page_show_content_aria": "Mostra il contenuto della confessione",
   "page_show_more": "Mostra altro",
-  "page_stat_confessions_sub": "confessioni",
   "page_stat_latest": "Ultimo numero",
-  "page_stat_latest_sub": "ID della confessione",
   "page_stat_month": "Questo mese",
   "page_stat_total": "Confessioni totali",
-  "page_stats_empty_hint": "Le statistiche delle confessioni appariranno qui una volta configurato il sistema.",
   "page_subtitle": "Gestione del sistema di confessioni anonime"
 }

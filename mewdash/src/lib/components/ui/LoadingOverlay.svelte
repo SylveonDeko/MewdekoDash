@@ -50,6 +50,7 @@
         class="h-full transition-all duration-300 ease-out relative"
         style="
           background: {$colorStore.primary};
+          color: {$colorStore.onPrimary};
           width: {hasProgress ? progressValue : 100}%;
           animation: {hasProgress ? 'none' : 'loading-shimmer 2s infinite ease-in-out'};
         "

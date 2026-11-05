@@ -699,7 +699,7 @@
         <Card title={m.serverstats.lookupWhoPlays()}>
           <div class="flex gap-2 mb-3">
             <input type="text" placeholder={m.serverstats.lookupGamePlaceholder()} bind:value={lookupGame} onkeydown={(e) => e.key === "Enter" && loadGame()} class="grow rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" aria-label={m.serverstats.lookupGamePlaceholder()} />
-            <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={() => loadGame()}>{m.serverstats.lookupLookUp()}</button>
+            <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};" onclick={() => loadGame()}>{m.serverstats.lookupLookUp()}</button>
           </div>
           {#if !settings?.trackActivities}
             <p class="text-sm" style="color: {$colorStore.muted}">{m.serverstats.lookupTrackingOff()}</p>
@@ -757,7 +757,7 @@
             <Card title={m.common.ignoredChannels()} note={m.serverstats.ignoredChannelsNote()}>
               <div class="flex gap-2 mb-3">
                 <div class="grow"><DiscordSelector type="channel" options={channels} placeholder={m.common.addAChannel()} bind:selected={excludeChannel} /></div>
-                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(StatsExclusionKind.Channel, excludeChannel)}>{m.common.add()}</button>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};" onclick={() => addExclusion(StatsExclusionKind.Channel, excludeChannel)}>{m.common.add()}</button>
               </div>
               <ul class="space-y-1">
                 {#each exclusions?.channels ?? [] as id (id.toString())}
@@ -771,7 +771,7 @@
             <Card title={m.common.ignoredRoles()} note={m.serverstats.ignoredRolesNote()}>
               <div class="flex gap-2 mb-3">
                 <div class="grow"><DiscordSelector type="role" options={roles} placeholder={m.common.addARole()} bind:selected={excludeRole} /></div>
-                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(StatsExclusionKind.Role, excludeRole)}>{m.common.add()}</button>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};" onclick={() => addExclusion(StatsExclusionKind.Role, excludeRole)}>{m.common.add()}</button>
               </div>
               <ul class="space-y-1">
                 {#each exclusions?.roles ?? [] as id (id.toString())}
@@ -785,7 +785,7 @@
             <Card title={m.common.ignoredMembers()} note={m.serverstats.ignoredMembersNote()}>
               <div class="flex gap-2 mb-3">
                 <div class="grow"><DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder={m.common.addAMember()} bind:selected={excludeUser} /></div>
-                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(StatsExclusionKind.User, excludeUser)}>{m.common.add()}</button>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};" onclick={() => addExclusion(StatsExclusionKind.User, excludeUser)}>{m.common.add()}</button>
               </div>
               <ul class="space-y-1">
                 {#each exclusions?.users ?? [] as id (id.toString())}
@@ -815,7 +815,7 @@
             </div>
             <div class="flex gap-2 mb-3">
               <input type="text" maxlength="128" placeholder={m.serverstats.lookupGamePlaceholder()} bind:value={filterNameDraft} onkeydown={(e) => e.key === "Enter" && toggleFilterName(filterNameDraft)} class="grow rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" aria-label={m.serverstats.lookupGamePlaceholder()} />
-              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={() => toggleFilterName(filterNameDraft)}>{m.common.add()}</button>
+              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};" onclick={() => toggleFilterName(filterNameDraft)}>{m.common.add()}</button>
             </div>
             <div class="flex flex-wrap gap-2">
               {#each activityFilters?.names ?? [] as name (name)}

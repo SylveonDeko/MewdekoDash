@@ -638,9 +638,6 @@
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.currency.supplyTitle()}</h2>
           </div>
-          <p class="text-sm mb-6" style="color: {$colorStore.muted}">
-            {m.currency.supplyHint()}
-          </p>
 
           {#if analytics.supplyHistory.length > 0}
             <div class="h-64 md:h-80">
@@ -658,18 +655,18 @@
           <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.currency.whereTitle()}</h2>
           <div class="flex h-8 rounded-full overflow-hidden mb-3" style="background: {$colorStore.primary}10;">
             {#if analytics.snapshot.moneySupply > 0}
-              <div style="width: {(analytics.snapshot.inWallets / analytics.snapshot.moneySupply) * 100}%; background: {$colorStore.primary};"></div>
-              <div style="width: {(analytics.snapshot.inBanks / analytics.snapshot.moneySupply) * 100}%; background: {$colorStore.secondary};"></div>
+              <div style="width: {(analytics.snapshot.inWallets / analytics.snapshot.moneySupply) * 100}%; background: {$colorStore.primary}; color: {$colorStore.onPrimary};"></div>
+              <div style="width: {(analytics.snapshot.inBanks / analytics.snapshot.moneySupply) * 100}%; background: {$colorStore.secondary}; color: {$colorStore.onSecondary};"></div>
             {/if}
           </div>
           <div class="flex flex-wrap gap-6 text-sm">
             <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full" style="background: {$colorStore.primary}"></span>
+              <span class="w-3 h-3 rounded-full" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary}"></span>
               <span style="color: {$colorStore.text}">{m.currency.whereWallets({ amount: formatNumber(analytics.snapshot.inWallets) })}</span>
               <span style="color: {$colorStore.muted}">{m.currency.whereWalletsNote()}</span>
             </div>
             <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full" style="background: {$colorStore.secondary}"></span>
+              <span class="w-3 h-3 rounded-full" style="background: {$colorStore.secondary}; color: {$colorStore.onSecondary}"></span>
               <span style="color: {$colorStore.text}">{m.currency.whereBanked({ amount: formatNumber(analytics.snapshot.inBanks) })}</span>
               <span style="color: {$colorStore.muted}">{m.currency.whereBankedNote()}</span>
             </div>
@@ -780,9 +777,9 @@
   {#if activeTab === 'config'}
     <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
       {#if config}
-        {#snippet toggle(label: string, description: string, value: boolean, onToggle: () => void)}
+        {#snippet toggle(label: string, value: boolean, onToggle: () => void)}
           <div class="md:col-span-2 lg:col-span-3">
-            {@render switchRow(label, description, value, onToggle)}
+            {@render switchRow(label, "", value, onToggle)}
           </div>
         {/snippet}
 
@@ -808,7 +805,7 @@
                     border-color: {$colorStore.primary}30;">
           <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.currency.configBetting()}</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle(m.currency.cfgEnableGambling(), m.currency.cfghintTurnsEveryWageringGameOnOrOff(), config.gamblingEnabled, () => toggleSetting("gamblingEnabled"))}
+            {@render toggle(m.currency.cfgEnableGambling(), config.gamblingEnabled, () => toggleSetting("gamblingEnabled"))}
             {@render numberField(m.currency.cfgMinimumBet(), "", "minBet", 1)}
             {@render numberField(m.currency.cfgMaximumBet(), m.currency.cfghint0ForUnlimitedACeilingStopsOneLuck(), "maxBet")}
             {@render numberField(m.currency.cfgPayoutMultiplier(), m.currency.cfghintScalesWinningsOnlyNeverTheReturned(), "payoutMultiplier")}
@@ -823,11 +820,11 @@
                     border-color: {$colorStore.primary}30;">
           <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.currency.configEarning()}</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle(m.currency.cfgEnableWork(), m.currency.cfghintTheLowRiskSteadyEarningCommand(), config.workEnabled, () => toggleSetting("workEnabled"))}
+            {@render toggle(m.currency.cfgEnableWork(), config.workEnabled, () => toggleSetting("workEnabled"))}
             {@render numberField(m.currency.cfgWorkMinimum(), "", "workMinReward")}
             {@render numberField(m.currency.cfgWorkMaximum(), "", "workMaxReward")}
             {@render numberField(m.currency.cfgWorkCooldownSeconds(), formatDuration(config.workCooldownSeconds), "workCooldownSeconds")}
-            {@render toggle(m.currency.cfgEnableCrime(), m.currency.cfghintPaysBetterThanWorkButFailsOftenEn(), config.crimeEnabled, () => toggleSetting("crimeEnabled"))}
+            {@render toggle(m.currency.cfgEnableCrime(), config.crimeEnabled, () => toggleSetting("crimeEnabled"))}
             {@render numberField(m.currency.cfgCrimeMinimum(), "", "crimeMinReward")}
             {@render numberField(m.currency.cfgCrimeMaximum(), "", "crimeMaxReward")}
             {@render numberField(m.currency.cfgCrimeSuccessChance(), "", "crimeSuccessChance")}
@@ -846,7 +843,7 @@
             {m.currency.configBankHint()}
           </p>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle(m.currency.cfgEnableBank(), m.currency.cfghintLetsUsersMoveCurrencyOutOfReachOf(), config.bankEnabled, () => toggleSetting("bankEnabled"))}
+            {@render toggle(m.currency.cfgEnableBank(), config.bankEnabled, () => toggleSetting("bankEnabled"))}
             {@render numberField(m.currency.cfgBankCapacity(), m.currency.shopMaxPerUserHint(), "bankCapacity")}
             {@render numberField(m.currency.cfgInterest(), m.currency.cfghintPaidPerIntervalOnTheBankedBalance(), "bankInterestPercent")}
             {@render numberField(m.currency.cfgInterestIntervalHours(), "", "bankInterestHours", 1)}
@@ -862,7 +859,7 @@
             {m.currency.configTransfersHint()}
           </p>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle(m.currency.cfgEnableTransfers(), m.currency.cfghintLetsUsersPayEachOther(), config.payEnabled, () => toggleSetting("payEnabled"))}
+            {@render toggle(m.currency.cfgEnableTransfers(), config.payEnabled, () => toggleSetting("payEnabled"))}
             {@render numberField(m.currency.cfgTransferTax(), "", "payTaxPercent")}
             {@render numberField(m.currency.cfgTransferCooldownSeconds(), formatDuration(config.payCooldownSeconds), "payCooldownSeconds")}
             {@render numberField(m.currency.cfgMinimumTransfer(), "", "payMinimum", 1)}
@@ -878,7 +875,7 @@
             {m.currency.configRobberyHint()}
           </p>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle(m.currency.cfgEnableRobbery(), m.currency.cfghintLetsUsersStealFromEachOtherSWalle(), config.robEnabled, () => toggleSetting("robEnabled"))}
+            {@render toggle(m.currency.cfgEnableRobbery(), config.robEnabled, () => toggleSetting("robEnabled"))}
             {@render numberField(m.currency.cfgSuccessChance(), "", "robSuccessChance")}
             {@render numberField(m.currency.cfgMaximumSteal(), m.currency.cfghintShareOfTheTargetSWalletASuccessT(), "robMaxStealPercent", 1)}
             {@render numberField(m.currency.cfgFailureFine(), m.currency.cfghintShareOfTheRobberSWalletDestroyedO(), "robFinePercent")}
@@ -893,7 +890,7 @@
                     border-color: {$colorStore.primary}30;">
           <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.currency.configDaily()}</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle(m.currency.cfgEnableStreaks(), m.currency.cfghintConsecutiveDailyClaimsEarnAnEscalat(), config.dailyStreakEnabled, () => toggleSetting("dailyStreakEnabled"))}
+            {@render toggle(m.currency.cfgEnableStreaks(), config.dailyStreakEnabled, () => toggleSetting("dailyStreakEnabled"))}
             {@render numberField(m.currency.cfgBonusPerDay(), m.currency.cfghintAddedPerConsecutiveDayClaimed(), "dailyStreakBonus")}
             {@render numberField(m.currency.cfgMaximumBonus(), m.currency.cfghint0ForUncapped(), "dailyStreakMaxBonus")}
           </div>
@@ -916,11 +913,7 @@
     <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.currency.shopTitle()}</h2>
-          <p class="text-sm" style="color: {$colorStore.muted}">
-            {m.currency.shopHint()}
-          </p>
-        </div>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.currency.shopTitle()}</h2>        </div>
         <button onclick={() => openShopEditor(null)}
                 class="px-6 py-3 rounded-xl font-medium transition-all min-h-[44px]"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
@@ -1130,9 +1123,7 @@
                   class="px-6 py-3 rounded-xl font-medium min-h-[44px] disabled:opacity-50"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
             {m.common.apply()}
-          </button>
-          <span class="text-xs" style="color: {$colorStore.muted}">{m.currency.adjustHint()}</span>
-        </div>
+          </button>        </div>
       </div>
 
       <!-- Leaderboard -->

@@ -93,7 +93,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
         <div class="flex items-center gap-3 flex-wrap">
           <button
             class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 text-sm min-h-[36px]"
-            style="background: {$colorStore.secondary}; color: white;"
+            style="background: {$colorStore.secondary}; color: {$colorStore.onSecondary};"
             onclick={handleStartSetup}
           >
             {m.common.quickSetup()}

@@ -31,7 +31,7 @@
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 mt-7">
       <a href={INVITE_URL} target="_blank" rel="noreferrer"
          class="inline-flex items-center justify-center gap-3 px-6 min-h-[52px] rounded-2xl text-base sm:text-lg font-bold transition-opacity hover:opacity-90"
-         style="background: {$colorStore.primary}; color: #111827; border: 1px solid {$colorStore.primary};">
+         style="background: {$colorStore.primary}; color: {$colorStore.onPrimary}; border: 1px solid {$colorStore.primary};">
         <i class="fa-brands fa-discord" aria-hidden="true"></i>
         {m.home.heroAddToDiscord()}
       </a>

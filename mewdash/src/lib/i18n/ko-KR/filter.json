@@ -30,7 +30,6 @@
   "remove_channel_aria": "#{channel} 제거",
   "search_words_aria": "필터링된 단어 검색",
   "search_words_placeholder": "단어 검색",
-  "server_wide_hint": "모든 채널에 적용돼요. 채널별 설정을 사용하면 특정 장소에서만 필터를 켤 수 있어요.",
   "server_wide_title": "서버 전체 필터",
   "stat_autoban_words_subtitle": "즉시 차단",
   "stat_channel_overrides_subtitle": "채널별 필터",

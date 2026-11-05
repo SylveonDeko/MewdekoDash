@@ -101,9 +101,9 @@
             </p>
             <a href="/dashboard/music"
                class="inline-flex items-center gap-2 py-3 px-6 rounded-xl transition-all"
-               style="background: {$colorStore.primary}; color: white;">
+               style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};">
               <i class="fa-utility-duo fa-regular fa-play"
-                 style="--fa-primary-color: white; --fa-secondary-color: white; --fa-secondary-opacity: 0.7;"></i>
+                 style="--fa-primary-color: {$colorStore.onPrimary}; --fa-secondary-color: {$colorStore.onPrimary}; --fa-secondary-opacity: 0.7;"></i>
               {m.common.openMusicDashboard()}
             </a>
           </div>

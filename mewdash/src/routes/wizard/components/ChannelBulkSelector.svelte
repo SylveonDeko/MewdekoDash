@@ -133,7 +133,7 @@ Supports single, multiple, category-based, and pattern-based selection
           </p>
           <button
             class="text-xs font-medium px-2 py-1 rounded-sm transition-all"
-            style="background: {$colorStore.accent}; color: white;"
+            style="background: {$colorStore.accent}; color: {$colorStore.onAccent};"
             onclick={applyDetected}
           >
             {m.wizard.channelSelectorUseDetected()}
@@ -184,7 +184,7 @@ Supports single, multiple, category-based, and pattern-based selection
             />
             <button
               class="px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
-              style="background: {$colorStore.primary}; color: white;"
+              style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
               onclick={applyCategory}
               disabled={!selectedCategory}
             >
@@ -210,7 +210,7 @@ Supports single, multiple, category-based, and pattern-based selection
           />
           <button
             class="px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
-            style="background: {$colorStore.primary}; color: white;"
+            style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
             onclick={applyPattern}
             disabled={!patternFilter}
           >

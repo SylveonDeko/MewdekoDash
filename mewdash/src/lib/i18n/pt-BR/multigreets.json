@@ -6,7 +6,6 @@
   "delete_time_seconds": "{seconds}s",
   "edit_delete_time_aria": "Editar tempo de exclusão",
   "edit_webhook_aria": "Editar webhook",
-  "empty_hint": "Adicione sua primeira mensagem de boas-vindas usando o formulário acima.",
   "empty_title": "Nenhuma Boas-vindas Configurada",
   "error_add": "Falha ao adicionar as boas-vindas",
   "error_fetch_greets": "Falha ao buscar as boas-vindas",

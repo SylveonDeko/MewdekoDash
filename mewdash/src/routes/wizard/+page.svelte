@@ -1705,7 +1705,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         <p class="mb-4">{dataError}</p>
         <button
           class="px-4 py-2 rounded-lg font-medium transition-all"
-          style="background: {$colorStore.primary}; color: white;"
+          style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
           onclick={() => goto('/dashboard')}
         >
           {m.wizard.backToDashboard()}

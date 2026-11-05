@@ -429,7 +429,7 @@
                 <img src={instance.botAvatar} alt="" class="w-6 h-6 rounded-full shrink-0">
                 <span class="flex-1 text-sm truncate">{instance.botName}</span>
                 {#if $currentInstance?.botId === instance.botId}
-                  <div class="w-1.5 h-1.5 rounded-full" style="background: {$colorStore.primary};"></div>
+                  <div class="w-1.5 h-1.5 rounded-full" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"></div>
                 {/if}
               </button>
             {/each}
@@ -570,7 +570,7 @@
                 </div>
               </div>
               {#if guild.id === $currentGuild?.id}
-                <div class="w-2 h-2 rounded-full shrink-0" style="background: {$colorStore.primary};"></div>
+                <div class="w-2 h-2 rounded-full shrink-0" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"></div>
               {/if}
             </button>
           {:else}
@@ -707,7 +707,7 @@
                aria-hidden="true"></i>
             {#if $unreadUpdateCount > 0}
               <span class="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full"
-                    style="background: {$colorStore.primary};"></span>
+                    style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"></span>
             {/if}
           </span>
           {#if !collapsed}
@@ -746,7 +746,7 @@
                 >
                   {#if active}
                     <div class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                         style="background: {$colorStore.primary};"
+                         style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                          transition:fade={{ duration: 150 }}></div>
                   {/if}
 
@@ -816,7 +816,7 @@
                   <img src={instance.botAvatar} alt="" class="w-5 h-5 rounded-full shrink-0">
                   <span class="flex-1 truncate text-xs">{instance.botName}</span>
                   {#if $currentInstance?.botId === instance.botId}
-                    <div class="w-1.5 h-1.5 rounded-full" style="background: {$colorStore.primary};"></div>
+                    <div class="w-1.5 h-1.5 rounded-full" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"></div>
                   {/if}
                 </button>
               {/each}
@@ -916,9 +916,9 @@
             {#if collapsed}
               <span
                 class="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-4 h-4 rounded-full border-2"
-                style="background: {$colorStore.primary}; border-color: {$colorStore.gradientStart};"
+                style="background: {$colorStore.primary}; border-color: {$colorStore.gradientStart}; color: {$colorStore.onPrimary};"
               >
-                <i class="fa-solid fa-angles-right text-[7px]" style="color: {$colorStore.text};" aria-hidden="true"></i>
+                <i class="fa-solid fa-angles-right text-[7px]" style="color: {$colorStore.onPrimary};" aria-hidden="true"></i>
               </span>
             {/if}
           </div>

@@ -434,7 +434,7 @@
                  style="background: {$colorStore.primary}20;">
               <div
                 class="h-2 rounded-full transition-all duration-500 ease-out"
-                style="width: {progress}%; background: {$colorStore.primary};"
+                style="width: {progress}%; background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
               ></div>
             </div>
           </div>
@@ -488,8 +488,8 @@
                         </div>
                       </div>
                       {#if completedSteps.has(index)}
-                        <div class="w-5 h-5 rounded-full flex items-center justify-center" style="background: {$colorStore.secondary};">
-                          <i class="fa-solid fa-check" style="color: {$colorStore.text}; font-size: 12px;"></i>
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center" style="background: {$colorStore.secondary}; color: {$colorStore.onSecondary};">
+                          <i class="fa-solid fa-check" style="color: {$colorStore.onSecondary}; font-size: 12px;"></i>
                         </div>
                       {/if}
                     </div>
@@ -928,7 +928,7 @@
 
                   <button
                     class="px-6 py-3 rounded-xl font-medium transition-opacity duration-200 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style="background: {$colorStore.primary}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+                    style="background: {$colorStore.primary}; color: {$colorStore.onPrimary}; border: 1px solid {$colorStore.primary}30;"
                     disabled={currentStep === steps.length - 1}
                     onclick={nextStep}
                   >

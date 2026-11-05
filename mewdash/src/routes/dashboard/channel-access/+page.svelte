@@ -444,7 +444,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard label={m.channelAccess.tabGates()} value={gates.length} icon="fa-lock" />
         <StatCard label={m.channelAccess.statOpenApplications()} value={pendingCount} icon="fa-inbox" />
-        <StatCard label={m.channelAccess.statBlockedUsers()} value={blacklist.length} icon="fa-shield-slash" />
+        <StatCard label={m.common.blockedUsers()} value={blacklist.length} icon="fa-shield-slash" />
       </div>
 
       <!-- Create a gate -->

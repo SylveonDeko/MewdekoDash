@@ -13,7 +13,7 @@
   interface Props {
     label: string;
     /** What this setting does, in one line. Read out after the label by screen readers. */
-    hint: string;
+    hint?: string;
     /** The id of the control inside, so the label points at it. */
     id: string;
     required?: boolean;
@@ -34,9 +34,11 @@
     {/if}
   </label>
 
-  <p id={hintId} class="text-xs mb-2" style="color: {$colorStore.muted};">
-    {hint}
-  </p>
+  {#if hint}
+    <p id={hintId} class="text-xs mb-2" style="color: {$colorStore.muted};">
+      {hint}
+    </p>
+  {/if}
 
   {@render children()}
 </div>

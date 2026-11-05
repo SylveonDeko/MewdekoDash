@@ -611,7 +611,7 @@
 >
   {#if activeTab === "overview"}
     <section>
-      <SectionHeader icon="fa-chart-pie" title={m.invites.overviewTitle()} subtitle={m.invites.overviewSubtitle()}>
+      <SectionHeader icon="fa-chart-pie" title={m.invites.overviewTitle()}>
         {#snippet actions()}
           <WindowPicker bind:value={overviewRange} options={rangeOptions} onchange={() => loadOverview()} />
         {/snippet}
@@ -758,7 +758,7 @@
                 </SettingField>
               </div>
               <div class="flex gap-2">
-                <button type="button" class="flex-1 min-h-[44px] rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={applyAdjust}>{m.common.apply()}</button>
+                <button type="button" class="flex-1 min-h-[44px] rounded-lg font-medium" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};" onclick={applyAdjust}>{m.common.apply()}</button>
                 <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={resetMember}>{m.common.reset()}</button>
               </div>
             {:else}
@@ -772,7 +772,7 @@
 
   {#if activeTab === "members"}
     <section>
-      <SectionHeader icon="fa-user-plus" title={m.invites.membersTitle()} subtitle={m.invites.membersSubtitle()}>
+      <SectionHeader icon="fa-user-plus" title={m.invites.membersTitle()}>
         {#snippet actions()}
           <button
             type="button"
@@ -807,7 +807,7 @@
           style="background: {$colorStore.primary}10; color: {$colorStore.text};"
           aria-label={m.invites.membersFilterLabelAria()}
         />
-        <SettingToggle id="include-left" label={m.invites.membersIncludeLeft()} hint={m.invites.membersIncludeLeftHint()} checked={memberIncludeLeft} onchange={(v) => { memberIncludeLeft = v; memberPage = 1; loadInvited(); }} />
+        <SettingToggle id="include-left" label={m.invites.membersIncludeLeft()} checked={memberIncludeLeft} onchange={(v) => { memberIncludeLeft = v; memberPage = 1; loadInvited(); }} />
       </div>
 
       <AsyncState loading={membersLoading} error={membersError} empty={!invitedPage || invitedPage.items.length === 0} emptyMessage={m.invites.membersEmpty()} emptyIcon="fa-users">
@@ -863,7 +863,7 @@
 
   {#if activeTab === "codes"}
     <section>
-      <SectionHeader icon="fa-link" title={m.invites.codesTitle()} subtitle={m.invites.codesSubtitle()} />
+      <SectionHeader icon="fa-link" title={m.invites.codesTitle()} />
 
       <AsyncState loading={codesLoading} error={codesError} empty={codes.length === 0} emptyMessage={m.invites.codesEmpty()} emptyIcon="fa-link">
         <div class="space-y-3">
@@ -887,7 +887,7 @@
                   <SettingField label={m.common.label()} hint={m.invites.codesLabelHint()} id={`label-${code.code}`}>
                     <input id={`label-${code.code}`} type="text" maxlength="64" placeholder={m.invites.codesLabelPlaceholder()} bind:value={labelDrafts[code.code].label} oninput={() => scheduleLabel(code.code)} onblur={() => flushLabel(code.code)} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
                   </SettingField>
-                  <SettingField label={m.invites.codesRole()} hint={m.invites.codesRoleHint()} id={`role-${code.code}`}>
+                  <SettingField label={m.invites.codesRole()} id={`role-${code.code}`}>
                     <DiscordSelector id={`role-${code.code}`} type="role" options={roles} bind:selected={labelDrafts[code.code].roleId} disabled={!labelDrafts[code.code].label.trim()} placeholder={labelDrafts[code.code].label.trim() ? m.common.noRole() : m.invites.codesRoleNeedsLabel()} onchange={() => saveLabelRole(code.code)} />
                   </SettingField>
                 </div>
@@ -918,10 +918,10 @@
       <AsyncState loading={settingsLoading} error={settingsError} empty={!settings}>
         {#if settings}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
-            <SettingToggle id="tracking" label={m.invites.settingsTracking()} hint={m.invites.settingsTrackingHint()} checked={settings.isEnabled} onchange={(v) => autoSaveSetting("tracking", () => inviteTrackingApi.toggleInviteTracking($currentGuild!.id, v))} />
+            <SettingToggle id="tracking" label={m.invites.settingsTracking()} checked={settings.isEnabled} onchange={(v) => autoSaveSetting("tracking", () => inviteTrackingApi.toggleInviteTracking($currentGuild!.id, v))} />
             <SettingToggle id="remove-on-leave" label={m.invites.settingsRemoveOnLeave()} hint={m.invites.settingsRemoveOnLeaveHint()} checked={settings.removeInviteOnLeave} onchange={(v) => autoSaveSetting("remove-on-leave", () => inviteTrackingApi.setRemoveOnLeave($currentGuild!.id, v))} />
             <SettingToggle id="count-rejoins" label={m.invites.settingsCountRejoins()} hint={m.invites.settingsCountRejoinsHint()} checked={settings.countRejoins} onchange={(v) => autoSaveSetting("count-rejoins", () => inviteTrackingApi.setCountRejoins($currentGuild!.id, v))} />
-            <SettingToggle id="fake-no-avatar" label={m.invites.settingsFakeNoAvatar()} hint={m.invites.settingsFakeNoAvatarHint()} checked={settings.fakeOnNoAvatar} onchange={(v) => autoSaveSetting("fake-no-avatar", () => inviteTrackingApi.setFakeOnNoAvatar($currentGuild!.id, v))} />
+            <SettingToggle id="fake-no-avatar" label={m.invites.settingsFakeNoAvatar()} checked={settings.fakeOnNoAvatar} onchange={(v) => autoSaveSetting("fake-no-avatar", () => inviteTrackingApi.setFakeOnNoAvatar($currentGuild!.id, v))} />
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -937,10 +937,10 @@
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <Card title={m.invites.settingsBlacklistUsers()} note={m.invites.settingsBlacklistUsersNote()}>
+            <Card title={m.invites.settingsBlacklistUsers()}>
               <div class="flex gap-2 mb-3">
                 <div class="grow"><DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder={m.common.addAMember()} bind:selected={exclusionUser} /></div>
-                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(InviteExclusionKind.BlacklistedUser, exclusionUser)}>{m.common.add()}</button>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};" onclick={() => addExclusion(InviteExclusionKind.BlacklistedUser, exclusionUser)}>{m.common.add()}</button>
               </div>
               <ul class="space-y-1">
                 {#each blacklistedUsers as id (id)}
@@ -951,10 +951,10 @@
                 {/each}
               </ul>
             </Card>
-            <Card title={m.common.blacklistedRoles()} note={m.invites.settingsBlacklistRolesNote()}>
+            <Card title={m.common.blacklistedRoles()}>
               <div class="flex gap-2 mb-3">
                 <div class="grow"><DiscordSelector type="role" options={roles} placeholder={m.common.addARole()} bind:selected={exclusionRole} /></div>
-                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(InviteExclusionKind.BlacklistedRole, exclusionRole)}>{m.common.add()}</button>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};" onclick={() => addExclusion(InviteExclusionKind.BlacklistedRole, exclusionRole)}>{m.common.add()}</button>
               </div>
               <ul class="space-y-1">
                 {#each blacklistedRoles as id (id)}
@@ -968,7 +968,7 @@
             <Card title={m.invites.settingsHidden()} note={m.invites.settingsHiddenNote()}>
               <div class="flex gap-2 mb-3">
                 <div class="grow"><DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder={m.common.addAMember()} bind:selected={hiddenUser} /></div>
-                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(InviteExclusionKind.HiddenUser, hiddenUser)}>{m.common.add()}</button>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};" onclick={() => addExclusion(InviteExclusionKind.HiddenUser, hiddenUser)}>{m.common.add()}</button>
               </div>
               <ul class="space-y-1">
                 {#each hiddenUsers as id (id)}
@@ -981,11 +981,11 @@
             </Card>
           </div>
 
-          <Card title={m.common.maintenance()} note={m.invites.settingsMaintenanceNote()}>
+          <Card title={m.common.maintenance()}>
             <div class="flex flex-wrap gap-2">
               <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}20; color: {$colorStore.primary};" onclick={syncInvites}>{m.invites.settingsSync()}</button>
               <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={() => resetAll(InviteResetScope.LeftMembers)}>{m.invites.settingsResetLeft()}</button>
-              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.accent}; color: #fff;" onclick={() => resetAll(InviteResetScope.Server)}>{m.common.resetEverything()}</button>
+              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.accent}; color: {$colorStore.onAccent};" onclick={() => resetAll(InviteResetScope.Server)}>{m.common.resetEverything()}</button>
             </div>
             <p class="text-xs mt-3" style="color: {$colorStore.muted}">{m.invites.settingsSyncHint()}</p>
           </Card>

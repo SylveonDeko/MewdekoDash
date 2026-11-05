@@ -387,7 +387,7 @@
       action: createStarboard,
       loading: creatingStarboard,
       disabled: !newStarboard.channelId || creatingStarboard,
-      style: `background: ${$colorStore.primary}; color: ${$colorStore.text};`
+      style: `background: ${$colorStore.primary}; color: ${$colorStore.onPrimary};`
     }
   ]}
   statusMessages={statusMessages}

@@ -333,7 +333,7 @@
         >
           {#if active}
             <div class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                 style="background: {$colorStore.primary};"
+                 style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                  transition:fade={{ duration: 150 }}></div>
           {/if}
           <i class="{feature.icon} text-sm shrink-0 transition-colors duration-200"
@@ -369,8 +369,8 @@
             <img src={userAvatarUrl} alt={$userStore.username} class="w-9 h-9 rounded-full shrink-0">
             {#if collapsed}
               <span class="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-4 h-4 rounded-full border-2"
-                    style="background: {$colorStore.primary}; border-color: {$colorStore.gradientStart};">
-                <i class="fa-solid fa-angles-right text-[7px]" style="color: {$colorStore.text};" aria-hidden="true"></i>
+                    style="background: {$colorStore.primary}; border-color: {$colorStore.gradientStart}; color: {$colorStore.onPrimary};">
+                <i class="fa-solid fa-angles-right text-[7px]" style="color: {$colorStore.onPrimary};" aria-hidden="true"></i>
               </span>
             {/if}
           </div>

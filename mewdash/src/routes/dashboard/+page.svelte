@@ -673,7 +673,7 @@
                 <div class="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-30" class:hidden={refreshing}>
                     <button aria-label={m.dashboard.pageRefreshAria()}
                             class="flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all"
-                            style="background: {$colorStore.primary}; color: white"
+                            style="background: {$colorStore.primary}; color: {$colorStore.onPrimary}"
                             onclick={() => fetchAllData(true)}
 
                     >

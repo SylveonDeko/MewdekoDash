@@ -30,7 +30,6 @@
   "remove_channel_aria": "#{channel} kanalını kaldır",
   "search_words_aria": "Filtrelenen kelimelerde ara",
   "search_words_placeholder": "Kelimelerde ara",
-  "server_wide_hint": "Bunlar her kanalda geçerlidir. Bir filtreyi yalnızca belirli yerlerde açmak için kanal geçersiz kılmalarını kullan.",
   "server_wide_title": "Sunucu genelindeki filtreler",
   "stat_autoban_words_subtitle": "hemen yasakla",
   "stat_channel_overrides_subtitle": "kanal başına filtreler",

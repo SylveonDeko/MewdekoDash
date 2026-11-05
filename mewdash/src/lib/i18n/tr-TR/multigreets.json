@@ -6,7 +6,6 @@
   "delete_time_seconds": "{seconds} sn",
   "edit_delete_time_aria": "Silme süresini düzenle",
   "edit_webhook_aria": "Webhook'u düzenle",
-  "empty_hint": "Yukarıdaki formu kullanarak ilk karşılama mesajını ekle.",
   "empty_title": "Yapılandırılmış Karşılama Yok",
   "error_add": "Karşılama eklenemedi",
   "error_fetch_greets": "Karşılamalar alınamadı",

@@ -113,7 +113,7 @@
           <div class="flex items-center gap-3">
             <span class="w-28 shrink-0 text-xs" style="color: {$colorStore.text}">{s.label}</span>
             <span class="flex-1 h-6 rounded overflow-hidden" style="background: {$colorStore.primary}10">
-              <span class="block h-full rounded" style="width: {s.width}%; background: {$colorStore.primary}"></span>
+              <span class="block h-full rounded" style="width: {s.width}%; background: {$colorStore.primary}; color: {$colorStore.onPrimary}"></span>
             </span>
             <span class="w-24 shrink-0 text-right text-xs tabular-nums" style="color: {$colorStore.text}">{n(s.visitors)} <span style="color: {$colorStore.muted}">({compact(s.views)})</span></span>
             <span class="w-16 shrink-0 text-right text-xs tabular-nums" style="color: {s.drop !== null && s.drop > 50 ? '#f87171' : $colorStore.muted}">{s.drop === null ? "" : `−${pct(s.drop, 0)}`}</span>

@@ -289,7 +289,7 @@
   <title>{title} - {guildName ?? m.common.dashboard()}</title>
 </svelte:head>
 
-<div class="min-h-screen p-4 md:p-6 overflow-x-hidden w-full transition-all duration-500 relative z-10"
+<div class="min-h-screen p-4 md:p-6 overflow-x-clip w-full transition-all duration-500 relative z-10"
      style="background: {$colorStore.primary}08;"
      in:fade={{ duration: 300 }}>
   

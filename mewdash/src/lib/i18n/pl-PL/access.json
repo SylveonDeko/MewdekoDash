@@ -15,7 +15,6 @@
   "grant_button": "Przyznaj dostęp",
   "grant_heading_edit": "Edytuj przyznany dostęp",
   "grant_heading_new": "Przyznaj ograniczony dostęp",
-  "grant_hint": "Daj użytkownikowi lub roli dostęp do wyświetlania lub zarządzania wybranymi sekcjami panelu, bez nadawania pełnych uprawnień administratora serwera.",
   "grant_sections_few": "{count} sekcje",
   "grant_sections_many": "{count} sekcji",
   "grant_sections_one": "{count} sekcja",

@@ -1,7 +1,6 @@
 {
   "page_add_aria": "RSS-Feed hinzufügen",
   "page_add_message": "Eigene Nachricht hinzufügen",
-  "page_add_url_hint": "Gib die vollständige URL eines RSS- oder Atom-Feeds ein.",
   "page_add_url_label": "RSS-Feed-URL",
   "page_by_channel_count_one": "{count} Feed",
   "page_by_channel_count_other": "{count} Feeds",
@@ -16,7 +15,6 @@
   "page_error_remove": "Feed konnte nicht entfernt werden",
   "page_feed_added": "Hinzugefügt: {date}",
   "page_feed_delete_aria": "Feed löschen",
-  "page_list_empty_hint": "Füge RSS-Feeds hinzu, um Updates automatisch in deinen Kanälen zu posten.",
   "page_list_empty_title": "Keine RSS-Feeds",
   "page_list_title": "RSS-Feeds ({count})",
   "page_notify_added": "RSS-Feed erfolgreich hinzugefügt!",
@@ -26,7 +24,6 @@
   "page_stat_total_sub": "aktive Abonnements",
   "page_stat_unique": "Einzigartige Feeds",
   "page_stat_unique_sub": "verschiedene Quellen",
-  "page_stats_empty_hint": "Feed-Statistiken erscheinen hier, sobald du RSS-Feeds hinzufügst.",
   "page_subtitle": "RSS-Feed-Abonnements verwalten",
   "page_tab_add": "Feed hinzufügen"
 }

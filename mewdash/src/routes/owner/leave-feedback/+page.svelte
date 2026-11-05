@@ -411,7 +411,7 @@
               <div
                 class="h-full rounded-full"
                 style="width: {stats.answered > 0 ? (reason.count / stats.answered) * 100 : 0}%;
-                       background: {$colorStore.primary};"
+                       background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
               ></div>
             </div>
           </button>

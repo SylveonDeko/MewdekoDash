@@ -1,6 +1,7 @@
 <script lang="ts">
   import { m } from "$lib/i18n";
 
+  import type { Snippet } from "svelte";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import Portal from "./Portal.svelte";
@@ -15,6 +16,7 @@
     confirmDisabled?: boolean;
     onconfirm?: () => void;
     oncancel?: () => void;
+    children?: Snippet;
   }
 
   let {
@@ -26,7 +28,8 @@
     variant = "danger",
     confirmDisabled = false,
     onconfirm,
-    oncancel
+    oncancel,
+    children
   }: Props = $props();
 
   const titleText = $derived(title ?? m.common.confirmAction());
@@ -169,6 +172,7 @@
         <p id="modal-description" class="text-sm leading-relaxed" style="color: {$colorStore.muted}">
           {messageText}
         </p>
+        {@render children?.()}
       </div>
 
       <!-- Actions -->

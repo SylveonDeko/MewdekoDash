@@ -517,7 +517,7 @@
           </h4>
           <button
             class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-1.5 sm:gap-2 disabled:opacity-50 text-sm"
-            style="background: {$colorStore.primary}; color: {$colorStore.text};"
+            style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
             disabled={(embed.fields?.length || 0) >= 25}
             onclick={addField}
           >
@@ -668,7 +668,6 @@
             value={embed.thumbnail?.url || ''}
             oninput={(e) => handleInput(e, 'thumbnail.url')}
           >
-          <p class="text-xs mt-1" style="color: {$colorStore.muted};">{m.embedbuilder.editorThumbnailHint()}</p>
         </div>
 
         <!-- Image -->
@@ -685,7 +684,6 @@
             value={embed.image?.url || ''}
             oninput={(e) => handleInput(e, 'image.url')}
           >
-          <p class="text-xs mt-1" style="color: {$colorStore.muted};">{m.embedbuilder.editorImageHint()}</p>
         </div>
 
         <!-- Media Tips -->

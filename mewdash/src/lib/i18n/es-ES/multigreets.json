@@ -6,7 +6,6 @@
   "delete_time_seconds": "{seconds}s",
   "edit_delete_time_aria": "Editar tiempo de eliminación",
   "edit_webhook_aria": "Editar webhook",
-  "empty_hint": "Añade tu primer mensaje de saludo con el formulario de arriba.",
   "empty_title": "No hay saludos configurados",
   "error_add": "No se pudo añadir el saludo",
   "error_fetch_greets": "No se pudieron obtener los saludos",

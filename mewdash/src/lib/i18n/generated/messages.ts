@@ -155,6 +155,8 @@ export const m = {
     blacklistedRoles: () => t("_common", "blacklisted_roles", "Blacklisted roles"),
     /** Block */
     block: () => t("_common", "block", "Block"),
+    /** Blocked users */
+    blockedUsers: () => t("_common", "blocked_users", "Blocked users"),
     /** Blue */
     blue: () => t("_common", "blue", "Blue"),
     /** Blurple */
@@ -417,8 +419,8 @@ export const m = {
     failedToFetchData: () => t("_common", "failed_to_fetch_data", "Failed to fetch data"),
     /** Failed to load analytics */
     failedToLoadAnalytics: () => t("_common", "failed_to_load_analytics", "Failed to load analytics"),
-    /** Failed to load bot instances. Please try again later. */
-    failedToLoadBotInstances: () => t("_common", "failed_to_load_bot_instances", "Failed to load bot instances. Please try again later."),
+    /** Failed to load bot instances */
+    failedToLoadBotInstances: () => t("_common", "failed_to_load_bot_instances", "Failed to load bot instances"),
     /** Failed to load data */
     failedToLoadData: () => t("_common", "failed_to_load_data", "Failed to load data"),
     /** Failed to load leaderboard */
@@ -1307,14 +1309,14 @@ export const m = {
     addManager: () => t("access", "add_manager", "Add Manager"),
     /** Delegation Settings */
     delegationHeading: () => t("access", "delegation_heading", "Delegation Settings"),
-    /** Owner-only. Controls who besides you may grant or revoke dashboard access for other peo... */
-    delegationHint: () => t("access", "delegation_hint", "Owner-only. Controls who besides you may grant or revoke dashboard access for other people."),
+    /** Owner only. */
+    delegationHint: () => t("access", "delegation_hint", "Owner only."),
     /** Toggle admins can manage access */
     delegationToggleAria: () => t("access", "delegation_toggle_aria", "Toggle admins can manage access"),
     /** Allow Administrators and Manage Guild members to manage dashboard access */
     delegationToggleLabel: () => t("access", "delegation_toggle_label", "Allow Administrators and Manage Guild members to manage dashboard access"),
-    /** Only the server owner and users/roles appointed as access managers can grant or revoke ... */
-    deniedHint: () => t("access", "denied_hint", "Only the server owner and users/roles appointed as access managers can grant or revoke restricted dashboard access for this server."),
+    /** Only the server owner and access managers can manage access. */
+    deniedHint: () => t("access", "denied_hint", "Only the server owner and access managers can manage access."),
     /** You can't manage dashboard access here */
     deniedTitle: () => t("access", "denied_title", "You can't manage dashboard access here"),
     /** Edit grant */
@@ -1335,8 +1337,6 @@ export const m = {
     grantHeadingEdit: () => t("access", "grant_heading_edit", "Edit Access Grant"),
     /** Grant Restricted Access */
     grantHeadingNew: () => t("access", "grant_heading_new", "Grant Restricted Access"),
-    /** Give a user or role View or Manage access to specific dashboard sections, without givin... */
-    grantHint: () => t("access", "grant_hint", "Give a user or role View or Manage access to specific dashboard sections, without giving them full server admin."),
     /** {count} section */
     grantSectionsOne: (p: { count: P }) => t("access", "grant_sections_one", "{count} section", p),
     /** {count} sections */
@@ -1365,8 +1365,8 @@ export const m = {
     notifySelectSection: () => t("access", "notify_select_section", "Select at least one section"),
     /** Select a user or role */
     notifySelectTarget: () => t("access", "notify_select_target", "Select a user or role"),
-    /** Grant restricted dashboard access to specific users and roles, without giving them serv... */
-    pageSubtitle: () => t("access", "page_subtitle", "Grant restricted dashboard access to specific users and roles, without giving them server admin"),
+    /** Restricted dashboard access for users and roles */
+    pageSubtitle: () => t("access", "page_subtitle", "Restricted dashboard access for users and roles"),
     /** Remove grant */
     removeGrantAria: () => t("access", "remove_grant_aria", "Remove grant"),
     /** this target */
@@ -1379,8 +1379,8 @@ export const m = {
     removeManagerAria: () => t("access", "remove_manager_aria", "Remove manager"),
     /** this manager */
     removeManagerFallback: () => t("access", "remove_manager_fallback", "this manager"),
-    /** Remove {name} from access managers? They will no longer be able to manage dashboard acc... */
-    removeManagerMessage: (p: { name: P }) => t("access", "remove_manager_message", "Remove {name} from access managers? They will no longer be able to manage dashboard access for this server.", p),
+    /** Remove {name} from access managers? */
+    removeManagerMessage: (p: { name: P }) => t("access", "remove_manager_message", "Remove {name} from access managers?", p),
     /** Target type */
     targetTypePlaceholder: () => t("access", "target_type_placeholder", "Target type"),
   },
@@ -1401,8 +1401,8 @@ export const m = {
     announcementsDelete5m: () => t("achievements", "announcements_delete_5m", "After 5 minutes"),
     /** After 5 seconds */
     announcementsDelete5s: () => t("achievements", "announcements_delete_5s", "After 5 seconds"),
-    /** Removes announcements from channels after a while to keep busy channels clean. 5 second... */
-    announcementsDeleteHint: () => t("achievements", "announcements_delete_hint", "Removes announcements from channels after a while to keep busy channels clean. 5 seconds unless you change it. DMs are never deleted."),
+    /** Defaults to 5 seconds. DMs are never deleted. */
+    announcementsDeleteHint: () => t("achievements", "announcements_delete_hint", "Defaults to 5 seconds. DMs are never deleted."),
     /** Delete unlock messages */
     announcementsDeleteLabel: () => t("achievements", "announcements_delete_label", "Delete unlock messages"),
     /** Delivery */
@@ -1427,8 +1427,8 @@ export const m = {
     announcementsMentionSubtitle: () => t("achievements", "announcements_mention_subtitle", "Ping members in unlock messages unless they turn it off."),
     /** Mention members */
     announcementsMentionTitle: () => t("achievements", "announcements_mention_title", "Mention members"),
-    /** Leave it empty for the default embed in the grade's color. When several unlock at once,... */
-    announcementsMessageHint: () => t("achievements", "announcements_message_hint", "Leave it empty for the default embed in the grade's color. When several unlock at once, the placeholders use the best one and %achievement.list% lists them all."),
+    /** Leave empty for the default embed. When several unlock at once, placeholders use the be... */
+    announcementsMessageHint: () => t("achievements", "announcements_message_hint", "Leave empty for the default embed. When several unlock at once, placeholders use the best one and %achievement.list% lists them all."),
     /** Click to write a custom unlock message, or leave it for the default */
     announcementsMessagePlaceholder: () => t("achievements", "announcements_message_placeholder", "Click to write a custom unlock message, or leave it for the default"),
     /** Sent when a member unlocks achievements */
@@ -1455,18 +1455,18 @@ export const m = {
     announcementsMode4Title: () => t("achievements", "announcements_mode_4_title", "Silent"),
     /** Announcement mode */
     announcementsModeLabel: () => t("achievements", "announcements_mode_label", "Announcement mode"),
-    /** Members still earn achievements in these channels. The unlock is posted in the log chan... */
-    announcementsQuietHint: () => t("achievements", "announcements_quiet_hint", "Members still earn achievements in these channels. The unlock is posted in the log channel instead, or not at all when there isn't one."),
+    /** Unlocks here go to the log channel, or nowhere without one. */
+    announcementsQuietHint: () => t("achievements", "announcements_quiet_hint", "Unlocks here go to the log channel, or nowhere without one."),
     /** Keep unlocks out of some channels */
     announcementsQuietLabel: () => t("achievements", "announcements_quiet_label", "Keep unlocks out of some channels"),
     /** No quiet channels */
     announcementsQuietPlaceholder: () => t("achievements", "announcements_quiet_placeholder", "No quiet channels"),
-    /** Skips channels the member can't send messages in, such as a read only channel they reac... */
-    announcementsRequireSendSubtitle: () => t("achievements", "announcements_require_send_subtitle", "Skips channels the member can't send messages in, such as a read only channel they reacted in. The log channel is never skipped."),
+    /** Skips channels the member can't send in. The log channel is never skipped. */
+    announcementsRequireSendSubtitle: () => t("achievements", "announcements_require_send_subtitle", "Skips channels the member can't send in. The log channel is never skipped."),
     /** Only post where the member can talk */
     announcementsRequireSendTitle: () => t("achievements", "announcements_require_send_title", "Only post where the member can talk"),
-    /** Several unlocks at once share one message. Members can turn messages, mentions, and DMs... */
-    announcementsWhereHint: () => t("achievements", "announcements_where_hint", "Several unlocks at once share one message. Members can turn messages, mentions, and DMs off for themselves."),
+    /** Members can turn messages, mentions, and DMs off for themselves. */
+    announcementsWhereHint: () => t("achievements", "announcements_where_hint", "Members can turn messages, mentions, and DMs off for themselves."),
     /** Where unlocks are announced */
     announcementsWhereTitle: () => t("achievements", "announcements_where_title", "Where unlocks are announced"),
     /** {label} palette */
@@ -1701,8 +1701,8 @@ export const m = {
     cardsTabCopyName: (p: { name: P }) => t("achievements", "cards_tab_copy_name", "{name} copy", p),
     /** Delete design */
     cardsTabDeleteConfirm: () => t("achievements", "cards_tab_delete_confirm", "Delete design"),
-    /** Categories and achievements using it go back to the server default. If it is the defaul... */
-    cardsTabDeleteMessage: () => t("achievements", "cards_tab_delete_message", "Categories and achievements using it go back to the server default. If it is the default, the built in design takes over."),
+    /** Categories and achievements using it go back to the server default. */
+    cardsTabDeleteMessage: () => t("achievements", "cards_tab_delete_message", "Categories and achievements using it go back to the server default."),
     /** Design */
     cardsTabDesignLabel: () => t("achievements", "cards_tab_design_label", "Design"),
     /** Design {number} */
@@ -1719,14 +1719,14 @@ export const m = {
     cardsTabErrorLoad: () => t("achievements", "cards_tab_error_load", "Couldn't load the card designs."),
     /** A server keeps at most {max} designs. Delete one first. */
     cardsTabErrorMaxDesigns: (p: { max: P }) => t("achievements", "cards_tab_error_max_designs", "A server keeps at most {max} designs. Delete one first.", p),
-    /** The image attached to unlock messages and shown by achview. Every achievement uses the ... */
-    cardsTabIntro: (p: { name: P }) => t("achievements", "cards_tab_intro", "The image attached to unlock messages and shown by achview. Every achievement uses the default, <strong>{name}</strong>, unless its category or itself picks another design.", p),
+    /** Attached to unlock messages and shown by achview. The default is <strong>{name}</strong>. */
+    cardsTabIntro: (p: { name: P }) => t("achievements", "cards_tab_intro", "Attached to unlock messages and shown by achview. The default is <strong>{name}</strong>.", p),
     /** Make default */
     cardsTabMakeDefault: () => t("achievements", "cards_tab_make_default", "Make default"),
     /** New design */
     cardsTabNewDesign: () => t("achievements", "cards_tab_new_design", "New design"),
-    /** Optional. Give a whole category or a single achievement its own design. An achievement'... */
-    cardsTabOverridesHint: () => t("achievements", "cards_tab_overrides_hint", "Optional. Give a whole category or a single achievement its own design. An achievement's own design wins over its category's."),
+    /** An achievement's own design wins over its category's. */
+    cardsTabOverridesHint: () => t("achievements", "cards_tab_overrides_hint", "An achievement's own design wins over its category's."),
     /** Different designs for some unlocks */
     cardsTabOverridesTitle: () => t("achievements", "cards_tab_overrides_title", "Different designs for some unlocks"),
     /** Preview of {title} */
@@ -1795,12 +1795,12 @@ export const m = {
     categoriesNewIconLabel: () => t("achievements", "categories_new_icon_label", "Pick an icon for the new category"),
     /** New category */
     categoriesNewTitle: () => t("achievements", "categories_new_title", "New category"),
-    /** Members see categories in this order everywhere. Deactivating one stops new unlocks in ... */
-    categoriesOrderHint: () => t("achievements", "categories_order_hint", "Members see categories in this order everywhere. Deactivating one stops new unlocks in it; anything already earned stays."),
+    /** Deactivating a category stops new unlocks in it. Earned ones stay. */
+    categoriesOrderHint: () => t("achievements", "categories_order_hint", "Deactivating a category stops new unlocks in it. Earned ones stay."),
     /** Order and visibility */
     categoriesOrderTitle: () => t("achievements", "categories_order_title", "Order and visibility"),
-    /** Bonus achievements for unlocking every achievement in a category. */
-    categoriesPrestigeSubtitle: () => t("achievements", "categories_prestige_subtitle", "Bonus achievements for unlocking every achievement in a category."),
+    /** Bonus for unlocking every achievement in a category. */
+    categoriesPrestigeSubtitle: () => t("achievements", "categories_prestige_subtitle", "Bonus for unlocking every achievement in a category."),
     /** Prestige for finishing categories */
     categoriesPrestigeTitle: () => t("achievements", "categories_prestige_title", "Prestige for finishing categories"),
     /** Deactivating it keeps it for everyone who already unlocked it. */
@@ -1869,8 +1869,8 @@ export const m = {
     editorIconChange: () => t("achievements", "editor_icon_change", "Change the icon"),
     /** the category's icon */
     editorIconDefaultLabel: () => t("achievements", "editor_icon_default_label", "the category's icon"),
-    /** Shown in its image, here, and in the apps. Pick an icon, one of the server's emojis, or... */
-    editorIconHint: () => t("achievements", "editor_icon_hint", "Shown in its image, here, and in the apps. Pick an icon, one of the server's emojis, or an image."),
+    /** An icon, a server emoji, or an image. */
+    editorIconHint: () => t("achievements", "editor_icon_hint", "An icon, a server emoji, or an image."),
     /** Icon */
     editorIconLabel: () => t("achievements", "editor_icon_label", "Icon"),
     /** Key */
@@ -1901,12 +1901,12 @@ export const m = {
     editorPreviewAlt: (p: { description: P; name: P; points: P }) => t("achievements", "editor_preview_alt", "{name}: {description}, +{points} points", p),
     /** The image appears here. */
     editorPreviewEmpty: () => t("achievements", "editor_preview_empty", "The image appears here."),
-    /** Attached to unlock messages while unlock images are on. Members can also show it with t... */
-    editorPreviewHint: () => t("achievements", "editor_preview_hint", "Attached to unlock messages while unlock images are on. Members can also show it with the achview command."),
+    /** Attached to unlock messages. Members can also show it with achview. */
+    editorPreviewHint: () => t("achievements", "editor_preview_hint", "Attached to unlock messages. Members can also show it with achview."),
     /** Pick an emoji */
     editorReactionPlaceholder: () => t("achievements", "editor_reaction_placeholder", "Pick an emoji"),
-    /** Its name, description, icon, points, and rewards go back to how the bot ships them, and... */
-    editorResetMessage: () => t("achievements", "editor_reset_message", "Its name, description, icon, points, and rewards go back to how the bot ships them, and it becomes active again."),
+    /** Name, description, icon, points, and rewards return to the defaults and it becomes active. */
+    editorResetMessage: () => t("achievements", "editor_reset_message", "Name, description, icon, points, and rewards return to the defaults and it becomes active."),
     /** Reset to default? */
     editorResetTitle: () => t("achievements", "editor_reset_title", "Reset to default?"),
     /** No role reward */
@@ -2035,16 +2035,16 @@ export const m = {
     libraryCategoryDefaultDescription: () => t("achievements", "library_category_default_description", "Achievements this server made."),
     /** This category is inactive. */
     libraryCategoryInactiveNotice: () => t("achievements", "library_category_inactive_notice", "This category is inactive."),
-    /** Made {name}. Members who already qualify get it quietly within a few minutes. */
-    libraryCreatedMessage: (p: { name: P }) => t("achievements", "library_created_message", "Made {name}. Members who already qualify get it quietly within a few minutes.", p),
+    /** Made {name}. Qualifying members get it quietly within minutes. */
+    libraryCreatedMessage: (p: { name: P }) => t("achievements", "library_created_message", "Made {name}. Qualifying members get it quietly within minutes.", p),
     /** Customized */
     libraryCustomized: () => t("achievements", "library_customized", "Customized"),
     /** Deactivate */
     libraryDeactivate: () => t("achievements", "library_deactivate", "Deactivate"),
     /** Deactivate {name} */
     libraryDeactivateLabel: (p: { name: P }) => t("achievements", "library_deactivate_label", "Deactivate {name}", p),
-    /** Make your own: hit a number, say a phrase, react with an emoji, or something staff hand... */
-    libraryEmptyCustomText: () => t("achievements", "library_empty_custom_text", "Make your own: hit a number, say a phrase, react with an emoji, or something staff hand out by hand."),
+    /** Reach a number, say a phrase, react with an emoji, or hand it out. */
+    libraryEmptyCustomText: () => t("achievements", "library_empty_custom_text", "Reach a number, say a phrase, react with an emoji, or hand it out."),
     /** No server achievements yet */
     libraryEmptyCustomTitle: () => t("achievements", "library_empty_custom_title", "No server achievements yet"),
     /** Try another filter or search. */
@@ -2113,24 +2113,24 @@ export const m = {
     membersNoneMatch: () => t("achievements", "members_none_match", "No members match."),
     /** Nobody has unlocked anything yet. */
     membersNoneUnlocked: () => t("achievements", "members_none_unlocked", "Nobody has unlocked anything yet."),
-    /** Pick a member to see their progress, give achievements, or take them away. */
-    membersPickPrompt: () => t("achievements", "members_pick_prompt", "Pick a member to see their progress, give achievements, or take them away."),
+    /** Pick a member to see their progress. */
+    membersPickPrompt: () => t("achievements", "members_pick_prompt", "Pick a member to see their progress."),
     /** {points} points */
     membersPoints: (p: { points: P }) => t("achievements", "members_points", "{points} points", p),
     /** {unlocked} of {total} · {rank} */
     membersProgressLine: (p: { rank: P; total: P; unlocked: P }) => t("achievements", "members_progress_line", "{unlocked} of {total} · {rank}", p),
     /** Reset member */
     membersResetConfirm: () => t("achievements", "members_reset_confirm", "Reset member"),
-    /** Every achievement they have here is cleared. Their tracked activity stays, so anything ... */
-    membersResetMessage: () => t("achievements", "members_reset_message", "Every achievement they have here is cleared. Their tracked activity stays, so anything they still qualify for comes back quietly."),
+    /** Clears every achievement they have here. Tracked activity stays, so what they still qua... */
+    membersResetMessage: () => t("achievements", "members_reset_message", "Clears every achievement they have here. Tracked activity stays, so what they still qualify for returns quietly."),
     /** Reset {name}? */
     membersResetTitle: (p: { name: P }) => t("achievements", "members_reset_title", "Reset {name}?", p),
     /** Take away */
     membersRevokeConfirm: () => t("achievements", "members_revoke_confirm", "Take away"),
     /** Take away {name} */
     membersRevokeLabel: (p: { name: P }) => t("achievements", "members_revoke_label", "Take away {name}", p),
-    /** They lose its points. If it unlocks from activity they still qualify for, it comes back... */
-    membersRevokeMessage: () => t("achievements", "members_revoke_message", "They lose its points. If it unlocks from activity they still qualify for, it comes back quietly later."),
+    /** They lose its points. Activity-based achievements may return quietly. */
+    membersRevokeMessage: () => t("achievements", "members_revoke_message", "They lose its points. Activity-based achievements may return quietly."),
     /** Take away {name}? */
     membersRevokeTitle: (p: { name: P }) => t("achievements", "members_revoke_title", "Take away {name}?", p),
     /** Sort members */
@@ -2145,8 +2145,8 @@ export const m = {
     membersUnranked: () => t("achievements", "members_unranked", "unranked"),
     /** All members */
     overviewAllMembers: () => t("achievements", "overview_all_members", "All members"),
-    /** Members unlock achievements, earn badges, and climb ranks as they take part. */
-    overviewEarningText: () => t("achievements", "overview_earning_text", "Members unlock achievements, earn badges, and climb ranks as they take part."),
+    /** Members unlock achievements and climb ranks. */
+    overviewEarningText: () => t("achievements", "overview_earning_text", "Members unlock achievements and climb ranks."),
     /** Members are earning achievements */
     overviewEarningTitle: () => t("achievements", "overview_earning_title", "Members are earning achievements"),
     /** Couldn't turn on message counting. */
@@ -2155,16 +2155,16 @@ export const m = {
     overviewNotTracking: () => t("achievements", "overview_not_tracking", "Not tracking"),
     /** Pause earning */
     overviewPause: () => t("achievements", "overview_pause", "Pause earning"),
-    /** Turn them on and members who already qualify get their achievements quietly, without a ... */
-    overviewPausedText: () => t("achievements", "overview_paused_text", "Turn them on and members who already qualify get their achievements quietly, without a flood of messages."),
+    /** Members who already qualify get theirs quietly when you turn it on. */
+    overviewPausedText: () => t("achievements", "overview_paused_text", "Members who already qualify get theirs quietly when you turn it on."),
     /** Earning is paused */
     overviewPausedTitle: () => t("achievements", "overview_paused_title", "Earning is paused"),
     /** Rarest */
     overviewRarest: () => t("achievements", "overview_rarest", "Rarest"),
     /** Nothing unlocked yet. */
     overviewRarityEmpty: () => t("achievements", "overview_rarity_empty", "Nothing unlocked yet."),
-    /** Nothing yet. Unlocks show up here as they happen. */
-    overviewRecentEmpty: () => t("achievements", "overview_recent_empty", "Nothing yet. Unlocks show up here as they happen."),
+    /** No unlocks yet */
+    overviewRecentEmpty: () => t("achievements", "overview_recent_empty", "No unlocks yet"),
     /** Recent unlocks */
     overviewRecentTitle: () => t("achievements", "overview_recent_title", "Recent unlocks"),
     /** Command stats */
@@ -2187,16 +2187,16 @@ export const m = {
     overviewSourceVoiceOff: () => t("achievements", "overview_source_voice_off", "Voice hours and channels need voice tracking in Server Stats."),
     /** Level achievements need XP gain turned on. */
     overviewSourceXpOff: () => t("achievements", "overview_source_xp_off", "Level achievements need XP gain turned on."),
-    /** Achievements read numbers other features already track. Anything not tracking means som... */
-    overviewSourcesHint: () => t("achievements", "overview_sources_hint", "Achievements read numbers other features already track. Anything not tracking means some achievements can't move."),
+    /** Achievements read numbers other features track. */
+    overviewSourcesHint: () => t("achievements", "overview_sources_hint", "Achievements read numbers other features track."),
     /** Data sources */
     overviewSourcesTitle: () => t("achievements", "overview_sources_title", "Data sources"),
     /** Start earning */
     overviewStart: () => t("achievements", "overview_start", "Start earning"),
     /** Start tracking */
     overviewStartTracking: () => t("achievements", "overview_start_tracking", "Start tracking"),
-    /** Members can now earn achievements. Those who already qualify get theirs quietly over th... */
-    overviewStartedMessage: () => t("achievements", "overview_started_message", "Members can now earn achievements. Those who already qualify get theirs quietly over the next few minutes."),
+    /** Members can now earn achievements. Qualifying members get theirs quietly within minutes. */
+    overviewStartedMessage: () => t("achievements", "overview_started_message", "Members can now earn achievements. Qualifying members get theirs quietly within minutes."),
     /** Starting */
     overviewStarting: () => t("achievements", "overview_starting", "Starting"),
     /** Achievements active */
@@ -2219,10 +2219,10 @@ export const m = {
     overviewUnlockLine: (p: { achievement: P; user: P }) => t("achievements", "overview_unlock_line", "{user} unlocked {achievement}", p),
     /** Couldn't load achievements. */
     pageLoadFailed: () => t("achievements", "page_load_failed", "Couldn't load achievements."),
-    /** Earning is paused in this server, so nothing unlocks yet. You can still set everything ... */
-    pagePausedNotice: () => t("achievements", "page_paused_notice", "Earning is paused in this server, so nothing unlocks yet. You can still set everything up first."),
-    /** Milestones, badges, and ranks members earn by taking part */
-    pageSubtitle: () => t("achievements", "page_subtitle", "Milestones, badges, and ranks members earn by taking part"),
+    /** Earning is paused, so nothing unlocks yet. */
+    pagePausedNotice: () => t("achievements", "page_paused_notice", "Earning is paused, so nothing unlocks yet."),
+    /** Milestones, badges, and ranks */
+    pageSubtitle: () => t("achievements", "page_subtitle", "Milestones, badges, and ranks"),
     /** Cleared {count} unlocks. */
     settingsCleared: (p: { count: P }) => t("achievements", "settings_cleared", "Cleared {count} unlocks.", p),
     /** Couldn't start the check. */
@@ -2231,8 +2231,8 @@ export const m = {
     settingsErrorReset: () => t("achievements", "settings_error_reset", "Couldn't reset achievements."),
     /** Couldn't save the settings. */
     settingsErrorSave: () => t("achievements", "settings_error_save", "Couldn't save the settings."),
-    /** Members with these roles earn nothing, and activity in these channels doesn't count. Bo... */
-    settingsExcludeHint: () => t("achievements", "settings_exclude_hint", "Members with these roles earn nothing, and activity in these channels doesn't count. Bots never earn."),
+    /** These roles earn nothing and these channels don't count. Bots never earn. */
+    settingsExcludeHint: () => t("achievements", "settings_exclude_hint", "These roles earn nothing and these channels don't count. Bots never earn."),
     /** Who and where doesn't count */
     settingsExcludeTitle: () => t("achievements", "settings_exclude_title", "Who and where doesn't count"),
     /** Extras */
@@ -2241,18 +2241,18 @@ export const m = {
     settingsNoChannels: () => t("achievements", "settings_no_channels", "No channels"),
     /** Check now */
     settingsRecheckButton: () => t("achievements", "settings_recheck_button", "Check now"),
-    /** Useful after turning on a data source. Anything members already qualify for unlocks qui... */
-    settingsRecheckHint: () => t("achievements", "settings_recheck_hint", "Useful after turning on a data source. Anything members already qualify for unlocks quietly."),
-    /** Checking every member again. Anything they qualify for unlocks quietly in the next few ... */
-    settingsRecheckStarted: () => t("achievements", "settings_recheck_started", "Checking every member again. Anything they qualify for unlocks quietly in the next few minutes."),
+    /** Run after turning on a data source. */
+    settingsRecheckHint: () => t("achievements", "settings_recheck_hint", "Run after turning on a data source."),
+    /** Checking every member again. Unlocks arrive quietly within minutes. */
+    settingsRecheckStarted: () => t("achievements", "settings_recheck_started", "Checking every member again. Unlocks arrive quietly within minutes."),
     /** Check everyone again */
     settingsRecheckTitle: () => t("achievements", "settings_recheck_title", "Check everyone again"),
     /** Clears all unlocks and points in this server. Settings and your own achievements stay. */
     settingsResetAllHint: () => t("achievements", "settings_reset_all_hint", "Clears all unlocks and points in this server. Settings and your own achievements stay."),
     /** Reset every achievement */
     settingsResetAllTitle: () => t("achievements", "settings_reset_all_title", "Reset every achievement"),
-    /** Every member loses every achievement and point in this server. Tracked activity stays, ... */
-    settingsResetMessage: () => t("achievements", "settings_reset_message", "Every member loses every achievement and point in this server. Tracked activity stays, so anything still qualified for comes back quietly. This can't be undone."),
+    /** Every member loses every achievement and point. This can't be undone. */
+    settingsResetMessage: () => t("achievements", "settings_reset_message", "Every member loses every achievement and point. This can't be undone."),
     /** Reset every achievement? */
     settingsResetTitle: () => t("achievements", "settings_reset_title", "Reset every achievement?"),
     /** Members see the names and goals of secret achievements before unlocking them. */
@@ -2263,14 +2263,14 @@ export const m = {
     settingsSecretTitle: () => t("achievements", "settings_secret_title", "Secret achievements"),
     /** XP per point */
     settingsXpPerPoint: () => t("achievements", "settings_xp_per_point", "XP per point"),
-    /** Achievement ranks and XP levels are separate. Set this to have every unlock also pay XP... */
-    settingsXpPerPointHint: () => t("achievements", "settings_xp_per_point_hint", "Achievement ranks and XP levels are separate. Set this to have every unlock also pay XP: a Gold unlock is 50 points, so 2 here gives 100 XP. 0 turns it off."),
+    /** Every unlock also pays XP: a 50 point Gold unlock with 2 here gives 100 XP. 0 turns it ... */
+    settingsXpPerPointHint: () => t("achievements", "settings_xp_per_point_hint", "Every unlock also pays XP: a 50 point Gold unlock with 2 here gives 100 XP. 0 turns it off."),
     /** Cards */
     tabCards: () => t("achievements", "tab_cards", "Cards"),
   },
   administration: {
-    /** This message will be sent to users when they are banned. Supports rich embeds and Disco... */
-    advancedBanMessageHint: () => t("administration", "advanced_ban_message_hint", "This message will be sent to users when they are banned. Supports rich embeds and Discord formatting."),
+    /** Sent to users when they are banned. Supports rich embeds. */
+    advancedBanMessageHint: () => t("administration", "advanced_ban_message_hint", "Sent to users when they are banned. Supports rich embeds."),
     /** Custom Ban Message */
     advancedBanMessageLabel: () => t("administration", "advanced_ban_message_label", "Custom Ban Message"),
     /** Click to configure ban message with rich embeds */
@@ -2337,12 +2337,12 @@ export const m = {
     advancedMassTitle: () => t("administration", "advanced_mass_title", "Mass Operations"),
     /** Copy recovery key */
     advancedRecoveryCopyKey: () => t("administration", "advanced_recovery_copy_key", "Copy recovery key"),
-    /** No recovery keys are stored. Set them up now so you can recover the server later. */
-    advancedRecoveryEmpty: () => t("administration", "advanced_recovery_empty", "No recovery keys are stored. Set them up now so you can recover the server later."),
+    /** No recovery keys stored */
+    advancedRecoveryEmpty: () => t("administration", "advanced_recovery_empty", "No recovery keys stored"),
     /** Recovery key must be at least 16 characters. */
     advancedRecoveryErrorKeyShort: () => t("administration", "advanced_recovery_error_key_short", "Recovery key must be at least 16 characters."),
-    /** Failed to set up server recovery. Please try again. */
-    advancedRecoveryErrorSetup: () => t("administration", "advanced_recovery_error_setup", "Failed to set up server recovery. Please try again."),
+    /** Failed to set up server recovery */
+    advancedRecoveryErrorSetup: () => t("administration", "advanced_recovery_error_setup", "Failed to set up server recovery"),
     /** Two-factor key must be at least 6 characters. */
     advancedRecoveryErrorTwoFactorShort: () => t("administration", "advanced_recovery_error_two_factor_short", "Two-factor key must be at least 6 characters."),
     /** Generate */
@@ -2351,12 +2351,12 @@ export const m = {
     advancedRecoveryHideKey: () => t("administration", "advanced_recovery_hide_key", "Hide recovery key"),
     /** Recovery key */
     advancedRecoveryKey: () => t("administration", "advanced_recovery_key", "Recovery key"),
-    /** Store this key somewhere safe. Combined with your two-factor key it lets the bot restor... */
-    advancedRecoveryKeyHint: () => t("administration", "advanced_recovery_key_hint", "Store this key somewhere safe. Combined with your two-factor key it lets the bot restore admin access via the recovery command."),
+    /** Store this somewhere safe. With your two-factor key it lets the bot restore admin access. */
+    advancedRecoveryKeyHint: () => t("administration", "advanced_recovery_key_hint", "Store this somewhere safe. With your two-factor key it lets the bot restore admin access."),
     /** Remove recovery setup */
     advancedRecoveryRemove: () => t("administration", "advanced_recovery_remove", "Remove recovery setup"),
-    /** The stored recovery and two-factor keys will be deleted. You can set new ones afterwards. */
-    advancedRecoveryRemoveMessage: () => t("administration", "advanced_recovery_remove_message", "The stored recovery and two-factor keys will be deleted. You can set new ones afterwards."),
+    /** The stored recovery and two-factor keys will be deleted. */
+    advancedRecoveryRemoveMessage: () => t("administration", "advanced_recovery_remove_message", "The stored recovery and two-factor keys will be deleted."),
     /** Remove Server Recovery */
     advancedRecoveryRemoveTitle: () => t("administration", "advanced_recovery_remove_title", "Remove Server Recovery"),
     /** Save recovery keys */
@@ -2365,8 +2365,8 @@ export const m = {
     advancedRecoverySetup: () => t("administration", "advanced_recovery_setup", "Set up recovery"),
     /** Show recovery key */
     advancedRecoveryShowKey: () => t("administration", "advanced_recovery_show_key", "Show recovery key"),
-    /** Regain control of the server if the owner account is lost or compromised */
-    advancedRecoverySubtitle: () => t("administration", "advanced_recovery_subtitle", "Regain control of the server if the owner account is lost or compromised"),
+    /** Regain control if the owner account is lost */
+    advancedRecoverySubtitle: () => t("administration", "advanced_recovery_subtitle", "Regain control if the owner account is lost"),
     /** Server Recovery */
     advancedRecoveryTitle: () => t("administration", "advanced_recovery_title", "Server Recovery"),
     /** Two-factor key */
@@ -2401,8 +2401,8 @@ export const m = {
     automationDeleteMessageDisabledHint: () => t("administration", "automation_delete_message_disabled_hint", "Enable to auto-delete command messages"),
     /** Delete Message on Command Disabled */
     automationDeleteMessageDisabledTitle: () => t("administration", "automation_delete_message_disabled_title", "Delete Message on Command Disabled"),
-    /** Command messages will be automatically deleted. Configure per-channel overrides below. */
-    automationDeleteMessageEnabledInfo: () => t("administration", "automation_delete_message_enabled_info", "Command messages will be automatically deleted. Configure per-channel overrides below."),
+    /** Command messages are deleted. Override per channel below. */
+    automationDeleteMessageEnabledInfo: () => t("administration", "automation_delete_message_enabled_info", "Command messages are deleted. Override per channel below."),
     /** Set Channel Override */
     automationDeleteMessageSetOverride: () => t("administration", "automation_delete_message_set_override", "Set Channel Override"),
     /** Disable (Never delete) */
@@ -2419,8 +2419,8 @@ export const m = {
     automationDeleteMessageTitle: () => t("administration", "automation_delete_message_title", "Delete Message on Command"),
     /** Current Channel: {channel} */
     automationGameVoiceChannelCurrent: (p: { channel: P }) => t("administration", "automation_game_voice_channel_current", "Current Channel: {channel}", p),
-    /** Automatically move users to matching voice channels based on their game activity */
-    automationGameVoiceChannelDescription: () => t("administration", "automation_game_voice_channel_description", "Automatically move users to matching voice channels based on their game activity"),
+    /** Move users to matching voice channels by game activity */
+    automationGameVoiceChannelDescription: () => t("administration", "automation_game_voice_channel_description", "Move users to matching voice channels by game activity"),
     /** Select voice channel for automatic game-based voice routing */
     automationGameVoiceChannelHint: () => t("administration", "automation_game_voice_channel_hint", "Select voice channel for automatic game-based voice routing"),
     /** Set as Game Voice Channel */
@@ -2447,8 +2447,8 @@ export const m = {
     automationPermissionOverridesDeleteSelectedConfirmOther: (p: { count: P }) => t("administration", "automation_permission_overrides_delete_selected_confirm_other", "Delete {count} selected permission overrides?", p),
     /** Delete Selected Overrides */
     automationPermissionOverridesDeleteSelectedTitle: () => t("administration", "automation_permission_overrides_delete_selected_title", "Delete Selected Overrides"),
-    /** Override Discord permissions required for specific bot commands. Select from {count} av... */
-    automationPermissionOverridesDescription: (p: { count: P }) => t("administration", "automation_permission_overrides_description", "Override Discord permissions required for specific bot commands. Select from {count} available commands.", p),
+    /** Override the permission required for specific bot commands ({count} available). */
+    automationPermissionOverridesDescription: (p: { count: P }) => t("administration", "automation_permission_overrides_description", "Override the permission required for specific bot commands ({count} available).", p),
     /** Add command permission overrides using actual bot commands */
     automationPermissionOverridesEmptyHint: () => t("administration", "automation_permission_overrides_empty_hint", "Add command permission overrides using actual bot commands"),
     /** No permission overrides configured */
@@ -2465,10 +2465,10 @@ export const m = {
     automationPermissionsManagementAddRule: () => t("administration", "automation_permissions_management_add_rule", "Add rule"),
     /** Custom Rules */
     automationPermissionsManagementCustomRules: () => t("administration", "automation_permissions_management_custom_rules", "Custom Rules"),
-    /** No custom rules yet. Every command is allowed for everyone. */
-    automationPermissionsManagementEmptyRules: () => t("administration", "automation_permissions_management_empty_rules", "No custom rules yet. Every command is allowed for everyone."),
-    /** Failed to add the rule. Please try again. */
-    automationPermissionsManagementErrorAddFailed: () => t("administration", "automation_permissions_management_error_add_failed", "Failed to add the rule. Please try again."),
+    /** No custom rules. Everyone can use every command. */
+    automationPermissionsManagementEmptyRules: () => t("administration", "automation_permissions_management_empty_rules", "No custom rules. Everyone can use every command."),
+    /** Failed to add the rule */
+    automationPermissionsManagementErrorAddFailed: () => t("administration", "automation_permissions_management_error_add_failed", "Failed to add the rule"),
     /** Pick a command. */
     automationPermissionsManagementErrorPickCommand: () => t("administration", "automation_permissions_management_error_pick_command", "Pick a command."),
     /** Pick a module. */
@@ -2567,8 +2567,8 @@ export const m = {
     automationStatsCollectionHint: () => t("administration", "automation_stats_collection_hint", "Opt out to stop collecting server statistics"),
     /** Delete Stats */
     automationStatsDeleteButton: () => t("administration", "automation_stats_delete_button", "Delete Stats"),
-    /** This will permanently delete all statistics data for this server. This action cannot be... */
-    automationStatsDeleteConfirm: () => t("administration", "automation_stats_delete_confirm", "This will permanently delete all statistics data for this server. This action cannot be undone!"),
+    /** This permanently deletes all statistics for this server. */
+    automationStatsDeleteConfirm: () => t("administration", "automation_stats_delete_confirm", "This permanently deletes all statistics for this server."),
     /** Delete All Stats */
     automationStatsDeleteConfirmTitle: () => t("administration", "automation_stats_delete_confirm_title", "Delete All Stats"),
     /** Permanently remove all collected statistics for this server */
@@ -2601,14 +2601,14 @@ export const m = {
     overviewAntiPostChannel: () => t("administration", "overview_anti_post_channel", "Anti-Post-Channel"),
     /** Configure Protection */
     overviewConfigureProtection: () => t("administration", "overview_configure_protection", "Configure Protection"),
-    /** Set up anti-raid, anti-spam, and pattern detection */
-    overviewConfigureProtectionHint: () => t("administration", "overview_configure_protection_hint", "Set up anti-raid, anti-spam, and pattern detection"),
+    /** Anti-raid, anti-spam and pattern detection */
+    overviewConfigureProtectionHint: () => t("administration", "overview_configure_protection_hint", "Anti-raid, anti-spam and pattern detection"),
     /** Cooldowns */
     overviewCooldowns: () => t("administration", "overview_cooldowns", "Cooldowns"),
     /** Game Voice Channel: */
     overviewGameVoiceChannel: () => t("administration", "overview_game_voice_channel", "Game Voice Channel:"),
-    /** Configure role assignment and permissions */
-    overviewManageRolesHint: () => t("administration", "overview_manage_roles_hint", "Configure role assignment and permissions"),
+    /** Role assignment and permissions */
+    overviewManageRolesHint: () => t("administration", "overview_manage_roles_hint", "Role assignment and permissions"),
     /** Member Role: */
     overviewMemberRole: () => t("administration", "overview_member_role", "Member Role:"),
     /** Protection Status */
@@ -2617,8 +2617,8 @@ export const m = {
     overviewSelfAssignable: () => t("administration", "overview_self_assignable", "Self-Assignable"),
     /** Server Configuration */
     overviewServerConfiguration: () => t("administration", "overview_server_configuration", "Server Configuration"),
-    /** Configure timezone, channels, and automation */
-    overviewServerSettingsHint: () => t("administration", "overview_server_settings_hint", "Configure timezone, channels, and automation"),
+    /** Timezone, channels and automation */
+    overviewServerSettingsHint: () => t("administration", "overview_server_settings_hint", "Timezone, channels and automation"),
     /** Staff Role: */
     overviewStaffRole: () => t("administration", "overview_staff_role", "Staff Role:"),
     /** {name}: */
@@ -2653,8 +2653,8 @@ export const m = {
     pagePermUseExternalEmojis: () => t("administration", "page_perm_use_external_emojis", "Use External Emojis"),
     /** View Channels */
     pagePermViewChannel: () => t("administration", "page_perm_view_channel", "View Channels"),
-    /** Manage all server administration settings and features */
-    pageSubtitle: () => t("administration", "page_subtitle", "Manage all server administration settings and features"),
+    /** Server administration settings */
+    pageSubtitle: () => t("administration", "page_subtitle", "Server administration settings"),
     /** Delete only */
     protectionActionDeleteOnly: () => t("administration", "protection_action_delete_only", "Delete only"),
     /** Enable to block young accounts */
@@ -2683,12 +2683,12 @@ export const m = {
     protectionExternalappAppMessagesAllowed: () => t("administration", "protection_externalapp_app_messages_allowed", "App Messages Allowed"),
     /** Delete the app message */
     protectionExternalappDeleteAppMessage: () => t("administration", "protection_externalapp_delete_app_message", "Delete the app message"),
-    /** Turn it on to remove mass pings, invite links and spam sent through members' own apps */
-    protectionExternalappDisabledHint: () => t("administration", "protection_externalapp_disabled_hint", "Turn it on to remove mass pings, invite links and spam sent through members' own apps"),
+    /** Enable to remove mass pings, invites and spam sent through members' own apps */
+    protectionExternalappDisabledHint: () => t("administration", "protection_externalapp_disabled_hint", "Enable to remove mass pings, invites and spam sent through members' own apps"),
     /** Anti-External App Disabled */
     protectionExternalappDisabledTitle: () => t("administration", "protection_externalapp_disabled_title", "Anti-External App Disabled"),
-    /** Apps added to the server itself are left alone. A ping of everyone or here always count... */
-    protectionExternalappIntro: () => t("administration", "protection_externalapp_intro", "Apps added to the server itself are left alone. A ping of everyone or here always counts as too many mentions. Set a limit to 0 to turn that check off."),
+    /** Apps added to the server are ignored. An everyone or here ping always counts as too man... */
+    protectionExternalappIntro: () => t("administration", "protection_externalapp_intro", "Apps added to the server are ignored. An everyone or here ping always counts as too many mentions. 0 turns a limit off."),
     /** Mention Limit */
     protectionExternalappMentionLimit: () => t("administration", "protection_externalapp_mention_limit", "Mention Limit"),
     /** Tell the member by DM */
@@ -2717,16 +2717,16 @@ export const m = {
     protectionImagehashBlockedImages: () => t("administration", "protection_imagehash_blocked_images", "Blocked Images"),
     /** Catch bordered copies */
     protectionImagehashCatchBordered: () => t("administration", "protection_imagehash_catch_bordered", "Catch bordered copies"),
-    /** Strips a border off a posted image before matching, so wrapping a blocked image in a fr... */
-    protectionImagehashCatchBorderedHint: () => t("administration", "protection_imagehash_catch_bordered_hint", "Strips a border off a posted image before matching, so wrapping a blocked image in a frame does not get it past the filter. Mirrored copies are always caught."),
+    /** Strips borders before matching. Mirrored copies are always caught. */
+    protectionImagehashCatchBorderedHint: () => t("administration", "protection_imagehash_catch_bordered_hint", "Strips borders before matching. Mirrored copies are always caught."),
     /** Check embedded images */
     protectionImagehashCheckEmbeddedImages: () => t("administration", "protection_imagehash_check_embedded_images", "Check embedded images"),
     /** Default Action */
     protectionImagehashDefaultAction: () => t("administration", "protection_imagehash_default_action", "Default Action"),
     /** Delete the message */
     protectionImagehashDeleteMessage: () => t("administration", "protection_imagehash_delete_message", "Delete the message"),
-    /** Enable to block scam images by how they look, so re-uploads still get caught when they ... */
-    protectionImagehashDisabledHint: () => t("administration", "protection_imagehash_disabled_hint", "Enable to block scam images by how they look, so re-uploads still get caught when they are resized, recompressed, or flipped"),
+    /** Enable to block scam images by appearance, even when resized, recompressed or flipped */
+    protectionImagehashDisabledHint: () => t("administration", "protection_imagehash_disabled_hint", "Enable to block scam images by appearance, even when resized, recompressed or flipped"),
     /** Anti-Image-Hash Protection Disabled */
     protectionImagehashDisabledTitle: () => t("administration", "protection_imagehash_disabled_title", "Anti-Image-Hash Protection Disabled"),
     /** DM the user */
@@ -2741,16 +2741,16 @@ export const m = {
     protectionImagehashErrorNotImage: () => t("administration", "protection_imagehash_error_not_image", "That file is not an image."),
     /** Images must be under 8MB. Paste the image URL instead. */
     protectionImagehashErrorTooLarge: () => t("administration", "protection_imagehash_error_too_large", "Images must be under 8MB. Paste the image URL instead."),
-    /** This image is too plain to identify reliably, so blocking it would catch unrelated imag... */
-    protectionImagehashErrorTooPlain: () => t("administration", "protection_imagehash_error_too_plain", "This image is too plain to identify reliably, so blocking it would catch unrelated images too. Use a more detailed version of it."),
+    /** This image is too plain to identify reliably. Use a more detailed version. */
+    protectionImagehashErrorTooPlain: () => t("administration", "protection_imagehash_error_too_plain", "This image is too plain to identify reliably. Use a more detailed version."),
     /** Could not read that image. */
     protectionImagehashErrorUnreadable: () => t("administration", "protection_imagehash_error_unreadable", "Could not read that image."),
-    /** Could not read that image. Supported formats are png, jpeg, webp, gif, and bmp. */
-    protectionImagehashErrorUnsupported: () => t("administration", "protection_imagehash_error_unsupported", "Could not read that image. Supported formats are png, jpeg, webp, gif, and bmp."),
+    /** Could not read that image. Use png, jpeg, webp, gif or bmp. */
+    protectionImagehashErrorUnsupported: () => t("administration", "protection_imagehash_error_unsupported", "Could not read that image. Use png, jpeg, webp, gif or bmp."),
     /** exact copies only */
     protectionImagehashExactCopiesOnly: () => t("administration", "protection_imagehash_exact_copies_only", "exact copies only"),
-    /** Added from a hash instead of the image itself, so mirrored and bordered copies will not... */
-    protectionImagehashExactCopiesTitle: () => t("administration", "protection_imagehash_exact_copies_title", "Added from a hash instead of the image itself, so mirrored and bordered copies will not be caught. Re-add it using the image to cover those."),
+    /** Added from a hash, so mirrored and bordered copies are not caught. Re-add the image its... */
+    protectionImagehashExactCopiesTitle: () => t("administration", "protection_imagehash_exact_copies_title", "Added from a hash, so mirrored and bordered copies are not caught. Re-add the image itself to cover them."),
     /** Hash */
     protectionImagehashHash: () => t("administration", "protection_imagehash_hash", "Hash"),
     /** Hash: */
@@ -2761,8 +2761,8 @@ export const m = {
     protectionImagehashLoadingHashes: () => t("administration", "protection_imagehash_loading_hashes", "Loading blocked images..."),
     /** Match Tolerance */
     protectionImagehashMatchTolerance: () => t("administration", "protection_imagehash_match_tolerance", "Match Tolerance"),
-    /** How different a posted image can look and still count as a blocked one. The default of ... */
-    protectionImagehashMatchToleranceHint: () => t("administration", "protection_imagehash_match_tolerance_hint", "How different a posted image can look and still count as a blocked one. The default of 31 catches re-uploads that were resized, recompressed, brightened, or flipped. Lower it if an innocent image gets caught; raise it only if scammers are slipping through, since high values start catching unrelated images."),
+    /** How different an image can look and still match. The default is 31. Lower it if innocen... */
+    protectionImagehashMatchToleranceHint: () => t("administration", "protection_imagehash_match_tolerance_hint", "How different an image can look and still match. The default is 31. Lower it if innocent images are caught, raise it only if scammers slip through."),
     /** Match Tolerance: {value} */
     protectionImagehashMatchToleranceValue: (p: { value: P }) => t("administration", "protection_imagehash_match_tolerance_value", "Match Tolerance: {value}", p),
     /** ...or paste an image URL */
@@ -2777,8 +2777,8 @@ export const m = {
     protectionImagehashPresetCountOne: (p: { count: P }) => t("administration", "protection_imagehash_preset_count_one", "({count} image)", p),
     /** ({count} images) */
     protectionImagehashPresetCountOther: (p: { count: P }) => t("administration", "protection_imagehash_preset_count_other", "({count} images)", p),
-    /** The fake crypto casino and MrBeast giveaway images currently being spammed across Discord. */
-    protectionImagehashPresetDescription: () => t("administration", "protection_imagehash_preset_description", "The fake crypto casino and MrBeast giveaway images currently being spammed across Discord."),
+    /** Fake crypto casino and MrBeast giveaway images spammed across Discord. */
+    protectionImagehashPresetDescription: () => t("administration", "protection_imagehash_preset_description", "Fake crypto casino and MrBeast giveaway images spammed across Discord."),
     /** Remove blocked image */
     protectionImagehashRemoveBlockedImage: () => t("administration", "protection_imagehash_remove_blocked_image", "Remove blocked image"),
     /** Action anyone posting a blocked image */
@@ -2921,12 +2921,12 @@ export const m = {
     protectionSpamTitle: () => t("administration", "protection_spam_title", "Anti-Spam Protection"),
     /** Add Another Pair */
     rolesAddReactionRoleAddPair: () => t("administration", "roles_add_reaction_role_add_pair", "Add Another Pair"),
-    /** Right-click a message and "Copy ID" (requires Developer Mode enabled in Discord settings) */
-    rolesAddReactionRoleCopyIdHint: () => t("administration", "roles_add_reaction_role_copy_id_hint", "Right-click a message and \"Copy ID\" (requires Developer Mode enabled in Discord settings)"),
+    /** Right-click a message and Copy ID (needs Developer Mode) */
+    rolesAddReactionRoleCopyIdHint: () => t("administration", "roles_add_reaction_role_copy_id_hint", "Right-click a message and Copy ID (needs Developer Mode)"),
     /** ({total} / {max} emojis on message) */
     rolesAddReactionRoleEmojiCount: (p: { max: P; total: P }) => t("administration", "roles_add_reaction_role_emoji_count", "({total} / {max} emojis on message)", p),
-    /** Failed to add reaction roles. Please check that the message and channel IDs are correct... */
-    rolesAddReactionRoleErrorAddFailed: () => t("administration", "roles_add_reaction_role_error_add_failed", "Failed to add reaction roles. Please check that the message and channel IDs are correct and the bot has access."),
+    /** Failed to add reaction roles. Check the message and channel IDs. */
+    rolesAddReactionRoleErrorAddFailed: () => t("administration", "roles_add_reaction_role_error_add_failed", "Failed to add reaction roles. Check the message and channel IDs."),
     /** Cannot add more than {max} reactions */
     rolesAddReactionRoleErrorMaxReactions: (p: { max: P }) => t("administration", "roles_add_reaction_role_error_max_reactions", "Cannot add more than {max} reactions", p),
     /** Please select at least one emoji and role pair. */
@@ -2951,8 +2951,8 @@ export const m = {
     rolesAddReactionRoleSetUp: () => t("administration", "roles_add_reaction_role_set_up", "Set Up New Reaction Roles"),
     /** Add Reaction Role */
     rolesAddReactionRoleTitle: () => t("administration", "roles_add_reaction_role_title", "Add Reaction Role"),
-    /** Warning: You're approaching Discord's limit of {max} reactions per message (currently a... */
-    rolesAddReactionRoleWarningApproaching: (p: { max: P; total: P }) => t("administration", "roles_add_reaction_role_warning_approaching", "Warning: You're approaching Discord's limit of {max} reactions per message (currently at {total}).", p),
+    /** Approaching Discord's limit of {max} reactions per message ({total} now). */
+    rolesAddReactionRoleWarningApproaching: (p: { max: P; total: P }) => t("administration", "roles_add_reaction_role_warning_approaching", "Approaching Discord's limit of {max} reactions per message ({total} now).", p),
     /** This message already has {count} reaction role. Adding to existing setup. */
     rolesAddReactionRoleWarningExistingOne: (p: { count: P }) => t("administration", "roles_add_reaction_role_warning_existing_one", "This message already has {count} reaction role. Adding to existing setup.", p),
     /** This message already has {count} reaction roles. Adding to existing setup. */
@@ -2963,20 +2963,20 @@ export const m = {
     rolesAddSelfAssignableRolePlaceholder: () => t("administration", "roles_add_self_assignable_role_placeholder", "Select role to make self-assignable..."),
     /** Add Self-Assignable Role */
     rolesAddSelfAssignableTitle: () => t("administration", "roles_add_self_assignable_title", "Add Self-Assignable Role"),
-    /** Roles automatically assigned to bot users when they join the server. */
-    rolesAutoAssignBotHint: () => t("administration", "roles_auto_assign_bot_hint", "Roles automatically assigned to bot users when they join the server."),
+    /** Given to bots when they join. */
+    rolesAutoAssignBotHint: () => t("administration", "roles_auto_assign_bot_hint", "Given to bots when they join."),
     /** Select roles to auto-assign to bot users */
     rolesAutoAssignBotPlaceholder: () => t("administration", "roles_auto_assign_bot_placeholder", "Select roles to auto-assign to bot users"),
     /** Bot Users */
     rolesAutoAssignBotUsers: () => t("administration", "roles_auto_assign_bot_users", "Bot Users"),
-    /** Roles automatically assigned to new users when they join the server. */
-    rolesAutoAssignNormalHint: () => t("administration", "roles_auto_assign_normal_hint", "Roles automatically assigned to new users when they join the server."),
+    /** Given to new users when they join. */
+    rolesAutoAssignNormalHint: () => t("administration", "roles_auto_assign_normal_hint", "Given to new users when they join."),
     /** Select roles to auto-assign to normal users */
     rolesAutoAssignNormalPlaceholder: () => t("administration", "roles_auto_assign_normal_placeholder", "Select roles to auto-assign to normal users"),
     /** Normal Users */
     rolesAutoAssignNormalUsers: () => t("administration", "roles_auto_assign_normal_users", "Normal Users"),
-    /** Users who receive these roles will be automatically banned from the server */
-    rolesAutoBanDescription: () => t("administration", "roles_auto_ban_description", "Users who receive these roles will be automatically banned from the server"),
+    /** Users who receive these roles are banned */
+    rolesAutoBanDescription: () => t("administration", "roles_auto_ban_description", "Users who receive these roles are banned"),
     /** Add roles that should trigger automatic bans */
     rolesAutoBanEmptyHint: () => t("administration", "roles_auto_ban_empty_hint", "Add roles that should trigger automatic bans"),
     /** No auto-ban roles configured */
@@ -2995,8 +2995,8 @@ export const m = {
     rolesReactionRolesChannelReactionsOne: (p: { channel: P; count: P }) => t("administration", "roles_reaction_roles_channel_reactions_one", "{channel} • {count} reaction", p),
     /** {channel} • {count} reactions */
     rolesReactionRolesChannelReactionsOther: (p: { channel: P; count: P }) => t("administration", "roles_reaction_roles_channel_reactions_other", "{channel} • {count} reactions", p),
-    /** Allow users to get roles by reacting to messages with specific emojis */
-    rolesReactionRolesDescription: () => t("administration", "roles_reaction_roles_description", "Allow users to get roles by reacting to messages with specific emojis"),
+    /** Roles from message reactions */
+    rolesReactionRolesDescription: () => t("administration", "roles_reaction_roles_description", "Roles from message reactions"),
     /** Set up reaction-based role assignment */
     rolesReactionRolesEmptyHint: () => t("administration", "roles_reaction_roles_empty_hint", "Set up reaction-based role assignment"),
     /** No reaction roles configured */
@@ -3047,8 +3047,8 @@ export const m = {
     rolesSelfAssignableToggleExclusive: () => t("administration", "roles_self_assignable_toggle_exclusive", "Toggle exclusive mode"),
     /** Add Mapping */
     rolesVoiceChannelAddMapping: () => t("administration", "roles_voice_channel_add_mapping", "Add Mapping"),
-    /** Automatically assign roles when users join specific voice channels */
-    rolesVoiceChannelDescription: () => t("administration", "roles_voice_channel_description", "Automatically assign roles when users join specific voice channels"),
+    /** Assign roles when users join voice channels */
+    rolesVoiceChannelDescription: () => t("administration", "roles_voice_channel_description", "Assign roles when users join voice channels"),
     /** Add voice channel to role mappings */
     rolesVoiceChannelEmptyHint: () => t("administration", "roles_voice_channel_empty_hint", "Add voice channel to role mappings"),
     /** No voice channel roles configured */
@@ -3085,18 +3085,16 @@ export const m = {
     badgeTimed: () => t("afk", "badge_timed", "Timed"),
     /** Basic AFK Settings */
     basicTitle: () => t("afk", "basic_title", "Basic AFK Settings"),
-    /** Are you sure you want to remove AFK status from {count} user(s)? This action cannot be ... */
-    bulkRemoveMessage: (p: { count: P }) => t("afk", "bulk_remove_message", "Are you sure you want to remove AFK status from {count} user(s)? This action cannot be undone.", p),
+    /** Remove AFK status from {count} user(s)? */
+    bulkRemoveMessage: (p: { count: P }) => t("afk", "bulk_remove_message", "Remove AFK status from {count} user(s)?", p),
     /** Bulk Remove AFK Status */
     bulkRemoveTitle: () => t("afk", "bulk_remove_title", "Bulk Remove AFK Status"),
-    /** Channels where AFK messages will not be displayed. Select multiple channels to disable ... */
-    channelsHint: () => t("afk", "channels_hint", "Channels where AFK messages will not be displayed. Select multiple channels to disable AFK notifications in those areas."),
     /** Select channels to disable AFK messages */
     channelsPlaceholder: () => t("afk", "channels_placeholder", "Select channels to disable AFK messages"),
     /** Disabled Channels */
     channelsTitle: () => t("afk", "channels_title", "Disabled Channels"),
-    /** Custom embed message template for AFK notifications. Use "-" to reset to default. Visit... */
-    customHint: (p: { link: P }) => t("afk", "custom_hint", "Custom embed message template for AFK notifications. Use \"-\" to reset to default. Visit {link} for available variables.", p),
+    /** Use "-" to reset to default. Variables: {link}. */
+    customHint: (p: { link: P }) => t("afk", "custom_hint", "Use \"-\" to reset to default. Variables: {link}.", p),
     /** placeholders documentation */
     customHintLink: () => t("afk", "custom_hint_link", "placeholders documentation"),
     /** Click to configure AFK message with rich embeds */
@@ -3109,8 +3107,8 @@ export const m = {
     customTitle: () => t("afk", "custom_title", "Custom AFK Embed Message"),
     /** Time in seconds before AFK messages are deleted */
     deletionAria: () => t("afk", "deletion_aria", "Time in seconds before AFK messages are deleted"),
-    /** Time in seconds before AFK messages are deleted. Set to 0 to disable. */
-    deletionHint: () => t("afk", "deletion_hint", "Time in seconds before AFK messages are deleted. Set to 0 to disable."),
+    /** Seconds. 0 disables. */
+    deletionHint: () => t("afk", "deletion_hint", "Seconds. 0 disables."),
     /** Auto-deletion Time */
     deletionTitle: () => t("afk", "deletion_title", "Auto-deletion Time"),
     /** Full Message: */
@@ -3137,8 +3135,8 @@ export const m = {
     loadingUsers: () => t("afk", "loading_users", "Loading AFK users..."),
     /** Maximum length for AFK messages */
     maxLengthAria: () => t("afk", "max_length_aria", "Maximum length for AFK messages"),
-    /** Maximum allowed length for AFK messages (1-4096 characters). */
-    maxLengthHint: () => t("afk", "max_length_hint", "Maximum allowed length for AFK messages (1-4096 characters)."),
+    /** 1-4096 characters. */
+    maxLengthHint: () => t("afk", "max_length_hint", "1-4096 characters."),
     /** Max Message Length */
     maxLengthTitle: () => t("afk", "max_length_title", "Max Message Length"),
     /** No message */
@@ -3155,14 +3153,14 @@ export const m = {
     notifySaveFailed: () => t("afk", "notify_save_failed", "Couldn't save AFK settings. Your last change was undone."),
     /** AFK timeout must be between 1 second and 2 hours */
     notifyTimeoutRange: () => t("afk", "notify_timeout_range", "AFK timeout must be between 1 second and 2 hours"),
-    /** Configure AFK settings and manage AFK users */
-    pageSubtitle: () => t("afk", "page_subtitle", "Configure AFK settings and manage AFK users"),
+    /** Settings and AFK users */
+    pageSubtitle: () => t("afk", "page_subtitle", "Settings and AFK users"),
     /** AFK Management */
     pageTitle: () => t("afk", "page_title", "AFK Management"),
     /** Remove AFK */
     removeConfirm: () => t("afk", "remove_confirm", "Remove AFK"),
-    /** Are you sure you want to remove AFK status from {name}? */
-    removeMessage: (p: { name: P }) => t("afk", "remove_message", "Are you sure you want to remove AFK status from {name}?", p),
+    /** Remove AFK status from {name}? */
+    removeMessage: (p: { name: P }) => t("afk", "remove_message", "Remove AFK status from {name}?", p),
     /** Remove AFK Status */
     removeTitle: () => t("afk", "remove_title", "Remove AFK Status"),
     /** Timed AFK */
@@ -3177,14 +3175,14 @@ export const m = {
     tabUsers: () => t("afk", "tab_users", "User Management"),
     /** AFK timeout duration */
     timeoutAria: () => t("afk", "timeout_aria", "AFK timeout duration"),
-    /** Time before someone is considered AFK (format: 1h2m3s). Range: 1s to 2h. */
-    timeoutHint: () => t("afk", "timeout_hint", "Time before someone is considered AFK (format: 1h2m3s). Range: 1s to 2h."),
+    /** Format 1h2m3s, from 1s to 2h. */
+    timeoutHint: () => t("afk", "timeout_hint", "Format 1h2m3s, from 1s to 2h."),
     /** e.g., 5m, 1h30m, 2h */
     timeoutPlaceholder: () => t("afk", "timeout_placeholder", "e.g., 5m, 1h30m, 2h"),
     /** AFK Timeout */
     timeoutTitle: () => t("afk", "timeout_title", "AFK Timeout"),
-    /** Determines how AFK status is automatically removed: Self Disable (manual only), On Mess... */
-    typeHint: () => t("afk", "type_hint", "Determines how AFK status is automatically removed: Self Disable (manual only), On Message, On Type, or Either."),
+    /** When AFK status clears: Self Disable, On Message, On Type, or Either. */
+    typeHint: () => t("afk", "type_hint", "When AFK status clears: Self Disable, On Message, On Type, or Either."),
     /** AFK Type */
     typeLabel: () => t("afk", "type_label", "AFK Type"),
     /** Select AFK removal behavior */
@@ -3963,8 +3961,8 @@ export const m = {
     pageDetailsHideLong: () => t("auditlog", "page_details_hide_long", "Hide details"),
     /** Show details */
     pageDetailsShowLong: () => t("auditlog", "page_details_show_long", "Show details"),
-    /** No audit log entries match the current filters. */
-    pageEmpty: () => t("auditlog", "page_empty", "No audit log entries match the current filters."),
+    /** No entries match */
+    pageEmpty: () => t("auditlog", "page_empty", "No entries match"),
     /** Failed to load the audit log */
     pageErrorLoad: () => t("auditlog", "page_error_load", "Failed to load the audit log"),
     /** All sections */
@@ -3973,8 +3971,8 @@ export const m = {
     pageLoading: () => t("auditlog", "page_loading", "Loading audit log..."),
     /** {total} entries · page {page} of {pages} */
     pagePagination: (p: { page: P; pages: P; total: P }) => t("auditlog", "page_pagination", "{total} entries · page {page} of {pages}", p),
-    /** Who accessed the dashboard, what they changed, and what they viewed */
-    pageSubtitle: () => t("auditlog", "page_subtitle", "Who accessed the dashboard, what they changed, and what they viewed"),
+    /** Dashboard activity */
+    pageSubtitle: () => t("auditlog", "page_subtitle", "Dashboard activity"),
     /** empty */
     pageValueEmpty: () => t("auditlog", "page_value_empty", "empty"),
     /** object */
@@ -4013,26 +4011,26 @@ export const m = {
     configReminderDays: () => t("birthday", "config_reminder_days", "Reminder Days Before Birthday"),
     /** Birthday Role (24-hour temporary) */
     configRole: () => t("birthday", "config_role", "Birthday Role (24-hour temporary)"),
-    /** Send birthday messages in channel */
-    featureAnnouncementsHint: () => t("birthday", "feature_announcements_hint", "Send birthday messages in channel"),
-    /** Ping specified role with announcements */
-    featurePingRoleHint: () => t("birthday", "feature_ping_role_hint", "Ping specified role with announcements"),
-    /** Send birthday reminders to users */
-    featureRemindersHint: () => t("birthday", "feature_reminders_hint", "Send birthday reminders to users"),
+    /** Post in the birthday channel */
+    featureAnnouncementsHint: () => t("birthday", "feature_announcements_hint", "Post in the birthday channel"),
+    /** Ping a role */
+    featurePingRoleHint: () => t("birthday", "feature_ping_role_hint", "Ping a role"),
+    /** Remind users */
+    featureRemindersHint: () => t("birthday", "feature_reminders_hint", "Remind users"),
     /** Birthday Role */
     featureRole: () => t("birthday", "feature_role", "Birthday Role"),
-    /** Assign temporary role for 24 hours */
-    featureRoleHint: () => t("birthday", "feature_role_hint", "Assign temporary role for 24 hours"),
+    /** Temporary role for 24 hours */
+    featureRoleHint: () => t("birthday", "feature_role_hint", "Temporary role for 24 hours"),
     /** Timezone Support */
     featureTimezone: () => t("birthday", "feature_timezone", "Timezone Support"),
-    /** Respect user-specific timezones */
-    featureTimezoneHint: () => t("birthday", "feature_timezone_hint", "Respect user-specific timezones"),
+    /** Use each user's timezone */
+    featureTimezoneHint: () => t("birthday", "feature_timezone_hint", "Use each user's timezone"),
     /** Birthday Features */
     featuresTitle: () => t("birthday", "features_title", "Birthday Features"),
     /** Custom Birthday Announcement */
     messageCustom: () => t("birthday", "message_custom", "Custom Birthday Announcement"),
-    /** Leave empty for default birthday message. Supports rich embeds and placeholders for per... */
-    messageHint: () => t("birthday", "message_hint", "Leave empty for default birthday message. Supports rich embeds and placeholders for personalization."),
+    /** Leave empty for the default message. */
+    messageHint: () => t("birthday", "message_hint", "Leave empty for the default message."),
     /** Click to configure birthday message with rich embeds */
     messagePlaceholder: () => t("birthday", "message_placeholder", "Click to configure birthday message with rich embeds"),
     /** Message sent when it's someone's birthday */
@@ -4053,10 +4051,10 @@ export const m = {
     period30: () => t("birthday", "period_30", "Next 30 days"),
     /** Next 7 days */
     period7: () => t("birthday", "period_7", "Next 7 days"),
-    /** Are you sure you want to reset the birthday configuration to defaults? */
-    resetConfirm: () => t("birthday", "reset_confirm", "Are you sure you want to reset the birthday configuration to defaults?"),
-    /** Birthday statistics will appear here once the system is configured. */
-    statsEmpty: () => t("birthday", "stats_empty", "Birthday statistics will appear here once the system is configured."),
+    /** Reset birthday settings to defaults? */
+    resetConfirm: () => t("birthday", "reset_confirm", "Reset birthday settings to defaults?"),
+    /** No birthday statistics yet */
+    statsEmpty: () => t("birthday", "stats_empty", "No birthday statistics yet"),
     /** server members */
     statsMembersSubtitle: () => t("birthday", "stats_members_subtitle", "server members"),
     /** Public Birthdays */
@@ -4103,8 +4101,8 @@ export const m = {
     tzUtc: () => t("birthday", "tz_utc", "UTC (GMT+0)"),
     /** All Users ({count}) */
     usersAllTitle: (p: { count: P }) => t("birthday", "users_all_title", "All Users ({count})", p),
-    /** No users have configured their birthdays yet. */
-    usersNoneHint: () => t("birthday", "users_none_hint", "No users have configured their birthdays yet."),
+    /** Nobody has set a birthday yet */
+    usersNoneHint: () => t("birthday", "users_none_hint", "Nobody has set a birthday yet"),
     /** No Birthdays Set */
     usersNoneTitle: () => t("birthday", "users_none_title", "No Birthdays Set"),
     /** Select period */
@@ -4129,6 +4127,166 @@ export const m = {
     starRatingRateOne: () => t("brand", "star_rating_rate_one", "Rate 1 star"),
     /** Rate {count} stars */
     starRatingRateOther: (p: { count: P }) => t("brand", "star_rating_rate_other", "Rate {count} stars", p),
+  },
+  bridges: {
+    /** Relay bots */
+    allowBotsLabel: () => t("bridges", "allow_bots_label", "Relay bots"),
+    /** Allowed roles */
+    allowedRolesLabel: () => t("bridges", "allowed_roles_label", "Allowed roles"),
+    /** Block invite links */
+    blockInvitesLabel: () => t("bridges", "block_invites_label", "Block invite links"),
+    /** Blocked roles */
+    blockedRolesLabel: () => t("bridges", "blocked_roles_label", "Blocked roles"),
+    /** Bridge removed */
+    bridgeRemoved: () => t("bridges", "bridge_removed", "Bridge removed"),
+    /** {channel} in {community} */
+    bridgeWith: (p: { channel: P; community: P }) => t("bridges", "bridge_with", "{channel} in {community}", p),
+    /** Copy code */
+    codeCopy: () => t("bridges", "code_copy", "Copy code"),
+    /** This code has expired. Create a new one. */
+    codeExpired: () => t("bridges", "code_expired", "This code has expired. Create a new one."),
+    /** Expires in {time} */
+    codeExpiresIn: (p: { time: P }) => t("bridges", "code_expires_in", "Expires in {time}", p),
+    /** Run {command} in the Fluxer channel. */
+    codeHint: (p: { command: P }) => t("bridges", "code_hint", "Run {command} in the Fluxer channel.", p),
+    /** Link code */
+    codeLabel: () => t("bridges", "code_label", "Link code"),
+    /** Connect a channel */
+    connectTitle: () => t("bridges", "connect_title", "Connect a channel"),
+    /** Create a code */
+    createCode: () => t("bridges", "create_code", "Create a code"),
+    /** Both ways */
+    directionBoth: () => t("bridges", "direction_both", "Both ways"),
+    /** Only receive here */
+    directionReceiveOnly: () => t("bridges", "direction_receive_only", "Only receive here"),
+    /** Only send from here */
+    directionSendOnly: () => t("bridges", "direction_send_only", "Only send from here"),
+    /** No channels are bridged yet */
+    empty: () => t("bridges", "empty", "No channels are bridged yet"),
+    /** Failed to change the bot setting */
+    errorAllowBots: () => t("bridges", "error_allow_bots", "Failed to change the bot setting"),
+    /** That channel is already bridged. */
+    errorAlreadyBridged: () => t("bridges", "error_already_bridged", "That channel is already bridged."),
+    /** These communities are already linked. */
+    errorAlreadyPaired: () => t("bridges", "error_already_paired", "These communities are already linked."),
+    /** That channel is not shared with this server. */
+    errorChannelNotShared: () => t("bridges", "error_channel_not_shared", "That channel is not shared with this server."),
+    /** That code is invalid or has expired. */
+    errorInvalidCode: () => t("bridges", "error_invalid_code", "That code is invalid or has expired."),
+    /** Failed to load bridges */
+    errorLoad: () => t("bridges", "error_load", "Failed to load bridges"),
+    /** That minimum time is not valid */
+    errorMinAge: () => t("bridges", "error_min_age", "That minimum time is not valid"),
+    /** The name format must include {name} and be at most 80 characters */
+    errorNameFormat: (p: { name: P }) => t("bridges", "error_name_format", "The name format must include {name} and be at most 80 characters", p),
+    /** You need the Manage Server permission to manage bridges. */
+    errorNoPermission: () => t("bridges", "error_no_permission", "You need the Manage Server permission to manage bridges."),
+    /** That bridge no longer exists */
+    errorNotFound: () => t("bridges", "error_not_found", "That bridge no longer exists"),
+    /** Failed to pause or resume the bridge */
+    errorPause: () => t("bridges", "error_pause", "Failed to pause or resume the bridge"),
+    /** Failed to remove the bridge */
+    errorRemove: () => t("bridges", "error_remove", "Failed to remove the bridge"),
+    /** That code was made here. Enter it on Fluxer. */
+    errorSamePlatform: () => t("bridges", "error_same_platform", "That code was made here. Enter it on Fluxer."),
+    /** The bridge could not be set up */
+    errorUnknown: () => t("bridges", "error_unknown", "The bridge could not be set up"),
+    /** Mewdeko needs the Manage Webhooks permission in that channel. */
+    errorWebhooks: () => t("bridges", "error_webhooks", "Mewdeko needs the Manage Webhooks permission in that channel."),
+    /** Fluxer */
+    examplePlatform: () => t("bridges", "example_platform", "Fluxer"),
+    /** I have a code */
+    haveCode: () => t("bridges", "have_code", "I have a code"),
+    /** ABCD2345 */
+    haveCodePlaceholder: () => t("bridges", "have_code_placeholder", "ABCD2345"),
+    /** Link channel */
+    link: () => t("bridges", "link", "Link channel"),
+    /** Channel linked with {channel} in {community} */
+    linked: (p: { channel: P; community: P }) => t("bridges", "linked", "Channel linked with {channel} in {community}", p),
+    /** Bridged channels */
+    listTitle: () => t("bridges", "list_title", "Bridged channels"),
+    /** Minimum time in the community before relaying */
+    minAgeLabel: () => t("bridges", "min_age_label", "Minimum time in the community before relaying"),
+    /** Use {name}, {platform} and {community} */
+    nameFormatHint: (p: { community: P; name: P; platform: P }) => t("bridges", "name_format_hint", "Use {name}, {platform} and {community}", p),
+    /** Name format */
+    nameFormatLabel: () => t("bridges", "name_format_label", "Name format"),
+    /** Relay messages with Fluxer communities */
+    pageSubtitle: () => t("bridges", "page_subtitle", "Relay messages with Fluxer communities"),
+    /** Accept bridge */
+    pairAccept: () => t("bridges", "pair_accept", "Accept bridge"),
+    /** When they propose a bridge */
+    pairApprovalLabel: () => t("bridges", "pair_approval_label", "When they propose a bridge"),
+    /** Run {command} in the Fluxer community. */
+    pairCodeInstructions: (p: { command: P }) => t("bridges", "pair_code_instructions", "Run {command} in the Fluxer community.", p),
+    /** Enter the pair code */
+    pairCodePlaceholder: () => t("bridges", "pair_code_placeholder", "Enter the pair code"),
+    /** Connect channels */
+    pairConnect: () => t("bridges", "pair_connect", "Connect channels"),
+    /** Channels connected */
+    pairConnected: () => t("bridges", "pair_connected", "Channels connected"),
+    /** Create a pair code */
+    pairCreateCode: () => t("bridges", "pair_create_code", "Create a pair code"),
+    /** Decline */
+    pairDecline: () => t("bridges", "pair_decline", "Decline"),
+    /** I have a pair code */
+    pairHaveCode: () => t("bridges", "pair_have_code", "I have a pair code"),
+    /** Proposed by {community} */
+    pairIncomingLabel: (p: { community: P }) => t("bridges", "pair_incoming_label", "Proposed by {community}", p),
+    /** Keep the channel bridges */
+    pairKeepBridges: () => t("bridges", "pair_keep_bridges", "Keep the channel bridges"),
+    /** Link communities */
+    pairLink: () => t("bridges", "pair_link", "Link communities"),
+    /** Communities linked */
+    pairLinked: () => t("bridges", "pair_linked", "Communities linked"),
+    /** Channel here */
+    pairLocalLabel: () => t("bridges", "pair_local_label", "Channel here"),
+    /** Approve each bridge */
+    pairModeApprove: () => t("bridges", "pair_mode_approve", "Approve each bridge"),
+    /** Connect automatically */
+    pairModeAuto: () => t("bridges", "pair_mode_auto", "Connect automatically"),
+    /** Waiting for {community} */
+    pairOutgoingLabel: (p: { community: P }) => t("bridges", "pair_outgoing_label", "Waiting for {community}", p),
+    /** #{local} and #{remote} */
+    pairProposalItem: (p: { local: P; remote: P }) => t("bridges", "pair_proposal_item", "#{local} and #{remote}", p),
+    /** Waiting for {community} to approve */
+    pairProposed: (p: { community: P }) => t("bridges", "pair_proposed", "Waiting for {community} to approve", p),
+    /** Their channel */
+    pairRemoteLabel: () => t("bridges", "pair_remote_label", "Their channel"),
+    /** Remove the channel bridges */
+    pairRemoveBridges: () => t("bridges", "pair_remove_bridges", "Remove the channel bridges"),
+    /** Channels they can see */
+    pairSharedLabel: () => t("bridges", "pair_shared_label", "Channels they can see"),
+    /** Sharing */
+    pairSharing: () => t("bridges", "pair_sharing", "Sharing"),
+    /** Since {date} */
+    pairSince: (p: { date: P }) => t("bridges", "pair_since", "Since {date}", p),
+    /** Unlink community */
+    pairUnlink: () => t("bridges", "pair_unlink", "Unlink community"),
+    /** Neither side will see the other's channels. */
+    pairUnlinkMessage: () => t("bridges", "pair_unlink_message", "Neither side will see the other's channels."),
+    /** Unlink {community}? */
+    pairUnlinkTitle: (p: { community: P }) => t("bridges", "pair_unlink_title", "Unlink {community}?", p),
+    /** Communities unlinked */
+    pairUnlinked: () => t("bridges", "pair_unlinked", "Communities unlinked"),
+    /** via {community} */
+    pairVia: (p: { community: P }) => t("bridges", "pair_via", "via {community}", p),
+    /** No linked communities yet */
+    pairsIntro: () => t("bridges", "pairs_intro", "No linked communities yet"),
+    /** Linked communities */
+    pairsTitle: () => t("bridges", "pairs_title", "Linked communities"),
+    /** Channel in this server */
+    pickChannelHint: () => t("bridges", "pick_channel_hint", "Channel in this server"),
+    /** Messages stop relaying to the Fluxer community. */
+    removeMessage: () => t("bridges", "remove_message", "Messages stop relaying to the Fluxer community."),
+    /** Remove this bridge? */
+    removeTitle: () => t("bridges", "remove_title", "Remove this bridge?"),
+    /** Resume relaying */
+    resume: () => t("bridges", "resume", "Resume relaying"),
+    /** Relaying */
+    stateRunning: () => t("bridges", "state_running", "Relaying"),
+    /** Use the word filter */
+    wordFilterLabel: () => t("bridges", "word_filter_label", "Use the word filter"),
   },
   channelAccess: {
     /** Closed {date}: {reason} */
@@ -4167,8 +4325,8 @@ export const m = {
     createTitle: () => t("channel-access", "create_title", "Open applications for a channel"),
     /** Delete gate */
     deleteConfirm: () => t("channel-access", "delete_confirm", "Delete gate"),
-    /** #{channel} stops taking applications, and its questions, applications and votes are del... */
-    deleteMessage: (p: { channel: P }) => t("channel-access", "delete_message", "#{channel} stops taking applications, and its questions, applications and votes are deleted. Nobody loses access they already have.", p),
+    /** Deletes #{channel}'s questions, applications and votes. Existing access stays. */
+    deleteMessage: (p: { channel: P }) => t("channel-access", "delete_message", "Deletes #{channel}'s questions, applications and votes. Existing access stays.", p),
     /** Delete this gate? */
     deleteTitle: () => t("channel-access", "delete_title", "Delete this gate?"),
     /** Deleted gate */
@@ -4261,8 +4419,8 @@ export const m = {
     gateWhenCloses: () => t("channel-access", "gate_when_closes", "When the window closes"),
     /** {hours}h window */
     gateWindowHours: (p: { hours: P }) => t("channel-access", "gate_window_hours", "{hours}h window", p),
-    /** No gates yet. Pick a locked channel above to start taking applications. */
-    gatesEmpty: () => t("channel-access", "gates_empty", "No gates yet. Pick a locked channel above to start taking applications."),
+    /** No gates yet */
+    gatesEmpty: () => t("channel-access", "gates_empty", "No gates yet"),
     /** Add them to the channel directly */
     grantChannel: () => t("channel-access", "grant_channel", "Add them to the channel directly"),
     /** Give them a role */
@@ -4277,8 +4435,8 @@ export const m = {
     notifyGateSaved: () => t("channel-access", "notify_gate_saved", "Gate settings saved"),
     /** Apply panel posted */
     notifyPanelPosted: () => t("channel-access", "notify_panel_posted", "Apply panel posted"),
-    /** Let members apply for locked channels and have the people inside vote them in */
-    pageSubtitle: () => t("channel-access", "page_subtitle", "Let members apply for locked channels and have the people inside vote them in"),
+    /** Applications and votes for locked channels */
+    pageSubtitle: () => t("channel-access", "page_subtitle", "Applications and votes for locked channels"),
     /** Not posted yet. */
     panelNotPosted: () => t("channel-access", "panel_not_posted", "Not posted yet."),
     /** Post panel */
@@ -4295,14 +4453,12 @@ export const m = {
     questionMultiline: () => t("channel-access", "question_multiline", "Multi-line answer"),
     /** Question (45 characters max) */
     questionPlaceholder: () => t("channel-access", "question_placeholder", "Question (45 characters max)"),
-    /** No questions, so applicants apply with a single click. */
-    questionsEmpty: () => t("channel-access", "questions_empty", "No questions, so applicants apply with a single click."),
-    /** Discord caps application forms at five questions. */
-    questionsMax: () => t("channel-access", "questions_max", "Discord caps application forms at five questions."),
+    /** No questions */
+    questionsEmpty: () => t("channel-access", "questions_empty", "No questions"),
+    /** Five questions max. */
+    questionsMax: () => t("channel-access", "questions_max", "Five questions max."),
     /** Application questions */
     questionsTitle: () => t("channel-access", "questions_title", "Application questions"),
-    /** Blocked users */
-    statBlockedUsers: () => t("channel-access", "stat_blocked_users", "Blocked users"),
     /** Open applications */
     statOpenApplications: () => t("channel-access", "stat_open_applications", "Open applications"),
     /** Withdrawn */
@@ -4325,8 +4481,8 @@ export const m = {
     advancedAllowTarget: () => t("chat-triggers", "advanced_allow_target", "Allow targeting someone"),
     /** Lets people add a name after the trigger, used by %target%. */
     advancedAllowTargetHint: () => t("chat-triggers", "advanced_allow_target_hint", "Lets people add a name after the trigger, used by %target%."),
-    /** Group related triggers so you can turn them all on or off at once. */
-    advancedCategoryHint: () => t("chat-triggers", "advanced_category_hint", "Group related triggers so you can turn them all on or off at once."),
+    /** Pause or resume a group together. */
+    advancedCategoryHint: () => t("chat-triggers", "advanced_category_hint", "Pause or resume a group together."),
     /** Then run trigger */
     advancedChain: () => t("chat-triggers", "advanced_chain", "Then run trigger"),
     /** Runs a second trigger by ID after this one. It still checks its own rules. 0 for none. */
@@ -4367,8 +4523,6 @@ export const m = {
     advancedDeleteResponseSeconds: () => t("chat-triggers", "advanced_delete_response_seconds", "seconds (0 keeps it)"),
     /** Delete the triggering message */
     advancedDeleteTrigger: () => t("chat-triggers", "advanced_delete_trigger", "Delete the triggering message"),
-    /** Removes what the person typed once the trigger fires. */
-    advancedDeleteTriggerHint: () => t("chat-triggers", "advanced_delete_trigger_hint", "Removes what the person typed once the trigger fires."),
     /** Unavailable while reacting to the message, since there would be nothing left to react to. */
     advancedDeleteTriggerHintBlocked: () => t("chat-triggers", "advanced_delete_trigger_hint_blocked", "Unavailable while reacting to the message, since there would be nothing left to react to."),
     /** Member starts boosting */
@@ -4453,8 +4607,6 @@ export const m = {
     advancedModeRandom: () => t("chat-triggers", "advanced_mode_random", "Random response"),
     /** Send no message at all */
     advancedNoMessage: () => t("chat-triggers", "advanced_no_message", "Send no message at all"),
-    /** Useful when the trigger only exists to hand out roles or run another trigger. */
-    advancedNoMessageHint: () => t("chat-triggers", "advanced_no_message_hint", "Useful when the trigger only exists to hand out roles or run another trigger."),
     /** Bot owner only */
     advancedOwnerOnly: () => t("chat-triggers", "advanced_owner_only", "Bot owner only"),
     /** Nobody else can use it, including server administrators. */
@@ -4473,14 +4625,10 @@ export const m = {
     advancedReactEmojiHint: () => t("chat-triggers", "advanced_react_emoji_hint", "Separate with spaces. Up to six, added one per second."),
     /** React to the message instead */
     advancedReactInstead: () => t("chat-triggers", "advanced_react_instead", "React to the message instead"),
-    /** Puts the trigger's emoji on their message rather than on the reply. */
-    advancedReactInsteadHint: () => t("chat-triggers", "advanced_react_instead_hint", "Puts the trigger's emoji on their message rather than on the reply."),
     /** Unavailable while deleting the triggering message. */
     advancedReactInsteadHintBlocked: () => t("chat-triggers", "advanced_react_instead_hint_blocked", "Unavailable while deleting the triggering message."),
     /** Reply to the message */
     advancedReplyToMessage: () => t("chat-triggers", "advanced_reply_to_message", "Reply to the message"),
-    /** Shows the response as a reply so it is clear what it answered. */
-    advancedReplyToMessageHint: () => t("chat-triggers", "advanced_reply_to_message_hint", "Shows the response as a reply so it is clear what it answered."),
     /** Requires level */
     advancedRequiredLevel: () => t("chat-triggers", "advanced_required_level", "Requires level"),
     /** When there are several responses */
@@ -4535,8 +4683,6 @@ export const m = {
     advancedSectionRolesHint: () => t("chat-triggers", "advanced_section_roles_hint", "Roles to grant or remove"),
     /** Send the response as a DM */
     advancedSendAsDm: () => t("chat-triggers", "advanced_send_as_dm", "Send the response as a DM"),
-    /** Replies privately instead of in the channel. */
-    advancedSendAsDmHint: () => t("chat-triggers", "advanced_send_as_dm_hint", "Replies privately instead of in the channel."),
     /** Grants XP */
     advancedXpReward: () => t("chat-triggers", "advanced_xp_reward", "Grants XP"),
     /** Create Advanced Trigger */
@@ -4559,12 +4705,12 @@ export const m = {
     pageAdvancedRegexTestString: () => t("chat-triggers", "page_advanced_regex_test_string", "Test String"),
     /** Regular Expression Testing */
     pageAdvancedRegexTitle: () => t("chat-triggers", "page_advanced_regex_title", "Regular Expression Testing"),
-    /** Test your regex pattern against sample text to ensure it matches correctly and prevents... */
-    pageAdvancedRegexTooltip: () => t("chat-triggers", "page_advanced_regex_tooltip", "Test your regex pattern against sample text to ensure it matches correctly and prevents unexpected behavior."),
+    /** Test your pattern against sample text. */
+    pageAdvancedRegexTooltip: () => t("chat-triggers", "page_advanced_regex_tooltip", "Test your pattern against sample text."),
     /** Click to configure response message with embeds/components */
     pageAdvancedResponsePlaceholder: () => t("chat-triggers", "page_advanced_response_placeholder", "Click to configure response message with embeds/components"),
-    /** Supports rich content including plain text, JSON embeds with images/fields/colors, inte... */
-    pageAdvancedResponseTooltip: () => t("chat-triggers", "page_advanced_response_tooltip", "Supports rich content including plain text, JSON embeds with images/fields/colors, interactive components, and placeholders like %user.name%. Try the Rich Embeds template!"),
+    /** Supports text, embeds, components and placeholders like %user.name%. */
+    pageAdvancedResponseTooltip: () => t("chat-triggers", "page_advanced_response_tooltip", "Supports text, embeds, components and placeholders like %user.name%."),
     /** Advanced Trigger Creation */
     pageAdvancedTitle: () => t("chat-triggers", "page_advanced_title", "Advanced Trigger Creation"),
     /** Enter trigger text or regex pattern */
@@ -4579,10 +4725,10 @@ export const m = {
     pageAdvancedTypeReactionAdded: () => t("chat-triggers", "page_advanced_type_reaction_added", "Reaction added"),
     /** Reaction removed */
     pageAdvancedTypeReactionRemoved: () => t("chat-triggers", "page_advanced_type_reaction_removed", "Reaction removed"),
-    /** Select which types of interactions can trigger this response */
-    pageAdvancedTypesHint: () => t("chat-triggers", "page_advanced_types_hint", "Select which types of interactions can trigger this response"),
-    /** Choose how this trigger activates: Messages (regular chat), Slash Commands (requires se... */
-    pageAdvancedTypesTooltip: () => t("chat-triggers", "page_advanced_types_tooltip", "Choose how this trigger activates: Messages (regular chat), Slash Commands (requires setup), Buttons (interactive), or Reactions (emoji responses). Multiple types can be enabled."),
+    /** Which interactions can trigger this response */
+    pageAdvancedTypesHint: () => t("chat-triggers", "page_advanced_types_hint", "Which interactions can trigger this response"),
+    /** Messages, slash commands, buttons or reactions. Several can be enabled. */
+    pageAdvancedTypesTooltip: () => t("chat-triggers", "page_advanced_types_tooltip", "Messages, slash commands, buttons or reactions. Several can be enabled."),
     /** Auto-delete disabled - cannot be used with react to trigger */
     pageAnnounceAutoDeleteDisabled: () => t("chat-triggers", "page_announce_auto_delete_disabled", "Auto-delete disabled - cannot be used with react to trigger"),
     /** Collapsed all cards */
@@ -4655,8 +4801,8 @@ export const m = {
     pageEditTriggerHint: () => t("chat-triggers", "page_edit_trigger_hint", "Text that will trigger this response"),
     /** Trigger Text */
     pageEditTriggerLabel: () => t("chat-triggers", "page_edit_trigger_label", "Trigger Text"),
-    /** Create your first trigger using the quick setup above */
-    pageEmptyHint: () => t("chat-triggers", "page_empty_hint", "Create your first trigger using the quick setup above"),
+    /** Create one above */
+    pageEmptyHint: () => t("chat-triggers", "page_empty_hint", "Create one above"),
     /** No Chat Triggers Found */
     pageEmptyTitle: () => t("chat-triggers", "page_empty_title", "No Chat Triggers Found"),
     /** Failed to fetch chat triggers */
@@ -4749,28 +4895,22 @@ export const m = {
     pagePatternRegex: () => t("chat-triggers", "page_pattern_regex", "Regular Expression Pattern"),
     /** Normal Text Pattern */
     pagePatternText: () => t("chat-triggers", "page_pattern_text", "Normal Text Pattern"),
-    /** Drop any of these into a response and the bot fills them in when the trigger fires. Reg... */
-    pagePlaceholdersHint: (p: { capture: P }) => t("chat-triggers", "page_placeholders_hint", "Drop any of these into a response and the bot fills them in when the trigger fires. Regex triggers can also use {capture} for capture groups.", p),
+    /** Filled in when the trigger fires. Regex triggers can also use {capture} for capture gro... */
+    pagePlaceholdersHint: (p: { capture: P }) => t("chat-triggers", "page_placeholders_hint", "Filled in when the trigger fires. Regex triggers can also use {capture} for capture groups.", p),
     /** {count} available in responses */
     pagePlaceholdersSummary: (p: { count: P }) => t("chat-triggers", "page_placeholders_summary", "{count} available in responses", p),
     /** Create Trigger */
     pageQuickCreate: () => t("chat-triggers", "page_quick_create", "Create Trigger"),
-    /** Creates a simple trigger that responds when users type your trigger text */
-    pageQuickCreateHint: () => t("chat-triggers", "page_quick_create_hint", "Creates a simple trigger that responds when users type your trigger text"),
     /** More options */
     pageQuickMoreOptions: () => t("chat-triggers", "page_quick_more_options", "More options"),
     /** Bot's response to the trigger */
     pageQuickPreviewDescription: () => t("chat-triggers", "page_quick_preview_description", "Bot's response to the trigger"),
     /** Quick Response */
     pageQuickPreviewTitle: () => t("chat-triggers", "page_quick_preview_title", "Quick Response"),
-    /** 💡 Supports rich embeds, interactive buttons, select menus, and Discord formatting */
-    pageQuickResponseHint: () => t("chat-triggers", "page_quick_response_hint", "💡 Supports rich embeds, interactive buttons, select menus, and Discord formatting"),
     /** Bot responds with: */
     pageQuickResponseLabel: () => t("chat-triggers", "page_quick_response_label", "Bot responds with:"),
     /** Click to configure response message with rich embeds and components */
     pageQuickResponsePlaceholder: () => t("chat-triggers", "page_quick_response_placeholder", "Click to configure response message with rich embeds and components"),
-    /** Simple text that will trigger the response */
-    pageQuickTriggerHint: () => t("chat-triggers", "page_quick_trigger_hint", "Simple text that will trigger the response"),
     /** When someone types: */
     pageQuickTriggerLabel: () => t("chat-triggers", "page_quick_trigger_label", "When someone types:"),
     /** Error testing regex */
@@ -4793,8 +4933,8 @@ export const m = {
     pageStatsTotalOne: (p: { count: P }) => t("chat-triggers", "page_stats_total_one", "Fired {count} time in total.", p),
     /** Fired {count} times in total. */
     pageStatsTotalOther: (p: { count: P }) => t("chat-triggers", "page_stats_total_other", "Fired {count} times in total.", p),
-    /** Create and manage automated responses to messages */
-    pageSubtitle: () => t("chat-triggers", "page_subtitle", "Create and manage automated responses to messages"),
+    /** Automated responses to messages */
+    pageSubtitle: () => t("chat-triggers", "page_subtitle", "Automated responses to messages"),
     /** [components] */
     pageSummaryComponents: () => t("chat-triggers", "page_summary_components", "[components]"),
     /** [{count} embed] */
@@ -4835,8 +4975,8 @@ export const m = {
     pageTemplatesHeading: () => t("chat-triggers", "page_templates_heading", "Or choose a template:"),
     /** Matched, but blocked: {blocker} */
     pageTestBlocked: (p: { blocker: P }) => t("chat-triggers", "page_test_blocked", "Matched, but blocked: {blocker}", p),
-    /** Checks whether a message would fire this trigger, as you. Nothing is sent, charged or c... */
-    pageTestHint: () => t("chat-triggers", "page_test_hint", "Checks whether a message would fire this trigger, as you. Nothing is sent, charged or counted."),
+    /** Checks if a message would fire this trigger. Nothing is sent, charged or counted. */
+    pageTestHint: () => t("chat-triggers", "page_test_hint", "Checks if a message would fire this trigger. Nothing is sent, charged or counted."),
     /** The message does not match this trigger's text, prefix or pattern. */
     pageTestNoMatch: () => t("chat-triggers", "page_test_no_match", "The message does not match this trigger's text, prefix or pattern."),
     /** Type a sample message */
@@ -4877,8 +5017,8 @@ export const m = {
     saverExportTitle: (p: { channel: P; guild: P }) => t("chatsaver", "saver_export_title", "Chat Log - #{channel} - {guild}", p),
     /** Fetching messages... */
     saverFetchingMessages: () => t("chatsaver", "saver_fetching_messages", "Fetching messages..."),
-    /** Showing {count} messages. There may be more messages that are not displayed. */
-    saverLimitNotice: (p: { count: P }) => t("chatsaver", "saver_limit_notice", "Showing {count} messages. There may be more messages that are not displayed.", p),
+    /** Showing {count} messages. There may be more. */
+    saverLimitNotice: (p: { count: P }) => t("chatsaver", "saver_limit_notice", "Showing {count} messages. There may be more.", p),
     /** Load Messages */
     saverLoadMessages: () => t("chatsaver", "saver_load_messages", "Load Messages"),
     /** #{channel} • {date} • {count} message */
@@ -4929,8 +5069,8 @@ export const m = {
     saverSaveLog: () => t("chatsaver", "saver_save_log", "Save Log"),
     /** Select time unit */
     saverSelectTimeUnit: () => t("chatsaver", "saver_select_time_unit", "Select time unit"),
-    /** Save and view chat logs from your Discord channels */
-    saverSubtitle: () => t("chatsaver", "saver_subtitle", "Save and view chat logs from your Discord channels"),
+    /** Save and view chat logs */
+    saverSubtitle: () => t("chatsaver", "saver_subtitle", "Save and view chat logs"),
     /** Fetch Messages */
     saverTabFetch: () => t("chatsaver", "saver_tab_fetch", "Fetch Messages"),
     /** Saved Logs */
@@ -4949,14 +5089,14 @@ export const m = {
     saverViewLog: () => t("chatsaver", "saver_view_log", "View log"),
   },
   confessions: {
-    /** Users with blacklisted roles cannot submit confessions. Click roles to toggle. */
-    pageBlacklistHint: () => t("confessions", "page_blacklist_hint", "Users with blacklisted roles cannot submit confessions. Click roles to toggle."),
+    /** Members with these roles cannot submit confessions. Click a role to toggle. */
+    pageBlacklistHint: () => t("confessions", "page_blacklist_hint", "Members with these roles cannot submit confessions. Click a role to toggle."),
     /** Role Blacklist */
     pageBlacklistTitle: () => t("confessions", "page_blacklist_title", "Role Blacklist"),
     /** Log Channel (shows user IDs) */
     pageConfigLogChannel: () => t("confessions", "page_config_log_channel", "Log Channel (shows user IDs)"),
-    /** Are you sure you want to delete confession #{number}? This will also delete the message. */
-    pageConfirmDelete: (p: { number: P }) => t("confessions", "page_confirm_delete", "Are you sure you want to delete confession #{number}? This will also delete the message.", p),
+    /** Delete confession #{number} and its message? */
+    pageConfirmDelete: (p: { number: P }) => t("confessions", "page_confirm_delete", "Delete confession #{number} and its message?", p),
     /** Delete confession */
     pageDeleteAria: () => t("confessions", "page_delete_aria", "Delete confession"),
     /** Couldn't save confession settings. Your last change was undone. */
@@ -4967,10 +5107,14 @@ export const m = {
     pageErrorLoad: () => t("confessions", "page_error_load", "Failed to load confession data"),
     /** Hide confession content */
     pageHideContentAria: () => t("confessions", "page_hide_content_aria", "Hide confession content"),
+    /** Members confess by DMing Mewdeko: */
+    pageHowTo: () => t("confessions", "page_how_to", "Members confess by DMing Mewdeko:"),
+    /** {prefix}confess {guildId} message */
+    pageHowToCommand: (p: { guildId: P; prefix: P }) => t("confessions", "page_how_to_command", "{prefix}confess {guildId} message", p),
+    /** Copy command */
+    pageHowToCopyAria: () => t("confessions", "page_how_to_copy_aria", "Copy command"),
     /** Confession #{number} */
     pageItemTitle: (p: { number: P }) => t("confessions", "page_item_title", "Confession #{number}", p),
-    /** Confessions will appear here once users submit them. */
-    pageListEmptyHint: () => t("confessions", "page_list_empty_hint", "Confessions will appear here once users submit them."),
     /** No Confessions */
     pageListEmptyTitle: () => t("confessions", "page_list_empty_title", "No Confessions"),
     /** All Confessions ({count}) */
@@ -4983,20 +5127,14 @@ export const m = {
     pageShowContentAria: () => t("confessions", "page_show_content_aria", "Show confession content"),
     /** Show more */
     pageShowMore: () => t("confessions", "page_show_more", "Show more"),
-    /** confessions */
-    pageStatConfessionsSub: () => t("confessions", "page_stat_confessions_sub", "confessions"),
     /** Latest Number */
     pageStatLatest: () => t("confessions", "page_stat_latest", "Latest Number"),
-    /** confession ID */
-    pageStatLatestSub: () => t("confessions", "page_stat_latest_sub", "confession ID"),
     /** This Month */
     pageStatMonth: () => t("confessions", "page_stat_month", "This Month"),
     /** Total Confessions */
     pageStatTotal: () => t("confessions", "page_stat_total", "Total Confessions"),
-    /** Confession statistics will appear here once the system is configured. */
-    pageStatsEmptyHint: () => t("confessions", "page_stats_empty_hint", "Confession statistics will appear here once the system is configured."),
-    /** Anonymous confession system management */
-    pageSubtitle: () => t("confessions", "page_subtitle", "Anonymous confession system management"),
+    /** Anonymous server confessions */
+    pageSubtitle: () => t("confessions", "page_subtitle", "Anonymous server confessions"),
   },
   counting: {
     /** until {date} */
@@ -5005,8 +5143,8 @@ export const m = {
     bansDurationAria: () => t("counting", "bans_duration_aria", "Ban duration in minutes"),
     /** Nobody is banned from counting here */
     bansEmpty: () => t("counting", "bans_empty", "Nobody is banned from counting here"),
-    /** Banned members can still chat but their numbers are ignored. */
-    bansHint: () => t("counting", "bans_hint", "Banned members can still chat but their numbers are ignored."),
+    /** Banned members' numbers are ignored. */
+    bansHint: () => t("counting", "bans_hint", "Banned members' numbers are ignored."),
     /** Counting Bans */
     bansTitle: () => t("counting", "bans_title", "Counting Bans"),
     /** User ID to ban */
@@ -5017,8 +5155,6 @@ export const m = {
     channelHighest: () => t("counting", "channel_highest", "Highest"),
     /** Last by */
     channelLastBy: () => t("counting", "channel_last_by", "Last by"),
-    /** Setup your first counting channel to get started */
-    channelsEmptyHint: () => t("counting", "channels_empty_hint", "Setup your first counting channel to get started"),
     /** No counting channels */
     channelsEmptyTitle: () => t("counting", "channels_empty_title", "No counting channels"),
     /** No counting channels configured */
@@ -5027,8 +5163,6 @@ export const m = {
     configAllowRepeated: () => t("counting", "config_allow_repeated", "Allow repeated users"),
     /** Banned Roles */
     configBannedRoles: () => t("counting", "config_banned_roles", "Banned Roles"),
-    /** Users with these roles cannot count */
-    configBannedRolesHint: () => t("counting", "config_banned_roles_hint", "Users with these roles cannot count"),
     /** Select banned roles... */
     configBannedRolesPlaceholder: () => t("counting", "config_banned_roles_placeholder", "Select banned roles..."),
     /** Behavior Settings */
@@ -5051,8 +5185,6 @@ export const m = {
     configPattern: () => t("counting", "config_pattern", "Counting Pattern"),
     /** Select pattern... */
     configPatternPlaceholder: () => t("counting", "config_pattern_placeholder", "Select pattern..."),
-    /** Users must have one of these roles */
-    configRequiredRolesHint: () => t("counting", "config_required_roles_hint", "Users must have one of these roles"),
     /** Select required roles... */
     configRequiredRolesPlaceholder: () => t("counting", "config_required_roles_placeholder", "Select required roles..."),
     /** Reset count on error */
@@ -5075,8 +5207,6 @@ export const m = {
     leaderboardAccuracy: () => t("counting", "leaderboard_accuracy", "Accuracy"),
     /** Contributions */
     leaderboardContributions: () => t("counting", "leaderboard_contributions", "Contributions"),
-    /** No users have participated in counting yet */
-    leaderboardEmptyHint: () => t("counting", "leaderboard_empty_hint", "No users have participated in counting yet"),
     /** No leaderboard data */
     leaderboardEmptyTitle: () => t("counting", "leaderboard_empty_title", "No leaderboard data"),
     /** Highest Streak */
@@ -5105,8 +5235,6 @@ export const m = {
     milestoneRemoveAria: (p: { milestone: P }) => t("counting", "milestone_remove_aria", "Remove milestone {milestone}", p),
     /** Using the default milestones. */
     milestonesDefault: () => t("counting", "milestones_default", "Using the default milestones."),
-    /** Numbers that trigger a celebration message when reached. */
-    milestonesHint: () => t("counting", "milestones_hint", "Numbers that trigger a celebration message when reached."),
     /** Milestones */
     milestonesTitle: () => t("counting", "milestones_title", "Milestones"),
     /** Failed to ban user */
@@ -5151,8 +5279,8 @@ export const m = {
     notifySavePointRestored: () => t("counting", "notify_save_point_restored", "Save point restored"),
     /** Failed to unban user */
     notifyUnbanFailed: () => t("counting", "notify_unban_failed", "Failed to unban user"),
-    /** Manage counting games and competitions in your server */
-    pageSubtitle: () => t("counting", "page_subtitle", "Manage counting games and competitions in your server"),
+    /** Counting games and competitions */
+    pageSubtitle: () => t("counting", "page_subtitle", "Counting games and competitions"),
     /** Counting Channels */
     pageTitle: () => t("counting", "page_title", "Counting Channels"),
     /** Fibonacci (1, 1, 2, 3, 5...) */
@@ -5175,8 +5303,8 @@ export const m = {
     patternSkipMultiples: () => t("counting", "pattern_skip_multiples", "Skip Multiples"),
     /** Purge everything */
     purgeButton: () => t("counting", "purge_button", "Purge everything"),
-    /** Deletes every count, statistic, streak, ban, and save point for this channel. The chann... */
-    purgeHint: () => t("counting", "purge_hint", "Deletes every count, statistic, streak, ban, and save point for this channel. The channel stays configured but starts from scratch."),
+    /** Deletes every count, statistic, streak, ban, and save point. The channel stays configured. */
+    purgeHint: () => t("counting", "purge_hint", "Deletes every count, statistic, streak, ban, and save point. The channel stays configured."),
     /** Purge reason */
     purgeReasonAria: () => t("counting", "purge_reason_aria", "Purge reason"),
     /** Purge Channel Data */
@@ -5201,8 +5329,6 @@ export const m = {
     savePointsEmpty: () => t("counting", "save_points_empty", "No save points created"),
     /** Save Points */
     savePointsTitle: () => t("counting", "save_points_title", "Save Points"),
-    /** Choose a counting channel to configure settings */
-    selectHint: () => t("counting", "select_hint", "Choose a counting channel to configure settings"),
     /** Selected: #{name} - {status} */
     selectedChannel: (p: { name: P; status: P }) => t("counting", "selected_channel", "Selected: #{name} - {status}", p),
     /** Setup Channel */
@@ -5245,16 +5371,14 @@ export const m = {
     timeUnknown: () => t("counting", "time_unknown", "Unknown time"),
   },
   currency: {
-    /** A negative amount removes currency. */
-    adjustHint: () => t("currency", "adjust_hint", "A negative amount removes currency."),
     /** Select a member */
     adjustMemberPlaceholder: () => t("currency", "adjust_member_placeholder", "Select a member"),
     /** Recorded on the ledger */
     adjustReasonPlaceholder: () => t("currency", "adjust_reason_placeholder", "Recorded on the ledger"),
     /** Adjust a balance */
     adjustTitle: () => t("currency", "adjust_title", "Adjust a balance"),
-    /** Nobody on this server holds any currency yet. */
-    analyticsEmpty: () => t("currency", "analytics_empty", "Nobody on this server holds any currency yet."),
+    /** No currency held yet. */
+    analyticsEmpty: () => t("currency", "analytics_empty", "No currency held yet."),
     /** Net worth */
     boardColNetWorth: () => t("currency", "board_col_net_worth", "Net worth"),
     /** Share */
@@ -5341,18 +5465,8 @@ export const m = {
     cfghint0ToDisableCutsAUserOffAfterLosin: () => t("currency", "cfghint_0_to_disable_cuts_a_user_off_after_losin", "0 to disable. Cuts a user off after losing this much in 24h."),
     /** Added per consecutive day claimed */
     cfghintAddedPerConsecutiveDayClaimed: () => t("currency", "cfghint_added_per_consecutive_day_claimed", "Added per consecutive day claimed"),
-    /** Consecutive daily claims earn an escalating bonus */
-    cfghintConsecutiveDailyClaimsEarnAnEscalat: () => t("currency", "cfghint_consecutive_daily_claims_earn_an_escalat", "Consecutive daily claims earn an escalating bonus"),
-    /** Lets users move currency out of reach of robbery */
-    cfghintLetsUsersMoveCurrencyOutOfReachOf: () => t("currency", "cfghint_lets_users_move_currency_out_of_reach_of", "Lets users move currency out of reach of robbery"),
-    /** Lets users pay each other */
-    cfghintLetsUsersPayEachOther: () => t("currency", "cfghint_lets_users_pay_each_other", "Lets users pay each other"),
-    /** Lets users steal from each other's wallets */
-    cfghintLetsUsersStealFromEachOtherSWalle: () => t("currency", "cfghint_lets_users_steal_from_each_other_s_walle", "Lets users steal from each other's wallets"),
     /** Paid per interval on the banked balance */
     cfghintPaidPerIntervalOnTheBankedBalance: () => t("currency", "cfghint_paid_per_interval_on_the_banked_balance", "Paid per interval on the banked balance"),
-    /** Pays better than work but fails often enough to stay behind it on average */
-    cfghintPaysBetterThanWorkButFailsOftenEn: () => t("currency", "cfghint_pays_better_than_work_but_fails_often_en", "Pays better than work but fails often enough to stay behind it on average"),
     /** Scales winnings only, never the returned stake. Below 1.0 widens the house edge. */
     cfghintScalesWinningsOnlyNeverTheReturned: () => t("currency", "cfghint_scales_winnings_only_never_the_returned", "Scales winnings only, never the returned stake. Below 1.0 widens the house edge."),
     /** Share of the robber's wallet destroyed on failure */
@@ -5361,18 +5475,14 @@ export const m = {
     cfghintShareOfTheTargetSWalletASuccessT: () => t("currency", "cfghint_share_of_the_target_s_wallet_a_success_t", "Share of the target's wallet a success takes"),
     /** Targets holding less than this cannot be robbed */
     cfghintTargetsHoldingLessThanThisCannotBe: () => t("currency", "cfghint_targets_holding_less_than_this_cannot_be", "Targets holding less than this cannot be robbed"),
-    /** The low-risk, steady earning command */
-    cfghintTheLowRiskSteadyEarningCommand: () => t("currency", "cfghint_the_low_risk_steady_earning_command", "The low-risk, steady earning command"),
-    /** Turns every wagering game on or off */
-    cfghintTurnsEveryWageringGameOnOrOff: () => t("currency", "cfghint_turns_every_wagering_game_on_or_off", "Turns every wagering game on or off"),
     /** Cumulative change */
     chartCumulative: () => t("currency", "chart_cumulative", "Cumulative change"),
     /** Daily net */
     chartDailyNet: () => t("currency", "chart_daily_net", "Daily net"),
     /** Bank */
     configBank: () => t("currency", "config_bank", "Bank"),
-    /** Banked currency cannot be robbed. Interest is a faucet, so it is off by default. */
-    configBankHint: () => t("currency", "config_bank_hint", "Banked currency cannot be robbed. Interest is a faucet, so it is off by default."),
+    /** Banked currency cannot be robbed. Interest is off by default. */
+    configBankHint: () => t("currency", "config_bank_hint", "Banked currency cannot be robbed. Interest is off by default."),
     /** Betting */
     configBetting: () => t("currency", "config_betting", "Betting"),
     /** Daily reward streaks */
@@ -5385,12 +5495,12 @@ export const m = {
     configReset: () => t("currency", "config_reset", "Reset to defaults"),
     /** Robbery */
     configRobbery: () => t("currency", "config_robbery", "Robbery"),
-    /** Off by default because it is disruptive in servers that did not opt into it. Only walle... */
-    configRobberyHint: () => t("currency", "config_robbery_hint", "Off by default because it is disruptive in servers that did not opt into it. Only wallets can be robbed."),
+    /** Off by default. Only wallets can be robbed. */
+    configRobberyHint: () => t("currency", "config_robbery_hint", "Off by default. Only wallets can be robbed."),
     /** Transfers */
     configTransfers: () => t("currency", "config_transfers", "Transfers"),
-    /** Transfer tax is a sink: the taxed portion is destroyed rather than moved. */
-    configTransfersHint: () => t("currency", "config_transfers_hint", "Transfer tax is a sink: the taxed portion is destroyed rather than moved."),
+    /** The taxed portion of a transfer is destroyed. */
+    configTransfersHint: () => t("currency", "config_transfers_hint", "The taxed portion of a transfer is destroyed."),
     /** Delete "{name}"? Everyone who owns one loses it. */
     confirmDeleteItem: (p: { name: P }) => t("currency", "confirm_delete_item", "Delete \"{name}\"? Everyone who owns one loses it.", p),
     /** Reset every economy setting to its default? */
@@ -5423,8 +5533,8 @@ export const m = {
     gamesColWagered: () => t("currency", "games_col_wagered", "Wagered"),
     /** No games played in this window. */
     gamesEmpty: () => t("currency", "games_empty", "No games played in this window."),
-    /** RTP is what players actually got back per unit wagered. Above 100% means the game is pr... */
-    gamesHint: () => t("currency", "games_hint", "RTP is what players actually got back per unit wagered. Above 100% means the game is printing currency and wants its payout multiplier lowered."),
+    /** RTP is what players got back per unit wagered. Above 100% means the game is creating cu... */
+    gamesHint: () => t("currency", "games_hint", "RTP is what players got back per unit wagered. Above 100% means the game is creating currency."),
     /** Game performance */
     gamesTitle: () => t("currency", "games_title", "Game performance"),
     /** Collectible */
@@ -5481,10 +5591,8 @@ export const m = {
     shopCreate: () => t("currency", "shop_create", "Create item"),
     /** Editing {name} */
     shopEditing: (p: { name: P }) => t("currency", "shop_editing", "Editing {name}", p),
-    /** No shop items yet. Add one to give currency somewhere to go. */
-    shopEmpty: () => t("currency", "shop_empty", "No shop items yet. Add one to give currency somewhere to go."),
-    /** The shop is the economy's main sink. Without one, balances only ever accumulate. */
-    shopHint: () => t("currency", "shop_hint", "The shop is the economy's main sink. Without one, balances only ever accumulate."),
+    /** No shop items yet. */
+    shopEmpty: () => t("currency", "shop_empty", "No shop items yet."),
     /** Limit {count} per person */
     shopLimit: (p: { count: P }) => t("currency", "shop_limit", "Limit {count} per person", p),
     /** Limit per user */
@@ -5543,14 +5651,12 @@ export const m = {
     statTopTen: (p: { share: P }) => t("currency", "stat_top_ten", "top 10% hold {share}", p),
     /** No ledger activity in this window. */
     supplyEmpty: () => t("currency", "supply_empty", "No ledger activity in this window."),
-    /** Currency created minus currency destroyed. A line that only climbs means your faucets o... */
-    supplyHint: () => t("currency", "supply_hint", "Currency created minus currency destroyed. A line that only climbs means your faucets outpace your sinks."),
     /** Money supply over time */
     supplyTitle: () => t("currency", "supply_title", "Money supply over time"),
     /** Shop */
     tabShop: () => t("currency", "tab_shop", "Shop"),
-    /** {amount} was destroyed as transfer tax over this window. Tax has no ledger row of its o... */
-    transferTaxNote: (p: { amount: P }) => t("currency", "transfer_tax_note", "{amount} was destroyed as transfer tax over this window. Tax has no ledger row of its own, so it is derived from the gap between what senders paid and what recipients received.", p),
+    /** {amount} destroyed as transfer tax in this window. */
+    transferTaxNote: (p: { amount: P }) => t("currency", "transfer_tax_note", "{amount} destroyed as transfer tax in this window.", p),
     /** Banked {amount} */
     whereBanked: (p: { amount: P }) => t("currency", "where_banked", "Banked {amount}", p),
     /** (safe, idle) */
@@ -5577,16 +5683,14 @@ export const m = {
     window90dShort: () => t("currency", "window_90d_short", "90d"),
   },
   customvoice: {
-    /** Pick a hub channel and a category. Changes on this page save once both are set. */
-    basicMissing: () => t("customvoice", "basic_missing", "Pick a hub channel and a category. Changes on this page save once both are set."),
+    /** Pick a hub channel and a category. Changes save once both are set. */
+    basicMissing: () => t("customvoice", "basic_missing", "Pick a hub channel and a category. Changes save once both are set."),
     /** Basic Configuration */
     basicTitle: () => t("customvoice", "basic_title", "Basic Configuration"),
     /** Default Bitrate */
     bitrateLabel: () => t("customvoice", "bitrate_label", "Default Bitrate"),
     /** Select bitrate... */
     bitratePlaceholder: () => t("customvoice", "bitrate_placeholder", "Select bitrate..."),
-    /** Category where temporary channels will be created */
-    categoryHint: () => t("customvoice", "category_hint", "Category where temporary channels will be created"),
     /** Channel Category */
     categoryLabel: () => t("customvoice", "category_label", "Channel Category"),
     /** Delete channel */
@@ -5611,18 +5715,14 @@ export const m = {
     defaultsTitle: () => t("customvoice", "defaults_title", "Channel Defaults"),
     /** Disable custom voice */
     disableButton: () => t("customvoice", "disable_button", "Disable custom voice"),
-    /** The hub channel stops creating channels and the configuration is removed. Existing chan... */
-    disableMessage: () => t("customvoice", "disable_message", "The hub channel stops creating channels and the configuration is removed. Existing channels are left alone."),
+    /** The configuration is removed. Existing channels are left alone. */
+    disableMessage: () => t("customvoice", "disable_message", "The configuration is removed. Existing channels are left alone."),
     /** Disable custom voice? */
     disableTitle: () => t("customvoice", "disable_title", "Disable custom voice?"),
-    /** Custom voice channels will appear here when users create them */
-    emptyText: () => t("customvoice", "empty_text", "Custom voice channels will appear here when users create them"),
     /** Empty timeout (seconds) */
     emptyTimeout: () => t("customvoice", "empty_timeout", "Empty timeout (seconds)"),
     /** No active channels */
     emptyTitle: () => t("customvoice", "empty_title", "No active channels"),
-    /** Channel users join to create their own temporary voice channel */
-    hubHint: () => t("customvoice", "hub_hint", "Channel users join to create their own temporary voice channel"),
     /** Channel Management */
     managementTitle: () => t("customvoice", "management_title", "Channel Management"),
     /** Use {token} for the user's name */
@@ -5655,8 +5755,8 @@ export const m = {
     notifyUpdateFailed: () => t("customvoice", "notify_update_failed", "Failed to update channel"),
     /** Custom Voice Channels - Dashboard */
     pageHeadTitle: () => t("customvoice", "page_head_title", "Custom Voice Channels - Dashboard"),
-    /** Create and manage temporary voice channels */
-    pageSubtitle: () => t("customvoice", "page_subtitle", "Create and manage temporary voice channels"),
+    /** Temporary voice channels */
+    pageSubtitle: () => t("customvoice", "page_subtitle", "Temporary voice channels"),
     /** Bitrate must be a whole number from 8 to 384. */
     prefErrorBitrate: () => t("customvoice", "pref_error_bitrate", "Bitrate must be a whole number from 8 to 384."),
     /** User limit must be a whole number from 0 to 99. */
@@ -5667,8 +5767,8 @@ export const m = {
     prefsBitrate: () => t("customvoice", "prefs_bitrate", "Default bitrate (kbps)"),
     /** Default channel name */
     prefsName: () => t("customvoice", "prefs_name", "Default channel name"),
-    /** Look up a member to view or change the defaults applied when they create a channel. */
-    prefsText: () => t("customvoice", "prefs_text", "Look up a member to view or change the defaults applied when they create a channel."),
+    /** Look up a member's channel defaults. */
+    prefsText: () => t("customvoice", "prefs_text", "Look up a member's channel defaults."),
     /** User Preferences */
     prefsTitle: () => t("customvoice", "prefs_title", "User Preferences"),
     /** Discord user ID */
@@ -5727,8 +5827,6 @@ export const m = {
     actionsNoGreetings: () => t("dashboard", "actions_no_greetings", "No greetings configured"),
     /** No Recent Activity */
     actionsNoRecentActivity: () => t("dashboard", "actions_no_recent_activity", "No Recent Activity"),
-    /** Set up greetings and role actions to see activity here. */
-    actionsNoRecentActivityHint: () => t("dashboard", "actions_no_recent_activity_hint", "Set up greetings and role actions to see activity here."),
     /** No states configured */
     actionsNoStates: () => t("dashboard", "actions_no_states", "No states configured"),
     /** Automated recurring messages */
@@ -5781,8 +5879,6 @@ export const m = {
     communityNoTickets: () => t("dashboard", "community_no_tickets", "No tickets yet"),
     /** No XP Data */
     communityNoXpData: () => t("dashboard", "community_no_xp_data", "No XP Data"),
-    /** No members have earned XP yet. Be the first. */
-    communityNoXpDataHint: () => t("dashboard", "community_no_xp_data_hint", "No members have earned XP yet. Be the first."),
     /** +{count} other channel */
     communityOtherChannelsOne: (p: { count: P }) => t("dashboard", "community_other_channels_one", "+{count} other channel", p),
     /** +{count} other channels */
@@ -5807,26 +5903,22 @@ export const m = {
     communityViewFullXp: () => t("dashboard", "community_view_full_xp", "View Full XP Dashboard"),
     /** Coming Up */
     entertainmentComingUp: () => t("dashboard", "entertainment_coming_up", "Coming Up"),
-    /** Temporary voice channels */
-    entertainmentCustomVoiceDesc: () => t("dashboard", "entertainment_custom_voice_desc", "Temporary voice channels"),
+    /** Temporary voice rooms */
+    entertainmentCustomVoiceDesc: () => t("dashboard", "entertainment_custom_voice_desc", "Temporary voice rooms"),
     /** Host contests & prizes */
     entertainmentGiveawaysDesc: () => t("dashboard", "entertainment_giveaways_desc", "Host contests & prizes"),
     /** No music playing */
     entertainmentNoMusic: () => t("dashboard", "entertainment_no_music", "No music playing"),
-    /** Join a voice channel and use music commands to start playing */
-    entertainmentNoMusicHint: () => t("dashboard", "entertainment_no_music_hint", "Join a voice channel and use music commands to start playing"),
+    /** Join a voice channel and start playing */
+    entertainmentNoMusicHint: () => t("dashboard", "entertainment_no_music_hint", "Join a voice channel and start playing"),
     /** {count} participants */
     entertainmentParticipants: (p: { count: P }) => t("dashboard", "entertainment_participants", "{count} participants", p),
-    /** Dashboard component failed to load. Please refresh or try a different page. */
-    layoutErrorBoundary: () => t("dashboard", "layout_error_boundary", "Dashboard component failed to load. Please refresh or try a different page."),
+    /** Dashboard component failed to load. Refresh or try another page. */
+    layoutErrorBoundary: () => t("dashboard", "layout_error_boundary", "Dashboard component failed to load. Refresh or try another page."),
     /** No servers match "{term}" */
     layoutNoMatch: (p: { term: P }) => t("dashboard", "layout_no_match", "No servers match \"{term}\"", p),
-    /** Try a different search term */
-    layoutNoMatchHint: () => t("dashboard", "layout_no_match_hint", "Try a different search term"),
-    /** Make sure the bot is in a server where you have admin permissions */
-    layoutNoServersHint: () => t("dashboard", "layout_no_servers_hint", "Make sure the bot is in a server where you have admin permissions"),
-    /** Choose a server to manage from the dashboard */
-    layoutSelectServerSubtitle: () => t("dashboard", "layout_select_server_subtitle", "Choose a server to manage from the dashboard"),
+    /** The bot must be in a server where you are an admin */
+    layoutNoServersHint: () => t("dashboard", "layout_no_servers_hint", "The bot must be in a server where you are an admin"),
     /** Select a Server */
     layoutSelectServerTitle: () => t("dashboard", "layout_select_server_title", "Select a Server"),
     /** Bot Info */
@@ -5853,8 +5945,8 @@ export const m = {
     pageErrorBotStatus: () => t("dashboard", "page_error_bot_status", "Failed to fetch bot status"),
     /** Failed to fetch dashboard data */
     pageErrorDashboard: () => t("dashboard", "page_error_dashboard", "Failed to fetch dashboard data"),
-    /** An error occurred while fetching data */
-    pageErrorFetch: () => t("dashboard", "page_error_fetch", "An error occurred while fetching data"),
+    /** Could not fetch data */
+    pageErrorFetch: () => t("dashboard", "page_error_fetch", "Could not fetch data"),
     /** Last updated: {time} */
     pageLastUpdated: (p: { time: P }) => t("dashboard", "page_last_updated", "Last updated: {time}", p),
     /** Now playing music in your server */
@@ -5889,8 +5981,6 @@ export const m = {
     securityActiveProtections: () => t("dashboard", "security_active_protections", "Active Protections"),
     /** All Clear */
     securityAllClear: () => t("dashboard", "security_all_clear", "All Clear"),
-    /** No recent moderation actions. Nothing needs attention. */
-    securityAllClearHint: () => t("dashboard", "security_all_clear_hint", "No recent moderation actions. Nothing needs attention."),
     /** {count} event types */
     securityEventTypes: (p: { count: P }) => t("dashboard", "security_event_types", "{count} event types", p),
     /** Full Moderation Dashboard */
@@ -5961,8 +6051,8 @@ export const m = {
     setupBannerBenefitSkip: () => t("dashboard", "setup_banner_benefit_skip", "Skip anytime"),
     /** ~{time} setup */
     setupBannerBenefitTime: (p: { time: P }) => t("dashboard", "setup_banner_benefit_time", "~{time} setup", p),
-    /** {guild} doesn't have any features configured yet. Want to set up essential features qui... */
-    setupBannerBody: (p: { guild: P }) => t("dashboard", "setup_banner_body", "{guild} doesn't have any features configured yet. Want to set up essential features quickly?", p),
+    /** {guild} has no features configured yet. */
+    setupBannerBody: (p: { guild: P }) => t("dashboard", "setup_banner_body", "{guild} has no features configured yet.", p),
     /** Maybe Later */
     setupBannerLater: () => t("dashboard", "setup_banner_later", "Maybe Later"),
     /** 5 min */
@@ -6015,8 +6105,8 @@ export const m = {
     componentsOptionNamePlaceholder: () => t("embedbuilder", "components_option_name_placeholder", "Option name"),
     /** Options ({count}/25) */
     componentsOptionsCount: (p: { count: P }) => t("embedbuilder", "components_options_count", "Options ({count}/25)", p),
-    /** No options added yet. Click "Add" to get started. */
-    componentsOptionsEmpty: () => t("embedbuilder", "components_options_empty", "No options added yet. Click \"Add\" to get started."),
+    /** No options yet */
+    componentsOptionsEmpty: () => t("embedbuilder", "components_options_empty", "No options yet"),
     /** Choose an option... */
     componentsSelectPlaceholderExample: () => t("embedbuilder", "components_select_placeholder_example", "Choose an option..."),
     /** Click to edit select menu */
@@ -6075,8 +6165,8 @@ export const m = {
     editorFieldValuePlaceholder: () => t("embedbuilder", "editor_field_value_placeholder", "Field value"),
     /** Fields ({count}/25) */
     editorFieldsCount: (p: { count: P }) => t("embedbuilder", "editor_fields_count", "Fields ({count}/25)", p),
-    /** No fields added yet. Click "Add Field" to get started. */
-    editorFieldsEmpty: () => t("embedbuilder", "editor_fields_empty", "No fields added yet. Click \"Add Field\" to get started."),
+    /** No fields yet */
+    editorFieldsEmpty: () => t("embedbuilder", "editor_fields_empty", "No fields yet"),
     /** Footer */
     editorFooter: () => t("embedbuilder", "editor_footer", "Footer"),
     /** Footer text */
@@ -6085,8 +6175,6 @@ export const m = {
     editorIconUrl: () => t("embedbuilder", "editor_icon_url", "Icon URL"),
     /** https://example.com/icon.png */
     editorIconUrlPlaceholder: () => t("embedbuilder", "editor_icon_url_placeholder", "https://example.com/icon.png"),
-    /** Large image displayed at the bottom of the embed */
-    editorImageHint: () => t("embedbuilder", "editor_image_hint", "Large image displayed at the bottom of the embed"),
     /** https://example.com/image.png */
     editorImagePlaceholder: () => t("embedbuilder", "editor_image_placeholder", "https://example.com/image.png"),
     /** Insert placeholder */
@@ -6115,8 +6203,6 @@ export const m = {
     editorTabMedia: () => t("embedbuilder", "editor_tab_media", "Media"),
     /** Embed editor sections */
     editorTabsAria: () => t("embedbuilder", "editor_tabs_aria", "Embed editor sections"),
-    /** Small image displayed in the top-right corner */
-    editorThumbnailHint: () => t("embedbuilder", "editor_thumbnail_hint", "Small image displayed in the top-right corner"),
     /** https://example.com/thumbnail.png */
     editorThumbnailPlaceholder: () => t("embedbuilder", "editor_thumbnail_placeholder", "https://example.com/thumbnail.png"),
     /** Thumbnail URL */
@@ -6447,12 +6533,10 @@ export const m = {
     pageSendWebhookToggle: () => t("embedbuilder", "page_send_webhook_toggle", "Send through a webhook with a custom name and avatar"),
     /** Start from Scratch */
     pageStartFromScratch: () => t("embedbuilder", "page_start_from_scratch", "Start from Scratch"),
-    /** Create and customize embeds for your Discord server */
-    pageSubtitle: () => t("embedbuilder", "page_subtitle", "Create and customize embeds for your Discord server"),
+    /** Build and send embeds */
+    pageSubtitle: () => t("embedbuilder", "page_subtitle", "Build and send embeds"),
     /** Choose a Template */
     pageTemplatesHeading: () => t("embedbuilder", "page_templates_heading", "Choose a Template"),
-    /** Start with a pre-built template or create from scratch */
-    pageTemplatesHint: () => t("embedbuilder", "page_templates_hint", "Start with a pre-built template or create from scratch"),
     /** Discord Embed Builder */
     pageTitle: () => t("embedbuilder", "page_title", "Discord Embed Builder"),
     /** Embed {number} is empty */
@@ -6491,10 +6575,8 @@ export const m = {
     personaDeleteTitle: () => t("embedbuilder", "persona_delete_title", "Delete Persona"),
     /** Deleted "{name}" */
     personaDeleted: (p: { name: P }) => t("embedbuilder", "persona_deleted", "Deleted \"{name}\"", p),
-    /** No personas yet. Create one to send messages under a custom name and avatar. */
-    personaEmpty: () => t("embedbuilder", "persona_empty", "No personas yet. Create one to send messages under a custom name and avatar."),
-    /** A persona is a saved name and avatar your messages can be sent under. */
-    personaIntro: () => t("embedbuilder", "persona_intro", "A persona is a saved name and avatar your messages can be sent under."),
+    /** No personas yet */
+    personaEmpty: () => t("embedbuilder", "persona_empty", "No personas yet"),
     /** You must be logged in to save personas */
     personaLoginRequired: () => t("embedbuilder", "persona_login_required", "You must be logged in to save personas"),
     /** Give the persona a name */
@@ -6719,8 +6801,8 @@ export const m = {
   featureRequests: {
     /** Yours */
     badgeYours: () => t("feature-requests", "badge_yours", "Yours"),
-    /** Nothing here yet. Be the first to suggest something. */
-    browseEmpty: () => t("feature-requests", "browse_empty", "Nothing here yet. Be the first to suggest something."),
+    /** No requests yet */
+    browseEmpty: () => t("feature-requests", "browse_empty", "No requests yet"),
     /** Any category */
     categoryAny: () => t("feature-requests", "category_any", "Any category"),
     /** Bug report */
@@ -6755,28 +6837,28 @@ export const m = {
     formAttachGuild: (p: { guild: P }) => t("feature-requests", "form_attach_guild", "Mention that I was managing {guild}", p),
     /** What kind of request is this? */
     formCategoryLabel: () => t("feature-requests", "form_category_label", "What kind of request is this?"),
-    /** What should it do? If it is a bug, what happened and what did you expect instead? */
-    formDetailsPlaceholder: () => t("feature-requests", "form_details_placeholder", "What should it do? If it is a bug, what happened and what did you expect instead?"),
+    /** What should it do, or what went wrong? */
+    formDetailsPlaceholder: () => t("feature-requests", "form_details_placeholder", "What should it do, or what went wrong?"),
     /** One line that sums it up */
     formTitlePlaceholder: () => t("feature-requests", "form_title_placeholder", "One line that sums it up"),
     /** from {guild} */
     fromGuild: (p: { guild: P }) => t("feature-requests", "from_guild", "from {guild}", p),
     /** Loading feature requests... */
     loadingRequests: () => t("feature-requests", "loading_requests", "Loading feature requests..."),
-    /** You have not submitted anything yet. */
-    mineEmpty: () => t("feature-requests", "mine_empty", "You have not submitted anything yet."),
+    /** Nothing submitted yet */
+    mineEmpty: () => t("feature-requests", "mine_empty", "Nothing submitted yet"),
     /** Suggest something */
     mineEmptyAction: () => t("feature-requests", "mine_empty_action", "Suggest something"),
-    /** Up to three requests an hour. Your Discord name is attached so we can follow up. */
-    rateLimitHint: () => t("feature-requests", "rate_limit_hint", "Up to three requests an hour. Your Discord name is attached so we can follow up."),
+    /** Three requests an hour. Your Discord name is attached. */
+    rateLimitHint: () => t("feature-requests", "rate_limit_hint", "Three requests an hour. Your Discord name is attached."),
     /** Report channel */
     reportChannelHeading: () => t("feature-requests", "report_channel_heading", "Report channel"),
     /** Channel ID new requests get posted to */
     reportChannelLabel: () => t("feature-requests", "report_channel_label", "Channel ID new requests get posted to"),
     /** The bot cannot see channel {channel}, so requests will not be posted. */
     reportChannelUnreachable: (p: { channel: P }) => t("feature-requests", "report_channel_unreachable", "The bot cannot see channel {channel}, so requests will not be posted.", p),
-    /** No channel is set and there is no join/leave channel to fall back to, so requests are o... */
-    reportChannelUnset: () => t("feature-requests", "report_channel_unset", "No channel is set and there is no join/leave channel to fall back to, so requests are only stored, not posted."),
+    /** No channel is set, so requests are stored but not posted. */
+    reportChannelUnset: () => t("feature-requests", "report_channel_unset", "No channel is set, so requests are stored but not posted."),
     /** Requests go to #{channel} */
     reportDestination: (p: { channel: P }) => t("feature-requests", "report_destination", "Requests go to #{channel}", p),
     /** Requests go to #{channel} in {guild} */
@@ -6801,8 +6883,8 @@ export const m = {
     statusPlanned: () => t("feature-requests", "status_planned", "Planned"),
     /** Submit another */
     submitAnother: () => t("feature-requests", "submit_another", "Submit another"),
-    /** Your request "{title}" was sent to the developers. You can follow it under the Mine tab. */
-    submittedMessage: (p: { title: P }) => t("feature-requests", "submitted_message", "Your request \"{title}\" was sent to the developers. You can follow it under the Mine tab.", p),
+    /** "{title}" was sent. Follow it under Mine. */
+    submittedMessage: (p: { title: P }) => t("feature-requests", "submitted_message", "\"{title}\" was sent. Follow it under Mine.", p),
     /** Thanks */
     submittedThanks: () => t("feature-requests", "submitted_thanks", "Thanks"),
     /** Browse */
@@ -6849,6 +6931,10 @@ export const m = {
     botHellsDescription: () => t("features", "bot_hells_description", "Servers littered with bots, with bulk leave"),
     /** Bot Hells */
     botHellsName: () => t("features", "bot_hells_name", "Bot Hells"),
+    /** Relay a channel with a channel in a Fluxer community */
+    bridgesDescription: () => t("features", "bridges_description", "Relay a channel with a channel in a Fluxer community"),
+    /** Bridges */
+    bridgesName: () => t("features", "bridges_name", "Bridges"),
     /** Actions */
     categoryActions: () => t("features", "category_actions", "Actions"),
     /** Community */
@@ -7481,8 +7567,8 @@ export const m = {
     wizardRolegreetsStepRoleTitle: () => t("features", "wizard_rolegreets_step_role_title", "Choose Role"),
     /** Tell the bot which role is your staff role */
     wizardRolesBenefit1: () => t("features", "wizard_roles_benefit_1", "Tell the bot which role is your staff role"),
-    /** Let members pick their own roles */
-    wizardRolesBenefit2: () => t("features", "wizard_roles_benefit_2", "Let members pick their own roles"),
+    /** Members pick their own roles */
+    wizardRolesBenefit2: () => t("features", "wizard_roles_benefit_2", "Members pick their own roles"),
     /** Powers permission checks across features */
     wizardRolesBenefit3: () => t("features", "wizard_roles_benefit_3", "Powers permission checks across features"),
     /** No commands needed to hand out cosmetic roles */
@@ -7725,8 +7811,6 @@ export const m = {
     pageAddAria: () => t("feeds", "page_add_aria", "Add RSS Feed"),
     /** Add Custom Message */
     pageAddMessage: () => t("feeds", "page_add_message", "Add Custom Message"),
-    /** Enter the full URL to an RSS or Atom feed. */
-    pageAddUrlHint: () => t("feeds", "page_add_url_hint", "Enter the full URL to an RSS or Atom feed."),
     /** RSS Feed URL */
     pageAddUrlLabel: () => t("feeds", "page_add_url_label", "RSS Feed URL"),
     /** {count} feed */
@@ -7735,8 +7819,8 @@ export const m = {
     pageByChannelCountOther: (p: { count: P }) => t("feeds", "page_by_channel_count_other", "{count} feeds", p),
     /** Feeds by Channel */
     pageByChannelTitle: () => t("feeds", "page_by_channel_title", "Feeds by Channel"),
-    /** Are you sure you want to remove this RSS feed? */
-    pageConfirmRemove: () => t("feeds", "page_confirm_remove", "Are you sure you want to remove this RSS feed?"),
+    /** Remove this feed? */
+    pageConfirmRemove: () => t("feeds", "page_confirm_remove", "Remove this feed?"),
     /** Edit Message */
     pageEditMessage: () => t("feeds", "page_edit_message", "Edit Message"),
     /** Custom message for this feed */
@@ -7755,8 +7839,6 @@ export const m = {
     pageFeedAdded: (p: { date: P }) => t("feeds", "page_feed_added", "Added: {date}", p),
     /** Delete feed */
     pageFeedDeleteAria: () => t("feeds", "page_feed_delete_aria", "Delete feed"),
-    /** Add RSS feeds to automatically post updates to your channels. */
-    pageListEmptyHint: () => t("feeds", "page_list_empty_hint", "Add RSS feeds to automatically post updates to your channels."),
     /** No RSS Feeds */
     pageListEmptyTitle: () => t("feeds", "page_list_empty_title", "No RSS Feeds"),
     /** RSS Feeds ({count}) */
@@ -7775,16 +7857,14 @@ export const m = {
     pageStatUnique: () => t("feeds", "page_stat_unique", "Unique Feeds"),
     /** different sources */
     pageStatUniqueSub: () => t("feeds", "page_stat_unique_sub", "different sources"),
-    /** Feed statistics will appear here once you add RSS feeds. */
-    pageStatsEmptyHint: () => t("feeds", "page_stats_empty_hint", "Feed statistics will appear here once you add RSS feeds."),
-    /** Manage RSS feed subscriptions */
-    pageSubtitle: () => t("feeds", "page_subtitle", "Manage RSS feed subscriptions"),
+    /** RSS feed subscriptions */
+    pageSubtitle: () => t("feeds", "page_subtitle", "RSS feed subscriptions"),
     /** Add Feed */
     pageTabAdd: () => t("feeds", "page_tab_add", "Add Feed"),
   },
   filter: {
-    /** Members who post any of these words are banned immediately. Use with care. */
-    autobanHint: () => t("filter", "autoban_hint", "Members who post any of these words are banned immediately. Use with care."),
+    /** Members who post these words are banned immediately. */
+    autobanHint: () => t("filter", "autoban_hint", "Members who post these words are banned immediately."),
     /** New auto-ban word */
     autobanWordAria: () => t("filter", "autoban_word_aria", "New auto-ban word"),
     /** All {count} filtered words are removed. */
@@ -7803,8 +7883,8 @@ export const m = {
     errorUpdateWarning: () => t("filter", "error_update_warning", "Failed to update warning setting"),
     /** Failed to update word list */
     errorUpdateWords: () => t("filter", "error_update_words", "Failed to update word list"),
-    /** Messages containing these words are deleted when the word filter is enabled server-wide... */
-    filteredHint: () => t("filter", "filtered_hint", "Messages containing these words are deleted when the word filter is enabled server-wide or in a channel."),
+    /** Messages with these words are deleted. */
+    filteredHint: () => t("filter", "filtered_hint", "Messages with these words are deleted."),
     /** New filtered word */
     filteredWordAria: () => t("filter", "filtered_word_aria", "New filtered word"),
     /** Invite filter channels */
@@ -7837,16 +7917,14 @@ export const m = {
     noSearchMatch: () => t("filter", "no_search_match", "No words match your search."),
     /** No words added yet. */
     noWords: () => t("filter", "no_words", "No words added yet."),
-    /** Block words, invites, and links before they reach your members */
-    pageSubtitle: () => t("filter", "page_subtitle", "Block words, invites, and links before they reach your members"),
+    /** Block words, invites and links */
+    pageSubtitle: () => t("filter", "page_subtitle", "Block words, invites and links"),
     /** Remove #{channel} */
     removeChannelAria: (p: { channel: P }) => t("filter", "remove_channel_aria", "Remove #{channel}", p),
     /** Search filtered words */
     searchWordsAria: () => t("filter", "search_words_aria", "Search filtered words"),
     /** Search words */
     searchWordsPlaceholder: () => t("filter", "search_words_placeholder", "Search words"),
-    /** These apply in every channel. Use channel overrides to enable a filter only in specific... */
-    serverWideHint: () => t("filter", "server_wide_hint", "These apply in every channel. Use channel overrides to enable a filter only in specific places."),
     /** Server-wide filters */
     serverWideTitle: () => t("filter", "server_wide_title", "Server-wide filters"),
     /** ban immediately */
@@ -7863,8 +7941,8 @@ export const m = {
     warnFilteredWord: () => t("filter", "warn_filtered_word", "Warn on filtered word"),
     /** Warn on invite link */
     warnInvite: () => t("filter", "warn_invite", "Warn on invite link"),
-    /** Give the member a warning in addition to deleting the message. Warning punishments on t... */
-    warningsHint: () => t("filter", "warnings_hint", "Give the member a warning in addition to deleting the message. Warning punishments on the Moderation page still apply."),
+    /** Also warns the member. Warning punishments still apply. */
+    warningsHint: () => t("filter", "warnings_hint", "Also warns the member. Warning punishments still apply."),
     /** Word filter channels */
     wordChannelsTitle: () => t("filter", "word_channels_title", "Word filter channels"),
     /** Delete messages containing any filtered word */
@@ -7883,8 +7961,8 @@ export const m = {
     conditionalExpectedValue: () => t("forms", "conditional_expected_value", "Expected value:"),
     /** Enter expected value... */
     conditionalExpectedValuePlaceholder: () => t("forms", "conditional_expected_value_placeholder", "Enter expected value..."),
-    /** Control when this question appears to users */
-    conditionalIntro: () => t("forms", "conditional_intro", "Control when this question appears to users"),
+    /** When this question appears */
+    conditionalIntro: () => t("forms", "conditional_intro", "When this question appears"),
     /** Min account age (days): */
     conditionalMinAccountAge: () => t("forms", "conditional_min_account_age", "Min account age (days):"),
     /** e.g., 180 */
@@ -7895,8 +7973,8 @@ export const m = {
     conditionalMinDaysPlaceholder: () => t("forms", "conditional_min_days_placeholder", "e.g., 30"),
     /** Advanced: Multiple Conditions with AND/OR Logic */
     conditionalMultiTitle: () => t("forms", "conditional_multi_title", "Advanced: Multiple Conditions with AND/OR Logic"),
-    /** <strong>Multiple Conditions:</strong> This advanced feature is only available when edit... */
-    conditionalMultiUnavailable: () => t("forms", "conditional_multi_unavailable", "<strong>Multiple Conditions:</strong> This advanced feature is only available when editing existing forms. Save the form first, then edit the question to add multiple conditions with AND/OR logic."),
+    /** <strong>Multiple Conditions:</strong> Save the form first, then edit the question to ad... */
+    conditionalMultiUnavailable: () => t("forms", "conditional_multi_unavailable", "<strong>Multiple Conditions:</strong> Save the form first, then edit the question to add them."),
     /** User must be boosting server */
     conditionalMustBoost: () => t("forms", "conditional_must_boost", "User must be boosting server"),
     /** User must have Discord Nitro */
@@ -7907,8 +7985,8 @@ export const m = {
     conditionalNotRequired: () => t("forms", "conditional_not_required", "Not conditionally required"),
     /** Operator: */
     conditionalOperator: () => t("forms", "conditional_operator", "Operator:"),
-    /** Question will only show to users with this permission */
-    conditionalPermissionHint: () => t("forms", "conditional_permission_hint", "Question will only show to users with this permission"),
+    /** Only shown to users with this permission */
+    conditionalPermissionHint: () => t("forms", "conditional_permission_hint", "Only shown to users with this permission"),
     /** <strong>Example:</strong> "Thanks {first}, what's your {second} experience level?" */
     conditionalPipingExample: (p: { first: P; second: P }) => t("forms", "conditional_piping_example", "<strong>Example:</strong> \"Thanks {first}, what's your {second} experience level?\"", p),
     /** Use {first}, {second}, etc. in question text to insert previous answers */
@@ -7917,8 +7995,8 @@ export const m = {
     conditionalPipingTitle: () => t("forms", "conditional_piping_title", "Answer Piping"),
     /** Q{number}: {text} */
     conditionalQuestionOption: (p: { number: P; text: P }) => t("forms", "conditional_question_option", "Q{number}: {text}", p),
-    /** Make this question required only when a condition is met */
-    conditionalRequiredIntro: () => t("forms", "conditional_required_intro", "Make this question required only when a condition is met"),
+    /** Required only when a condition is met */
+    conditionalRequiredIntro: () => t("forms", "conditional_required_intro", "Required only when a condition is met"),
     /** Conditional Required */
     conditionalRequiredTitle: () => t("forms", "conditional_required_title", "Conditional Required"),
     /** Required when question: */
@@ -7977,8 +8055,8 @@ export const m = {
     editEditDetails: () => t("forms", "edit_edit_details", "Edit Question Details"),
     /** Edit Question */
     editEditQuestion: () => t("forms", "edit_edit_question", "Edit Question"),
-    /** Nothing on this page yet. Anything you add lands here. */
-    editEmptyPage: () => t("forms", "edit_empty_page", "Nothing on this page yet. Anything you add lands here."),
+    /** Nothing on this page yet */
+    editEmptyPage: () => t("forms", "edit_empty_page", "Nothing on this page yet"),
     /** Enter your question... */
     editEnterYourQuestionPlaceholder: () => t("forms", "edit_enter_your_question_placeholder", "Enter your question..."),
     /** Failed to update form */
@@ -8003,10 +8081,10 @@ export const m = {
     editNoMaximumPlaceholder: () => t("forms", "edit_no_maximum_placeholder", "No maximum"),
     /** No minimum */
     editNoMinimumPlaceholder: () => t("forms", "edit_no_minimum_placeholder", "No minimum"),
-    /** No options yet. Click "Add Option" to create choices. */
-    editNoOptions: () => t("forms", "edit_no_options", "No options yet. Click \"Add Option\" to create choices."),
-    /** No questions yet. Click "Add Question" to get started. */
-    editNoQuestions: () => t("forms", "edit_no_questions", "No questions yet. Click \"Add Question\" to get started."),
+    /** No options added */
+    editNoOptions: () => t("forms", "edit_no_options", "No options added"),
+    /** No questions yet */
+    editNoQuestions: () => t("forms", "edit_no_questions", "No questions yet"),
     /** Number Validation */
     editNumberValidation: () => t("forms", "edit_number_validation", "Number Validation"),
     /** Excessive combining characters were removed from option text */
@@ -8141,8 +8219,8 @@ export const m = {
     listCreateFirst: () => t("forms", "list_create_first", "Create Your First Form"),
     /** Draft */
     listDraft: () => t("forms", "list_draft", "Draft"),
-    /** Create your first form to start collecting responses from your community */
-    listEmptyBody: () => t("forms", "list_empty_body", "Create your first form to start collecting responses from your community"),
+    /** Create a form to start collecting responses */
+    listEmptyBody: () => t("forms", "list_empty_body", "Create a form to start collecting responses"),
     /** No forms yet */
     listEmptyTitle: () => t("forms", "list_empty_title", "No forms yet"),
     /** Loading forms... */
@@ -8243,8 +8321,8 @@ export const m = {
     pageBarTitleLabel: () => t("forms", "page_bar_title_label", "Page title"),
     /** Page title, shown above its questions */
     pageBarTitlePlaceholder: () => t("forms", "page_bar_title_placeholder", "Page title, shown above its questions"),
-    /** Are you sure you want to delete "{name}"? This will delete all responses. */
-    pageConfirmDelete: (p: { name: P }) => t("forms", "page_confirm_delete", "Are you sure you want to delete \"{name}\"? This will delete all responses.", p),
+    /** Delete "{name}" and all its responses? */
+    pageConfirmDelete: (p: { name: P }) => t("forms", "page_confirm_delete", "Delete \"{name}\" and all its responses?", p),
     /** Could not copy automatically, select the link and copy it */
     pageErrorCopyFailed: () => t("forms", "page_error_copy_failed", "Could not copy automatically, select the link and copy it"),
     /** Failed to delete form */
@@ -8297,20 +8375,20 @@ export const m = {
     pageNotifyPublished: () => t("forms", "page_notify_published", "Form published"),
     /** Close share modal */
     pageShareCloseAria: () => t("forms", "page_share_close_aria", "Close share modal"),
-    /** This link is permanent and reusable. Share it anywhere - clicking "Copy" again won't in... */
-    pageShareHint: () => t("forms", "page_share_hint", "This link is permanent and reusable. Share it anywhere - clicking \"Copy\" again won't invalidate it."),
+    /** This link is permanent and reusable. */
+    pageShareHint: () => t("forms", "page_share_hint", "This link is permanent and reusable."),
     /** Share Link */
     pageShareLinkLabel: () => t("forms", "page_share_link_label", "Share Link"),
     /** Share Form */
     pageShareTitle: () => t("forms", "page_share_title", "Share Form"),
-    /** Create and manage custom forms for your community */
-    pageSubtitle: () => t("forms", "page_subtitle", "Create and manage custom forms for your community"),
+    /** Custom forms for your community */
+    pageSubtitle: () => t("forms", "page_subtitle", "Custom forms for your community"),
     /** Responses ({count}) */
     pageTabResponsesPending: (p: { count: P }) => t("forms", "page_tab_responses_pending", "Responses ({count})", p),
     /** Failed to verify administrator permissions */
     publicAdminVerifyFailed: () => t("forms", "public_admin_verify_failed", "Failed to verify administrator permissions"),
-    /** This form accepts <strong>anonymous submissions</strong>. Your Discord login is require... */
-    publicAnonymousIntro: () => t("forms", "public_anonymous_intro", "This form accepts <strong>anonymous submissions</strong>. Your Discord login is required to verify guild membership and prevent spam, but your identity <strong>will not be stored</strong>."),
+    /** This form accepts <strong>anonymous submissions</strong>. You log in with Discord to ve... */
+    publicAnonymousIntro: () => t("forms", "public_anonymous_intro", "This form accepts <strong>anonymous submissions</strong>. You log in with Discord to verify membership, but your identity <strong>will not be stored</strong>."),
     /** Anonymous Submission */
     publicAnonymousSubmission: () => t("forms", "public_anonymous_submission", "Anonymous Submission"),
     /** We could not load your answers. Try the link in your submission again. */
@@ -8351,8 +8429,8 @@ export const m = {
     publicEditLinkInvalid: () => t("forms", "public_edit_link_invalid", "That edit link is not valid any more"),
     /** This response can no longer be changed */
     publicEditUnavailable: () => t("forms", "public_edit_unavailable", "This response can no longer be changed"),
-    /** Failed to verify eligibility. Please try again later. */
-    publicEligibilityFailed: () => t("forms", "public_eligibility_failed", "Failed to verify eligibility. Please try again later."),
+    /** Failed to verify eligibility. Try again later. */
+    publicEligibilityFailed: () => t("forms", "public_eligibility_failed", "Failed to verify eligibility. Try again later."),
     /** From **{server}** */
     publicEmbedFrom: (p: { server: P }) => t("forms", "public_embed_from", "From **{server}**", p),
     /** Open form */
@@ -8397,16 +8475,16 @@ export const m = {
     publicFixErrorsOne: (p: { count: P }) => t("forms", "public_fix_errors_one", "Please fix {count} error highlighted below", p),
     /** Please fix {count} errors highlighted below */
     publicFixErrorsOther: (p: { count: P }) => t("forms", "public_fix_errors_other", "Please fix {count} errors highlighted below", p),
-    /** Form not found. It may have been deleted or the link may be incorrect. */
-    publicFormNotFound: () => t("forms", "public_form_not_found", "Form not found. It may have been deleted or the link may be incorrect."),
+    /** Form not found. It may have been deleted. */
+    publicFormNotFound: () => t("forms", "public_form_not_found", "Form not found. It may have been deleted."),
     /** If approved, you will be automatically unbanned */
     publicIfApprovedYouWillBe: () => t("forms", "public_if_approved_you_will_be", "If approved, you will be automatically unbanned"),
     /** If approved, you'll receive an invite link to join the server */
     publicIfApprovedYoullReceiveAn: () => t("forms", "public_if_approved_youll_receive_an", "If approved, you'll receive an invite link to join the server"),
     /** Join Application Form */
     publicJoinApplicationForm: () => t("forms", "public_join_application_form", "Join Application Form"),
-    /** This form link is invalid or has expired. Please request a new link from the server adm... */
-    publicLinkInvalid: () => t("forms", "public_link_invalid", "This form link is invalid or has expired. Please request a new link from the server administrator."),
+    /** This form link is invalid or expired. Ask the server administrator for a new one. */
+    publicLinkInvalid: () => t("forms", "public_link_invalid", "This form link is invalid or expired. Ask the server administrator for a new one."),
     /** {summary} Your answers are submitted anonymously. */
     publicMetaAnonymous: (p: { summary: P }) => t("forms", "public_meta_anonymous", "{summary} Your answers are submitted anonymously.", p),
     /** Fill out this form */
@@ -8423,12 +8501,12 @@ export const m = {
     publicPageAnnouncement: (p: { current: P; total: P }) => t("forms", "public_page_announcement", "Page {current} of {total}", p),
     /** Page {current} of {total}: {heading} */
     publicPageAnnouncementTitled: (p: { current: P; heading: P; total: P }) => t("forms", "public_page_announcement_titled", "Page {current} of {total}: {heading}", p),
-    /** Please be honest and provide as much detail as possible in your responses. */
-    publicPleaseBeHonestAndProvide: () => t("forms", "public_please_be_honest_and_provide", "Please be honest and provide as much detail as possible in your responses."),
-    /** Please provide accurate information to help us process your application. */
-    publicPleaseProvideAccurateInformationTo: () => t("forms", "public_please_provide_accurate_information_to", "Please provide accurate information to help us process your application."),
-    /** Please review your responses before submitting. Click "Edit" to make changes. */
-    publicPleaseReviewYourResponsesBefore: () => t("forms", "public_please_review_your_responses_before", "Please review your responses before submitting. Click \"Edit\" to make changes."),
+    /** Please answer honestly and in detail. */
+    publicPleaseBeHonestAndProvide: () => t("forms", "public_please_be_honest_and_provide", "Please answer honestly and in detail."),
+    /** Please provide accurate information. */
+    publicPleaseProvideAccurateInformationTo: () => t("forms", "public_please_provide_accurate_information_to", "Please provide accurate information."),
+    /** Review your responses before submitting. */
+    publicPleaseReviewYourResponsesBefore: () => t("forms", "public_please_review_your_responses_before", "Review your responses before submitting."),
     /** Prevent spam and abuse */
     publicPreventSpamAndAbuse: () => t("forms", "public_prevent_spam_and_abuse", "Prevent spam and abuse"),
     /** Preview mode is only available to server administrators */
@@ -8443,8 +8521,8 @@ export const m = {
     publicProgressPaged: (p: { answered: P; current: P; questions: P; total: P }) => t("forms", "public_progress_paged", "Page {current} of {total}, {answered} of {questions} answered", p),
     /** Protect potentially sensitive information */
     publicProtectPotentiallySensitiveInformation: () => t("forms", "public_protect_potentially_sensitive_information", "Protect potentially sensitive information"),
-    /** Questions with errors are highlighted in red. Scroll down to see them. */
-    publicQuestionsWithErrorsAreHighlighted: () => t("forms", "public_questions_with_errors_are_highlighted", "Questions with errors are highlighted in red. Scroll down to see them."),
+    /** Questions with errors are highlighted in red. */
+    publicQuestionsWithErrorsAreHighlighted: () => t("forms", "public_questions_with_errors_are_highlighted", "Questions with errors are highlighted in red."),
     /** {count} / {max} responses */
     publicResponseLimit: (p: { count: P; max: P }) => t("forms", "public_response_limit", "{count} / {max} responses", p),
     /** You can try again in about {time} */
@@ -8471,10 +8549,10 @@ export const m = {
     publicSuccessUpdated: () => t("forms", "public_success_updated", "Answers updated"),
     /** The reviewers keep a copy of what you wrote before, so they can see what changed. */
     publicTheReviewersKeepACopy: () => t("forms", "public_the_reviewers_keep_a_copy", "The reviewers keep a copy of what you wrote before, so they can see what changed."),
-    /** This is a ban appeal form. Your submission will be reviewed by the moderation team. If ... */
-    publicThisIsABanAppeal: () => t("forms", "public_this_is_a_ban_appeal", "This is a ban appeal form. Your submission will be reviewed by the moderation team. If approved, you will be automatically unbanned from the server."),
-    /** This is a join application form. Your submission will be reviewed by the moderation tea... */
-    publicThisIsAJoinApplication: () => t("forms", "public_this_is_a_join_application", "This is a join application form. Your submission will be reviewed by the moderation team. If approved, you'll receive an invite link to join the server with pre-assigned roles."),
+    /** This is a ban appeal form. If approved, you will be unbanned automatically. */
+    publicThisIsABanAppeal: () => t("forms", "public_this_is_a_ban_appeal", "This is a ban appeal form. If approved, you will be unbanned automatically."),
+    /** This is a join application form. If approved, you'll receive an invite to join the server. */
+    publicThisIsAJoinApplication: () => t("forms", "public_this_is_a_join_application", "This is a join application form. If approved, you'll receive an invite to join the server."),
     /** {title} - Mewdeko */
     publicTitle: (p: { title: P }) => t("forms", "public_title", "{title} - Mewdeko", p),
     /** Verify you're a member of the server */
@@ -8503,8 +8581,8 @@ export const m = {
     publicYourApplicationWillBeReviewed: () => t("forms", "public_your_application_will_be_reviewed", "Your application will be reviewed by the moderation team"),
     /** Your assigned roles will be applied automatically when you join */
     publicYourAssignedRolesWillBe: () => t("forms", "public_your_assigned_roles_will_be", "Your assigned roles will be applied automatically when you join"),
-    /** Your Discord login is used only for verification and is not saved with your submission. */
-    publicYourDiscordLoginIsUsed: () => t("forms", "public_your_discord_login_is_used", "Your Discord login is used only for verification and is not saved with your submission."),
+    /** Your Discord login is only used for verification. */
+    publicYourDiscordLoginIsUsed: () => t("forms", "public_your_discord_login_is_used", "Your Discord login is only used for verification."),
     /** ✗ Your IP address */
     publicYourIpAddress: () => t("forms", "public_your_ip_address", "✗ Your IP address"),
     /** ✗ Your user ID */
@@ -8537,8 +8615,8 @@ export const m = {
     queueEdited: () => t("forms", "queue_edited", "Edited"),
     /** No responses yet */
     queueEmpty: () => t("forms", "queue_empty", "No responses yet"),
-    /** Responses will show up here as people submit them. */
-    queueEmptyHint: () => t("forms", "queue_empty_hint", "Responses will show up here as people submit them."),
+    /** Responses appear here */
+    queueEmptyHint: () => t("forms", "queue_empty_hint", "Responses appear here"),
     /** Nothing {status} */
     queueEmptyStatus: (p: { status: P }) => t("forms", "queue_empty_status", "Nothing {status}", p),
     /** Try a different filter. */
@@ -8603,210 +8681,210 @@ export const m = {
     reviewTitle: () => t("forms", "review_title", "Review Form Responses"),
     /** Submit anonymously */
     settingsAllowAnonymous: () => t("forms", "settings_allow_anonymous", "Submit anonymously"),
-    /** Answers are stored with no submitter. Nobody can be messaged, given roles, or replied to. */
-    settingsAllowAnonymousHint: () => t("forms", "settings_allow_anonymous_hint", "Answers are stored with no submitter. Nobody can be messaged, given roles, or replied to."),
+    /** No submitter is stored, so nobody can be messaged or given roles. */
+    settingsAllowAnonymousHint: () => t("forms", "settings_allow_anonymous_hint", "No submitter is stored, so nobody can be messaged or given roles."),
     /** Allow people outside the server */
     settingsAllowExternal: () => t("forms", "settings_allow_external", "Allow people outside the server"),
-    /** Lets anyone with the link submit, even if they have not joined. */
-    settingsAllowExternalHint: () => t("forms", "settings_allow_external_hint", "Lets anyone with the link submit, even if they have not joined."),
+    /** Anyone with the link can submit. */
+    settingsAllowExternalHint: () => t("forms", "settings_allow_external_hint", "Anyone with the link can submit."),
     /** Allow more than one answer per person */
     settingsAllowMultiple: () => t("forms", "settings_allow_multiple", "Allow more than one answer per person"),
-    /** Off means one submission each. Turn on for things like weekly check-ins. */
-    settingsAllowMultipleHint: () => t("forms", "settings_allow_multiple_hint", "Off means one submission each. Turn on for things like weekly check-ins."),
+    /** Off means one submission each. */
+    settingsAllowMultipleHint: () => t("forms", "settings_allow_multiple_hint", "Off means one submission each."),
     /** Let rejected people try again */
     settingsAllowResubmit: () => t("forms", "settings_allow_resubmit", "Let rejected people try again"),
-    /** A rejected answer no longer counts as their one submission, so they can correct it and ... */
-    settingsAllowResubmitHint: () => t("forms", "settings_allow_resubmit_hint", "A rejected answer no longer counts as their one submission, so they can correct it and resend."),
+    /** A rejected answer stops counting as their submission. */
+    settingsAllowResubmitHint: () => t("forms", "settings_allow_resubmit_hint", "A rejected answer stops counting as their submission."),
     /** Announce the opening in */
     settingsAnnounceChannel: () => t("forms", "settings_announce_channel", "Announce the opening in"),
-    /** Posts a message when the opening time passes, or immediately if you publish with no ope... */
-    settingsAnnounceChannelHint: () => t("forms", "settings_announce_channel_hint", "Posts a message when the opening time passes, or immediately if you publish with no opening time."),
+    /** Posted at the opening time, or on publish if there is none. */
+    settingsAnnounceChannelHint: () => t("forms", "settings_announce_channel_hint", "Posted at the opening time, or on publish if there is none."),
     /** Announcement text */
     settingsAnnounceMessage: () => t("forms", "settings_announce_message", "Announcement text"),
-    /** The body of the launch message. The closing time is added as a countdown. */
-    settingsAnnounceMessageHint: () => t("forms", "settings_announce_message_hint", "The body of the launch message. The closing time is added as a countdown."),
+    /** The closing time is added as a countdown. */
+    settingsAnnounceMessageHint: () => t("forms", "settings_announce_message_hint", "The closing time is added as a countdown."),
     /** Ping with the announcement */
     settingsAnnounceRole: () => t("forms", "settings_announce_role", "Ping with the announcement"),
-    /** Mentioned in the launch message. Nothing else pings this role. */
-    settingsAnnounceRoleHint: () => t("forms", "settings_announce_role_hint", "Mentioned in the launch message. Nothing else pings this role."),
+    /** Mentioned in the launch message. */
+    settingsAnnounceRoleHint: () => t("forms", "settings_announce_role_hint", "Mentioned in the launch message."),
     /** Announced {date}. Changing the opening time will not send it again. */
     settingsAnnounced: (p: { date: P }) => t("forms", "settings_announced", "Announced {date}. Changing the opening time will not send it again.", p),
-    /** This form is anonymous, so it records nobody to give roles to. The role settings below ... */
-    settingsAnonymousRolesNote: () => t("forms", "settings_anonymous_roles_note", "This form is anonymous, so it records nobody to give roles to. The role settings below are hidden until you turn that off."),
+    /** Role settings are hidden while the form is anonymous. */
+    settingsAnonymousRolesNote: () => t("forms", "settings_anonymous_roles_note", "Role settings are hidden while the form is anonymous."),
     /** Anyone in the server */
     settingsAnyoneInTheServerPlaceholder: () => t("forms", "settings_anyone_in_the_server_placeholder", "Anyone in the server"),
     /** Wait after the ban */
     settingsAppealDelay: () => t("forms", "settings_appeal_delay", "Wait after the ban"),
-    /** Days somebody must wait after being banned before they may appeal at all. */
-    settingsAppealDelayHint: () => t("forms", "settings_appeal_delay_hint", "Days somebody must wait after being banned before they may appeal at all."),
+    /** Days to wait after the ban before appealing. */
+    settingsAppealDelayHint: () => t("forms", "settings_appeal_delay_hint", "Days to wait after the ban before appealing."),
     /** Appeal limits */
     settingsAppealLimitsTitle: () => t("forms", "settings_appeal_limits_title", "Appeal limits"),
     /** Add on approval */
     settingsApprovalAddRoles: () => t("forms", "settings_approval_add_roles", "Add on approval"),
-    /** Given to the person when their answer is approved. */
-    settingsApprovalAddRolesHint: () => t("forms", "settings_approval_add_roles_hint", "Given to the person when their answer is approved."),
+    /** Given when their answer is approved. */
+    settingsApprovalAddRolesHint: () => t("forms", "settings_approval_add_roles_hint", "Given when their answer is approved."),
     /** Remove on approval */
     settingsApprovalRemoveRoles: () => t("forms", "settings_approval_remove_roles", "Remove on approval"),
-    /** Taken away when their answer is approved. The waiting role above is removed anyway. */
-    settingsApprovalRemoveRolesHint: () => t("forms", "settings_approval_remove_roles_hint", "Taken away when their answer is approved. The waiting role above is removed anyway."),
+    /** The waiting role is removed anyway. */
+    settingsApprovalRemoveRolesHint: () => t("forms", "settings_approval_remove_roles_hint", "The waiting role is removed anyway."),
     /** Approve button emote */
     settingsApproveEmote: () => t("forms", "settings_approve_emote", "Approve button emote"),
-    /** Shown on the approve button. Empty uses the server default. */
-    settingsApproveEmoteHint: () => t("forms", "settings_approve_emote_hint", "Shown on the approve button. Empty uses the server default."),
+    /** Empty uses the server default. */
+    settingsApproveEmoteHint: () => t("forms", "settings_approve_emote_hint", "Empty uses the server default."),
     /** Roles waiting for them on join */
     settingsAutoApproveRoles: () => t("forms", "settings_auto_approve_roles", "Roles waiting for them on join"),
-    /** Applied when the accepted person actually joins, not when they are approved. */
-    settingsAutoApproveRolesHint: () => t("forms", "settings_auto_approve_roles_hint", "Applied when the accepted person actually joins, not when they are approved."),
+    /** Applied when they join, not on approval. */
+    settingsAutoApproveRolesHint: () => t("forms", "settings_auto_approve_roles_hint", "Applied when they join, not on approval."),
     /** Ban appeals always go through review. */
     settingsBanAppealsReview: () => t("forms", "settings_ban_appeals_review", "Ban appeals always go through review."),
-    /** What this form is called and where its answers go. */
-    settingsBasicsSummary: () => t("forms", "settings_basics_summary", "What this form is called and where its answers go."),
+    /** Name and answer destination. */
+    settingsBasicsSummary: () => t("forms", "settings_basics_summary", "Name and answer destination."),
     /** One rejection is final */
     settingsBlockReappeal: () => t("forms", "settings_block_reappeal", "One rejection is final"),
-    /** A rejected appeal is the end of it. Overrides the two limits below. */
-    settingsBlockReappealHint: () => t("forms", "settings_block_reappeal_hint", "A rejected appeal is the end of it. Overrides the two limits below."),
+    /** Overrides the two limits below. */
+    settingsBlockReappealHint: () => t("forms", "settings_block_reappeal_hint", "Overrides the two limits below."),
     /** Do not announce */
     settingsDoNotAnnouncePlaceholder: () => t("forms", "settings_do_not_announce_placeholder", "Do not announce"),
     /** ✅ server default */
     settingsEmoteServerDefault: () => t("forms", "settings_emote_server_default", "✅ server default"),
     /** Closes at */
     settingsExpiresAt: () => t("forms", "settings_expires_at", "Closes at"),
-    /** The form stops accepting answers at this moment. */
-    settingsExpiresAtHint: () => t("forms", "settings_expires_at_hint", "The form stops accepting answers at this moment."),
-    /** Shown under the title, and used as the preview when the link is pasted into Discord. */
-    settingsFormDescriptionHint: () => t("forms", "settings_form_description_hint", "Shown under the title, and used as the preview when the link is pasted into Discord."),
-    /** Shown as the title of the form and in your list of forms. */
-    settingsFormNameHint: () => t("forms", "settings_form_name_hint", "Shown as the title of the form and in your list of forms."),
+    /** The form stops accepting answers then. */
+    settingsExpiresAtHint: () => t("forms", "settings_expires_at_hint", "The form stops accepting answers then."),
+    /** Shown under the title and in link previews. */
+    settingsFormDescriptionHint: () => t("forms", "settings_form_description_hint", "Shown under the title and in link previews."),
+    /** Shown as the form title. */
+    settingsFormNameHint: () => t("forms", "settings_form_name_hint", "Shown as the form title."),
     /** Form type */
     settingsFormType: () => t("forms", "settings_form_type", "Form type"),
-    /** Decides who may submit. This cannot be changed afterwards. */
-    settingsFormTypeHintCreate: () => t("forms", "settings_form_type_hint_create", "Decides who may submit. This cannot be changed afterwards."),
-    /** Decides who may submit. Fixed once the form is created. */
-    settingsFormTypeHintEdit: () => t("forms", "settings_form_type_hint_edit", "Decides who may submit. Fixed once the form is created."),
+    /** Cannot be changed after creating the form. */
+    settingsFormTypeHintCreate: () => t("forms", "settings_form_type_hint_create", "Cannot be changed after creating the form."),
+    /** Fixed once the form is created. */
+    settingsFormTypeHintEdit: () => t("forms", "settings_form_type_hint_edit", "Fixed once the form is created."),
     /** Failed to load form settings */
     settingsGuildLoadFailed: () => t("forms", "settings_guild_load_failed", "Failed to load form settings"),
     /** Loading settings */
     settingsGuildLoading: () => t("forms", "settings_guild_loading", "Loading settings"),
     /** Review buttons */
     settingsGuildReviewButtons: () => t("forms", "settings_guild_review_buttons", "Review buttons"),
-    /** The emotes on the approve and reject buttons posted with each submission. Leave either ... */
-    settingsGuildReviewButtonsHint: () => t("forms", "settings_guild_review_buttons_hint", "The emotes on the approve and reject buttons posted with each submission. Leave either empty for a plain tick or cross."),
+    /** Leave empty for a plain tick or cross. */
+    settingsGuildReviewButtonsHint: () => t("forms", "settings_guild_review_buttons_hint", "Leave empty for a plain tick or cross."),
     /** Failed to save form settings */
     settingsGuildSaveFailed: () => t("forms", "settings_guild_save_failed", "Failed to save form settings"),
     /** Review button emotes saved */
     settingsGuildSaved: () => t("forms", "settings_guild_saved", "Review button emotes saved"),
-    /** Applied to every form here unless a form sets its own. */
-    settingsGuildSubtitle: () => t("forms", "settings_guild_subtitle", "Applied to every form here unless a form sets its own."),
+    /** Applies to every form unless it sets its own. */
+    settingsGuildSubtitle: () => t("forms", "settings_guild_subtitle", "Applies to every form unless it sets its own."),
     /** Use the built-in pair */
     settingsGuildUseBuiltin: () => t("forms", "settings_guild_use_builtin", "Use the built-in pair"),
-    /** How often somebody may appeal, and how long they must wait. */
-    settingsHowOftenSomebodyMayAppealSummary: () => t("forms", "settings_how_often_somebody_may_appeal_summary", "How often somebody may appeal, and how long they must wait."),
-    /** How the invite works for people accepted into the server. */
-    settingsHowTheInviteWorksForSummary: () => t("forms", "settings_how_the_invite_works_for_summary", "How the invite works for people accepted into the server."),
+    /** Appeal count and wait time. */
+    settingsHowOftenSomebodyMayAppealSummary: () => t("forms", "settings_how_often_somebody_may_appeal_summary", "Appeal count and wait time."),
+    /** Invite for accepted people. */
+    settingsHowTheInviteWorksForSummary: () => t("forms", "settings_how_the_invite_works_for_summary", "Invite for accepted people."),
     /** Invite expires after (seconds) */
     settingsInviteMaxAge: () => t("forms", "settings_invite_max_age", "Invite expires after (seconds)"),
-    /** How long the accepted person has to use it. 86400 is a day. */
-    settingsInviteMaxAgeHint: () => t("forms", "settings_invite_max_age_hint", "How long the accepted person has to use it. 86400 is a day."),
+    /** 86400 is a day. */
+    settingsInviteMaxAgeHint: () => t("forms", "settings_invite_max_age_hint", "86400 is a day."),
     /** Times the invite can be used */
     settingsInviteMaxUses: () => t("forms", "settings_invite_max_uses", "Times the invite can be used"),
-    /** Usually one, so the invite cannot be passed around. */
-    settingsInviteMaxUsesHint: () => t("forms", "settings_invite_max_uses_hint", "Usually one, so the invite cannot be passed around."),
+    /** Usually one. */
+    settingsInviteMaxUsesHint: () => t("forms", "settings_invite_max_uses_hint", "Usually one."),
     /** Accepting responses */
     settingsIsActive: () => t("forms", "settings_is_active", "Accepting responses"),
-    /** Turn off to close the form without deleting it. */
-    settingsIsActiveHint: () => t("forms", "settings_is_active_hint", "Turn off to close the form without deleting it."),
+    /** Turn off to close the form. */
+    settingsIsActiveHint: () => t("forms", "settings_is_active_hint", "Turn off to close the form."),
     /** A draft is not reachable by its link, however it is shared. */
     settingsIsDraftHint: () => t("forms", "settings_is_draft_hint", "A draft is not reachable by its link, however it is shared."),
     /** Join applications always go through review. */
     settingsJoinApplicationsReview: () => t("forms", "settings_join_applications_review", "Join applications always go through review."),
-    /** Limits on who may open and send this form. */
-    settingsLimitsOnWhoMayOpenSummary: () => t("forms", "settings_limits_on_who_may_open_summary", "Limits on who may open and send this form."),
+    /** Who may open and send this form. */
+    settingsLimitsOnWhoMayOpenSummary: () => t("forms", "settings_limits_on_who_may_open_summary", "Who may open and send this form."),
     /** Manage Server only */
     settingsManageServerOnlyPlaceholder: () => t("forms", "settings_manage_server_only_placeholder", "Manage Server only"),
     /** Appeals allowed */
     settingsMaxAppeals: () => t("forms", "settings_max_appeals", "Appeals allowed"),
-    /** How many rejected appeals before they are locked out for good. */
-    settingsMaxAppealsHint: () => t("forms", "settings_max_appeals_hint", "How many rejected appeals before they are locked out for good."),
+    /** Rejected appeals before a permanent lockout. */
+    settingsMaxAppealsHint: () => t("forms", "settings_max_appeals_hint", "Rejected appeals before a permanent lockout."),
     /** Total responses accepted */
     settingsMaxResponses: () => t("forms", "settings_max_responses", "Total responses accepted"),
-    /** The form closes itself once this many people have answered, across everyone. */
-    settingsMaxResponsesHint: () => t("forms", "settings_max_responses_hint", "The form closes itself once this many people have answered, across everyone."),
+    /** The form closes after this many responses. */
+    settingsMaxResponsesHint: () => t("forms", "settings_max_responses_hint", "The form closes after this many responses."),
     /** Minimum Discord account age */
     settingsMinAccountAge: () => t("forms", "settings_min_account_age", "Minimum Discord account age"),
-    /** Turns away accounts newer than this many days. Useful against throwaway accounts. */
-    settingsMinAccountAgeHint: () => t("forms", "settings_min_account_age_hint", "Turns away accounts newer than this many days. Useful against throwaway accounts."),
+    /** Turns away accounts newer than this many days. */
+    settingsMinAccountAgeHint: () => t("forms", "settings_min_account_age_hint", "Turns away accounts newer than this many days."),
     /** No wait */
     settingsNoWaitPlaceholder: () => t("forms", "settings_no_wait_placeholder", "No wait"),
     /** Ping when a response arrives */
     settingsNotifyRole: () => t("forms", "settings_notify_role", "Ping when a response arrives"),
-    /** Mentioned in the channel above each time somebody answers, so reviewers notice. */
-    settingsNotifyRoleHint: () => t("forms", "settings_notify_role_hint", "Mentioned in the channel above each time somebody answers, so reviewers notice."),
+    /** Mentioned in the channel above on each response. */
+    settingsNotifyRoleHint: () => t("forms", "settings_notify_role_hint", "Mentioned in the channel above on each response."),
     /** On approval */
     settingsOnApproval: () => t("forms", "settings_on_approval", "On approval"),
     /** On rejection */
     settingsOnRejection: () => t("forms", "settings_on_rejection", "On rejection"),
     /** Opens at */
     settingsOpensAt: () => t("forms", "settings_opens_at", "Opens at"),
-    /** The form turns people away until this moment. Leave empty to open as soon as it is publ... */
-    settingsOpensAtHint: () => t("forms", "settings_opens_at_hint", "The form turns people away until this moment. Leave empty to open as soon as it is published."),
+    /** Leave empty to open on publish. */
+    settingsOpensAtHint: () => t("forms", "settings_opens_at_hint", "Leave empty to open on publish."),
     /** Role while awaiting review */
     settingsPendingRole: () => t("forms", "settings_pending_role", "Role while awaiting review"),
-    /** Held only until the answer is approved or rejected, then removed automatically. */
-    settingsPendingRoleHint: () => t("forms", "settings_pending_role_hint", "Held only until the answer is approved or rejected, then removed automatically."),
+    /** Removed once the answer is approved or rejected. */
+    settingsPendingRoleHint: () => t("forms", "settings_pending_role_hint", "Removed once the answer is approved or rejected."),
     /** Ping nobody */
     settingsPingNobodyPlaceholder: () => t("forms", "settings_ping_nobody_placeholder", "Ping nobody"),
     /** Wait between appeals */
     settingsReappealCooldown: () => t("forms", "settings_reappeal_cooldown", "Wait between appeals"),
-    /** Days after a rejection before they may appeal again. */
-    settingsReappealCooldownHint: () => t("forms", "settings_reappeal_cooldown_hint", "Days after a rejection before they may appeal again."),
+    /** Days to wait after a rejection. */
+    settingsReappealCooldownHint: () => t("forms", "settings_reappeal_cooldown_hint", "Days to wait after a rejection."),
     /** Reject button emote */
     settingsRejectEmote: () => t("forms", "settings_reject_emote", "Reject button emote"),
-    /** Shown on the reject button. Empty uses the server default. */
-    settingsRejectEmoteHint: () => t("forms", "settings_reject_emote_hint", "Shown on the reject button. Empty uses the server default."),
+    /** Empty falls back to the server default. */
+    settingsRejectEmoteHint: () => t("forms", "settings_reject_emote_hint", "Empty falls back to the server default."),
     /** ❌ server default */
     settingsRejectEmoteServerDefault: () => t("forms", "settings_reject_emote_server_default", "❌ server default"),
     /** Add on rejection */
     settingsRejectionAddRoles: () => t("forms", "settings_rejection_add_roles", "Add on rejection"),
-    /** Given to the person when their answer is turned down. */
-    settingsRejectionAddRolesHint: () => t("forms", "settings_rejection_add_roles_hint", "Given to the person when their answer is turned down."),
+    /** Given when their answer is rejected. */
+    settingsRejectionAddRolesHint: () => t("forms", "settings_rejection_add_roles_hint", "Given when their answer is rejected."),
     /** Remove on rejection */
     settingsRejectionRemoveRoles: () => t("forms", "settings_rejection_remove_roles", "Remove on rejection"),
-    /** Taken away when their answer is turned down. */
-    settingsRejectionRemoveRolesHint: () => t("forms", "settings_rejection_remove_roles_hint", "Taken away when their answer is turned down."),
+    /** Removed when their answer is rejected. */
+    settingsRejectionRemoveRolesHint: () => t("forms", "settings_rejection_remove_roles_hint", "Removed when their answer is rejected."),
     /** Answers need approving */
     settingsRequireApproval: () => t("forms", "settings_require_approval", "Answers need approving"),
-    /** Each answer waits for a decision. Without this, answers are simply recorded. */
-    settingsRequireApprovalHint: () => t("forms", "settings_require_approval_hint", "Each answer waits for a decision. Without this, answers are simply recorded."),
+    /** Without this, answers are only recorded. */
+    settingsRequireApprovalHint: () => t("forms", "settings_require_approval_hint", "Without this, answers are only recorded."),
     /** Require a captcha */
     settingsRequireCaptcha: () => t("forms", "settings_require_captcha", "Require a captcha"),
     /** Adds a verification step before answers can be sent. */
     settingsRequireCaptchaHint: () => t("forms", "settings_require_captcha_hint", "Adds a verification step before answers can be sent."),
     /** Role required to submit */
     settingsRequiredRole: () => t("forms", "settings_required_role", "Role required to submit"),
-    /** Only people holding this role can open the form. Everyone else is turned away. */
-    settingsRequiredRoleHint: () => t("forms", "settings_required_role_hint", "Only people holding this role can open the form. Everyone else is turned away."),
+    /** Everyone else is turned away. */
+    settingsRequiredRoleHint: () => t("forms", "settings_required_role_hint", "Everyone else is turned away."),
     /** Who may approve or reject */
     settingsReviewerRole: () => t("forms", "settings_reviewer_role", "Who may approve or reject"),
-    /** Can press the buttons on the submission in Discord. Anyone with Manage Server can regar... */
-    settingsReviewerRoleHint: () => t("forms", "settings_reviewer_role_hint", "Can press the buttons on the submission in Discord. Anyone with Manage Server can regardless."),
+    /** Anyone with Manage Server can regardless. */
+    settingsReviewerRoleHint: () => t("forms", "settings_reviewer_role_hint", "Anyone with Manage Server can regardless."),
     /** Reviewing answers */
     settingsReviewingAnswersTitle: () => t("forms", "settings_reviewing_answers_title", "Reviewing answers"),
-    /** Scheduling, limits, and how often one person may answer. */
-    settingsSchedulingLimitsAndHowOftenSummary: () => t("forms", "settings_scheduling_limits_and_how_often_summary", "Scheduling, limits, and how often one person may answer."),
+    /** Schedule and limits. */
+    settingsSchedulingLimitsAndHowOftenSummary: () => t("forms", "settings_scheduling_limits_and_how_often_summary", "Schedule and limits."),
     /** Staff application */
     settingsStaffApplicationPlaceholder: () => t("forms", "settings_staff_application_placeholder", "Staff application"),
     /** Where answers are posted */
     settingsSubmitChannel: () => t("forms", "settings_submit_channel", "Where answers are posted"),
-    /** Each submission is posted here as an embed. Leave empty to keep answers on the dashboar... */
-    settingsSubmitChannelHint: () => t("forms", "settings_submit_channel_hint", "Each submission is posted here as an embed. Leave empty to keep answers on the dashboard only."),
+    /** Leave empty to keep answers on the dashboard only. */
+    settingsSubmitChannelHint: () => t("forms", "settings_submit_channel_hint", "Leave empty to keep answers on the dashboard only."),
     /** Roles given on submitting */
     settingsSubmitRoles: () => t("forms", "settings_submit_roles", "Roles given on submitting"),
-    /** Granted the moment somebody answers, before anyone reviews it. Useful for a waiting-roo... */
-    settingsSubmitRolesHint: () => t("forms", "settings_submit_roles_hint", "Granted the moment somebody answers, before anyone reviews it. Useful for a waiting-room role."),
+    /** Granted on submitting, before review. */
+    settingsSubmitRolesHint: () => t("forms", "settings_submit_roles_hint", "Granted on submitting, before review."),
     /** Message after submitting */
     settingsSuccessMessage: () => t("forms", "settings_success_message", "Message after submitting"),
-    /** Shown on the confirmation page once someone has sent their answers. */
-    settingsSuccessMessageHint: () => t("forms", "settings_success_message_hint", "Shown on the confirmation page once someone has sent their answers."),
+    /** Shown on the confirmation page. */
+    settingsSuccessMessageHint: () => t("forms", "settings_success_message_hint", "Shown on the confirmation page."),
     /** Tell people what this form is for. */
     settingsTellPeopleWhatThisFormPlaceholder: () => t("forms", "settings_tell_people_what_this_form_placeholder", "Tell people what this form is for."),
     /** Thanks, we have your answers. */
@@ -8819,28 +8897,28 @@ export const m = {
     settingsUnlimitedPlaceholder: () => t("forms", "settings_unlimited_placeholder", "Unlimited"),
     /** Send to a webhook */
     settingsWebhookUrl: () => t("forms", "settings_webhook_url", "Send to a webhook"),
-    /** Also posts each response to this address, for feeding another system. */
-    settingsWebhookUrlHint: () => t("forms", "settings_webhook_url_hint", "Also posts each response to this address, for feeding another system."),
+    /** Also posts each response to this address. */
+    settingsWebhookUrlHint: () => t("forms", "settings_webhook_url_hint", "Also posts each response to this address."),
     /** When it is open */
     settingsWhenItIsOpenTitle: () => t("forms", "settings_when_it_is_open_title", "When it is open"),
     /** When someone submits */
     settingsWhenSomeoneSubmitsTitle: () => t("forms", "settings_when_someone_submits_title", "When someone submits"),
-    /** Whether answers are approved, by whom, and what a decision does. */
-    settingsWhetherAnswersAreApprovedBySummary: () => t("forms", "settings_whether_answers_are_approved_by_summary", "Whether answers are approved, by whom, and what a decision does."),
+    /** Approval, reviewers and decisions. */
+    settingsWhetherAnswersAreApprovedBySummary: () => t("forms", "settings_whether_answers_are_approved_by_summary", "Approval, reviewers and decisions."),
     /** Who can submit */
     settingsWhoCanSubmitTitle: () => t("forms", "settings_who_can_submit_title", "Who can submit"),
-    /** Who gets told, and what the person who answered receives. */
-    settingsWhoGetsToldAndWhatSummary: () => t("forms", "settings_who_gets_told_and_what_summary", "Who gets told, and what the person who answered receives."),
+    /** Notifications and what submitters receive. */
+    settingsWhoGetsToldAndWhatSummary: () => t("forms", "settings_who_gets_told_and_what_summary", "Notifications and what submitters receive."),
     /** Congratulations! Your submission has been approved. */
     statusCheckerApprovedBody: () => t("forms", "status_checker_approved_body", "Congratulations! Your submission has been approved."),
     /** Auto-Refresh */
     statusCheckerAutoRefresh: () => t("forms", "status_checker_auto_refresh", "Auto-Refresh"),
-    /** Automatically check for status updates every 30 seconds */
-    statusCheckerAutoRefreshHint: () => t("forms", "status_checker_auto_refresh_hint", "Automatically check for status updates every 30 seconds"),
+    /** Checks every 30 seconds */
+    statusCheckerAutoRefreshHint: () => t("forms", "status_checker_auto_refresh_hint", "Checks every 30 seconds"),
     /** 💡 Bookmark this page to check your submission status at any time */
     statusCheckerBookmarkTip: () => t("forms", "status_checker_bookmark_tip", "💡 Bookmark this page to check your submission status at any time"),
-    /** You can still correct this while it is waiting to be reviewed. The reviewers keep a cop... */
-    statusCheckerChangeAnswerBody: () => t("forms", "status_checker_change_answer_body", "You can still correct this while it is waiting to be reviewed. The reviewers keep a copy of what you wrote before."),
+    /** You can edit this until it is reviewed. Reviewers keep your earlier version. */
+    statusCheckerChangeAnswerBody: () => t("forms", "status_checker_change_answer_body", "You can edit this until it is reviewed. Reviewers keep your earlier version."),
     /** Need to change an answer? */
     statusCheckerChangeAnswerTitle: () => t("forms", "status_checker_change_answer_title", "Need to change an answer?"),
     /** You changed your answers on {date}. */
@@ -8855,8 +8933,8 @@ export const m = {
     statusCheckerExpiresMinutes: (p: { count: P }) => t("forms", "status_checker_expires_minutes", "Expires in {count} minutes", p),
     /** Expires on {date} */
     statusCheckerExpiresOn: (p: { date: P }) => t("forms", "status_checker_expires_on", "Expires on {date}", p),
-    /** Use this invite link to join the server. Your assigned roles will be automatically appl... */
-    statusCheckerInviteBody: () => t("forms", "status_checker_invite_body", "Use this invite link to join the server. Your assigned roles will be automatically applied when you join!"),
+    /** Use this invite to join the server. Your roles are applied when you join. */
+    statusCheckerInviteBody: () => t("forms", "status_checker_invite_body", "Use this invite to join the server. Your roles are applied when you join."),
     /** This invite has expired. Please contact the server administrators. */
     statusCheckerInviteExpired: () => t("forms", "status_checker_invite_expired", "This invite has expired. Please contact the server administrators."),
     /** Your Server Invite */
@@ -8877,10 +8955,10 @@ export const m = {
     statusCheckerMissingToken: () => t("forms", "status_checker_missing_token", "Missing token in URL."),
     /** Moderator Notes: */
     statusCheckerModeratorNotes: () => t("forms", "status_checker_moderator_notes", "Moderator Notes:"),
-    /** Your submission is awaiting review by the moderation team. You'll be notified once a de... */
-    statusCheckerPendingBody: () => t("forms", "status_checker_pending_body", "Your submission is awaiting review by the moderation team. You'll be notified once a decision is made."),
-    /** 💡 Tip: You can refresh this page or enable auto-refresh to check for updates. */
-    statusCheckerPendingTip: () => t("forms", "status_checker_pending_tip", "💡 Tip: You can refresh this page or enable auto-refresh to check for updates."),
+    /** Your submission is awaiting review. */
+    statusCheckerPendingBody: () => t("forms", "status_checker_pending_body", "Your submission is awaiting review."),
+    /** 💡 Refresh this page or enable auto-refresh to check for updates. */
+    statusCheckerPendingTip: () => t("forms", "status_checker_pending_tip", "💡 Refresh this page or enable auto-refresh to check for updates."),
     /** Refresh Status */
     statusCheckerRefreshStatus: () => t("forms", "status_checker_refresh_status", "Refresh Status"),
     /** Unfortunately, your submission has been rejected. */
@@ -8893,36 +8971,36 @@ export const m = {
     statusCheckerSubmissionsIntro: () => t("forms", "status_checker_submissions_intro", "Everything you have submitted is listed in one place."),
     /** Submission Status */
     statusCheckerTitle: () => t("forms", "status_checker_title", "Submission Status"),
-    /** Your ban appeal has been approved and you have been unbanned from the server. You can n... */
-    statusCheckerUnbannedBody: () => t("forms", "status_checker_unbanned_body", "Your ban appeal has been approved and you have been unbanned from the server. You can now rejoin using a server invite link."),
-    /** If you need help finding an invite link, please contact the server administrators or ch... */
-    statusCheckerUnbannedHelp: () => t("forms", "status_checker_unbanned_help", "If you need help finding an invite link, please contact the server administrators or check the server's public channels."),
+    /** Your ban appeal was approved. You can rejoin with a server invite. */
+    statusCheckerUnbannedBody: () => t("forms", "status_checker_unbanned_body", "Your ban appeal was approved. You can rejoin with a server invite."),
+    /** Need an invite? Contact the server administrators. */
+    statusCheckerUnbannedHelp: () => t("forms", "status_checker_unbanned_help", "Need an invite? Contact the server administrators."),
     /** You Have Been Unbanned */
     statusCheckerUnbannedTitle: () => t("forms", "status_checker_unbanned_title", "You Have Been Unbanned"),
-    /** Your submission is currently being reviewed by a moderator. A decision will be made soon. */
-    statusCheckerUnderReviewBody: () => t("forms", "status_checker_under_review_body", "Your submission is currently being reviewed by a moderator. A decision will be made soon."),
+    /** A moderator is reviewing your submission. */
+    statusCheckerUnderReviewBody: () => t("forms", "status_checker_under_review_body", "A moderator is reviewing your submission."),
     /** Check your form submission status */
     statusDescription: () => t("forms", "status_description", "Check your form submission status"),
     /** Response Status - Mewdeko */
     statusTitle: () => t("forms", "status_title", "Response Status - Mewdeko"),
-    /** Every form you have submitted and where each one stands */
-    submissionsDescription: () => t("forms", "submissions_description", "Every form you have submitted and where each one stands"),
+    /** Your submitted forms */
+    submissionsDescription: () => t("forms", "submissions_description", "Your submitted forms"),
     /** Edited {time} */
     submissionsEditedAt: (p: { time: P }) => t("forms", "submissions_edited_at", "Edited {time}", p),
-    /** Every form you have sent, and where each one stands. */
-    submissionsEveryFormYouHaveSent: () => t("forms", "submissions_every_form_you_have_sent", "Every form you have sent, and where each one stands."),
+    /** Your submitted forms. */
+    submissionsEveryFormYouHaveSent: () => t("forms", "submissions_every_form_you_have_sent", "Your submitted forms."),
     /** All ({count}) */
     submissionsFilterAll: (p: { count: P }) => t("forms", "submissions_filter_all", "All ({count})", p),
-    /** Forms you submit will show up here so you can check on them. */
-    submissionsFormsYouSubmitWillShow: () => t("forms", "submissions_forms_you_submit_will_show", "Forms you submit will show up here so you can check on them."),
+    /** No submissions yet */
+    submissionsFormsYouSubmitWillShow: () => t("forms", "submissions_forms_you_submit_will_show", "No submissions yet"),
     /** Gathering your submissions */
     submissionsGatheringYourSubmissions: () => t("forms", "submissions_gathering_your_submissions", "Gathering your submissions"),
     /** My submissions */
     submissionsHeading: () => t("forms", "submissions_heading", "My submissions"),
     /** Failed to load your submissions */
     submissionsLoadFailed: () => t("forms", "submissions_load_failed", "Failed to load your submissions"),
-    /** Responses sent anonymously are stored without a submitter, so they do not appear here. ... */
-    submissionsResponsesSentAnonymouslyAreStored: () => t("forms", "submissions_responses_sent_anonymously_are_stored", "Responses sent anonymously are stored without a submitter, so they do not appear here. The status link you were given at the time is the only way back to one."),
+    /** Anonymous responses do not appear here. Use the status link you were given. */
+    submissionsResponsesSentAnonymouslyAreStored: () => t("forms", "submissions_responses_sent_anonymously_are_stored", "Anonymous responses do not appear here. Use the status link you were given."),
     /** Reviewed {time} */
     submissionsReviewedAt: (p: { time: P }) => t("forms", "submissions_reviewed_at", "Reviewed {time}", p),
     /** Submitted {time} */
@@ -8937,8 +9015,8 @@ export const m = {
     versionComparing: () => t("forms", "version_comparing", "Comparing"),
     /** (current) */
     versionCurrent: () => t("forms", "version_current", "(current)"),
-    /** Nothing saved yet. A version is kept every time this form is saved. */
-    versionEmpty: () => t("forms", "version_empty", "Nothing saved yet. A version is kept every time this form is saved."),
+    /** Nothing saved yet */
+    versionEmpty: () => t("forms", "version_empty", "Nothing saved yet"),
     /** The last {count} saves are kept. Older ones are dropped. */
     versionKeptNote: (p: { count: P }) => t("forms", "version_kept_note", "The last {count} saves are kept. Older ones are dropped.", p),
     /** Failed to load version history */
@@ -8953,8 +9031,8 @@ export const m = {
     versionRestoreButton: () => t("forms", "version_restore_button", "Restore this version"),
     /** Failed to restore this version */
     versionRestoreFailed: () => t("forms", "version_restore_failed", "Failed to restore this version"),
-    /** This puts the form back to version {number}, replacing its current questions and settin... */
-    versionRestoreMessage: (p: { number: P }) => t("forms", "version_restore_message", "This puts the form back to version {number}, replacing its current questions and settings. The current state is kept in the history, so this can be undone.", p),
+    /** Replaces the current questions and settings with version {number}. The current state st... */
+    versionRestoreMessage: (p: { number: P }) => t("forms", "version_restore_message", "Replaces the current questions and settings with version {number}. The current state stays in the history.", p),
     /** Restore this version? */
     versionRestoreTitle: () => t("forms", "version_restore_title", "Restore this version?"),
     /** Version history */
@@ -8963,8 +9041,6 @@ export const m = {
   giveaways: {
     /** No active giveaways */
     pageActiveEmpty: () => t("giveaways", "page_active_empty", "No active giveaways"),
-    /** Create your first giveaway using the form above */
-    pageActiveEmptyHint: () => t("giveaways", "page_active_empty_hint", "Create your first giveaway using the form above"),
     /** Create New Giveaway */
     pageCreateTitle: () => t("giveaways", "page_create_title", "Create New Giveaway"),
     /** Entry Method: */
@@ -9007,8 +9083,6 @@ export const m = {
     pageFieldDuration: () => t("giveaways", "page_field_duration", "Duration"),
     /** Reaction Emoji */
     pageFieldEmoji: () => t("giveaways", "page_field_emoji", "Reaction Emoji"),
-    /** Select a custom emoji or paste Discord emoji code */
-    pageFieldEmojiHint: () => t("giveaways", "page_field_emoji_hint", "Select a custom emoji or paste Discord emoji code"),
     /** Entry Method */
     pageFieldEntryMethod: () => t("giveaways", "page_field_entry_method", "Entry Method"),
     /** Giveaway Item */
@@ -9027,32 +9101,28 @@ export const m = {
     pageNotifyCreated: () => t("giveaways", "page_notify_created", "Giveaway created"),
     /** Giveaway ended */
     pageNotifyEnded: () => t("giveaways", "page_notify_ended", "Giveaway ended"),
-    /** Manage server giveaways and prizes */
-    pageSubtitle: () => t("giveaways", "page_subtitle", "Manage server giveaways and prizes"),
+    /** Server giveaways */
+    pageSubtitle: () => t("giveaways", "page_subtitle", "Server giveaways"),
     /** Create Giveaway */
     pageTabCreate: () => t("giveaways", "page_tab_create", "Create Giveaway"),
     /** Ended Giveaways */
     pageTabEnded: () => t("giveaways", "page_tab_ended", "Ended Giveaways"),
   },
   highlights: {
-    /** Users haven't set up any highlights yet. */
-    pageAllEmptyHint: () => t("highlights", "page_all_empty_hint", "Users haven't set up any highlights yet."),
     /** No Highlights */
     pageAllEmptyTitle: () => t("highlights", "page_all_empty_title", "No Highlights"),
     /** All Highlights ({count}) */
     pageAllTitle: (p: { count: P }) => t("highlights", "page_all_title", "All Highlights ({count})", p),
-    /** Are you sure you want to delete this highlight? */
-    pageConfirmDelete: () => t("highlights", "page_confirm_delete", "Are you sure you want to delete this highlight?"),
-    /** Are you sure you want to delete all highlights for {username}? */
-    pageConfirmDeleteUser: (p: { username: P }) => t("highlights", "page_confirm_delete_user", "Are you sure you want to delete all highlights for {username}?", p),
+    /** Delete this highlight? */
+    pageConfirmDelete: () => t("highlights", "page_confirm_delete", "Delete this highlight?"),
+    /** Delete all highlights for {username}? */
+    pageConfirmDeleteUser: (p: { username: P }) => t("highlights", "page_confirm_delete_user", "Delete all highlights for {username}?", p),
     /** Delete all */
     pageDeleteAll: () => t("highlights", "page_delete_all", "Delete all"),
     /** Delete highlight */
     pageDeleteHighlightAria: () => t("highlights", "page_delete_highlight_aria", "Delete highlight"),
     /** Delete word */
     pageDeleteWordAria: () => t("highlights", "page_delete_word_aria", "Delete word"),
-    /** No users have disabled highlights. */
-    pageDisabledEmptyHint: () => t("highlights", "page_disabled_empty_hint", "No users have disabled highlights."),
     /** All Users Enabled */
     pageDisabledEmptyTitle: () => t("highlights", "page_disabled_empty_title", "All Users Enabled"),
     /** Ignoring {channels} channel(s) • {users} user(s) */
@@ -9077,8 +9147,6 @@ export const m = {
     pageRecentTitle: () => t("highlights", "page_recent_title", "Recent Highlights"),
     /** Search highlights */
     pageSearchAria: () => t("highlights", "page_search_aria", "Search highlights"),
-    /** No highlights match your search query. */
-    pageSearchNoResultsHint: () => t("highlights", "page_search_no_results_hint", "No highlights match your search query."),
     /** No Results */
     pageSearchNoResultsTitle: () => t("highlights", "page_search_no_results_title", "No Results"),
     /** Enter word or pattern... */
@@ -9097,10 +9165,8 @@ export const m = {
     pageStatUsers: () => t("highlights", "page_stat_users", "Active Users"),
     /** with highlights */
     pageStatUsersSub: () => t("highlights", "page_stat_users_sub", "with highlights"),
-    /** Highlight statistics will appear here once users set up highlights. */
-    pageStatsEmptyHint: () => t("highlights", "page_stats_empty_hint", "Highlight statistics will appear here once users set up highlights."),
-    /** Manage guild-wide highlight system */
-    pageSubtitle: () => t("highlights", "page_subtitle", "Manage guild-wide highlight system"),
+    /** Server-wide highlights */
+    pageSubtitle: () => t("highlights", "page_subtitle", "Server-wide highlights"),
     /** All Highlights */
     pageTabAll: () => t("highlights", "page_tab_all", "All Highlights"),
     /** Disabled Users */
@@ -9401,16 +9467,16 @@ export const m = {
     flowCurveKeepLevels: (p: { curve: P }) => t("import", "flow_curve_keep_levels", "Members keep their levels and progress on the {curve} curve. Their XP numbers change.", p),
     /** Drop the file here or choose one */
     flowDropFile: () => t("import", "flow_drop_file", "Drop the file here or choose one"),
-    /** That key was rejected. Check it was copied in full. */
-    flowErrorBadKey: () => t("import", "flow_error_bad_key", "That key was rejected. Check it was copied in full."),
+    /** That key was rejected. */
+    flowErrorBadKey: () => t("import", "flow_error_bad_key", "That key was rejected."),
     /** Another import is already running on this server. */
     flowErrorBusy: () => t("import", "flow_error_busy", "Another import is already running on this server."),
     /** No members were found in that data. */
     flowErrorEmpty: () => t("import", "flow_error_empty", "No members were found in that data."),
     /** Choose a file first. */
     flowErrorFileRequired: () => t("import", "flow_error_file_required", "Choose a file first."),
-    /** Something went wrong. Try again in a moment. */
-    flowErrorGeneric: () => t("import", "flow_error_generic", "Something went wrong. Try again in a moment."),
+    /** Something went wrong. Try again. */
+    flowErrorGeneric: () => t("import", "flow_error_generic", "Something went wrong. Try again."),
     /** This bot shares one balance across every server, so balances cannot be imported into on... */
     flowErrorGlobalCurrency: () => t("import", "flow_error_global_currency", "This bot shares one balance across every server, so balances cannot be imported into one server."),
     /** That import expired. Read the data again. */
@@ -9423,10 +9489,10 @@ export const m = {
     flowErrorNotFound: () => t("import", "flow_error_not_found", "The other bot has no data for this server."),
     /** That import is not ready yet. */
     flowErrorNotReady: () => t("import", "flow_error_not_ready", "That import is not ready yet."),
-    /** The other bot is limiting requests right now. Try again in a few minutes. */
-    flowErrorRateLimited: () => t("import", "flow_error_rate_limited", "The other bot is limiting requests right now. Try again in a few minutes."),
-    /** The other bot did not answer properly. Try again in a few minutes. */
-    flowErrorSourceFailed: () => t("import", "flow_error_source_failed", "The other bot did not answer properly. Try again in a few minutes."),
+    /** The other bot is rate limiting. Try again in a few minutes. */
+    flowErrorRateLimited: () => t("import", "flow_error_rate_limited", "The other bot is rate limiting. Try again in a few minutes."),
+    /** The other bot did not respond. Try again in a few minutes. */
+    flowErrorSourceFailed: () => t("import", "flow_error_source_failed", "The other bot did not respond. Try again in a few minutes."),
     /** That file could not be read. Use a JSON or CSV export with a user ID and an XP or level... */
     flowErrorUnreadableFile: () => t("import", "flow_error_unreadable_file", "That file could not be read. Use a JSON or CSV export with a user ID and an XP or level for each member."),
     /** That data does not match. XP sources need XP or levels, and UnbelievaBoat needs balances. */
@@ -9445,14 +9511,14 @@ export const m = {
     flowImportMembers: (p: { count: P }) => t("import", "flow_import_members", "Import {count} members", p),
     /** Import level roles */
     flowImportRoles: () => t("import", "flow_import_roles", "Import level roles"),
-    /** Sets the same role for each level here. Existing roles on those levels are replaced. */
-    flowImportRolesHint: () => t("import", "flow_import_roles_hint", "Sets the same role for each level here. Existing roles on those levels are replaced."),
+    /** Existing roles on those levels are replaced. */
+    flowImportRolesHint: () => t("import", "flow_import_roles_hint", "Existing roles on those levels are replaced."),
     /** Import settings */
     flowImportSettings: () => t("import", "flow_import_settings", "Import settings"),
     /** Importing */
     flowImporting: () => t("import", "flow_importing", "Importing"),
-    /** Moving from another bot? Bring your members' XP, levels, level roles and balances with ... */
-    flowIntro: () => t("import", "flow_intro", "Moving from another bot? Bring your members' XP, levels, level roles and balances with you. You see everything before it is written, and an import can be undone for 24 hours."),
+    /** You see everything before it is written. Imports can be undone for 24 hours. */
+    flowIntro: () => t("import", "flow_intro", "You see everything before it is written. Imports can be undone for 24 hours."),
     /** {name} key */
     flowKeyAria: (p: { name: P }) => t("import", "flow_key_aria", "{name} key", p),
     /** Paste the key */
@@ -9517,8 +9583,8 @@ export const m = {
     flowSectionWritten: (p: { section: P; written: P }) => t("import", "flow_section_written", "{section}: {written} written", p),
     /** {section}: {written} written, {skipped} skipped */
     flowSectionWrittenSkipped: (p: { section: P; skipped: P; written: P }) => t("import", "flow_section_written_skipped", "{section}: {written} written, {skipped} skipped", p),
-    /** Pick what to bring over. Names already in use and deleted channels or roles are skipped... */
-    flowSettingsIntro: () => t("import", "flow_settings_intro", "Pick what to bring over. Names already in use and deleted channels or roles are skipped. Reaction roles keep working on MEE6's messages, while button menus are posted again by Mewdeko."),
+    /** Names already in use and deleted channels or roles are skipped. Button menus are posted... */
+    flowSettingsIntro: () => t("import", "flow_settings_intro", "Names already in use and deleted channels or roles are skipped. Button menus are posted again by Mewdeko."),
     /** XP and levels */
     flowSourceAmariBrings: () => t("import", "flow_source_amari_brings", "XP and levels"),
     /** Apply for an Amari API key. Amari sends it to you in a DM, usually within a day. Paste ... */
@@ -9557,8 +9623,8 @@ export const m = {
     flowSourceUnbelievaboatHow: () => t("import", "flow_source_unbelievaboat_how", "Create an application on UnbelievaBoat's site, authorize it on this server from the application's page, then paste its token below."),
     /** Hand out level roles afterwards */
     flowSyncRoles: () => t("import", "flow_sync_roles", "Hand out level roles afterwards"),
-    /** Gives every imported member the roles for their level. Takes a while on big servers. */
-    flowSyncRolesHint: () => t("import", "flow_sync_roles_hint", "Gives every imported member the roles for their level. Takes a while on big servers."),
+    /** Takes a while on big servers. */
+    flowSyncRolesHint: () => t("import", "flow_sync_roles_hint", "Takes a while on big servers."),
     /** You can undo this for 24 hours. */
     flowUndoHint: () => t("import", "flow_undo_hint", "You can undo this for 24 hours."),
     /** Use the {curve} curve */
@@ -9571,8 +9637,8 @@ export const m = {
     pageHistoryBalances: (p: { count: P; source: P }) => t("import", "page_history_balances", "{source}: balances for {count} members", p),
     /** {source}: balances for {count} members, {roles} level roles */
     pageHistoryBalancesRoles: (p: { count: P; roles: P; source: P }) => t("import", "page_history_balances_roles", "{source}: balances for {count} members, {roles} level roles", p),
-    /** Nothing has been imported into this server yet. */
-    pageHistoryEmpty: () => t("import", "page_history_empty", "Nothing has been imported into this server yet."),
+    /** Nothing imported yet. */
+    pageHistoryEmpty: () => t("import", "page_history_empty", "Nothing imported yet."),
     /** {source}: {count} settings */
     pageHistorySettings: (p: { count: P; source: P }) => t("import", "page_history_settings", "{source}: {count} settings", p),
     /** undone {when} */
@@ -9591,8 +9657,8 @@ export const m = {
     pageUndoExpired: () => t("import", "page_undo_expired", "That import can no longer be undone."),
     /** That import no longer exists. */
     pageUndoJobMissing: () => t("import", "page_undo_job_missing", "That import no longer exists."),
-    /** Every member it changed goes back to what they had before. Anything they earned since t... */
-    pageUndoMessage: () => t("import", "page_undo_message", "Every member it changed goes back to what they had before. Anything they earned since the import is lost."),
+    /** Members go back to what they had before. Anything earned since is lost. */
+    pageUndoMessage: () => t("import", "page_undo_message", "Members go back to what they had before. Anything earned since is lost."),
     /** Undo the newer import first. */
     pageUndoNotLatest: () => t("import", "page_undo_not_latest", "Undo the newer import first."),
     /** Undo this import? */
@@ -9619,14 +9685,10 @@ export const m = {
     codesLabelPlaceholder: () => t("invites", "codes_label_placeholder", "e.g. Twitter campaign"),
     /** Role on join */
     codesRole: () => t("invites", "codes_role", "Role on join"),
-    /** Granted to everyone who joins through this code */
-    codesRoleHint: () => t("invites", "codes_role_hint", "Granted to everyone who joins through this code"),
     /** Add a label first */
     codesRoleNeedsLabel: () => t("invites", "codes_role_needs_label", "Add a label first"),
     /** Labels for codes that no longer exist */
     codesStaleTitle: () => t("invites", "codes_stale_title", "Labels for codes that no longer exist"),
-    /** Name codes so they show up in stats, and grant a role to everyone who joins through one */
-    codesSubtitle: () => t("invites", "codes_subtitle", "Name codes so they show up in stats, and grant a role to everyone who joins through one"),
     /** Invite Codes & Labels */
     codesTitle: () => t("invites", "codes_title", "Invite Codes & Labels"),
     /** {count} use of {max} */
@@ -9637,20 +9699,20 @@ export const m = {
     codesUsesOne: (p: { count: P }) => t("invites", "codes_uses_one", "{count} use", p),
     /** {count} uses */
     codesUsesOther: (p: { count: P }) => t("invites", "codes_uses_other", "{count} uses", p),
-    /** Delete invite code {code}? Anyone holding the link will no longer be able to use it. */
-    confirmDeleteCodeMessage: (p: { code: P }) => t("invites", "confirm_delete_code_message", "Delete invite code {code}? Anyone holding the link will no longer be able to use it.", p),
+    /** Delete invite code {code}? */
+    confirmDeleteCodeMessage: (p: { code: P }) => t("invites", "confirm_delete_code_message", "Delete invite code {code}?", p),
     /** Delete invite */
     confirmDeleteCodeTitle: () => t("invites", "confirm_delete_code_title", "Delete invite"),
-    /** This clears the tally of every inviter who is no longer in the server. */
-    confirmResetLeftMessage: () => t("invites", "confirm_reset_left_message", "This clears the tally of every inviter who is no longer in the server."),
+    /** Clears the tally of inviters who left the server. */
+    confirmResetLeftMessage: () => t("invites", "confirm_reset_left_message", "Clears the tally of inviters who left the server."),
     /** Reset invites of members who left */
     confirmResetLeftTitle: () => t("invites", "confirm_reset_left_title", "Reset invites of members who left"),
     /** Reset all invites for {user}? This cannot be undone. */
     confirmResetMemberMessage: (p: { user: P }) => t("invites", "confirm_reset_member_message", "Reset all invites for {user}? This cannot be undone.", p),
     /** Reset invites */
     confirmResetMemberTitle: () => t("invites", "confirm_reset_member_title", "Reset invites"),
-    /** This clears every inviter's tally and the join history for this server. It cannot be un... */
-    confirmResetServerMessage: () => t("invites", "confirm_reset_server_message", "This clears every inviter's tally and the join history for this server. It cannot be undone."),
+    /** Clears every inviter's tally and the join history. This cannot be undone. */
+    confirmResetServerMessage: () => t("invites", "confirm_reset_server_message", "Clears every inviter's tally and the join history. This cannot be undone."),
     /** Reset every invite */
     confirmResetServerTitle: () => t("invites", "confirm_reset_server_title", "Reset every invite"),
     /** Adjust */
@@ -9659,8 +9721,8 @@ export const m = {
     detailBonus: () => t("invites", "detail_bonus", "Bonus"),
     /** code {code} */
     detailCode: (p: { code: P }) => t("invites", "detail_code", "code {code}", p),
-    /** Pick a member, or click a leaderboard row, to see their breakdown and adjust it. */
-    detailEmpty: () => t("invites", "detail_empty", "Pick a member, or click a leaderboard row, to see their breakdown and adjust it."),
+    /** Pick a member to see and adjust their invites. */
+    detailEmpty: () => t("invites", "detail_empty", "Pick a member to see and adjust their invites."),
     /** Fake */
     detailFake: () => t("invites", "detail_fake", "Fake"),
     /** Positive adds, negative removes */
@@ -9711,58 +9773,46 @@ export const m = {
     membersFilterLabelAria: () => t("invites", "members_filter_label_aria", "Filter by label"),
     /** Include members who left */
     membersIncludeLeft: () => t("invites", "members_include_left", "Include members who left"),
-    /** Show joins whose member has since left */
-    membersIncludeLeftHint: () => t("invites", "members_include_left_hint", "Show joins whose member has since left"),
     /** Page {page} of {pages} · {total} joins */
     membersPager: (p: { page: P; pages: P; total: P }) => t("invites", "members_pager", "Page {page} of {pages} · {total} joins", p),
     /** fake: {reason} */
     membersPillFake: (p: { reason: P }) => t("invites", "members_pill_fake", "fake: {reason}", p),
     /** left */
     membersPillLeft: () => t("invites", "members_pill_left", "left"),
-    /** Every witnessed join, filtered by inviter, code or label */
-    membersSubtitle: () => t("invites", "members_subtitle", "Every witnessed join, filtered by inviter, code or label"),
     /** Invited Members */
     membersTitle: () => t("invites", "members_title", "Invited Members"),
     /** Reset invites for {count} inviters. */
     notifyResetDone: (p: { count: P }) => t("invites", "notify_reset_done", "Reset invites for {count} inviters.", p),
     /** Couldn't save invite settings. Use Retry to try again. */
     notifySaveFailed: () => t("invites", "notify_save_failed", "Couldn't save invite settings. Use Retry to try again."),
-    /** Imported invite uses from Discord and raised totals for {count} inviters. */
-    notifySynced: (p: { count: P }) => t("invites", "notify_synced", "Imported invite uses from Discord and raised totals for {count} inviters.", p),
+    /** Imported invite uses for {count} inviters. */
+    notifySynced: (p: { count: P }) => t("invites", "notify_synced", "Imported invite uses for {count} inviters.", p),
     /** No joins in this window */
     overviewChartEmpty: () => t("invites", "overview_chart_empty", "No joins in this window"),
     /** No joins recorded yet */
     overviewEmpty: () => t("invites", "overview_empty", "No joins recorded yet"),
-    /** Joins, leaves and where members come from */
-    overviewSubtitle: () => t("invites", "overview_subtitle", "Joins, leaves and where members come from"),
     /** Growth */
     overviewTitle: () => t("invites", "overview_title", "Growth"),
     /** Top invite codes */
     overviewTopCodes: () => t("invites", "overview_top_codes", "Top invite codes"),
-    /** No invite codes were used in this window. */
-    overviewTopCodesEmpty: () => t("invites", "overview_top_codes_empty", "No invite codes were used in this window."),
-    /** Nobody has invited anyone in this window. */
-    overviewTopInvitersEmpty: () => t("invites", "overview_top_inviters_empty", "Nobody has invited anyone in this window."),
-    /** Who brings people in, how they arrive, and whether they stay */
-    pageSubtitle: () => t("invites", "page_subtitle", "Who brings people in, how they arrive, and whether they stay"),
+    /** No codes used in this window */
+    overviewTopCodesEmpty: () => t("invites", "overview_top_codes_empty", "No codes used in this window"),
+    /** No invites in this window */
+    overviewTopInvitersEmpty: () => t("invites", "overview_top_inviters_empty", "No invites in this window"),
+    /** Who invites, and whether they stay */
+    pageSubtitle: () => t("invites", "page_subtitle", "Who invites, and whether they stay"),
     /** Last 7 days */
     rangeLabel2: () => t("invites", "range_label_2", "Last 7 days"),
     /** Last 30 days */
     rangeLabel3: () => t("invites", "range_label_3", "Last 30 days"),
-    /** Holders never earn invite credit */
-    settingsBlacklistRolesNote: () => t("invites", "settings_blacklist_roles_note", "Holders never earn invite credit"),
     /** Blacklisted inviters */
     settingsBlacklistUsers: () => t("invites", "settings_blacklist_users", "Blacklisted inviters"),
-    /** Never earn invite credit */
-    settingsBlacklistUsersNote: () => t("invites", "settings_blacklist_users_note", "Never earn invite credit"),
     /** Count rejoins */
     settingsCountRejoins: () => t("invites", "settings_count_rejoins", "Count rejoins"),
     /** Off flags members who have joined before as fake invites */
     settingsCountRejoinsHint: () => t("invites", "settings_count_rejoins_hint", "Off flags members who have joined before as fake invites"),
     /** Flag members without an avatar */
     settingsFakeNoAvatar: () => t("invites", "settings_fake_no_avatar", "Flag members without an avatar"),
-    /** Joins from accounts with no avatar count as fake */
-    settingsFakeNoAvatarHint: () => t("invites", "settings_fake_no_avatar_hint", "Joins from accounts with no avatar count as fake"),
     /** Hidden from leaderboard */
     settingsHidden: () => t("invites", "settings_hidden", "Hidden from leaderboard"),
     /** Still tracked, never shown */
@@ -9775,10 +9825,8 @@ export const m = {
     settingsLinkChannelPlaceholder: () => t("invites", "settings_link_channel_placeholder", "System channel"),
     /** Join and leave log channel */
     settingsLogChannel: () => t("invites", "settings_log_channel", "Join and leave log channel"),
-    /** Posts who invited whom and how, on every join and leave */
-    settingsLogChannelHint: () => t("invites", "settings_log_channel_hint", "Posts who invited whom and how, on every join and leave"),
-    /** Bulk operations on the tallies */
-    settingsMaintenanceNote: () => t("invites", "settings_maintenance_note", "Bulk operations on the tallies"),
+    /** Posts every join and leave with its inviter */
+    settingsLogChannelHint: () => t("invites", "settings_log_channel_hint", "Posts every join and leave with its inviter"),
     /** Accounts younger than this are flagged as fake. 0 disables the check. */
     settingsMinAgeHint: () => t("invites", "settings_min_age_hint", "Accounts younger than this are flagged as fake. 0 disables the check."),
     /** Remove credit when members leave */
@@ -9789,14 +9837,12 @@ export const m = {
     settingsResetLeft: () => t("invites", "settings_reset_left", "Reset inviters who left"),
     /** Import uses from Discord */
     settingsSync: () => t("invites", "settings_sync", "Import uses from Discord"),
-    /** Importing raises each inviter's regular total to the sum of uses across their codes and... */
-    settingsSyncHint: () => t("invites", "settings_sync_hint", "Importing raises each inviter's regular total to the sum of uses across their codes and never lowers it, so it is safe to run again."),
+    /** Raises each inviter's total to their codes' uses and never lowers it. */
+    settingsSyncHint: () => t("invites", "settings_sync_hint", "Raises each inviter's total to their codes' uses and never lowers it."),
     /** Invite Tracking Settings */
     settingsTitle: () => t("invites", "settings_title", "Invite Tracking Settings"),
     /** Track invites */
     settingsTracking: () => t("invites", "settings_tracking", "Track invites"),
-    /** Attribute every join to an invite, the vanity URL or an app */
-    settingsTrackingHint: () => t("invites", "settings_tracking_hint", "Attribute every join to an invite, the vanity URL or an app"),
     /** Fake joins */
     statFakeJoins: () => t("invites", "stat_fake_joins", "Fake joins"),
     /** {vanity} vanity · {bots} bots · {unknown} unknown */
@@ -9813,8 +9859,8 @@ export const m = {
   joinRoleTimeout: {
     /** Give a role */
     actionAddRole: () => t("join-role-timeout", "action_add_role", "Give a role"),
-    /** Sent to the member when the action is taken. Leave empty for the default message. */
-    actionMessageHint: () => t("join-role-timeout", "action_message_hint", "Sent to the member when the action is taken. Leave empty for the default message."),
+    /** Empty uses the default message. */
+    actionMessageHint: () => t("join-role-timeout", "action_message_hint", "Empty uses the default message."),
     /** Action message */
     actionMessageLabel: () => t("join-role-timeout", "action_message_label", "Action message"),
     /** You were removed from %server.name% because you did not get a role in time. */
@@ -9823,8 +9869,8 @@ export const m = {
     actionRoleLabel: () => t("join-role-timeout", "action_role_label", "Role to give"),
     /** Time out */
     actionTimeout: () => t("join-role-timeout", "action_timeout", "Time out"),
-    /** Members who do not get one of the required roles in time have the action applied to them. */
-    enabledHint: () => t("join-role-timeout", "enabled_hint", "Members who do not get one of the required roles in time have the action applied to them."),
+    /** Applies the action to members who miss the deadline. */
+    enabledHint: () => t("join-role-timeout", "enabled_hint", "Applies the action to members who miss the deadline."),
     /** The timeout has to be between 1 minute and 30 days */
     errorInvalidTimeout: () => t("join-role-timeout", "error_invalid_timeout", "The timeout has to be between 1 minute and 30 days"),
     /** The warning has to be at least 1 minute and shorter than the timeout */
@@ -9835,12 +9881,10 @@ export const m = {
     errorMissingRequiredRoles: () => t("join-role-timeout", "error_missing_required_roles", "Pick at least one required role"),
     /** Couldn't save the join role timeout */
     errorSave: () => t("join-role-timeout", "error_save", "Couldn't save the join role timeout"),
-    /** Members with any of these roles are never acted on. */
-    exemptRolesHint: () => t("join-role-timeout", "exempt_roles_hint", "Members with any of these roles are never acted on."),
     /** Exempt roles */
     exemptRolesLabel: () => t("join-role-timeout", "exempt_roles_label", "Exempt roles"),
-    /** Members already here without a required role start counting down when this is turned on. */
-    includeExistingHint: () => t("join-role-timeout", "include_existing_hint", "Members already here without a required role start counting down when this is turned on."),
+    /** Members already here without a required role start counting down. */
+    includeExistingHint: () => t("join-role-timeout", "include_existing_hint", "Members already here without a required role start counting down."),
     /** Include existing members */
     includeExistingLabel: () => t("join-role-timeout", "include_existing_label", "Include existing members"),
     /** {count} counting down */
@@ -9849,24 +9893,22 @@ export const m = {
     pendingNext: () => t("join-role-timeout", "pending_next", "Next due"),
     /** Nobody is counting down */
     pendingNone: () => t("join-role-timeout", "pending_none", "Nobody is counting down"),
-    /** Any one of these roles is enough to stop the countdown. */
-    requiredRolesHint: () => t("join-role-timeout", "required_roles_hint", "Any one of these roles is enough to stop the countdown."),
+    /** Any one stops the countdown. */
+    requiredRolesHint: () => t("join-role-timeout", "required_roles_hint", "Any one stops the countdown."),
     /** Required roles */
     requiredRolesLabel: () => t("join-role-timeout", "required_roles_label", "Required roles"),
     /** Select roles */
     rolesPlaceholder: () => t("join-role-timeout", "roles_placeholder", "Select roles"),
-    /** Act on members who do not get a role within a set time of joining */
-    subtitle: () => t("join-role-timeout", "subtitle", "Act on members who do not get a role within a set time of joining"),
     /** Time to get a role */
     timeoutLabel: () => t("join-role-timeout", "timeout_label", "Time to get a role"),
     /** Join role timeout */
     title: () => t("join-role-timeout", "title", "Join role timeout"),
-    /** Optional. Leave empty to send no warning. */
-    warnBeforeHint: () => t("join-role-timeout", "warn_before_hint", "Optional. Leave empty to send no warning."),
+    /** Optional. */
+    warnBeforeHint: () => t("join-role-timeout", "warn_before_hint", "Optional."),
     /** Warn before */
     warnBeforeLabel: () => t("join-role-timeout", "warn_before_label", "Warn before"),
-    /** Sent to the member before the timeout. Leave empty for the default message. */
-    warnMessageHint: () => t("join-role-timeout", "warn_message_hint", "Sent to the member before the timeout. Leave empty for the default message."),
+    /** Empty uses the default warning. */
+    warnMessageHint: () => t("join-role-timeout", "warn_message_hint", "Empty uses the default warning."),
     /** Warning message */
     warnMessageLabel: () => t("join-role-timeout", "warn_message_label", "Warning message"),
     /** Get a role in %server.name% soon or you will be removed. */
@@ -9875,8 +9917,8 @@ export const m = {
   layout: {
     /** Close dialog */
     confirmClose: () => t("layout", "confirm_close", "Close dialog"),
-    /** Are you sure you want to proceed? */
-    confirmMessage: () => t("layout", "confirm_message", "Are you sure you want to proceed?"),
+    /** Are you sure? */
+    confirmMessage: () => t("layout", "confirm_message", "Are you sure?"),
     /** Reload Page */
     errorBoundaryReload: () => t("layout", "error_boundary_reload", "Reload Page"),
     /** Feature is active */
@@ -9899,8 +9941,8 @@ export const m = {
     instanceAvailable: () => t("layout", "instance_available", "Available"),
     /** {bot} avatar */
     instanceAvatarAlt: (p: { bot: P }) => t("layout", "instance_avatar_alt", "{bot} avatar", p),
-    /** Checking which servers you share with each bot... */
-    instanceChecking: () => t("layout", "instance_checking", "Checking which servers you share with each bot..."),
+    /** Checking shared servers... */
+    instanceChecking: () => t("layout", "instance_checking", "Checking shared servers..."),
     /** Please contact an administrator */
     instanceContactAdmin: () => t("layout", "instance_contact_admin", "Please contact an administrator"),
     /** Failed to check mutual guilds */
@@ -9987,8 +10029,8 @@ export const m = {
     pageLayoutTabsAria: () => t("layout", "page_layout_tabs_aria", "Page tabs"),
     /** How {title} works */
     pageLayoutWikiAria: (p: { title: P }) => t("layout", "page_layout_wiki_aria", "How {title} works", p),
-    /** Read the wiki page for this feature */
-    pageLayoutWikiTitle: () => t("layout", "page_layout_wiki_title", "Read the wiki page for this feature"),
+    /** Open wiki */
+    pageLayoutWikiTitle: () => t("layout", "page_layout_wiki_title", "Open wiki"),
     /** Couldn't save */
     saveStatusFailed: () => t("layout", "save_status_failed", "Couldn't save"),
     /** Close search */
@@ -9999,8 +10041,8 @@ export const m = {
     searchHintNavigate: () => t("layout", "search_hint_navigate", "Navigate"),
     /** Select */
     searchHintSelect: () => t("layout", "search_hint_select", "Select"),
-    /** Try adjusting your search or browse by category */
-    searchNoResultsHint: () => t("layout", "search_no_results_hint", "Try adjusting your search or browse by category"),
+    /** Try a different search */
+    searchNoResultsHint: () => t("layout", "search_no_results_hint", "Try a different search"),
     /** Popular Features */
     searchPopular: () => t("layout", "search_popular", "Popular Features"),
     /** Quick Access */
@@ -10045,8 +10087,8 @@ export const m = {
     sidebarNoServersFound: () => t("layout", "sidebar_no_servers_found", "No servers found"),
     /** Open full search */
     sidebarOpenFullSearch: () => t("layout", "sidebar_open_full_search", "Open full search"),
-    /** Search everything, including settings inside each page */
-    sidebarOpenFullSearchTitle: () => t("layout", "sidebar_open_full_search_title", "Search everything, including settings inside each page"),
+    /** Search all settings */
+    sidebarOpenFullSearchTitle: () => t("layout", "sidebar_open_full_search_title", "Search all settings"),
     /** Search features... */
     sidebarSearchFeaturesPlaceholder: () => t("layout", "sidebar_search_features_placeholder", "Search features..."),
     /** Search settings inside pages */
@@ -10255,8 +10297,8 @@ export const m = {
     termsYouAgreeNotToUse: () => t("legal", "terms_you_agree_not_to_use", "You agree not to use the Service to:"),
   },
   linkfix: {
-    /** When someone posts a supported link, Mewdeko replies with the fixed link and hides the ... */
-    enabledHint: () => t("linkfix", "enabled_hint", "When someone posts a supported link, Mewdeko replies with the fixed link and hides the original embed if it can manage messages. The reply goes away when the original message is deleted."),
+    /** Replies with the fixed link and hides the original embed. */
+    enabledHint: () => t("linkfix", "enabled_hint", "Replies with the fixed link and hides the original embed."),
     /** Fix links */
     enabledLabel: () => t("linkfix", "enabled_label", "Fix links"),
     /** {site} needs a plain host name like fixupx.com */
@@ -10271,12 +10313,10 @@ export const m = {
     hostLabel: () => t("linkfix", "host_label", "Fixing host"),
     /** Use default */
     hostReset: () => t("linkfix", "host_reset", "Use default"),
-    /** Reply to social media links with a copy that embeds properly */
-    pageSubtitle: () => t("linkfix", "page_subtitle", "Reply to social media links with a copy that embeds properly"),
-    /** Reply to {site} links with the fixed link */
-    siteHint: (p: { site: P }) => t("linkfix", "site_hint", "Reply to {site} links with the fixed link", p),
-    /** Turn sites on or off, and pick the embed fixing service each one uses */
-    sitesSubtitle: () => t("linkfix", "sites_subtitle", "Turn sites on or off, and pick the embed fixing service each one uses"),
+    /** Fix social media link embeds */
+    pageSubtitle: () => t("linkfix", "page_subtitle", "Fix social media link embeds"),
+    /** Pick a fixing service per site */
+    sitesSubtitle: () => t("linkfix", "sites_subtitle", "Pick a fixing service per site"),
     /** Sites */
     sitesTitle: () => t("linkfix", "sites_title", "Sites"),
   },
@@ -10285,22 +10325,18 @@ export const m = {
     addBoard: () => t("liveboards", "add_board", "Add live board"),
     /** Add a live board */
     addTitle: () => t("liveboards", "add_title", "Add a live board"),
-    /** What the message shows */
-    boardHint: () => t("liveboards", "board_hint", "What the message shows"),
     /** Board */
     boardLabel: () => t("liveboards", "board_label", "Board"),
     /** #{channel} · every {minutes}m · updated {updated} */
     boardMeta: (p: { channel: P; minutes: P; updated: P }) => t("liveboards", "board_meta", "#{channel} · every {minutes}m · updated {updated}", p),
     /** · {count} rows */
     boardRows: (p: { count: P }) => t("liveboards", "board_rows", "· {count} rows", p),
-    /** No live boards yet. Add one and the bot posts and pins it right away. */
-    boardsEmpty: () => t("liveboards", "boards_empty", "No live boards yet. Add one and the bot posts and pins it right away."),
-    /** Up to 10 per server, each refreshed on its own interval */
-    boardsSubtitle: () => t("liveboards", "boards_subtitle", "Up to 10 per server, each refreshed on its own interval"),
-    /** Where the message is posted */
-    channelHint: () => t("liveboards", "channel_hint", "Where the message is posted"),
-    /** Delete the {kind} in #{channel}? Its message is removed too. */
-    confirmDeleteMessage: (p: { channel: P; kind: P }) => t("liveboards", "confirm_delete_message", "Delete the {kind} in #{channel}? Its message is removed too.", p),
+    /** No live boards yet */
+    boardsEmpty: () => t("liveboards", "boards_empty", "No live boards yet"),
+    /** Up to 10 per server */
+    boardsSubtitle: () => t("liveboards", "boards_subtitle", "Up to 10 per server"),
+    /** Delete the {kind} in #{channel}? */
+    confirmDeleteMessage: (p: { channel: P; kind: P }) => t("liveboards", "confirm_delete_message", "Delete the {kind} in #{channel}?", p),
     /** Delete live board */
     confirmDeleteTitle: () => t("liveboards", "confirm_delete_title", "Delete live board"),
     /** 💬 Messages, 🔊 voice time and active members */
@@ -10335,8 +10371,8 @@ export const m = {
     errorSendReport: () => t("liveboards", "error_send_report", "Failed to send the report"),
     /** Report frequency */
     frequencyAria: () => t("liveboards", "frequency_aria", "Report frequency"),
-    /** Daily at 00:00 UTC, weekly on Mondays, or on the first of the month */
-    frequencyHint: () => t("liveboards", "frequency_hint", "Daily at 00:00 UTC, weekly on Mondays, or on the first of the month"),
+    /** Sent at 00:00 UTC, on Mondays for weekly, on the 1st for monthly */
+    frequencyHint: () => t("liveboards", "frequency_hint", "Sent at 00:00 UTC, on Mondays for weekly, on the 1st for monthly"),
     /** Frequency */
     frequencyLabel: () => t("liveboards", "frequency_label", "Frequency"),
     /** Monthly */
@@ -10375,8 +10411,8 @@ export const m = {
     notifyPickChannel: () => t("liveboards", "notify_pick_channel", "Pick the channel to post in."),
     /** Report posted in #{channel}. */
     notifyReportPosted: (p: { channel: P }) => t("liveboards", "notify_report_posted", "Report posted in #{channel}.", p),
-    /** Leaderboards and charts that keep themselves current, plus scheduled digests */
-    pageSubtitle: () => t("liveboards", "page_subtitle", "Leaderboards and charts that keep themselves current, plus scheduled digests"),
+    /** Self-updating leaderboards, charts and digests */
+    pageSubtitle: () => t("liveboards", "page_subtitle", "Self-updating leaderboards, charts and digests"),
     /** pinned */
     pillPinned: () => t("liveboards", "pill_pinned", "pinned"),
     /** Needs Manage Messages in the channel */
@@ -10387,22 +10423,18 @@ export const m = {
     posting: () => t("liveboards", "posting", "Posting..."),
     /** Refresh all */
     refreshAll: () => t("liveboards", "refresh_all", "Refresh all"),
-    /** Where the report is posted. Clearing it disables reports. */
-    reportChannelHint: () => t("liveboards", "report_channel_hint", "Where the report is posted. Clearing it disables reports."),
-    /** Turn scheduled reports on or off without losing the channel */
-    reportsEnabledHint: () => t("liveboards", "reports_enabled_hint", "Turn scheduled reports on or off without losing the channel"),
+    /** Clearing it disables reports */
+    reportChannelHint: () => t("liveboards", "report_channel_hint", "Clearing it disables reports"),
     /** Reports enabled */
     reportsEnabledLabel: () => t("liveboards", "reports_enabled_label", "Reports enabled"),
-    /** A digest of growth and activity posted daily, weekly or monthly */
-    reportsSubtitle: () => t("liveboards", "reports_subtitle", "A digest of growth and activity posted daily, weekly or monthly"),
     /** 3 to 25 */
     rowsHint: () => t("liveboards", "rows_hint", "3 to 25"),
     /** Send a report now */
     sendNow: () => t("liveboards", "send_now", "Send a report now"),
     /** Server Reports */
     tabReports: () => t("liveboards", "tab_reports", "Server Reports"),
-    /** Leaderboards use it directly; charts use up to 90 days for all time */
-    windowHint: () => t("liveboards", "window_hint", "Leaderboards use it directly; charts use up to 90 days for all time"),
+    /** Charts use up to 90 days for all time */
+    windowHint: () => t("liveboards", "window_hint", "Charts use up to 90 days for all time"),
   },
   logging: {
     /** Avatar Updated */
@@ -10499,8 +10531,8 @@ export const m = {
     logtypeVoicePresenceTts: () => t("logging", "logtype_voice_presence_tts", "Voice Presence TTS"),
     /** Logs TTS usage in voice channels */
     logtypeVoicePresenceTtsDescription: () => t("logging", "logtype_voice_presence_tts_description", "Logs TTS usage in voice channels"),
-    /** All channels are ignored. Consider enabling logging for important channels. */
-    pageActiveEmpty: () => t("logging", "page_active_empty", "All channels are ignored. Consider enabling logging for important channels."),
+    /** All channels are ignored */
+    pageActiveEmpty: () => t("logging", "page_active_empty", "All channels are ignored"),
     /** All Events */
     pageCategoryAll: () => t("logging", "page_category_all", "All Events"),
     /** Popular */
@@ -10531,8 +10563,6 @@ export const m = {
     pageErrorDisable: () => t("logging", "page_error_disable", "Failed to disable logging"),
     /** Failed to load logging data */
     pageErrorLoad: () => t("logging", "page_error_load", "Failed to load logging data"),
-    /** Prevent logging for specific channels like staff rooms, bot commands, or spam channels. */
-    pageExclusionsBody: () => t("logging", "page_exclusions_body", "Prevent logging for specific channels like staff rooms, bot commands, or spam channels."),
     /** 💡 <strong>{count}</strong> channels ignored */
     pageExclusionsIgnoredCount: (p: { count: P }) => t("logging", "page_exclusions_ignored_count", "💡 <strong>{count}</strong> channels ignored", p),
     /** 📝 <strong>{count}</strong> channels logged */
@@ -10545,20 +10575,18 @@ export const m = {
     pageIgnore: () => t("logging", "page_ignore", "Ignore"),
     /** Ignore logging for {name} */
     pageIgnoreLoggingAria: (p: { name: P }) => t("logging", "page_ignore_logging_aria", "Ignore logging for {name}", p),
-    /** No channels are ignored. All events will be logged according to your channel configurat... */
-    pageIgnoredEmpty: () => t("logging", "page_ignored_empty", "No channels are ignored. All events will be logged according to your channel configurations."),
+    /** No channels are ignored */
+    pageIgnoredEmpty: () => t("logging", "page_ignored_empty", "No channels are ignored"),
     /** Search channels... */
     pageSearchChannelsPlaceholder: () => t("logging", "page_search_channels_placeholder", "Search channels..."),
-    /** Track important server events like joins, leaves, message edits, and moderation actions... */
-    pageSetupBody: () => t("logging", "page_setup_body", "Track important server events like joins, leaves, message edits, and moderation actions by assigning channels below."),
-    /** 💡 Start with "User Joined" and "Message Deleted" for basic monitoring */
-    pageSetupTip: () => t("logging", "page_setup_tip", "💡 Start with \"User Joined\" and \"Message Deleted\" for basic monitoring"),
+    /** Assign channels below to log server events. */
+    pageSetupBody: () => t("logging", "page_setup_body", "Assign channels below to log server events."),
     /** Set up Event Logging */
     pageSetupTitle: () => t("logging", "page_setup_title", "Set up Event Logging"),
     /** Logging is active • {count} event types configured */
     pageStatusActive: (p: { count: P }) => t("logging", "page_status_active", "Logging is active • {count} event types configured", p),
-    /** Configure event logging channels and settings */
-    pageSubtitle: () => t("logging", "page_subtitle", "Configure event logging channels and settings"),
+    /** Event log channels */
+    pageSubtitle: () => t("logging", "page_subtitle", "Event log channels"),
     /** Ignored Channels ({count}) */
     pageTabIgnored: (p: { count: P }) => t("logging", "page_tab_ignored", "Ignored Channels ({count})", p),
     /** Logging Configuration */
@@ -10641,8 +10669,8 @@ export const m = {
     disableLevelUpNotifications: () => t("me", "disable_level_up_notifications", "Disable level-up notifications"),
     /** Disable PronounDB integration */
     disablePronoundbIntegration: () => t("me", "disable_pronoundb_integration", "Disable PronounDB integration"),
-    /** Earning is paused in this server, so nothing new unlocks right now. */
-    earningIsPausedInThisServer: () => t("me", "earning_is_paused_in_this_server", "Earning is paused in this server, so nothing new unlocks right now."),
+    /** Earning is paused in this server. */
+    earningIsPausedInThisServer: () => t("me", "earning_is_paused_in_this_server", "Earning is paused in this server."),
     /** Enter AFK message (optional)... */
     enterAfkMessageOptional: () => t("me", "enter_afk_message_optional", "Enter AFK message (optional)..."),
     /** Failed to add highlight */
@@ -10699,12 +10727,12 @@ export const m = {
     lastfmScrobblingDisabled: () => t("me", "lastfm_scrobbling_disabled", "Scrobbling: Disabled"),
     /** Scrobbling: Enabled */
     lastfmScrobblingEnabled: () => t("me", "lastfm_scrobbling_enabled", "Scrobbling: Enabled"),
-    /** Are you sure you want to unlink your Last.fm account? */
-    lastfmUnlinkConfirm: () => t("me", "lastfm_unlink_confirm", "Are you sure you want to unlink your Last.fm account?"),
+    /** Unlink your Last.fm account? */
+    lastfmUnlinkConfirm: () => t("me", "lastfm_unlink_confirm", "Unlink your Last.fm account?"),
     /** Level-up Pings */
     levelUpPings: () => t("me", "level_up_pings", "Level-up Pings"),
-    /** Link your Last.fm account to automatically scrobble music */
-    linkYourLastFmAccount: () => t("me", "link_your_last_fm_account", "Link your Last.fm account to automatically scrobble music"),
+    /** Link Last.fm to scrobble music */
+    linkYourLastFmAccount: () => t("me", "link_your_last_fm_account", "Link Last.fm to scrobble music"),
     /** Listening Stats */
     listeningStats: () => t("me", "listening_stats", "Listening Stats"),
     /** Mention me in unlock messages */
@@ -10763,10 +10791,6 @@ export const m = {
     sectionHighlights: (p: { count: P }) => t("me", "section_highlights", "Highlights ({count})", p),
     /** See setup guides again for all servers */
     seeSetupGuidesAgainFor: () => t("me", "see_setup_guides_again_for", "See setup guides again for all servers"),
-    /** Select a server to manage your highlights, AFK status, and view your activity */
-    selectAServerToManage: () => t("me", "select_a_server_to_manage", "Select a server to manage your highlights, AFK status, and view your activity"),
-    /** Settings specific to each server */
-    settingsSpecificToEachServer: () => t("me", "settings_specific_to_each_server", "Settings specific to each server"),
     /** Show me on leaderboards */
     showMeOnLeaderboards: () => t("me", "show_me_on_leaderboards", "Show me on leaderboards"),
     /** Stars */
@@ -10815,24 +10839,22 @@ export const m = {
     toastWelcomeDmsAllowed: () => t("me", "toast_welcome_dms_allowed", "Welcome DMs allowed"),
     /** Welcome DMs blocked */
     toastWelcomeDmsBlocked: () => t("me", "toast_welcome_dms_blocked", "Welcome DMs blocked"),
-    /** Wizard state reset! You'll see setup guides again. */
-    toastWizardReset: () => t("me", "toast_wizard_reset", "Wizard state reset! You'll see setup guides again."),
+    /** Setup guides reset */
+    toastWizardReset: () => t("me", "toast_wizard_reset", "Setup guides reset"),
     /** Top Albums */
     topAlbums: () => t("me", "top_albums", "Top Albums"),
     /** Top Artists */
     topArtists: () => t("me", "top_artists", "Top Artists"),
     /** Total Scrobbles */
     totalScrobbles: () => t("me", "total_scrobbles", "Total Scrobbles"),
-    /** Unlock achievements to earn badges for your profile card. */
-    unlockAchievementsToEarnBadgesFor: () => t("me", "unlock_achievements_to_earn_badges_for", "Unlock achievements to earn badges for your profile card."),
+    /** Unlock achievements to earn badges. */
+    unlockAchievementsToEarnBadgesFor: () => t("me", "unlock_achievements_to_earn_badges_for", "Unlock achievements to earn badges."),
     /** Unlocks in my DMs */
     unlocksInMyDms: () => t("me", "unlocks_in_my_dms", "Unlocks in my DMs"),
     /** Use OpenDyslexic across the dashboard (this device only) */
     useOpendyslexicAcrossTheDashboard: () => t("me", "use_opendyslexic_across_the_dashboard", "Use OpenDyslexic across the dashboard (this device only)"),
     /** Your personal settings and activity for this server */
     yourPersonalSettingsAndActivity: () => t("me", "your_personal_settings_and_activity", "Your personal settings and activity for this server"),
-    /** Your profile and server preferences */
-    yourProfileAndServerPreferences: () => t("me", "your_profile_and_server_preferences", "Your profile and server preferences"),
     /** Zodiac: */
     zodiac: () => t("me", "zodiac", "Zodiac:"),
     /** Aquarius */
@@ -10871,12 +10893,10 @@ export const m = {
     chartHourlyTitle: () => t("messagestats", "chart_hourly_title", "24-Hour Activity"),
     /** Weekly Trend */
     chartWeeklyTitle: () => t("messagestats", "chart_weekly_title", "Weekly Trend"),
-    /** Are you sure you want to reset all message counts? This cannot be undone. */
-    confirmReset: () => t("messagestats", "confirm_reset", "Are you sure you want to reset all message counts? This cannot be undone."),
+    /** Reset all message counts? This cannot be undone. */
+    confirmReset: () => t("messagestats", "confirm_reset", "Reset all message counts? This cannot be undone."),
     /** Toggle message counting */
     enableAria: () => t("messagestats", "enable_aria", "Toggle message counting"),
-    /** Track message statistics for this server */
-    enableHint: () => t("messagestats", "enable_hint", "Track message statistics for this server"),
     /** Enable Message Counting */
     enableLabel: () => t("messagestats", "enable_label", "Enable Message Counting"),
     /** Failed to export stats */
@@ -10905,8 +10925,8 @@ export const m = {
     exportStart: () => t("messagestats", "export_start", "Start Date"),
     /** Exporting... */
     exporting: () => t("messagestats", "exporting", "Exporting..."),
-    /** Only count messages with at least this many characters (0-4098) */
-    minLengthHint: () => t("messagestats", "min_length_hint", "Only count messages with at least this many characters (0-4098)"),
+    /** Characters needed to count (0-4098) */
+    minLengthHint: () => t("messagestats", "min_length_hint", "Characters needed to count (0-4098)"),
     /** Minimum Message Length */
     minLengthLabel: () => t("messagestats", "min_length_label", "Minimum Message Length"),
     /** Message count setting updated */
@@ -10917,16 +10937,14 @@ export const m = {
     notifyMinLengthUpdated: () => t("messagestats", "notify_min_length_updated", "Minimum message length updated"),
     /** Message counts reset */
     notifyReset: () => t("messagestats", "notify_reset", "Message counts reset"),
-    /** Analyze server message activity and user engagement */
-    pageSubtitle: () => t("messagestats", "page_subtitle", "Analyze server message activity and user engagement"),
+    /** Server message activity */
+    pageSubtitle: () => t("messagestats", "page_subtitle", "Server message activity"),
     /** Message Statistics */
     pageTitle: () => t("messagestats", "page_title", "Message Statistics"),
     /** Reset All Server Counts */
     resetAll: () => t("messagestats", "reset_all", "Reset All Server Counts"),
     /** Reset Message Counts */
     resetHeading: () => t("messagestats", "reset_heading", "Reset Message Counts"),
-    /** Permanently delete message count data. This action cannot be undone. */
-    resetHint: () => t("messagestats", "reset_hint", "Permanently delete message count data. This action cannot be undone."),
     /** {percent}% of total • Daily: {daily} */
     rowShare: (p: { daily: P; percent: P }) => t("messagestats", "row_share", "{percent}% of total • Daily: {daily}", p),
     /** {count} messages • {percent}% • Daily: {daily} */
@@ -10979,22 +10997,20 @@ export const m = {
     chartLatencyLabel: (p: { ms: P }) => t("minecraft", "chart_latency_label", "Latency: {ms}ms", p),
     /** Players: {count} */
     chartPlayersLabel: (p: { count: P }) => t("minecraft", "chart_players_label", "Players: {count}", p),
-    /** Are you sure you want to remove server "{name}"? */
-    confirmRemoveServer: (p: { name: P }) => t("minecraft", "confirm_remove_server", "Are you sure you want to remove server \"{name}\"?", p),
+    /** Remove server "{name}"? */
+    confirmRemoveServer: (p: { name: P }) => t("minecraft", "confirm_remove_server", "Remove server \"{name}\"?", p),
     /** Replace */
     confirmReplaceButton: () => t("minecraft", "confirm_replace_button", "Replace"),
-    /** This will replace the existing key. The old key will stop working. */
-    confirmReplaceKey: () => t("minecraft", "confirm_replace_key", "This will replace the existing key. The old key will stop working."),
+    /** Replace the key? The old key stops working. */
+    confirmReplaceKey: () => t("minecraft", "confirm_replace_key", "Replace the key? The old key stops working."),
     /** Revoke */
     confirmRevokeButton: () => t("minecraft", "confirm_revoke_button", "Revoke"),
-    /** This will revoke the plugin API key. The companion plugin will disconnect. */
-    confirmRevokeKey: () => t("minecraft", "confirm_revoke_key", "This will revoke the plugin API key. The companion plugin will disconnect."),
+    /** Revoke the key? The plugin will disconnect. */
+    confirmRevokeKey: () => t("minecraft", "confirm_revoke_key", "Revoke the key? The plugin will disconnect."),
     /** Enter command... */
     consoleInputPlaceholder: () => t("minecraft", "console_input_placeholder", "Enter command..."),
     /** No servers have RCON enabled */
     consoleNoRcon: () => t("minecraft", "console_no_rcon", "No servers have RCON enabled"),
-    /** Edit a server and configure RCON settings to use the console */
-    consoleNoRconHint: () => t("minecraft", "console_no_rcon_hint", "Edit a server and configure RCON settings to use the console"),
     /** Type a command below and press Enter... */
     consolePrompt: () => t("minecraft", "console_prompt", "Type a command below and press Enter..."),
     /** Select a server to open the console */
@@ -11041,14 +11057,12 @@ export const m = {
     historyAvgPlayers: () => t("minecraft", "history_avg_players", "Avg Players"),
     /** Latency ({server}) */
     historyLatency: (p: { server: P }) => t("minecraft", "history_latency", "Latency ({server})", p),
-    /** Not enough data yet. Snapshots are recorded each time the watch timer runs. */
-    historyNotEnough: () => t("minecraft", "history_not_enough", "Not enough data yet. Snapshots are recorded each time the watch timer runs."),
+    /** Not enough data yet. */
+    historyNotEnough: () => t("minecraft", "history_not_enough", "Not enough data yet."),
     /** Peak Players */
     historyPeakPlayers: () => t("minecraft", "history_peak_players", "Peak Players"),
     /** Players Online ({server}) */
     historyPlayersOnline: (p: { server: P }) => t("minecraft", "history_players_online", "Players Online ({server})", p),
-    /** Player counts, latency, and uptime over time */
-    historySelectHint: () => t("minecraft", "history_select_hint", "Player counts, latency, and uptime over time"),
     /** Select a server to view its history */
     historySelectServer: () => t("minecraft", "history_select_server", "Select a server to view its history"),
     /** Online Players ({count}) */
@@ -11079,8 +11093,8 @@ export const m = {
     notifyQueriedOne: (p: { count: P }) => t("minecraft", "notify_queried_one", "Queried {count} server", p),
     /** Queried {count} servers */
     notifyQueriedOther: (p: { count: P }) => t("minecraft", "notify_queried_other", "Queried {count} servers", p),
-    /** RCON is not enabled for this server. Configure it in the edit panel. */
-    notifyRconDisabled: () => t("minecraft", "notify_rcon_disabled", "RCON is not enabled for this server. Configure it in the edit panel."),
+    /** RCON is not enabled for this server. */
+    notifyRconDisabled: () => t("minecraft", "notify_rcon_disabled", "RCON is not enabled for this server."),
     /** Failed to refresh statuses */
     notifyRefreshFailed: () => t("minecraft", "notify_refresh_failed", "Failed to refresh statuses"),
     /** Failed to remove server */
@@ -11141,10 +11155,8 @@ export const m = {
     placeholderWatchMode: () => t("minecraft", "placeholder_watch_mode", "Select watch mode"),
     /** Placeholders: */
     placeholdersLabel: () => t("minecraft", "placeholders_label", "Placeholders:"),
-    /** Copy these values into your plugin's config.yml. The key will not be shown again. */
-    pluginCopyHint: () => t("minecraft", "plugin_copy_hint", "Copy these values into your plugin's config.yml. The key will not be shown again."),
-    /** Generate an API key for the Mewdeko companion Minecraft plugin. Each server gets its ow... */
-    pluginDescription: () => t("minecraft", "plugin_description", "Generate an API key for the Mewdeko companion Minecraft plugin. Each server gets its own key."),
+    /** Copy these into your plugin's config.yml. The key is shown once. */
+    pluginCopyHint: () => t("minecraft", "plugin_copy_hint", "Copy these into your plugin's config.yml. The key is shown once."),
     /** Generate Key */
     pluginGenerate: () => t("minecraft", "plugin_generate", "Generate Key"),
     /** Key active */
@@ -11203,8 +11215,6 @@ export const m = {
     serverTypeGeyser: () => t("minecraft", "server_type_geyser", "Geyser (Java + Bedrock)"),
     /** Java Edition */
     serverTypeJava: () => t("minecraft", "server_type_java", "Java Edition"),
-    /** Add a Minecraft server to start monitoring */
-    serversEmptyHint: () => t("minecraft", "servers_empty_hint", "Add a Minecraft server to start monitoring"),
     /** No servers registered */
     serversEmptyTitle: () => t("minecraft", "servers_empty_title", "No servers registered"),
     /** {online}/{max} online */
@@ -11237,8 +11247,8 @@ export const m = {
     templateJoin: () => t("minecraft", "template_join", "Player Join (Discord)"),
     /** Player Leave (Discord) */
     templateLeave: () => t("minecraft", "template_leave", "Player Leave (Discord)"),
-    /** Customize how events from the companion plugin appear in Discord and in-game. Leave emp... */
-    templatesDescription: () => t("minecraft", "templates_description", "Customize how events from the companion plugin appear in Discord and in-game. Leave empty for defaults."),
+    /** Leave empty for defaults. */
+    templatesDescription: () => t("minecraft", "templates_description", "Leave empty for defaults."),
     /** Bridge Event Templates */
     templatesTitle: () => t("minecraft", "templates_title", "Bridge Event Templates"),
     /** Embed (edit in place) */
@@ -11265,8 +11275,8 @@ export const m = {
     activityReason: () => t("moderation", "activity_reason", "Reason:"),
     /** Recent Moderation Activity */
     activityTitle: () => t("moderation", "activity_title", "Recent Moderation Activity"),
-    /** The warning is removed permanently and no longer counts toward punishments. Forgiving k... */
-    deleteWarningMessage: () => t("moderation", "delete_warning_message", "The warning is removed permanently and no longer counts toward punishments. Forgiving keeps a record instead."),
+    /** Removes it permanently. Forgiving keeps a record instead. */
+    deleteWarningMessage: () => t("moderation", "delete_warning_message", "Removes it permanently. Forgiving keeps a record instead."),
     /** Delete warning? */
     deleteWarningTitle: () => t("moderation", "delete_warning_title", "Delete warning?"),
     /** for {count}d */
@@ -11307,8 +11317,6 @@ export const m = {
     overridesDaysLabel: () => t("moderation", "overrides_days_label", "Purge in days"),
     /** No overrides */
     overridesEmpty: () => t("moderation", "overrides_empty", "No overrides"),
-    /** Every channel uses the server defaults. */
-    overridesEmptyHint: () => t("moderation", "overrides_empty_hint", "Every channel uses the server defaults."),
     /** Purge (days) */
     overridesPurgeDays: () => t("moderation", "overrides_purge_days", "Purge (days)"),
     /** Reset everything to defaults */
@@ -11319,20 +11327,20 @@ export const m = {
     overridesSubtitle: () => t("moderation", "overrides_subtitle", "A channel beats its category, which beats the server default."),
     /** Overrides */
     overridesTitle: () => t("moderation", "overrides_title", "Overrides"),
-    /** Manage warnings, punishments, and moderation activity */
-    pageSubtitle: () => t("moderation", "page_subtitle", "Manage warnings, punishments, and moderation activity"),
+    /** Warnings, punishments and activity */
+    pageSubtitle: () => t("moderation", "page_subtitle", "Warnings, punishments and activity"),
     /** Moderation Dashboard */
     pageTitle: () => t("moderation", "page_title", "Moderation Dashboard"),
-    /** Applies to any action above that has no value of its own. */
-    pruneAllHint: () => t("moderation", "prune_all_hint", "Applies to any action above that has no value of its own."),
+    /** Used by actions with no value of their own. */
+    pruneAllHint: () => t("moderation", "prune_all_hint", "Used by actions with no value of their own."),
     /** Purge in days for every action */
     pruneAllLabel: () => t("moderation", "prune_all_label", "Purge in days for every action"),
     /** Built in default of {days} */
     pruneBuiltin: (p: { days: P }) => t("moderation", "prune_builtin", "Built in default of {days}", p),
     /** {action} purge in days */
     pruneDaysLabel: (p: { action: P }) => t("moderation", "prune_days_label", "{action} purge in days", p),
-    /** How many days of a member's messages each action deletes when it bans them. */
-    pruneDefaultsSubtitle: () => t("moderation", "prune_defaults_subtitle", "How many days of a member's messages each action deletes when it bans them."),
+    /** Days of messages deleted when an action bans. */
+    pruneDefaultsSubtitle: () => t("moderation", "prune_defaults_subtitle", "Days of messages deleted when an action bans."),
     /** From the all-actions default */
     pruneFromAll: () => t("moderation", "prune_from_all", "From the all-actions default"),
     /** No messages */
@@ -11357,8 +11365,6 @@ export const m = {
     punishMinCount: () => t("moderation", "punish_min_count", "Warning count must be at least 1."),
     /** Failed to save punishment. */
     punishSaveFailed: () => t("moderation", "punish_save_failed", "Failed to save punishment."),
-    /** What happens automatically when a member reaches a number of active warnings */
-    punishSubtitle: () => t("moderation", "punish_subtitle", "What happens automatically when a member reaches a number of active warnings"),
     /** Warning Punishments */
     punishTitle: () => t("moderation", "punish_title", "Warning Punishments"),
     /** warn */
@@ -11373,8 +11379,8 @@ export const m = {
     removePunishmentMessage: (p: { count: P }) => t("moderation", "remove_punishment_message", "Nothing will happen automatically at {count} warnings anymore.", p),
     /** Remove punishment? */
     removePunishmentTitle: () => t("moderation", "remove_punishment_title", "Remove punishment?"),
-    /** Every server default and override is removed, and each action goes back to its built in... */
-    resetMessage: () => t("moderation", "reset_message", "Every server default and override is removed, and each action goes back to its built in purge."),
+    /** Removes every default and override. */
+    resetMessage: () => t("moderation", "reset_message", "Removes every default and override."),
     /** Reset ban purge settings? */
     resetTitle: () => t("moderation", "reset_title", "Reset ban purge settings?"),
     /** Active Warnings */
@@ -11385,12 +11391,10 @@ export const m = {
     tabBanpurge: () => t("moderation", "tab_banpurge", "Ban Purge"),
     /** Punishments */
     tabPunishments: () => t("moderation", "tab_punishments", "Punishments"),
-    /** Failed to warn user. Make sure the ID belongs to a member of this server. */
-    warnFailed: () => t("moderation", "warn_failed", "Failed to warn user. Make sure the ID belongs to a member of this server."),
+    /** Failed to warn user. Check the ID is a member of this server. */
+    warnFailed: () => t("moderation", "warn_failed", "Failed to warn user. Check the ID is a member of this server."),
     /** A reason is required. */
     warnReasonRequired: () => t("moderation", "warn_reason_required", "A reason is required."),
-    /** Configured punishments for the resulting warning count are applied automatically. */
-    warningsAutoHint: () => t("moderation", "warnings_auto_hint", "Configured punishments for the resulting warning count are applied automatically."),
     /** By {name} */
     warningsBy: (p: { name: P }) => t("moderation", "warnings_by", "By {name}", p),
     /** Delete warning */
@@ -11399,8 +11403,6 @@ export const m = {
     warningsDeleteTitle: () => t("moderation", "warnings_delete_title", "Delete permanently"),
     /** No warnings found */
     warningsEmpty: () => t("moderation", "warnings_empty", "No warnings found"),
-    /** This server has been peaceful. */
-    warningsEmptyHint: () => t("moderation", "warnings_empty_hint", "This server has been peaceful."),
     /** Forgive */
     warningsForgive: () => t("moderation", "warnings_forgive", "Forgive"),
     /** Forgive all */
@@ -11431,8 +11433,8 @@ export const m = {
     warningsWarnUser: () => t("moderation", "warnings_warn_user", "Warn a user"),
     /** No warning log */
     warnlogPlaceholder: () => t("moderation", "warnlog_placeholder", "No warning log"),
-    /** Every warning and punishment is posted here. Saves immediately. */
-    warnlogSubtitle: () => t("moderation", "warnlog_subtitle", "Every warning and punishment is posted here. Saves immediately."),
+    /** Warnings and punishments are posted here. */
+    warnlogSubtitle: () => t("moderation", "warnlog_subtitle", "Warnings and punishments are posted here."),
   },
   monitoring: {
     /** Avg Error Rate */
@@ -11441,10 +11443,8 @@ export const m = {
     eventMetricsColErrorRate: () => t("monitoring", "event_metrics_col_error_rate", "Error Rate"),
     /** Processed */
     eventMetricsColProcessed: () => t("monitoring", "event_metrics_col_processed", "Processed"),
-    /** No event metrics available yet. */
-    eventMetricsEmpty: () => t("monitoring", "event_metrics_empty", "No event metrics available yet."),
-    /** Event metrics will appear as your bot processes Discord events. */
-    eventMetricsEmptyHint: () => t("monitoring", "event_metrics_empty_hint", "Event metrics will appear as your bot processes Discord events."),
+    /** No event metrics yet */
+    eventMetricsEmpty: () => t("monitoring", "event_metrics_empty", "No event metrics yet"),
     /** Event Types */
     eventMetricsEventTypes: () => t("monitoring", "event_metrics_event_types", "Event Types"),
     /** Failed to load event metrics */
@@ -11469,8 +11469,6 @@ export const m = {
     moduleMetricsColModuleName: () => t("monitoring", "module_metrics_col_module_name", "Module Name"),
     /** No module metrics available yet. */
     moduleMetricsEmpty: () => t("monitoring", "module_metrics_empty", "No module metrics available yet."),
-    /** Module metrics will appear as your bot modules process events. */
-    moduleMetricsEmptyHint: () => t("monitoring", "module_metrics_empty_hint", "Module metrics will appear as your bot modules process events."),
     /** Failed to load module metrics */
     moduleMetricsLoadFailed: () => t("monitoring", "module_metrics_load_failed", "Failed to load module metrics"),
     /** Module Metrics */
@@ -11489,8 +11487,6 @@ export const m = {
     performanceColMethod: () => t("monitoring", "performance_col_method", "Method"),
     /** No performance data available yet. */
     performanceEmpty: () => t("monitoring", "performance_empty", "No performance data available yet."),
-    /** Run some commands to generate performance metrics. */
-    performanceEmptyHint: () => t("monitoring", "performance_empty_hint", "Run some commands to generate performance metrics."),
     /** Failed to load performance data */
     performanceLoadFailed: () => t("monitoring", "performance_load_failed", "Failed to load performance data"),
     /** {value}μs */
@@ -11511,8 +11507,6 @@ export const m = {
     systemInfoCpuUsage: () => t("monitoring", "system_info_cpu_usage", "CPU Usage"),
     /** No system information available. */
     systemInfoEmpty: () => t("monitoring", "system_info_empty", "No system information available."),
-    /** System data will appear here once loaded. */
-    systemInfoEmptyHint: () => t("monitoring", "system_info_empty_hint", "System data will appear here once loaded."),
     /** Failed to load system information */
     systemInfoLoadFailed: () => t("monitoring", "system_info_load_failed", "Failed to load system information"),
     /** {value} GB */
@@ -11543,8 +11537,6 @@ export const m = {
     editDeleteTimeAria: () => t("multigreets", "edit_delete_time_aria", "Edit delete time"),
     /** Edit webhook */
     editWebhookAria: () => t("multigreets", "edit_webhook_aria", "Edit webhook"),
-    /** Add your first greet message using the form above. */
-    emptyHint: () => t("multigreets", "empty_hint", "Add your first greet message using the form above."),
     /** No Greets Configured */
     emptyTitle: () => t("multigreets", "empty_title", "No Greets Configured"),
     /** Failed to add greet */
@@ -11587,8 +11579,8 @@ export const m = {
     notifyTypeUpdated: () => t("multigreets", "notify_type_updated", "Greet type updated"),
     /** Webhook updated */
     notifyWebhookUpdated: () => t("multigreets", "notify_webhook_updated", "Webhook updated"),
-    /** Configure multiple greeting messages for your server */
-    pageSubtitle: () => t("multigreets", "page_subtitle", "Configure multiple greeting messages for your server"),
+    /** Several greetings per server */
+    pageSubtitle: () => t("multigreets", "page_subtitle", "Several greetings per server"),
     /** MultiGreets Configuration */
     pageTitle: () => t("multigreets", "page_title", "MultiGreets Configuration"),
     /** Join */
@@ -11711,12 +11703,8 @@ export const m = {
     generalVolume: () => t("music", "general_volume", "Default Volume"),
     /** Add Channel */
     linkAddChannel: () => t("music", "link_add_channel", "Add Channel"),
-    /** Apple Music, Spotify, and YouTube links posted in these channels get replaced with a cr... */
-    linkDescription: () => t("music", "link_description", "Apple Music, Spotify, and YouTube links posted in these channels get replaced with a cross-platform embed showing links to every provider."),
     /** No channels have music link conversion enabled */
     linkEmpty: () => t("music", "link_empty", "No channels have music link conversion enabled"),
-    /** Click "Add Channel" to enable it for a channel */
-    linkEmptyHint: () => t("music", "link_empty_hint", "Click \"Add Channel\" to enable it for a channel"),
     /** Music Link Conversion */
     linkTitle: () => t("music", "link_title", "Music Link Conversion"),
     /** Failed to toggle filter */
@@ -11753,8 +11741,8 @@ export const m = {
     notifyVcRemoveFailed: () => t("music", "notify_vc_remove_failed", "Failed to remove VC setting"),
     /** Voice channel TTS removed */
     notifyVcRemoved: () => t("music", "notify_vc_removed", "Voice channel TTS removed"),
-    /** Configure music playback and TTS settings */
-    pageSubtitle: () => t("music", "page_subtitle", "Configure music playback and TTS settings"),
+    /** Playback and TTS */
+    pageSubtitle: () => t("music", "page_subtitle", "Playback and TTS"),
     /** Music Player Settings */
     pageTitle: () => t("music", "page_title", "Music Player Settings"),
     /** Add music to queue */
@@ -11795,8 +11783,6 @@ export const m = {
     playerNotInVoice: () => t("music", "player_not_in_voice", "Bot is not in a voice channel"),
     /** Bot not in voice channel */
     playerNotInVoiceAlert: () => t("music", "player_not_in_voice_alert", "Bot not in voice channel"),
-    /** Use bot commands to join a voice channel and play music */
-    playerNotInVoiceHint: () => t("music", "player_not_in_voice_hint", "Use bot commands to join a voice channel and play music"),
     /** *** nothing playing *** */
     playerNothingPlaying: () => t("music", "player_nothing_playing", "*** nothing playing ***"),
     /** Pause (Space) */
@@ -11853,8 +11839,8 @@ export const m = {
     playerUpcomingLabel: () => t("music", "player_upcoming_label", "Upcoming tracks"),
     /** Clear queue */
     queueClear: () => t("music", "queue_clear", "Clear queue"),
-    /** Remove every track from the queue? The current track keeps playing. */
-    queueClearConfirm: () => t("music", "queue_clear_confirm", "Remove every track from the queue? The current track keeps playing."),
+    /** Clear the queue? The current track keeps playing. */
+    queueClearConfirm: () => t("music", "queue_clear_confirm", "Clear the queue? The current track keeps playing."),
     /** Queue: {count} track */
     queueCountOne: (p: { count: P }) => t("music", "queue_count_one", "Queue: {count} track", p),
     /** Queue: {count} tracks */
@@ -11869,10 +11855,10 @@ export const m = {
     repeatModePlaceholder: () => t("music", "repeat_mode_placeholder", "Select repeat mode..."),
     /** Single Track */
     repeatModeSingle: () => t("music", "repeat_mode_single", "Single Track"),
-    /** Failed to add "{title}". Please try again. */
-    searchAddFailed: (p: { title: P }) => t("music", "search_add_failed", "Failed to add \"{title}\". Please try again.", p),
-    /** Failed to add "{title}" after multiple attempts. Please try again later. */
-    searchAddFailedFinal: (p: { title: P }) => t("music", "search_add_failed_final", "Failed to add \"{title}\" after multiple attempts. Please try again later.", p),
+    /** Failed to add "{title}". */
+    searchAddFailed: (p: { title: P }) => t("music", "search_add_failed", "Failed to add \"{title}\".", p),
+    /** Couldn't add "{title}". Try again later. */
+    searchAddFailedFinal: (p: { title: P }) => t("music", "search_add_failed_final", "Couldn't add \"{title}\". Try again later.", p),
     /** Failed to add track. Retrying... ({attempt}/{max}) */
     searchAddRetrying: (p: { attempt: P; max: P }) => t("music", "search_add_retrying", "Failed to add track. Retrying... ({attempt}/{max})", p),
     /** Add {title} to queue */
@@ -11885,14 +11871,12 @@ export const m = {
     searchEmptyHint: () => t("music", "search_empty_hint", "Type artist name, song title or paste a link"),
     /** Search for music */
     searchEmptyTitle: () => t("music", "search_empty_title", "Search for music"),
-    /** Search failed. Please try a different search term. */
-    searchFailed: () => t("music", "search_failed", "Search failed. Please try a different search term."),
-    /** Search failed after multiple attempts. Please check your connection and try again. */
-    searchFailedFinal: () => t("music", "search_failed_final", "Search failed after multiple attempts. Please check your connection and try again."),
-    /** Try different keywords or check your spelling */
-    searchNoResultsHint: () => t("music", "search_no_results_hint", "Try different keywords or check your spelling"),
-    /** No results found. Try a different search term or platform. */
-    searchNoResultsRetry: () => t("music", "search_no_results_retry", "No results found. Try a different search term or platform."),
+    /** Search failed. */
+    searchFailed: () => t("music", "search_failed", "Search failed."),
+    /** Search failed. Check your connection. */
+    searchFailedFinal: () => t("music", "search_failed_final", "Search failed. Check your connection."),
+    /** No results found. */
+    searchNoResultsRetry: () => t("music", "search_no_results_retry", "No results found."),
     /** Open in {source} */
     searchOpenIn: (p: { source: P }) => t("music", "search_open_in", "Open in {source}", p),
     /** original source */
@@ -11991,8 +11975,6 @@ export const m = {
     ttsConsecutiveGroupingHint: () => t("music", "tts_consecutive_grouping_hint", "Skip name for consecutive messages from the same user"),
     /** Default Voice */
     ttsDefaultVoice: () => t("music", "tts_default_voice", "Default Voice"),
-    /** Use the voice search below to find available voices */
-    ttsDefaultVoiceHint: () => t("music", "tts_default_voice_hint", "Use the voice search below to find available voices"),
     /** e.g. Brian (leave empty for default) */
     ttsDefaultVoicePlaceholder: () => t("music", "tts_default_voice_placeholder", "e.g. Brian (leave empty for default)"),
     /** General TTS Settings */
@@ -12021,8 +12003,6 @@ export const m = {
     ttsVcAutoJoinToggle: () => t("music", "tts_vc_auto_join_toggle", "Join automatically"),
     /** No voice channels have TTS enabled */
     ttsVcEmpty: () => t("music", "tts_vc_empty", "No voice channels have TTS enabled"),
-    /** Click "Add Channel" to enable TTS for a voice channel */
-    ttsVcEmptyHint: () => t("music", "tts_vc_empty_hint", "Click \"Add Channel\" to enable TTS for a voice channel"),
     /** Enable TTS */
     ttsVcEnable: () => t("music", "tts_vc_enable", "Enable TTS"),
     /** Join Format */
@@ -12051,8 +12031,8 @@ export const m = {
     unknownWithId: (p: { id: P }) => t("music", "unknown_with_id", "Unknown ({id})", p),
   },
   owner: {
-    /** A server is flagged when it has at least the minimum members and either the bot count o... */
-    botHellsAServerIsFlaggedWhenIt: () => t("owner", "bot_hells_a_server_is_flagged_when_it", "A server is flagged when it has at least the minimum members and either the bot count or the bot percentage is met. Set a threshold to 0 to turn that check off."),
+    /** Flagged at the minimum members plus either bot threshold. 0 turns a threshold off. */
+    botHellsAServerIsFlaggedWhenIt: () => t("owner", "bot_hells_a_server_is_flagged_when_it", "Flagged at the minimum members plus either bot threshold. 0 turns a threshold off."),
     /** Bot count */
     botHellsBotCount: () => t("owner", "bot_hells_bot_count", "Bot count"),
     /** Bot percentage */
@@ -12061,8 +12041,8 @@ export const m = {
     botHellsChannelUnreachable: (p: { channel: P }) => t("owner", "bot_hells_channel_unreachable", "The bot cannot see channel {channel}, so join detections will not be posted.", p),
     /** Checking... */
     botHellsChecking: () => t("owner", "bot_hells_checking", "Checking..."),
-    /** Counts come from the member cache, use Recheck for exact numbers on large servers. */
-    botHellsCountsComeFromTheMemberCache: () => t("owner", "bot_hells_counts_come_from_the_member_cache", "Counts come from the member cache, use Recheck for exact numbers on large servers."),
+    /** Counts come from the member cache. Recheck for exact numbers. */
+    botHellsCountsComeFromTheMemberCache: () => t("owner", "bot_hells_counts_come_from_the_member_cache", "Counts come from the member cache. Recheck for exact numbers."),
     /** {total} members · {humans} humans · {bots} bots ({percent}%) */
     botHellsCountsLine: (p: { bots: P; humans: P; percent: P; total: P }) => t("owner", "bot_hells_counts_line", "{total} members · {humans} humans · {bots} bots ({percent}%)", p),
     /** No servers meet the thresholds. */
@@ -12077,8 +12057,8 @@ export const m = {
     botHellsErrorRecheck: (p: { server: P }) => t("owner", "bot_hells_error_recheck", "Failed to recheck {server}", p),
     /** Thresholds must be whole numbers, zero or above */
     botHellsErrorThresholdsInvalid: () => t("owner", "bot_hells_error_thresholds_invalid", "Thresholds must be whole numbers, zero or above"),
-    /** Every new server is checked after its member list downloads. Flagged ones are reported,... */
-    botHellsEveryNewServerIsCheckedAfter: () => t("owner", "bot_hells_every_new_server_is_checked_after", "Every new server is checked after its member list downloads. Flagged ones are reported, and left when this is on."),
+    /** New servers are checked once members download. Flagged ones are reported, and left when... */
+    botHellsEveryNewServerIsCheckedAfter: () => t("owner", "bot_hells_every_new_server_is_checked_after", "New servers are checked once members download. Flagged ones are reported, and left when this is on."),
     /** All servers */
     botHellsFilterAllServers: () => t("owner", "bot_hells_filter_all_servers", "All servers"),
     /** Flagged only */
@@ -12099,10 +12079,10 @@ export const m = {
     botHellsJoinDetectionsInGuild: (p: { channel: P; guild: P }) => t("owner", "bot_hells_join_detections_in_guild", "Join detections go to #{channel} in {guild}", p),
     /** Leave flagged servers automatically */
     botHellsLeaveFlaggedServersAutomatically: () => t("owner", "bot_hells_leave_flagged_servers_automatically", "Leave flagged servers automatically"),
-    /** Leave {server}? The bot will have to be re-invited to come back. */
-    botHellsLeaveMessageOne: (p: { server: P }) => t("owner", "bot_hells_leave_message_one", "Leave {server}? The bot will have to be re-invited to come back.", p),
-    /** Leave {count} servers? The bot will have to be re-invited to come back to any of them. */
-    botHellsLeaveMessageOther: (p: { count: P }) => t("owner", "bot_hells_leave_message_other", "Leave {count} servers? The bot will have to be re-invited to come back to any of them.", p),
+    /** Leave {server}? The bot must be re-invited to return. */
+    botHellsLeaveMessageOne: (p: { server: P }) => t("owner", "bot_hells_leave_message_one", "Leave {server}? The bot must be re-invited to return.", p),
+    /** Leave {count} servers? The bot must be re-invited to return. */
+    botHellsLeaveMessageOther: (p: { count: P }) => t("owner", "bot_hells_leave_message_other", "Leave {count} servers? The bot must be re-invited to return.", p),
     /** Leave selected ({count}) */
     botHellsLeaveSelected: (p: { count: P }) => t("owner", "bot_hells_leave_selected", "Leave selected ({count})", p),
     /** Leave this server */
@@ -12125,8 +12105,8 @@ export const m = {
     botHellsMemberCacheIsPartial: () => t("owner", "bot_hells_member_cache_is_partial", "Member cache is partial"),
     /** Minimum members */
     botHellsMinimumMembers: () => t("owner", "bot_hells_minimum_members", "Minimum members"),
-    /** No channel is set and there is no join/leave channel to fall back to, so join detection... */
-    botHellsNoChannelIsSetAndThere: () => t("owner", "bot_hells_no_channel_is_set_and_there", "No channel is set and there is no join/leave channel to fall back to, so join detections are not posted anywhere."),
+    /** No channel set and no join/leave channel to fall back to, so join detections are not po... */
+    botHellsNoChannelIsSetAndThere: () => t("owner", "bot_hells_no_channel_is_set_and_there", "No channel set and no join/leave channel to fall back to, so join detections are not posted."),
     /** On join */
     botHellsOnJoin: () => t("owner", "bot_hells_on_join", "On join"),
     /** · partial */
@@ -12177,22 +12157,22 @@ export const m = {
     dockerComposeFilesNotVisible: () => t("owner", "docker_compose_files_not_visible", "compose files not visible"),
     /** Compose jobs */
     dockerComposeJobs: () => t("owner", "docker_compose_jobs", "Compose jobs"),
-    /** Fetch the latest images for {project} and rebuild anything built locally. Nothing resta... */
-    dockerComposePullDescription: (p: { project: P }) => t("owner", "docker_compose_pull_description", "Fetch the latest images for {project} and rebuild anything built locally. Nothing restarts until you run Up.", p),
+    /** Fetch the latest images for {project} and rebuild local ones. Nothing restarts until Up. */
+    dockerComposePullDescription: (p: { project: P }) => t("owner", "docker_compose_pull_description", "Fetch the latest images for {project} and rebuild local ones. Nothing restarts until Up.", p),
     /** Run {operation} */
     dockerComposeRun: (p: { operation: P }) => t("owner", "docker_compose_run", "Run {operation}", p),
     /** Compose {operation} on {project}? */
     dockerComposeTitle: (p: { operation: P; project: P }) => t("owner", "docker_compose_title", "Compose {operation} on {project}?", p),
-    /** Bring {project} up. Containers whose image or config changed are recreated; the rest ar... */
-    dockerComposeUpDescription: (p: { project: P }) => t("owner", "docker_compose_up_description", "Bring {project} up. Containers whose image or config changed are recreated; the rest are left alone.", p),
-    /** Fetch the latest images for {project}, then bring it up so changed containers are recre... */
-    dockerComposeUpdateDescription: (p: { project: P }) => t("owner", "docker_compose_update_description", "Fetch the latest images for {project}, then bring it up so changed containers are recreated.", p),
+    /** Bring {project} up and recreate changed containers. */
+    dockerComposeUpDescription: (p: { project: P }) => t("owner", "docker_compose_up_description", "Bring {project} up and recreate changed containers.", p),
+    /** Fetch the latest images for {project} and recreate changed containers. */
+    dockerComposeUpdateDescription: (p: { project: P }) => t("owner", "docker_compose_update_description", "Fetch the latest images for {project} and recreate changed containers.", p),
     /** Container log output */
     dockerContainerLogOutput: () => t("owner", "docker_container_log_output", "Container log output"),
     /** Containers */
     dockerContainers: () => t("owner", "docker_containers", "Containers"),
-    /** Containers and compose projects on the selected instance's host */
-    dockerContainersAndComposeProjectsOnThe: () => t("owner", "docker_containers_and_compose_projects_on_the", "Containers and compose projects on the selected instance's host"),
+    /** Containers and compose projects on this host */
+    dockerContainersAndComposeProjectsOnThe: () => t("owner", "docker_containers_and_compose_projects_on_the", "Containers and compose projects on this host"),
     /** created {ago} */
     dockerCreatedAgo: (p: { ago: P }) => t("owner", "docker_created_ago", "created {ago}", p),
     /** Daemon */
@@ -12213,16 +12193,16 @@ export const m = {
     dockerErrorStartUpdate: () => t("owner", "docker_error_start_update", "Could not start the update"),
     /** exit {code} */
     dockerExitCode: (p: { code: P }) => t("owner", "docker_exit_code", "exit {code}", p),
-    /** Every registered instance, the commit it runs, and whether a newer image is published */
-    dockerFleetSubtitle: () => t("owner", "docker_fleet_subtitle", "Every registered instance, the commit it runs, and whether a newer image is published"),
+    /** Each instance, its commit and newer images */
+    dockerFleetSubtitle: () => t("owner", "docker_fleet_subtitle", "Each instance, its commit and newer images"),
     /** Fleet update started */
     dockerFleetUpdateStarted: () => t("owner", "docker_fleet_update_started", "Fleet update started"),
     /** {count} of {total} instances have a newer build published */
     dockerFleetUpdatesAvailable: (p: { count: P; total: P }) => t("owner", "docker_fleet_updates_available", "{count} of {total} instances have a newer build published", p),
     /** {running}/{total} up */
     dockerGroupUp: (p: { running: P; total: P }) => t("owner", "docker_group_up", "{running}/{total} up", p),
-    /** Grouped by compose project. Expand a project to sample its resource use. */
-    dockerGroupedByComposeProjectExpandA: () => t("owner", "docker_grouped_by_compose_project_expand_a", "Grouped by compose project. Expand a project to sample its resource use."),
+    /** Grouped by compose project. Expand one to sample resource use. */
+    dockerGroupedByComposeProjectExpandA: () => t("owner", "docker_grouped_by_compose_project_expand_a", "Grouped by compose project. Expand one to sample resource use."),
     /** failed */
     dockerJobFailed: () => t("owner", "docker_job_failed", "failed"),
     /** running */
@@ -12255,8 +12235,8 @@ export const m = {
     dockerOtherHost: (p: { name: P }) => t("owner", "docker_other_host", "{name} runs on another host; select that instance to read its logs", p),
     /** asking... */
     dockerPillAsking: () => t("owner", "docker_pill_asking", "asking..."),
-    /** Pull, up and build runs started from here, with their output */
-    dockerPullUpAndBuildRunsStarted: () => t("owner", "docker_pull_up_and_build_runs_started", "Pull, up and build runs started from here, with their output"),
+    /** Runs started here, with output */
+    dockerPullUpAndBuildRunsStarted: () => t("owner", "docker_pull_up_and_build_runs_started", "Runs started here, with output"),
     /** registry unreachable */
     dockerRegistryUnreachable: () => t("owner", "docker_registry_unreachable", "registry unreachable"),
     /** Restart */
@@ -12271,10 +12251,10 @@ export const m = {
     dockerSamplePidsRx: (p: { pids: P; rx: P }) => t("owner", "docker_sample_pids_rx", "{pids} pids · rx {rx}", p),
     /** sampling... */
     dockerSampling: () => t("owner", "docker_sampling", "sampling..."),
-    /** This is the container the selected bot instance runs in, so the dashboard will lose con... */
-    dockerSelfWarningRestart: () => t("owner", "docker_self_warning_restart", "This is the container the selected bot instance runs in, so the dashboard will lose contact with it until it comes back."),
-    /** This is the container the selected bot instance runs in, so the dashboard will lose con... */
-    dockerSelfWarningStop: () => t("owner", "docker_self_warning_stop", "This is the container the selected bot instance runs in, so the dashboard will lose contact with it until it is started again from elsewhere."),
+    /** This is the selected bot's own container. The dashboard loses contact until it comes back. */
+    dockerSelfWarningRestart: () => t("owner", "docker_self_warning_restart", "This is the selected bot's own container. The dashboard loses contact until it comes back."),
+    /** This is the selected bot's own container. The dashboard loses contact until it is start... */
+    dockerSelfWarningStop: () => t("owner", "docker_self_warning_stop", "This is the selected bot's own container. The dashboard loses contact until it is started again elsewhere."),
     /** Standalone containers */
     dockerStandalone: () => t("owner", "docker_standalone", "Standalone containers"),
     /** started {ago} */
@@ -12319,18 +12299,18 @@ export const m = {
     dockerUpdateAll: () => t("owner", "docker_update_all", "Update all"),
     /** The selected instance is not part of a compose fleet */
     dockerUpdateAllDisabled: () => t("owner", "docker_update_all_disabled", "The selected instance is not part of a compose fleet"),
-    /** Pull the newest image and recreate every changed container in the fleet */
-    dockerUpdateAllHint: () => t("owner", "docker_update_all_hint", "Pull the newest image and recreate every changed container in the fleet"),
-    /** Pull the newest image once and recreate every container in the fleet whose image change... */
-    dockerUpdateAllMessage: () => t("owner", "docker_update_all_message", "Pull the newest image once and recreate every container in the fleet whose image changed. Each bot restarts in turn, including the one you are looking at, so this page loses contact for a moment."),
-    /** Pull the newest image once and recreate every container in the fleet whose image change... */
-    dockerUpdateAllMessageNames: (p: { names: P }) => t("owner", "docker_update_all_message_names", "Pull the newest image once and recreate every container in the fleet whose image changed ({names}). Each bot restarts in turn, including the one you are looking at, so this page loses contact for a moment.", p),
+    /** Pull the newest image and recreate changed containers */
+    dockerUpdateAllHint: () => t("owner", "docker_update_all_hint", "Pull the newest image and recreate changed containers"),
+    /** Pull the newest image and recreate changed containers. Each bot restarts in turn, inclu... */
+    dockerUpdateAllMessage: () => t("owner", "docker_update_all_message", "Pull the newest image and recreate changed containers. Each bot restarts in turn, including this one, so the page loses contact briefly."),
+    /** Pull the newest image and recreate changed containers ({names}). Each bot restarts in t... */
+    dockerUpdateAllMessageNames: (p: { names: P }) => t("owner", "docker_update_all_message_names", "Pull the newest image and recreate changed containers ({names}). Each bot restarts in turn, including this one, so the page loses contact briefly.", p),
     /** Update every bot? */
     dockerUpdateAllTitle: () => t("owner", "docker_update_all_title", "Update every bot?"),
-    /** Pull the newest image and recreate this bot's container */
-    dockerUpdateBotHint: () => t("owner", "docker_update_bot_hint", "Pull the newest image and recreate this bot's container"),
-    /** Pull {target} and recreate {name}'s container. The bot goes offline for the restart, us... */
-    dockerUpdateBotMessage: (p: { name: P; target: P }) => t("owner", "docker_update_bot_message", "Pull {target} and recreate {name}'s container. The bot goes offline for the restart, usually a minute or two.", p),
+    /** Pull and recreate this bot's container */
+    dockerUpdateBotHint: () => t("owner", "docker_update_bot_hint", "Pull and recreate this bot's container"),
+    /** Pull {target} and recreate {name}'s container. The bot is offline for a minute or two. */
+    dockerUpdateBotMessage: (p: { name: P; target: P }) => t("owner", "docker_update_bot_message", "Pull {target} and recreate {name}'s container. The bot is offline for a minute or two.", p),
     /** Update {name}? */
     dockerUpdateBotTitle: (p: { name: P }) => t("owner", "docker_update_bot_title", "Update {name}?", p),
     /** newer */
@@ -12345,8 +12325,8 @@ export const m = {
     dockerWaitingForOutput: () => t("owner", "docker_waiting_for_output", "Waiting for output..."),
     /** the selected bot */
     landingSelectedBot: () => t("owner", "landing_selected_bot", "the selected bot"),
-    /** Fleet and host tools for {bot}. Nothing here is scoped to a server. */
-    landingSubtitle: (p: { bot: P }) => t("owner", "landing_subtitle", "Fleet and host tools for {bot}. Nothing here is scoped to a server.", p),
+    /** Fleet and host tools for {bot} */
+    landingSubtitle: (p: { bot: P }) => t("owner", "landing_subtitle", "Fleet and host tools for {bot}", p),
     /** Owner Panel - Mewdeko */
     landingTitle: () => t("owner", "landing_title", "Owner Panel - Mewdeko"),
     /** Checking owner access... */
@@ -12389,8 +12369,8 @@ export const m = {
     leaveFeedbackLoading: () => t("owner", "leave_feedback_loading", "Loading leave feedback..."),
     /** Loading leave feedback */
     leaveFeedbackLoadingLeaveFeedback: () => t("owner", "leave_feedback_loading_leave_feedback", "Loading leave feedback"),
-    /** No channel is set and there is no join/leave channel to fall back to, so answers are no... */
-    leaveFeedbackNoChannelIsSetAndThere: () => t("owner", "leave_feedback_no_channel_is_set_and_there", "No channel is set and there is no join/leave channel to fall back to, so answers are not posted anywhere."),
+    /** No channel set and no join/leave channel to fall back to, so answers are not posted. */
+    leaveFeedbackNoChannelIsSetAndThere: () => t("owner", "leave_feedback_no_channel_is_set_and_there", "No channel set and no join/leave channel to fall back to, so answers are not posted."),
     /** No feedback matches the current filters. */
     leaveFeedbackNoFeedbackMatchesTheCurrentFilters: () => t("owner", "leave_feedback_no_feedback_matches_the_current_filters", "No feedback matches the current filters."),
     /** Owner {owner} · answered {date} */
@@ -12469,8 +12449,8 @@ export const m = {
     logsWrap: () => t("owner", "logs_wrap", "Wrap"),
     /** Bot Performance Dashboard */
     performanceGuildName: () => t("owner", "performance_guild_name", "Bot Performance Dashboard"),
-    /** Monitor system resources, method performance, event processing, and module metrics */
-    performanceSubtitle: () => t("owner", "performance_subtitle", "Monitor system resources, method performance, event processing, and module metrics"),
+    /** System resources, methods, events and modules */
+    performanceSubtitle: () => t("owner", "performance_subtitle", "System resources, methods, events and modules"),
     /** Methods */
     performanceTabMethods: () => t("owner", "performance_tab_methods", "Methods"),
     /** selected */
@@ -12525,8 +12505,8 @@ export const m = {
     processLogsShowAll: () => t("owner", "process_logs_show_all", "Show all"),
     /** Usage */
     processLogsUsage: () => t("owner", "process_logs_usage", "Usage"),
-    /** What pm2 is running on the selected instance's host */
-    processLogsWhatPm2IsRunningOnThe: () => t("owner", "process_logs_what_pm2_is_running_on_the", "What pm2 is running on the selected instance's host"),
+    /** pm2 on this host */
+    processLogsWhatPm2IsRunningOnThe: () => t("owner", "process_logs_what_pm2_is_running_on_the", "pm2 on this host"),
     /** Report channel ID */
     settingsReportChannelId: () => t("owner", "settings_report_channel_id", "Report channel ID"),
   },
@@ -12547,8 +12527,6 @@ export const m = {
     connectButton: () => t("patreon", "connect_button", "Connect to Patreon"),
     /** Connecting... */
     connectConnecting: () => t("patreon", "connect_connecting", "Connecting..."),
-    /** Link your Patreon campaign to automatically sync supporters and provide exclusive perks... */
-    connectIntro: () => t("patreon", "connect_intro", "Link your Patreon campaign to automatically sync supporters and provide exclusive perks to your community."),
     /** Connect Your Patreon */
     connectTitle: () => t("patreon", "connect_title", "Connect Your Patreon"),
     /** Creator avatar */
@@ -12571,14 +12549,6 @@ export const m = {
     errorOauthState: () => t("patreon", "error_oauth_state", "Invalid OAuth state - missing guild ID"),
     /** Please select a server first */
     errorSelectServer: () => t("patreon", "error_select_server", "Please select a server first"),
-    /** Connect your Patreon account by clicking the "Connect to Patreon" button above. */
-    howStep1: () => t("patreon", "how_step_1", "Connect your Patreon account by clicking the \"Connect to Patreon\" button above."),
-    /** Authorize Mewdeko to access your campaign information and supporter data. */
-    howStep2: () => t("patreon", "how_step_2", "Authorize Mewdeko to access your campaign information and supporter data."),
-    /** Configure automatic role rewards and exclusive perks for your supporters. */
-    howStep3: () => t("patreon", "how_step_3", "Configure automatic role rewards and exclusive perks for your supporters."),
-    /** Supporters get their Discord roles and perks automatically. */
-    howStep4: () => t("patreon", "how_step_4", "Supporters get their Discord roles and perks automatically."),
     /** Loading Patreon data... */
     loading: () => t("patreon", "loading", "Loading Patreon data..."),
     /** Failed to send the announcement */
@@ -12615,8 +12585,8 @@ export const m = {
     pageHeadFallback: () => t("patreon", "page_head_fallback", "Mewdeko Dashboard"),
     /** Patreon Integration - {guild} */
     pageHeadTitle: (p: { guild: P }) => t("patreon", "page_head_title", "Patreon Integration - {guild}", p),
-    /** Connect your Patreon campaign to automatically sync supporters and manage perks */
-    pageSubtitle: () => t("patreon", "page_subtitle", "Connect your Patreon campaign to automatically sync supporters and manage perks"),
+    /** Sync supporters and tier roles */
+    pageSubtitle: () => t("patreon", "page_subtitle", "Sync supporters and tier roles"),
     /** Patreon Integration */
     pageTitle: () => t("patreon", "page_title", "Patreon Integration"),
     /** Announcement Channel */
@@ -12629,16 +12599,16 @@ export const m = {
     settingsEnableAnnouncements: () => t("patreon", "settings_enable_announcements", "Enable Announcements"),
     /** Enable Role Sync */
     settingsEnableRoleSync: () => t("patreon", "settings_enable_role_sync", "Enable Role Sync"),
-    /** Click to configure announcement message with rich embeds */
-    settingsMessagePlaceholder: () => t("patreon", "settings_message_placeholder", "Click to configure announcement message with rich embeds"),
-    /** Message sent for Patreon announcements */
-    settingsPreviewDescription: () => t("patreon", "settings_preview_description", "Message sent for Patreon announcements"),
+    /** Click to edit the message */
+    settingsMessagePlaceholder: () => t("patreon", "settings_message_placeholder", "Click to edit the message"),
+    /** Announcement message */
+    settingsPreviewDescription: () => t("patreon", "settings_preview_description", "Announcement message"),
     /** Patreon Announcement */
     settingsPreviewTitle: () => t("patreon", "settings_preview_title", "Patreon Announcement"),
     /** All Supporters ({count}) */
     supportersAll: (p: { count: P }) => t("patreon", "supporters_all", "All Supporters ({count})", p),
-    /** No supporters found. Try syncing to load the latest data. */
-    supportersEmpty: () => t("patreon", "supporters_empty", "No supporters found. Try syncing to load the latest data."),
+    /** No supporters yet */
+    supportersEmpty: () => t("patreon", "supporters_empty", "No supporters yet"),
     /** No email */
     supportersNoEmail: () => t("patreon", "supporters_no_email", "No email"),
     /** Pledge */
@@ -12651,8 +12621,8 @@ export const m = {
     tiersAvailableTitle: () => t("patreon", "tiers_available_title", "Available Tiers"),
     /** Discord Role */
     tiersDiscordRole: () => t("patreon", "tiers_discord_role", "Discord Role"),
-    /** No tiers found. Make sure your Patreon campaign has published tiers. Try clicking "Sync... */
-    tiersEmpty: () => t("patreon", "tiers_empty", "No tiers found. Make sure your Patreon campaign has published tiers. Try clicking \"Sync All Data\"."),
+    /** No tiers found. Publish tiers on Patreon, then sync. */
+    tiersEmpty: () => t("patreon", "tiers_empty", "No tiers found. Publish tiers on Patreon, then sync."),
     /** Map Tier */
     tiersMapButton: () => t("patreon", "tiers_map_button", "Map Tier"),
     /** Map Tier to Role */
@@ -13261,8 +13231,8 @@ export const m = {
     analyticsAvg: () => t("polls", "analytics_avg", "Avg votes per poll"),
     /** engagement */
     analyticsAvgSubtitle: () => t("polls", "analytics_avg_subtitle", "engagement"),
-    /** Analytics appear once polls have been created. */
-    analyticsEmpty: () => t("polls", "analytics_empty", "Analytics appear once polls have been created."),
+    /** No analytics yet */
+    analyticsEmpty: () => t("polls", "analytics_empty", "No analytics yet"),
     /** Favourite type */
     analyticsFavourite: () => t("polls", "analytics_favourite", "Favourite type"),
     /** most created */
@@ -13277,8 +13247,8 @@ export const m = {
     analyticsVotes: () => t("polls", "analytics_votes", "Votes cast"),
     /** last 30 days */
     analyticsVotesSubtitle: () => t("polls", "analytics_votes_subtitle", "last 30 days"),
-    /** Close "{question}"? Voting stops and final results are posted. */
-    closeConfirm: (p: { question: P }) => t("polls", "close_confirm", "Close \"{question}\"? Voting stops and final results are posted.", p),
+    /** Close "{question}"? */
+    closeConfirm: (p: { question: P }) => t("polls", "close_confirm", "Close \"{question}\"?", p),
     /** Close poll */
     closeConfirmButton: () => t("polls", "close_confirm_button", "Close poll"),
     /** Allow changing votes */
@@ -13327,8 +13297,8 @@ export const m = {
     errorRoles: () => t("polls", "error_roles", "Choose which roles may vote."),
     /** Scheduled time must be in the future. */
     errorSchedulePast: () => t("polls", "error_schedule_past", "Scheduled time must be in the future."),
-    /** Create one from the Create tab. */
-    listEmptyHint: () => t("polls", "list_empty_hint", "Create one from the Create tab."),
+    /** Use the Create tab */
+    listEmptyHint: () => t("polls", "list_empty_hint", "Use the Create tab"),
     /** No polls yet */
     listEmptyTitle: () => t("polls", "list_empty_title", "No polls yet"),
     /** Include closed polls */
@@ -13353,8 +13323,8 @@ export const m = {
     scheduledCancelButton: () => t("polls", "scheduled_cancel_button", "Cancel poll"),
     /** Cancel the scheduled poll "{question}"? */
     scheduledCancelConfirm: (p: { question: P }) => t("polls", "scheduled_cancel_confirm", "Cancel the scheduled poll \"{question}\"?", p),
-    /** Nothing scheduled. Set a time on the Create tab to queue a poll. */
-    scheduledEmpty: () => t("polls", "scheduled_empty", "Nothing scheduled. Set a time on the Create tab to queue a poll."),
+    /** Nothing scheduled */
+    scheduledEmpty: () => t("polls", "scheduled_empty", "Nothing scheduled"),
     /** posts {date} */
     scheduledPosts: (p: { date: P }) => t("polls", "scheduled_posts", "posts {date}", p),
     /** Scheduled polls */
@@ -13363,8 +13333,8 @@ export const m = {
     templateDeleteConfirm: (p: { name: P }) => t("polls", "template_delete_confirm", "Delete template \"{name}\"?", p),
     /** Delete template {name} */
     templatesDeleteAria: (p: { name: P }) => t("polls", "templates_delete_aria", "Delete template {name}", p),
-    /** Tick "save as a template" when creating a poll to reuse it later. */
-    templatesEmpty: () => t("polls", "templates_empty", "Tick \"save as a template\" when creating a poll to reuse it later."),
+    /** No templates yet */
+    templatesEmpty: () => t("polls", "templates_empty", "No templates yet"),
     /** Templates ({count}) */
     templatesTitle: (p: { count: P }) => t("polls", "templates_title", "Templates ({count})", p),
     /** {count}d left */
@@ -13815,14 +13785,14 @@ export const m = {
     giveawaysErrorDefaultEnter: (p: { message: P }) => t("public", "giveaways_error_default_enter", "Failed to enter giveaway: {message}", p),
     /** Failed to load giveaway details: {message} */
     giveawaysErrorDefaultLoad: (p: { message: P }) => t("public", "giveaways_error_default_load", "Failed to load giveaway details: {message}", p),
-    /** Network error: Unable to enter giveaway. Please check your connection and try again. */
-    giveawaysErrorNetworkEnter: () => t("public", "giveaways_error_network_enter", "Network error: Unable to enter giveaway. Please check your connection and try again."),
-    /** Network error: Unable to load giveaway details. Please check your connection and try ag... */
-    giveawaysErrorNetworkLoad: () => t("public", "giveaways_error_network_load", "Network error: Unable to load giveaway details. Please check your connection and try again."),
-    /** Server error: enter giveaway failed. Please try again later. */
-    giveawaysErrorServerEnter: () => t("public", "giveaways_error_server_enter", "Server error: enter giveaway failed. Please try again later."),
-    /** Server error: load giveaway details failed. Please try again later. */
-    giveawaysErrorServerLoad: () => t("public", "giveaways_error_server_load", "Server error: load giveaway details failed. Please try again later."),
+    /** Network error: could not enter the giveaway */
+    giveawaysErrorNetworkEnter: () => t("public", "giveaways_error_network_enter", "Network error: could not enter the giveaway"),
+    /** Network error: could not load the giveaway */
+    giveawaysErrorNetworkLoad: () => t("public", "giveaways_error_network_load", "Network error: could not load the giveaway"),
+    /** Server error: could not enter the giveaway */
+    giveawaysErrorServerEnter: () => t("public", "giveaways_error_server_enter", "Server error: could not enter the giveaway"),
+    /** Server error: could not load the giveaway */
+    giveawaysErrorServerLoad: () => t("public", "giveaways_error_server_load", "Server error: could not load the giveaway"),
     /** Invalid data: {message} */
     giveawaysErrorValidation: (p: { message: P }) => t("public", "giveaways_error_validation", "Invalid data: {message}", p),
     /** 🎉 Giveaway Entry */
@@ -13913,8 +13883,8 @@ export const m = {
     reviewsEmbedSummary: () => t("public", "reviews_embed_summary", "What users think of Mewdeko, and where to leave your own review."),
     /** Bot Reviews */
     reviewsHeading: () => t("public", "reviews_heading", "Bot Reviews"),
-    /** Failed to load reviews. Please try again later. */
-    reviewsLoadFailed: () => t("public", "reviews_load_failed", "Failed to load reviews. Please try again later."),
+    /** Failed to load reviews */
+    reviewsLoadFailed: () => t("public", "reviews_load_failed", "Failed to load reviews"),
     /** Loading reviews... */
     reviewsLoading: () => t("public", "reviews_loading", "Loading reviews..."),
     /** Please log in to submit a review. */
@@ -13933,8 +13903,8 @@ export const m = {
     reviewsSubheading: () => t("public", "reviews_subheading", "What our community thinks about Mewdeko"),
     /** Submit Review */
     reviewsSubmitButton: () => t("public", "reviews_submit_button", "Submit Review"),
-    /** Failed to submit review. Please try again later. */
-    reviewsSubmitFailed: () => t("public", "reviews_submit_failed", "Failed to submit review. Please try again later."),
+    /** Failed to submit review */
+    reviewsSubmitFailed: () => t("public", "reviews_submit_failed", "Failed to submit review"),
     /** Submit Your Review */
     reviewsSubmitHeading: () => t("public", "reviews_submit_heading", "Submit Your Review"),
     /** Thank you for your review */
@@ -14057,8 +14027,6 @@ export const m = {
     pageCardFeatures: () => t("repeaters", "page_card_features", "Features & Settings"),
     /** Immediate Response */
     pageCardImmediate: () => t("repeaters", "page_card_immediate", "Immediate Response"),
-    /** Reposts instantly when messages are sent */
-    pageCardImmediateHint: () => t("repeaters", "page_card_immediate_hint", "Reposts instantly when messages are sent"),
     /** Max: {count} triggers */
     pageCardMaxTriggers: (p: { count: P }) => t("repeaters", "page_card_max_triggers", "Max: {count} triggers", p),
     /** Never expires */
@@ -14085,16 +14053,14 @@ export const m = {
     pageChannelOptionText: (p: { name: P }) => t("repeaters", "page_channel_option_text", "#{name} (Text Channel)", p),
     /** Clear ({count}) */
     pageClearSelection: (p: { count: P }) => t("repeaters", "page_clear_selection", "Clear ({count})", p),
-    /** Are you sure you want to delete this repeater? This action cannot be undone. */
-    pageConfirmDelete: () => t("repeaters", "page_confirm_delete", "Are you sure you want to delete this repeater? This action cannot be undone."),
+    /** Delete this repeater? */
+    pageConfirmDelete: () => t("repeaters", "page_confirm_delete", "Delete this repeater?"),
     /** Create Repeater */
     pageCreateRepeater: () => t("repeaters", "page_create_repeater", "Create Repeater"),
     /** {count} display */
     pageDisplaysOne: (p: { count: P }) => t("repeaters", "page_displays_one", "{count} display", p),
     /** {count} displays */
     pageDisplaysOther: (p: { count: P }) => t("repeaters", "page_displays_other", "{count} displays", p),
-    /** Create your first repeater to start sending automated messages. */
-    pageEmptyHint: () => t("repeaters", "page_empty_hint", "Create your first repeater to start sending automated messages."),
     /** No Repeaters */
     pageEmptyTitle: () => t("repeaters", "page_empty_title", "No Repeaters"),
     /** Conversation Detection */
@@ -14117,18 +14083,14 @@ export const m = {
     pageFormAllowMentions: () => t("repeaters", "page_form_allow_mentions", "Allow @everyone and @here mentions"),
     /** Target Channel */
     pageFormChannel: () => t("repeaters", "page_form_channel", "Target Channel"),
-    /** Set up automated messages for your server */
-    pageFormCreateSubtitle: () => t("repeaters", "page_form_create_subtitle", "Set up automated messages for your server"),
     /** Create New Repeater */
     pageFormCreateTitle: () => t("repeaters", "page_form_create_title", "Create New Repeater"),
     /** Custom: HH:MM:SS */
     pageFormCustomInterval: () => t("repeaters", "page_form_custom_interval", "Custom: HH:MM:SS"),
-    /** Modify settings for repeater #{id} */
-    pageFormEditSubtitle: (p: { id: P }) => t("repeaters", "page_form_edit_subtitle", "Modify settings for repeater #{id}", p),
     /** Edit Repeater */
     pageFormEditTitle: () => t("repeaters", "page_form_edit_title", "Edit Repeater"),
-    /** This repeater will immediately repost the message when any message is sent in the channel. */
-    pageFormImmediateHint: () => t("repeaters", "page_form_immediate_hint", "This repeater will immediately repost the message when any message is sent in the channel."),
+    /** Reposts when any message is sent in the channel */
+    pageFormImmediateHint: () => t("repeaters", "page_form_immediate_hint", "Reposts when any message is sent in the channel"),
     /** Auto-delete after (days) */
     pageFormMaxAge: () => t("repeaters", "page_form_max_age", "Auto-delete after (days)"),
     /** 7.00:00:00 (7 days) */
@@ -14137,8 +14099,6 @@ export const m = {
     pageFormMaxTriggers: () => t("repeaters", "page_form_max_triggers", "Max displays"),
     /** Leave empty for unlimited */
     pageFormMaxTriggersPlaceholder: () => t("repeaters", "page_form_max_triggers_placeholder", "Leave empty for unlimited"),
-    /** Create rich messages with embeds, buttons, and select menus. Supports Discord markdown ... */
-    pageFormMessageHint: () => t("repeaters", "page_form_message_hint", "Create rich messages with embeds, buttons, and select menus. Supports Discord markdown and placeholders."),
     /** Click to configure repeater message with rich embeds and components */
     pageFormMessagePlaceholder: () => t("repeaters", "page_form_message_placeholder", "Click to configure repeater message with rich embeds and components"),
     /** Message that will be repeated in the channel */
@@ -14163,8 +14123,6 @@ export const m = {
     pageFormTagsExcluded: () => t("repeaters", "page_form_tags_excluded", "Never Use These Tags"),
     /** No tags excluded - will work on all thread types */
     pageFormTagsExcludedEmpty: () => t("repeaters", "page_form_tags_excluded_empty", "No tags excluded - will work on all thread types"),
-    /** Configure which forum tags are required or excluded for this repeater. */
-    pageFormTagsHint: () => t("repeaters", "page_form_tags_hint", "Configure which forum tags are required or excluded for this repeater."),
     /** Must Have These Tags */
     pageFormTagsRequired: () => t("repeaters", "page_form_tags_required", "Must Have These Tags"),
     /** No tags required - will work on all threads */
@@ -14257,14 +14215,14 @@ export const m = {
     pageNotifyUpdated: () => t("repeaters", "page_notify_updated", "Repeater updated"),
     /** Trigger Modes */
     pageOverviewModes: () => t("repeaters", "page_overview_modes", "Trigger Modes"),
-    /** Stop the repeater after a time limit or a number of triggers. Leave empty for no limit. */
-    pageQuickEditExpiryHint: () => t("repeaters", "page_quick_edit_expiry_hint", "Stop the repeater after a time limit or a number of triggers. Leave empty for no limit."),
-    /** How often the message repeats, in hours, minutes and seconds. */
-    pageQuickEditIntervalHint: () => t("repeaters", "page_quick_edit_interval_hint", "How often the message repeats, in hours, minutes and seconds."),
-    /** Time of day (24h) the first message should send. Leave empty to disable. */
-    pageQuickEditStartHint: () => t("repeaters", "page_quick_edit_start_hint", "Time of day (24h) the first message should send. Leave empty to disable."),
-    /** Messages per minute that count as an active conversation. */
-    pageQuickEditThresholdHint: () => t("repeaters", "page_quick_edit_threshold_hint", "Messages per minute that count as an active conversation."),
+    /** Leave empty for no limit. */
+    pageQuickEditExpiryHint: () => t("repeaters", "page_quick_edit_expiry_hint", "Leave empty for no limit."),
+    /** How often the message repeats. */
+    pageQuickEditIntervalHint: () => t("repeaters", "page_quick_edit_interval_hint", "How often the message repeats."),
+    /** 24h time. Leave empty to disable. */
+    pageQuickEditStartHint: () => t("repeaters", "page_quick_edit_start_hint", "24h time. Leave empty to disable."),
+    /** Messages per minute that count as a conversation. */
+    pageQuickEditThresholdHint: () => t("repeaters", "page_quick_edit_threshold_hint", "Messages per minute that count as a conversation."),
     /** Conversation Threshold */
     pageQuickEditThresholdTitle: () => t("repeaters", "page_quick_edit_threshold_title", "Conversation Threshold"),
     /** Interval must be in HH:MM:SS format. */
@@ -14295,18 +14253,12 @@ export const m = {
     pageStartTime: () => t("repeaters", "page_start_time", "Start Time"),
     /** Active Repeaters */
     pageStatActive: () => t("repeaters", "page_stat_active", "Active Repeaters"),
-    /** currently running */
-    pageStatActiveHint: () => t("repeaters", "page_stat_active_hint", "currently running"),
     /** Total Displays */
     pageStatDisplays: () => t("repeaters", "page_stat_displays", "Total Displays"),
-    /** messages sent */
-    pageStatDisplaysHint: () => t("repeaters", "page_stat_displays_hint", "messages sent"),
-    /** with time conditions */
-    pageStatScheduledHint: () => t("repeaters", "page_stat_scheduled_hint", "with time conditions"),
     /** Total Repeaters */
     pageStatTotal: () => t("repeaters", "page_stat_total", "Total Repeaters"),
-    /** Manage automated recurring messages and sticky posts */
-    pageSubtitle: () => t("repeaters", "page_subtitle", "Manage automated recurring messages and sticky posts"),
+    /** Recurring messages and sticky posts */
+    pageSubtitle: () => t("repeaters", "page_subtitle", "Recurring messages and sticky posts"),
     /** Message Repeaters */
     pageTitle: () => t("repeaters", "page_title", "Message Repeaters"),
     /** Create New */
@@ -14331,20 +14283,20 @@ export const m = {
     bonusXpLabel: () => t("reputation", "bonus_xp_label", "Bonus XP (optional)"),
     /** System Configuration */
     configHeading: () => t("reputation", "config_heading", "System Configuration"),
-    /** Are you sure you want to remove this role reward? */
-    confirmRemoveReward: () => t("reputation", "confirm_remove_reward", "Are you sure you want to remove this role reward?"),
+    /** Remove this role reward? */
+    confirmRemoveReward: () => t("reputation", "confirm_remove_reward", "Remove this role reward?"),
     /** Enable reputation system */
     enableAria: () => t("reputation", "enable_aria", "Enable reputation system"),
-    /** Allow users to give and receive reputation points */
-    enableHint: () => t("reputation", "enable_hint", "Allow users to give and receive reputation points"),
+    /** Let members give reputation */
+    enableHint: () => t("reputation", "enable_hint", "Let members give reputation"),
     /** Failed to load reputation data */
     errorLoad: () => t("reputation", "error_load", "Failed to load reputation data"),
     /** Failed to load reputation history */
     errorLoadHistory: () => t("reputation", "error_load_history", "Failed to load reputation history"),
-    /** Couldn't save reputation settings. Your last change was undone. */
-    errorSave: () => t("reputation", "error_save", "Couldn't save reputation settings. Your last change was undone."),
-    /** No reputation has been given to this member yet. */
-    historyEmpty: () => t("reputation", "history_empty", "No reputation has been given to this member yet."),
+    /** Couldn't save. Change undone. */
+    errorSave: () => t("reputation", "error_save", "Couldn't save. Change undone."),
+    /** No reputation yet */
+    historyEmpty: () => t("reputation", "history_empty", "No reputation yet"),
     /** from an anonymous member */
     historyFromAnonymous: () => t("reputation", "history_from_anonymous", "from an anonymous member"),
     /** from user {id} */
@@ -14353,8 +14305,8 @@ export const m = {
     historySubtitle: (p: { reputation: P; username: P }) => t("reputation", "history_subtitle", "{username} · {reputation} reputation", p),
     /** Reputation history */
     historyTitle: () => t("reputation", "history_title", "Reputation history"),
-    /** The leaderboard will appear once users start earning reputation. */
-    leaderboardEmptyHint: () => t("reputation", "leaderboard_empty_hint", "The leaderboard will appear once users start earning reputation."),
+    /** Nobody has earned reputation yet */
+    leaderboardEmptyHint: () => t("reputation", "leaderboard_empty_hint", "Nobody has earned reputation yet"),
     /** No Reputation Data */
     leaderboardEmptyTitle: () => t("reputation", "leaderboard_empty_title", "No Reputation Data"),
     /** Reputation Leaderboard */
@@ -14367,8 +14319,8 @@ export const m = {
     notificationChannelLabel: () => t("reputation", "notification_channel_label", "Notification Channel (optional)"),
     /** No notifications */
     notificationChannelPlaceholder: () => t("reputation", "notification_channel_placeholder", "No notifications"),
-    /** Manage server reputation and rewards */
-    pageSubtitle: () => t("reputation", "page_subtitle", "Manage server reputation and rewards"),
+    /** Reputation and role rewards */
+    pageSubtitle: () => t("reputation", "page_subtitle", "Reputation and role rewards"),
     /** Reputation System */
     pageTitle: () => t("reputation", "page_title", "Reputation System"),
     /** Remove role if rep drops below threshold */
@@ -14381,8 +14333,8 @@ export const m = {
     rewardRequirement: (p: { rep: P }) => t("reputation", "reward_requirement", "{rep} reputation", p),
     /** {rep} reputation • +{xp} XP bonus */
     rewardRequirementXp: (p: { rep: P; xp: P }) => t("reputation", "reward_requirement_xp", "{rep} reputation • +{xp} XP bonus", p),
-    /** Add role rewards to incentivize reputation growth. */
-    rewardsEmptyHint: () => t("reputation", "rewards_empty_hint", "Add role rewards to incentivize reputation growth."),
+    /** Add a role reward */
+    rewardsEmptyHint: () => t("reputation", "rewards_empty_hint", "Add a role reward"),
     /** No Role Rewards */
     rewardsEmptyTitle: () => t("reputation", "rewards_empty_title", "No Role Rewards"),
     /** Role Rewards ({count}) */
@@ -14399,8 +14351,8 @@ export const m = {
     statTransactionsSubtitle: () => t("reputation", "stat_transactions_subtitle", "reputation exchanges"),
     /** with reputation */
     statUsersSubtitle: () => t("reputation", "stat_users_subtitle", "with reputation"),
-    /** Reputation statistics will appear here once the system is active. */
-    statsEmptyHint: () => t("reputation", "stats_empty_hint", "Reputation statistics will appear here once the system is active."),
+    /** No statistics yet */
+    statsEmptyHint: () => t("reputation", "stats_empty_hint", "No statistics yet"),
     /** View history */
     viewHistory: () => t("reputation", "view_history", "View history"),
     /** View reputation history for {username} */
@@ -14415,20 +14367,20 @@ export const m = {
     channelDeleted: () => t("role-menus", "channel_deleted", "Deleted channel"),
     /** the deleted channel */
     channelDeletedRef: () => t("role-menus", "channel_deleted_ref", "the deleted channel"),
-    /** Its message in {channel} is deleted too. Members keep the roles they already picked. */
-    deleteMessage: (p: { channel: P }) => t("role-menus", "delete_message", "Its message in {channel} is deleted too. Members keep the roles they already picked.", p),
-    /** Your edits to this menu haven't been saved. */
-    discardMessage: () => t("role-menus", "discard_message", "Your edits to this menu haven't been saved."),
+    /** Its message in {channel} is deleted too. Members keep their roles. */
+    deleteMessage: (p: { channel: P }) => t("role-menus", "delete_message", "Its message in {channel} is deleted too. Members keep their roles.", p),
+    /** Unsaved edits will be lost. */
+    discardMessage: () => t("role-menus", "discard_message", "Unsaved edits will be lost."),
     /** All menus */
     editorAllMenus: () => t("role-menus", "editor_all_menus", "All menus"),
     /** Anyone */
     editorAnyone: () => t("role-menus", "editor_anyone", "Anyone"),
-    /** The bot can't post in the selected channel. Pick another one or fix its permissions. */
-    editorChannelBlocked: () => t("role-menus", "editor_channel_blocked", "The bot can't post in the selected channel. Pick another one or fix its permissions."),
+    /** The bot can't post in this channel */
+    editorChannelBlocked: () => t("role-menus", "editor_channel_blocked", "The bot can't post in this channel"),
     /** Members still get a private note if something goes wrong. */
     editorConfirmSilentHint: () => t("role-menus", "editor_confirm_silent_hint", "Members still get a private note if something goes wrong."),
-    /** Sends a private note only they can see, listing the roles added and removed. */
-    editorConfirmSubtitle: () => t("role-menus", "editor_confirm_subtitle", "Sends a private note only they can see, listing the roles added and removed."),
+    /** Private note listing roles added and removed */
+    editorConfirmSubtitle: () => t("role-menus", "editor_confirm_subtitle", "Private note listing roles added and removed"),
     /** Tell members what changed */
     editorConfirmTitle: () => t("role-menus", "editor_confirm_title", "Tell members what changed"),
     /** Shown in the dropdown before anyone picks. */
@@ -14443,26 +14395,26 @@ export const m = {
     editorInvalidNoOptions: () => t("role-menus", "editor_invalid_no_options", "Add at least one option"),
     /** Every option needs a role */
     editorInvalidRole: () => t("role-menus", "editor_invalid_role", "Every option needs a role"),
-    /** Members can switch roles but can't clear their pick. */
-    editorKeepOneSubtitle: () => t("role-menus", "editor_keep_one_subtitle", "Members can switch roles but can't clear their pick."),
+    /** Members can switch but not clear */
+    editorKeepOneSubtitle: () => t("role-menus", "editor_keep_one_subtitle", "Members can switch but not clear"),
     /** Keep one once chosen */
     editorKeepOneTitle: () => t("role-menus", "editor_keep_one_title", "Keep one once chosen"),
     /** {max} is the most a menu can hold */
     editorMaxOptionsTitle: (p: { max: P }) => t("role-menus", "editor_max_options_title", "{max} is the most a menu can hold", p),
     /** Can hold at most */
     editorMaxRoles: () => t("role-menus", "editor_max_roles", "Can hold at most"),
-    /** Leave empty to post the menu's name and a list of its options. */
-    editorMessageHint: () => t("role-menus", "editor_message_hint", "Leave empty to post the menu's name and a list of its options."),
-    /** Click to write the message, or leave it empty for a simple list of the options */
-    editorMessagePlaceholder: () => t("role-menus", "editor_message_placeholder", "Click to write the message, or leave it empty for a simple list of the options"),
+    /** Empty posts the name and options */
+    editorMessageHint: () => t("role-menus", "editor_message_hint", "Empty posts the name and options"),
+    /** Click to write the message */
+    editorMessagePlaceholder: () => t("role-menus", "editor_message_placeholder", "Click to write the message"),
     /** Shown above the dropdown or buttons */
     editorMessagePreviewDescription: () => t("role-menus", "editor_message_preview_description", "Shown above the dropdown or buttons"),
     /** Role menu message */
     editorMessagePreviewTitle: () => t("role-menus", "editor_message_preview_title", "Role menu message"),
     /** Must keep at least */
     editorMinRoles: () => t("role-menus", "editor_min_roles", "Must keep at least"),
-    /** Only staff see this, and it titles the default message. */
-    editorNameHint: () => t("role-menus", "editor_name_hint", "Only staff see this, and it titles the default message."),
+    /** Only staff see this */
+    editorNameHint: () => t("role-menus", "editor_name_hint", "Only staff see this"),
     /** Members turn each role on or off. */
     editorPickAnyText: () => t("role-menus", "editor_pick_any_text", "Members turn each role on or off."),
     /** Choosing a role swaps out the one they had. */
@@ -14487,36 +14439,36 @@ export const m = {
     importCopySubtitle: () => t("role-menus", "import_copy_subtitle", "Uses the text and embeds from the old message"),
     /** Copy the original message */
     importCopyTitle: () => t("role-menus", "import_copy_title", "Copy the original message"),
-    /** Older emoji role setups made with the old command show up here. */
-    importEmptyText: () => t("role-menus", "import_empty_text", "Older emoji role setups made with the old command show up here."),
+    /** Old emoji role setups show up here */
+    importEmptyText: () => t("role-menus", "import_empty_text", "Old emoji role setups show up here"),
     /** Nothing to move */
     importEmptyTitle: () => t("role-menus", "import_empty_title", "Nothing to move"),
-    /** Older setups had members add an emoji under a message to get a role. Move one to a role... */
-    importIntro: () => t("role-menus", "import_intro", "Older setups had members add an emoji under a message to get a role. Move one to a role menu and members pick from a dropdown or buttons instead."),
+    /** Move an emoji role setup to a role menu */
+    importIntro: () => t("role-menus", "import_intro", "Move an emoji role setup to a role menu"),
     /** Menu type */
     importMenuType: () => t("role-menus", "import_menu_type", "Menu type"),
     /** Move to a role menu */
     importMove: () => t("role-menus", "import_move", "Move to a role menu"),
     /** Post in */
     importPostIn: () => t("role-menus", "import_post_in", "Post in"),
-    /** Stops the old emoji setup and clears its emojis. If the bot posted the original message... */
-    importRetireSubtitle: () => t("role-menus", "import_retire_subtitle", "Stops the old emoji setup and clears its emojis. If the bot posted the original message, it's deleted."),
+    /** Stops the old setup and clears its emojis */
+    importRetireSubtitle: () => t("role-menus", "import_retire_subtitle", "Stops the old setup and clears its emojis"),
     /** Retire the old setup */
     importRetireTitle: () => t("role-menus", "import_retire_title", "Retire the old setup"),
     /** {count} of {max} menus */
     listCount: (p: { count: P; max: P }) => t("role-menus", "list_count", "{count} of {max} menus", p),
     /** Create your first menu */
     listCreateFirst: () => t("role-menus", "list_create_first", "Create your first menu"),
-    /** Post a message with a dropdown or buttons, and members pick their own roles. Pronouns, ... */
-    listEmptyText: () => t("role-menus", "list_empty_text", "Post a message with a dropdown or buttons, and members pick their own roles. Pronouns, colors, pings, regions: one menu each."),
+    /** Let members pick their own roles */
+    listEmptyText: () => t("role-menus", "list_empty_text", "Let members pick their own roles"),
     /** No role menus yet */
     listEmptyTitle: () => t("role-menus", "list_empty_title", "No role menus yet"),
-    /** You have {count} older emoji role setups you can move over. */
-    listImportHint: (p: { count: P }) => t("role-menus", "list_import_hint", "You have {count} older emoji role setups you can move over.", p),
+    /** {count} older emoji role setups to move */
+    listImportHint: (p: { count: P }) => t("role-menus", "list_import_hint", "{count} older emoji role setups to move", p),
     /** Loading */
     listLoading: () => t("role-menus", "list_loading", "Loading"),
-    /** Its channel was deleted. Edit the menu, pick a new channel, and save to post it again. */
-    menuChannelMissing: () => t("role-menus", "menu_channel_missing", "Its channel was deleted. Edit the menu, pick a new channel, and save to post it again."),
+    /** Its channel was deleted. Pick a new one and save. */
+    menuChannelMissing: () => t("role-menus", "menu_channel_missing", "Its channel was deleted. Pick a new one and save."),
     /** Pick any */
     menuModePickAny: () => t("role-menus", "menu_mode_pick_any", "Pick any"),
     /** Pick one */
@@ -14557,8 +14509,8 @@ export const m = {
     pageSaveFailed: () => t("role-menus", "page_save_failed", "Couldn't save the menu."),
     /** Add an option to see the menu */
     previewEmpty: () => t("role-menus", "preview_empty", "Add an option to see the menu"),
-    /** Paused: the dropdown or buttons are greyed out in Discord. */
-    previewPaused: () => t("role-menus", "preview_paused", "Paused: the dropdown or buttons are greyed out in Discord."),
+    /** Menu paused */
+    previewPaused: () => t("role-menus", "preview_paused", "Menu paused"),
     /** Channel missing */
     statusChannelMissing: () => t("role-menus", "status_channel_missing", "Channel missing"),
     /** Live */
@@ -14569,8 +14521,8 @@ export const m = {
     tabMenus: () => t("role-menus", "tab_menus", "Menus"),
     /** Move older setups */
     tabMove: () => t("role-menus", "tab_move", "Move older setups"),
-    /** The bot doesn't have Manage Roles, so menus can't give out roles until it does. */
-    warnBotManageRoles: () => t("role-menus", "warn_bot_manage_roles", "The bot doesn't have Manage Roles, so menus can't give out roles until it does."),
+    /** The bot needs Manage Roles to give out roles */
+    warnBotManageRoles: () => t("role-menus", "warn_bot_manage_roles", "The bot needs Manage Roles to give out roles"),
   },
   rolegreets: {
     /** Add Role Greet */
@@ -14587,14 +14539,14 @@ export const m = {
     pageEditDeleteTimeLabel: () => t("rolegreets", "page_edit_delete_time_label", "Delete Time (seconds, 0 for never)"),
     /** Click to configure role greeting message */
     pageEditMessagePlaceholder: () => t("rolegreets", "page_edit_message_placeholder", "Click to configure role greeting message"),
-    /** Message sent when users receive this role */
-    pageEditPreviewDescription: () => t("rolegreets", "page_edit_preview_description", "Message sent when users receive this role"),
+    /** Sent when a member gets this role */
+    pageEditPreviewDescription: () => t("rolegreets", "page_edit_preview_description", "Sent when a member gets this role"),
     /** Role Greeting Message */
     pageEditPreviewTitle: () => t("rolegreets", "page_edit_preview_title", "Role Greeting Message"),
-    /** Enter a full Discord webhook URL, or leave it empty. It saves once it is complete. */
-    pageEditWebhookInvalid: () => t("rolegreets", "page_edit_webhook_invalid", "Enter a full Discord webhook URL, or leave it empty. It saves once it is complete."),
-    /** Create a role greet to welcome users when they get a specific role */
-    pageEmptyHint: () => t("rolegreets", "page_empty_hint", "Create a role greet to welcome users when they get a specific role"),
+    /** Enter a full Discord webhook URL or leave it empty */
+    pageEditWebhookInvalid: () => t("rolegreets", "page_edit_webhook_invalid", "Enter a full Discord webhook URL or leave it empty"),
+    /** Add a role greet */
+    pageEmptyHint: () => t("rolegreets", "page_empty_hint", "Add a role greet"),
     /** No role greets configured */
     pageEmptyTitle: () => t("rolegreets", "page_empty_title", "No role greets configured"),
     /** Failed to add role greet */
@@ -14607,8 +14559,8 @@ export const m = {
     pageErrorFetch: () => t("rolegreets", "page_error_fetch", "Failed to fetch role greets"),
     /** Failed to update role greet state */
     pageErrorToggle: () => t("rolegreets", "page_error_toggle", "Failed to update role greet state"),
-    /** Should bot accounts receive this greeting? */
-    pageGreetBotsHint: () => t("rolegreets", "page_greet_bots_hint", "Should bot accounts receive this greeting?"),
+    /** Greet bots too */
+    pageGreetBotsHint: () => t("rolegreets", "page_greet_bots_hint", "Greet bots too"),
     /** Role greet added */
     pageNotifyAdded: () => t("rolegreets", "page_notify_added", "Role greet added"),
     /** Role greet deleted */
@@ -14617,8 +14569,8 @@ export const m = {
     pageNotifyDisabled: () => t("rolegreets", "page_notify_disabled", "Role greet disabled"),
     /** Role greet enabled */
     pageNotifyEnabled: () => t("rolegreets", "page_notify_enabled", "Role greet enabled"),
-    /** Configure greeting messages when users receive specific roles */
-    pageSubtitle: () => t("rolegreets", "page_subtitle", "Configure greeting messages when users receive specific roles"),
+    /** Greet members who get a role */
+    pageSubtitle: () => t("rolegreets", "page_subtitle", "Greet members who get a role"),
     /** No message set */
     pageViewNoMessage: () => t("rolegreets", "page_view_no_message", "No message set"),
     /** Using Webhook */
@@ -14629,8 +14581,8 @@ export const m = {
     actionSaveAllStates: () => t("rolestates", "action_save_all_states", "Save All States"),
     /** Apply Role State */
     copyApply: () => t("rolestates", "copy_apply", "Apply Role State"),
-    /** Copy saved roles from one user and apply them to another user */
-    copyHint: () => t("rolestates", "copy_hint", "Copy saved roles from one user and apply them to another user"),
+    /** Copy saved roles from one user to another */
+    copyHint: () => t("rolestates", "copy_hint", "Copy saved roles from one user to another"),
     /** Source User (copy from) */
     copySource: () => t("rolestates", "copy_source", "Source User (copy from)"),
     /** Select source user */
@@ -14645,16 +14597,16 @@ export const m = {
     deniedRoleRemove: () => t("rolestates", "denied_role_remove", "Remove denied role"),
     /** No roles are being excluded */
     deniedRolesEmpty: () => t("rolestates", "denied_roles_empty", "No roles are being excluded"),
-    /** Roles in this list will not be saved or restored */
-    deniedRolesHint: () => t("rolestates", "denied_roles_hint", "Roles in this list will not be saved or restored"),
+    /** Never saved or restored */
+    deniedRolesHint: () => t("rolestates", "denied_roles_hint", "Never saved or restored"),
     /** Denied Roles */
     deniedRolesTitle: () => t("rolestates", "denied_roles_title", "Denied Roles"),
     /** Remove denied user */
     deniedUserRemove: () => t("rolestates", "denied_user_remove", "Remove denied user"),
     /** No users are being excluded */
     deniedUsersEmpty: () => t("rolestates", "denied_users_empty", "No users are being excluded"),
-    /** Users in this list will not have their roles saved or restored */
-    deniedUsersHint: () => t("rolestates", "denied_users_hint", "Users in this list will not have their roles saved or restored"),
+    /** Roles never saved or restored */
+    deniedUsersHint: () => t("rolestates", "denied_users_hint", "Roles never saved or restored"),
     /** Denied Users */
     deniedUsersTitle: () => t("rolestates", "denied_users_title", "Denied Users"),
     /** No roles selected */
@@ -14727,8 +14679,8 @@ export const m = {
     notifyUserDenied: () => t("rolestates", "notify_user_denied", "User added to deny list"),
     /** Save All */
     saveAllButton: () => t("rolestates", "save_all_button", "Save All"),
-    /** Save role states for all current server members */
-    saveCurrentHint: () => t("rolestates", "save_current_hint", "Save role states for all current server members"),
+    /** Save states for all current members */
+    saveCurrentHint: () => t("rolestates", "save_current_hint", "Save states for all current members"),
     /** Save Current States */
     saveCurrentTitle: () => t("rolestates", "save_current_title", "Save Current States"),
     /** Deny List */
@@ -14741,8 +14693,8 @@ export const m = {
     statesAllRoles: () => t("rolestates", "states_all_roles", "All Saved Roles:"),
     /** Delete role state */
     statesDelete: () => t("rolestates", "states_delete", "Delete role state"),
-    /** Role states will be saved automatically when users leave the server */
-    statesEmptyHint: () => t("rolestates", "states_empty_hint", "Role states will be saved automatically when users leave the server"),
+    /** Saved when members leave */
+    statesEmptyHint: () => t("rolestates", "states_empty_hint", "Saved when members leave"),
     /** No Role States Saved */
     statesEmptyTitle: () => t("rolestates", "states_empty_title", "No Role States Saved"),
     /** Saved Role States ({count}) */
@@ -14751,26 +14703,26 @@ export const m = {
     statesViewDetails: () => t("rolestates", "states_view_details", "View details"),
     /** Don't clear on ban */
     toggleClearOnBanDisable: () => t("rolestates", "toggle_clear_on_ban_disable", "Don't clear on ban"),
-    /** Role states will be kept when a user is banned */
-    toggleClearOnBanOff: () => t("rolestates", "toggle_clear_on_ban_off", "Role states will be kept when a user is banned"),
-    /** Role states will be deleted when a user is banned */
-    toggleClearOnBanOn: () => t("rolestates", "toggle_clear_on_ban_on", "Role states will be deleted when a user is banned"),
+    /** Kept after a ban */
+    toggleClearOnBanOff: () => t("rolestates", "toggle_clear_on_ban_off", "Kept after a ban"),
+    /** Deleted after a ban */
+    toggleClearOnBanOn: () => t("rolestates", "toggle_clear_on_ban_on", "Deleted after a ban"),
     /** Clear on ban */
     toggleClearOnBanTitle: () => t("rolestates", "toggle_clear_on_ban_title", "Clear on ban"),
     /** Don't ignore bots */
     toggleIgnoreBotsDisable: () => t("rolestates", "toggle_ignore_bots_disable", "Don't ignore bots"),
-    /** Bot roles will be saved just like user roles */
-    toggleIgnoreBotsOff: () => t("rolestates", "toggle_ignore_bots_off", "Bot roles will be saved just like user roles"),
-    /** Bot roles will not be saved */
-    toggleIgnoreBotsOn: () => t("rolestates", "toggle_ignore_bots_on", "Bot roles will not be saved"),
+    /** Bot roles are saved */
+    toggleIgnoreBotsOff: () => t("rolestates", "toggle_ignore_bots_off", "Bot roles are saved"),
+    /** Bot roles are not saved */
+    toggleIgnoreBotsOn: () => t("rolestates", "toggle_ignore_bots_on", "Bot roles are not saved"),
     /** Disable Role States */
     toggleRoleStatesDisable: () => t("rolestates", "toggle_role_states_disable", "Disable Role States"),
     /** Enable Role States */
     toggleRoleStatesEnable: () => t("rolestates", "toggle_role_states_enable", "Enable Role States"),
-    /** Not currently saving user roles */
-    toggleRoleStatesOff: () => t("rolestates", "toggle_role_states_off", "Not currently saving user roles"),
-    /** Currently remembering user roles when they leave */
-    toggleRoleStatesOn: () => t("rolestates", "toggle_role_states_on", "Currently remembering user roles when they leave"),
+    /** Not saving roles */
+    toggleRoleStatesOff: () => t("rolestates", "toggle_role_states_off", "Not saving roles"),
+    /** Saving roles when members leave */
+    toggleRoleStatesOn: () => t("rolestates", "toggle_role_states_on", "Saving roles when members leave"),
   },
   serverstats: {
     /** DND */
@@ -14827,12 +14779,12 @@ export const m = {
     ignoredMembersNote: () => t("serverstats", "ignored_members_note", "Not counted in this server"),
     /** Holders are not counted */
     ignoredRolesNote: () => t("serverstats", "ignored_roles_note", "Holders are not counted"),
-    /** Pick a channel to see who is active in it. */
-    lookupChannelEmpty: () => t("serverstats", "lookup_channel_empty", "Pick a channel to see who is active in it."),
+    /** Choose a channel */
+    lookupChannelEmpty: () => t("serverstats", "lookup_channel_empty", "Choose a channel"),
     /** Chats most in */
     lookupChatsMost: () => t("serverstats", "lookup_chats_most", "Chats most in"),
-    /** Type a game to see who plays it and for how long. */
-    lookupGameEmpty: () => t("serverstats", "lookup_game_empty", "Type a game to see who plays it and for how long."),
+    /** Type a game to see who plays it */
+    lookupGameEmpty: () => t("serverstats", "lookup_game_empty", "Type a game to see who plays it"),
     /** Game or app name */
     lookupGamePlaceholder: () => t("serverstats", "lookup_game_placeholder", "Game or app name"),
     /** Games and apps */
@@ -14843,8 +14795,8 @@ export const m = {
     lookupLifetimeVoice: () => t("serverstats", "lookup_lifetime_voice", "Lifetime voice"),
     /** Look up */
     lookupLookUp: () => t("serverstats", "lookup_look_up", "Look up"),
-    /** Pick a member to see their messages, voice time and games. */
-    lookupMemberEmpty: () => t("serverstats", "lookup_member_empty", "Pick a member to see their messages, voice time and games."),
+    /** Choose a member */
+    lookupMemberEmpty: () => t("serverstats", "lookup_member_empty", "Choose a member"),
     /** Nobody has been seen in {game} in this window. */
     lookupNobody: (p: { game: P }) => t("serverstats", "lookup_nobody", "Nobody has been seen in {game} in this window.", p),
     /** People */
@@ -14859,12 +14811,12 @@ export const m = {
     lookupVoiceChannels: () => t("serverstats", "lookup_voice_channels", "Voice channels"),
     /** Who plays */
     lookupWhoPlays: () => t("serverstats", "lookup_who_plays", "Who plays"),
-    /** Couldn't save activity stats settings. Toggles were put back; use Retry for number fields. */
-    notifySaveFailed: () => t("serverstats", "notify_save_failed", "Couldn't save activity stats settings. Toggles were put back; use Retry for number fields."),
+    /** Couldn't save settings. Use Retry for number fields. */
+    notifySaveFailed: () => t("serverstats", "notify_save_failed", "Couldn't save settings. Use Retry for number fields."),
     /** Server Activity */
     overviewTitle: () => t("serverstats", "overview_title", "Server Activity"),
-    /** Messages, voice time, games and member growth over any window */
-    pageSubtitle: () => t("serverstats", "page_subtitle", "Messages, voice time, games and member growth over any window"),
+    /** Messages, voice, games and growth */
+    pageSubtitle: () => t("serverstats", "page_subtitle", "Messages, voice, games and growth"),
     /** CSV */
     rankCsv: () => t("serverstats", "rank_csv", "CSV"),
     /** No activity recorded for this window */
@@ -14881,34 +14833,34 @@ export const m = {
     rankTopGamesTime: () => t("serverstats", "rank_top_games_time", "Most time in games"),
     /** Message cooldown (seconds) */
     settingCooldown: () => t("serverstats", "setting_cooldown", "Message cooldown (seconds)"),
-    /** Messages from the same member count at most once per this many seconds. 0 counts every ... */
-    settingCooldownHint: () => t("serverstats", "setting_cooldown_hint", "Messages from the same member count at most once per this many seconds. 0 counts every message."),
+    /** Count a member's messages once per this many seconds. 0 counts all. */
+    settingCooldownHint: () => t("serverstats", "setting_cooldown_hint", "Count a member's messages once per this many seconds. 0 counts all."),
     /** Count bots */
     settingCountBots: () => t("serverstats", "setting_count_bots", "Count bots"),
-    /** Include bot accounts in message and voice stats */
-    settingCountBotsHint: () => t("serverstats", "setting_count_bots_hint", "Include bot accounts in message and voice stats"),
+    /** Include bots in stats */
+    settingCountBotsHint: () => t("serverstats", "setting_count_bots_hint", "Include bots in stats"),
     /** Hourly snapshots */
     settingSnapshots: () => t("serverstats", "setting_snapshots", "Hourly snapshots"),
-    /** Member and status counts every hour, for the member and status charts */
-    settingSnapshotsHint: () => t("serverstats", "setting_snapshots_hint", "Member and status counts every hour, for the member and status charts"),
+    /** Hourly member and status counts for the charts */
+    settingSnapshotsHint: () => t("serverstats", "setting_snapshots_hint", "Hourly member and status counts for the charts"),
     /** Track games and apps */
     settingTrackActivities: () => t("serverstats", "setting_track_activities", "Track games and apps"),
-    /** Time members spend playing, streaming, listening or watching. Off by default; the heavi... */
-    settingTrackActivitiesHint: () => t("serverstats", "setting_track_activities_hint", "Time members spend playing, streaming, listening or watching. Off by default; the heaviest tracker."),
+    /** Off by default, the heaviest tracker */
+    settingTrackActivitiesHint: () => t("serverstats", "setting_track_activities_hint", "Off by default, the heaviest tracker"),
     /** Track voice time */
     settingTrackVoice: () => t("serverstats", "setting_track_voice", "Track voice time"),
-    /** Seconds spent in voice channels, per member and channel */
-    settingTrackVoiceHint: () => t("serverstats", "setting_track_voice_hint", "Seconds spent in voice channels, per member and channel"),
+    /** Per member and channel */
+    settingTrackVoiceHint: () => t("serverstats", "setting_track_voice_hint", "Per member and channel"),
     /** Verify activities */
     settingVerify: () => t("serverstats", "setting_verify", "Verify activities"),
-    /** Only count activities backed by a Discord application, Spotify or a stream, which block... */
-    settingVerifyHint: () => t("serverstats", "setting_verify_hint", "Only count activities backed by a Discord application, Spotify or a stream, which blocks spoofed presences"),
+    /** Ignore spoofed presences */
+    settingVerifyHint: () => t("serverstats", "setting_verify_hint", "Ignore spoofed presences"),
     /** Default window (days) */
     settingWindow: () => t("serverstats", "setting_window", "Default window (days)"),
-    /** What stats commands and this page use when no window is picked, 1 to 90 */
-    settingWindowHint: () => t("serverstats", "setting_window_hint", "What stats commands and this page use when no window is picked, 1 to 90"),
-    /** What is recorded, for whom, and where */
-    settingsSubtitle: () => t("serverstats", "settings_subtitle", "What is recorded, for whom, and where"),
+    /** 1 to 90 */
+    settingWindowHint: () => t("serverstats", "setting_window_hint", "1 to 90"),
+    /** What gets recorded */
+    settingsSubtitle: () => t("serverstats", "settings_subtitle", "What gets recorded"),
     /** Tracking Settings */
     settingsTitle: () => t("serverstats", "settings_title", "Tracking Settings"),
     /** Member & Channel */
@@ -14991,12 +14943,12 @@ export const m = {
     pageLanguageDefault: () => t("settings", "page_language_default", "Bot default"),
     /** Language the bot replies in for this server */
     pageLanguageHint: () => t("settings", "page_language_hint", "Language the bot replies in for this server"),
-    /** Additional settings like roles, permissions, and module-specific configurations can be ... */
-    pageMoreHint: () => t("settings", "page_more_hint", "Additional settings like roles, permissions, and module-specific configurations can be found in their respective dashboard pages: <strong>Administration</strong>, <strong>Message Stats</strong>, <strong>Starboard</strong>, and more."),
+    /** Other settings live on their module pages. */
+    pageMoreHint: () => t("settings", "page_more_hint", "Other settings live on their module pages."),
     /** More Settings Available */
     pageMoreTitle: () => t("settings", "page_more_title", "More Settings Available"),
-    /** Name of the role applied by mute commands and punishments. Created automatically if mis... */
-    pageMuteHint: () => t("settings", "page_mute_hint", "Name of the role applied by mute commands and punishments. Created automatically if missing."),
+    /** Role name applied on mute. Created if missing. */
+    pageMuteHint: () => t("settings", "page_mute_hint", "Role name applied on mute. Created if missing."),
     /** Muted */
     pageMutePlaceholder: () => t("settings", "page_mute_placeholder", "Muted"),
     /** Remove all other roles while muted */
@@ -15005,20 +14957,20 @@ export const m = {
     pageMuteTitle: () => t("settings", "page_mute_title", "Mute Role"),
     /** The prefix used to invoke bot commands */
     pagePrefixHint: () => t("settings", "page_prefix_hint", "The prefix used to invoke bot commands"),
-    /** Show the contents of Discord message links when they are posted */
-    pagePreviewsHint: () => t("settings", "page_previews_hint", "Show the contents of Discord message links when they are posted"),
+    /** Preview posted message links */
+    pagePreviewsHint: () => t("settings", "page_previews_hint", "Preview posted message links"),
     /** Message link previews */
     pagePreviewsTitle: () => t("settings", "page_previews_title", "Message link previews"),
     /** Couldn't save bot settings. */
     pageSaveFailed: () => t("settings", "page_save_failed", "Couldn't save bot settings."),
-    /** Let members recover recently deleted or edited messages with the snipe commands */
-    pageSnipeHint: () => t("settings", "page_snipe_hint", "Let members recover recently deleted or edited messages with the snipe commands"),
+    /** Let members recover deleted or edited messages */
+    pageSnipeHint: () => t("settings", "page_snipe_hint", "Let members recover deleted or edited messages"),
     /** Message sniping */
     pageSnipeTitle: () => t("settings", "page_snipe_title", "Message sniping"),
-    /** Configure bot-wide settings for your server */
-    pageSubtitle: () => t("settings", "page_subtitle", "Configure bot-wide settings for your server"),
-    /** Used for scheduled messages, reminders and time displays. */
-    pageTimezoneHint: () => t("settings", "page_timezone_hint", "Used for scheduled messages, reminders and time displays."),
+    /** Bot settings for this server */
+    pageSubtitle: () => t("settings", "page_subtitle", "Bot settings for this server"),
+    /** Used for scheduled messages and reminders */
+    pageTimezoneHint: () => t("settings", "page_timezone_hint", "Used for scheduled messages and reminders"),
     /** Loading timezones... */
     pageTimezoneLoading: () => t("settings", "page_timezone_loading", "Loading timezones..."),
     /** Hours until warnings automatically expire (0 = never) */
@@ -15069,32 +15021,32 @@ export const m = {
     profileNoBanner: () => t("settings", "profile_no_banner", "No banner set"),
     /** No bio set */
     profileNoBio: () => t("settings", "profile_no_bio", "No bio set"),
-    /** These settings only affect how the bot appears in this specific server. The bot's globa... */
-    profileNote: () => t("settings", "profile_note", "These settings only affect how the bot appears in this specific server. The bot's global profile remains unchanged."),
+    /** Only affects this server. */
+    profileNote: () => t("settings", "profile_note", "Only affects this server."),
     /** Note: */
     profileNoteLabel: () => t("settings", "profile_note_label", "Note:"),
-    /** The avatar, banner and bio in this server all go back to the bot's normal profile. */
-    profileResetAllMessage: () => t("settings", "profile_reset_all_message", "The avatar, banner and bio in this server all go back to the bot's normal profile."),
+    /** Avatar, banner and bio go back to default. */
+    profileResetAllMessage: () => t("settings", "profile_reset_all_message", "Avatar, banner and bio go back to default."),
     /** Reset the whole profile? */
     profileResetAllTitle: () => t("settings", "profile_reset_all_title", "Reset the whole profile?"),
-    /** The bot goes back to its normal avatar in this server. */
-    profileResetAvatarMessage: () => t("settings", "profile_reset_avatar_message", "The bot goes back to its normal avatar in this server."),
+    /** Goes back to the default avatar. */
+    profileResetAvatarMessage: () => t("settings", "profile_reset_avatar_message", "Goes back to the default avatar."),
     /** Reset the avatar? */
     profileResetAvatarTitle: () => t("settings", "profile_reset_avatar_title", "Reset the avatar?"),
-    /** The bot goes back to its normal banner in this server. */
-    profileResetBannerMessage: () => t("settings", "profile_reset_banner_message", "The bot goes back to its normal banner in this server."),
+    /** Goes back to the default banner. */
+    profileResetBannerMessage: () => t("settings", "profile_reset_banner_message", "Goes back to the default banner."),
     /** Reset the banner? */
     profileResetBannerTitle: () => t("settings", "profile_reset_banner_title", "Reset the banner?"),
-    /** The bot goes back to its normal bio in this server. */
-    profileResetBioMessage: () => t("settings", "profile_reset_bio_message", "The bot goes back to its normal bio in this server."),
+    /** Goes back to the default bio. */
+    profileResetBioMessage: () => t("settings", "profile_reset_bio_message", "Goes back to the default bio."),
     /** Reset the bio? */
     profileResetBioTitle: () => t("settings", "profile_reset_bio_title", "Reset the bio?"),
     /** Failed to reset the profile */
     profileResetFailed: () => t("settings", "profile_reset_failed", "Failed to reset the profile"),
     /** Please select an image file. */
     profileSelectImage: () => t("settings", "profile_select_image", "Please select an image file."),
-    /** Customize bot appearance in this server */
-    profileSubtitle: () => t("settings", "profile_subtitle", "Customize bot appearance in this server"),
+    /** Bot appearance in this server */
+    profileSubtitle: () => t("settings", "profile_subtitle", "Bot appearance in this server"),
     /** Bot Guild Profile */
     profileTitle: () => t("settings", "profile_title", "Bot Guild Profile"),
   },
@@ -15109,8 +15061,8 @@ export const m = {
     sanitizeQuestionTextEmpty: () => t("shared", "sanitize_question_text_empty", "Question text cannot be empty"),
     /** Leave without saving */
     unsavedLeave: () => t("shared", "unsaved_leave", "Leave without saving"),
-    /** You have changes that have not been saved. Leaving this page will lose them. */
-    unsavedMessage: () => t("shared", "unsaved_message", "You have changes that have not been saved. Leaving this page will lose them."),
+    /** Leaving will lose your changes. */
+    unsavedMessage: () => t("shared", "unsaved_message", "Leaving will lose your changes."),
     /** Stay */
     unsavedStay: () => t("shared", "unsaved_stay", "Stay"),
     /** Discard unsaved changes? */
@@ -15241,16 +15193,16 @@ export const m = {
     customEmojiSet: () => t("starboard", "custom_emoji_set", "Set"),
     /** Delete starboard */
     deleteAria: () => t("starboard", "delete_aria", "Delete starboard"),
-    /** Are you sure you want to delete this starboard? This action cannot be undone. */
-    deleteMessage: () => t("starboard", "delete_message", "Are you sure you want to delete this starboard? This action cannot be undone."),
+    /** Delete this starboard? */
+    deleteMessage: () => t("starboard", "delete_message", "Delete this starboard?"),
     /** Emote */
     emoteLabel: () => t("starboard", "emote_label", "Emote"),
     /** Star Emotes */
     emotesHeading: () => t("starboard", "emotes_heading", "Star Emotes"),
     /** Any of these reactions counts toward the threshold. */
     emotesHint: () => t("starboard", "emotes_hint", "Any of these reactions counts toward the threshold."),
-    /** Create your first starboard to showcase your server's best messages */
-    emptyHint: () => t("starboard", "empty_hint", "Create your first starboard to showcase your server's best messages"),
+    /** Create your first starboard */
+    emptyHint: () => t("starboard", "empty_hint", "Create your first starboard"),
     /** No starboards configured */
     emptyTitle: () => t("starboard", "empty_title", "No starboards configured"),
     /** Failed to add emote */
@@ -15309,18 +15261,18 @@ export const m = {
     notifyModeBlacklist: () => t("starboard", "notify_mode_blacklist", "Now using blacklist mode for channels"),
     /** Now using whitelist mode for channels */
     notifyModeWhitelist: () => t("starboard", "notify_mode_whitelist", "Now using whitelist mode for channels"),
-    /** Starred messages will not be removed when below threshold */
-    notifyRemoveBelowOff: () => t("starboard", "notify_remove_below_off", "Starred messages will not be removed when below threshold"),
-    /** Starred messages will be removed when below threshold */
-    notifyRemoveBelowOn: () => t("starboard", "notify_remove_below_on", "Starred messages will be removed when below threshold"),
-    /** Starred messages will not be removed when reactions are cleared */
-    notifyRemoveOnClearOff: () => t("starboard", "notify_remove_on_clear_off", "Starred messages will not be removed when reactions are cleared"),
-    /** Starred messages will be removed when reactions are cleared */
-    notifyRemoveOnClearOn: () => t("starboard", "notify_remove_on_clear_on", "Starred messages will be removed when reactions are cleared"),
-    /** Starred messages will not be removed when original is deleted */
-    notifyRemoveOnDeleteOff: () => t("starboard", "notify_remove_on_delete_off", "Starred messages will not be removed when original is deleted"),
-    /** Starred messages will be removed when original is deleted */
-    notifyRemoveOnDeleteOn: () => t("starboard", "notify_remove_on_delete_on", "Starred messages will be removed when original is deleted"),
+    /** Now kept below threshold */
+    notifyRemoveBelowOff: () => t("starboard", "notify_remove_below_off", "Now kept below threshold"),
+    /** Now removed below threshold */
+    notifyRemoveBelowOn: () => t("starboard", "notify_remove_below_on", "Now removed below threshold"),
+    /** Now kept when reactions are cleared */
+    notifyRemoveOnClearOff: () => t("starboard", "notify_remove_on_clear_off", "Now kept when reactions are cleared"),
+    /** Now removed when reactions are cleared */
+    notifyRemoveOnClearOn: () => t("starboard", "notify_remove_on_clear_on", "Now removed when reactions are cleared"),
+    /** Now kept when the original is deleted */
+    notifyRemoveOnDeleteOff: () => t("starboard", "notify_remove_on_delete_off", "Now kept when the original is deleted"),
+    /** Now removed when the original is deleted */
+    notifyRemoveOnDeleteOn: () => t("starboard", "notify_remove_on_delete_on", "Now removed when the original is deleted"),
     /** Reposting disabled */
     notifyRepostDisabled: () => t("starboard", "notify_repost_disabled", "Reposting disabled"),
     /** Repost threshold updated to {threshold} */
@@ -15337,16 +15289,16 @@ export const m = {
     onDeleteRemove: () => t("starboard", "on_delete_remove", "Remove on Delete"),
     /** Starboard - Dashboard */
     pageHeadTitle: () => t("starboard", "page_head_title", "Starboard - Dashboard"),
-    /** Showcase your server's best messages in dedicated channels */
-    pageSubtitle: () => t("starboard", "page_subtitle", "Showcase your server's best messages in dedicated channels"),
+    /** Highlight the best messages */
+    pageSubtitle: () => t("starboard", "page_subtitle", "Highlight the best messages"),
     /** Disable remove below threshold */
     removeBelowDisableAria: () => t("starboard", "remove_below_disable_aria", "Disable remove below threshold"),
     /** Enable remove below threshold */
     removeBelowEnableAria: () => t("starboard", "remove_below_enable_aria", "Enable remove below threshold"),
-    /** Starred messages remain when they fall below threshold */
-    removeBelowOff: () => t("starboard", "remove_below_off", "Starred messages remain when they fall below threshold"),
-    /** Starred messages are removed when they fall below threshold */
-    removeBelowOn: () => t("starboard", "remove_below_on", "Starred messages are removed when they fall below threshold"),
+    /** Kept below threshold */
+    removeBelowOff: () => t("starboard", "remove_below_off", "Kept below threshold"),
+    /** Removed below threshold */
+    removeBelowOn: () => t("starboard", "remove_below_on", "Removed below threshold"),
     /** Remove channel */
     removeChannelAria: () => t("starboard", "remove_channel_aria", "Remove channel"),
     /** Remove emote {emote} */
@@ -15357,18 +15309,18 @@ export const m = {
     removeOnClearEnableAria: () => t("starboard", "remove_on_clear_enable_aria", "Enable remove on clear"),
     /** Remove on Reactions Clear */
     removeOnClearLabel: () => t("starboard", "remove_on_clear_label", "Remove on Reactions Clear"),
-    /** Starred messages remain when reactions are cleared */
-    removeOnClearOff: () => t("starboard", "remove_on_clear_off", "Starred messages remain when reactions are cleared"),
-    /** Starred messages are removed when reactions are cleared */
-    removeOnClearOn: () => t("starboard", "remove_on_clear_on", "Starred messages are removed when reactions are cleared"),
+    /** Kept when reactions are cleared */
+    removeOnClearOff: () => t("starboard", "remove_on_clear_off", "Kept when reactions are cleared"),
+    /** Removed when reactions are cleared */
+    removeOnClearOn: () => t("starboard", "remove_on_clear_on", "Removed when reactions are cleared"),
     /** Disable remove on delete */
     removeOnDeleteDisableAria: () => t("starboard", "remove_on_delete_disable_aria", "Disable remove on delete"),
     /** Enable remove on delete */
     removeOnDeleteEnableAria: () => t("starboard", "remove_on_delete_enable_aria", "Enable remove on delete"),
-    /** Starred messages remain when original is deleted */
-    removeOnDeleteOff: () => t("starboard", "remove_on_delete_off", "Starred messages remain when original is deleted"),
-    /** Starred messages are removed when original is deleted */
-    removeOnDeleteOn: () => t("starboard", "remove_on_delete_on", "Starred messages are removed when original is deleted"),
+    /** Kept when the original is deleted */
+    removeOnDeleteOff: () => t("starboard", "remove_on_delete_off", "Kept when the original is deleted"),
+    /** Removed when the original is deleted */
+    removeOnDeleteOn: () => t("starboard", "remove_on_delete_on", "Removed when the original is deleted"),
     /** {count} message */
     repostMessagesOne: (p: { count: P }) => t("starboard", "repost_messages_one", "{count} message", p),
     /** Repost Threshold (0 to disable) */
@@ -15407,14 +15359,14 @@ export const m = {
     addMinecraftServer: () => t("statchannels", "add_minecraft_server", "Minecraft Server"),
     /** No category */
     addNoCategory: () => t("statchannels", "add_no_category", "No category"),
-    /** Live preview rendered against this server's current data. */
-    addPreviewHint: () => t("statchannels", "add_preview_hint", "Live preview rendered against this server's current data."),
+    /** Live preview */
+    addPreviewHint: () => t("statchannels", "add_preview_hint", "Live preview"),
     /** Rendering... */
     addPreviewRendering: () => t("statchannels", "add_preview_rendering", "Rendering..."),
     /** Preview unavailable */
     addPreviewUnavailable: () => t("statchannels", "add_preview_unavailable", "Preview unavailable"),
-    /** This counter changes constantly, so a short interval is worth it. */
-    addRealtimeHint: () => t("statchannels", "add_realtime_hint", "This counter changes constantly, so a short interval is worth it."),
+    /** Changes constantly, so a short interval helps */
+    addRealtimeHint: () => t("statchannels", "add_realtime_hint", "Changes constantly, so a short interval helps"),
     /** Select a counter */
     addSelectCounter: () => t("statchannels", "add_select_counter", "Select a counter"),
     /** Select counting channel */
@@ -15423,20 +15375,20 @@ export const m = {
     addSelectServer: () => t("statchannels", "add_select_server", "Select server"),
     /** Select voice channel */
     addSelectVoice: () => t("statchannels", "add_select_voice", "Select voice channel"),
-    /** This counter produces {kind} rather than a number, so the style only affects %count.raw%. */
-    addStyleTextHint: (p: { kind: P }) => t("statchannels", "add_style_text_hint", "This counter produces {kind} rather than a number, so the style only affects %count.raw%.", p),
+    /** This counter produces {kind}, so style only affects %count.raw%. */
+    addStyleTextHint: (p: { kind: P }) => t("statchannels", "add_style_text_hint", "This counter produces {kind}, so style only affects %count.raw%.", p),
     /** Target Date */
     addTargetDate: () => t("statchannels", "add_target_date", "Target Date"),
     /** Twitch Counter Name */
     addTwitchCounter: () => t("statchannels", "add_twitch_counter", "Twitch Counter Name"),
-    /** The name of a counter your Twitch chat commands already update. */
-    addTwitchCounterHint: () => t("statchannels", "add_twitch_counter_hint", "The name of a counter your Twitch chat commands already update."),
+    /** Name of an existing Twitch chat counter */
+    addTwitchCounterHint: () => t("statchannels", "add_twitch_counter_hint", "Name of an existing Twitch chat counter"),
     /** deaths */
     addTwitchCounterPlaceholder: () => t("statchannels", "add_twitch_counter_placeholder", "deaths"),
     /** Use Existing Channel */
     addUseExisting: () => t("statchannels", "add_use_existing", "Use Existing Channel"),
-    /** Every counter Mewdeko can display, with an example of how it renders. */
-    countersText: () => t("statchannels", "counters_text", "Every counter Mewdeko can display, with an example of how it renders."),
+    /** Every counter with an example */
+    countersText: () => t("statchannels", "counters_text", "Every counter with an example"),
     /** Available Counters */
     countersTitle: () => t("statchannels", "counters_title", "Available Counters"),
     /** Default Interval (minutes) */
@@ -15445,12 +15397,12 @@ export const m = {
     defaultsMechanism: () => t("statchannels", "defaults_mechanism", "Default Mechanism"),
     /** Default Counter Style */
     defaultsStyle: () => t("statchannels", "defaults_style", "Default Counter Style"),
-    /** These apply to stat channels created from now on. Existing channels keep their own sett... */
-    defaultsText: () => t("statchannels", "defaults_text", "These apply to stat channels created from now on. Existing channels keep their own settings."),
+    /** Applies to new stat channels only */
+    defaultsText: () => t("statchannels", "defaults_text", "Applies to new stat channels only"),
     /** Defaults For New Stat Channels */
     defaultsTitle: () => t("statchannels", "defaults_title", "Defaults For New Stat Channels"),
-    /** Changes save automatically. Each save renames the channel, which Discord limits to two ... */
-    editHint: () => t("statchannels", "edit_hint", "Changes save automatically. Each save renames the channel, which Discord limits to two per 10 minutes."),
+    /** Saves automatically. Discord allows two renames per 10 minutes. */
+    editHint: () => t("statchannels", "edit_hint", "Saves automatically. Discord allows two renames per 10 minutes."),
     /** Refresh Interval (minutes) */
     editInterval: () => t("statchannels", "edit_interval", "Refresh Interval (minutes)"),
     /** Update Mechanism */
@@ -15471,38 +15423,38 @@ export const m = {
     listRefreshEvery: (p: { mechanism: P; minutes: P }) => t("statchannels", "list_refresh_every", "{mechanism} every {minutes}m", p),
     /** Template: */
     listTemplate: () => t("statchannels", "list_template", "Template:"),
-    /** Renames while the per-channel budget allows it and only falls back to recreating when y... */
-    mechanismAutoBlurb: () => t("statchannels", "mechanism_auto_blurb", "Renames while the per-channel budget allows it and only falls back to recreating when you have asked for a faster refresh than a rename can deliver."),
+    /** Renames, and recreates only when you need a faster refresh. */
+    mechanismAutoBlurb: () => t("statchannels", "mechanism_auto_blurb", "Renames, and recreates only when you need a faster refresh."),
     /** Auto (recommended) */
     mechanismAutoLabel: () => t("statchannels", "mechanism_auto_label", "Auto (recommended)"),
-    /** Recreates the channel each update using the far more permissive guild channel bucket, s... */
-    mechanismRecreateBlurb: () => t("statchannels", "mechanism_recreate_blurb", "Recreates the channel each update using the far more permissive guild channel bucket, so it can refresh every minute."),
-    /** The channel ID changes on every update and each refresh writes two audit log entries. */
-    mechanismRecreateCaution: () => t("statchannels", "mechanism_recreate_caution", "The channel ID changes on every update and each refresh writes two audit log entries."),
+    /** Recreates the channel each update. Can refresh every minute. */
+    mechanismRecreateBlurb: () => t("statchannels", "mechanism_recreate_blurb", "Recreates the channel each update. Can refresh every minute."),
+    /** The channel ID changes each update and two audit log entries are written. */
+    mechanismRecreateCaution: () => t("statchannels", "mechanism_recreate_caution", "The channel ID changes each update and two audit log entries are written."),
     /** Delete and recreate */
     mechanismRecreateLabel: () => t("statchannels", "mechanism_recreate_label", "Delete and recreate"),
-    /** Edits the existing channel name. The channel keeps its ID, position and permissions. */
-    mechanismRenameBlurb: () => t("statchannels", "mechanism_rename_blurb", "Edits the existing channel name. The channel keeps its ID, position and permissions."),
-    /** Discord allows two name edits per 10 minutes per channel, so this cannot refresh faster... */
-    mechanismRenameCaution: () => t("statchannels", "mechanism_rename_caution", "Discord allows two name edits per 10 minutes per channel, so this cannot refresh faster than every 5 minutes."),
+    /** Edits the channel name and keeps everything else. */
+    mechanismRenameBlurb: () => t("statchannels", "mechanism_rename_blurb", "Edits the channel name and keeps everything else."),
+    /** Discord allows two renames per 10 minutes, so no faster than every 5 minutes. */
+    mechanismRenameCaution: () => t("statchannels", "mechanism_rename_caution", "Discord allows two renames per 10 minutes, so no faster than every 5 minutes."),
     /** Rename only */
     mechanismRenameLabel: () => t("statchannels", "mechanism_rename_label", "Rename only"),
-    /** Failed to add. That channel may already be a stat channel. */
-    notifyAddFailed: () => t("statchannels", "notify_add_failed", "Failed to add. That channel may already be a stat channel."),
+    /** Failed to add. It may already be a stat channel. */
+    notifyAddFailed: () => t("statchannels", "notify_add_failed", "Failed to add. It may already be a stat channel."),
     /** Failed to remove */
     notifyRemoveFailed: () => t("statchannels", "notify_remove_failed", "Failed to remove"),
-    /** Couldn't save stat channel settings. Use Retry to try again. */
-    notifySaveFailed: () => t("statchannels", "notify_save_failed", "Couldn't save stat channel settings. Use Retry to try again."),
+    /** Couldn't save settings. Use Retry. */
+    notifySaveFailed: () => t("statchannels", "notify_save_failed", "Couldn't save settings. Use Retry."),
     /** Select a voice channel */
     notifySelectVoice: () => t("statchannels", "notify_select_voice", "Select a voice channel"),
-    /** Voice channels displaying live server statistics */
-    pageSubtitle: () => t("statchannels", "page_subtitle", "Voice channels displaying live server statistics"),
-    /** Remove the stat channel "{name}"? The voice channel itself is left in place. */
-    removeMessage: (p: { name: P }) => t("statchannels", "remove_message", "Remove the stat channel \"{name}\"? The voice channel itself is left in place.", p),
+    /** Voice channels showing live stats */
+    pageSubtitle: () => t("statchannels", "page_subtitle", "Voice channels showing live stats"),
+    /** Remove "{name}"? The voice channel stays. */
+    removeMessage: (p: { name: P }) => t("statchannels", "remove_message", "Remove \"{name}\"? The voice channel stays.", p),
     /** Remove Stat Channel */
     removeTitle: () => t("statchannels", "remove_title", "Remove Stat Channel"),
-    /** How each style renders the number 1,234 against a target of 2,000. */
-    stylesText: () => t("statchannels", "styles_text", "How each style renders the number 1,234 against a target of 2,000."),
+    /** 1,234 against a target of 2,000 */
+    stylesText: () => t("statchannels", "styles_text", "1,234 against a target of 2,000"),
     /** Counter Styles */
     stylesTitle: () => t("statchannels", "styles_title", "Counter Styles"),
     /** Defaults */
@@ -15519,16 +15471,16 @@ export const m = {
     createRole: () => t("statroles", "create_role", "Create stat role"),
     /** Failed to delete the stat role */
     deleteFailed: () => t("statroles", "delete_failed", "Failed to delete the stat role"),
-    /** Delete "{name}"? Members keep whatever they currently hold. */
-    deleteMessage: (p: { name: P }) => t("statroles", "delete_message", "Delete \"{name}\"? Members keep whatever they currently hold.", p),
+    /** Delete "{name}"? Members keep their roles. */
+    deleteMessage: (p: { name: P }) => t("statroles", "delete_message", "Delete \"{name}\"? Members keep their roles.", p),
     /** Delete stat role */
     deleteTitle: () => t("statroles", "delete_title", "Delete stat role"),
     /** DMs members */
     dmsMembers: () => t("statroles", "dms_members", "DMs members"),
     /** Edit Stat Role #{id} */
     editorEditTitle: (p: { id: P }) => t("statroles", "editor_edit_title", "Edit Stat Role #{id}", p),
-    /** Pick what to measure, how members qualify, and what happens when they do */
-    editorSubtitle: () => t("statroles", "editor_subtitle", "Pick what to measure, how members qualify, and what happens when they do"),
+    /** What to measure and who qualifies */
+    editorSubtitle: () => t("statroles", "editor_subtitle", "What to measure and who qualifies"),
     /** Pick the role to manage. */
     errorPickRole: () => t("statroles", "error_pick_role", "Pick the role to manage."),
     /** x */
@@ -15539,8 +15491,8 @@ export const m = {
     fieldActivityHint: () => t("statroles", "field_activity_hint", "Leave empty to count time in any game"),
     /** Announce in */
     fieldAnnounce: () => t("statroles", "field_announce", "Announce in"),
-    /** A message is posted here whenever the role is granted or removed */
-    fieldAnnounceHint: () => t("statroles", "field_announce_hint", "A message is posted here whenever the role is granted or removed"),
+    /** Posted when the role is granted or removed */
+    fieldAnnounceHint: () => t("statroles", "field_announce_hint", "Posted when the role is granted or removed"),
     /** Members holding any of these are never considered */
     fieldBlacklistHint: () => t("statroles", "field_blacklist_hint", "Members holding any of these are never considered"),
     /** Only count in channels */
@@ -15557,10 +15509,10 @@ export const m = {
     fieldFromPercentile: () => t("statroles", "field_from_percentile", "From percentile"),
     /** From rank */
     fieldFromRank: () => t("statroles", "field_from_rank", "From rank"),
-    /** Stat roles sharing a group keep only the highest tier a member qualifies for */
-    fieldGroupHint: () => t("statroles", "field_group_hint", "Stat roles sharing a group keep only the highest tier a member qualifies for"),
-    /** The role is never granted to or removed from these members */
-    fieldIgnoredHint: () => t("statroles", "field_ignored_hint", "The role is never granted to or removed from these members"),
+    /** Members keep only the highest tier in a group */
+    fieldGroupHint: () => t("statroles", "field_group_hint", "Members keep only the highest tier in a group"),
+    /** Never granted or removed */
+    fieldIgnoredHint: () => t("statroles", "field_ignored_hint", "Never granted or removed"),
     /** Evaluate every (minutes) */
     fieldInterval: () => t("statroles", "field_interval", "Evaluate every (minutes)"),
     /** At least 10. Default is every 3 hours. */
@@ -15591,8 +15543,8 @@ export const m = {
     fieldQualifyHint: () => t("statroles", "field_qualify_hint", "Threshold, top rank, top percent or a daily streak"),
     /** Role to manage */
     fieldRole: () => t("statroles", "field_role", "Role to manage"),
-    /** Granted to members who qualify and removed from those who no longer do */
-    fieldRoleHint: () => t("statroles", "field_role_hint", "Granted to members who qualify and removed from those who no longer do"),
+    /** Granted on qualifying, removed when no longer */
+    fieldRoleHint: () => t("statroles", "field_role_hint", "Granted on qualifying, removed when no longer"),
     /** Worst position that still qualifies */
     fieldToHint: () => t("statroles", "field_to_hint", "Worst position that still qualifies"),
     /** To percentile */
@@ -15609,10 +15561,10 @@ export const m = {
     limitLabel2: () => t("statroles", "limit_label_2", "Top percent"),
     /** Daily streak */
     limitLabel3: () => t("statroles", "limit_label_3", "Daily streak"),
-    /** No stat roles yet. Create one to reward active members automatically. */
-    listEmpty: () => t("statroles", "list_empty", "No stat roles yet. Create one to reward active members automatically."),
-    /** Each role is re-evaluated on its own schedule */
-    listSubtitle: () => t("statroles", "list_subtitle", "Each role is re-evaluated on its own schedule"),
+    /** No stat roles yet */
+    listEmpty: () => t("statroles", "list_empty", "No stat roles yet"),
+    /** Each role runs on its own schedule */
+    listSubtitle: () => t("statroles", "list_subtitle", "Each role runs on its own schedule"),
     /** Failed to load stat roles */
     loadFailed: () => t("statroles", "load_failed", "Failed to load stat roles"),
     /** New stat role */
@@ -15655,8 +15607,8 @@ export const m = {
     run: () => t("statroles", "run", "Run"),
     /** Failed to run the stat role */
     runFailed: () => t("statroles", "run_failed", "Failed to run the stat role"),
-    /** Evaluate "{name}" and apply role changes right now? */
-    runMessage: (p: { name: P }) => t("statroles", "run_message", "Evaluate \"{name}\" and apply role changes right now?", p),
+    /** Run "{name}" now? */
+    runMessage: (p: { name: P }) => t("statroles", "run_message", "Run \"{name}\" now?", p),
     /** Run now */
     runNow: () => t("statroles", "run_now", "Run now"),
     /** Failed to save the stat role */
@@ -15679,12 +15631,12 @@ export const m = {
     toggleBotsHint: () => t("statroles", "toggle_bots_hint", "Consider bot accounts too"),
     /** DM the member */
     toggleDm: () => t("statroles", "toggle_dm", "DM the member"),
-    /** Send the same message directly to the member */
-    toggleDmHint: () => t("statroles", "toggle_dm_hint", "Send the same message directly to the member"),
+    /** Send the message by DM */
+    toggleDmHint: () => t("statroles", "toggle_dm_hint", "Send the message by DM"),
     /** Invert */
     toggleInvert: () => t("statroles", "toggle_invert", "Invert"),
-    /** Members who do NOT qualify get it (inactivity roles) */
-    toggleInvertHint: () => t("statroles", "toggle_invert_hint", "Members who do NOT qualify get it (inactivity roles)"),
+    /** Members who do not qualify get it */
+    toggleInvertHint: () => t("statroles", "toggle_invert_hint", "Members who do not qualify get it"),
     /** Never removed once earned */
     togglePermanentHint: () => t("statroles", "toggle_permanent_hint", "Never removed once earned"),
     /** Failed to update the stat role */
@@ -15693,16 +15645,16 @@ export const m = {
   statusroles: {
     /** Add Status Role */
     pageAddAria: () => t("statusroles", "page_add_aria", "Add Status Role"),
-    /** <strong>Note:</strong> After adding a status role, you can configure which roles to add... */
-    pageAddNote: () => t("statusroles", "page_add_note", "<strong>Note:</strong> After adding a status role, you can configure which roles to add/remove and notification settings by expanding it in the Status Roles tab."),
-    /** When a user's custom status contains this text, the configured roles will be added/remo... */
-    pageAddStatusHint: () => t("statusroles", "page_add_status_hint", "When a user's custom status contains this text, the configured roles will be added/removed."),
+    /** Configure roles and notifications after adding, in the Status Roles tab. */
+    pageAddNote: () => t("statusroles", "page_add_note", "Configure roles and notifications after adding, in the Status Roles tab."),
+    /** Matches against a member's custom status */
+    pageAddStatusHint: () => t("statusroles", "page_add_status_hint", "Matches against a member's custom status"),
     /** Status Text to Watch For */
     pageAddStatusLabel: () => t("statusroles", "page_add_status_label", "Status Text to Watch For"),
     /** Enter status text (e.g., 'playing minecraft') */
     pageAddStatusPlaceholder: () => t("statusroles", "page_add_status_placeholder", "Enter status text (e.g., 'playing minecraft')"),
-    /** Are you sure you want to remove this status role? */
-    pageConfirmRemove: () => t("statusroles", "page_confirm_remove", "Are you sure you want to remove this status role?"),
+    /** Remove this status role? */
+    pageConfirmRemove: () => t("statusroles", "page_confirm_remove", "Remove this status role?"),
     /** Roles to Add (space-separated IDs) */
     pageEditAddRoles: () => t("statusroles", "page_edit_add_roles", "Roles to Add (space-separated IDs)"),
     /** Notification Message */
@@ -15719,8 +15671,8 @@ export const m = {
     pageEditSettings: () => t("statusroles", "page_edit_settings", "Edit Settings"),
     /** Failed to add status role */
     pageErrorAdd: () => t("statusroles", "page_error_add", "Failed to add status role"),
-    /** Couldn't save status role settings. Use Retry to try again. */
-    pageErrorAutosave: () => t("statusroles", "page_error_autosave", "Couldn't save status role settings. Use Retry to try again."),
+    /** Autosave failed. Use Retry. */
+    pageErrorAutosave: () => t("statusroles", "page_error_autosave", "Autosave failed. Use Retry."),
     /** Failed to load status role data */
     pageErrorLoad: () => t("statusroles", "page_error_load", "Failed to load status role data"),
     /** Failed to remove status role */
@@ -15729,8 +15681,8 @@ export const m = {
     pageItemRoles: (p: { adds: P; removes: P }) => t("statusroles", "page_item_roles", "Adds: {adds} • Removes: {removes}", p),
     /** Status: "{status}" */
     pageItemStatus: (p: { status: P }) => t("statusroles", "page_item_status", "Status: \"{status}\"", p),
-    /** Add status-based role assignments to automatically manage roles based on custom status ... */
-    pageListEmptyHint: () => t("statusroles", "page_list_empty_hint", "Add status-based role assignments to automatically manage roles based on custom status text."),
+    /** Add a status role */
+    pageListEmptyHint: () => t("statusroles", "page_list_empty_hint", "Add a status role"),
     /** No Status Roles */
     pageListEmptyTitle: () => t("statusroles", "page_list_empty_title", "No Status Roles"),
     /** Status Roles ({count}) */
@@ -15749,8 +15701,8 @@ export const m = {
     pageStatNotifySub: () => t("statusroles", "page_stat_notify_sub", "have notification channels"),
     /** Total Status Roles */
     pageStatTotal: () => t("statusroles", "page_stat_total", "Total Status Roles"),
-    /** Manage roles based on Discord custom status */
-    pageSubtitle: () => t("statusroles", "page_subtitle", "Manage roles based on Discord custom status"),
+    /** Roles from custom status text */
+    pageSubtitle: () => t("statusroles", "page_subtitle", "Roles from custom status text"),
     /** Add New */
     pageTabAdd: () => t("statusroles", "page_tab_add", "Add New"),
     /** Re-add removed roles when status removed: */
@@ -15761,18 +15713,18 @@ export const m = {
   streams: {
     /** Streams by Platform */
     byPlatformHeading: () => t("streams", "by_platform_heading", "Streams by Platform"),
-    /** Are you sure you want to stop following this stream? */
-    confirmUnfollow: () => t("streams", "confirm_unfollow", "Are you sure you want to stop following this stream?"),
-    /** Are you sure you want to unfollow all streams? This cannot be undone. */
-    confirmUnfollowAll: () => t("streams", "confirm_unfollow_all", "Are you sure you want to unfollow all streams? This cannot be undone."),
+    /** Unfollow this stream? */
+    confirmUnfollow: () => t("streams", "confirm_unfollow", "Unfollow this stream?"),
+    /** Unfollow all streams? */
+    confirmUnfollowAll: () => t("streams", "confirm_unfollow_all", "Unfollow all streams?"),
     /** Unfollow all */
     confirmUnfollowAllButton: () => t("streams", "confirm_unfollow_all_button", "Unfollow all"),
     /** Unfollow */
     confirmUnfollowButton: () => t("streams", "confirm_unfollow_button", "Unfollow"),
     /** Customize Messages */
     customizeMessages: () => t("streams", "customize_messages", "Customize Messages"),
-    /** Start following streamers to get notifications when they go live */
-    emptyHint: () => t("streams", "empty_hint", "Start following streamers to get notifications when they go live"),
+    /** Follow a streamer to get live notifications */
+    emptyHint: () => t("streams", "empty_hint", "Follow a streamer to get live notifications"),
     /** No Streams Followed */
     emptyTitle: () => t("streams", "empty_title", "No Streams Followed"),
     /** Failed to clear streams */
@@ -15789,8 +15741,8 @@ export const m = {
     followedHeading: (p: { count: P }) => t("streams", "followed_heading", "Followed Streams ({count})", p),
     /** Following... */
     following: () => t("streams", "following", "Following..."),
-    /** Default message for all stream notifications */
-    globalMessageDescription: () => t("streams", "global_message_description", "Default message for all stream notifications"),
+    /** Default for all streams */
+    globalMessageDescription: () => t("streams", "global_message_description", "Default for all streams"),
     /** Global Stream Message */
     globalMessageLabel: () => t("streams", "global_message_label", "Global Stream Message"),
     /** Global Settings */
@@ -15807,18 +15759,18 @@ export const m = {
     notifyRemoved: (p: { count: P }) => t("streams", "notify_removed", "Removed {count} stream(s)", p),
     /** Stream unfollowed */
     notifyUnfollowed: () => t("streams", "notify_unfollowed", "Stream unfollowed"),
-    /** Message sent when stream goes offline */
-    offlineMessageDescription: () => t("streams", "offline_message_description", "Message sent when stream goes offline"),
+    /** Sent when a stream goes offline */
+    offlineMessageDescription: () => t("streams", "offline_message_description", "Sent when a stream goes offline"),
     /** Offline Message */
     offlineMessageTitle: () => t("streams", "offline_message_title", "Offline Message"),
     /** Offline Notifications */
     offlineNotifications: () => t("streams", "offline_notifications", "Offline Notifications"),
     /** Toggle offline notifications */
     offlineNotificationsAria: () => t("streams", "offline_notifications_aria", "Toggle offline notifications"),
-    /** Send notifications when streams go offline */
-    offlineNotificationsHint: () => t("streams", "offline_notifications_hint", "Send notifications when streams go offline"),
-    /** Message sent when stream goes online */
-    onlineMessageDescription: () => t("streams", "online_message_description", "Message sent when stream goes online"),
+    /** Notify when streams go offline */
+    offlineNotificationsHint: () => t("streams", "offline_notifications_hint", "Notify when streams go offline"),
+    /** Sent when a stream goes online */
+    onlineMessageDescription: () => t("streams", "online_message_description", "Sent when a stream goes online"),
     /** Online Message */
     onlineMessageTitle: () => t("streams", "online_message_title", "Online Message"),
     /** Track Twitch, YouTube, Kick, Trovo & Picarto streams */
@@ -15853,8 +15805,8 @@ export const m = {
     statUniqueStreamers: () => t("streams", "stat_unique_streamers", "Unique Streamers"),
     /** followed */
     statUniqueStreamersSubtitle: () => t("streams", "stat_unique_streamers_subtitle", "followed"),
-    /** Stream statistics will appear here once you follow streamers. */
-    statsEmptyHint: () => t("streams", "stats_empty_hint", "Stream statistics will appear here once you follow streamers."),
+    /** No stream statistics yet */
+    statsEmptyHint: () => t("streams", "stats_empty_hint", "No stream statistics yet"),
     /** {count} stream */
     streamCountOne: (p: { count: P }) => t("streams", "stream_count_one", "{count} stream", p),
     /** {count} streams */
@@ -15889,16 +15841,16 @@ export const m = {
     archiveOnImplement: () => t("suggestions", "archive_on_implement", "Archive on Implement"),
     /** Button Emote */
     buttonEmote: () => t("suggestions", "button_emote", "Button Emote"),
-    /** Single emote for the suggest button. Supports Unicode or Discord custom emotes. Leave e... */
-    buttonEmoteHint: () => t("suggestions", "button_emote_hint", "Single emote for the suggest button. Supports Unicode or Discord custom emotes. Leave empty for no emote."),
+    /** Empty for no emote */
+    buttonEmoteHint: () => t("suggestions", "button_emote_hint", "Empty for no emote"),
     /** Select button emote... */
     buttonEmotePlaceholder: () => t("suggestions", "button_emote_placeholder", "Select button emote..."),
     /** Enter button label */
     buttonLabelPlaceholder: () => t("suggestions", "button_label_placeholder", "Enter button label"),
     /** Button Message */
     buttonMessage: () => t("suggestions", "button_message", "Button Message"),
-    /** Configure the message sent when users click the suggestion button */
-    buttonMessagePreview: () => t("suggestions", "button_message_preview", "Configure the message sent when users click the suggestion button"),
+    /** Sent when someone clicks the button */
+    buttonMessagePreview: () => t("suggestions", "button_message_preview", "Sent when someone clicks the button"),
     /** Suggestion Button */
     buttonTitle: () => t("suggestions", "button_title", "Suggestion Button"),
     /** Accept Channel */
@@ -15923,8 +15875,8 @@ export const m = {
     channelSuggestPlaceholder: () => t("suggestions", "channel_suggest_placeholder", "Select suggest channel..."),
     /** Emote {number} Button */
     colorsEmoteButton: (p: { number: P }) => t("suggestions", "colors_emote_button", "Emote {number} Button", p),
-    /** Customize button colors for each emote when using button mode (applies to all 5 emote b... */
-    colorsHint: () => t("suggestions", "colors_hint", "Customize button colors for each emote when using button mode (applies to all 5 emote buttons)"),
+    /** Button mode colors for each emote button */
+    colorsHint: () => t("suggestions", "colors_hint", "Button mode colors for each emote button"),
     /** Color... */
     colorsPlaceholder: () => t("suggestions", "colors_placeholder", "Color..."),
     /** Suggest Button Color */
@@ -15933,8 +15885,8 @@ export const m = {
     colorsSuggestPlaceholder: () => t("suggestions", "colors_suggest_placeholder", "Select button color..."),
     /** Button Colors */
     colorsTitle: () => t("suggestions", "colors_title", "Button Colors"),
-    /** Are you sure you want to delete this suggestion? */
-    confirmDelete: () => t("suggestions", "confirm_delete", "Are you sure you want to delete this suggestion?"),
+    /** Delete this suggestion? */
+    confirmDelete: () => t("suggestions", "confirm_delete", "Delete this suggestion?"),
     /** Reason (optional)... */
     confirmReasonPlaceholder: () => t("suggestions", "confirm_reason_placeholder", "Reason (optional)..."),
     /** Confirm {status} */
@@ -15943,22 +15895,22 @@ export const m = {
     confirmUpdating: () => t("suggestions", "confirm_updating", "Updating..."),
     /** Emote {number}: {count} */
     emoteCountLabel: (p: { count: P; number: P }) => t("suggestions", "emote_count_label", "Emote {number}: {count}", p),
-    /** Select up to 5 emotes. Supports Unicode and Discord custom emotes. Leave empty for defa... */
-    emoteCustomHint: () => t("suggestions", "emote_custom_hint", "Select up to 5 emotes. Supports Unicode and Discord custom emotes. Leave empty for default 👍/👎"),
+    /** Up to 5 emotes. Empty uses 👍/👎 */
+    emoteCustomHint: () => t("suggestions", "emote_custom_hint", "Up to 5 emotes. Empty uses 👍/👎"),
     /** Custom Emotes */
     emoteCustomLabel: () => t("suggestions", "emote_custom_label", "Custom Emotes"),
     /** Select up to 5 emotes... */
     emoteCustomPlaceholder: () => t("suggestions", "emote_custom_placeholder", "Select up to 5 emotes..."),
-    /** Choose how users interact with suggestions: traditional reactions or interactive buttons */
-    emoteModeHint: () => t("suggestions", "emote_mode_hint", "Choose how users interact with suggestions: traditional reactions or interactive buttons"),
+    /** Reactions or buttons */
+    emoteModeHint: () => t("suggestions", "emote_mode_hint", "Reactions or buttons"),
     /** Mode */
     emoteModeLabel: () => t("suggestions", "emote_mode_label", "Mode"),
     /** Select emote mode... */
     emoteModePlaceholder: () => t("suggestions", "emote_mode_placeholder", "Select emote mode..."),
     /** Emote Display Mode */
     emoteModeTitle: () => t("suggestions", "emote_mode_title", "Emote Display Mode"),
-    /** Suggestions from your community will appear here */
-    emptyBody: () => t("suggestions", "empty_body", "Suggestions from your community will appear here"),
+    /** Suggestions show up here */
+    emptyBody: () => t("suggestions", "empty_body", "Suggestions show up here"),
     /** No suggestions yet */
     emptyTitle: () => t("suggestions", "empty_title", "No suggestions yet"),
     /** Failed to fetch suggestions */
@@ -15969,40 +15921,40 @@ export const m = {
     loadingDeleting: () => t("suggestions", "loading_deleting", "Deleting suggestion..."),
     /** Loading suggestions... */
     loadingSuggestions: () => t("suggestions", "loading_suggestions", "Loading suggestions..."),
-    /** Message sent when a suggestion is accepted. Supports Discord embeds and placeholders. */
-    messageAcceptHint: () => t("suggestions", "message_accept_hint", "Message sent when a suggestion is accepted. Supports Discord embeds and placeholders."),
+    /** Sent when a suggestion is accepted */
+    messageAcceptHint: () => t("suggestions", "message_accept_hint", "Sent when a suggestion is accepted"),
     /** Click to configure the accept message */
     messageAcceptPlaceholder: () => t("suggestions", "message_accept_placeholder", "Click to configure the accept message"),
     /** Message sent when a suggestion is accepted */
     messageAcceptPreview: () => t("suggestions", "message_accept_preview", "Message sent when a suggestion is accepted"),
     /** Accept Message */
     messageAcceptTitle: () => t("suggestions", "message_accept_title", "Accept Message"),
-    /** Message sent when a suggestion is being considered. Supports Discord embeds and placeho... */
-    messageConsiderHint: () => t("suggestions", "message_consider_hint", "Message sent when a suggestion is being considered. Supports Discord embeds and placeholders."),
+    /** Sent when a suggestion is considered */
+    messageConsiderHint: () => t("suggestions", "message_consider_hint", "Sent when a suggestion is considered"),
     /** Click to configure the consider message */
     messageConsiderPlaceholder: () => t("suggestions", "message_consider_placeholder", "Click to configure the consider message"),
     /** Message sent when a suggestion is being considered */
     messageConsiderPreview: () => t("suggestions", "message_consider_preview", "Message sent when a suggestion is being considered"),
     /** Consider Message */
     messageConsiderTitle: () => t("suggestions", "message_consider_title", "Consider Message"),
-    /** Message sent when a suggestion is denied. Supports Discord embeds and placeholders. */
-    messageDenyHint: () => t("suggestions", "message_deny_hint", "Message sent when a suggestion is denied. Supports Discord embeds and placeholders."),
+    /** Sent when a suggestion is denied */
+    messageDenyHint: () => t("suggestions", "message_deny_hint", "Sent when a suggestion is denied"),
     /** Click to configure the deny message */
     messageDenyPlaceholder: () => t("suggestions", "message_deny_placeholder", "Click to configure the deny message"),
     /** Message sent when a suggestion is denied */
     messageDenyPreview: () => t("suggestions", "message_deny_preview", "Message sent when a suggestion is denied"),
     /** Deny Message */
     messageDenyTitle: () => t("suggestions", "message_deny_title", "Deny Message"),
-    /** Message sent when a suggestion is implemented. Supports Discord embeds and placeholders. */
-    messageImplementHint: () => t("suggestions", "message_implement_hint", "Message sent when a suggestion is implemented. Supports Discord embeds and placeholders."),
+    /** Sent when a suggestion is implemented */
+    messageImplementHint: () => t("suggestions", "message_implement_hint", "Sent when a suggestion is implemented"),
     /** Click to configure the implement message */
     messageImplementPlaceholder: () => t("suggestions", "message_implement_placeholder", "Click to configure the implement message"),
     /** Message sent when a suggestion is implemented */
     messageImplementPreview: () => t("suggestions", "message_implement_preview", "Message sent when a suggestion is implemented"),
     /** Implement Message */
     messageImplementTitle: () => t("suggestions", "message_implement_title", "Implement Message"),
-    /** Format for displaying new suggestions. Supports Discord embeds and placeholders. */
-    messageSuggestionHint: () => t("suggestions", "message_suggestion_hint", "Format for displaying new suggestions. Supports Discord embeds and placeholders."),
+    /** How new suggestions are shown */
+    messageSuggestionHint: () => t("suggestions", "message_suggestion_hint", "How new suggestions are shown"),
     /** Click to configure the suggestion message */
     messageSuggestionPlaceholder: () => t("suggestions", "message_suggestion_placeholder", "Click to configure the suggestion message"),
     /** Message sent when a new suggestion is created */
@@ -16017,12 +15969,12 @@ export const m = {
     notifyDeleteFailed: () => t("suggestions", "notify_delete_failed", "Failed to delete suggestion"),
     /** Suggestion deleted */
     notifyDeleted: () => t("suggestions", "notify_deleted", "Suggestion deleted"),
-    /** Couldn't save suggestion settings. Your last change was undone. */
-    notifySaveFailed: () => t("suggestions", "notify_save_failed", "Couldn't save suggestion settings. Your last change was undone."),
+    /** Couldn't save settings. Change undone. */
+    notifySaveFailed: () => t("suggestions", "notify_save_failed", "Couldn't save settings. Change undone."),
     /** Status updated */
     notifyStatusUpdated: () => t("suggestions", "notify_status_updated", "Status updated"),
-    /** Manage and configure server suggestions */
-    pageSubtitle: () => t("suggestions", "page_subtitle", "Manage and configure server suggestions"),
+    /** Server suggestions */
+    pageSubtitle: () => t("suggestions", "page_subtitle", "Server suggestions"),
     /** Reactions: */
     reactionsLabel: () => t("suggestions", "reactions_label", "Reactions:"),
     /** Asc */
@@ -16109,8 +16061,6 @@ export const m = {
     casesLinkTicketsOptional: () => t("tickets", "cases_link_tickets_optional", "Link Tickets (Optional)"),
     /** Linked Tickets ({count}) */
     casesLinkedTicketsHeading: (p: { count: P }) => t("tickets", "cases_linked_tickets_heading", "Linked Tickets ({count})", p),
-    /** Tickets associated with this case */
-    casesLinkedTicketsHint: () => t("tickets", "cases_linked_tickets_hint", "Tickets associated with this case"),
     /** New Case */
     casesNewCase: () => t("tickets", "cases_new_case", "New Case"),
     /** No available tickets to link */
@@ -16125,8 +16075,6 @@ export const m = {
     casesReopen: () => t("tickets", "cases_reopen", "Reopen"),
     /** Select a case above */
     casesSelectPrompt: () => t("tickets", "cases_select_prompt", "Select a case above"),
-    /** or create a new one to get started */
-    casesSelectPromptHint: () => t("tickets", "cases_select_prompt_hint", "or create a new one to get started"),
     /** Select Tickets to Link */
     casesSelectTicketsToLink: () => t("tickets", "cases_select_tickets_to_link", "Select Tickets to Link"),
     /** {count} ticket selected */
@@ -16169,8 +16117,6 @@ export const m = {
     configPingStaffLabel: (p: { value: P }) => t("tickets", "config_ping_staff_label", "Ping Staff: {value}", p),
     /** No priorities configured */
     configPrioritiesEmpty: () => t("tickets", "config_priorities_empty", "No priorities configured"),
-    /** Click "New" to create a priority level */
-    configPrioritiesEmptyHint: () => t("tickets", "config_priorities_empty_hint", "Click \"New\" to create a priority level"),
     /** Priorities ({count}) */
     configPrioritiesTitle: (p: { count: P }) => t("tickets", "config_priorities_title", "Priorities ({count})", p),
     /** urgent */
@@ -16185,8 +16131,6 @@ export const m = {
     configTagNamePlaceholder: () => t("tickets", "config_tag_name_placeholder", "Billing Issue"),
     /** No tags configured */
     configTagsEmpty: () => t("tickets", "config_tags_empty", "No tags configured"),
-    /** Click "New" to create a tag */
-    configTagsEmptyHint: () => t("tickets", "config_tags_empty_hint", "Click \"New\" to create a tag"),
     /** Tags ({count}) */
     configTagsTitle: (p: { count: P }) => t("tickets", "config_tags_title", "Tags ({count})", p),
     /** Transcript Channel */
@@ -16229,8 +16173,6 @@ export const m = {
     overviewAverageResolution: () => t("tickets", "overview_average_resolution", "Average Resolution"),
     /** Average Response */
     overviewAverageResponse: () => t("tickets", "overview_average_response", "Average Response"),
-    /** Ticket cases */
-    overviewCasesHint: () => t("tickets", "overview_cases_hint", "Ticket cases"),
     /** Closed Tickets */
     overviewClosedTickets: () => t("tickets", "overview_closed_tickets", "Closed Tickets"),
     /** {value} hrs */
@@ -16257,12 +16199,8 @@ export const m = {
     overviewOpenTickets: () => t("tickets", "overview_open_tickets", "Open Tickets"),
     /** Panels */
     overviewPanels: () => t("tickets", "overview_panels", "Panels"),
-    /** Active ticket panels */
-    overviewPanelsHint: () => t("tickets", "overview_panels_hint", "Active ticket panels"),
     /** Priorities */
     overviewPriorities: () => t("tickets", "overview_priorities", "Priorities"),
-    /** Priority levels configured */
-    overviewPrioritiesHint: () => t("tickets", "overview_priorities_hint", "Priority levels configured"),
     /** Response Times */
     overviewResponseTimes: () => t("tickets", "overview_response_times", "Response Times"),
     /** Avg Response: {value} min */
@@ -16271,8 +16209,6 @@ export const m = {
     overviewStaffPerformance: () => t("tickets", "overview_staff_performance", "Staff Performance"),
     /** Tags */
     overviewTags: () => t("tickets", "overview_tags", "Tags"),
-    /** Available tags */
-    overviewTagsHint: () => t("tickets", "overview_tags_hint", "Available tags"),
     /** Tickets by Priority */
     overviewTicketsByPriority: () => t("tickets", "overview_tickets_by_priority", "Tickets by Priority"),
     /** Total Tickets */
@@ -16339,8 +16275,6 @@ export const m = {
     panelsDeleteButtonConfirm: (p: { name: P }) => t("tickets", "panels_delete_button_confirm", "Delete \"{name}\"?", p),
     /** Delete Button */
     panelsDeleteButtonTitle: () => t("tickets", "panels_delete_button_title", "Delete Button"),
-    /** Delay before deleting ticket on close */
-    panelsDeleteDelayHint: () => t("tickets", "panels_delete_delay_hint", "Delay before deleting ticket on close"),
     /** 0 (instant) */
     panelsDeleteDelayPlaceholder: () => t("tickets", "panels_delete_delay_placeholder", "0 (instant)"),
     /** Delete Delay (seconds) */
@@ -16477,8 +16411,8 @@ export const m = {
     panelsTabSettings: () => t("tickets", "panels_tab_settings", "Panel Settings"),
     /** Thread Channel */
     panelsThreadChannel: () => t("tickets", "panels_thread_channel", "Thread Channel"),
-    /** Open tickets as private threads in a text channel, or as posts in a forum, instead of a... */
-    panelsThreadChannelHint: () => t("tickets", "panels_thread_channel_hint", "Open tickets as private threads in a text channel, or as posts in a forum, instead of a channel for each ticket. Anyone who can see a forum can see its posts."),
+    /** Private threads in a text channel, or posts in a forum. Anyone who can see the forum ca... */
+    panelsThreadChannelHint: () => t("tickets", "panels_thread_channel_hint", "Private threads in a text channel, or posts in a forum. Anyone who can see the forum can see its posts."),
     /** Troubleshoot */
     panelsTroubleshoot: () => t("tickets", "panels_troubleshoot", "Troubleshoot"),
     /** Viewer Roles */
@@ -16491,8 +16425,8 @@ export const m = {
     ticketsAddNote: () => t("tickets", "tickets_add_note", "Add note"),
     /** Add tag */
     ticketsAddTag: () => t("tickets", "tickets_add_tag", "Add tag"),
-    /** Archive ticket #{id}? It moves out of the active list. */
-    ticketsArchiveConfirm: (p: { id: P }) => t("tickets", "tickets_archive_confirm", "Archive ticket #{id}? It moves out of the active list.", p),
+    /** Archive ticket #{id}? */
+    ticketsArchiveConfirm: (p: { id: P }) => t("tickets", "tickets_archive_confirm", "Archive ticket #{id}?", p),
     /** Archive ticket */
     ticketsArchiveTitle: () => t("tickets", "tickets_archive_title", "Archive ticket"),
     /** Case #{id} */
@@ -16501,12 +16435,10 @@ export const m = {
     ticketsClaim: () => t("tickets", "tickets_claim", "Claim"),
     /** Claimed by {user} */
     ticketsClaimedBy: (p: { user: P }) => t("tickets", "tickets_claimed_by", "Claimed by {user}", p),
-    /** Close ticket #{id}? The channel is closed for the member. */
-    ticketsCloseConfirm: (p: { id: P }) => t("tickets", "tickets_close_confirm", "Close ticket #{id}? The channel is closed for the member.", p),
+    /** Close ticket #{id}? */
+    ticketsCloseConfirm: (p: { id: P }) => t("tickets", "tickets_close_confirm", "Close ticket #{id}?", p),
     /** Close ticket */
     ticketsCloseTitle: () => t("tickets", "tickets_close_title", "Close ticket"),
-    /** Try another status filter or search term. */
-    ticketsEmptyHint: () => t("tickets", "tickets_empty_hint", "Try another status filter or search term."),
     /** No tickets here */
     ticketsEmptyTitle: () => t("tickets", "tickets_empty_title", "No tickets here"),
     /** Failed to add note */
@@ -16551,8 +16483,6 @@ export const m = {
     ticketsStatusClaimed: () => t("tickets", "tickets_status_claimed", "Claimed"),
     /** Ticket status */
     ticketsStatusFilterAria: () => t("tickets", "tickets_status_filter_aria", "Ticket status"),
-    /** Claim, prioritise, tag, and close tickets without leaving the dashboard */
-    ticketsSubtitle: () => t("tickets", "tickets_subtitle", "Claim, prioritise, tag, and close tickets without leaving the dashboard"),
     /** Ticket #{id} */
     ticketsTicketNumber: (p: { id: P }) => t("tickets", "tickets_ticket_number", "Ticket #{id}", p),
     /** Unclaim */
@@ -16567,10 +16497,10 @@ export const m = {
     transcriptExportGenerated: (p: { date: P }) => t("tickets", "transcript_export_generated", "Generated {date}", p),
     /** Ticket Transcript */
     transcriptExportTitle: () => t("tickets", "transcript_export_title", "Ticket Transcript"),
-    /** Could not find bot instance on port {port}. Please check your instance configuration. */
-    transcriptInstanceNotFound: (p: { port: P }) => t("tickets", "transcript_instance_not_found", "Could not find bot instance on port {port}. Please check your instance configuration.", p),
-    /** Invalid or expired transcript link. Share code: {code}. Check browser console for details. */
-    transcriptInvalidLink: (p: { code: P }) => t("tickets", "transcript_invalid_link", "Invalid or expired transcript link. Share code: {code}. Check browser console for details.", p),
+    /** No bot instance on port {port}. */
+    transcriptInstanceNotFound: (p: { port: P }) => t("tickets", "transcript_instance_not_found", "No bot instance on port {port}.", p),
+    /** Invalid or expired transcript link ({code}). */
+    transcriptInvalidLink: (p: { code: P }) => t("tickets", "transcript_invalid_link", "Invalid or expired transcript link ({code}).", p),
     /** Failed to load transcript */
     transcriptLoadFailed: () => t("tickets", "transcript_load_failed", "Failed to load transcript"),
     /** Loading transcript... */
@@ -16581,8 +16511,8 @@ export const m = {
     transcriptMetaOther: (p: { count: P; timestamp: P }) => t("tickets", "transcript_meta_other", "{count} messages • {timestamp}", p),
     /** Missing share code in URL. */
     transcriptMissingShareCode: () => t("tickets", "transcript_missing_share_code", "Missing share code in URL."),
-    /** You do not have access to view this transcript. Only server administrators can view tic... */
-    transcriptNoAccess: () => t("tickets", "transcript_no_access", "You do not have access to view this transcript. Only server administrators can view ticket transcripts."),
+    /** Only server administrators can view ticket transcripts. */
+    transcriptNoAccess: () => t("tickets", "transcript_no_access", "Only server administrators can view ticket transcripts."),
     /** No messages in this transcript */
     transcriptNoMessages: () => t("tickets", "transcript_no_messages", "No messages in this transcript"),
     /** Transcript not found */
@@ -16599,8 +16529,8 @@ export const m = {
     pageAddItemAria: () => t("todo", "page_add_item_aria", "Add todo item"),
     /** This list */
     pageConfirmDeleteListFallbackName: () => t("todo", "page_confirm_delete_list_fallback_name", "This list"),
-    /** "{name}" and every item in it will be deleted permanently. */
-    pageConfirmDeleteListMessage: (p: { name: P }) => t("todo", "page_confirm_delete_list_message", "\"{name}\" and every item in it will be deleted permanently.", p),
+    /** "{name}" and all its items will be deleted. */
+    pageConfirmDeleteListMessage: (p: { name: P }) => t("todo", "page_confirm_delete_list_message", "\"{name}\" and all its items will be deleted.", p),
     /** Delete list? */
     pageConfirmDeleteListTitle: () => t("todo", "page_confirm_delete_list_title", "Delete list?"),
     /** Create Your First List */
@@ -16611,40 +16541,40 @@ export const m = {
     pageEditDueDate: () => t("todo", "page_edit_due_date", "Due date"),
     /** Title * */
     pageEditFieldTitle: () => t("todo", "page_edit_field_title", "Title *"),
-    /** Failed to save changes. Please try again. */
-    pageEditSaveFailed: () => t("todo", "page_edit_save_failed", "Failed to save changes. Please try again."),
+    /** Failed to save changes */
+    pageEditSaveFailed: () => t("todo", "page_edit_save_failed", "Failed to save changes"),
     /** Title is required. */
     pageEditTitleRequired: () => t("todo", "page_edit_title_required", "Title is required."),
-    /** Failed to add todo item. Please try again. */
-    pageErrorAddItem: () => t("todo", "page_error_add_item", "Failed to add todo item. Please try again."),
-    /** Failed to complete todo item. Please try again. */
-    pageErrorCompleteItem: () => t("todo", "page_error_complete_item", "Failed to complete todo item. Please try again."),
-    /** Failed to create todo list. Please try again. */
-    pageErrorCreateList: () => t("todo", "page_error_create_list", "Failed to create todo list. Please try again."),
-    /** Failed to delete todo item. Please try again. */
-    pageErrorDeleteItem: () => t("todo", "page_error_delete_item", "Failed to delete todo item. Please try again."),
-    /** Failed to delete list. Please try again. */
-    pageErrorDeleteList: () => t("todo", "page_error_delete_list", "Failed to delete list. Please try again."),
-    /** Failed to load todo items. Please try again. */
-    pageErrorLoadItems: () => t("todo", "page_error_load_items", "Failed to load todo items. Please try again."),
-    /** Failed to load todo lists. Please try again. */
-    pageErrorLoadLists: () => t("todo", "page_error_load_lists", "Failed to load todo lists. Please try again."),
-    /** Todo dashboard failed to load. Please refresh the page. */
-    pageFallback: () => t("todo", "page_fallback", "Todo dashboard failed to load. Please refresh the page."),
+    /** Failed to add item */
+    pageErrorAddItem: () => t("todo", "page_error_add_item", "Failed to add item"),
+    /** Failed to complete item */
+    pageErrorCompleteItem: () => t("todo", "page_error_complete_item", "Failed to complete item"),
+    /** Failed to create list */
+    pageErrorCreateList: () => t("todo", "page_error_create_list", "Failed to create list"),
+    /** Could not delete item */
+    pageErrorDeleteItem: () => t("todo", "page_error_delete_item", "Could not delete item"),
+    /** Failed to delete list */
+    pageErrorDeleteList: () => t("todo", "page_error_delete_list", "Failed to delete list"),
+    /** Failed to load items */
+    pageErrorLoadItems: () => t("todo", "page_error_load_items", "Failed to load items"),
+    /** Failed to load lists */
+    pageErrorLoadLists: () => t("todo", "page_error_load_lists", "Failed to load lists"),
+    /** Failed to load. Refresh the page. */
+    pageFallback: () => t("todo", "page_fallback", "Failed to load. Refresh the page."),
     /** Created {date} */
     pageItemCreated: (p: { date: P }) => t("todo", "page_item_created", "Created {date}", p),
     /** Delete item */
     pageItemDelete: () => t("todo", "page_item_delete", "Delete item"),
     /** Edit item */
     pageItemEdit: () => t("todo", "page_item_edit", "Edit item"),
-    /** Add your first todo item to get started. */
-    pageItemsEmptyCanAdd: () => t("todo", "page_items_empty_can_add", "Add your first todo item to get started."),
+    /** Add the first item */
+    pageItemsEmptyCanAdd: () => t("todo", "page_items_empty_can_add", "Add the first item"),
     /** This list is empty. */
     pageItemsEmptyReadOnly: () => t("todo", "page_items_empty_read_only", "This list is empty."),
     /** No Items Yet */
     pageItemsEmptyTitle: () => t("todo", "page_items_empty_title", "No Items Yet"),
-    /** Try adjusting your filters. */
-    pageItemsFilteredHint: () => t("todo", "page_items_filtered_hint", "Try adjusting your filters."),
+    /** Adjust your filters */
+    pageItemsFilteredHint: () => t("todo", "page_items_filtered_hint", "Adjust your filters"),
     /** No Items Match Filters */
     pageItemsFilteredTitle: () => t("todo", "page_items_filtered_title", "No Items Match Filters"),
     /** {name} Items */
@@ -16657,10 +16587,10 @@ export const m = {
     pageListSelectAria: (p: { name: P }) => t("todo", "page_list_select_aria", "Select todo list {name}", p),
     /** List settings */
     pageListSettingsAria: () => t("todo", "page_list_settings_aria", "List settings"),
-    /** Create your first server todo list to get started organizing tasks. */
-    pageListsEmptyHint: () => t("todo", "page_lists_empty_hint", "Create your first server todo list to get started organizing tasks."),
-    /** Try adjusting your search terms. */
-    pageListsEmptySearchHint: () => t("todo", "page_lists_empty_search_hint", "Try adjusting your search terms."),
+    /** Create the first list */
+    pageListsEmptyHint: () => t("todo", "page_lists_empty_hint", "Create the first list"),
+    /** Adjust your search */
+    pageListsEmptySearchHint: () => t("todo", "page_lists_empty_search_hint", "Adjust your search"),
     /** No Lists Found */
     pageListsEmptySearchTitle: () => t("todo", "page_lists_empty_search_title", "No Lists Found"),
     /** No Todo Lists Yet */
@@ -16705,8 +16635,8 @@ export const m = {
     pageSortPriority: () => t("todo", "page_sort_priority", "Sort by Priority"),
     /** Sort by Title */
     pageSortTitle: () => t("todo", "page_sort_title", "Sort by Title"),
-    /** Organize and track your server's collaborative tasks */
-    pageSubtitle: () => t("todo", "page_subtitle", "Organize and track your server's collaborative tasks"),
+    /** Shared server tasks */
+    pageSubtitle: () => t("todo", "page_subtitle", "Shared server tasks"),
     /** Todo Lists - {guild} Dashboard */
     pageTitle: (p: { guild: P }) => t("todo", "page_title", "Todo Lists - {guild} Dashboard", p),
     /** Add User */
@@ -16725,8 +16655,8 @@ export const m = {
     permissionsCanViewHint: () => t("todo", "permissions_can_view_hint", "See list and items"),
     /** Current Permissions */
     permissionsCurrent: () => t("todo", "permissions_current", "Current Permissions"),
-    /** Add users to collaborate on this todo list. */
-    permissionsEmptyHint: () => t("todo", "permissions_empty_hint", "Add users to collaborate on this todo list."),
+    /** Add users to share this list */
+    permissionsEmptyHint: () => t("todo", "permissions_empty_hint", "Add users to share this list"),
     /** No Permissions Set */
     permissionsEmptyTitle: () => t("todo", "permissions_empty_title", "No Permissions Set"),
     /** Grant Permissions */
@@ -16755,8 +16685,6 @@ export const m = {
     botDisconnectChannel: () => t("twitch", "bot_disconnect_channel", "Disconnect channel"),
     /** Enable Twitch chat bot for this server */
     botEnable: () => t("twitch", "bot_enable", "Enable Twitch chat bot for this server"),
-    /** Configure how Twitch chat commands behave in this channel. */
-    botHint: () => t("twitch", "bot_hint", "Configure how Twitch chat commands behave in this channel."),
     /** Language override */
     botLanguage: () => t("twitch", "bot_language", "Language override"),
     /** Chat bot */
@@ -16771,8 +16699,6 @@ export const m = {
     commandChatTitle: () => t("twitch", "command_chat_title", "Twitch chat commands"),
     /** Cooldown seconds */
     commandCooldown: () => t("twitch", "command_cooldown", "Cooldown seconds"),
-    /** Create Twitch chat commands with permissions, cooldowns, and template variables. */
-    commandEditorHint: () => t("twitch", "command_editor_hint", "Create Twitch chat commands with permissions, cooldowns, and template variables."),
     /** Custom command editor */
     commandEditorTitle: () => t("twitch", "command_editor_title", "Custom command editor"),
     /** No custom commands yet. */
@@ -16823,16 +16749,14 @@ export const m = {
     eventsGoliveMessage: () => t("twitch", "events_golive_message", "Go-live message"),
     /** Sent to the go-live channel when the connected streamer goes live */
     eventsGolivePreviewDescription: () => t("twitch", "events_golive_preview_description", "Sent to the go-live channel when the connected streamer goes live"),
-    /** This channel is connected via OAuth, so go-live notifications set up here replace anyth... */
-    eventsOauthNotice: (p: { name: P }) => t("twitch", "events_oauth_notice", "This channel is connected via OAuth, so go-live notifications set up here replace anything configured for @{name} under Stream Alerts.", p),
+    /** Go-live notifications set here replace anything set for @{name} under Stream Alerts. */
+    eventsOauthNotice: (p: { name: P }) => t("twitch", "events_oauth_notice", "Go-live notifications set here replace anything set for @{name} under Stream Alerts.", p),
     /** Raid Discord channel */
     eventsRaidChannel: () => t("twitch", "events_raid_channel", "Raid Discord channel"),
     /** Raid message */
     eventsRaidMessage: () => t("twitch", "events_raid_message", "Raid message"),
     /** %raider% raided %channel% with %viewers% viewers! */
     eventsRaidPlaceholder: () => t("twitch", "events_raid_placeholder", "%raider% raided %channel% with %viewers% viewers!"),
-    /** Post a message when the connected channel goes live (and goes offline again). */
-    eventsRoutingHint: () => t("twitch", "events_routing_hint", "Post a message when the connected channel goes live (and goes offline again)."),
     /** Event routing */
     eventsRoutingTitle: () => t("twitch", "events_routing_title", "Event routing"),
     /** Sub Discord channel */
@@ -16841,8 +16765,6 @@ export const m = {
     eventsSubMessage: () => t("twitch", "events_sub_message", "Sub message"),
     /** %display% subscribed to %channel%! */
     eventsSubPlaceholder: () => t("twitch", "events_sub_placeholder", "%display% subscribed to %channel%!"),
-    /** Configure subscription and raid messages without touching slash commands. */
-    eventsTemplatesHint: () => t("twitch", "events_templates_hint", "Configure subscription and raid messages without touching slash commands."),
     /** Sub and raid templates */
     eventsTemplatesTitle: () => t("twitch", "events_templates_title", "Sub and raid templates"),
     /** Send test go-live */
@@ -16891,8 +16813,6 @@ export const m = {
     linksDiscordUser: () => t("twitch", "links_discord_user", "Discord user"),
     /** No linked accounts yet. */
     linksEmpty: () => t("twitch", "links_empty", "No linked accounts yet."),
-    /** Link Discord members to their Twitch username so chat commands can recognise them. */
-    linksHint: () => t("twitch", "links_hint", "Link Discord members to their Twitch username so chat commands can recognise them."),
     /** Select a user */
     linksSelectUser: () => t("twitch", "links_select_user", "Select a user"),
     /** twitchlogin */
@@ -16911,8 +16831,6 @@ export const m = {
     liveCreatePoll: () => t("twitch", "live_create_poll", "Create poll"),
     /** Delete message */
     liveDeleteMessage: () => t("twitch", "live_delete_message", "Delete message"),
-    /** Run live chat, marker, clip, poll, and moderation actions from the dashboard. */
-    liveHint: () => t("twitch", "live_hint", "Run live chat, marker, clip, poll, and moderation actions from the dashboard."),
     /** Marker and clip */
     liveMarkerClip: () => t("twitch", "live_marker_clip", "Marker and clip"),
     /** Marker description */
@@ -17009,22 +16927,22 @@ export const m = {
     notifyTimerUpdateFailed: () => t("twitch", "notify_timer_update_failed", "Failed to update Twitch timer"),
     /** Bot account */
     overviewBotAccount: () => t("twitch", "overview_bot_account", "Bot account"),
-    /** Authorize the Twitch account Mewdeko should speak as. */
-    overviewBotMissing: () => t("twitch", "overview_bot_missing", "Authorize the Twitch account Mewdeko should speak as."),
-    /** Sends chat and owns chat subscriptions. */
-    overviewBotOk: () => t("twitch", "overview_bot_ok", "Sends chat and owns chat subscriptions."),
+    /** Authorize the bot's Twitch account. */
+    overviewBotMissing: () => t("twitch", "overview_bot_missing", "Authorize the bot's Twitch account."),
+    /** Bot connected */
+    overviewBotOk: () => t("twitch", "overview_bot_ok", "Bot connected"),
     /** Authorize the Twitch channel owner. */
     overviewChannelMissing: () => t("twitch", "overview_channel_missing", "Authorize the Twitch channel owner."),
-    /** Broadcaster permission is stored. */
-    overviewChannelOk: () => t("twitch", "overview_channel_ok", "Broadcaster permission is stored."),
-    /** Connect both the bot account and the broadcaster channel to enable modern Twitch chat. */
-    overviewConnectBoth: () => t("twitch", "overview_connect_both", "Connect both the bot account and the broadcaster channel to enable modern Twitch chat."),
+    /** Channel connected */
+    overviewChannelOk: () => t("twitch", "overview_channel_ok", "Channel connected"),
+    /** Connect the bot account and the broadcaster channel. */
+    overviewConnectBoth: () => t("twitch", "overview_connect_both", "Connect the bot account and the broadcaster channel."),
     /** Connection */
     overviewConnection: () => t("twitch", "overview_connection", "Connection"),
     /** EventSub chat is ready for @{name}. */
     overviewReady: (p: { name: P }) => t("twitch", "overview_ready", "EventSub chat is ready for @{name}.", p),
-    /** Connect Mewdeko to Twitch chat, events, and future channel tools. */
-    pageSubtitle: () => t("twitch", "page_subtitle", "Connect Mewdeko to Twitch chat, events, and future channel tools."),
+    /** Chat, events, and channel tools */
+    pageSubtitle: () => t("twitch", "page_subtitle", "Chat, events, and channel tools"),
     /** Broadcaster */
     permBroadcaster: () => t("twitch", "perm_broadcaster", "Broadcaster"),
     /** Mod */
@@ -17047,8 +16965,6 @@ export const m = {
     quoteBodyAuthor: (p: { author: P; text: P }) => t("twitch", "quote_body_author", "\"{text}\" - {author}", p),
     /** No quotes saved yet. */
     quoteEmpty: () => t("twitch", "quote_empty", "No quotes saved yet."),
-    /** Manage the quote pool used by {command}. */
-    quotePoolHint: (p: { command: P }) => t("twitch", "quote_pool_hint", "Manage the quote pool used by {command}.", p),
     /** filter quotes */
     quoteSearchPlaceholder: () => t("twitch", "quote_search_placeholder", "filter quotes"),
     /** The stream moment worth saving. */
@@ -17061,8 +16977,6 @@ export const m = {
     redemptionDiscordPlaceholder: () => t("twitch", "redemption_discord_placeholder", "%display% redeemed %reward%: %input%"),
     /** No channel point actions yet. */
     redemptionEmpty: () => t("twitch", "redemption_empty", "No channel point actions yet."),
-    /** Map reward titles to Twitch replies or Discord posts. */
-    redemptionHint: () => t("twitch", "redemption_hint", "Map reward titles to Twitch replies or Discord posts."),
     /** no */
     redemptionNo: () => t("twitch", "redemption_no", "no"),
     /** No Discord post */
@@ -17083,18 +16997,16 @@ export const m = {
     redemptionTwitchReplyPlaceholder: () => t("twitch", "redemption_twitch_reply_placeholder", "Thanks %display%, hydrate time."),
     /** yes */
     redemptionYes: () => t("twitch", "redemption_yes", "yes"),
-    /** Grants user:read:chat, user:write:chat, and user:bot. This is a single shared identity ... */
-    setupBotScopesHint: () => t("twitch", "setup_bot_scopes_hint", "Grants user:read:chat, user:write:chat, and user:bot. This is a single shared identity used across every server, so only bot owners can (re)authorize it."),
+    /** Grants user:read:chat, user:write:chat, and user:bot. Shared across every server, so on... */
+    setupBotScopesHint: () => t("twitch", "setup_bot_scopes_hint", "Grants user:read:chat, user:write:chat, and user:bot. Shared across every server, so only bot owners can authorize it."),
     /** Broadcaster channel */
     setupBroadcasterChannel: () => t("twitch", "setup_broadcaster_channel", "Broadcaster channel"),
-    /** Grants channel:bot and event scopes for this server. Authorize this with your own Twitc... */
-    setupChannelScopesHint: () => t("twitch", "setup_channel_scopes_hint", "Grants channel:bot and event scopes for this server. Authorize this with your own Twitch account."),
+    /** Grants channel:bot and event scopes. Authorize with your own Twitch account. */
+    setupChannelScopesHint: () => t("twitch", "setup_channel_scopes_hint", "Grants channel:bot and event scopes. Authorize with your own Twitch account."),
     /** Connect bot */
     setupConnectBot: () => t("twitch", "setup_connect_bot", "Connect bot"),
     /** Connect channel */
     setupConnectChannel: () => t("twitch", "setup_connect_channel", "Connect channel"),
-    /** Use Twitch authorization instead of hand-pasted chat tokens. */
-    setupOauthHint: () => t("twitch", "setup_oauth_hint", "Use Twitch authorization instead of hand-pasted chat tokens."),
     /** OAuth setup */
     setupOauthTitle: () => t("twitch", "setup_oauth_title", "OAuth setup"),
     /** Opening... */
@@ -17141,8 +17053,6 @@ export const m = {
     timerAlways: () => t("twitch", "timer_always", "always"),
     /** No repeating messages yet. */
     timerEmpty: () => t("twitch", "timer_empty", "No repeating messages yet."),
-    /** Rotate chat reminders with online-only and chat-activity guards. */
-    timerHint: () => t("twitch", "timer_hint", "Rotate chat reminders with online-only and chat-activity guards."),
     /** Interval minutes */
     timerInterval: () => t("twitch", "timer_interval", "Interval minutes"),
     /** One message per line. Try: Follow the socials: %url% */
@@ -17173,24 +17083,18 @@ export const m = {
     aiApiKey: () => t("utility", "ai_api_key", "API key"),
     /** hidden */
     aiApiKeyHidden: () => t("utility", "ai_api_key_hidden", "hidden"),
-    /** The key is stored by the bot and never shown again in full. */
-    aiApiKeyHint: () => t("utility", "ai_api_key_hint", "The key is stored by the bot and never shown again in full."),
     /** Paste your provider API key */
     aiApiKeyPlaceholder: () => t("utility", "ai_api_key_placeholder", "Paste your provider API key"),
     /** Stored ({hint}). Enter a new key to replace it. */
     aiApiKeyStored: (p: { hint: P }) => t("utility", "ai_api_key_stored", "Stored ({hint}). Enter a new key to replace it.", p),
-    /** Let the bot answer questions in one channel using your own provider key. */
-    aiCardSubtitle: () => t("utility", "ai_card_subtitle", "Let the bot answer questions in one channel using your own provider key."),
     /** Select channel */
     aiChannelPlaceholder: () => t("utility", "ai_channel_placeholder", "Select channel"),
     /** Pick a channel before enabling the assistant */
     aiChannelRequired: () => t("utility", "ai_channel_required", "Pick a channel before enabling the assistant"),
     /** Assistant enabled */
     aiEnabled: () => t("utility", "ai_enabled", "Assistant enabled"),
-    /** Replies to messages in the chosen channel */
-    aiEnabledHint: () => t("utility", "ai_enabled_hint", "Replies to messages in the chosen channel"),
-    /** Replies to messages in the chosen channel · {count} tokens used */
-    aiEnabledHintTokens: (p: { count: P }) => t("utility", "ai_enabled_hint_tokens", "Replies to messages in the chosen channel · {count} tokens used", p),
+    /** {count} tokens used */
+    aiEnabledHintTokens: (p: { count: P }) => t("utility", "ai_enabled_hint_tokens", "{count} tokens used", p),
     /** Fetch models */
     aiFetchModels: () => t("utility", "ai_fetch_models", "Fetch models"),
     /** Hide "searching the web" notices */
@@ -17223,8 +17127,6 @@ export const m = {
     aiWebhookSet: () => t("utility", "ai_webhook_set", "Webhook URL (set)"),
     /** Failed to add alias */
     aliasesAddFailed: () => t("utility", "aliases_add_failed", "Failed to add alias"),
-    /** Shortcuts that expand into full commands when typed with the prefix. */
-    aliasesCardSubtitle: () => t("utility", "aliases_card_subtitle", "Shortcuts that expand into full commands when typed with the prefix."),
     /** Command aliases */
     aliasesCardTitle: () => t("utility", "aliases_card_title", "Command aliases"),
     /** Clear all aliases */
@@ -17233,8 +17135,8 @@ export const m = {
     aliasesClearConfirm: (p: { count: P }) => t("utility", "aliases_clear_confirm", "Remove all {count} aliases?", p),
     /** Failed to clear aliases */
     aliasesClearFailed: () => t("utility", "aliases_clear_failed", "Failed to clear aliases"),
-    /** No aliases yet. Aliases let members type a short word that expands to a full command. */
-    aliasesEmpty: () => t("utility", "aliases_empty", "No aliases yet. Aliases let members type a short word that expands to a full command."),
+    /** No aliases yet. */
+    aliasesEmpty: () => t("utility", "aliases_empty", "No aliases yet."),
     /** Alias mapping */
     aliasesMappingAria: () => t("utility", "aliases_mapping_aria", "Alias mapping"),
     /** Runs this command, e.g. play youtube */
@@ -17255,16 +17157,14 @@ export const m = {
     autopublishBlacklistUserFailed: () => t("utility", "autopublish_blacklist_user_failed", "Failed to blacklist user"),
     /** Failed to blacklist word */
     autopublishBlacklistWordFailed: () => t("utility", "autopublish_blacklist_word_failed", "Failed to blacklist word"),
-    /** Automatically publish announcement channel posts to servers that follow them. */
-    autopublishCardSubtitle: () => t("utility", "autopublish_card_subtitle", "Automatically publish announcement channel posts to servers that follow them."),
     /** No announcement channels in this server */
     autopublishChannelNone: () => t("utility", "autopublish_channel_none", "No announcement channels in this server"),
     /** Select announcement channel */
     autopublishChannelPlaceholder: () => t("utility", "autopublish_channel_placeholder", "Select announcement channel"),
     /** Failed to disable auto publish */
     autopublishDisableFailed: () => t("utility", "autopublish_disable_failed", "Failed to disable auto publish"),
-    /** No channels are auto published. Messages posted in announcement channels you add here a... */
-    autopublishEmpty: () => t("utility", "autopublish_empty", "No channels are auto published. Messages posted in announcement channels you add here are published to followers automatically."),
+    /** No auto published channels. */
+    autopublishEmpty: () => t("utility", "autopublish_empty", "No auto published channels."),
     /** Failed to enable auto publish */
     autopublishEnableFailed: () => t("utility", "autopublish_enable_failed", "Failed to enable auto publish"),
     /** Failed to remove user */
@@ -17287,20 +17187,18 @@ export const m = {
     errorWithDetail: (p: { detail: P; failure: P }) => t("utility", "error_with_detail", "{failure}: {detail}", p),
     /** Block tag */
     nsfwBlock: () => t("utility", "nsfw_block", "Block tag"),
-    /** Tags that NSFW image commands will never return in this server. */
-    nsfwCardSubtitle: () => t("utility", "nsfw_card_subtitle", "Tags that NSFW image commands will never return in this server."),
     /** Blocked NSFW tags ({count}) */
     nsfwCardTitle: (p: { count: P }) => t("utility", "nsfw_card_title", "Blocked NSFW tags ({count})", p),
-    /** No tags are blocked. Blocked tags are excluded from every NSFW image search in this ser... */
-    nsfwEmpty: () => t("utility", "nsfw_empty", "No tags are blocked. Blocked tags are excluded from every NSFW image search in this server."),
+    /** No tags blocked. */
+    nsfwEmpty: () => t("utility", "nsfw_empty", "No tags blocked."),
     /** Tag to block */
     nsfwTagAria: () => t("utility", "nsfw_tag_aria", "Tag to block"),
     /** Tag to block, e.g. gore */
     nsfwTagPlaceholder: () => t("utility", "nsfw_tag_placeholder", "Tag to block, e.g. gore"),
     /** Unblock {tag} */
     nsfwUnblockAria: (p: { tag: P }) => t("utility", "nsfw_unblock_aria", "Unblock {tag}", p),
-    /** Aliases, quotes, auto publish, stream roles, AI, NSFW filters, and role monitoring */
-    pageSubtitle: () => t("utility", "page_subtitle", "Aliases, quotes, auto publish, stream roles, AI, NSFW filters, and role monitoring"),
+    /** Aliases, quotes, auto publish, stream roles, AI, and more */
+    pageSubtitle: () => t("utility", "page_subtitle", "Aliases, quotes, auto publish, stream roles, AI, and more"),
     /** Manage Events */
     permManageEvents: () => t("utility", "perm_manage_events", "Manage Events"),
     /** Manage Threads */
@@ -17309,8 +17207,6 @@ export const m = {
     punishmentDefault: () => t("utility", "punishment_default", "default"),
     /** Failed to add quote */
     quotesAddFailed: () => t("utility", "quotes_add_failed", "Failed to add quote"),
-    /** Saved snippets members can recall by keyword. */
-    quotesCardSubtitle: () => t("utility", "quotes_card_subtitle", "Saved snippets members can recall by keyword."),
     /** Quotes ({count}) */
     quotesCardTitle: (p: { count: P }) => t("utility", "quotes_card_title", "Quotes ({count})", p),
     /** Delete quote */
@@ -17343,14 +17239,12 @@ export const m = {
     rmBlacklistPermissionFailed: () => t("utility", "rm_blacklist_permission_failed", "Failed to blacklist permission"),
     /** Failed to blacklist role */
     rmBlacklistRoleFailed: () => t("utility", "rm_blacklist_role_failed", "Failed to blacklist role"),
-    /** Revert dangerous role or permission changes and punish the moderator who made them. */
-    rmCardSubtitle: () => t("utility", "rm_card_subtitle", "Revert dangerous role or permission changes and punish the moderator who made them."),
     /** Role monitor */
     rmCardTitle: () => t("utility", "rm_card_title", "Role monitor"),
     /** Failed to save default punishment */
     rmDefaultFailed: () => t("utility", "rm_default_failed", "Failed to save default punishment"),
-    /** Applied to whoever hands out a blacklisted role or permission, unless the entry has its... */
-    rmDefaultHint: () => t("utility", "rm_default_hint", "Applied to whoever hands out a blacklisted role or permission, unless the entry has its own punishment."),
+    /** Used unless the entry has its own punishment. */
+    rmDefaultHint: () => t("utility", "rm_default_hint", "Used unless the entry has its own punishment."),
     /** Default punishment */
     rmDefaultPunishment: () => t("utility", "rm_default_punishment", "Default punishment"),
     /** Use default punishment */
@@ -17361,8 +17255,8 @@ export const m = {
     rmPermPlaceholder: () => t("utility", "rm_perm_placeholder", "Permission to protect"),
     /** No permissions are blacklisted. */
     rmPermsEmpty: () => t("utility", "rm_perms_empty", "No permissions are blacklisted."),
-    /** Roles granting these permissions are reverted when created or edited. */
-    rmPermsSubtitle: () => t("utility", "rm_perms_subtitle", "Roles granting these permissions are reverted when created or edited."),
+    /** Roles with these permissions are reverted. */
+    rmPermsSubtitle: () => t("utility", "rm_perms_subtitle", "Roles with these permissions are reverted."),
     /** Blacklisted permissions */
     rmPermsTitle: () => t("utility", "rm_perms_title", "Blacklisted permissions"),
     /** Only revert the change */
@@ -17379,8 +17273,8 @@ export const m = {
     rmRolePlaceholder: () => t("utility", "rm_role_placeholder", "Role to protect"),
     /** No roles are blacklisted. */
     rmRolesEmpty: () => t("utility", "rm_roles_empty", "No roles are blacklisted."),
-    /** Nobody can be given these roles; the change is reverted and the moderator punished. */
-    rmRolesSubtitle: () => t("utility", "rm_roles_subtitle", "Nobody can be given these roles; the change is reverted and the moderator punished."),
+    /** Changes are reverted and the moderator punished. */
+    rmRolesSubtitle: () => t("utility", "rm_roles_subtitle", "Changes are reverted and the moderator punished."),
     /** Remove trusted member {user} */
     rmTrustedMemberRemoveAria: (p: { user: P }) => t("utility", "rm_trusted_member_remove_aria", "Remove trusted member {user}", p),
     /** Trusted members */
@@ -17391,8 +17285,8 @@ export const m = {
     rmTrustedRoleRemoveAria: (p: { role: P }) => t("utility", "rm_trusted_role_remove_aria", "Remove trusted role {role}", p),
     /** Trusted roles */
     rmTrustedRoles: () => t("utility", "rm_trusted_roles", "Trusted roles"),
-    /** Changes made by these roles or members are never reverted. */
-    rmTrustedSubtitle: () => t("utility", "rm_trusted_subtitle", "Changes made by these roles or members are never reverted."),
+    /** Their changes are never reverted. */
+    rmTrustedSubtitle: () => t("utility", "rm_trusted_subtitle", "Their changes are never reverted."),
     /** Trusted roles and members */
     rmTrustedTitle: () => t("utility", "rm_trusted_title", "Trusted roles and members"),
     /** Failed to whitelist role */
@@ -17459,8 +17353,8 @@ export const m = {
     pageConfigPasswordHint: () => t("votes", "page_config_password_hint", "Leave the field empty to remove the password."),
     /** Enter API password */
     pageConfigPasswordPlaceholder: () => t("votes", "page_config_password_placeholder", "Enter API password"),
-    /** Are you sure you want to remove all vote roles? */
-    pageConfirmClear: () => t("votes", "page_confirm_clear", "Are you sure you want to remove all vote roles?"),
+    /** Remove all vote roles? */
+    pageConfirmClear: () => t("votes", "page_confirm_clear", "Remove all vote roles?"),
     /** Remove all */
     pageConfirmClearConfirm: () => t("votes", "page_confirm_clear_confirm", "Remove all"),
     /** Couldn't save vote settings. */
@@ -17473,14 +17367,14 @@ export const m = {
     pageErrorRoleAdd: () => t("votes", "page_error_role_add", "Failed to add vote role"),
     /** Failed to remove vote role */
     pageErrorRoleRemove: () => t("votes", "page_error_role_remove", "Failed to remove vote role"),
-    /** Vote statistics will appear here once users start voting. */
-    pageLeaderboardEmptyHint: () => t("votes", "page_leaderboard_empty_hint", "Vote statistics will appear here once users start voting."),
+    /** Nobody has voted yet */
+    pageLeaderboardEmptyHint: () => t("votes", "page_leaderboard_empty_hint", "Nobody has voted yet"),
     /** No Votes Yet */
     pageLeaderboardEmptyTitle: () => t("votes", "page_leaderboard_empty_title", "No Votes Yet"),
     /** Vote Leaderboard */
     pageLeaderboardTitle: () => t("votes", "page_leaderboard_title", "Vote Leaderboard"),
-    /** Available placeholders: {tokens}. Leave empty for default message. */
-    pageMessageHint: (p: { tokens: P }) => t("votes", "page_message_hint", "Available placeholders: {tokens}. Leave empty for default message.", p),
+    /** Placeholders: {tokens}. Empty uses the default. */
+    pageMessageHint: (p: { tokens: P }) => t("votes", "page_message_hint", "Placeholders: {tokens}. Empty uses the default.", p),
     /** Custom Vote Announcement */
     pageMessageLabel: () => t("votes", "page_message_label", "Custom Vote Announcement"),
     /** 🗳️ Thanks %user.mention% for voting! You've received your rewards! */
@@ -17501,8 +17395,8 @@ export const m = {
     pageRoleDurationLabel: () => t("votes", "page_role_duration_label", "Duration (seconds, 0 for permanent)"),
     /** Role to Grant */
     pageRoleToGrant: () => t("votes", "page_role_to_grant", "Role to Grant"),
-    /** Add roles to grant users when they vote for your server. */
-    pageRolesEmptyHint: () => t("votes", "page_roles_empty_hint", "Add roles to grant users when they vote for your server."),
+    /** Add a role to grant on vote */
+    pageRolesEmptyHint: () => t("votes", "page_roles_empty_hint", "Add a role to grant on vote"),
     /** No Vote Roles */
     pageRolesEmptyTitle: () => t("votes", "page_roles_empty_title", "No Vote Roles"),
     /** Vote Roles ({count}) */
@@ -17515,8 +17409,8 @@ export const m = {
     pageStatTopSubVotes: () => t("votes", "page_stat_top_sub_votes", "votes"),
     /** Total Votes */
     pageStatTotal: () => t("votes", "page_stat_total", "Total Votes"),
-    /** Configure voting rewards and tracking */
-    pageSubtitle: () => t("votes", "page_subtitle", "Configure voting rewards and tracking"),
+    /** Vote rewards and tracking */
+    pageSubtitle: () => t("votes", "page_subtitle", "Vote rewards and tracking"),
     /** Vote Roles */
     pageTabRoles: () => t("votes", "page_tab_roles", "Vote Roles"),
     /** Vote Management */
@@ -17559,8 +17453,8 @@ export const m = {
     intervalEndLabel: (p: { end: P }) => t("widgets", "interval_end_label", "End time: {end}", p),
     /** Ends: */
     intervalEnds: () => t("widgets", "interval_ends", "Ends:"),
-    /** Use arrow keys or number input to set duration. Maximum values: hours 23, minutes and s... */
-    intervalInstructions: () => t("widgets", "interval_instructions", "Use arrow keys or number input to set duration. Maximum values: hours 23, minutes and seconds 59."),
+    /** Max: hours 23, minutes and seconds 59. */
+    intervalInstructions: () => t("widgets", "interval_instructions", "Max: hours 23, minutes and seconds 59."),
     /** Set duration for timer */
     intervalLegend: () => t("widgets", "interval_legend", "Set duration for timer"),
     /** Duration set to {duration}, ending at {end} */
@@ -17609,8 +17503,8 @@ export const m = {
     embedReadArticle: () => t("wiki", "embed_read_article", "Read the article"),
     /** Related: {articles} */
     embedRelated: (p: { articles: P }) => t("wiki", "embed_related", "Related: {articles}", p),
-    /** Plain language write-ups of every Mewdeko feature: what it does, how to set it up, and ... */
-    embedSummary: () => t("wiki", "embed_summary", "Plain language write-ups of every Mewdeko feature: what it does, how to set it up, and how servers use it."),
+    /** Plain language write-ups of every Mewdeko feature. */
+    embedSummary: () => t("wiki", "embed_summary", "Plain language write-ups of every Mewdeko feature."),
     /** Every guide is listed A to Z in the sidebar. */
     everyGuideIsListedA: () => t("wiki", "every_guide_is_listed_a", "Every guide is listed A to Z in the sidebar."),
     /** Filter articles */
@@ -17623,8 +17517,8 @@ export const m = {
     mewdekoWikiEveryFeatureExplained: () => t("wiki", "mewdeko_wiki_every_feature_explained", "Mewdeko Wiki - Every feature explained"),
     /** {module} module */
     moduleBadge: (p: { module: P }) => t("wiki", "module_badge", "{module} module", p),
-    /** Plain language write-ups of every Mewdeko feature. */
-    ogDescription: () => t("wiki", "og_description", "Plain language write-ups of every Mewdeko feature."),
+    /** Plain language write-ups of every feature. */
+    ogDescription: () => t("wiki", "og_description", "Plain language write-ups of every feature."),
     /** On this page */
     onThisPage: () => t("wiki", "on_this_page", "On this page"),
     /** Open in dashboard */
@@ -17651,8 +17545,8 @@ export const m = {
     searchResultsOther: (p: { count: P; query: P }) => t("wiki", "search_results_other", "{count} matches for \"{query}\"", p),
     /** Start here */
     startHere: () => t("wiki", "start_here", "Start here"),
-    /** What each feature does, why you would want it, and how to set it up. */
-    whatEachFeatureDoesWhy: () => t("wiki", "what_each_feature_does_why", "What each feature does, why you would want it, and how to set it up."),
+    /** What each feature does and how to set it up. */
+    whatEachFeatureDoesWhy: () => t("wiki", "what_each_feature_does_why", "What each feature does and how to set it up."),
     /** Wiki home */
     wikiHome: () => t("wiki", "wiki_home", "Wiki home"),
   },
@@ -17665,14 +17559,14 @@ export const m = {
     basicsLanguagePlaceholder: () => t("wizard", "basics_language_placeholder", "Choose a language..."),
     /** Loading server settings... */
     basicsLoading: () => t("wizard", "basics_loading", "Loading server settings..."),
-    /** What members type before a command, for example <code>.help</code>. Slash commands work... */
-    basicsPrefixHint: () => t("wizard", "basics_prefix_hint", "What members type before a command, for example <code>.help</code>. Slash commands work regardless."),
+    /** What members type before a command, like <code>.help</code>. */
+    basicsPrefixHint: () => t("wizard", "basics_prefix_hint", "What members type before a command, like <code>.help</code>."),
     /** Leave blank to keep the default */
     basicsPrefixPlaceholder: () => t("wizard", "basics_prefix_placeholder", "Leave blank to keep the default"),
-    /** A few server-wide settings that everything else builds on. */
-    basicsSubtitle: () => t("wizard", "basics_subtitle", "A few server-wide settings that everything else builds on."),
-    /** Used for birthdays, repeating messages, timestamps and every other scheduled feature. W... */
-    basicsTimezoneHint: () => t("wizard", "basics_timezone_hint", "Used for birthdays, repeating messages, timestamps and every other scheduled feature. Worth setting even if you skip everything else."),
+    /** Server-wide settings */
+    basicsSubtitle: () => t("wizard", "basics_subtitle", "Server-wide settings"),
+    /** Used for birthdays, repeating messages, timestamps and other scheduled features. */
+    basicsTimezoneHint: () => t("wizard", "basics_timezone_hint", "Used for birthdays, repeating messages, timestamps and other scheduled features."),
     /** Choose your server's timezone... */
     basicsTimezonePlaceholder: () => t("wizard", "basics_timezone_placeholder", "Choose your server's timezone..."),
     /** Server Basics */
@@ -17721,12 +17615,12 @@ export const m = {
     channelSelectorUseDetected: () => t("wizard", "channel_selector_use_detected", "Use Detected Channels"),
     /** Features Configured: */
     completeConfigured: () => t("wizard", "complete_configured", "Features Configured:"),
-    /** Everything else was saved. Set these up from the dashboard, and check that Mewdeko has ... */
-    completeFailedHint: () => t("wizard", "complete_failed_hint", "Everything else was saved. Set these up from the dashboard, and check that Mewdeko has the permissions they need."),
+    /** Everything else was saved. Set these up from the dashboard and check Mewdeko's permissi... */
+    completeFailedHint: () => t("wizard", "complete_failed_hint", "Everything else was saved. Set these up from the dashboard and check Mewdeko's permissions."),
     /** Could not be set up */
     completeFailedTitle: () => t("wizard", "complete_failed_title", "Could not be set up"),
-    /** You can configure additional features and fine-tune settings there. */
-    completeRedirectHint: () => t("wizard", "complete_redirect_hint", "You can configure additional features and fine-tune settings there."),
+    /** Configure more features there. */
+    completeRedirectHint: () => t("wizard", "complete_redirect_hint", "Configure more features there."),
     /** Redirecting to dashboard... */
     completeRedirecting: () => t("wizard", "complete_redirecting", "Redirecting to dashboard..."),
     /** {guild} is now ready to go with your selected features. */
@@ -18015,10 +17909,10 @@ export const m = {
     featuresSelectedOther: () => t("wizard", "features_selected_other", "features selected"),
     /** Show only what's suggested */
     featuresShowSuggestedOnly: () => t("wizard", "features_show_suggested_only", "Show only what's suggested"),
-    /** We've picked a starting point. Adjust it if you like, or carry on. */
-    featuresSubtitle: () => t("wizard", "features_subtitle", "We've picked a starting point. Adjust it if you like, or carry on."),
-    /** Based on your channels, roles and size. Change anything you like, or continue as is. */
-    featuresSuggestedHint: () => t("wizard", "features_suggested_hint", "Based on your channels, roles and size. Change anything you like, or continue as is."),
+    /** Adjust the suggestions or continue. */
+    featuresSubtitle: () => t("wizard", "features_subtitle", "Adjust the suggestions or continue."),
+    /** Based on your channels, roles and size. */
+    featuresSuggestedHint: () => t("wizard", "features_suggested_hint", "Based on your channels, roles and size."),
     /** Suggested for your server */
     featuresSuggestedTitle: () => t("wizard", "features_suggested_title", "Suggested for your server"),
     /** Full Setup */
@@ -18043,12 +17937,12 @@ export const m = {
     healthWarning: () => t("wizard", "health_warning", "Needs Attention"),
     /** Some important permissions missing */
     healthWarningDescription: () => t("wizard", "health_warning_description", "Some important permissions missing"),
-    /** Bring your members' XP, levels, level roles and balances with you. Skip this if you're ... */
-    importSubtitle: () => t("wizard", "import_subtitle", "Bring your members' XP, levels, level roles and balances with you. Skip this if you're starting fresh."),
+    /** Bring over XP, levels, level roles and balances. Skip if starting fresh. */
+    importSubtitle: () => t("wizard", "import_subtitle", "Bring over XP, levels, level roles and balances. Skip if starting fresh."),
     /** Coming From Another Bot? */
     importTitle: () => t("wizard", "import_title", "Coming From Another Bot?"),
-    /** Set up Mewdeko for your Discord server with our guided setup wizard. */
-    layoutMetaDescription: () => t("wizard", "layout_meta_description", "Set up Mewdeko for your Discord server with our guided setup wizard."),
+    /** Set up Mewdeko for your Discord server. */
+    layoutMetaDescription: () => t("wizard", "layout_meta_description", "Set up Mewdeko for your Discord server."),
     /** Setup Wizard - Mewdeko Dashboard */
     layoutPageTitle: () => t("wizard", "layout_page_title", "Setup Wizard - Mewdeko Dashboard"),
     /** Set up your server in a few minutes */
@@ -18075,14 +17969,14 @@ export const m = {
     permissionCheckRequiredFor: () => t("wizard", "permission_check_required_for", "Required for:"),
     /** Fix Permissions */
     permsFixButton: () => t("wizard", "perms_fix_button", "Fix Permissions"),
-    /** Click the button below to re-invite Mewdeko with the correct permissions. */
-    permsFixHint: () => t("wizard", "perms_fix_hint", "Click the button below to re-invite Mewdeko with the correct permissions."),
+    /** Re-invite Mewdeko with the correct permissions. */
+    permsFixHint: () => t("wizard", "perms_fix_hint", "Re-invite Mewdeko with the correct permissions."),
     /** Need to fix permissions? */
     permsFixTitle: () => t("wizard", "perms_fix_title", "Need to fix permissions?"),
     /** Scroll for more */
     permsScrollMore: () => t("wizard", "perms_scroll_more", "Scroll for more"),
-    /** Let's make sure Mewdeko has the permissions it needs to function properly. */
-    permsSubtitle: () => t("wizard", "perms_subtitle", "Let's make sure Mewdeko has the permissions it needs to function properly."),
+    /** Check that Mewdeko has the permissions it needs. */
+    permsSubtitle: () => t("wizard", "perms_subtitle", "Check that Mewdeko has the permissions it needs."),
     /** Permission Check */
     permsTitle: () => t("wizard", "perms_title", "Permission Check"),
     /** Pick an emoji... */
@@ -18091,8 +17985,8 @@ export const m = {
     progressPercentComplete: (p: { percent: P }) => t("wizard", "progress_percent_complete", "{percent}% Complete", p),
     /** Choose where to send messages... */
     progressiveChannelPlaceholder: () => t("wizard", "progressive_channel_placeholder", "Choose where to send messages..."),
-    /** Plain text works fine on its own. Placeholders like %user.mention% and %server.name% ar... */
-    progressiveMessageHint: () => t("wizard", "progressive_message_hint", "Plain text works fine on its own. Placeholders like %user.mention% and %server.name% are filled in when the message is sent."),
+    /** Placeholders like %user.mention% and %server.name% are filled in when sent. */
+    progressiveMessageHint: () => t("wizard", "progressive_message_hint", "Placeholders like %user.mention% and %server.name% are filled in when sent."),
     /** Click to write your message, add embeds or buttons */
     progressiveMessagePlaceholder: () => t("wizard", "progressive_message_placeholder", "Click to write your message, add embeds or buttons"),
     /** Skip {feature} */
@@ -18125,8 +18019,8 @@ export const m = {
     quickCompleteSetup: () => t("wizard", "quick_complete_setup", "Complete Setup"),
     /** Completing... */
     quickCompleting: () => t("wizard", "quick_completing", "Completing..."),
-    /** Configure essential settings for features you're quick enabling */
-    quickSubtitle: () => t("wizard", "quick_subtitle", "Configure essential settings for features you're quick enabling"),
+    /** Essential settings for quick-enabled features */
+    quickSubtitle: () => t("wizard", "quick_subtitle", "Essential settings for quick-enabled features"),
     /** Quick Enable Features */
     quickTitle: () => t("wizard", "quick_title", "Quick Enable Features"),
     /** Recommended */
@@ -18233,8 +18127,8 @@ export const m = {
     welcomeItemReady: () => t("wizard", "welcome_item_ready", "Review and finish"),
     /** Ready for setup */
     welcomeReady: () => t("wizard", "welcome_ready", "Ready for setup"),
-    /** You can always configure features later from the dashboard. */
-    welcomeSkipHint: () => t("wizard", "welcome_skip_hint", "You can always configure features later from the dashboard."),
+    /** You can configure features later from the dashboard. */
+    welcomeSkipHint: () => t("wizard", "welcome_skip_hint", "You can configure features later from the dashboard."),
     /** Skip Setup */
     welcomeSkipSetup: () => t("wizard", "welcome_skip_setup", "Skip Setup"),
     /** Skip setup? */
@@ -18243,8 +18137,8 @@ export const m = {
     welcomeSkipping: () => t("wizard", "welcome_skipping", "Skipping..."),
     /** Set up {guild} in a few minutes. */
     welcomeSubtitleFirstTime: (p: { guild: P }) => t("wizard", "welcome_subtitle_first_time", "Set up {guild} in a few minutes.", p),
-    /** Configure essential features for your server quickly. */
-    welcomeSubtitleRepeat: () => t("wizard", "welcome_subtitle_repeat", "Configure essential features for your server quickly."),
+    /** Configure essential features. */
+    welcomeSubtitleRepeat: () => t("wizard", "welcome_subtitle_repeat", "Configure essential features."),
     /** Welcome to Mewdeko */
     welcomeTitleFirstTime: () => t("wizard", "welcome_title_first_time", "Welcome to Mewdeko"),
     /** Quick Setup for {guild} */
@@ -18283,8 +18177,8 @@ export const m = {
     difficultyModerate: () => t("wordoftheday", "difficulty_moderate", "Moderate"),
     /** Rare */
     difficultyRare: () => t("wordoftheday", "difficulty_rare", "Rare"),
-    /** Words appear here after the first scheduled post or "Post now". */
-    historyEmptyHint: () => t("wordoftheday", "history_empty_hint", "Words appear here after the first scheduled post or \"Post now\"."),
+    /** Words show up after the first post */
+    historyEmptyHint: () => t("wordoftheday", "history_empty_hint", "Words show up after the first post"),
     /** Nothing posted yet */
     historyEmptyTitle: () => t("wordoftheday", "history_empty_title", "Nothing posted yet"),
     /** Recent words */
@@ -18329,8 +18223,8 @@ export const m = {
     notifyRuleSaveFailed: (p: { name: P }) => t("wordoftheday", "notify_rule_save_failed", "Failed to save the {name} rule", p),
     /** Couldn't save Word of the Day settings. */
     notifySaveFailed: () => t("wordoftheday", "notify_save_failed", "Couldn't save Word of the Day settings."),
-    /** Couldn't save Word of the Day settings. Your last change was undone. */
-    notifySaveFailedUndone: () => t("wordoftheday", "notify_save_failed_undone", "Couldn't save Word of the Day settings. Your last change was undone."),
+    /** Couldn't save the word settings. Change undone. */
+    notifySaveFailedUndone: () => t("wordoftheday", "notify_save_failed_undone", "Couldn't save the word settings. Change undone."),
     /** Any */
     optionAny: () => t("wordoftheday", "option_any", "Any"),
     /** Inherit */
@@ -18351,10 +18245,10 @@ export const m = {
     postingTitle: () => t("wordoftheday", "posting_title", "Posting"),
     /** Post a word every day */
     postingToggle: () => t("wordoftheday", "posting_toggle", "Post a word every day"),
-    /** Runs at the hour above in the selected timezone */
-    postingToggleHint: () => t("wordoftheday", "posting_toggle_hint", "Runs at the hour above in the selected timezone"),
-    /** This removes the configuration, every custom word, all weekday and month rules, and the... */
-    resetMessage: () => t("wordoftheday", "reset_message", "This removes the configuration, every custom word, all weekday and month rules, and the posting history for this server."),
+    /** Uses the selected timezone */
+    postingToggleHint: () => t("wordoftheday", "posting_toggle_hint", "Uses the selected timezone"),
+    /** Removes the configuration, custom words, rules and posting history. */
+    resetMessage: () => t("wordoftheday", "reset_message", "Removes the configuration, custom words, rules and posting history."),
     /** Reset Word of the Day */
     resetTitle: () => t("wordoftheday", "reset_title", "Reset Word of the Day"),
     /** Clear {name} rule */
@@ -18369,8 +18263,8 @@ export const m = {
     ruleTopicAria: (p: { name: P }) => t("wordoftheday", "rule_topic_aria", "{name} topic", p),
     /** Topic (optional) */
     ruleTopicPlaceholder: () => t("wordoftheday", "rule_topic_placeholder", "Topic (optional)"),
-    /** Each rule only overrides what it sets and inherits the rest from the Settings tab. Week... */
-    scheduleHint: () => t("wordoftheday", "schedule_hint", "Each rule only overrides what it sets and inherits the rest from the Settings tab. Weekday rules win over month rules."),
+    /** Rules inherit unset values from Settings. Weekday rules win over month rules. */
+    scheduleHint: () => t("wordoftheday", "schedule_hint", "Rules inherit unset values from Settings. Weekday rules win over month rules."),
     /** Months */
     scheduleMonths: () => t("wordoftheday", "schedule_months", "Months"),
     /** Weekdays */
@@ -18381,8 +18275,8 @@ export const m = {
     sourceDictionary: () => t("wordoftheday", "source_dictionary", "Dictionary (Datamuse)"),
     /** Difficulty */
     sourceDifficulty: () => t("wordoftheday", "source_difficulty", "Difficulty"),
-    /** Topic and filters apply to dictionary words. Up to five topic words, e.g. "medieval his... */
-    sourceHint: () => t("wordoftheday", "source_hint", "Topic and filters apply to dictionary words. Up to five topic words, e.g. \"medieval history\". Difficulty is based on how often a word appears in written English. Weekday and month rules on the Schedule tab override these."),
+    /** Topic and filters apply to dictionary words. Up to five topic words. Schedule rules ove... */
+    sourceHint: () => t("wordoftheday", "source_hint", "Topic and filters apply to dictionary words. Up to five topic words. Schedule rules override these."),
     /** Source */
     sourceLabel: () => t("wordoftheday", "source_label", "Source"),
     /** Custom list first, then dictionary */
@@ -18411,12 +18305,12 @@ export const m = {
     summaryThreadOn: (p: { archive: P; name: P }) => t("wordoftheday", "summary_thread_on", "On, {archive}, \"{name}\"", p),
     /** Custom Words */
     tabWords: () => t("wordoftheday", "tab_words", "Custom Words"),
-    /** Your custom template rendered an empty message, so the default embed was posted instead. */
-    templateFallbackWarning: () => t("wordoftheday", "template_fallback_warning", "Your custom template rendered an empty message, so the default embed was posted instead."),
-    /** Leave empty to use the built-in embed with pronunciation, definition, and example. */
-    templateHint: () => t("wordoftheday", "template_hint", "Leave empty to use the built-in embed with pronunciation, definition, and example."),
-    /** Click to build a custom message, or leave empty for the default embed */
-    templatePlaceholder: () => t("wordoftheday", "template_placeholder", "Click to build a custom message, or leave empty for the default embed"),
+    /** The custom template was empty, so the default embed was posted. */
+    templateFallbackWarning: () => t("wordoftheday", "template_fallback_warning", "The custom template was empty, so the default embed was posted."),
+    /** Empty uses the default embed */
+    templateHint: () => t("wordoftheday", "template_hint", "Empty uses the default embed"),
+    /** Click to build a custom message */
+    templatePlaceholder: () => t("wordoftheday", "template_placeholder", "Click to build a custom message"),
     /** Message posted each day */
     templatePreviewDescription: () => t("wordoftheday", "template_preview_description", "Message posted each day"),
     /** Message template */
@@ -18427,16 +18321,16 @@ export const m = {
     threadArchivePlaceholder: () => t("wordoftheday", "thread_archive_placeholder", "Auto-archive"),
     /** Thread name */
     threadName: () => t("wordoftheday", "thread_name", "Thread name"),
-    /** Leave empty to use the default, "{default}". Supports {wordToken}, {dateToken}, {posTok... */
-    threadNameHint: (p: { dateToken: P; default: P; posToken: P; wordToken: P }) => t("wordoftheday", "thread_name_hint", "Leave empty to use the default, \"{default}\". Supports {wordToken}, {dateToken}, {posToken}, and server placeholders.", p),
+    /** Empty uses "{default}". Supports {wordToken}, {dateToken}, {posToken} and server placeh... */
+    threadNameHint: (p: { dateToken: P; default: P; posToken: P; wordToken: P }) => t("wordoftheday", "thread_name_hint", "Empty uses \"{default}\". Supports {wordToken}, {dateToken}, {posToken} and server placeholders.", p),
     /** Discussion thread */
     threadTitle: () => t("wordoftheday", "thread_title", "Discussion thread"),
     /** Create a thread under each post */
     threadToggle: () => t("wordoftheday", "thread_toggle", "Create a thread under each post"),
-    /** Invites people to use the word in a sentence */
-    threadToggleHint: () => t("wordoftheday", "thread_toggle_hint", "Invites people to use the word in a sentence"),
-    /** Posting is enabled but no channel is set, so nothing will be posted. */
-    warningNoChannel: () => t("wordoftheday", "warning_no_channel", "Posting is enabled but no channel is set, so nothing will be posted."),
+    /** For discussing the word */
+    threadToggleHint: () => t("wordoftheday", "thread_toggle_hint", "For discussing the word"),
+    /** Posting is enabled but no channel is set. */
+    warningNoChannel: () => t("wordoftheday", "warning_no_channel", "Posting is enabled but no channel is set."),
     /** Posted with the default embed */
     warningTitle: () => t("wordoftheday", "warning_title", "Posted with the default embed"),
     /** Add a word */
@@ -18445,8 +18339,8 @@ export const m = {
     wordsDefinitionAria: () => t("wordoftheday", "words_definition_aria", "Definition"),
     /** Definition (optional, looked up if empty) */
     wordsDefinitionPlaceholder: () => t("wordoftheday", "words_definition_placeholder", "Definition (optional, looked up if empty)"),
-    /** Add words above, then switch the source to "Custom" or "Mixed" on the Settings tab. */
-    wordsEmptyHint: () => t("wordoftheday", "words_empty_hint", "Add words above, then switch the source to \"Custom\" or \"Mixed\" on the Settings tab."),
+    /** Add words above and set the source to Custom or Mixed */
+    wordsEmptyHint: () => t("wordoftheday", "words_empty_hint", "Add words above and set the source to Custom or Mixed"),
     /** No custom words yet */
     wordsEmptyTitle: () => t("wordoftheday", "words_empty_title", "No custom words yet"),
     /** No definition, one will be looked up when posted */
@@ -18657,8 +18551,6 @@ export const m = {
     editorZoomOut: () => t("xp", "editor_zoom_out", "Zoom out"),
     /** Exclude Channel from XP */
     exclusionsChannelForm: () => t("xp", "exclusions_channel_form", "Exclude Channel from XP"),
-    /** Users won't earn XP from messages in excluded channels. */
-    exclusionsChannelHint: () => t("xp", "exclusions_channel_hint", "Users won't earn XP from messages in excluded channels."),
     /** Excluded Channels */
     exclusionsChannelsTitle: () => t("xp", "exclusions_channels_title", "Excluded Channels"),
     /** Exclude */
@@ -18677,8 +18569,6 @@ export const m = {
     exclusionsNoRoles: () => t("xp", "exclusions_no_roles", "No excluded roles"),
     /** Exclude Role from XP */
     exclusionsRoleForm: () => t("xp", "exclusions_role_form", "Exclude Role from XP"),
-    /** Users with excluded roles won't earn XP from any source. */
-    exclusionsRoleHint: () => t("xp", "exclusions_role_hint", "Users with excluded roles won't earn XP from any source."),
     /** XP Exclusions */
     exclusionsTitle: () => t("xp", "exclusions_title", "XP Exclusions"),
     /** Add XP */
@@ -18703,8 +18593,8 @@ export const m = {
     leaderboardRankAria: (p: { rank: P }) => t("xp", "leaderboard_rank_aria", "Rank {rank}", p),
     /** Also reset bonus XP */
     leaderboardResetBonus: () => t("xp", "leaderboard_reset_bonus", "Also reset bonus XP"),
-    /** This sets the member's server XP back to zero. It cannot be undone. */
-    leaderboardResetWarning: () => t("xp", "leaderboard_reset_warning", "This sets the member's server XP back to zero. It cannot be undone."),
+    /** Resets the member's server XP to zero. This cannot be undone. */
+    leaderboardResetWarning: () => t("xp", "leaderboard_reset_warning", "Resets the member's server XP to zero. This cannot be undone."),
     /** Reset XP */
     leaderboardResetXp: () => t("xp", "leaderboard_reset_xp", "Reset XP"),
     /** Set total XP */
@@ -18721,8 +18611,8 @@ export const m = {
     pageEditTemplateAria: () => t("xp", "page_edit_template_aria", "Edit XP card template"),
     /** Amount must be greater than 0 */
     pageErrorAmountMin: () => t("xp", "page_error_amount_min", "Amount must be greater than 0"),
-    /** Couldn't save XP settings. Toggles were put back; use Retry for typed fields. */
-    pageErrorAutosave: () => t("xp", "page_error_autosave", "Couldn't save XP settings. Toggles were put back; use Retry for typed fields."),
+    /** Couldn't save XP settings. Use Retry for typed fields. */
+    pageErrorAutosave: () => t("xp", "page_error_autosave", "Couldn't save XP settings. Use Retry for typed fields."),
     /** Failed to exclude channel */
     pageErrorChannelExclude: () => t("xp", "page_error_channel_exclude", "Failed to exclude channel"),
     /** Failed to include channel */
@@ -18779,8 +18669,8 @@ export const m = {
     pageResetChanges: () => t("xp", "page_reset_changes", "Reset changes"),
     /** Save template changes */
     pageSaveTemplate: () => t("xp", "page_save_template", "Save template changes"),
-    /** Configure XP settings, rewards, and manage users' experience */
-    pageSubtitle: () => t("xp", "page_subtitle", "Configure XP settings, rewards, and manage users' experience"),
+    /** Settings, rewards, and members */
+    pageSubtitle: () => t("xp", "page_subtitle", "Settings, rewards, and members"),
     /** Stats */
     pageTabStats: () => t("xp", "page_tab_stats", "Stats"),
     /** Background: {background} */
@@ -18819,42 +18709,34 @@ export const m = {
     settingsBackground: () => t("xp", "settings_background", "Custom XP Card Background"),
     /** Custom XP card background URL */
     settingsBackgroundAria: () => t("xp", "settings_background_aria", "Custom XP card background URL"),
-    /** URL to a custom background image for XP cards. Recommended size: 797x279 pixels. */
-    settingsBackgroundHint: () => t("xp", "settings_background_hint", "URL to a custom background image for XP cards. Recommended size: 797x279 pixels."),
+    /** Recommended size: 797x279 pixels */
+    settingsBackgroundHint: () => t("xp", "settings_background_hint", "Recommended size: 797x279 pixels"),
     /** Message XP Cooldown */
     settingsCooldown: () => t("xp", "settings_cooldown", "Message XP Cooldown"),
     /** Message XP cooldown in seconds */
     settingsCooldownAria: () => t("xp", "settings_cooldown_aria", "Message XP cooldown in seconds"),
-    /** Cooldown in seconds between messages that can earn XP. */
-    settingsCooldownHint: () => t("xp", "settings_cooldown_hint", "Cooldown in seconds between messages that can earn XP."),
-    /** Determines how much XP is required for each level. */
-    settingsCurveHint: () => t("xp", "settings_curve_hint", "Determines how much XP is required for each level."),
     /** Select curve type */
     settingsCurvePlaceholder: () => t("xp", "settings_curve_placeholder", "Select curve type"),
     /** XP Curve Type */
     settingsCurveType: () => t("xp", "settings_curve_type", "XP Curve Type"),
     /** Global XP multiplier */
     settingsMultiplier: () => t("xp", "settings_multiplier", "Global XP multiplier"),
-    /** Global multiplier applied to all XP gains. */
-    settingsMultiplierHint: () => t("xp", "settings_multiplier_hint", "Global multiplier applied to all XP gains."),
-    /** Amount of XP users earn per message (max 50). */
-    settingsPerMessageHint: () => t("xp", "settings_per_message_hint", "Amount of XP users earn per message (max 50)."),
+    /** XP per message (max 50) */
+    settingsPerMessageHint: () => t("xp", "settings_per_message_hint", "XP per message (max 50)"),
     /** Server XP Exclusion */
     settingsServerExclusion: () => t("xp", "settings_server_exclusion", "Server XP Exclusion"),
     /** Enable or disable XP gain for the entire server */
     settingsServerExclusionAria: () => t("xp", "settings_server_exclusion_aria", "Enable or disable XP gain for the entire server"),
-    /** When enabled, XP gain is disabled server-wide. */
-    settingsServerExclusionHint: () => t("xp", "settings_server_exclusion_hint", "When enabled, XP gain is disabled server-wide."),
     /** XP Settings */
     settingsTitle: () => t("xp", "settings_title", "XP Settings"),
-    /** Amount of XP users earn per minute in voice channels (max 10). */
-    settingsVoicePerMinuteHint: () => t("xp", "settings_voice_per_minute_hint", "Amount of XP users earn per minute in voice channels (max 10)."),
+    /** XP per voice minute (max 10) */
+    settingsVoicePerMinuteHint: () => t("xp", "settings_voice_per_minute_hint", "XP per voice minute (max 10)"),
     /** Voice XP Timeout */
     settingsVoiceTimeout: () => t("xp", "settings_voice_timeout", "Voice XP Timeout"),
     /** Voice XP timeout in minutes */
     settingsVoiceTimeoutAria: () => t("xp", "settings_voice_timeout_aria", "Voice XP timeout in minutes"),
-    /** Time in minutes before a voice session expires if user is inactive. */
-    settingsVoiceTimeoutHint: () => t("xp", "settings_voice_timeout_hint", "Time in minutes before a voice session expires if user is inactive."),
+    /** Minutes of inactivity before a voice session expires */
+    settingsVoiceTimeoutHint: () => t("xp", "settings_voice_timeout_hint", "Minutes of inactivity before a voice session expires"),
     /** Average Level */
     statsAverageLevel: () => t("xp", "stats_average_level", "Average Level"),
     /** No recent XP activity */
@@ -18867,4 +18749,4 @@ export const m = {
 } as const;
 
 /** Module names that exist in the source locale, for loading other locales lazily later. */
-export const modules = ["_common","access","achievements","administration","afk","analytics","auditlog","birthday","brand","channel-access","chat-triggers","chatsaver","confessions","counting","currency","customvoice","dashboard","embedbuilder","feature-requests","features","feeds","filter","forms","giveaways","highlights","home","import","invites","join-role-timeout","layout","legal","linkfix","liveboards","logging","me","messagestats","minecraft","moderation","monitoring","multigreets","music","owner","patreon","placeholders","polls","public","repeaters","reputation","role-menus","rolegreets","rolestates","serverstats","settings","shared","shortcuts","starboard","statchannels","statroles","statusroles","streams","suggestions","tickets","todo","twitch","utility","votes","widgets","wiki","wizard","wordoftheday","xp"] as const;
+export const modules = ["_common","access","achievements","administration","afk","analytics","auditlog","birthday","brand","bridges","channel-access","chat-triggers","chatsaver","confessions","counting","currency","customvoice","dashboard","embedbuilder","feature-requests","features","feeds","filter","forms","giveaways","highlights","home","import","invites","join-role-timeout","layout","legal","linkfix","liveboards","logging","me","messagestats","minecraft","moderation","monitoring","multigreets","music","owner","patreon","placeholders","polls","public","repeaters","reputation","role-menus","rolegreets","rolestates","serverstats","settings","shared","shortcuts","starboard","statchannels","statroles","statusroles","streams","suggestions","tickets","todo","twitch","utility","votes","widgets","wiki","wizard","wordoftheday","xp"] as const;

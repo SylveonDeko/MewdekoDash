@@ -1,7 +1,6 @@
 {
   "page_add_aria": "Dodaj źródło RSS",
   "page_add_message": "Dodaj własną wiadomość",
-  "page_add_url_hint": "Wpisz pełny URL źródła RSS lub Atom.",
   "page_add_url_label": "URL źródła RSS",
   "page_by_channel_count_few": "{count} źródła",
   "page_by_channel_count_many": "{count} źródeł",
@@ -18,7 +17,6 @@
   "page_error_remove": "Nie udało się usunąć źródła",
   "page_feed_added": "Dodano: {date}",
   "page_feed_delete_aria": "Usuń źródło",
-  "page_list_empty_hint": "Dodaj źródła RSS, aby automatycznie publikować aktualizacje na swoich kanałach.",
   "page_list_empty_title": "Brak źródeł RSS",
   "page_list_title": "Źródła RSS ({count})",
   "page_notify_added": "Źródło RSS dodane!",
@@ -28,7 +26,6 @@
   "page_stat_total_sub": "aktywne subskrypcje",
   "page_stat_unique": "Unikalne źródła",
   "page_stat_unique_sub": "różne serwisy",
-  "page_stats_empty_hint": "Statystyki źródeł pojawią się tutaj po dodaniu źródeł RSS.",
   "page_subtitle": "Zarządzaj subskrypcjami źródeł RSS",
   "page_tab_add": "Dodaj źródło"
 }

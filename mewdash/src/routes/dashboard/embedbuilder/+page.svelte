@@ -1651,7 +1651,7 @@
       action: copyJson,
       disabled: !canCopyJson,
       loading: false,
-      style: `background: ${$colorStore.primary}; color: ${$colorStore.text};`
+      style: `background: ${$colorStore.primary}; color: ${$colorStore.onPrimary};`
     }
     ]);
 </script>
@@ -1688,9 +1688,6 @@
           <div class="space-y-6">
             <div class="text-center mb-6">
               <h2 class="text-xl font-semibold mb-2" style="color: {$colorStore.text};">{m.embedbuilder.pageTemplatesHeading()}</h2>
-              <p class="text-sm" style="color: {$colorStore.muted};">
-                {m.embedbuilder.pageTemplatesHint()}
-              </p>
             </div>
 
             <TemplateGallery

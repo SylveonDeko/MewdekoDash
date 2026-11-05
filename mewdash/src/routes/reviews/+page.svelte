@@ -242,7 +242,7 @@
       <button
               onclick={submitReview}
               class="w-full sm:w-auto mt-4 font-bold py-3 px-8 rounded-xl transition-all duration-300 ease-in-out focus:outline-hidden focus:ring-2"
-        style="background: {$colorStore.primary}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
+        style="background: {$colorStore.primary}; color: {$colorStore.onPrimary}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
       >
         {m.public.reviewsSubmitButton()}
       </button>

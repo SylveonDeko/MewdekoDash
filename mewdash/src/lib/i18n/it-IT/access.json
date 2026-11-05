@@ -15,7 +15,6 @@
   "grant_button": "Concedi accesso",
   "grant_heading_edit": "Modifica permesso di accesso",
   "grant_heading_new": "Concedi accesso limitato",
-  "grant_hint": "Dai a un utente o a un ruolo l'accesso di visualizzazione o gestione a specifiche sezioni della dashboard, senza dare l'amministrazione completa del server.",
   "grant_sections_one": "{count} sezione",
   "grant_sections_other": "{count} sezioni",
   "grants_empty": "Nessun permesso di accesso limitato ancora",

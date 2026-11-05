@@ -1,6 +1,5 @@
 {
   "page_active_empty": "진행 중인 이벤트가 없어요",
-  "page_active_empty_hint": "위 양식을 사용해 첫 이벤트를 만들어 보세요",
   "page_create_title": "새 이벤트 만들기",
   "page_detail_entry_method": "참여 방식:",
   "page_detail_message_requirement": "메시지 요구 사항:",
@@ -22,7 +21,6 @@
   "page_error_winners_min": "당첨자 수는 최소 1명이어야 해요.",
   "page_field_duration": "기간",
   "page_field_emoji": "반응 이모지",
-  "page_field_emoji_hint": "사용자 지정 이모지를 선택하거나 Discord 이모지 코드를 붙여넣으세요",
   "page_field_entry_method": "참여 방식",
   "page_field_item": "이벤트 경품",
   "page_field_item_placeholder": "나눠 줄 경품을 입력하세요",

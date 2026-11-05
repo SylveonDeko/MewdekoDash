@@ -335,11 +335,7 @@
           <h4 class="font-semibold flex items-center gap-2" style="color: {$colorStore.text}">
             <i class="fa-solid fa-link" style="color: {$colorStore.secondary};"></i>
             {m.tickets.casesLinkedTicketsHeading({ count: Array.isArray(selectedCase.linkedTickets) ? selectedCase.linkedTickets.length : (selectedCase.linkedTickets || 0) })}
-          </h4>
-          <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-            {m.tickets.casesLinkedTicketsHint()}
-          </p>
-        </div>
+          </h4>        </div>
         <button
           class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80 min-h-[44px]"
           style="background: {showTicketLinking ? $colorStore.muted + '20' : $colorStore.primary + '20'};
@@ -535,9 +531,7 @@
   <div class="text-center py-24 rounded-xl"
        style="background: {$colorStore.primary}0c; border: 1px dashed {$colorStore.primary}20;">
     <i class="fa-solid fa-hand-pointer" style="color: {$colorStore.muted}; font-size: 64px; opacity: 0.2;"></i>
-    <p class="mt-6 text-lg font-medium" style="color: {$colorStore.text}">{m.tickets.casesSelectPrompt()}</p>
-    <p class="text-sm mt-2" style="color: {$colorStore.muted}">{m.tickets.casesSelectPromptHint()}</p>
-  </div>
+    <p class="mt-6 text-lg font-medium" style="color: {$colorStore.text}">{m.tickets.casesSelectPrompt()}</p>  </div>
 {/if}
 
 <style>

@@ -568,7 +568,7 @@
           </Card>
 
           <div class="flex gap-2">
-            <button type="button" class="flex-1 min-h-[48px] rounded-xl font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={save} disabled={saving}>
+            <button type="button" class="flex-1 min-h-[48px] rounded-xl font-medium" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};" onclick={save} disabled={saving}>
               {saving ? m.common.saving() : draft.id === null ? m.statroles.createRole() : m.common.saveChanges()}
             </button>
             <button type="button" class="min-h-[48px] px-5 rounded-xl font-medium" style="background: {$colorStore.primary}20; color: {$colorStore.text};" onclick={() => { draft = emptyDraft(); activeTab = "roles"; }}>{m.common.cancel()}</button>

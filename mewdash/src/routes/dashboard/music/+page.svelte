@@ -955,11 +955,7 @@
                 <i class="fa-utility-duo fa-regular fa-link" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
               </div>
               <div>
-                <h2 class="text-xl font-bold" style="color: {colors.text}">{m.music.linkTitle()}</h2>
-                <p class="text-sm" style="color: {colors.muted}">
-                  {m.music.linkDescription()}
-                </p>
-              </div>
+                <h2 class="text-xl font-bold" style="color: {colors.text}">{m.music.linkTitle()}</h2>              </div>
             </div>
             <button
               onclick={() => showAddLinkChannel = !showAddLinkChannel}
@@ -998,9 +994,7 @@
           {#if linkChannels.length === 0}
             <div class="text-center py-8" style="color: {colors.muted}">
               <i class="fa-regular fa-link-slash text-3xl mb-3 block" style="color: {colors.primary}30;"></i>
-              <p>{m.music.linkEmpty()}</p>
-              <p class="text-sm mt-1">{m.music.linkEmptyHint()}</p>
-            </div>
+              <p>{m.music.linkEmpty()}</p>            </div>
           {:else}
             <div class="space-y-2">
               {#each linkChannels as channelId}
@@ -1119,9 +1113,7 @@
                   placeholder={m.music.ttsDefaultVoicePlaceholder()}
                   class="w-full px-3 py-2 rounded-lg border"
                   style="background: {colors.gradientStart}20; border-color: {colors.primary}30; color: {colors.text};"
-                >
-                <div class="text-sm mt-1" style="color: {colors.muted}">{m.music.ttsDefaultVoiceHint()}</div>
-              </div>
+                >              </div>
 
               <!-- TTS Role -->
               <div>
@@ -1323,9 +1315,7 @@
           {#if ttsSettings.vcSettings.length === 0}
             <div class="text-center py-8" style="color: {colors.muted}">
               <i class="fa-regular fa-volume-slash text-3xl mb-3 block" style="color: {colors.primary}30;"></i>
-              <p>{m.music.ttsVcEmpty()}</p>
-              <p class="text-sm mt-1">{m.music.ttsVcEmptyHint()}</p>
-            </div>
+              <p>{m.music.ttsVcEmpty()}</p>            </div>
           {:else}
             <div class="space-y-4">
               {#each ttsSettings.vcSettings as vc, i}

@@ -158,9 +158,7 @@
           <i class="fa-utility-duo fa-regular fa-ticket" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         </div>
         <div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.tickets.ticketsHeading({ count: filtered.length })}</h2>
-          <p class="text-sm" style="color: {$colorStore.muted}">{m.tickets.ticketsSubtitle()}</p>
-        </div>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.tickets.ticketsHeading({ count: filtered.length })}</h2>        </div>
       </div>
       <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
         <div class="relative flex-1 lg:w-72">
@@ -179,9 +177,7 @@
     {#if filtered.length === 0}
       <div class="text-center py-8">
         <i class="fa-utility-duo fa-regular fa-ticket" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-        <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.tickets.ticketsEmptyTitle()}</p>
-        <p class="text-sm" style="color: {$colorStore.muted}">{m.tickets.ticketsEmptyHint()}</p>
-      </div>
+        <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.tickets.ticketsEmptyTitle()}</p>      </div>
     {:else}
       <div class="space-y-3">
         {#each filtered as ticket (ticket.id)}

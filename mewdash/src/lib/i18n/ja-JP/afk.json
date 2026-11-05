@@ -6,7 +6,6 @@
   "basic_title": "AFK の基本設定",
   "bulk_remove_message": "{count} 人のユーザーの AFK 状態を解除しますか？ この操作は取り消せません。",
   "bulk_remove_title": "AFK 状態を一括解除",
-  "channels_hint": "AFK メッセージを表示しないチャンネルです。複数のチャンネルを選ぶと、それらのチャンネルでは AFK の通知を無効にします。",
   "channels_placeholder": "AFK メッセージを無効にするチャンネルを選択",
   "channels_title": "無効化されたチャンネル",
   "custom_hint": "AFK の通知に使うカスタム埋め込みメッセージのテンプレートです。既定値に戻すには \"-\" を入力してください。使用できる変数は {link} を確認してください。",

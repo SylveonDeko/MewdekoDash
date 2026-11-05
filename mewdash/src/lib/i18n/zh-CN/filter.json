@@ -30,7 +30,6 @@
   "remove_channel_aria": "移除 #{channel}",
   "search_words_aria": "搜索被过滤的词",
   "search_words_placeholder": "搜索词语",
-  "server_wide_hint": "这些设置适用于所有频道。如需仅在特定位置启用过滤器，请使用频道覆盖设置。",
   "server_wide_title": "全服过滤器",
   "stat_autoban_words_subtitle": "立即封禁",
   "stat_channel_overrides_subtitle": "各频道过滤器",

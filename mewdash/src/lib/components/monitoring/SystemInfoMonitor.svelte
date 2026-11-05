@@ -145,7 +145,7 @@
                style="background: {$colorStore.primary}10;">
             <div
               class="h-3 rounded-full transition-all duration-500"
-              style="width: {(systemInfo.memoryUsageMb / systemInfo.totalMemoryMb) * 100}%; background: {$colorStore.secondary};"
+              style="width: {(systemInfo.memoryUsageMb / systemInfo.totalMemoryMb) * 100}%; background: {$colorStore.secondary}; color: {$colorStore.onSecondary};"
             ></div>
           </div>
           <div class="text-right text-sm font-medium" style="color: {$colorStore.text}">
@@ -212,7 +212,6 @@
         <i class="fa-utility-duo fa-regular fa-circle"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
         <p class="font-medium mb-2" style="color: {$colorStore.text}">{m.monitoring.systemInfoEmpty()}</p>
-        <p class="text-sm" style="color: {$colorStore.muted}">{m.monitoring.systemInfoEmptyHint()}</p>
       </div>
     {/if}
   </div>

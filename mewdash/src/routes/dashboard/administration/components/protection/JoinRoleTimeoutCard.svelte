@@ -211,7 +211,6 @@
     </div>
     <div>
       <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.joinRoleTimeout.title()}</h2>
-      <p class="text-sm" style="color: {$colorStore.muted}">{m.joinRoleTimeout.subtitle()}</p>
     </div>
   </div>
 
@@ -318,7 +317,6 @@
             ariaLabelledby="jrt-exempt-label"
             onchange={(d) => pick("exemptRoleIds", d)}
           />
-          <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.joinRoleTimeout.exemptRolesHint()}</p>
         </div>
 
         <div>

@@ -6,7 +6,6 @@
   "delete_time_seconds": "{seconds} 秒",
   "edit_delete_time_aria": "编辑删除时间",
   "edit_webhook_aria": "编辑 Webhook",
-  "empty_hint": "使用上方的表单添加你的第一条欢迎消息。",
   "empty_title": "尚未配置欢迎语",
   "error_add": "添加欢迎语失败",
   "error_fetch_greets": "获取欢迎语失败",

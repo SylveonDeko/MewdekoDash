@@ -820,7 +820,7 @@
             class="flex-1 px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
             onclick={addRolesToUser}
             disabled={!selectedUserId || selectedRoleIds.length === 0}
-            style="background: {$colorStore.primary}; color: {$colorStore.text};
+            style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};
                    opacity: {!selectedUserId || selectedRoleIds.length === 0 ? '0.5' : '1'};"
           >
             <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
@@ -831,7 +831,7 @@
             class="flex-1 px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
             onclick={removeRolesFromUser}
             disabled={!selectedUserId || selectedRoleIds.length === 0}
-            style="background: {$colorStore.accent}; color: {$colorStore.text};
+            style="background: {$colorStore.accent}; color: {$colorStore.onAccent};
                    opacity: {!selectedUserId || selectedRoleIds.length === 0 ? '0.5' : '1'};"
           >
             <i class="fa-solid fa-minus" style="font-size: 16px;"></i>
@@ -884,7 +884,7 @@
           class="w-full mt-4 px-4 py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
           onclick={applyRoleState}
           disabled={!sourceUserId || !targetUserId}
-          style="background: {$colorStore.secondary}; color: {$colorStore.text};
+          style="background: {$colorStore.secondary}; color: {$colorStore.onSecondary};
                  opacity: {!sourceUserId || !targetUserId ? '0.5' : '1'};"
         >
           <i class="fa-solid fa-copy" style="font-size: 16px;"></i>

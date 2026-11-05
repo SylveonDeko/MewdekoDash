@@ -17,7 +17,7 @@
   "interval_duration": "Duration:",
   "interval_end_label": "End time: {end}",
   "interval_ends": "Ends:",
-  "interval_instructions": "Use arrow keys or number input to set duration. Maximum values: hours 23, minutes and seconds 59.",
+  "interval_instructions": "Max: hours 23, minutes and seconds 59.",
   "interval_legend": "Set duration for timer",
   "interval_live_region": "Duration set to {duration}, ending at {end}",
   "interval_seconds": "Seconds",

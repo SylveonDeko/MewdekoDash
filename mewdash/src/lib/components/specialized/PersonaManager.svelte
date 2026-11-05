@@ -259,10 +259,6 @@
         <div class="p-4 overflow-y-auto flex-1">
           {#if view === "list"}
             <div class="space-y-3">
-              <p class="text-xs" style="color: {$colorStore.muted};">
-                {m.embedbuilder.personaIntro()}
-              </p>
-
               <button
                 aria-label={m.embedbuilder.personaCreateAria()}
                 class="w-full px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 min-h-[44px]"

@@ -364,7 +364,7 @@
                   onclick={enterGiveaway}
                   disabled={!turnstileToken || !isGiveawayActive || isSubmitting}
                   class="px-8 py-4 rounded-xl font-bold text-lg transition-opacity duration-300 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px]"
-                  style="background: {$colorStore.primary}; color: white; border: 1px solid {$colorStore.primary};"
+                  style="background: {$colorStore.primary}; color: {$colorStore.onPrimary}; border: 1px solid {$colorStore.primary};"
                 >
                   {#if isSubmitting}
                     <div class="flex items-center justify-center gap-2">

@@ -709,7 +709,7 @@
             <div class="flex items-end gap-1 h-40 overflow-x-auto" role="img" aria-label={m.polls.analyticsPerDay()}>
               {#each entries as [day, count]}
                 <div class="flex-1 min-w-[8px] rounded-t-sm" title={`${new Date(day).toLocaleDateString()}: ${count}`}
-                     style="height: {Math.max(4, (count / max) * 100)}%; background: {$colorStore.primary};"></div>
+                     style="height: {Math.max(4, (count / max) * 100)}%; background: {$colorStore.primary}; color: {$colorStore.onPrimary};"></div>
               {/each}
             </div>
           </div>

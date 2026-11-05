@@ -971,9 +971,7 @@
                 <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                   <i class="fa-utility-duo fa-regular fa-key" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
                   {m.twitch.setupOauthTitle()}
-                </h2>
-                <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.setupOauthHint()}</p>
-              </div>
+                </h2>              </div>
             </div>
 
             <div class="grid gap-3">
@@ -1066,9 +1064,7 @@
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-comments" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
                 {m.twitch.botTitle()}
-              </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.botHint()}</p>
-            </div>
+              </h2>            </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1117,9 +1113,7 @@
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-code" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
                 {m.twitch.commandEditorTitle()}
-              </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.commandEditorHint()}</p>
-            </div>
+              </h2>            </div>
             <div class="flex flex-wrap gap-2 items-center">
               <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0" onclick={resetCommandForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">{m.common.clear()}</button>
               <button
@@ -1251,9 +1245,7 @@
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-arrows-rotate" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
                 {m.features.wizardRepeatersName()}
-              </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.timerHint()}</p>
-            </div>
+              </h2>            </div>
             <div class="flex flex-wrap gap-2 items-center">
               <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0" onclick={resetTimerForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">{m.common.clear()}</button>
               <button
@@ -1332,9 +1324,7 @@
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
                 {m.common.quotes()}
-              </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.quotePoolHint({ command: `${configForm.commandPrefix}quote` })}</p>
-            </div>
+              </h2>            </div>
             <button
               class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform disabled:opacity-55 disabled:cursor-not-allowed"
               disabled={quoteSaving || !quoteForm.text.trim()}
@@ -1387,9 +1377,7 @@
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-video" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
                 {m.twitch.eventsRoutingTitle()}
-              </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.eventsRoutingHint()}</p>
-            </div>
+              </h2>            </div>
           </div>
 
           {#if status?.hasChannelAuthorization}
@@ -1449,9 +1437,7 @@
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-bell" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
                 {m.twitch.eventsTemplatesTitle()}
-              </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.eventsTemplatesHint()}</p>
-            </div>
+              </h2>            </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1512,9 +1498,7 @@
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-gift" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
                 {m.twitch.redemptionTitle()}
-              </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.redemptionHint()}</p>
-            </div>
+              </h2>            </div>
             <div class="flex flex-wrap gap-2 items-center">
               <button class="min-h-[44px] rounded-lg px-3.5 py-2.5 font-extrabold cursor-pointer transition-transform border-0" onclick={resetRedemptionForm} style="background: {$colorStore.primary}10; color: {$colorStore.text};">{m.common.clear()}</button>
               <button
@@ -1581,9 +1565,7 @@
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-sliders" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
                 {m.twitch.liveTitle()}
-              </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.liveHint()}</p>
-            </div>
+              </h2>            </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1644,9 +1626,7 @@
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-link" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
                 {m.twitch.tabLinks()}
-              </h2>
-              <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">{m.twitch.linksHint()}</p>
-            </div>
+              </h2>            </div>
           </div>
 
           <div class="grid gap-3 mb-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">

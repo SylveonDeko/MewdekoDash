@@ -6,7 +6,6 @@
   "delete_time_seconds": "{seconds} 秒",
   "edit_delete_time_aria": "削除時間を編集",
   "edit_webhook_aria": "Webhook を編集",
-  "empty_hint": "上のフォームから、最初の挨拶メッセージを追加してください。",
   "empty_title": "挨拶は設定されていません",
   "error_add": "挨拶の追加に失敗しました",
   "error_fetch_greets": "挨拶の取得に失敗しました",

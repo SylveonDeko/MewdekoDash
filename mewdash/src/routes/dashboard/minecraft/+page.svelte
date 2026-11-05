@@ -1092,9 +1092,7 @@
                      style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <i class="fa-utility-duo fa-regular fa-server" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-                    <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">{m.minecraft.serversEmptyTitle()}</p>
-                    <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.minecraft.serversEmptyHint()}</p>
-                    <button
+                    <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">{m.minecraft.serversEmptyTitle()}</p>                    <button
                       class="mt-4 flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all mx-auto"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                       onclick={() => { activeTab = 'add'; }}
@@ -1549,9 +1547,6 @@
                         <i class="fa-solid fa-plug" style="color: {$colorStore.primary}; font-size: 14px;"></i>
                         <span class="text-sm font-medium" style="color: {$colorStore.text}">{m.minecraft.pluginTitle()}</span>
                     </div>
-                    <p class="text-xs mb-3" style="color: {$colorStore.muted}">
-                        {m.minecraft.pluginDescription()}
-                    </p>
 
                     {#if showPluginKey && pluginKey}
                         <div class="mb-3 p-3 rounded-lg space-y-3" style="background: #10b98110; border: 1px solid #10b98130;">
@@ -1657,9 +1652,7 @@
                          style="background: {$colorStore.primary}0c;
                                 border-color: {$colorStore.primary}30;">
                         <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-                        <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">{m.minecraft.historySelectServer()}</p>
-                        <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.minecraft.historySelectHint()}</p>
-                    </div>
+                        <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">{m.minecraft.historySelectServer()}</p>                    </div>
                 {:else if snapshots && snapshots.length > 1}
                     <div class="rounded-2xl border p-6"
                          style="background: {$colorStore.primary}0c;
@@ -1730,9 +1723,7 @@
                      style="background: {$colorStore.primary}0c;
                             border-color: {$colorStore.primary}30;">
                     <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 48px; opacity: 0.5;"></i>
-                    <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">{m.minecraft.consoleNoRcon()}</p>
-                    <p class="text-sm mt-1" style="color: {$colorStore.muted}">{m.minecraft.consoleNoRconHint()}</p>
-                </div>
+                    <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">{m.minecraft.consoleNoRcon()}</p>                </div>
             {:else}
                 <div class="flex flex-wrap items-center gap-3 mb-2">
                     {#each servers.filter(s => s.rconEnabled) as server}

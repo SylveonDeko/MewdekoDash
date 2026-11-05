@@ -612,7 +612,6 @@
                 {m.common.warn()}
               </button>
             </div>
-            <p class="text-xs" style="color: {$colorStore.muted}">{m.moderation.warningsAutoHint()}</p>
             {#if warnError}
               <div class="p-3 rounded-lg flex items-center gap-2 text-sm" role="alert"
                    style="background: #ef444420; border: 1px solid #ef444430; color: #ef4444;">
@@ -644,7 +643,6 @@
           <div class="text-center py-8">
             <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
             <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.moderation.warningsEmpty()}</p>
-            <p class="text-sm" style="color: {$colorStore.muted}">{m.moderation.warningsEmptyHint()}</p>
           </div>
         {:else if filteredWarnings.length === 0}
           <div class="text-center py-8">
@@ -739,7 +737,6 @@
             </div>
             <div>
               <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.moderation.punishTitle()}</h2>
-              <p class="text-sm" style="color: {$colorStore.muted}">{m.moderation.punishSubtitle()}</p>
             </div>
           </div>
 
@@ -863,7 +860,6 @@
           <div class="text-center py-8">
             <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
             <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.moderation.activityEmpty()}</p>
-            <p class="text-sm" style="color: {$colorStore.muted}">{m.moderation.warningsEmptyHint()}</p>
           </div>
         {:else}
           <div class="space-y-4 max-h-96 overflow-y-auto">
@@ -1093,7 +1089,7 @@
               <button
                 type="button"
                 class="px-4 rounded-lg font-medium transition-all hover:opacity-90 disabled:opacity-40"
-                style="background: {$colorStore.primary}; color: {$colorStore.text};"
+                style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                 disabled={!overrideTarget || pruneSaving}
                 onclick={addOverride}
               >
@@ -1108,7 +1104,6 @@
             <i class="fa-utility-duo fa-regular fa-layer-group"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
             <p class="text-lg font-medium" style="color: {$colorStore.text}">{m.moderation.overridesEmpty()}</p>
-            <p class="text-sm" style="color: {$colorStore.muted}">{m.moderation.overridesEmptyHint()}</p>
           </div>
         {:else}
           <div class="space-y-3 mt-6">

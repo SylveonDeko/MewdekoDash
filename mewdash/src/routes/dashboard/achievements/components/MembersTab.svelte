@@ -337,7 +337,7 @@
                 <span class="text-sm font-semibold" style="color: {$colorStore.text}">{group.category.name}</span>
                 <span class="text-xs" style="color: {$colorStore.muted}">{m.achievements.membersCategoryProgress({ done, total: group.items.length })}</span>
                 <span class="flex-1 h-1.5 rounded-full overflow-hidden" style="background: {$colorStore.primary}15;">
-                  <span class="block h-full rounded-full" style="width: {(done / group.items.length) * 100}%; background: {$colorStore.primary};"></span>
+                  <span class="block h-full rounded-full" style="width: {(done / group.items.length) * 100}%; background: {$colorStore.primary}; color: {$colorStore.onPrimary};"></span>
                 </span>
               </div>
               <ul class="space-y-1">

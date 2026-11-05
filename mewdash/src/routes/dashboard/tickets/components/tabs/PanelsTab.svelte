@@ -910,9 +910,7 @@
                       placeholder={m.tickets.panelsDeleteDelayPlaceholder()}
                       class="w-full px-3 py-2 rounded-lg border"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                    />
-                    <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.tickets.panelsDeleteDelayHint()}</p>
-                  </div>
+                    />                  </div>
                 </div>
 
               {:else if buttonCreatorSection === 'archive'}
@@ -2165,9 +2163,7 @@
   <div class="text-center py-24 rounded-xl"
        style="background: {$colorStore.primary}0c; border: 1px dashed {$colorStore.primary}20;">
     <i class="fa-solid fa-hand-pointer" style="color: {$colorStore.muted}; font-size: 64px; opacity: 0.2;"></i>
-    <p class="mt-6 text-lg font-medium" style="color: {$colorStore.text}">{m.tickets.panelsSelectPanel()}</p>
-    <p class="text-sm mt-2" style="color: {$colorStore.muted}">{m.tickets.casesSelectPromptHint()}</p>
-  </div>
+    <p class="mt-6 text-lg font-medium" style="color: {$colorStore.text}">{m.tickets.panelsSelectPanel()}</p>  </div>
 {/if}
 
 

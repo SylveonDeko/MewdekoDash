@@ -1,6 +1,5 @@
 {
   "page_active_empty": "Nenhum sorteio ativo",
-  "page_active_empty_hint": "Crie seu primeiro sorteio usando o formulário acima",
   "page_create_title": "Criar novo sorteio",
   "page_detail_entry_method": "Método de participação:",
   "page_detail_message_requirement": "Requisito de mensagens:",
@@ -22,7 +21,6 @@
   "page_error_winners_min": "O número de vencedores deve ser pelo menos 1.",
   "page_field_duration": "Duração",
   "page_field_emoji": "Emoji de reação",
-  "page_field_emoji_hint": "Selecione um emoji personalizado ou cole o código de emoji do Discord",
   "page_field_entry_method": "Método de participação",
   "page_field_item": "Item do sorteio",
   "page_field_item_placeholder": "Digite o item que será sorteado",

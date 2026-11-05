@@ -713,11 +713,7 @@
        style="--fa-primary-color: {colors.foreground}; --fa-secondary-color: {colors.foreground}; --fa-primary-opacity: 0.5; --fa-secondary-opacity: 0.3;"></i>
     <h3 class="text-xl font-semibold" style="color: {colors.text};">
         {m.music.playerNotInVoice()}
-    </h3>
-    <p class="mt-2" style="color: {colors.text}80;">
-        {m.music.playerNotInVoiceHint()}
-    </p>
-    <button
+    </h3>    <button
       class="mt-4 px-4 py-2 rounded-lg transition-all"
       style="background: {colors.foreground}20; color: {colors.foreground}; border: 1px solid {colors.foreground}30;"
       onclick={openMusicDashboard}

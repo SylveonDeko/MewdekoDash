@@ -350,9 +350,7 @@
             style="background: {$colorStore.primary}0c;
                    border-color: {$colorStore.primary}30;"
           >
-            <h1 class="text-xl md:text-2xl font-bold mb-1" style="color: {$colorStore.text}">{m.dashboard.layoutSelectServerTitle()}</h1>
-            <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">{m.dashboard.layoutSelectServerSubtitle()}</p>
-          </div>
+            <h1 class="text-xl md:text-2xl font-bold mb-1" style="color: {$colorStore.text}">{m.dashboard.layoutSelectServerTitle()}</h1>          </div>
 
           <div class="relative shrink-0">
             <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-xs"
@@ -398,13 +396,9 @@
                       {m.common.noServersAvailable()}
                     {/if}
                   </p>
-                  <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                    {#if guildSearchTerm}
-                      {m.dashboard.layoutNoMatchHint()}
-                    {:else}
-                      {m.dashboard.layoutNoServersHint()}
-                    {/if}
-                  </p>
+                  {#if !guildSearchTerm}
+                    <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.dashboard.layoutNoServersHint()}</p>
+                  {/if}
                 </div>
               {/each}
             </div>

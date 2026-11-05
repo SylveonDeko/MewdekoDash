@@ -6,7 +6,6 @@
   "basic_title": "기본 AFK 설정",
   "bulk_remove_message": "사용자 {count}명의 AFK 상태를 해제할까요? 이 작업은 되돌릴 수 없어요.",
   "bulk_remove_title": "AFK 상태 일괄 해제",
-  "channels_hint": "AFK 메시지가 표시되지 않을 채널이에요. 여러 채널을 선택하면 해당 위치에서 AFK 알림을 끌 수 있어요.",
   "channels_placeholder": "AFK 메시지를 끌 채널 선택",
   "channels_title": "비활성화된 채널",
   "custom_hint": "AFK 알림에 사용할 사용자 지정 임베드 메시지 템플릿이에요. 기본값으로 되돌리려면 \"-\"를 사용하세요. 사용 가능한 변수는 {link}를 참고하세요.",

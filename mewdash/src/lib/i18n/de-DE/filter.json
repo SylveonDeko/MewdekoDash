@@ -30,7 +30,6 @@
   "remove_channel_aria": "#{channel} entfernen",
   "search_words_aria": "Gefilterte Wörter durchsuchen",
   "search_words_placeholder": "Wörter suchen",
-  "server_wide_hint": "Diese gelten in jedem Kanal. Nutze Kanal-Ausnahmen, um einen Filter nur an bestimmten Orten zu aktivieren.",
   "server_wide_title": "Serverweite Filter",
   "stat_autoban_words_subtitle": "sofort bannen",
   "stat_channel_overrides_subtitle": "Filter pro Kanal",

@@ -15,7 +15,6 @@
   "grant_button": "Accorder l'accès",
   "grant_heading_edit": "Modifier l'accès",
   "grant_heading_new": "Accorder un accès restreint",
-  "grant_hint": "Accordez à un utilisateur ou à un rôle un accès en consultation ou en gestion à des sections précises du tableau de bord, sans leur donner les droits d'administrateur complets du serveur.",
   "grant_sections_one": "{count} section",
   "grant_sections_other": "{count} sections",
   "grants_empty": "Aucun accès restreint accordé pour le moment",

@@ -226,7 +226,7 @@ Groups similar features together for efficient configuration with category suppo
                 </div>
                 <button
                   class="px-4 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all min-h-[44px] disabled:opacity-50"
-                  style="background: {$colorStore.secondary}; color: white;"
+                  style="background: {$colorStore.secondary}; color: {$colorStore.onSecondary};"
                   onclick={() => applyToCategory(category)}
                   disabled={!categoryChannelSelectors[category]}
                 >

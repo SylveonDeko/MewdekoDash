@@ -6,7 +6,6 @@
   "basic_title": "Configurações básicas de AFK",
   "bulk_remove_message": "Tem certeza de que deseja remover o status AFK de {count} usuário(s)? Esta ação não pode ser desfeita.",
   "bulk_remove_title": "Remover status AFK em massa",
-  "channels_hint": "Canais em que as mensagens de AFK não serão exibidas. Selecione vários canais para desativar as notificações de AFK nessas áreas.",
   "channels_placeholder": "Selecione os canais para desativar as mensagens de AFK",
   "channels_title": "Canais desativados",
   "custom_hint": "Modelo de mensagem em embed personalizado para as notificações de AFK. Use \"-\" para restaurar o padrão. Acesse {link} para ver as variáveis disponíveis.",

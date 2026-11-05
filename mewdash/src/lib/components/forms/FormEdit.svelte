@@ -1034,7 +1034,7 @@
           <div class="flex items-center gap-2 flex-1 min-w-0">
             <div
               class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm"
-              style="background: {$colorStore.primary}; color: white;"
+              style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
             >
               {mobileEditingQuestionIndex + 1}
             </div>

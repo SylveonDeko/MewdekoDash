@@ -6,7 +6,6 @@
   "delete_time_seconds": "{seconds} с",
   "edit_delete_time_aria": "Змінити час видалення",
   "edit_webhook_aria": "Змінити вебхук",
-  "empty_hint": "Додай своє перше привітання через форму вище.",
   "empty_title": "Привітання не налаштовано",
   "error_add": "Не вдалося додати привітання",
   "error_fetch_greets": "Не вдалося завантажити привітання",

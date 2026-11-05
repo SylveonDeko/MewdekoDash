@@ -1,6 +1,5 @@
 {
   "page_active_empty": "No active giveaways",
-  "page_active_empty_hint": "Create your first giveaway using the form above",
   "page_create_title": "Create New Giveaway",
   "page_detail_entry_method": "Entry Method:",
   "page_detail_message_requirement": "Message Requirement:",
@@ -22,7 +21,6 @@
   "page_error_winners_min": "The number of winners must be at least 1.",
   "page_field_duration": "Duration",
   "page_field_emoji": "Reaction Emoji",
-  "page_field_emoji_hint": "Select a custom emoji or paste Discord emoji code",
   "page_field_entry_method": "Entry Method",
   "page_field_item": "Giveaway Item",
   "page_field_item_placeholder": "Enter the item to be given away",
@@ -32,7 +30,7 @@
   "page_loading_fetch": "Loading giveaways...",
   "page_notify_created": "Giveaway created",
   "page_notify_ended": "Giveaway ended",
-  "page_subtitle": "Manage server giveaways and prizes",
+  "page_subtitle": "Server giveaways",
   "page_tab_create": "Create Giveaway",
   "page_tab_ended": "Ended Giveaways"
 }

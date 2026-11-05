@@ -641,7 +641,7 @@
               <button
                 type="button"
                 class="absolute bottom-3 right-4 px-3 min-h-[36px] rounded-full text-xs font-medium shadow-lg flex items-center gap-2"
-                style="background: {$colorStore.primary}; color: #fff;"
+                style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                 onclick={scrollToBottom}
               >
                 <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>

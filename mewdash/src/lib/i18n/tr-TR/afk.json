@@ -6,7 +6,6 @@
   "basic_title": "Temel AFK Ayarları",
   "bulk_remove_message": "{count} kullanıcının AFK durumunu kaldırmak istediğinden emin misin? Bu işlem geri alınamaz.",
   "bulk_remove_title": "AFK Durumlarını Toplu Kaldır",
-  "channels_hint": "AFK mesajlarının gösterilmeyeceği kanallar. Bu alanlarda AFK bildirimlerini devre dışı bırakmak için birden fazla kanal seç.",
   "channels_placeholder": "AFK mesajlarını devre dışı bırakmak için kanal seç",
   "channels_title": "Devre Dışı Kanallar",
   "custom_hint": "AFK bildirimleri için özel embed mesaj şablonu. Varsayılana dönmek için \"-\" kullan. Kullanılabilir değişkenler için {link} sayfasını ziyaret et.",

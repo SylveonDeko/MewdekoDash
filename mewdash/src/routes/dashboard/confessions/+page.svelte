@@ -5,7 +5,7 @@
     import { fade, fly } from "svelte/transition";
     import { colorStore } from "$lib/stores/colorStore";
     import { currentGuild } from "$lib/stores/currentGuild";
-    import { clientApi, type Confession, confessionsApi, type ConfessionStats } from "$lib/api/index.ts";
+    import { clientApi, type Confession, confessionsApi, type ConfessionStats, guildApi } from "$lib/api/index.ts";
     import { logger } from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -26,6 +26,19 @@
     let confessionLogChannel: bigint | null = $state(null);
     let blacklistedRoles: bigint[] = $state([]);
     let stats: ConfessionStats | null = $state(null);
+    let guildPrefix = $state(".");
+    let commandCopied = $state(false);
+    const confessCommand = $derived(m.confessions.pageHowToCommand({ prefix: guildPrefix, guildId: String($currentGuild?.id ?? "") }));
+
+    async function copyConfessCommand() {
+        try {
+            await navigator.clipboard.writeText(confessCommand);
+            commandCopied = true;
+            setTimeout(() => commandCopied = false, 2000);
+        } catch (err) {
+            logger.error("Failed to copy confession command:", err);
+        }
+    }
     let guildChannels: Array<{ id: string; name: string; }> = $state([]);
     let guildRoles: Array<{ id: string; name: string; color: number }> = $state([]);
 
@@ -52,7 +65,8 @@
                 blacklistData,
                 statsData,
                 channelsData,
-                rolesListData
+                rolesListData,
+                guildConfigData
             ] = await Promise.all([
                 confessionsApi.getConfessions($currentGuild.id).catch(() => []),
                 confessionsApi.getConfessionChannel($currentGuild.id).catch(() => null),
@@ -60,9 +74,11 @@
                 confessionsApi.getConfessionBlacklist($currentGuild.id).catch(() => []),
                 confessionsApi.getConfessionStats($currentGuild.id).catch(() => null),
                 clientApi.getTextChannels($currentGuild.id).catch(() => []),
-                clientApi.getRoles($currentGuild.id).catch(() => [])
+                clientApi.getRoles($currentGuild.id).catch(() => []),
+                guildApi.getGuildConfig($currentGuild.id).catch(() => null)
             ]);
 
+            guildPrefix = guildConfigData?.prefix || ".";
             confessions = confessionsData;
             confessionChannel = channelData;
             confessionLogChannel = logChannelData;
@@ -295,6 +311,16 @@
                                         onchange={(detail) => saveConfessionChannel(detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null)}
                                 />
                             </div>
+                            <div class="mt-3 flex flex-wrap items-center gap-2 text-sm" style="color: {$colorStore.muted}">
+                                <span>{m.confessions.pageHowTo()}</span>
+                                <code class="px-2 py-1 rounded-sm font-mono break-all" style="background: {$colorStore.primary}15; color: {$colorStore.primary};">{confessCommand}</code>
+                                <button type="button" class="px-3 rounded-lg min-h-[44px]"
+                                        style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                        onclick={copyConfessCommand}
+                                        aria-label={m.confessions.pageHowToCopyAria()}>
+                                    <i class="fa-solid {commandCopied ? 'fa-check' : 'fa-copy'}"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Log Channel -->
@@ -369,11 +395,7 @@
                     {#if confessions.length === 0}
                         <div class="text-center py-8">
                             <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.confessions.pageListEmptyTitle()}</h3>
-                            <p class="text-sm" style="color: {$colorStore.muted}">
-                                {m.confessions.pageListEmptyHint()}
-                            </p>
-                        </div>
+                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.confessions.pageListEmptyTitle()}</h3>                        </div>
                     {:else}
                         {#each confessions.slice().reverse() as confession}
                             <div class="rounded-xl border transition-all"
@@ -460,7 +482,6 @@
                             icon="fa-calendar"
                             label={m.confessions.pageStatMonth()}
                             value={stats.confessionsThisMonth}
-                            subtitle={m.confessions.pageStatConfessionsSub()}
                             iconColor="secondary"
                             animationDelay={100}
                     />
@@ -469,7 +490,6 @@
                             icon="fa-clock"
                             label={m.common.today()}
                             value={stats.confessionsToday}
-                            subtitle={m.confessions.pageStatConfessionsSub()}
                             iconColor="accent"
                             animationDelay={200}
                     />
@@ -477,20 +497,14 @@
                     <StatCard
                             icon="fa-list-numeric"
                             label={m.confessions.pageStatLatest()}
-                            value={Number(stats.lastConfessionNumber)}
-                            subtitle={m.confessions.pageStatLatestSub()}
-                            iconColor="primary"
+                            value={Number(stats.lastConfessionNumber)}                            iconColor="primary"
                             animationDelay={300}
                     />
                 </div>
             {:else}
                 <div class="text-center py-12">
                     <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                    <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">{m.common.noStatisticsAvailable()}</h3>
-                    <p style="color: {$colorStore.muted}">
-                        {m.confessions.pageStatsEmptyHint()}
-                    </p>
-                </div>
+                    <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">{m.common.noStatisticsAvailable()}</h3>                </div>
             {/if}
         </div>
     {/if}

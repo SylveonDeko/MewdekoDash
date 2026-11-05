@@ -382,9 +382,9 @@
                         {#if tab.id === 'entertainment' && showMusicPlayer}
                     <span class="relative flex h-2 w-2 ml-1">
                       <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                            style="background: {$colorStore.primary};"></span>
+                            style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"></span>
                       <span class="relative inline-flex rounded-full h-2 w-2"
-                            style="background: {$colorStore.primary};"></span>
+                            style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"></span>
                     </span>
                         {/if}
                     </button>

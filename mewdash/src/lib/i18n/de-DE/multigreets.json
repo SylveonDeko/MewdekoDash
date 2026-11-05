@@ -6,7 +6,6 @@
   "delete_time_seconds": "{seconds} s",
   "edit_delete_time_aria": "Löschzeit bearbeiten",
   "edit_webhook_aria": "Webhook bearbeiten",
-  "empty_hint": "Füge deine erste Begrüßungsnachricht über das Formular oben hinzu.",
   "empty_title": "Keine Begrüßungen konfiguriert",
   "error_add": "Begrüßung konnte nicht hinzugefügt werden",
   "error_fetch_greets": "Begrüßungen konnten nicht abgerufen werden",

@@ -1,7 +1,6 @@
 {
   "page_add_aria": "RSSフィードを追加",
   "page_add_message": "カスタムメッセージを追加",
-  "page_add_url_hint": "RSSまたはAtomフィードの完全なURLを入力してください。",
   "page_add_url_label": "RSSフィードのURL",
   "page_by_channel_count_one": "フィード{count}件",
   "page_by_channel_count_other": "フィード{count}件",
@@ -16,7 +15,6 @@
   "page_error_remove": "フィードの削除に失敗しました",
   "page_feed_added": "追加日: {date}",
   "page_feed_delete_aria": "フィードを削除",
-  "page_list_empty_hint": "RSSフィードを追加すると、チャンネルに更新が自動で投稿されます。",
   "page_list_empty_title": "RSSフィードはありません",
   "page_list_title": "RSSフィード（{count}）",
   "page_notify_added": "RSSフィードを追加しました！",
@@ -26,7 +24,6 @@
   "page_stat_total_sub": "有効な購読",
   "page_stat_unique": "ユニークなフィード",
   "page_stat_unique_sub": "異なるソース",
-  "page_stats_empty_hint": "RSSフィードを追加すると、ここにフィードの統計が表示されます。",
   "page_subtitle": "RSSフィードの購読を管理",
   "page_tab_add": "フィードを追加"
 }

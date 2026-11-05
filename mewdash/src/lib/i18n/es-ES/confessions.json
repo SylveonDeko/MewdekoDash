@@ -9,18 +9,14 @@
   "page_error_load": "No se pudieron cargar los datos de confesiones",
   "page_hide_content_aria": "Ocultar el contenido de la confesión",
   "page_item_title": "Confesión #{number}",
-  "page_list_empty_hint": "Las confesiones aparecerán aquí cuando los usuarios las envíen.",
   "page_list_empty_title": "No hay confesiones",
   "page_list_title": "Todas las confesiones ({count})",
   "page_no_content": "Sin contenido",
   "page_notify_deleted": "¡Confesión eliminada correctamente!",
   "page_show_content_aria": "Mostrar el contenido de la confesión",
   "page_show_more": "Mostrar más",
-  "page_stat_confessions_sub": "confesiones",
   "page_stat_latest": "Último número",
-  "page_stat_latest_sub": "ID de confesión",
   "page_stat_month": "Este mes",
   "page_stat_total": "Confesiones totales",
-  "page_stats_empty_hint": "Las estadísticas de confesiones aparecerán aquí cuando el sistema esté configurado.",
   "page_subtitle": "Gestión del sistema de confesiones anónimas"
 }

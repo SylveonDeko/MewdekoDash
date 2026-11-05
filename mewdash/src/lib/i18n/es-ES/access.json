@@ -15,7 +15,6 @@
   "grant_button": "Conceder acceso",
   "grant_heading_edit": "Editar concesión de acceso",
   "grant_heading_new": "Conceder acceso restringido",
-  "grant_hint": "Da a un usuario o rol acceso de Ver o Gestionar a secciones concretas del panel, sin darle permisos completos de administrador del servidor.",
   "grant_sections_one": "{count} sección",
   "grant_sections_other": "{count} secciones",
   "grants_empty": "Aún no hay concesiones de acceso restringido",

@@ -1,6 +1,5 @@
 {
   "page_active_empty": "Nessun giveaway attivo",
-  "page_active_empty_hint": "Crea il tuo primo giveaway usando il modulo qui sopra",
   "page_create_title": "Crea nuovo giveaway",
   "page_detail_entry_method": "Metodo di partecipazione:",
   "page_detail_message_requirement": "Requisito di messaggi:",
@@ -22,7 +21,6 @@
   "page_error_winners_min": "Il numero di vincitori deve essere almeno 1.",
   "page_field_duration": "Durata",
   "page_field_emoji": "Emoji di reazione",
-  "page_field_emoji_hint": "Seleziona un'emoji personalizzata o incolla il codice emoji di Discord",
   "page_field_entry_method": "Metodo di partecipazione",
   "page_field_item": "Premio del giveaway",
   "page_field_item_placeholder": "Inserisci il premio da assegnare",

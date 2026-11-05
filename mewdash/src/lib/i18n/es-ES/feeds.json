@@ -1,7 +1,6 @@
 {
   "page_add_aria": "Añadir feed RSS",
   "page_add_message": "Añadir mensaje personalizado",
-  "page_add_url_hint": "Introduce la URL completa de un feed RSS o Atom.",
   "page_add_url_label": "URL del feed RSS",
   "page_by_channel_count_one": "{count} feed",
   "page_by_channel_count_other": "{count} feeds",
@@ -16,7 +15,6 @@
   "page_error_remove": "No se pudo quitar el feed",
   "page_feed_added": "Añadido: {date}",
   "page_feed_delete_aria": "Eliminar feed",
-  "page_list_empty_hint": "Añade feeds RSS para publicar novedades automáticamente en tus canales.",
   "page_list_empty_title": "No hay feeds RSS",
   "page_list_title": "Feeds RSS ({count})",
   "page_notify_added": "¡Feed RSS añadido correctamente!",
@@ -26,7 +24,6 @@
   "page_stat_total_sub": "suscripciones activas",
   "page_stat_unique": "Feeds únicos",
   "page_stat_unique_sub": "fuentes distintas",
-  "page_stats_empty_hint": "Las estadísticas de feeds aparecerán aquí cuando añadas feeds RSS.",
   "page_subtitle": "Gestiona las suscripciones a feeds RSS",
   "page_tab_add": "Añadir feed"
 }

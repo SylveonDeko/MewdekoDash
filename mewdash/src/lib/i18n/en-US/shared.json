@@ -4,7 +4,7 @@
   "sanitize_form_name_empty": "Form name cannot be empty",
   "sanitize_question_text_empty": "Question text cannot be empty",
   "unsaved_leave": "Leave without saving",
-  "unsaved_message": "You have changes that have not been saved. Leaving this page will lose them.",
+  "unsaved_message": "Leaving will lose your changes.",
   "unsaved_stay": "Stay",
   "unsaved_title": "Discard unsaved changes?",
   "validation_circular_dependency": "Circular dependency detected in conditional logic",

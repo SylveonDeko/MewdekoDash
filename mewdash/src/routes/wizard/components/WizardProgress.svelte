@@ -49,7 +49,7 @@ Wizard progress indicator showing current step and completion status
     <div class="w-full h-2 rounded-full" style="background: {$colorStore.primary}15;"></div>
     <div 
       class="absolute top-0 left-0 h-2 rounded-full transition-all duration-500 ease-out"
-      style="background: {$colorStore.primary}; 
+      style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};
              width: {progressPercent}%"
     ></div>
   </div>
