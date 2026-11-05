@@ -9199,6 +9199,8 @@ export const m = {
     heroOpenDashboard: () => t("home", "hero_open_dashboard", "Open dashboard"),
     /** Moderation, tickets, XP, achievements, music, forms, giveaways and about a thousand oth... */
     heroSubtitle: () => t("home", "hero_subtitle", "Moderation, tickets, XP, achievements, music, forms, giveaways and about a thousand other things. We might have gone a little overboard."),
+    /** Questions or ideas? Join the Mewdeko server on Discord. */
+    heroSupport: () => t("home", "hero_support", "Questions or ideas? Join the Mewdeko server on Discord."),
     /** One bot.<br />Way too many tails. */
     heroTitle: () => t("home", "hero_title", "One bot.<br />Way too many tails."),
     /** 20+ gambling games */
