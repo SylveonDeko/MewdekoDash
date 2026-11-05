@@ -620,7 +620,7 @@
     } else {
       const firstEmoji = selectedEmojis()[0];
       if (!firstEmoji) return placeholder;
-      return isUnicodeEmoji(firstEmoji) ? firstEmoji.name : firstEmoji.name;
+      return isUnicodeEmoji(firstEmoji) ? "" : firstEmoji.name;
     }
   });
 
