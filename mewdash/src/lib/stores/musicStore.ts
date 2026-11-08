@@ -402,6 +402,7 @@ function createMusicStore() {
 
   // Fallback polling implementation
   async function fetchStatus(userId: bigint) {
+    if (typeof document !== "undefined" && document.hidden) return;
     const state = get({ subscribe });
     if (state.failedFetchCount >= MAX_RETRIES) {
       stopPolling();

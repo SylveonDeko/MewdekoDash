@@ -41,7 +41,7 @@
   ]);
 
   async function refresh() {
-    if (userId === null) return;
+    if (userId === null || document.hidden) return;
     try {
       const read = readPlayer(await musicApi.getPlayerStatus(guildId, userId));
       player = read?.playingTrack ? read.view : null;
