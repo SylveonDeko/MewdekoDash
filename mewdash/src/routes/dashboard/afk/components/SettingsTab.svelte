@@ -188,6 +188,7 @@
     <PluginCard title={m.afk.customTitle()} alwaysOpen>
       <MessageField
         value={values.message}
+        card={{ guildId, target: "afk", ownerId: 0, autoSave, onerror: (message) => notify(message, "error") }}
         previewTitle={m.afk.customPreviewTitle()}
         icon="fa-moon"
         {user}

@@ -1,7 +1,7 @@
 import type { CardImage, CardTemplate } from "../cards/models";
 
 /** Which kind of message a card belongs to */
-export type WelcomeCardTarget = "greet" | "bye" | "dmgreet" | "boost" | "rolegreet";
+export type WelcomeCardTarget = "greet" | "bye" | "dmgreet" | "boost" | "rolegreet" | "afk";
 
 /** Where a message's card appears */
 export type CardPlacement = "None" | "EmbedImage" | "Attached";
