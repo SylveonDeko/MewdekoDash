@@ -1,7 +1,7 @@
 ---
 title: Intent Verification
 slug: intent-verification
-summary: What to answer on Discord's privileged intent application when your own Mewdeko bot gets big enough to need verifying, with text you can paste into each box.
+summary: What to write on Discord's privileged intent application when your own Mewdeko bot needs verifying
 icon: fa-shield-check
 category: General
 tags: [intents, privileged intents, verification, verify, discord developer portal, presence intent, server members intent, message content intent, self host, selfhost, custom bot, privacy policy]
@@ -15,7 +15,7 @@ This page is for people running their own Mewdeko bot: a self hosted copy, or an
 > [!NOTE]
 > Unless Discord changes the process, you have to re-verify every year. Keep a link to this page for next time.
 
-Mewdeko connects with every gateway intent switched on, so the application needs all three privileged intents: **Presence**, **Server Members** and **Message Content**. The sections below follow the order of Discord's form. For select menus, pick the option given here. For text boxes, copy the code block and adjust anything in angle brackets. The screenshot links point at screenshots of the official Mewdeko; you can use them as they are or swap in screenshots of your own instance.
+Mewdeko connects with every gateway intent switched on, so the application needs every privileged intent: **Presence**, **Server Members** and **Message Content**. The sections below follow the order of Discord's form. For select menus, pick the option given here. For text boxes, copy the code block and adjust anything in angle brackets. The screenshot links point at screenshots of the official Mewdeko; you can use them as they are or swap in screenshots of your own instance.
 
 > [!WARNING]
 > This guide does not guarantee approval; Discord makes the final decision. Answer every question truthfully for *your* instance. Where your setup differs from a default Mewdeko install, such as features you have disabled, change the text to match. Discord can ask follow-up questions and may ask you to prove your answers.
@@ -61,7 +61,7 @@ In the bot's profile bio and on our website.
 ```
 
 > [!WARNING]
-> Mewdeko's own policy at https://mewdeko.tech/privacy covers the official bot and its servers only; it says where *our* data is stored and who to contact. Your instance stores data on your own server, so you need your own policy. You can base it on ours, changing the storage location, contact details and anything else that differs, and publish it on your site or a GitHub gist. Discord usually wants the link in the bot's profile bio as well.
+> Mewdeko's own policy at https://mewdeko.tech/privacy covers the official bot and its servers only; it says where *our* data is stored and who to contact. Your instance stores data on your own server, so you need your own policy. You can base it on ours, changing whatever differs, such as the storage location and contact details, and publish it on your site or a GitHub gist. Discord usually wants the link in the bot's profile bio as well.
 
 ## Privileged gateway intents
 
@@ -122,7 +122,7 @@ Select **Yes**. The bot stores user IDs, usernames, XP, warnings and per-server 
 
 ### Are you storing API Data for 30 days or less?
 
-Select **No**. Server data such as XP, warnings and tickets is kept for as long as the bot stays in that server.
+Select **No**. Server data such as XP and tickets is kept for as long as the bot stays in that server.
 
 ### How do users contact you to request deletion of their activity data?
 

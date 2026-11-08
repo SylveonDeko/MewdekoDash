@@ -36,18 +36,29 @@ export interface PatreonConfigUpdateRequest {
   announcementDay?: number;
   toggleAnnouncements?: boolean;
   toggleRoleSync?: boolean;
+  /** Sets announcements on or off, applied after the channel. */
+  announcementsEnabled?: boolean;
+  /** Sets role sync on or off. */
+  roleSyncEnabled?: boolean;
 }
 
 export interface PatreonTier {
-  id: string;
-  type: string;
-  attributes?: {
-    title?: string;
-    amountCents?: number;
-    patronCount?: number;
-    description?: string;
-    discordRoleIds?: string[] | null;
-  };
+  id: number;
+  guildId: bigint;
+  tierId: string;
+  tierTitle: string;
+  amountCents: number;
+  /** 0 when no role is mapped. */
+  discordRoleId: bigint;
+  description: string | null;
+  dateAdded: string;
+  isActive: boolean;
+}
+
+export interface PatreonSupporterLinkRequest {
+  patreonUserId: string;
+  /** 0 unlinks the supporter. */
+  discordUserId: bigint;
 }
 
 export interface PatreonSupporter {
@@ -59,7 +70,7 @@ export interface PatreonSupporter {
   email: string | null;
   tierId: string | null;
   amountCents: number;
-  patronStatus: string;
+  patronStatus: string | null;
   pledgeRelationshipStart: string | null;
   lastChargeDate: string | null;
   lastChargeStatus: string | null;
@@ -89,6 +100,7 @@ export interface PatreonAnalytics {
     name: string;
     amount: number;
     isLinked: boolean;
+    tier?: string | null;
   }>;
 }
 

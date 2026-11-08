@@ -58,7 +58,6 @@
   "landing_multi_greets": "다중 인사",
   "landing_music_bot": "음악 봇",
   "landing_no_servers_to_show_right_now": "지금 보여 드릴 서버가 없어요.",
-  "landing_or_just_hop_in_discord_for": "간단한 질문이나 도움이 필요하면 Discord에 들어오세요",
   "landing_our_top_servers": "인기 서버",
   "landing_per_server_bot_profile": "서버별 봇 프로필",
   "landing_polls_with_buttons": "버튼이 있는 투표",
@@ -130,7 +129,5 @@
   "tails_subheading": "모든 꼬리에는 한 가지 이상의 역할이 있어요.",
   "tails_tag_text": "멤버가 버튼이나 드롭다운에서 직접 역할을 고를 수 있어요.",
   "tails_wrench_text": "직접 명령어와 답변을 만들고, 서버에서 봇의 모습을 바꿀 수 있어요.",
-  "tails_wrench_title": "나만의 봇으로",
-  "update_next": "다음 업데이트",
-  "update_previous": "이전 업데이트"
+  "tails_wrench_title": "나만의 봇으로"
 }

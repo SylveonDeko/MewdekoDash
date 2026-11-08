@@ -40,8 +40,14 @@
     basePath?: string;
     category?: string;
     statusMessages?: import("svelte").Snippet;
+    /** Controls shown at the start of the header's action row, such as a master switch. */
+    headerActions?: import("svelte").Snippet;
+    /** A control shown at the end of the title row, such as the feature's on/off switch. */
+    titleAction?: import("svelte").Snippet;
     /** A page that saves as you go passes its controller here to show save progress in the header. */
     autoSave?: AutoSave;
+    /** Shows the main tabs as a two-column grid on phones instead of a scrolling strip. */
+    phoneTabGrid?: boolean;
     children: import("svelte").Snippet;
     ontabChange?: (detail: { tabId: string }) => void;
     onsubTabChange?: (detail: { tabId: string }) => void;
@@ -62,7 +68,10 @@
     basePath = "/dashboard",
     category = "Settings",
     statusMessages,
+    headerActions,
+    titleAction,
     autoSave,
+    phoneTabGrid = false,
     children,
     ontabChange,
     onsubTabChange
@@ -295,8 +304,8 @@
   
   <!-- Page Header -->
   <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8">
-    <div class="flex items-center gap-4">
-      <div class="p-4 rounded-xl"
+    <div class="flex items-center gap-4 w-full lg:w-auto">
+      <div class="p-4 rounded-xl shrink-0"
            style="background: {$colorStore.primary}20;">
         {#if icon.includes("fa-brands")}
           <i class="{icon} text-3xl" style="color: {$colorStore.primary};"></i>
@@ -305,38 +314,40 @@
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         {/if}
       </div>
-      <div>
+      <div class="min-w-0 grow">
         <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">{title}</h1>
         <p class="text-lg mt-1" style="color: {$colorStore.muted}">
           {subtitle}
         </p>
       </div>
+      {#if titleAction}
+        <div class="shrink-0 lg:ml-4">{@render titleAction()}</div>
+      {/if}
     </div>
 
-    {#if actionButtons.length > 0 || wikiArticle || autoSave}
-      <!--
-        On phones the wiki button collapses to its icon and the action buttons grow
-        to fill the row, wrapping onto a second line when their labels don't fit.
-      -->
-      <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full lg:w-auto lg:shrink-0">
+    {#if actionButtons.length > 0 || wikiArticle || autoSave || headerActions}
+      <div class="flex flex-wrap items-center justify-start gap-2 w-full lg:w-auto lg:shrink-0">
         {#if autoSave}
           <SaveStatus {autoSave} />
         {/if}
+        {#if headerActions}
+          {@render headerActions()}
+        {/if}
         {#if wikiArticle}
           <button
-            class="flex items-center justify-center gap-3 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all min-h-[44px] sm:min-h-[52px] min-w-[44px] shrink-0 sm:flex-initial font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-            style="background: {$colorStore.primary}10; color: {$colorStore.primary}; border: 1px dashed {$colorStore.primary}40;"
+            class="flex items-center justify-center gap-2 px-4 rounded-xl transition-all min-h-[44px] grow sm:grow-0 shrink-0 text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
             onclick={() => (wikiOpen = true)}
             aria-label={m.layout.pageLayoutWikiAria({ title })}
             title={m.layout.pageLayoutWikiTitle()}
           >
-            <i class="fa-solid fa-circle-question" style="font-size: 18px;" aria-hidden="true"></i>
-            <span class="hidden sm:inline text-sm sm:text-base">{m.common.howItWorks()}</span>
+            <i class="fa-solid fa-circle-question" aria-hidden="true"></i>
+            <span>{m.common.howItWorks()}</span>
           </button>
         {/if}
         {#each actionButtons as button}
           <button
-            class="flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all min-h-[44px] sm:min-h-[52px] flex-auto sm:flex-initial whitespace-nowrap font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+            class="flex items-center justify-center gap-2 px-4 rounded-xl transition-all min-h-[44px] grow sm:grow-0 shrink-0 whitespace-nowrap text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
             disabled={button.loading || button.disabled}
             onclick={button.action}
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
@@ -345,9 +356,8 @@
             title={button.label}
           >
             <i class="fa-solid {button.icon} {button.loading ? 'fa-spin' : ''} shrink-0"
-               style="font-size: 18px;"
                aria-hidden="true"></i>
-            <span class="text-sm sm:text-base">{button.label}</span>
+            <span>{button.label}</span>
           </button>
         {/each}
       </div>
@@ -375,7 +385,7 @@
         <!-- Left scroll button -->
         {#if tabsOverflow}
           <button
-            class="shrink-0 p-2 rounded-lg transition-all "
+            class="shrink-0 p-2 rounded-lg transition-all {phoneTabGrid ? 'hidden sm:block' : ''}"
             style="background: rgba(15, 23, 42, 0.9); border: 1px solid {$colorStore.primary}30;"
             onclick={() => scrollTabs('left', tabContainer)}
             aria-label={m.layout.pageLayoutScrollTabsLeft()}
@@ -387,14 +397,14 @@
         <!-- Tab list -->
         <div 
           bind:this={tabContainer}
-          class="flex items-center space-x-1 p-2 rounded-xl overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth flex-1 min-w-0 {tabsOverflow ? 'justify-start' : 'justify-center'}"
+          class="{phoneTabGrid ? 'grid grid-cols-2 gap-1 [&>:last-child:nth-child(odd)]:col-span-2 sm:flex sm:gap-0 sm:space-x-1' : 'flex space-x-1'} items-center p-2 rounded-xl overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth flex-1 min-w-0 {tabsOverflow && !phoneTabGrid ? 'justify-start' : 'justify-center'}"
           style="background: {$colorStore.primary}10;"
           role="tablist"
           aria-label={m.layout.pageLayoutTabListAria({ title })}
         >
           {#each tabs as tab, index}
             <button
-                    class="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3 rounded-lg sm:rounded-xl transition-all font-medium whitespace-nowrap shrink-0 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                    class="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3 rounded-lg sm:rounded-xl transition-all font-medium shrink-0{phoneTabGrid ? ' justify-center min-h-[44px] min-w-0 sm:whitespace-nowrap' : ' whitespace-nowrap'} focus:outline-hidden focus:ring-2 focus:ring-offset-2"
               class:active={activeTab === tab.id}
               style="color: {activeTab === tab.id ? $colorStore.primary : $colorStore.muted};
                      background: {activeTab === tab.id ? $colorStore.primary + '20' : 'transparent'};

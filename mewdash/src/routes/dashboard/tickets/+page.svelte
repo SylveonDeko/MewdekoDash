@@ -1,1216 +1,216 @@
 <!-- routes/dashboard/tickets/+page.svelte -->
 <script lang="ts">
   import { m } from "$lib/i18n";
-  import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
+  import { fade } from "svelte/transition";
+  import type { PageData } from "./$types";
   import { clientApi, ticketApi } from "$lib/api/index.ts";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import { loadingStore } from "$lib/stores/loadingStore";
-  import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+  import type { BlacklistedUserResponse, Ticket, TicketCase, TicketOverview, TicketPanel, TicketPriority, TicketSettings, TicketTag } from "$lib/api/ticket/models";
+  import type { GuildEmojiInfo } from "$lib/api/client/models";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { colorStore } from "$lib/stores/colorStore.ts";
+  import { logger } from "$lib/logger.ts";
   import { createAutoSave } from "$lib/utils/autoSave.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import PluginPage from "$lib/components/plugin/PluginPage.svelte";
+  import OverviewCard from "./components/OverviewCard.svelte";
+  import PanelsCard from "./components/PanelsCard.svelte";
+  import TicketsCard from "./components/TicketsCard.svelte";
+  import CasesCard from "./components/CasesCard.svelte";
+  import PrioritiesCard from "./components/PrioritiesCard.svelte";
+  import TagsCard from "./components/TagsCard.svelte";
+  import SettingsCard from "./components/SettingsCard.svelte";
+  import BlacklistCard from "./components/BlacklistCard.svelte";
+  import BatchCard from "./components/BatchCard.svelte";
+  import { errorText, type Named } from "./ticketModel";
 
-  // Import tab components
-  import OverviewTab from "./components/tabs/OverviewTab.svelte";
-  import PanelsTab from "./components/tabs/PanelsTab.svelte";
-  import ConfigurationTab from "./components/tabs/ConfigurationTab.svelte";
-  import CasesTab from "./components/tabs/CasesTab.svelte";
-  import TicketsTab from "./components/tabs/TicketsTab.svelte";
-  import AdvancedTab from "./components/tabs/AdvancedTab.svelte";
+  interface Props {
+    data: PageData;
+  }
 
-  let { data } = $props();
+  let { data }: Props = $props();
 
-  const autoSave = createAutoSave();
-
+  let overview: TicketOverview | null = $state(null);
+  let panels: TicketPanel[] = $state([]);
+  let tickets: Ticket[] = $state([]);
+  let cases: TicketCase[] = $state([]);
+  let priorities: TicketPriority[] = $state([]);
+  let tags: TicketTag[] = $state([]);
+  let blocked: BlacklistedUserResponse[] = $state([]);
+  let settings: TicketSettings | null = $state(null);
+  let channels: Named[] = $state([]);
+  let categories: Named[] = $state([]);
+  let forums: Named[] = $state([]);
+  let roles: Named[] = $state([]);
+  let emojis: GuildEmojiInfo[] = $state([]);
   let loading = $state(true);
-  let error: string | null = $state(null);
-  let saving = $state(false);
+  let showNotification = $state(false);
+  let notificationMessage = $state("");
+  let notificationType: "success" | "error" = $state("success");
+  let loadedGuildId = "";
 
-  // Layout state
-  let activeTab = $state("overview");
-
-  const tabs = $derived([
-    { id: "overview", label: m.common.overview(), icon: "fa-chart-line" },
-    { id: "tickets", label: m.features.ticketsName(), icon: "fa-ticket" },
-    { id: "panels", label: m.tickets.tabPanels(), icon: "fa-table-cells" },
-    { id: "configuration", label: m.common.configuration(), icon: "fa-sliders" },
-    { id: "cases", label: m.tickets.tabCases(), icon: "fa-folder-open" },
-    { id: "advanced", label: m.common.advanced(), icon: "fa-screwdriver-wrench" }
-  ]);
-
-  // Overview data
-  let statistics: any = $state(null);
-  let ticketActivity: any[] = $state([]);
-  let staffResponseStats: any[] = $state([]);
-
-  // Panel data
-  let panels: any[] = $state([]);
-  let panelStatuses = $state(new Map<bigint, number>()); // Map<panelId, status>
-  let checkingPanelStatus = $state(false);
-  let selectedPanel: any = $state(null);
-  let panelButtons: any[] = $state([]);
-  let panelSelectMenus: any[] = $state([]);
-
-  // Configuration data
-  let priorities: any[] = $state([]);
-  let tags: any[] = $state([]);
-  let transcriptChannelId: bigint | null = $state(null);
-  let logChannelId: bigint | null = $state(null);
-
-  // Case data
-  let cases: any[] = $state([]);
-  let selectedCase: any = $state(null);
-  let allTickets: any[] = $state([]);
-
-  // Advanced data
-  let blacklistedUsers: any[] = $state([]);
-
-  // Available data
-  let availableRoles: any[] = $state([]);
-  let textChannels: any[] = $state([]);
-  let categories: any[] = $state([]);
-  let forumChannels: any[] = $state([]);
-  let threadChannels = $derived([...textChannels, ...forumChannels]);
-  let guildEmojis: any[] = $state([]);
-
-  // UI State
-  let showConfirmModal = $state(false);
-  let confirmModalData = $state<{
-    title: string;
-    message: string;
-    action: (() => void) | null;
-    variant: "danger" | "warning" | "info"
-  }>({ title: "", message: "", action: null, variant: "danger" });
-
-  // Panel creation state
-  let showPanelCreator = $state(false);
-  let newPanel = $state({
-    channelId: null as string | null,
-    embedJson: "",
-    title: m.features.wizardTicketsName(),
-    description: m.tickets.pageDefaultPanelDescription(),
-    color: null as number | null
+  const autoSave = createAutoSave({
+    onError: (err) => notify(errorText(err, m.common.failedToSaveTheSettings()), "error")
   });
 
-  // Button creation state
-  let showButtonCreator = $state(false);
-  let newButton = $state({
-    label: "",
-    emoji: null as string | null,
-    style: "1", // Primary
-    openMessageJson: null as string | null,
-    modalJson: null as string | null,
-    channelFormat: "ticket-{username}-{id}",
-    categoryId: null as string | null,
-    archiveCategoryId: null as string | null,
-    threadChannelId: null as string | null,
-    supportRoles: [] as string[],
-    viewerRoles: [] as string[],
-    autoCloseTime: null as number | null,
-    requiredResponseTime: null as number | null,
-    maxActiveTickets: 1,
-    allowedPriorities: [] as string[],
-    defaultPriority: null as string | null,
-    saveTranscript: false,
-    deleteOnClose: false,
-    lockOnClose: false,
-    renameOnClose: false,
-    removeCreatorOnClose: false,
-    deleteDelay: null as number | null,
-    lockOnArchive: false,
-    renameOnArchive: false,
-    removeCreatorOnArchive: false,
-    autoArchiveOnClose: false
-  });
+  let guildId = $derived($currentGuild?.id ? BigInt($currentGuild.id) : null);
+  const staffId = $derived(data.user?.id ? BigInt(String(data.user.id)) : null);
+  const threadChannels = $derived([...channels, ...forums]);
 
-  // Button editing state
-  let editingButton = $state<any>(null);
-  let showButtonEditor = $state(false);
-
-  // Select menu creation state
-  let showSelectMenuCreator = $state(false);
-  let newSelectMenu = $state({
-    placeholder: m.tickets.pageDefaultSelectPlaceholder(),
-    firstOptionLabel: "",
-    firstOptionDescription: null as string | null,
-    firstOptionEmoji: null as string | null
-  });
-
-  // Priority creation state
-  let showPriorityCreator = $state(false);
-  let newPriority = $state({
-    id: "",
-    name: "",
-    emoji: "",
-    level: 1,
-    pingStaff: false,
-    responseTime: "PT5M", // 5 minutes default
-    color: 0x3498db
-  });
-
-  // Tag creation state
-  let showTagCreator = $state(false);
-  let newTag = $state({
-    id: "",
-    name: "",
-    description: "",
-    color: 0x3498db
-  });
-
-  // Case creation state
-  let showCaseCreator = $state(false);
-  let newCase = $state<{ title: string; description: string; creatorId: bigint }>({
-    title: "",
-    description: "",
-    creatorId: BigInt(0)
-  });
-  $effect(() => {
-    if (data?.user?.id && newCase.creatorId === BigInt(0)) {
-      newCase.creatorId = BigInt(data.user.id);
-    }
-  });
-
-  async function fetchAllData() {
-    if (!$currentGuild?.id || !data?.user?.id) return;
-
-    return await loadingStore.wrap("fetch-ticket-data", async () => {
-      try {
-        loading = true;
-
-        // Use the optimized overview endpoint for the main data
-        // Only fetch auxiliary data (roles, channels, etc.) separately
-        // Note: allTickets and panelStatuses are loaded lazily when their tabs are accessed
-        const [
-          overviewData,
-          blacklistData,
-          settingsData,
-          rolesData,
-          textChannelsData,
-          categoriesData,
-          forumChannelsData,
-          emojisData
-        ] = await Promise.all([
-          ticketApi.getTicketOverview($currentGuild.id, 30).catch(() => null),
-          ticketApi.getTicketBlacklist($currentGuild.id).catch(() => []),
-          ticketApi.getTicketSettings($currentGuild.id).catch(() => null),
-          clientApi.getRoles($currentGuild.id),
-          clientApi.getTextChannels($currentGuild.id),
-          clientApi.getCategories($currentGuild.id),
-          clientApi.getForumChannels($currentGuild.id).catch(() => []),
-          clientApi.getEmojis(BigInt(data.user!.id), false).catch(() => [])
-        ]);
-
-        // Unpack the overview data
-        if (overviewData) {
-          statistics = overviewData.statistics || null;
-          ticketActivity = overviewData.ticketActivity || [];
-          staffResponseStats = overviewData.staffResponseStats || [];
-          panels = overviewData.panels || [];
-          priorities = overviewData.priorities || [];
-          tags = overviewData.tags || [];
-          cases = overviewData.cases || [];
-        } else {
-          statistics = null;
-          ticketActivity = [];
-          staffResponseStats = [];
-          panels = [];
-          priorities = [];
-          tags = [];
-          cases = [];
-        }
-
-        // Set the rest of the data
-        // panelStatuses and allTickets are loaded lazily when needed (Panels/Cases tabs)
-        blacklistedUsers = blacklistData || [];
-        transcriptChannelId = settingsData?.transcriptChannelId || null;
-        logChannelId = settingsData?.logChannelId || null;
-        availableRoles = rolesData || [];
-        textChannels = textChannelsData || [];
-        categories = categoriesData || [];
-        forumChannels = forumChannelsData || [];
-        guildEmojis = emojisData || [];
-
-      } catch (err) {
-        logger.error("Failed to fetch ticket data:", err);
-        error = m.tickets.pageLoadFailed();
-      } finally {
-        loading = false;
-      }
-    }, "api", m.tickets.pageLoadingData());
+  function notify(message: string, type: "success" | "error" = "success") {
+    notificationMessage = message;
+    notificationType = type;
+    showNotification = true;
+    setTimeout(() => {
+      showNotification = false;
+    }, 3000);
   }
 
-  async function loadPanelDetails(panelId: bigint) {
-    if (!$currentGuild?.id) return;
-
+  async function guarded<T>(task: Promise<T>, apply: (value: T) => void) {
     try {
-      const [buttons, menus] = await Promise.all([
-        ticketApi.getPanelButtons($currentGuild.id, panelId),
-        ticketApi.getPanelSelectMenus($currentGuild.id, panelId)
-      ]);
-
-      panelButtons = buttons || [];
-      panelSelectMenus = menus || [];
+      apply(await task);
     } catch (err) {
-      logger.error("Failed to load panel details:", err);
+      logger.error("Failed to load ticket data:", err);
+      notify(errorText(err, m.tickets.pageLoadFailed()), "error");
     }
   }
 
-  async function loadAllTickets(force = false) {
-    if (!$currentGuild?.id || (allTickets.length > 0 && !force)) return;
+  const reloadPanels = (id: bigint) => guarded(ticketApi.getTicketPanels(id), value => (panels = value));
+  const reloadTickets = (id: bigint) => guarded(ticketApi.getGuildTickets(id, true, true, false), value => (tickets = value));
+  const reloadCases = (id: bigint) => guarded(ticketApi.getTicketCases(id), value => (cases = value));
+  const reloadPriorities = (id: bigint) => guarded(ticketApi.getTicketPriorities(id), value => (priorities = value));
+  const reloadTags = (id: bigint) => guarded(ticketApi.getTicketTags(id), value => (tags = value));
+  const reloadBlocked = (id: bigint) => guarded(ticketApi.getTicketBlacklist(id), value => (blocked = value));
+  const reloadOverview = (id: bigint) => guarded(ticketApi.getTicketOverview(id, 30), value => (overview = value));
 
-    try {
-      const tickets = await ticketApi.getGuildTickets($currentGuild.id, true, true, false);
-      allTickets = tickets || [];
-    } catch (err) {
-      logger.error("Failed to load all tickets:", err);
+  async function loadGuildData(id: bigint) {
+    loading = true;
+    const results = await Promise.allSettled([
+      reloadOverview(id),
+      reloadPanels(id),
+      reloadTickets(id),
+      reloadCases(id),
+      reloadPriorities(id),
+      reloadTags(id),
+      reloadBlocked(id),
+      ticketApi.getTicketSettings(id).then(value => (settings = value)),
+      clientApi.getRoles(id).then(value => (roles = value as Named[])),
+      clientApi.getTextChannels(id).then(value => (channels = value)),
+      clientApi.getCategories(id).then(value => (categories = value as Named[])),
+      clientApi.getForumChannels(id).then(value => (forums = value.map(f => ({ id: String(f.id), name: f.name })))),
+      data.user?.id ? clientApi.getEmojis(BigInt(String(data.user.id)), false).then(value => (emojis = value)) : Promise.resolve()
+    ]);
+    for (const result of results) {
+      if (result.status === "rejected") logger.error("Failed to load ticket data:", result.reason);
     }
+    if (!settings) settings = {};
+    loading = false;
   }
-
-  async function checkPanelStatus(panelId: bigint) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      checkingPanelStatus = true;
-      const result = await ticketApi.getSinglePanelStatus($currentGuild.id, panelId);
-      panelStatuses.set(result.panelId, result.status);
-      // Trigger reactivity
-      panelStatuses = new Map(panelStatuses);
-    } catch (err) {
-      logger.error("Failed to check panel status:", err);
-    } finally {
-      checkingPanelStatus = false;
-    }
-  }
-
-  function showConfirm(title: string, message: string, action: () => void, variant: "danger" | "warning" | "info" = "danger") {
-    confirmModalData = { title, message, action, variant };
-    showConfirmModal = true;
-  }
-
-  // Panel embed for creator
-  let panelEmbed = $state({
-    title: m.features.wizardTicketsName(),
-    description: m.tickets.pageDefaultPanelDescription(),
-    color: "#5865F2",
-    url: "",
-    author: { name: "", url: "", icon_url: "" },
-    thumbnail: { url: "" },
-    image: { url: "" },
-    footer: { text: "", icon_url: "" },
-    fields: []
-  });
-
-  function cleanEmbed(embed: any) {
-    const cleaned: any = {};
-    if (embed.title?.trim()) cleaned.title = embed.title;
-    if (embed.description?.trim()) cleaned.description = embed.description;
-    if (embed.color) cleaned.color = embed.color;
-    if (embed.url?.trim()) cleaned.url = embed.url;
-
-    if (embed.author?.name?.trim() || embed.author?.url?.trim() || embed.author?.icon_url?.trim()) {
-      cleaned.author = {};
-      if (embed.author.name?.trim()) cleaned.author.name = embed.author.name;
-      if (embed.author.url?.trim()) cleaned.author.url = embed.author.url;
-      if (embed.author.icon_url?.trim()) cleaned.author.icon_url = embed.author.icon_url;
-    }
-
-    if (embed.footer?.text?.trim() || embed.footer?.icon_url?.trim()) {
-      cleaned.footer = {};
-      if (embed.footer.text?.trim()) cleaned.footer.text = embed.footer.text;
-      if (embed.footer.icon_url?.trim()) cleaned.footer.icon_url = embed.footer.icon_url;
-    }
-
-    if (embed.thumbnail?.url?.trim()) cleaned.thumbnail = { url: embed.thumbnail.url };
-    if (embed.image?.url?.trim()) cleaned.image = { url: embed.image.url };
-    if (embed.fields?.length > 0) cleaned.fields = embed.fields;
-
-    return cleaned;
-  }
-
-  // Panel Management Functions
-  async function createPanel() {
-    if (!$currentGuild?.id || !newPanel.channelId) return;
-
-    try {
-      saving = true;
-
-      // panelEmbed is already a message object from FullscreenEmbedBuilder
-      const embedJson = Object.keys(panelEmbed).length > 0 ? JSON.stringify(panelEmbed) : "";
-
-      await ticketApi.createTicketPanel($currentGuild.id, {
-        channelId: BigInt(newPanel.channelId),
-        embedJson: embedJson,
-        title: null,
-        description: null,
-        color: null
-      });
-
-      showPanelCreator = false;
-      newPanel = {
-        channelId: null,
-        embedJson: "",
-        title: m.features.wizardTicketsName(),
-        description: m.tickets.pageDefaultPanelDescription(),
-        color: null
-      };
-      panelEmbed = {
-        title: m.features.wizardTicketsName(),
-        description: m.tickets.pageDefaultPanelDescription(),
-        color: "#5865F2",
-        url: "",
-        author: { name: "", url: "", icon_url: "" },
-        thumbnail: { url: "" },
-        image: { url: "" },
-        footer: { text: "", icon_url: "" },
-        fields: []
-      };
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to create panel:", err);
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function deletePanel(panelId: bigint, force: boolean = false) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.deleteTicketPanel($currentGuild.id, panelId, force);
-      selectedPanel = null;
-      panelButtons = [];
-      panelSelectMenus = [];
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to delete panel:", err);
-    }
-  }
-
-  async function recreatePanel(panelId: bigint) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.recreateTicketPanel($currentGuild.id, panelId);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to recreate panel:", err);
-    }
-  }
-
-  // Panel editing state (now inline, not modal)
-  let editingPanelEmbed = $state(false);
-  let tempPanelEmbed: any = $state({});
-
-  async function savePanelEmbed(embedData: any) {
-    if (!$currentGuild?.id || !selectedPanel) return;
-
-    try {
-      saving = true;
-      // embedData is already a message object from FullscreenEmbedBuilder
-      const embedJson = Object.keys(embedData).length > 0 ? JSON.stringify(embedData) : "";
-      await ticketApi.updateTicketPanelEmbed($currentGuild.id, selectedPanel.messageId, { embedJson });
-
-      editingPanelEmbed = false;
-      await fetchAllData();
-      if (selectedPanel) {
-        await loadPanelDetails(selectedPanel.messageId);
-      }
-    } catch (err) {
-      logger.error("Failed to update panel embed:", err);
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function movePanel(newChannelId: bigint) {
-    if (!$currentGuild?.id || !selectedPanel) return;
-
-    try {
-      await ticketApi.moveTicketPanel($currentGuild.id, selectedPanel.messageId, newChannelId);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to move panel:", err);
-    }
-  }
-
-  async function duplicatePanel(newChannelId: bigint) {
-    if (!$currentGuild?.id || !selectedPanel) return;
-
-    try {
-      await ticketApi.duplicateTicketPanel($currentGuild.id, selectedPanel.messageId);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to duplicate panel:", err);
-    }
-  }
-
-  /**
-   * Serialises the open message editor's value for the API. A cleared editor
-   * (null, an empty string, or an object with nothing in it) becomes an empty
-   * string rather than null, because the bot's settings endpoint ignores null
-   * fields; the bot stores an empty string as "use the default message".
-   */
-  function serializeTicketOpenMessage(value: unknown): string {
-    if (value === null || value === undefined || value === "") return "";
-    if (typeof value === "string") return value.trim() === "{}" ? "" : value;
-    if (typeof value === "object" && Object.keys(value as object).length === 0) return "";
-    return JSON.stringify(value);
-  }
-
-  async function addButton() {
-    if (!$currentGuild?.id || !selectedPanel || !newButton.label) return;
-
-    try {
-      saving = true;
-      await ticketApi.addPanelButton($currentGuild.id, selectedPanel.messageId, {
-        label: newButton.label,
-        emoji: newButton.emoji || null,
-        style: typeof newButton.style === "string" ? parseInt(newButton.style) : newButton.style,
-        openMessageJson: serializeTicketOpenMessage(newButton.openMessageJson),
-        modalJson: newButton.modalJson || null,
-        channelFormat: newButton.channelFormat || null,
-        categoryId: newButton.categoryId ? BigInt(newButton.categoryId) : null,
-        archiveCategoryId: newButton.archiveCategoryId ? BigInt(newButton.archiveCategoryId) : null,
-        threadChannelId: newButton.threadChannelId ? BigInt(newButton.threadChannelId) : null,
-        supportRoles: newButton.supportRoles?.length > 0 ? newButton.supportRoles.map(r => BigInt(r)) : null,
-        viewerRoles: newButton.viewerRoles?.length > 0 ? newButton.viewerRoles.map(r => BigInt(r)) : null,
-        autoCloseTime: newButton.autoCloseTime ? `PT${newButton.autoCloseTime}H` : null,
-        requiredResponseTime: newButton.requiredResponseTime ? `PT${newButton.requiredResponseTime}M` : null,
-        maxActiveTickets: newButton.maxActiveTickets,
-        allowedPriorities: newButton.allowedPriorities?.length > 0 ? newButton.allowedPriorities : null,
-        defaultPriority: newButton.defaultPriority || null
-      });
-
-      showButtonCreator = false;
-      resetButtonForm();
-      await loadPanelDetails(selectedPanel.messageId);
-    } catch (err) {
-      logger.error("Failed to add button:", err);
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function loadFullButton(buttonId: number) {
-    if (!$currentGuild?.id) return null;
-
-    try {
-      const buttonDetails = await ticketApi.getButton($currentGuild.id, buttonId);
-      logger.debug("Raw button details from API:", buttonDetails);
-      return buttonDetails;
-    } catch (err) {
-      logger.error("Failed to load button details:", err);
-      return null;
-    }
-  }
-
-  async function saveButtonEdits(button: any) {
-    if (!$currentGuild?.id || !button.id) return;
-
-    // Optimistic update - update local state immediately
-    const buttonIndex = panelButtons.findIndex(b => b.id === button.id);
-    const previousButton = buttonIndex >= 0 ? { ...panelButtons[buttonIndex] } : null;
-
-    if (buttonIndex >= 0) {
-      panelButtons[buttonIndex] = { ...panelButtons[buttonIndex], ...button };
-      panelButtons = [...panelButtons]; // Trigger reactivity
-    }
-
-    try {
-      saving = true;
-
-      // Helper to handle TimeSpan values - keep them in HH:mm:ss format if already a string, convert numbers to ISO 8601
-      const formatTimeSpan = (value: any, unit: "H" | "M" | "S"): string | null => {
-        if (!value) return null;
-
-        // If it's already a TimeSpan string like "01:30:00", keep it as-is
-        if (typeof value === "string" && value.includes(":")) {
-          return value;
-        }
-
-        // Otherwise it's a number, convert to ISO 8601
-        return `PT${value}${unit}`;
-      };
-
-      // Prepare update request - only send properties that exist in UpdateButtonRequest model
-      const updateRequest: any = {
-        label: button.label || null,
-        emoji: button.emoji || null,
-        style: typeof button.style === "string" ? parseInt(button.style) : button.style,
-        categoryId: button.categoryId ? BigInt(button.categoryId) : null,
-        archiveCategoryId: button.archiveCategoryId ? BigInt(button.archiveCategoryId) : null,
-        threadChannelId: button.threadChannelId ? BigInt(button.threadChannelId) : 0n,
-        supportRoles: button.supportRoles?.length > 0 ? button.supportRoles.map((r: string) => BigInt(r)) : null,
-        viewerRoles: button.viewerRoles?.length > 0 ? button.viewerRoles.map((r: string) => BigInt(r)) : null,
-        autoCloseTime: formatTimeSpan(button.autoCloseTime, "H"),
-        requiredResponseTime: formatTimeSpan(button.requiredResponseTime, "M"),
-        maxActiveTickets: button.maxActiveTickets,
-        allowedPriorities: button.allowedPriorities?.length > 0 ? button.allowedPriorities : null,
-        defaultPriority: button.defaultPriority || null,
-        saveTranscript: button.saveTranscript,
-        deleteOnClose: button.deleteOnClose,
-        lockOnClose: button.lockOnClose,
-        renameOnClose: button.renameOnClose,
-        removeCreatorOnClose: button.removeCreatorOnClose,
-        deleteDelay: formatTimeSpan(button.deleteDelay, "S"),
-        lockOnArchive: button.lockOnArchive,
-        renameOnArchive: button.renameOnArchive,
-        removeCreatorOnArchive: button.removeCreatorOnArchive,
-        autoArchiveOnClose: button.autoArchiveOnClose,
-        modalJson: button.modalJson || null,
-        openMessageJson: serializeTicketOpenMessage(button.openMessageJson)
-      };
-
-      logger.debug("Sending update request:", updateRequest);
-
-      await ticketApi.updateButton($currentGuild.id, button.id, updateRequest);
-
-      // Success - no need to reload, optimistic update is correct
-    } catch (err) {
-      logger.error("Failed to update button:", err);
-      // Rollback on error
-      if (previousButton && buttonIndex >= 0) {
-        panelButtons[buttonIndex] = previousButton;
-        panelButtons = [...panelButtons]; // Trigger reactivity
-      }
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function deleteButton(buttonId: number) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.deleteButton($currentGuild.id, buttonId);
-      if (selectedPanel) {
-        await loadPanelDetails(selectedPanel.messageId);
-      }
-    } catch (err) {
-      logger.error("Failed to delete button:", err);
-    }
-  }
-
-  async function reorderButtons(buttonOrder: number[]) {
-    if (!$currentGuild?.id || !selectedPanel) return;
-
-    try {
-      await ticketApi.reorderPanelButtons($currentGuild.id, selectedPanel.messageId, {
-        buttonOrder
-      });
-      await loadPanelDetails(selectedPanel.messageId);
-    } catch (err) {
-      logger.error("Failed to reorder buttons:", err);
-    }
-  }
-
-  async function addSelectMenu() {
-    if (!$currentGuild?.id || !selectedPanel || !newSelectMenu.placeholder || !newSelectMenu.firstOptionLabel) return;
-
-    try {
-      saving = true;
-      await ticketApi.addPanelSelectMenu($currentGuild.id, selectedPanel.messageId, newSelectMenu);
-
-      showSelectMenuCreator = false;
-      newSelectMenu = {
-        placeholder: m.tickets.pageDefaultSelectPlaceholder(),
-        firstOptionLabel: "",
-        firstOptionDescription: null,
-        firstOptionEmoji: null
-      };
-      await loadPanelDetails(selectedPanel.messageId);
-    } catch (err) {
-      logger.error("Failed to add select menu:", err);
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function deleteSelectMenu(menuId: number) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.deleteSelectMenu($currentGuild.id, menuId);
-      if (selectedPanel) {
-        await loadPanelDetails(selectedPanel.messageId);
-      }
-    } catch (err) {
-      logger.error("Failed to delete select menu:", err);
-    }
-  }
-
-  async function updateMenuPlaceholder(menuId: number, placeholder: string) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.updateSelectMenuPlaceholder($currentGuild.id, menuId, { placeholder });
-      if (selectedPanel) {
-        await loadPanelDetails(selectedPanel.messageId);
-      }
-    } catch (err) {
-      logger.error("Failed to update menu placeholder:", err);
-    }
-  }
-
-  async function addSelectOption(menuId: number, option: any) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.addSelectMenuOption($currentGuild.id, menuId, {
-        ...option,
-        openMessageJson: serializeTicketOpenMessage(option.openMessageJson)
-      });
-      if (selectedPanel) {
-        await loadPanelDetails(selectedPanel.messageId);
-      }
-    } catch (err) {
-      logger.error("Failed to add select option:", err);
-    }
-  }
-
-  async function loadFullSelectOption(optionId: number) {
-    if (!$currentGuild?.id) return null;
-
-    try {
-      const optionDetails = await ticketApi.getSelectMenuOption($currentGuild.id, optionId);
-      logger.debug("Raw select option details from API:", optionDetails);
-      return optionDetails;
-    } catch (err) {
-      logger.error("Failed to load select option details:", err);
-      return null;
-    }
-  }
-
-  async function saveSelectOption(option: any) {
-    if (!$currentGuild?.id || !option.id) return;
-
-    // Optimistic update - find and update the option in panelSelectMenus
-    let menuIndex = -1;
-    let optionIndex = -1;
-    let previousOption: any = null;
-
-    for (let i = 0; i < panelSelectMenus.length; i++) {
-      const menu = panelSelectMenus[i];
-      if (menu.options) {
-        const idx = menu.options.findIndex((o: any) => o.id === option.id);
-        if (idx >= 0) {
-          menuIndex = i;
-          optionIndex = idx;
-          previousOption = { ...menu.options[idx] };
-          // Update the option
-          menu.options[idx] = { ...menu.options[idx], ...option };
-          break;
-        }
-      }
-    }
-
-    if (menuIndex >= 0) {
-      panelSelectMenus = [...panelSelectMenus]; // Trigger reactivity
-    }
-
-    try {
-      saving = true;
-
-      // Helper to handle TimeSpan values - keep them in HH:mm:ss format if already a string, convert numbers to ISO 8601
-      const formatTimeSpan = (value: any, unit: "H" | "M" | "S"): string | null => {
-        if (!value) return null;
-
-        // If it's already a TimeSpan string like "01:30:00", keep it as-is
-        if (typeof value === "string" && value.includes(":")) {
-          return value;
-        }
-
-        // Otherwise it's a number, convert to ISO 8601
-        return `PT${value}${unit}`;
-      };
-
-      // Prepare update request
-      const updateRequest: any = {
-        label: option.label || null,
-        description: option.description || null,
-        emoji: option.emoji || null,
-        categoryId: option.categoryId ? BigInt(option.categoryId) : null,
-        archiveCategoryId: option.archiveCategoryId ? BigInt(option.archiveCategoryId) : null,
-        threadChannelId: option.threadChannelId ? BigInt(option.threadChannelId) : 0n,
-        supportRoles: option.supportRoles?.length > 0 ? option.supportRoles.map((r: string) => BigInt(r)) : null,
-        viewerRoles: option.viewerRoles?.length > 0 ? option.viewerRoles.map((r: string) => BigInt(r)) : null,
-        autoCloseTime: formatTimeSpan(option.autoCloseTime, "H"),
-        requiredResponseTime: formatTimeSpan(option.requiredResponseTime, "M"),
-        maxActiveTickets: option.maxActiveTickets,
-        allowedPriorities: option.allowedPriorities?.length > 0 ? option.allowedPriorities : null,
-        defaultPriority: option.defaultPriority || null,
-        saveTranscript: option.saveTranscript,
-        deleteOnClose: option.deleteOnClose,
-        lockOnClose: option.lockOnClose,
-        renameOnClose: option.renameOnClose,
-        removeCreatorOnClose: option.removeCreatorOnClose,
-        deleteDelay: formatTimeSpan(option.deleteDelay, "S"),
-        lockOnArchive: option.lockOnArchive,
-        renameOnArchive: option.renameOnArchive,
-        removeCreatorOnArchive: option.removeCreatorOnArchive,
-        autoArchiveOnClose: option.autoArchiveOnClose,
-        modalJson: option.modalJson || null,
-        openMessageJson: serializeTicketOpenMessage(option.openMessageJson)
-      };
-
-      logger.debug("Sending select option update request:", updateRequest);
-
-      await ticketApi.updateSelectMenuOption($currentGuild.id, option.id, updateRequest);
-
-      // Success - no need to reload, optimistic update is correct
-    } catch (err) {
-      logger.error("Failed to update select option:", err);
-      // Rollback on error
-      if (previousOption && menuIndex >= 0 && optionIndex >= 0) {
-        panelSelectMenus[menuIndex].options[optionIndex] = previousOption;
-        panelSelectMenus = [...panelSelectMenus]; // Trigger reactivity
-      }
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function deleteSelectOption(optionId: number) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.deleteSelectMenuOption($currentGuild.id, optionId);
-      if (selectedPanel) {
-        await loadPanelDetails(selectedPanel.messageId);
-      }
-    } catch (err) {
-      logger.error("Failed to delete select option:", err);
-    }
-  }
-
-  // Priority Management Functions
-  async function createPriority() {
-    if (!$currentGuild?.id || !newPriority.id || !newPriority.name) return;
-
-    try {
-      saving = true;
-      await ticketApi.createTicketPriority($currentGuild.id, newPriority);
-
-      showPriorityCreator = false;
-      newPriority = {
-        id: "",
-        name: "",
-        emoji: "",
-        level: 1,
-        pingStaff: false,
-        responseTime: "PT5M",
-        color: 0x3498db
-      };
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to create priority:", err);
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function deletePriority(priorityId: number) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.deleteTicketPriority($currentGuild.id, priorityId);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to delete priority:", err);
-    }
-  }
-
-  // Tag Management Functions
-  async function createTag() {
-    if (!$currentGuild?.id || !newTag.id || !newTag.name) return;
-
-    try {
-      saving = true;
-      await ticketApi.createTicketTag($currentGuild.id, newTag);
-
-      showTagCreator = false;
-      newTag = {
-        id: "",
-        name: "",
-        description: "",
-        color: 0x3498db
-      };
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to create tag:", err);
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function deleteTag(tagId: number) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.deleteTicketTag($currentGuild.id, tagId);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to delete tag:", err);
-    }
-  }
-
-  // Case Management Functions
-  async function createCase() {
-    if (!$currentGuild?.id || !newCase.title || !data?.user?.id) return;
-
-    try {
-      saving = true;
-      await ticketApi.createTicketCase($currentGuild.id, newCase);
-
-      showCaseCreator = false;
-      newCase = {
-        title: "",
-        description: "",
-        creatorId: BigInt(data.user.id)
-      };
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to create case:", err);
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function closeCase(caseId: number, archiveTickets: boolean = false) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.closeTicketCase($currentGuild.id, caseId);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to close case:", err);
-    }
-  }
-
-  async function reopenCase(caseId: number) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.reopenTicketCase($currentGuild.id, caseId);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to reopen case:", err);
-    }
-  }
-
-  async function linkTicketsToCase(caseId: number, ticketIds: number[]) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.linkTicketsToCase($currentGuild.id, caseId, ticketIds);
-      await fetchAllData();
-      if (selectedCase?.id === caseId) {
-        selectedCase = await ticketApi.getTicketCase($currentGuild.id, caseId);
-      }
-    } catch (err) {
-      logger.error("Failed to link tickets to case:", err);
-    }
-  }
-
-  async function unlinkTickets(ticketIds: number[]) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.unlinkTickets($currentGuild.id, ticketIds);
-      await fetchAllData();
-      if (selectedCase) {
-        selectedCase = await ticketApi.getTicketCase($currentGuild.id, selectedCase.id);
-      }
-    } catch (err) {
-      logger.error("Failed to unlink tickets:", err);
-    }
-  }
-
-  // Advanced Functions
-  async function blacklistUser(userId: bigint, reason: string = "") {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.blacklistUser($currentGuild.id, userId, { reason });
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to blacklist user:", err);
-    }
-  }
-
-  async function unblacklistUser(userId: bigint) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.unblacklistUser($currentGuild.id, userId);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to unblacklist user:", err);
-    }
-  }
-
-  async function closeInactiveTickets(hours: number) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await ticketApi.closeInactiveTickets($currentGuild.id, hours);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to close inactive tickets:", err);
-    }
-  }
-
-  async function setTranscriptChannel(channelId: bigint | null) {
-    if (!$currentGuild?.id) return;
-    const guildId = $currentGuild.id;
-    const previous = transcriptChannelId;
-    transcriptChannelId = channelId;
-    await autoSave.now("transcriptChannel", async () => {
-      try {
-        await ticketApi.setTicketTranscriptChannel(guildId, { channelId: channelId || BigInt(0) });
-      } catch (err) {
-        transcriptChannelId = previous;
-        throw err;
-      }
-    });
-  }
-
-  async function setLogChannel(channelId: bigint | null) {
-    if (!$currentGuild?.id) return;
-    const guildId = $currentGuild.id;
-    const previous = logChannelId;
-    logChannelId = channelId;
-    await autoSave.now("logChannel", async () => {
-      try {
-        await ticketApi.setTicketLogChannel(guildId, { channelId: channelId || BigInt(0) });
-      } catch (err) {
-        logChannelId = previous;
-        throw err;
-      }
-    });
-  }
-
-  function resetButtonForm() {
-    newButton = {
-      label: "",
-      emoji: null,
-      style: "1",
-      openMessageJson: null,
-      modalJson: null,
-      channelFormat: "ticket-{username}-{id}",
-      categoryId: null,
-      archiveCategoryId: null,
-      threadChannelId: null,
-      supportRoles: [],
-      viewerRoles: [],
-      autoCloseTime: null,
-      requiredResponseTime: null,
-      maxActiveTickets: 1,
-      allowedPriorities: [],
-      defaultPriority: null,
-      saveTranscript: false,
-      deleteOnClose: false,
-      lockOnClose: false,
-      renameOnClose: false,
-      removeCreatorOnClose: false,
-      deleteDelay: null,
-      lockOnArchive: false,
-      renameOnArchive: false,
-      removeCreatorOnArchive: false,
-      autoArchiveOnClose: false
-    };
-  }
-
-  onMount(() => {
-    fetchAllData();
-  });
 
   $effect(() => {
-    if ($currentGuild) {
-      fetchAllData();
+    if (!$currentGuild) {
+      void goto("/dashboard");
+      return;
     }
-  });
-
-  // Lazy-load tickets when the Tickets or Cases tab is accessed
-  $effect(() => {
-    if ((activeTab === "cases" || activeTab === "tickets") && $currentGuild?.id) {
-      loadAllTickets();
+    if ($currentGuild.icon) {
+      const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
+      colorStore.extractFromServerIcon(serverIconUrl);
+    } else if ($currentInstance?.botAvatar) {
+      colorStore.extractFromImage($currentInstance.botAvatar);
+    }
+    if (loadedGuildId !== $currentGuild.id.toString()) {
+      loadedGuildId = $currentGuild.id.toString();
+      void loadGuildData(BigInt($currentGuild.id));
     }
   });
 </script>
 
-<DashboardPageLayout
-  guildName={$currentGuild?.name || m.common.dashboard()}
-  subtitle={m.tickets.pageSubtitle()}
-  icon="fa-ticket"
-  tabs={tabs}
-  title={m.tickets.pageTitle()}
+{#snippet statusMessages()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-[10001]" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
+
+<PluginPage
+  {statusMessages}
   {autoSave}
-  bind:activeTab
+  icon="fa-ticket"
+  guildName={$currentGuild?.name || m.common.dashboard()}
+  title={m.features.ticketsName()}
+  subtitle={m.tickets.pageSubtitle()}
 >
-
-  {#if loading}
-    <div class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2" style="border-color: {$colorStore.primary}"></div>
-      <span class="ml-3" style="color: {$colorStore.text}">{m.tickets.pageLoadingSystem()}</span>
-    </div>
-  {:else if error}
-    <div class="p-6 rounded-xl mb-6 transition-all" role="alert"
-         style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}40;">
-      <div class="flex items-center gap-3">
-        <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-        <div style="color: {$colorStore.accent}">
-          <div class="font-semibold text-lg">{m.common.errorOccurred()}</div>
-          <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
-        </div>
-      </div>
-    </div>
-  {:else}
-
-    {#if activeTab === 'overview'}
-      <OverviewTab
-        {statistics}
-        {ticketActivity}
-        {staffResponseStats}
-        {panels}
-        {priorities}
-        {tags}
-        {cases}
-        bind:activeTab
-      />
-    {/if}
-
-    {#if activeTab === 'tickets'}
-      <TicketsTab
-        {allTickets}
-        {priorities}
-        {tags}
-        staffId={data.user?.id ? BigInt(data.user.id) : null}
-        {showConfirm}
-        reloadTickets={() => loadAllTickets(true)}
-      />
-    {/if}
-
-    {#if activeTab === 'panels'}
-      <PanelsTab
-        {data}
-        {panels}
-        {panelStatuses}
-        {checkingPanelStatus}
-        bind:selectedPanel
-        {panelButtons}
-        {panelSelectMenus}
-        bind:showPanelCreator
-        bind:newPanel
-        bind:panelEmbed
-        bind:showButtonCreator
-        bind:newButton
-        bind:showSelectMenuCreator
-        bind:newSelectMenu
-        bind:editingPanelEmbed
-        bind:tempPanelEmbed
-        {textChannels}
+  {#if guildId}
+    {#key guildId}
+      <OverviewCard {overview} {priorities} {loading} />
+      <PanelsCard
+        {guildId}
+        bind:panels
+        {loading}
+        {channels}
         {categories}
         {threadChannels}
-        {availableRoles}
+        {roles}
+        {emojis}
         {priorities}
-        {guildEmojis}
-        {saving}
-        {createPanel}
-        {deletePanel}
-        {recreatePanel}
-        {savePanelEmbed}
-        {movePanel}
-        {duplicatePanel}
-        {loadPanelDetails}
-        {addButton}
-        {loadFullButton}
-        saveButton={saveButtonEdits}
-        {deleteButton}
-        {reorderButtons}
-        {addSelectMenu}
-        {deleteSelectMenu}
-        {updateMenuPlaceholder}
-        {addSelectOption}
-        {loadFullSelectOption}
-        {saveSelectOption}
-        {deleteSelectOption}
-        {showConfirm}
-        {fetchAllData}
-        {checkPanelStatus}
+        user={data.user}
+        {autoSave}
+        onreload={() => reloadPanels(guildId)}
+        onerror={(message) => notify(message, "error")}
+        onsuccess={(message) => notify(message)}
       />
-    {/if}
-
-    {#if activeTab === 'configuration'}
-      <ConfigurationTab
+      <TicketsCard
+        {guildId}
+        {tickets}
+        {loading}
         {priorities}
         {tags}
-        {transcriptChannelId}
-        {logChannelId}
-        bind:showPriorityCreator
-        bind:newPriority
-        bind:showTagCreator
-        bind:newTag
-        {textChannels}
-        {guildEmojis}
-        {saving}
-        {createPriority}
-        {deletePriority}
-        {createTag}
-        {deleteTag}
-        {setTranscriptChannel}
-        {setLogChannel}
-        {showConfirm}
-        {fetchAllData}
-      />
-    {/if}
-
-    {#if activeTab === 'cases'}
-      <CasesTab
         {cases}
-        bind:selectedCase
-        bind:showCaseCreator
-        bind:newCase
-        {allTickets}
-        {saving}
-        {createCase}
-        {closeCase}
-        {reopenCase}
-        {linkTicketsToCase}
-        {unlinkTickets}
-        {showConfirm}
-        {fetchAllData}
+        {staffId}
+        onreload={async () => {
+          await reloadTickets(guildId);
+          await reloadOverview(guildId);
+        }}
+        onerror={(message) => notify(message, "error")}
+        onsuccess={(message) => notify(message)}
       />
-    {/if}
-
-    {#if activeTab === 'advanced'}
-      <AdvancedTab
-        {blacklistedUsers}
-        {panels}
+      <CasesCard
+        {guildId}
+        {cases}
+        {tickets}
+        {loading}
+        {staffId}
+        {autoSave}
+        onreload={() => reloadCases(guildId)}
+        onticketsreload={() => reloadTickets(guildId)}
+        onerror={(message) => notify(message, "error")}
+      />
+      <PrioritiesCard
+        {guildId}
+        {priorities}
+        {loading}
+        {emojis}
+        onreload={() => reloadPriorities(guildId)}
+        onerror={(message) => notify(message, "error")}
+      />
+      <TagsCard {guildId} {tags} {loading} onreload={() => reloadTags(guildId)} onerror={(message) => notify(message, "error")} />
+      {#if settings}
+        <SettingsCard {guildId} {settings} {channels} {roles} {autoSave} />
+      {/if}
+      <BlacklistCard {guildId} users={blocked} {loading} onreload={() => reloadBlocked(guildId)} onerror={(message) => notify(message, "error")} />
+      <BatchCard
+        {guildId}
         {categories}
-        {availableRoles}
-        {saving}
-        {blacklistUser}
-        {unblacklistUser}
-        {closeInactiveTickets}
-        {showConfirm}
-        {fetchAllData}
+        {roles}
+        onreload={async () => {
+          await reloadTickets(guildId);
+          await reloadOverview(guildId);
+        }}
+        onerror={(message) => notify(message, "error")}
+        onsuccess={(message) => notify(message)}
       />
-    {/if}
+    {/key}
   {/if}
-</DashboardPageLayout>
-
-<ConfirmationModal
-  bind:isOpen={showConfirmModal}
-  message={confirmModalData.message}
-  oncancel={() => showConfirmModal = false}
-  onconfirm={() => confirmModalData.action?.()}
-  title={confirmModalData.title}
-  variant={confirmModalData.variant}
-/>
-
-<style lang="postcss">
-    @reference '../../../app.css';
-</style>
+</PluginPage>

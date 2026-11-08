@@ -1,7 +1,7 @@
 ---
 title: Reputation
 slug: reputation
-summary: Let members thank each other with reputation points, with cooldowns and anti-abuse limits, role rewards at thresholds, reaction-based giving, and optional decay for inactive members.
+summary: Members thank each other with reputation points that can earn role rewards
 icon: fa-trophy
 category: Community
 dashboard: /dashboard/reputation
@@ -12,11 +12,11 @@ related: [xp, administration]
 
 ## What it does
 
-A member runs `rep @user` to give one reputation point, optionally with a reason. The receiver's total goes up, the giver's daily streak is tracked, and the history keeps who gave what and why. Anyone can check totals with `repcheck`, see the server ranking with `repleaderboard`, and read the last ten entries with `rephistory`.
+A member runs `rep @user` to give one reputation point, optionally with a reason. The receiver's total goes up and the giver's daily streak is tracked, while the history keeps who gave what and why. Anyone can check totals with `repcheck` and read the last ten entries with `rephistory`. `repleaderboard` shows the server ranking.
 
-Staff configure how freely rep flows: a cooldown per giver and receiver pair, daily and weekly caps, and minimum account age, server time and message count before someone may give at all. Channels can be disabled for rep or given a multiplier. Reputation can also be earned from reactions: a configured emoji on a message gives its author points.
+Staff configure how freely rep flows, with a cooldown per giver and receiver pair and with daily and weekly caps. They can also require a minimum account age, server time and message count before someone may give at all. Channels can be disabled for rep or given a multiplier. Reputation can also be earned from reactions: a configured emoji on a message gives its author points.
 
-At chosen thresholds the bot hands out roles, announces the milestone in a channel, and DMs the member. Optional decay slowly removes points from members who have neither given nor received rep for a while, so the leaderboard reflects current activity.
+At chosen thresholds the bot hands out roles and DMs the member, and it can announce the milestone in a channel. Optional decay slowly removes points from members who have neither given nor received rep for a while, so the leaderboard reflects current activity.
 
 ## Why you would use it
 
@@ -54,7 +54,7 @@ Giving rep on consecutive days builds a streak; a gap of more than a day and a h
 
 ## Reactions
 
-`repreaction <emoji> [amount] [type]` makes a reaction give rep to the message author. The reactor must not be a bot, and removing the reaction takes the points back. The command defaults to one point of standard rep, and each reaction config carries its own cooldown.
+The **Reactions** tab, or `repreaction <emoji> [amount] [type]`, makes a reaction give rep to the message author. The reactor must not be a bot, and removing the reaction takes the points back. The command defaults to one point of standard rep, and each reaction config carries its own cooldown.
 
 ## Role rewards
 
@@ -68,36 +68,43 @@ When enabled, every hour the bot checks whether it is time to decay. `daily` run
 
 ## Command requirements
 
-`repcommandreq <command> <minimum> [type] [#channels]` blocks a command until the member has that much rep, optionally of one custom type and optionally only in certain channels. `repcommandbypass` exempts roles, and `repcommandinfo` lets anyone see what a command needs.
+`repcommandreq <command> <minimum> [type] [#channels]` blocks a command until the member has that much rep, optionally of one custom type and optionally only in certain channels. `repcommandbypass` exempts roles from that, and `repcommandinfo` lets anyone see what a command needs.
 
 ## Settings
 
-The Reputation page has four tabs: **Configuration**, **Role Rewards**, **Leaderboard** and **Statistics**.
+The Reputation system page has five tabs: **Configuration**, **Role rewards**, **Reactions**, **Leaderboard** and **Statistics**. The switch in the page header turns the whole system on or off. Changes on **Configuration** save automatically.
+
+The **System configuration** card on **Configuration**:
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
-| Enable Reputation System | on | Master switch |
-| Cooldown (minutes) | 60 | Per giver and receiver pair |
-| Daily Limit | 10 | Rep per giver per day |
-| Weekly Limit (optional) | none | Rep per giver per week |
-| Min Account Age (days) | 7 | Giver requirement |
-| Min Server Time (hours) | 24 | Giver requirement |
-| Min Message Count | 10 | Giver requirement |
-| Notification Channel (optional) | none | Where milestone messages go |
-| Allow Negative Reputation | off | Enables negative amounts |
-| Enable Anonymous Reputation | off | Lets `repanon` hide the giver |
+| Cooldown (minutes) | 60 | Per giver and receiver pair, minimum 1 |
+| Daily limit | 10 | Rep per giver per day, minimum 1 |
+| Weekly limit (optional) | none | Rep per giver per week, minimum 1 |
+| Min account age (days) | 7 | Giver requirement |
+| Min server time (hours) | 24 | Giver requirement |
+| Min message count | 10 | Giver requirement |
+| Notification channel (optional) | No notifications | Where milestone messages go |
+| Allow negative reputation | off | Enables negative amounts |
+| Enable anonymous reputation | off | Lets `repanon` hide the giver |
 
-Decay is not on the dashboard; use the `repdecay*` commands below.
+The **Decay** card has its own switch plus **Schedule** (**Daily**, **Weekly**, **Monthly**, **Fixed** or **Percentage**), **Lost per decay** (1 to 100) and **Inactive days before decay** (1 to 365). The `repdecay*` commands change the same settings.
 
-**Role Rewards** has a form with **Role**, **Reputation Required**, **Announce Channel (optional)**, **Bonus XP (optional)**, **Remove role if rep drops below threshold** and **Send DM notification**. **Leaderboard** shows the ranking and opens a member's history. **Statistics** shows total users, total rep given, transactions and average rep.
+**Role rewards** lists rewards as "Role rewards (count)". **Add role reward** opens a sheet with **Role**, **Reputation required**, **Announce channel (optional)**, **Bonus XP (optional)**, **Remove role if rep drops below threshold** and **Send DM notification**. Each reward can be edited or removed.
+
+**Reactions** has two cards. **Reactions that give reputation** lists each emoji with its amount and type, and adds new ones with an emoji picker, **Reputation per reaction** (negative values down to -100 are accepted) and a type, then **Add**. **Custom types** lists custom reputation types and adds one from a **Short name** and a **Display name**. **Standard** is always available.
+
+**Leaderboard** shows **Reputation leaderboard** with paging. **View history** on a member opens **Reputation history**, where staff can **Take** points, **Set total**, **Reset** the member or **Freeze** and **Unfreeze** them.
+
+**Statistics** shows **Total users**, **Total rep given**, **Transactions** and **Average rep**, plus **Top givers** and **Recent activity**.
 
 ## Setup walkthrough
 
-1. Open **Reputation** in the dashboard. On **Configuration**, turn **Enabled** on.
-2. Set **Cooldown**, **Daily Limit** and the three minimum requirements to suit your server's size.
-3. Pick a **Notification channel** for milestones and save.
-4. On **Role Rewards**, add a role with its **Reputation Required** and tick **Remove role if rep drops below threshold** if you want it to be earned continuously.
-5. In Discord, run `repreaction <emoji> 1` to enable reaction rep, and `repchannel #bot-spam disabled` to keep spam channels out.
+1. Open **Reputation** in the dashboard and turn the header switch on.
+2. On **Configuration**, set **Cooldown (minutes)**, **Daily limit** and the three minimum requirements to suit your server's size.
+3. Pick a **Notification channel (optional)** for milestones.
+4. On **Role rewards**, press **Add role reward**, choose a **Role** and its **Reputation required**, and tick **Remove role if rep drops below threshold** if you want it to be earned continuously.
+5. On **Reactions**, pick an emoji, an amount and a type, then press **Add** to enable reaction rep. In Discord, run `repchannel #bot-spam disabled` to keep spam channels out.
 6. Test with a second account: `rep @you great help`, then `repcheck @you`.
 
 > [!WARNING]

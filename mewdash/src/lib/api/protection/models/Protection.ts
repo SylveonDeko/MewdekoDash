@@ -1,5 +1,70 @@
 // lib/api/protection/models/Protection.ts
 
+export type AutomodRuleName =
+  | "Caps"
+  | "Attachments"
+  | "Media"
+  | "Files"
+  | "Emoji"
+  | "Spoilers"
+  | "Zalgo"
+  | "Commands"
+  | "ImageOnly"
+  | "VideoOnly";
+
+export interface AutomodRuleSettings {
+  rule: AutomodRuleName;
+  enabled: boolean;
+  /** Comma separated action names, or "none". */
+  actions: string;
+  actionMinutes: number;
+  actionMessage: string | null;
+  minLength: number;
+  capsPercent: number;
+  maxAttachments: number;
+  windowSeconds: number;
+  maxEmojis: number;
+  maxSpoilers: number;
+  zalgoThreshold: number;
+  allowThreads: boolean;
+  mediaChannelIds: bigint[];
+  exemptRoleIds: bigint[];
+  exemptChannelIds: bigint[];
+}
+
+export interface AutomodRuleRequest {
+  enabled: boolean;
+  actions?: string;
+  actionMinutes?: number;
+  actionMessage?: string;
+  minLength?: number;
+  capsPercent?: number;
+  maxAttachments?: number;
+  windowSeconds?: number;
+  maxEmojis?: number;
+  maxSpoilers?: number;
+  zalgoThreshold?: number;
+  allowThreads?: boolean;
+  mediaChannelIds?: bigint[];
+  exemptRoleIds?: bigint[];
+  exemptChannelIds?: bigint[];
+}
+
+export interface AutomodSharedSettings {
+  logChannelId: bigint | null;
+  reviewChannelId: bigint | null;
+  exemptRoleIds: bigint[];
+  exemptChannelIds: bigint[];
+}
+
+export interface AutomodSharedRequest {
+  /** 0 clears the channel. */
+  logChannelId?: bigint | number;
+  reviewChannelId?: bigint | number;
+  exemptRoleIds?: bigint[];
+  exemptChannelIds?: bigint[];
+}
+
 export interface AddPatternRequest {
   pattern: string;
   name: string;

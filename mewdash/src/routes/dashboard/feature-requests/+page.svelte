@@ -1,851 +1,128 @@
 <!-- routes/dashboard/feature-requests/+page.svelte -->
 <script lang="ts">
   import { m } from "$lib/i18n";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/state";
+  import { fade } from "svelte/transition";
   import { onMount } from "svelte";
-  import { fade, fly } from "svelte/transition";
-  import { featureRequestsApi, ownershipApi } from "$lib/api/index.ts";
-  import type {
-    FeatureRequestCategory,
-    FeatureRequestEntry,
-    FeatureRequestSettings,
-    FeatureRequestStats,
-    FeatureRequestStatus,
-  } from "$lib/api/featurerequests/models";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { logger } from "$lib/logger";
-  import { loadingStore } from "$lib/stores/loadingStore";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
-  import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
+  import { ownershipApi } from "$lib/api/index.ts";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { colorStore } from "$lib/stores/colorStore.ts";
+  import { logger } from "$lib/logger.ts";
   import { createAutoSave } from "$lib/utils/autoSave.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import PluginPage from "$lib/components/plugin/PluginPage.svelte";
+  import BrowseTab from "./components/BrowseTab.svelte";
+  import MineTab from "./components/MineTab.svelte";
+  import SettingsTab from "./components/SettingsTab.svelte";
+  import SuggestTab from "./components/SuggestTab.svelte";
+  import type { TabId } from "./components/requestModel";
 
   let { data } = $props();
 
-  // The report channel saves as it is typed; failures show inline under the field and in the header.
+  let owner = $state(false);
+  let showNotification = $state(false);
+  let notificationMessage = $state("");
+  let notificationType: "success" | "error" = $state("success");
+
   const autoSave = createAutoSave();
 
-  let isOwner = $state(false);
-  let activeTab = $state("browse");
-
-  let entries: FeatureRequestEntry[] = $state([]);
-  let mine: FeatureRequestEntry[] = $state([]);
-  let total = $state(0);
-  let page = $state(1);
-  let pageSize = $state(25);
-  let loading = $state(true);
-  let error: string | null = $state(null);
-  let expandedId: number | null = $state(null);
-
-  let statusFilter: FeatureRequestStatus | null = $state("open");
-  let categoryFilter: FeatureRequestCategory | null = $state(null);
-  let sort: "votes" | "newest" = $state("votes");
-  let search = $state("");
-
-  let formCategory: FeatureRequestCategory = $state("feature");
-  let formTitle = $state("");
-  let formBody = $state("");
-  let formAttachGuild = $state(true);
-  let submitting = $state(false);
-  let submitError: string | null = $state(null);
-  let submitted: FeatureRequestEntry | null = $state(null);
-
-  let stats = $state<FeatureRequestStats | null>(null);
-  let settings = $state<FeatureRequestSettings | null>(null);
-  let channelInput = $state("");
-  let settingsError: string | null = $state(null);
-
-  let statusTarget = $state<FeatureRequestEntry | null>(null);
-  let statusChoice: FeatureRequestStatus = $state("open");
-  let statusNote = $state("");
-  let savingStatus = $state(false);
-
-  let deleteTarget = $state<FeatureRequestEntry | null>(null);
-  let confirmDeleteOpen = $state(false);
-
-  let tabs = $derived(
-    isOwner
-      ? [
-          { id: "browse", label: m.featureRequests.tabBrowse(), icon: "fa-lightbulb" },
-          { id: "submit", label: m.featureRequests.tabSuggest(), icon: "fa-paper-plane" },
-          { id: "mine", label: m.featureRequests.tabMine(), icon: "fa-user" },
-          { id: "settings", label: m.common.settings(), icon: "fa-cog" },
-        ]
-      : [
-          { id: "browse", label: m.featureRequests.tabBrowse(), icon: "fa-lightbulb" },
-          { id: "submit", label: m.featureRequests.tabSuggest(), icon: "fa-paper-plane" },
-          { id: "mine", label: m.featureRequests.tabMine(), icon: "fa-user" },
-        ],
-  );
-
-  const categoryOptions = $derived([
-    { id: "feature", name: m.featureRequests.categoryFeature() },
-    { id: "bug", name: m.featureRequests.categoryBug() },
-    { id: "other", name: m.featureRequests.categoryOther() },
+  const tabs = $derived<Array<{ id: TabId; label: string; icon: string }>>([
+    { id: "browse", label: m.featureRequests.tabBrowse(), icon: "fa-solid fa-lightbulb" },
+    { id: "suggest", label: m.featureRequests.tabSuggest(), icon: "fa-solid fa-paper-plane" },
+    { id: "mine", label: m.featureRequests.tabMine(), icon: "fa-solid fa-user" },
+    ...(owner ? [{ id: "settings" as TabId, label: m.common.settings(), icon: "fa-solid fa-gear" }] : [])
   ]);
 
-  const statusOptions = $derived([
-    { id: "open", name: m.common.open() },
-    { id: "planned", name: m.featureRequests.statusPlanned() },
-    { id: "done", name: m.common.done() },
-    { id: "declined", name: m.featureRequests.statusDeclined() },
-  ]);
+  const tab: TabId = $derived.by(() => {
+    const requested = page.url.searchParams.get("tab");
+    return tabs.find(entry => entry.id === requested)?.id ?? "browse";
+  });
 
-  let totalPages = $derived(Math.max(1, Math.ceil(total / pageSize)));
-
-  let titleRemaining = $derived(120 - formTitle.length);
-  let bodyRemaining = $derived(2000 - formBody.length);
-  let canSubmit = $derived(
-    !submitting && formTitle.trim().length >= 3 && formBody.trim().length >= 10 && titleRemaining >= 0 && bodyRemaining >= 0,
-  );
-
-  let statTiles = $derived([
-    { label: m.common.total(), value: stats?.total ?? 0, icon: "fa-lightbulb", tone: "primary" },
-    { label: m.common.open(), value: stats?.byStatus?.open ?? 0, icon: "fa-hourglass", tone: "secondary" },
-    { label: m.featureRequests.statusPlanned(), value: stats?.byStatus?.planned ?? 0, icon: "fa-wand-magic-sparkles", tone: "primary" },
-    { label: m.common.done(), value: stats?.byStatus?.done ?? 0, icon: "fa-circle-check", tone: "primary" },
-    { label: m.featureRequests.statusDeclined(), value: stats?.byStatus?.declined ?? 0, icon: "fa-xmark", tone: "accent" },
-    { label: m.featureRequests.statBugs(), value: stats?.byCategory?.bug ?? 0, icon: "fa-bug", tone: "accent" },
-  ]);
-
-  function toneColor(tone: string): string {
-    if (tone === "accent") return $colorStore.accent;
-    if (tone === "secondary") return $colorStore.secondary;
-    return $colorStore.primary;
+  function notify(message: string, type: "success" | "error" = "success") {
+    notificationMessage = message;
+    notificationType = type;
+    showNotification = true;
+    setTimeout(() => {
+      showNotification = false;
+    }, 3000);
   }
 
-  function statusTone(status: FeatureRequestStatus): string {
-    if (status === "declined") return $colorStore.accent;
-    if (status === "open") return $colorStore.secondary;
-    return $colorStore.primary;
-  }
-
-  function statusLabel(status: FeatureRequestStatus): string {
-    return statusOptions.find((s) => s.id === status)?.name ?? status;
-  }
-
-  function categoryLabel(category: FeatureRequestCategory): string {
-    return categoryOptions.find((c) => c.id === category)?.name ?? category;
-  }
-
-  function categoryIcon(category: FeatureRequestCategory): string {
-    if (category === "bug") return "fa-bug";
-    if (category === "other") return "fa-comments";
-    return "fa-lightbulb";
-  }
-
-  /**
-   * Renders a UTC timestamp in the viewer's timezone, appending a `Z` when the
-   * bot serialized the value without a timezone designator.
-   */
-  function formatDate(value: string | null): string {
-    if (!value) return m.common.unknown();
-    const utc = /[zZ]|[+-]\d\d:?\d\d$/.test(value) ? value : `${value}Z`;
-    return new Date(utc).toLocaleString();
-  }
-
-  async function fetchPage() {
-    return await loadingStore.wrap(
-      "fetch-feature-requests",
-      async () => {
-        try {
-          loading = true;
-          error = null;
-          const result = await featureRequestsApi.getPage({
-            status: statusFilter ?? undefined,
-            category: categoryFilter ?? undefined,
-            search: search.trim() || undefined,
-            sort,
-            page,
-            pageSize,
-          });
-          entries = result.items ?? [];
-          total = result.total ?? 0;
-        } catch (err) {
-          logger.error("Failed to fetch feature requests:", err);
-          error = m.featureRequests.errorLoad();
-        } finally {
-          loading = false;
-        }
-      },
-      "api",
-      m.featureRequests.loadingRequests(),
-    );
-  }
-
-  async function fetchMine() {
-    try {
-      mine = await featureRequestsApi.getMine();
-    } catch (err) {
-      logger.error("Failed to fetch own feature requests:", err);
-    }
-  }
-
-  async function fetchStats() {
-    if (!isOwner) return;
-    try {
-      stats = await featureRequestsApi.getStats();
-    } catch (err) {
-      logger.error("Failed to fetch feature request stats:", err);
-    }
-  }
-
-  async function fetchSettings() {
-    if (!isOwner) return;
-    try {
-      settings = await featureRequestsApi.getSettings();
-      channelInput = settings.channelId === 0n ? "" : settings.channelId.toString();
-      settingsError = null;
-    } catch (err) {
-      logger.error("Failed to load feature request settings:", err);
-      settingsError = m.common.notifyLoadSettingsFailed();
-    }
-  }
-
-  function applyFilters() {
-    page = 1;
-    expandedId = null;
-    fetchPage();
-  }
-
-  function changePage(next: number) {
-    if (next < 1 || next > totalPages) return;
-    page = next;
-    expandedId = null;
-    fetchPage();
-  }
-
-  function toggleExpand(id: number) {
-    expandedId = expandedId === id ? null : id;
-  }
-
-  function onStatusFilterChange(detail: { selected: string | string[] | null }) {
-    const value = detail.selected;
-    statusFilter = typeof value === "string" && value !== "" ? (value as FeatureRequestStatus) : null;
-    applyFilters();
-  }
-
-  function onCategoryFilterChange(detail: { selected: string | string[] | null }) {
-    const value = detail.selected;
-    categoryFilter = typeof value === "string" && value !== "" ? (value as FeatureRequestCategory) : null;
-    applyFilters();
-  }
-
-  function onFormCategoryChange(detail: { selected: string | string[] | null }) {
-    const value = detail.selected;
-    if (typeof value === "string" && value !== "") formCategory = value as FeatureRequestCategory;
-  }
-
-  function onStatusChoiceChange(detail: { selected: string | string[] | null }) {
-    const value = detail.selected;
-    if (typeof value === "string" && value !== "") statusChoice = value as FeatureRequestStatus;
-  }
-
-  /**
-   * Flips the vote locally first so the button feels instant, then reconciles with
-   * whatever count the bot reports back.
-   */
-  async function toggleVote(entry: FeatureRequestEntry) {
-    const before = { votes: entry.votes, voted: entry.voted };
-    entry.voted = !entry.voted;
-    entry.votes += entry.voted ? 1 : -1;
-
-    try {
-      const result = await featureRequestsApi.toggleVote(entry.id);
-      entry.votes = result.votes;
-      entry.voted = result.voted;
-    } catch (err) {
-      logger.error("Failed to toggle vote:", err);
-      entry.votes = before.votes;
-      entry.voted = before.voted;
-      error = m.featureRequests.errorVote();
-    }
-  }
-
-  async function submit() {
-    if (!canSubmit) return;
-
-    try {
-      submitting = true;
-      submitError = null;
-      submitted = await featureRequestsApi.submit({
-        guildId: formAttachGuild && $currentGuild ? BigInt($currentGuild.id) : null,
-        category: formCategory,
-        title: formTitle.trim(),
-        body: formBody.trim(),
-      });
-      formTitle = "";
-      formBody = "";
-      formCategory = "feature";
-      await Promise.all([fetchMine(), fetchStats()]);
-    } catch (err) {
-      logger.error("Failed to submit feature request:", err);
-      submitError = err instanceof Error ? err.message : m.featureRequests.errorSubmit();
-    } finally {
-      submitting = false;
-    }
-  }
-
-  function openStatus(entry: FeatureRequestEntry) {
-    statusTarget = entry;
-    statusChoice = entry.status;
-    statusNote = entry.ownerNote ?? "";
-  }
-
-  async function saveStatus() {
-    const target = statusTarget;
-    if (!target) return;
-
-    try {
-      savingStatus = true;
-      const updated = await featureRequestsApi.setStatus(target.id, {
-        status: statusChoice,
-        note: statusNote.trim() || null,
-      });
-      target.status = updated.status;
-      target.ownerNote = updated.ownerNote;
-      target.updatedAt = updated.updatedAt;
-      statusTarget = null;
-      await fetchStats();
-    } catch (err) {
-      logger.error("Failed to update feature request status:", err);
-      error = err instanceof Error ? err.message : m.featureRequests.errorUpdateStatus();
-    } finally {
-      savingStatus = false;
-    }
-  }
-
-  function requestDelete(entry: FeatureRequestEntry) {
-    deleteTarget = entry;
-    confirmDeleteOpen = true;
-  }
-
-  async function confirmDelete() {
-    const target = deleteTarget;
-    deleteTarget = null;
-    if (!target) return;
-
-    try {
-      await featureRequestsApi.deleteRequest(target.id);
-      await Promise.all([fetchPage(), fetchStats()]);
-    } catch (err) {
-      logger.error("Failed to delete feature request:", err);
-      error = m.featureRequests.errorDelete();
-    }
-  }
-
-  /**
-   * Debounces the report channel while it is typed. Partial or malformed IDs are never sent;
-   * the inline error for them only appears once the field is left, so it does not flash while
-   * an ID is being typed. Failures keep what was typed so Retry in the header can resend it.
-   */
-  function scheduleChannel(showInvalid = false) {
-    if (!settings) return;
-    const trimmed = channelInput.trim();
-    const saved = settings.channelId === 0n ? "" : settings.channelId.toString();
-
-    if (trimmed && !/^\d{17,20}$/.test(trimmed)) {
-      autoSave.cancel("channel");
-      settingsError = showInvalid ? m.common.invalidChannelId() : null;
-      return;
-    }
-
-    settingsError = null;
-    if (trimmed === saved) {
-      autoSave.cancel("channel");
-      return;
-    }
-
-    const channelId = trimmed ? BigInt(trimmed) : 0n;
-    autoSave.schedule("channel", async () => {
-      try {
-        settings = await featureRequestsApi.setSettings(channelId);
-        settingsError = null;
-      } catch (err) {
-        logger.error("Failed to save feature request settings:", err);
-        settingsError = err instanceof Error ? err.message : m.common.failedToSaveTheSettings();
-        throw err;
-      }
-    });
+  function select(id: TabId) {
+    if (id === tab) return;
+    void autoSave.flush();
+    const url = new URL(page.url);
+    url.search = "";
+    url.searchParams.set("tab", id);
+    void goto(url, { replaceState: true, noScroll: true, keepFocus: true });
   }
 
   onMount(async () => {
     try {
-      isOwner = await ownershipApi.isOwner(BigInt(data.user.id));
+      owner = await ownershipApi.isOwner(BigInt(data.user.id));
     } catch (err) {
       logger.error("Owner check failed:", err);
-      isOwner = false;
+      owner = false;
     }
+  });
 
-    await Promise.all([fetchPage(), fetchMine(), fetchStats(), fetchSettings()]);
+  $effect(() => {
+    if (!$currentGuild) return;
+    if ($currentGuild.icon) {
+      const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
+      colorStore.extractFromServerIcon(serverIconUrl);
+    } else if ($currentInstance?.botAvatar) {
+      colorStore.extractFromImage($currentInstance.botAvatar);
+    }
   });
 </script>
 
-{#snippet requestCard(entry: FeatureRequestEntry, showOwnerActions: boolean)}
-  <div
-    class="rounded-2xl border overflow-hidden"
-    style="background: {$colorStore.primary}0c;
-           border-color: {$colorStore.primary}30;"
-  >
-    <div class="flex gap-3 p-4">
-      <button
-        type="button"
-        class="flex flex-col items-center justify-center rounded-xl px-3 min-w-[56px] min-h-[56px] transition-all hover:opacity-80"
-        style="background: {entry.voted ? $colorStore.primary : $colorStore.primary + '15'};
-               color: {entry.voted ? '#fff' : $colorStore.primary};
-               border: 1px solid {$colorStore.primary}30;"
-        aria-pressed={entry.voted}
-        aria-label={entry.voted ? m.featureRequests.voteRemoveAria() : m.featureRequests.voteAddAria()}
-        onclick={() => toggleVote(entry)}
-      >
-        <i class="fa-solid fa-thumbs-up"></i>
-        <span class="text-sm font-semibold mt-1">{entry.votes}</span>
-      </button>
-
-      <button type="button" class="flex-1 min-w-0 text-left" onclick={() => toggleExpand(entry.id)}>
-        <div class="flex flex-wrap items-center gap-2">
-          <span
-            class="text-xs px-2 py-0.5 rounded-full font-medium"
-            style="background: {statusTone(entry.status)}20; color: {statusTone(entry.status)};"
-          >
-            {statusLabel(entry.status)}
-          </span>
-          <span class="text-xs flex items-center gap-1" style="color: {$colorStore.muted}">
-            <i class="fa-regular {categoryIcon(entry.category)}"></i>
-            {categoryLabel(entry.category)}
-          </span>
-          {#if entry.mine}
-            <span class="text-xs px-2 py-0.5 rounded-full" style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
-              {m.featureRequests.badgeYours()}
-            </span>
-          {/if}
-        </div>
-        <h3 class="mt-1 font-semibold truncate" style="color: {$colorStore.text}">{entry.title}</h3>
-        <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-          {entry.userName} · {formatDate(entry.dateAdded)}
-          {#if entry.guildName}· {m.featureRequests.fromGuild({ guild: entry.guildName })}{/if}
-        </p>
-        {#if expandedId !== entry.id}
-          <p class="text-sm mt-2 line-clamp-2 whitespace-pre-line" style="color: {$colorStore.text}">{entry.body}</p>
-        {/if}
-      </button>
+{#snippet statusMessages()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-[10001]" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
     </div>
-
-    {#if expandedId === entry.id}
-      <div class="px-4 pb-4" transition:fade={{ duration: 150 }}>
-        <p class="text-sm whitespace-pre-line" style="color: {$colorStore.text}">{entry.body}</p>
-
-        {#if entry.ownerNote}
-          <div class="mt-3 rounded-xl p-3 text-sm" style="background: {$colorStore.primary}10; color: {$colorStore.text};">
-            <span class="font-medium" style="color: {$colorStore.primary}">{m.featureRequests.developerNote()}</span>
-            {entry.ownerNote}
-          </div>
-        {/if}
-
-        {#if showOwnerActions}
-          <div class="flex flex-wrap gap-2 mt-3">
-            <button
-              type="button"
-              class="rounded-xl px-4 min-h-[44px] font-medium"
-              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-              onclick={() => openStatus(entry)}
-            >
-              {m.featureRequests.changeStatus()}
-            </button>
-            <button
-              type="button"
-              class="rounded-xl px-4 min-h-[44px] font-medium"
-              style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-              onclick={() => requestDelete(entry)}
-            >
-              {m.common.delete()}
-            </button>
-          </div>
-        {/if}
-      </div>
-    {/if}
-  </div>
+  {/if}
 {/snippet}
 
-<DashboardPageLayout
-  category="Community"
-  guildName={$currentGuild?.name ?? "Mewdeko"}
-  icon="fa-lightbulb"
-  subtitle={m.features.featureRequestsDescription()}
-  title={m.features.featureRequestsName()}
-  {tabs}
-  bind:activeTab
+<PluginPage
+  {statusMessages}
   {autoSave}
+  icon="fa-lightbulb"
+  guildName={$currentGuild?.name ?? "Mewdeko"}
+  title={m.features.featureRequestsName()}
+  subtitle={m.features.featureRequestsDescription()}
 >
-  {#if error}
-    <div
-      class="rounded-2xl border p-4 mb-6 text-sm"
-      style="background: {$colorStore.accent}10; border-color: {$colorStore.accent}30; color: {$colorStore.accent};"
-      in:fade
-    >
-      {error}
-    </div>
-  {/if}
-
-  {#if activeTab === "submit"}
-    <div
-      class="rounded-2xl border p-4 sm:p-6 max-w-3xl"
-      style="background: {$colorStore.primary}0c;
-             border-color: {$colorStore.primary}30;"
-      in:fly={{ y: 20, duration: 300 }}
-    >
-      {#if submitted}
-        <div class="rounded-xl p-4 mb-4 text-sm" style="background: {$colorStore.primary}15; color: {$colorStore.text};" in:fade>
-          <span class="font-medium" style="color: {$colorStore.primary}">{m.featureRequests.submittedThanks()}</span>
-          {m.featureRequests.submittedMessage({ title: submitted.title })}
-          <button type="button" class="underline ml-1" style="color: {$colorStore.primary}" onclick={() => (submitted = null)}>
-            {m.featureRequests.submitAnother()}
-          </button>
-        </div>
-      {/if}
-
-      <div class="mb-4">
-        <label class="block text-sm font-medium mb-1" for="fr-category" style="color: {$colorStore.muted}">
-          {m.featureRequests.formCategoryLabel()}
-        </label>
-        <DiscordSelector
-          id="fr-category"
-          type="custom"
-          options={categoryOptions}
-          selected={formCategory}
-          placeholder={m.common.pickCategoryPlaceholder()}
-          onchange={onFormCategoryChange}
-        />
-      </div>
-
-      <div class="mb-4">
-        <label class="block text-sm font-medium mb-1" for="fr-title" style="color: {$colorStore.muted}">
-          {m.common.title()}
-        </label>
-        <input
-          id="fr-title"
-          type="text"
-          bind:value={formTitle}
-          maxlength="120"
-          disabled={submitting}
-          placeholder={m.featureRequests.formTitlePlaceholder()}
-          class="w-full rounded-xl px-3 min-h-[44px] outline-none"
-          style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-        />
-        <p class="text-xs mt-1 text-right" style="color: {titleRemaining < 0 ? $colorStore.accent : $colorStore.muted}">
-          {m.featureRequests.charsLeft({ count: titleRemaining })}
-        </p>
-      </div>
-
-      <div class="mb-4">
-        <label class="block text-sm font-medium mb-1" for="fr-body" style="color: {$colorStore.muted}">
-          {m.common.details()}
-        </label>
-        <textarea
-          id="fr-body"
-          rows="7"
-          bind:value={formBody}
-          maxlength="2000"
-          disabled={submitting}
-          placeholder={m.featureRequests.formDetailsPlaceholder()}
-          class="w-full rounded-xl px-3 py-2 outline-none resize-y"
-          style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-        ></textarea>
-        <p class="text-xs mt-1 text-right" style="color: {bodyRemaining < 0 ? $colorStore.accent : $colorStore.muted}">
-          {m.featureRequests.charsLeft({ count: bodyRemaining })}
-        </p>
-      </div>
-
-      {#if $currentGuild}
-        <label class="flex items-center gap-3 mb-4 min-h-[44px] cursor-pointer" style="color: {$colorStore.text}">
-          <input type="checkbox" bind:checked={formAttachGuild} class="w-5 h-5" />
-          <span class="text-sm">{m.featureRequests.formAttachGuild({ guild: $currentGuild.name })}</span>
-        </label>
-      {/if}
-
-      {#if submitError}
-        <p class="text-sm mb-3" style="color: {$colorStore.accent}">{submitError}</p>
-      {/if}
-
-      <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-        <button
-          type="button"
-          class="rounded-xl px-5 min-h-[44px] font-medium disabled:opacity-40"
-          style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
-          disabled={!canSubmit}
-          onclick={submit}
-        >
-          {submitting ? m.common.sending() : m.featureRequests.sendButton()}
-        </button>
-        <span class="text-xs" style="color: {$colorStore.muted}">
-          {m.featureRequests.rateLimitHint()}
-        </span>
-      </div>
-    </div>
-  {:else if activeTab === "mine"}
-    {#if mine.length === 0}
-      <div class="rounded-2xl border p-8 text-center" style="border-color: {$colorStore.primary}30; color: {$colorStore.muted};" in:fade>
-        <i class="fa-regular fa-lightbulb text-3xl mb-3" style="color: {$colorStore.primary}"></i>
-        <p>{m.featureRequests.mineEmpty()}</p>
-        <button type="button" class="mt-3 underline" style="color: {$colorStore.primary}" onclick={() => (activeTab = "submit")}>
-          {m.featureRequests.mineEmptyAction()}
-        </button>
-      </div>
-    {:else}
-      <div class="space-y-3" in:fly={{ y: 20, duration: 300 }}>
-        {#each mine as entry (entry.id)}
-          {@render requestCard(entry, isOwner)}
-        {/each}
-      </div>
-    {/if}
-  {:else if activeTab === "settings" && isOwner}
-    {#if settings}
-      <div
-        class="rounded-2xl border p-4 sm:p-5 mb-6 max-w-3xl"
-        style="background: {$colorStore.primary}0c;
-               border-color: {$colorStore.primary}30;"
-        in:fly={{ y: 20, duration: 300 }}
-      >
-        <div class="flex items-baseline justify-between gap-3 mb-3">
-          <h2 class="text-sm font-semibold" style="color: {$colorStore.text}">{m.featureRequests.reportChannelHeading()}</h2>
-          <span class="text-xs" style="color: {$colorStore.muted}">{m.common.appliesToWholeBotHint()}</span>
-        </div>
-
-        <label class="block text-sm font-medium mb-1" for="fr-channel" style="color: {$colorStore.muted}">
-          {m.featureRequests.reportChannelLabel()}
-        </label>
-        <input
-          id="fr-channel"
-          type="text"
-          inputmode="numeric"
-          bind:value={channelInput}
-          oninput={() => scheduleChannel()}
-          onblur={() => { scheduleChannel(true); void autoSave.flush("channel"); }}
-          placeholder={m.common.leaveEmptyJoinLeaveHint()}
-          class="w-full rounded-xl px-3 min-h-[44px] outline-none font-mono"
-          style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-        />
-
-        {#if settingsError}
-          <p class="mt-2 text-xs" style="color: {$colorStore.accent}">{settingsError}</p>
-        {:else if settings.effectiveChannelId === 0n}
-          <p class="mt-2 text-xs" style="color: {$colorStore.accent}">
-            {m.featureRequests.reportChannelUnset()}
-          </p>
-        {:else if !settings.reachable}
-          <p class="mt-2 text-xs" style="color: {$colorStore.accent}">
-            {m.featureRequests.reportChannelUnreachable({ channel: settings.effectiveChannelId.toString() })}
-          </p>
-        {:else}
-          <p class="mt-2 text-xs" style="color: {$colorStore.muted}">
-            {settings.guildName
-              ? m.featureRequests.reportDestinationInGuild({ channel: settings.channelName ?? "", guild: settings.guildName })
-              : m.featureRequests.reportDestination({ channel: settings.channelName ?? "" })}
-            {#if settings.usingFallback}{m.common.joinLeaveChannelFallbackHint()}{/if}
-          </p>
-        {/if}
-      </div>
-    {/if}
-  {:else}
-    {#if isOwner && stats}
-      <div class="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6" in:fly={{ y: 20, duration: 300 }}>
-        {#each statTiles as tile (tile.label)}
-          <div
-            class="rounded-2xl border p-4"
-            style="background: {$colorStore.primary}0c;
-                   border-color: {$colorStore.primary}30;"
-          >
-            <div class="flex items-center gap-2 text-xs font-medium" style="color: {$colorStore.muted}">
-              <i class="fa-regular {tile.icon}" style="color: {toneColor(tile.tone)}"></i>
-              {tile.label}
-            </div>
-            <div class="mt-2 text-2xl font-semibold" style="color: {$colorStore.text}">{tile.value}</div>
-          </div>
-        {/each}
-      </div>
-    {/if}
-
-    <div
-      class="rounded-2xl border p-4 sm:p-5 mb-6 flex flex-col lg:flex-row lg:items-end gap-4"
-      style="background: {$colorStore.primary}0c;
-             border-color: {$colorStore.primary}30;"
-      in:fly={{ y: 20, duration: 300 }}
-    >
-      <div class="flex-1 min-w-0">
-        <label class="block text-sm font-medium mb-1" for="fr-search" style="color: {$colorStore.muted}">{m.common.search()}</label>
-        <input
-          id="fr-search"
-          type="search"
-          bind:value={search}
-          placeholder={m.featureRequests.searchPlaceholder()}
-          class="w-full rounded-xl px-3 min-h-[44px] outline-none"
-          style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-          onkeydown={(e) => e.key === "Enter" && applyFilters()}
-        />
-      </div>
-      <div class="w-full lg:w-44">
-        <label class="block text-sm font-medium mb-1" for="fr-status" style="color: {$colorStore.muted}">{m.common.status()}</label>
-        <DiscordSelector
-          id="fr-status"
-          type="custom"
-          options={statusOptions}
-          selected={statusFilter}
-          placeholder={m.common.anyStatus()}
-          onchange={onStatusFilterChange}
-        />
-      </div>
-      <div class="w-full lg:w-44">
-        <label class="block text-sm font-medium mb-1" for="fr-cat" style="color: {$colorStore.muted}">{m.common.category()}</label>
-        <DiscordSelector
-          id="fr-cat"
-          type="custom"
-          options={categoryOptions}
-          selected={categoryFilter}
-          placeholder={m.featureRequests.categoryAny()}
-          onchange={onCategoryFilterChange}
-        />
-      </div>
-      <div class="flex gap-2">
-        <button
-          type="button"
-          class="rounded-xl px-4 min-h-[44px] font-medium"
-          style="background: {sort === 'votes' ? $colorStore.primary : $colorStore.primary + '15'};
-                 color: {sort === 'votes' ? '#fff' : $colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-          onclick={() => { sort = "votes"; applyFilters(); }}
-        >
-          {m.featureRequests.sortTop()}
-        </button>
-        <button
-          type="button"
-          class="rounded-xl px-4 min-h-[44px] font-medium"
-          style="background: {sort === 'newest' ? $colorStore.primary : $colorStore.primary + '15'};
-                 color: {sort === 'newest' ? '#fff' : $colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-          onclick={() => { sort = "newest"; applyFilters(); }}
-        >
-          {m.common.new()}
-        </button>
-      </div>
-    </div>
-
-    {#if loading}
-      <SkeletonLoader />
-    {:else if entries.length === 0}
-      <div class="rounded-2xl border p-8 text-center" style="border-color: {$colorStore.primary}30; color: {$colorStore.muted};" in:fade>
-        <i class="fa-regular fa-lightbulb text-3xl mb-3" style="color: {$colorStore.primary}"></i>
-        <p>{m.featureRequests.browseEmpty()}</p>
-        <button type="button" class="mt-3 underline" style="color: {$colorStore.primary}" onclick={() => (activeTab = "submit")}>
-          {m.common.suggestAFeature()}
-        </button>
-      </div>
-    {:else}
-      <div class="space-y-3" in:fly={{ y: 20, duration: 300 }}>
-        {#each entries as entry (entry.id)}
-          {@render requestCard(entry, isOwner)}
-        {/each}
-      </div>
-
-      {#if totalPages > 1}
-        <div class="flex items-center justify-between gap-3 mt-6">
-          <button
-            type="button"
-            class="rounded-xl px-4 min-h-[44px] font-medium disabled:opacity-40"
-            style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-            disabled={page <= 1}
-            onclick={() => changePage(page - 1)}
-          >
-            {m.common.previous()}
-          </button>
-          <span class="text-sm" style="color: {$colorStore.muted}">{m.common.pageOfTotal({ page, total: totalPages })}</span>
-          <button
-            type="button"
-            class="rounded-xl px-4 min-h-[44px] font-medium disabled:opacity-40"
-            style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-            disabled={page >= totalPages}
-            onclick={() => changePage(page + 1)}
-          >
-            {m.common.next()}
-          </button>
-        </div>
-      {/if}
-    {/if}
-  {/if}
-</DashboardPageLayout>
-
-{#if statusTarget}
   <div
-    class="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-4"
-    role="presentation"
-    onclick={(e) => { if (e.target === e.currentTarget) statusTarget = null; }}
+    class="grid grid-cols-2 gap-2 {tabs.length === 4 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}"
+    role="group"
+    aria-label={m.features.featureRequestsName()}
   >
-    <div
-      class="rounded-2xl border shadow-lg max-w-md w-full p-6"
-      style="background: {$colorStore.primary}0c; border-color: {$colorStore.primary}30;"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="fr-status-title"
-      in:fly={{ y: 20, duration: 200 }}
-      out:fly={{ y: -20, duration: 150 }}
-    >
-      <h2 id="fr-status-title" class="text-lg font-semibold mb-1" style="color: {$colorStore.text}">{m.featureRequests.statusDialogTitle()}</h2>
-      <p class="text-sm mb-4 truncate" style="color: {$colorStore.muted}">{statusTarget.title}</p>
-
-      <div class="mb-4">
-        <label class="block text-sm font-medium mb-1" for="fr-status-choice" style="color: {$colorStore.muted}">{m.common.status()}</label>
-        <DiscordSelector
-          id="fr-status-choice"
-          type="custom"
-          options={statusOptions}
-          selected={statusChoice}
-          placeholder={m.featureRequests.statusPick()}
-          onchange={onStatusChoiceChange}
-        />
-      </div>
-
-      <div class="mb-4">
-        <label class="block text-sm font-medium mb-1" for="fr-status-note" style="color: {$colorStore.muted}">
-          {m.featureRequests.statusNoteLabel()}
-        </label>
-        <textarea
-          id="fr-status-note"
-          rows="4"
-          bind:value={statusNote}
-          maxlength="1000"
-          class="w-full rounded-xl px-3 py-2 outline-none resize-y"
-          style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-        ></textarea>
-      </div>
-
-      <div class="flex gap-3">
-        <button
-          type="button"
-          class="flex-1 px-4 py-3 rounded-xl font-medium min-h-[44px]"
-          style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-          onclick={() => (statusTarget = null)}
-        >
-          {m.common.cancel()}
-        </button>
-        <button
-          type="button"
-          class="flex-1 px-4 py-3 rounded-xl font-medium min-h-[44px] disabled:opacity-40"
-          style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
-          disabled={savingStatus}
-          onclick={saveStatus}
-        >
-          {savingStatus ? m.common.saving() : m.common.save()}
-        </button>
-      </div>
-    </div>
+    {#each tabs as entry (entry.id)}
+      {@const selected = tab === entry.id}
+      <button
+        type="button"
+        class="min-h-[44px] px-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2"
+        style="background: {selected ? $colorStore.selectedSurface : `${$colorStore.primary}08`}; border-color: {selected ? $colorStore.selectedBorder : `${$colorStore.primary}20`}; color: {$colorStore.text};"
+        aria-pressed={selected}
+        onclick={() => select(entry.id)}
+      >
+        <i class={entry.icon} aria-hidden="true"></i>
+        {entry.label}
+      </button>
+    {/each}
   </div>
-{/if}
 
-<ConfirmationModal
-  bind:isOpen={confirmDeleteOpen}
-  title={m.featureRequests.deleteTitle()}
-  message={deleteTarget ? m.featureRequests.deleteMessage({ title: deleteTarget.title }) : ""}
-  confirmText={m.common.delete()}
-  cancelText={m.featureRequests.deleteKeep()}
-  variant="danger"
-  onconfirm={confirmDelete}
-  oncancel={() => (deleteTarget = null)}
-/>
+  {#key `${tab}:${owner}`}
+    {#if tab === "browse"}
+      <BrowseTab {owner} {notify} onsuggest={() => select("suggest")} />
+    {:else if tab === "suggest"}
+      <SuggestTab {notify} onopenmine={() => select("mine")} />
+    {:else if tab === "mine"}
+      <MineTab {owner} {notify} onsuggest={() => select("suggest")} />
+    {:else if owner}
+      <SettingsTab {autoSave} {notify} />
+    {/if}
+  {/key}
+</PluginPage>

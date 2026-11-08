@@ -1,7 +1,7 @@
 ---
 title: Stat Channels
 slug: statchannels
-summary: Voice channels whose names update themselves to show live numbers such as member count, boosts, open tickets or a Twitch viewer count.
+summary: Voice channels whose names update to show live numbers, like your member count
 icon: fa-chart-simple
 category: Community
 dashboard: /dashboard/statchannels
@@ -14,22 +14,22 @@ related: [counting, twitch, suggestions, xp, afk, starboard]
 
 A stat channel is a locked voice channel that sits at the top of your channel list and shows a number in its name, for example "Members: 12,480". The bot rewrites the name on a schedule so the number stays current. Members cannot join the channel; it exists only to be read.
 
-You choose a counter type, a template for the name, a style for the number and how often it refreshes. The bot supports several dozen counters covering server facts, presence, Nitro boosts, emoji slots, member goals and countdowns, plus values pulled from other Mewdeko features such as tickets, suggestions, giveaways, XP, counting, the starboard, and linked Twitch or Minecraft servers.
+You choose a counter type and a template for the name. You also set a style for the number and how often it refreshes. The bot supports several dozen counters covering server facts, presence, Nitro boosts, emoji slots, member goals and countdowns, plus values pulled from other Mewdeko features such as tickets, suggestions, giveaways, XP, counting, the starboard, and linked Twitch or Minecraft servers.
 
 Discord only allows a channel to be renamed twice every ten minutes. Stat Channels works around that with a choice of update mechanism, including one that deletes and recreates the channel so it can refresh every minute.
 
 ## Why you would use it
 
-- Show member, human and bot counts at the top of the server.
+- Show member counts at the top of the server, with humans and bots counted separately.
 - Track progress to a member goal with a percentage or a progress bar.
-- Count down to an event, a launch or an anniversary.
+- Count down to an event or a launch.
 - Show Twitch live status and viewer count for a streamer's server.
 - Give staff a live view of open tickets or pending suggestions without opening a dashboard.
 - Display Minecraft server status and player count next to the invite link.
 
 ## Counter types
 
-The full catalogue below is what `statchanneltypes` and the dashboard's **Available Counters** section list. Every type accepts the common placeholders; some add their own. Default templates begin with a matching emoji followed by the text shown.
+The full catalogue below is what `statchanneltypes` and the **Counters** tab list. Every type accepts the common placeholders; some add their own. Default templates begin with a matching emoji followed by the text shown.
 
 ### Members
 
@@ -121,6 +121,7 @@ These read from the Twitch channel linked through the Twitch module.
 | `InvitesWeek` | Invite Tracking | Joins credited to inviters in the last 7 days | `This Week: %count%` | |
 | `MembersLeftToday`, `MembersLeftWeek` | Members | Members who left in the last 24 hours or 7 days | `Left Today: %count%` | |
 | `NetGrowthWeek` | Members | Joins minus leaves over the last 7 days | `Growth: %count%` | `%joins%`, `%leaves%` |
+| `PeakOnline` | Members | Most members seen online at once, counted while this stat is shown | `Peak Online: %count%` | `%peak.date%`, `%online%` |
 
 ### Placeholders available to every type
 
@@ -138,7 +139,7 @@ Channel names are capped at Discord's 100 character limit.
 
 ## Display styles
 
-The **Counter Style** decides how `%count%` is rendered. It only applies to numeric counters; text counters such as `NewestMember` print the text as is, and true or false counters such as `TwitchLiveStatus` print "LIVE" or "Offline" style text.
+The **Counter style** decides how `%count%` is rendered. It only applies to numeric counters; text counters such as `NewestMember` print the text as is, and true or false counters such as `TwitchLiveStatus` print "LIVE" or "Offline" style text.
 
 | Style | Example for 1234 | Notes |
 | --- | --- | --- |
@@ -153,6 +154,16 @@ The **Counter Style** decides how `%count%` is rendered. It only applies to nume
 | `Roman` | `MCCXXXIV` | Roman numerals for 1 to 3999, otherwise falls back to comma style |
 
 `Percent` and `ProgressBar` need a goal target to compare against. Without one they show `0%` or an empty bar.
+
+Some styles have **Style options** in the editor:
+
+| Option | Applies to | Range |
+| --- | --- | --- |
+| Decimal places | `Compact`, `Percent` | 0 to 3 |
+| Width | `Padded` | 1 to 12 |
+| Bar length | `ProgressBar` | 1 to 40 |
+| Filled cell, Empty cell | `ProgressBar` | Up to 4 characters each |
+| Text when on, Text when off | True or false counters such as `TwitchLiveStatus` | Up to 32 characters each |
 
 ## Update mechanisms
 
@@ -169,38 +180,61 @@ The default for new stat channels is **Auto** every **5 minutes**. Intervals are
 
 ## Settings
 
-The page has three tabs, **Stat Channels**, **Add** and **Defaults**, plus a **Refresh** button in the header. **Stat Channels** lists every configured channel with **Edit** and **Remove** buttons.
+The page has three tabs, **Channels**, **Defaults** and **Counters**. A **Refresh** button sits in the header. Switch tabs with `?tab=channels`, `?tab=defaults` or `?tab=counters` on the page address.
 
-**Add Stat Channel** offers **Create New Channel** or **Use Existing Channel** with a **Voice Channel** picker, then:
+### Channels tab
+
+The **Channels** card lists every configured stat channel with its counter type, the value it shows now, its template, the update mechanism and interval, and the role or target it uses. Each row has **Edit** and **Remove**. **Remove** asks for confirmation and only stops tracking, the voice channel stays. With nothing configured the card says **No stat channels configured**. **Add** opens the editor.
+
+The editor, titled **New stat channel** when adding, has these settings:
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
-| Category (optional) | none | Where a newly created channel is placed |
-| Counter | none | The counter type from the catalogue |
-| Template | the type's default | Channel name with placeholders; click a placeholder chip to insert it, and the preview updates as you type |
-| Counter Style | Comma | Display style from the table above |
-| Update Mechanism | Auto | Rename, recreate or auto |
-| Refresh Interval (minutes) | 5 | How often the name refreshes |
-| Role | none | Shown for `RoleMembers` |
-| Target Date | none | Shown for `Countdown` |
-| Goal Target | none | Shown for `MemberGoal`, and used by the percent and progress bar styles |
-| Twitch Counter Name | none | Shown for `TwitchCounter` |
-| Counting Channel | none | Shown for the counting types |
-| Minecraft Server | none | Shown for the Minecraft types |
+| New channel / Existing channel | New channel | Create a new voice channel or use one you already have |
+| Category (optional) | No category | Where a newly created channel is placed |
+| Voice channel | none | The channel to use in Existing channel mode |
+| Counter | none | The counter type, shown as category and name |
+| Role | none | Shown for role counters |
+| Target date | none | Shown for `Countdown` |
+| Goal | 1000 | Shown for `MemberGoal`. Minimum 1. Used by the percent and progress bar styles |
+| Twitch counter name | none | Shown for `TwitchCounter`, the name of an existing Twitch chat counter |
+| Counting channel | none | Shown for the counting types |
+| Minecraft server | none | Shown for the Minecraft types |
+| Template | the counter's default | Channel name with placeholders. Click a placeholder to add it, or use the emoji picker. A live preview shows the result |
+| Counter style | the counter's recommended style | Display style from the table above |
+| Update mechanism | Auto (recommended) | Rename only, Delete and recreate, or Auto |
+| Interval (minutes) | 5 | How often the name refreshes |
 
-**Defaults For New Stat Channels** sets **Default Mechanism**, **Default Counter Style** and **Default Interval (minutes)** for channels added later. The **Defaults** tab also has reference sections for **Counter Styles** and **Available Counters**.
+The interval has a minimum that depends on the mechanism (5 minutes for **Rename only**, 1 for the others) and a maximum of 1440. Counters that change constantly default to 1 minute unless the mechanism is **Rename only**. Press **Add** to finish.
+
+Editing an existing channel saves automatically after a short pause, and the bot refreshes the channel afterwards. Changing the counter type resets the template and style to that counter's defaults.
 
 A newly created channel denies Connect to `@everyone` so it acts as a label. A channel you add yourself keeps whatever permissions it already has.
 
+### Defaults tab
+
+**Defaults for new stat channels** applies to channels added later only:
+
+| Setting | Default |
+| --- | --- |
+| Update mechanism | Auto (recommended) |
+| Counter style | Comma |
+| Interval (minutes) | 5 |
+
+### Counters tab
+
+The **Counters** card lists every counter with an example, grouped by category. Search with **Search counters**. Counters that change constantly carry a **Live** badge. **Use** opens the editor with that counter already selected.
+
 ## Setup walkthrough
 
-1. Open **Stat Channels** in the dashboard and go to the **Defaults** tab. Leave **Default Mechanism** on Auto and set an interval you are comfortable with.
-2. Go to **Add**, choose **Create New Channel**, and pick a **Category** if you want the counters grouped.
-3. Choose a **Counter**, for example Total Members. Adjust the **Template** and watch the preview.
-4. Pick a **Counter Style** and save.
-5. Repeat for each counter. For a member goal, choose `MemberGoal`, set **Goal Target** and try the `ProgressBar` style.
-6. Drag the new channels to the top of the channel list in Discord if they did not land there.
-7. Wait one refresh interval and confirm the names update.
+1. Open **Stat Channels** in the dashboard and go to the **Defaults** tab. Leave **Update mechanism** on Auto and set an interval you are comfortable with.
+2. Go to the **Counters** tab and press **Use** next to a counter, for example Total Members. You can also press **Add** on the **Channels** tab.
+3. Choose **New channel** and pick a **Category** if you want the counters grouped.
+4. Adjust the **Template** and watch the preview. Pick a **Counter style**.
+5. Press **Add**.
+6. Repeat for each counter. For a member goal, choose `MemberGoal`, set **Goal** and try the `ProgressBar` style.
+7. Drag the new channels to the top of the channel list in Discord if they did not land there.
+8. Wait one refresh interval and confirm the names update.
 
 ## Commands
 

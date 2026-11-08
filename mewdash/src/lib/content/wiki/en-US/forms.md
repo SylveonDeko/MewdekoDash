@@ -1,7 +1,7 @@
 ---
 title: Forms
 slug: forms
-summary: Build applications, surveys, ban appeals, and join applications on the dashboard, collect answers through a shareable link, and approve or reject them from Discord or the response queue.
+summary: Build applications and surveys, then review the answers members send in
 icon: fa-clipboard
 category: Community
 dashboard: /dashboard/forms
@@ -12,18 +12,18 @@ related: [administration, moderation, rolestates]
 
 ## What it does
 
-Staff build a form on the dashboard: a name, a set of questions, and rules about who may answer and what happens afterwards. Publishing it produces a permanent share link. A member opens the link, signs in with Discord, fills in the questions page by page, reviews their answers, and submits. Their progress is saved as a draft while they type, so they can come back later.
+Staff build a form on the dashboard from a name and a set of questions, then set rules about who may answer and what happens afterwards. Publishing it produces a permanent share link. A member opens the link and signs in with Discord, then fills in the questions page by page, reviews their answers and submits. Their progress is saved as a draft while they type, so they can come back later.
 
 Each submission is posted as an embed in the channel you choose, with **Approve** and **Reject** buttons if the form needs a decision. Reviewers press a button in Discord or use the **Responses** tab on the dashboard. The submitter gets a DM with the decision and any notes, and can follow it on a status page at any time.
 
-Forms come in three types. A regular form is for members. A ban appeal form is for people currently banned, and approving it unbans them. A join application is for people outside the server, and approving it sends them a single-use invite with roles waiting for them when they join.
+There are three types of form. A regular form is for members, and a ban appeal form is for people currently banned, so approving it unbans them. A join application is for people outside the server, and approving it sends them a single-use invite with roles waiting for them when they join.
 
 There are no commands for forms. Everything except the two review buttons happens on the dashboard.
 
 ## Why you would use it
 
-- Staff, partner, or event applications with a proper review queue instead of a DM pile.
-- A ban appeal process with waiting periods, attempt limits, and automatic unban on approval.
+- Staff or event applications with a proper review queue instead of a DM pile.
+- A ban appeal process with waiting periods and attempt limits that unbans on approval.
 - A gated community where applicants are vetted before receiving an invite.
 - Feedback surveys with a response cap and CSV export.
 
@@ -31,29 +31,29 @@ There are no commands for forms. Everything except the two review buttons happen
 
 | Type | Who can submit | On approval |
 | --- | --- | --- |
-| Regular Form | Members, or anyone if **Allow people outside the server** is on | Role changes only, if configured |
-| Ban Appeal | People currently banned from the server | The ban is removed |
-| Join Application | People who are not in the server | An invite is created and any **Roles waiting for them on join** are saved as a role state, so they are applied when the person joins |
+| Regular form | Members, or anyone if **Allow people outside the server** is on | Role changes only, if configured |
+| Ban appeal | People currently banned from the server | The ban is removed |
+| Join application | People who are not in the server | An invite is created and any **Roles waiting for them on join** are saved as a role state, so they are applied when the person joins |
 
 The type is fixed once the form is created. Ban appeals and join applications always go through review; regular forms only do if **Answers need approving** is on.
 
 ## Questions
 
-Questions are added in the builder under **Questions**. The types are:
+Questions are added in the **Questions** section of the form editor with **Add question**. Each question can be edited, duplicated, deleted and moved up or down. **Add page** splits the form at that point. Each page can have a **Page title** and a **Page introduction**, can be moved back or forward, and **Remove page** joins its questions to the page above. The types are:
 
 | Type | Answer | Options |
 | --- | --- | --- |
-| Short Text | One line | Minimum and maximum length, up to 5000 |
-| Long Text | Several lines | Same length limits |
+| Short text | One line | Minimum and maximum length, up to 5000 |
+| Long text | Several lines | Same length limits |
 | Multiple Choice | One of the listed options | Up to 25 options |
 | Checkboxes | Several options | Up to 25 options; **Minimum value** and **Maximum value** limit how many may be ticked |
 | Dropdown | One option from a list | Up to 25 options |
 | Number | A number | Minimum and maximum value |
 | Email | A valid email address | |
 | URL | An `http` or `https` address | |
-| Section Break | Nothing; it starts a new page and can carry a title and introduction | |
+| Section break | Nothing; it splits the form into pages and carries a title and **Section description** | |
 
-Question text is limited to 500 characters, placeholders to 200, and any answer to 4000 characters. Each question can have an image URL and can be marked required. A question can also be required only when an earlier answer matches a condition.
+Question text is limited to 500 characters and placeholders to 200. Any answer can be up to 4000 characters. Each question can have a **Question image URL** (http or https only) and can be marked **Required question**. A question can also be required only when an earlier answer matches a condition.
 
 ### Answer piping
 
@@ -67,10 +67,10 @@ Each question can be shown only when a condition holds. Hidden questions are ski
 | --- | --- |
 | Answer-Based | An earlier answer matches: **Equals**, **Does not equal**, **Contains**, **Greater than**, or **Less than** |
 | Role-Based | The member holds **Any Of**, **All Of**, or **None Of** the chosen roles |
-| Server Tenure | The member has been in the server for at least N days, or their account is at least N days old |
+| Server tenure | The member has been in the server for at least N days, or their account is at least N days old |
 | Boost/Nitro | The member is boosting. The Nitro check is a best guess from avatar and boost data. |
 | Permission-Based | The member has all of the chosen permissions |
-| Multiple Conditions | Several rows combined. Rows in the same group must all be true (AND); any group being true shows the question (OR). |
+| Multiple Conditions | Several rows combined. Rows in the same group must all be true (AND); any group being true shows the question (OR). Answer rows can only point at questions that are already saved. |
 
 Text comparisons ignore case. Greater than and less than compare numbers.
 
@@ -93,33 +93,62 @@ Submitters can edit their answers from the status page while the response is sti
 ## What happens on submit
 
 1. Roles in **Roles given on submitting** and the **Role while awaiting review** are granted.
-2. If **Where answers are posted** is set, an embed is posted there showing the user (or "Anonymous (login required)"), the time, and up to 20 answers, pinging **Ping when a response arrives**. Approve and Reject buttons are attached when the form is reviewed.
-3. If **Send to a webhook** is set, the same embed is posted to that webhook, without the buttons. When the response is later approved or rejected, a second message with the outcome, reviewer and reason goes to the webhook too. The URL must be a Discord webhook; anything else is ignored with a warning in the bot's log, and a webhook that fails never blocks the submission.
-4. The response appears in the **Responses** tab with status Pending Review.
+2. If **Where answers are posted** is set, an embed is posted there showing the user (or "Anonymous (login required)") and the time. It lists up to 20 answers and pings **Ping when a response arrives**. Approve and Reject buttons are attached when the form is reviewed.
+3. If **Send to a webhook** is set, the same embed is posted to that webhook, without the buttons. When the response is later approved or rejected, a second message goes to the webhook with the outcome and the reviewer's reason. The URL must be a Discord webhook; anything else is ignored with a warning in the bot's log, and a webhook that fails never blocks the submission.
+4. The response appears in the **Responses** tab with status Pending review.
 
 Anonymous forms store no user ID, so they cannot change roles and their responses cannot be edited.
 
 ## The review process
 
-Responses move from Pending Review to Approved or Rejected. **Who may approve or reject** names a role; anyone with Manage Server or Administrator can always decide. If no reviewer role is set, holders of the approval roles can also decide.
+Responses move from Pending review to Approved or Rejected. **Who may approve or reject** names a role; anyone with Manage Server or Administrator can always decide. If no reviewer role is set, holders of the approval roles can also decide.
 
-In Discord, **Approve** decides immediately. **Reject** opens a modal asking for a reason, which is required because it is sent to the submitter. Either way the embed is recoloured, gains an **Approved** or **Rejected** field with the reviewer and time, the reason if any, and loses its buttons. On the dashboard, the same decision is made from the queue with a **Notes for the submitter** box.
+In Discord, **Approve** decides immediately. **Reject** opens a modal asking for a reason, which is required because it is sent to the submitter. Either way the embed is recoloured and loses its buttons. It also gains an **Approved** or **Rejected** field showing the reviewer and the time, and the reason is added if there is one. On the dashboard, the same decision is made from the queue with a **Notes for the submitter** box.
 
 On a decision the bot:
 
 - Adds and removes the roles under **Add on approval**, **Remove on approval**, **Add on rejection**, and **Remove on rejection**, and always removes the awaiting-review role. A role listed on both sides is removed.
 - Unbans the user for an approved ban appeal, or creates the invite for an approved join application.
-- DMs the submitter "Your response was approved" or "Your response was not accepted" with the notes, your **Message after submitting** on approval, and the invite. If the DM fails, the embed and queue say so.
+- DMs the submitter "Your response was approved" or "Your response was not accepted" with the notes. On approval the DM also carries your **Message after submitting** and the invite. If the DM fails, the embed and queue say so.
 
-The review button emotes come from the form, then the **Server defaults** on the **Settings** tab, then a plain tick and cross.
+The review button emotes come from the form, then the server-wide pair on the **Review buttons** tab, then a plain tick and cross.
 
 ## Versions
 
-Every save of a form keeps a version, up to the last 20. **Version history** shows each one with a diff of settings and questions and a **Restore** button. Restoring recreates the questions with new IDs and rewrites conditions and piping to match.
+Every save of a form keeps a version, up to the last 20. **Version history** shows each one with a diff of settings and questions and a **Restore this version** button. Restoring recreates the questions with new IDs and rewrites conditions and piping to match.
 
 ## Settings
 
-The **Forms** page has **Forms**, **Create**, and **Settings** tabs, plus **Edit** and **Responses** when a form is selected. The Create and Edit tabs share one settings panel.
+The **Forms** page has three tabs: **Forms**, **Responses** and **Review buttons**. The open tab, form and response filters are kept in the URL.
+
+### Forms tab
+
+The **Forms** card lists every form with badges for its type, Draft, Expired or Inactive state, pending count, response and question counts, Captcha and Anonymous. Use the search box to filter. **Create form** opens the editor. Each row has an inbox button that opens its responses and a menu with:
+
+| Action | What it does |
+| --- | --- |
+| Edit | Opens the editor |
+| Responses | Opens the **Responses** tab for this form |
+| Preview | Opens the public page in preview mode. Submissions are disabled. |
+| Copy link | Shows the permanent **Share link** |
+| Publish | Takes a draft live. Only shown for drafts |
+| Pause or Activate | Closes or reopens the form without deleting it |
+| Duplicate | Copies the form |
+| Delete | Removes the form and all its responses after a confirmation |
+
+The editor has **Settings**, **Questions** and **Version history** sections. Creating and editing share the same settings, and **Version history** appears only for saved forms. Press **Create** or **Save changes** to save.
+
+### Responses tab
+
+Pick a form under **Choose a form**, then filter by status: Pending review, Under review, Approved or Rejected, each with a count. Each response shows its submitter, ID, submission time, an **Edited** badge if the submitter changed it, and its answers. Earlier versions of edited answers can be shown or hidden. A reviewer can fill in **Notes for the submitter**, then **Approve** or **Reject**. A reason is required when rejecting. Approving a join application shows the created invite code. **Delete response** removes a response permanently with its answers and review history. **Export CSV** downloads the responses. The same queue is also available at `/dashboard/forms/<id>/review`.
+
+### Review buttons tab
+
+Sets the server-wide **Approve button emote** and **Reject button emote**. Leave them empty for the plain tick or cross, or use **Use the built-in pair**. A form can override them. Changes save as you pick them.
+
+### Form settings
+
+The settings are grouped into cards: **Basics**, **Who can submit**, **When it is open**, **Announce the opening in**, **When someone submits**, **Reviewing answers**, and for the matching types **Appeal limits** and **The invite sent on approval**.
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
@@ -133,12 +162,12 @@ The **Forms** page has **Forms**, **Create**, and **Settings** tabs, plus **Edit
 | Minimum Discord account age | No limit | Days |
 | Allow people outside the server | off | Regular forms only |
 | Submit anonymously | off | Records no submitter |
-| Opens at, Closes at | none | Window; a launch announcement needs an opening time |
+| Opens at, Closes at | none | Window the form accepts answers in |
 | Total responses accepted | No limit | Cap across everyone |
 | Allow more than one answer per person | off | |
 | Let rejected people try again | off | |
 | Require a captcha | off | Turnstile at the review step |
-| Announce the opening in, Ping with the announcement, Announcement text | none | Launch embed with a closing countdown, sent within about a minute of **Opens at** or on publish |
+| Announce the opening in, Ping with the announcement, Announcement text | none | Launch message, sent within about a minute of **Opens at** or on publish. Plain text is wrapped in an embed with a closing countdown; a message built with the embed editor is sent as written. `%server%` and `%server.members%` work in it |
 | Ping when a response arrives | none | Role mentioned with each submission |
 | Roles given on submitting | none | Granted straight away |
 | Role while awaiting review | none | Removed on decision |
@@ -154,13 +183,13 @@ Settings that do not apply to the form's type are dropped on save.
 
 ## Setup walkthrough
 
-1. Open **Forms** in the dashboard and press **Create**.
+1. Open **Forms** in the dashboard and press **Create form**.
 2. Choose the **Form type**. This cannot be changed later.
-3. Fill in **Name** and **Description**, and pick **Where answers are posted**.
-4. Under **Questions**, add questions, mark the required ones, and use **Add page** to split long forms.
-5. Set who can submit and, if you want a review step, turn on **Answers need approving** and choose **Who may approve or reject**.
-6. Press **Save Form**. Use **Preview** on the form card to walk through it as an administrator.
-7. Press **Publish** on the card, then **Copy Link** and post the link wherever applicants will find it.
+3. In **Basics**, fill in **Name** and **Description**, and pick **Where answers are posted**.
+4. Under **Questions**, add questions, mark the required ones, and use **Add page** to split long forms. Open a question to set its options, limits and conditions.
+5. Under **Who can submit**, set who may answer. If you want a review step, turn on **Answers need approving** under **Reviewing answers** and choose **Who may approve or reject**.
+6. Press **Create**. Use **Preview** in the form's menu to walk through it as an administrator.
+7. Choose **Publish** in the menu, then **Copy link** and post the link wherever applicants will find it.
 8. Watch the **Responses** tab, or the submit channel, and decide each response.
 
 ## Commands
@@ -169,8 +198,8 @@ Forms have no text or slash commands. The only Discord interaction is the **Appr
 
 ## Tips and gotchas
 
-- The bot needs Manage Roles, and its role must sit above every role a form gives or removes. Roles above the bot, managed roles, and everyone are skipped silently.
-- Ban appeals need View Audit Log for the "wait after the ban" check. Unbanning needs Ban Members, and join application invites need Create Invite in a channel visible to everyone.
+- The bot needs Manage Roles, and its role must sit above every role a form gives or removes. Roles above the bot and managed roles are skipped silently, as is the everyone role.
+- Ban appeals need View Audit Log for the "wait after the ban" check and Ban Members to unban. Join application invites need Create Invite in a channel visible to everyone.
 - The submission embed shows at most 20 answers; the full response is on the dashboard.
 - **Export CSV** on the Responses tab includes one column per question, with multi-select answers separated by semicolons.
 - The response filter and page are part of the URL, so you can bookmark "pending only" and share it with reviewers.

@@ -286,6 +286,9 @@
             selected={component.style?.toString()}
             placeholder={m.embedbuilder.componentsButtonStylePlaceholder()}
             searchable={false}
+            clearable={false}
+            customIcon="fa-palette"
+            ariaLabel={m.embedbuilder.componentsButtonStyle()}
             onchange={(detail) => {
               if (detail.selected && typeof detail.selected === 'string') {
                 updateComponent('style', parseInt(detail.selected));
@@ -351,6 +354,7 @@
                   label: t.response || m.common.noResponse()
                 }))}
                 selected={component.id}
+                ariaLabel={m.embedbuilder.componentsTriggerAction()}
                 placeholder={m.embedbuilder.componentsTriggerPlaceholder()}
                 onchange={(detail) => {
                   updateComponent('id', detail.selected);
@@ -546,6 +550,7 @@
                           label: t.response || m.common.noResponse()
                         }))}
                         selected={option.id}
+                        ariaLabel={m.embedbuilder.componentsTriggerAction()}
                         placeholder={m.embedbuilder.componentsTriggerPlaceholder()}
                         onchange={(detail) => {
                           updateOption(index, 'id', detail.selected);

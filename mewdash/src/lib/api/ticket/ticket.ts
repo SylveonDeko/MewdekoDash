@@ -2,6 +2,7 @@
 import { apiRequest } from "../core";
 import type {
   AddButtonRequest,
+  AddNoteRequest,
   AddSelectMenuRequest,
   AddSelectOptionRequest,
   AddTagsRequest,
@@ -30,13 +31,20 @@ import type {
   Ticket,
   TicketActivity,
   TicketCase,
+  TicketCaseDetail,
+  TicketComponentDetail,
+  TicketNote,
+  TicketOverview,
   TicketPanel,
   TicketPriority,
+  TicketSettings,
   TicketTag,
   UpdateButtonRequest,
   UpdateCaseRequest,
   UpdateEmbedRequest,
+  UpdateNotificationSettingsRequest,
   UpdatePlaceholderRequest,
+  UpdateSelectOptionRequest,
   UserStatistics
 } from "./models";
 
@@ -110,9 +118,14 @@ export const ticketApi = {
    * Duplicates a ticket panel
    * @param guildId The guild ID
    * @param panelId The panel ID (message ID) to duplicate
+   * @param channelId The channel the copy is posted in
    */
-  duplicateTicketPanel: (guildId: bigint, panelId: bigint) =>
-    apiRequest<void>(`ticket/${guildId}/panels/${panelId}/duplicate`, "POST"),
+  duplicateTicketPanel: (guildId: bigint, panelId: bigint, channelId: bigint) =>
+    apiRequest<TicketPanel>(
+      `ticket/${guildId}/panels/${panelId}/duplicate`,
+      "POST",
+      { channelId },
+    ),
 
   /**
    * Recreates a ticket panel message
@@ -176,7 +189,7 @@ export const ticketApi = {
     panelId: bigint,
     button: AddButtonRequest,
   ) =>
-    apiRequest<void>(
+    apiRequest<{ id: number }>(
       `ticket/${guildId}/panels/${panelId}/buttons`,
       "POST",
       button,
@@ -189,7 +202,7 @@ export const ticketApi = {
    * @returns Button details
    */
   getButton: (guildId: bigint, buttonId: number) =>
-    apiRequest<PanelButton>(`ticket/${guildId}/buttons/${buttonId}`),
+    apiRequest<TicketComponentDetail>(`ticket/${guildId}/buttons/${buttonId}`),
 
   /**
    * Updates a button
@@ -254,7 +267,7 @@ export const ticketApi = {
     panelId: bigint,
     menu: AddSelectMenuRequest,
   ) =>
-    apiRequest<void>(
+    apiRequest<{ id: number }>(
       `ticket/${guildId}/panels/${panelId}/selectmenus`,
       "POST",
       menu,
@@ -301,7 +314,9 @@ export const ticketApi = {
    * @returns Option details
    */
   getSelectMenuOption: (guildId: bigint, optionId: number) =>
-    apiRequest<any>(`ticket/${guildId}/selectmenus/options/${optionId}`),
+    apiRequest<TicketComponentDetail>(
+      `ticket/${guildId}/selectmenus/options/${optionId}`,
+    ),
 
   /**
    * Updates a select menu option
@@ -309,7 +324,11 @@ export const ticketApi = {
    * @param optionId The option ID
    * @param option Option updates
    */
-  updateSelectMenuOption: (guildId: bigint, optionId: number, option: any) =>
+  updateSelectMenuOption: (
+    guildId: bigint,
+    optionId: number,
+    option: UpdateSelectOptionRequest,
+  ) =>
     apiRequest<void>(
       `ticket/${guildId}/selectmenus/options/${optionId}`,
       "PUT",
@@ -397,23 +416,23 @@ export const ticketApi = {
    * @param guildId The guild ID
    * @param channelId The ticket channel ID
    */
-  unclaimTicket: (guildId: bigint, channelId: bigint) =>
+  unclaimTicket: (guildId: bigint, channelId: bigint, staffId: bigint) =>
     apiRequest<void>(
       `ticket/${guildId}/tickets/by-channel/${channelId}/unclaim`,
       "POST",
+      { staffId },
     ),
 
   /**
    * Closes a ticket
    * @param guildId The guild ID
    * @param channelId The ticket channel ID
-   * @param reason Close reason
+   * @param forceArchive Archives the ticket as part of closing it
    */
-  closeTicket: (guildId: bigint, channelId: bigint, reason?: string) =>
+  closeTicket: (guildId: bigint, channelId: bigint, forceArchive = false) =>
     apiRequest<void>(
-      `ticket/${guildId}/tickets/by-channel/${channelId}/close`,
+      `ticket/${guildId}/tickets/by-channel/${channelId}/close?forceArchive=${forceArchive}`,
       "POST",
-      { reason },
     ),
 
   /**
@@ -481,12 +500,20 @@ export const ticketApi = {
    * @param channelId The ticket channel ID
    * @param notes Note content
    */
-  addTicketNotes: (guildId: bigint, channelId: bigint, notes: string) =>
+  addTicketNotes: (guildId: bigint, channelId: bigint, request: AddNoteRequest) =>
     apiRequest<void>(
       `ticket/${guildId}/tickets/by-channel/${channelId}/notes`,
       "POST",
-      { notes },
+      request,
     ),
+
+  /**
+   * Gets the staff notes on a ticket
+   * @param guildId The guild ID
+   * @param ticketId The ticket ID
+   */
+  getTicketNotes: (guildId: bigint, ticketId: number) =>
+    apiRequest<TicketNote[]>(`ticket/${guildId}/tickets/${ticketId}/notes`),
 
   /**
    * Edits an existing ticket note
@@ -537,7 +564,7 @@ export const ticketApi = {
    * @returns Case details
    */
   getTicketCase: (guildId: bigint, caseId: number) =>
-    apiRequest<TicketCase>(`ticket/${guildId}/cases/${caseId}`),
+    apiRequest<TicketCaseDetail>(`ticket/${guildId}/cases/${caseId}`),
 
   /**
    * Creates a new ticket case
@@ -564,8 +591,11 @@ export const ticketApi = {
    * @param guildId The guild ID
    * @param caseId The case ID
    */
-  closeTicketCase: (guildId: bigint, caseId: number) =>
-    apiRequest<void>(`ticket/${guildId}/cases/${caseId}/close`, "POST"),
+  closeTicketCase: (guildId: bigint, caseId: number, archiveTickets = false) =>
+    apiRequest<void>(
+      `ticket/${guildId}/cases/${caseId}/close?archiveTickets=${archiveTickets}`,
+      "POST",
+    ),
 
   /**
    * Reopens a ticket case
@@ -600,10 +630,8 @@ export const ticketApi = {
    * @param caseId The case ID
    * @param notes Note content
    */
-  addCaseNotes: (guildId: bigint, caseId: number, notes: string) =>
-    apiRequest<void>(`ticket/${guildId}/cases/${caseId}/notes`, "POST", {
-      notes,
-    }),
+  addCaseNotes: (guildId: bigint, caseId: number, request: AddNoteRequest) =>
+    apiRequest<void>(`ticket/${guildId}/cases/${caseId}/notes`, "POST", request),
 
   // ============================================
   // Statistics
@@ -617,7 +645,7 @@ export const ticketApi = {
    */
   getTicketOverview: (guildId: bigint, activityDays?: number) => {
     const daysQs = activityDays ? `?activityDays=${activityDays}` : "";
-    return apiRequest<any>(`ticket/${guildId}/overview${daysQs}`);
+    return apiRequest<TicketOverview>(`ticket/${guildId}/overview${daysQs}`);
   },
 
   /**
@@ -685,7 +713,7 @@ export const ticketApi = {
    * @param guildId The guild ID
    * @param priorityId The priority ID
    */
-  deleteTicketPriority: (guildId: bigint, priorityId: number) =>
+  deleteTicketPriority: (guildId: bigint, priorityId: string) =>
     apiRequest<void>(`ticket/${guildId}/priorities/${priorityId}`, "DELETE"),
 
   // ============================================
@@ -713,7 +741,7 @@ export const ticketApi = {
    * @param guildId The guild ID
    * @param tagId The tag ID
    */
-  deleteTicketTag: (guildId: bigint, tagId: number) =>
+  deleteTicketTag: (guildId: bigint, tagId: string) =>
     apiRequest<void>(`ticket/${guildId}/tags/${tagId}`, "DELETE"),
 
   // ============================================
@@ -759,9 +787,10 @@ export const ticketApi = {
    * @param inactiveHours Hours of inactivity
    */
   closeInactiveTickets: (guildId: bigint, inactiveHours: number) =>
-    apiRequest<void>(`ticket/${guildId}/batch/close-inactive`, "POST", {
-      inactiveHours,
-    }),
+    apiRequest<{ closed: number; failed: number }>(
+      `ticket/${guildId}/batch/close-inactive?hours=${inactiveHours}`,
+      "POST",
+    ),
 
   /**
    * Batch moves tickets between categories
@@ -769,7 +798,11 @@ export const ticketApi = {
    * @param request Move request
    */
   moveTicketsBatch: (guildId: bigint, request: BatchMoveTicketsRequest) =>
-    apiRequest<void>(`ticket/${guildId}/batch/move-tickets`, "POST", request),
+    apiRequest<{ moved: number; failed: number }>(
+      `ticket/${guildId}/batch/move-tickets`,
+      "POST",
+      request,
+    ),
 
   /**
    * Batch adds role to all active tickets
@@ -777,7 +810,11 @@ export const ticketApi = {
    * @param request Role request
    */
   addRoleBatch: (guildId: bigint, request: BatchAddRoleRequest) =>
-    apiRequest<void>(`ticket/${guildId}/batch/add-role`, "POST", request),
+    apiRequest<{ updated: number; failed: number }>(
+      `ticket/${guildId}/batch/add-role`,
+      "POST",
+      request,
+    ),
 
   /**
    * Batch transfers tickets between staff members
@@ -788,7 +825,7 @@ export const ticketApi = {
     guildId: bigint,
     request: BatchTransferTicketsRequest,
   ) =>
-    apiRequest<void>(
+    apiRequest<{ transferred: number; failed: number }>(
       `ticket/${guildId}/batch/transfer-tickets`,
       "POST",
       request,
@@ -804,12 +841,32 @@ export const ticketApi = {
    * @returns Ticket settings including transcript and log channels
    */
   getTicketSettings: (guildId: bigint) =>
-    apiRequest<{
-      transcriptChannelId?: bigint;
-      logChannelId?: bigint;
-      defaultMaxTickets?: number;
-      blacklistedUsers?: bigint[];
-    }>(`ticket/${guildId}/settings`),
+    apiRequest<TicketSettings>(`ticket/${guildId}/settings`),
+
+  /**
+   * Sets whether every closed ticket DMs its transcript to the creator
+   * @param guildId The guild ID
+   * @param enabled Whether to DM transcripts
+   */
+  setTicketDmTranscript: (guildId: bigint, enabled: boolean) =>
+    apiRequest<void>(`ticket/${guildId}/settings/dm-transcript`, "PUT", {
+      enabled,
+    }),
+
+  /**
+   * Sets who is notified about ticket activity
+   * @param guildId The guild ID
+   * @param request Notification options
+   */
+  setTicketNotifications: (
+    guildId: bigint,
+    request: UpdateNotificationSettingsRequest,
+  ) =>
+    apiRequest<void>(
+      `ticket/${guildId}/settings/notifications`,
+      "PUT",
+      request,
+    ),
 
   /**
    * Sets ticket transcript channel

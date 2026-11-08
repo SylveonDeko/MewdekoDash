@@ -1,1327 +1,163 @@
 <!-- routes/dashboard/administration/+page.svelte -->
 <script lang="ts">
   import { m } from "$lib/i18n";
-  import { onMount, untrack } from "svelte";
+  import { goto } from "$app/navigation";
   import { page } from "$app/state";
-  import { administrationApi, clientApi, protectionApi, type TimezoneInfo } from "$lib/api/index.ts";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import { loadingStore } from "$lib/stores/loadingStore";
-  import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+  import { fade } from "svelte/transition";
+  import type { PageData } from "./$types";
+  import { clientApi, guildChannelsApi } from "$lib/api/index.ts";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { colorStore } from "$lib/stores/colorStore.ts";
+  import { logger } from "$lib/logger.ts";
   import { createAutoSave } from "$lib/utils/autoSave.svelte";
-
-  // Import tab components
-  import OverviewTab from "./components/OverviewTab.svelte";
-  import ProtectionTab from "./components/tabs/ProtectionTab.svelte";
-  import RolesTab from "./components/tabs/RolesTab.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import PluginPage from "$lib/components/plugin/PluginPage.svelte";
   import AutomationTab from "./components/tabs/AutomationTab.svelte";
+  import CommandsTab from "./components/tabs/CommandsTab.svelte";
+  import RolesTab from "./components/tabs/RolesTab.svelte";
+  import BackupsTab from "./components/tabs/BackupsTab.svelte";
+  import ChannelsTab from "./components/tabs/ChannelsTab.svelte";
   import AdvancedTab from "./components/tabs/AdvancedTab.svelte";
+  import { TABS, type Named, type TabId } from "./components/toolsModel";
 
-  let { data } = $props();
-
-  // Settings save as they change. Failures show in the header (Couldn't save · Retry).
-  const autoSave = createAutoSave();
-
-  let loading = $state(true);
-  let error: string | null = $state(null);
-  let saving = $state(false);
-  let notificationMessage = $state("");
-  let notificationType = $state<"success" | "error">("success");
-
-  function notify(message: string, type: "success" | "error" = "error") {
-    notificationMessage = message;
-    notificationType = type;
+  interface Props {
+    data: PageData;
   }
 
-  // Layout state
-  let activeTab = $state("overview");
+  let { data }: Props = $props();
+
+  let channels: Named[] = $state([]);
+  let textChannels: Named[] = $state([]);
+  let voiceChannels: Named[] = $state([]);
+  let roles: Named[] = $state([]);
+  let showNotification = $state(false);
+  let notificationMessage = $state("");
+  let notificationType: "success" | "error" = $state("success");
+  let loadedGuildId = "";
+
+  const autoSave = createAutoSave({
+    onError: () => notify(m.common.failedToSaveTheSettings(), "error")
+  });
+
+  let guildId = $derived($currentGuild?.id ? BigInt($currentGuild.id) : null);
+
+  const tab: TabId = $derived.by(() => {
+    const requested = page.url.searchParams.get("tab");
+    return TABS.find(id => id === requested) ?? "automation";
+  });
 
   const tabs = $derived([
-    { id: "overview", label: m.common.overview(), icon: "fa-chart-bar" },
-    { id: "protection", label: m.administration.tabProtection(), icon: "fa-shield" },
-    { id: "roles", label: m.administration.tabRoles(), icon: "fa-users" },
-    { id: "automation", label: m.administration.tabAutomation(), icon: "fa-gear" },
-    { id: "advanced", label: m.administration.tabAdvanced(), icon: "fa-bolt" }
+    { id: "automation", label: m.serverTools.tabAutomation(), icon: "fa-solid fa-gear" },
+    { id: "commands", label: m.common.commands(), icon: "fa-solid fa-terminal" },
+    { id: "roles", label: m.common.roles(), icon: "fa-solid fa-users" },
+    { id: "backups", label: m.serverTools.tabBackups(), icon: "fa-solid fa-box-archive" },
+    { id: "channels", label: m.common.channels(), icon: "fa-solid fa-hashtag" },
+    { id: "advanced", label: m.common.advanced(), icon: "fa-solid fa-bolt" }
   ]);
 
-  // Server Management
-  let staffRole: bigint | null = $state(null);
-  let memberRole: bigint | null = $state(null);
-  let guildTimezone: string = $state("UTC");
-  let availableTimezones: Array<{ id: string; displayName: string; offset: string }> = $state([]);
-  let gameVoiceChannel: bigint | null = $state(null);
+  function notify(message: string, type: "success" | "error" = "success") {
+    notificationMessage = message;
+    notificationType = type;
+    showNotification = true;
+    setTimeout(() => {
+      showNotification = false;
+    }, 3000);
+  }
 
-  // Auto-assign roles
-  let autoAssignRoles: { normalRoles: bigint[]; botRoles: bigint[] } = $state({ normalRoles: [], botRoles: [] });
-  let autoBanRoles: Array<{ roleId: bigint; roleName: string }> = $state([]);
-  let selectedNormalRoles: string[] = $state([]);
-  let selectedBotRoles: string[] = $state([]);
+  function select(id: TabId) {
+    if (id === tab) return;
+    void autoSave.flush();
+    const url = new URL(page.url);
+    url.search = "";
+    url.searchParams.set("tab", id);
+    void goto(url, { replaceState: true, noScroll: true, keepFocus: true });
+  }
 
-  // Protection settings
-  let protectionStatus: any = $state({
-    antiRaid: { enabled: false, userThreshold: 5, seconds: 10, action: "Mute", punishDuration: 60 },
-    antiSpam: { enabled: false, messageThreshold: 5, action: "Mute", muteTime: 5, roleId: null },
-    antiAlt: { enabled: false, minAgeMinutes: 1440, action: "Kick", actionDurationMinutes: 0, roleId: null },
-    antiMassMention: { enabled: false, mentionThreshold: 5, timeWindowSeconds: 30, maxMentionsInTimeWindow: 10, ignoreBots: true, action: "Mute", muteTime: 5, roleId: null },
-    antiPattern: {
-      enabled: false,
-      action: 1,
-      punishDuration: 60,
-      roleId: null,
-      checkAccountAge: false,
-      maxAccountAgeMonths: 6,
-      checkJoinTiming: false,
-      maxJoinHours: 48.0,
-      checkBatchCreation: false,
-      checkOfflineStatus: false,
-      checkNewAccounts: false,
-      newAccountDays: 7,
-      minimumScore: 15,
-      patternCount: 0,
-      counter: 0
-    },
-    antiMassPost: {
-      enabled: false,
-      channelThreshold: 3,
-      timeWindowSeconds: 60,
-      contentSimilarityThreshold: 0.8,
-      minContentLength: 20,
-      checkLinksOnly: true,
-      checkDuplicateContent: true,
-      requireIdenticalContent: false,
-      caseSensitive: false,
-      deleteMessages: true,
-      notifyUser: true,
-      action: 2,
-      punishDuration: 0,
-      roleId: null,
-      ignoreBots: true,
-      maxMessagesTracked: 50,
-      userCount: 0,
-      counter: 0
-    },
-    antiPostChannel: {
-      enabled: false,
-      action: 2,
-      deleteMessages: true,
-      notifyUser: true,
-      punishDuration: 0,
-      roleId: null,
-      ignoreBots: true,
-      channelCount: 0,
-      channels: [],
-      ignoredRoles: [],
-      ignoredUsers: [],
-      counter: 0
-    },
-    antiImageHash: {
-      enabled: false,
-      action: 2,
-      punishDuration: 0,
-      roleId: null,
-      hashThreshold: 31,
-      deleteMessages: true,
-      notifyUser: true,
-      ignoreBots: true,
-      checkEmbeds: true,
-      checkBorders: true,
-      usePresetList: false,
-      presetCount: 0,
-      presetTriggers: 0,
-      maxImageSizeMb: 8,
-      hashCount: 0,
-      ignoredRoles: [],
-      ignoredChannels: [],
-      counter: 0
-    },
-    antiExternalApp: {
-      enabled: false,
-      action: 10,
-      punishDuration: 60,
-      roleId: null,
-      mentionThreshold: 5,
-      blockInvites: true,
-      maxMessages: 5,
-      timeWindowSeconds: 10,
-      deleteMessages: true,
-      notifyUser: true,
-      counter: 0
+  async function loadGuildData(id: bigint) {
+    const results = await Promise.allSettled([
+      guildChannelsApi.list(id).then(list => {
+        const named = (types: string[]) =>
+          list
+            .filter(channel => types.includes(channel.type))
+            .sort((a, b) => a.position - b.position)
+            .map(channel => ({ id: String(channel.id), name: channel.name }));
+        channels = named(["text", "announcement", "voice", "stage", "forum", "category"]);
+        textChannels = named(["text", "announcement"]);
+        voiceChannels = named(["voice", "stage"]);
+      }),
+      clientApi.getRoles(id).then(value => (roles = value as unknown as Named[]))
+    ]);
+    for (const result of results) {
+      if (result.status === "rejected") logger.error("Failed to load server tools data:", result.reason);
     }
-  });
-
-  // Protection form data
-  let tempProtectionConfig: any = $state({});
-  let protectionBaseline: any = {};
-  const invalidProtectionInputs = new Set<HTMLInputElement>();
-
-  // Anti-pattern specific state
-  let antiPatternPatterns: Array<{
-    id: number;
-    name: string;
-    pattern: string;
-    checkUsername: boolean;
-    checkDisplayName: boolean;
-  }> = $state([]);
-  let newPattern = $state({ name: "", pattern: "", checkUsername: true, checkDisplayName: false });
-
-  // Anti-post-channel specific state
-  let selectedHoneypotChannels: string[] = $state([]);
-  let selectedIgnoredRoles: string[] = $state([]);
-  let selectedIgnoredUsers: string = $state("");
-
-  // Role Management
-  let selfAssignableRoles: {
-    exclusive: boolean;
-    roles: Array<{
-      model: {
-        id: number;
-        guildId: bigint;
-        roleId: bigint;
-        group: number;
-        levelRequirement: number;
-      };
-      role: {
-        id: bigint;
-        name: string;
-        color: number;
-      } | null;
-    }>;
-    groups: Record<number, string>;
-  } = $state({exclusive: false, roles: [], groups: {}});
-  let voiceChannelRoles: Array<{
-    channelId: bigint;
-    channelName: string;
-    roleId: bigint;
-    roleName: string
-  }> = $state([]);
-  let reactionRoles: {
-    success: boolean;
-    reactionRoles: Array<{
-      index: number;
-      messageId: bigint;
-      channelId: bigint;
-      exclusive: boolean;
-      reactionRoles: Array<{
-        emoteName: string;
-        roleId: bigint;
-      }>;
-    }>;
-  } = $state({success: false, reactionRoles: []});
-
-  // Permission Overrides
-  let permissionOverrides: Array<{ command: string; permission: string }> = $state([]);
-
-  // Command Cooldowns
-  let commandCooldowns: Array<{ command: string; cooldown: number }> = $state([]);
-
-  // Advanced Operations
-  let banMessage: any = $state({});
-  let savedBanMessage: any = {};
-
-  // Available data
-  let availableRoles: any[] = $state([]);
-  let guildChannels: any[] = $state([]);
-  let textChannels: Array<{ id: string; name: string }> = $state([]);
-  let voiceChannels: Array<{ id: string; name: string }> = $state([]);
-  let availableCommands: Array<{ id: string; name: string; label?: string }> = $state([]);
-  let availablePermissions: Array<{ id: string; name: string }> = $state([]);
-  const actionOptions = $derived([
-    { id: "9", name: m.common.warn(), label: m.common.warn() },
-    { id: "0", name: m.common.actionMute(), label: m.common.actionMute() },
-    { id: "1", name: m.common.actionKick(), label: m.common.actionKick() },
-    { id: "2", name: m.common.actionBan(), label: m.common.actionBan() }
-  ]);
-
-  // UI State
-  let showConfirmModal = $state(false);
-  let confirmModalData = $state<{
-    title: string;
-    message: string;
-    action: (() => void) | null;
-    variant: "danger" | "warning" | "info"
-  }>({ title: "", message: "", action: null, variant: "danger" });
-
-  // Expanded cards state
-  let expandedProtectionCard: string | null = $state(null);
-  let expandedRoleCard: string | null = $state(null);
-  let showPatternManagement = $state(false);
-
-  // Form data
-  let newStaffRole: string | null = $state(null);
-  let newMemberRole: string | null = $state(null);
-  let newTimezone = $state("");
-  let newAutoBanRole: string | null = $state(null);
-  let newVoiceChannelRole: { channelId: string | null; roleId: string | null } = $state({
-    channelId: null,
-    roleId: null
-  });
-  let newPermissionOverride: { command: string; permission: string } = $state({
-    command: "",
-    permission: "Administrator"
-  });
-  let selectedPermissionOverrides: string[] = $state([]);
-  let selectAllPermissionOverrides = $state(false);
-  let newCommandCooldown: { command: string; seconds: number } = $state({ command: "", seconds: 5 });
-
-  async function fetchAllData() {
-    if (!$currentGuild?.id) return;
-
-    return await loadingStore.wrap("fetch-admin-data", async () => {
-      try {
-        loading = true;
-
-        const [
-          autoAssignData, protectionData, selfAssignData, rolesData, textChannelsData, voiceChannelsData,
-          staffRoleData, memberRoleData, timezoneData, timezonesData,
-          _deleteMsgData, gameVoiceData,
-          autoBanRolesData, voiceChannelRolesData, reactionRolesData,
-          permissionOverridesData, commandsAndModulesData, commandCooldownsData,
-          banMessageData, antiPatternPatternsData
-        ] = await Promise.all([
-          administrationApi.getAutoAssignRoles($currentGuild.id),
-          protectionApi.getProtectionStatus($currentGuild.id),
-          administrationApi.getSelfAssignableRoles($currentGuild.id),
-          clientApi.getRoles($currentGuild.id),
-          clientApi.getChannelsByType($currentGuild.id, 0), // Text channels
-          clientApi.getChannelsByType($currentGuild.id, 2), // Voice channels
-          administrationApi.getStaffRole($currentGuild.id),
-          administrationApi.getMemberRole($currentGuild.id),
-          administrationApi.getGuildTimezone($currentGuild.id),
-          administrationApi.getTimezones($currentGuild.id),
-          administrationApi.getDeleteMessageOnCommand($currentGuild.id),
-          administrationApi.getGameVoiceChannel($currentGuild.id),
-          administrationApi.getAutoBanRoles($currentGuild.id),
-          administrationApi.getVoiceChannelRoles($currentGuild.id),
-          administrationApi.getReactionRoles($currentGuild.id),
-          administrationApi.getPermissionOverrides($currentGuild.id),
-          administrationApi.getCommandsAndModules(),
-          administrationApi.getCommandCooldowns($currentGuild.id),
-          administrationApi.getBanMessage($currentGuild.id),
-          protectionApi.getAntiPatternPatterns($currentGuild.id).catch(() => [])
-        ]);
-
-        // Server Management
-        staffRole = staffRoleData && staffRoleData !== BigInt(0) ? staffRoleData : null;
-        memberRole = memberRoleData && memberRoleData !== BigInt(0) ? memberRoleData : null;
-
-        // Pre-populate selector values
-        const staffRoleString = staffRole ? staffRole.toString() : null;
-        const memberRoleString = memberRole ? memberRole.toString() : null;
-        newStaffRole = staffRoleString;
-        newMemberRole = memberRoleString;
-        // Handle timezone data
-        guildTimezone = (timezoneData as any)?.data || timezoneData || "UTC";
-        // Transform timezone data to match DiscordSelector's expected format
-        availableTimezones = (timezonesData || []).map((tz: TimezoneInfo) => ({
-          id: tz.id,
-          displayName: tz.displayName,
-          offset: tz.offset
-        }));
-        // Find the timezone ID from the available timezones that matches the current timezone
-        const currentTimezoneOption = availableTimezones.find((tz: TimezoneInfo) =>
-          tz.id === guildTimezone ||
-          (tz.displayName && tz.displayName.includes(guildTimezone)) ||
-          tz.id.includes(guildTimezone)
-        );
-        newTimezone = currentTimezoneOption ? currentTimezoneOption.id : (guildTimezone || "UTC");
-        gameVoiceChannel = gameVoiceData;
-
-        // Auto-assign roles
-        autoAssignRoles = autoAssignData || { normalRoles: [], botRoles: [] };
-        autoBanRoles = autoBanRolesData || [];
-
-        // Convert role IDs to strings for DiscordSelector
-        const normalRoleIds = (autoAssignRoles.normalRoles || []).map(id => id.toString());
-        const botRoleIds = (autoAssignRoles.botRoles || []).map(id => id.toString());
-        selectedNormalRoles = normalRoleIds;
-        selectedBotRoles = botRoleIds;
-
-        // Ensure proper timing for pre-population
-        setTimeout(() => {
-          selectedNormalRoles = [...normalRoleIds];
-          selectedBotRoles = [...botRoleIds];
-        }, 0);
-
-        // Protection
-        protectionStatus = protectionData || {
-          antiRaid: { enabled: false },
-          antiSpam: { enabled: false },
-          antiAlt: { enabled: false },
-          antiMassMention: { enabled: false },
-          antiPattern: { enabled: false },
-          antiMassPost: { enabled: false },
-          antiPostChannel: { enabled: false },
-          antiImageHash: { enabled: false },
-          antiExternalApp: { enabled: false }
-        };
-
-        if (protectionStatus.antiPostChannel) {
-          // Convert channel and role IDs to strings for DiscordSelector
-          const channelIds = (protectionStatus.antiPostChannel.channels || []).map((id: any) => id.toString());
-          const roleIds = (protectionStatus.antiPostChannel.ignoredRoles || []).map((id: any) => id.toString());
-          selectedHoneypotChannels = channelIds;
-          selectedIgnoredRoles = roleIds;
-
-          // Ensure proper timing for pre-population
-          setTimeout(() => {
-            selectedHoneypotChannels = [...channelIds];
-            selectedIgnoredRoles = [...roleIds];
-          }, 0);
-        }
-
-        // Anti-pattern patterns
-        antiPatternPatterns = antiPatternPatternsData || [];
-
-        // Role Management
-        selfAssignableRoles = (selfAssignData as any) || { exclusive: false, roles: [], groups: {} };
-        voiceChannelRoles = voiceChannelRolesData || [];
-        reactionRoles = (reactionRolesData as any) || { success: false, reactionRoles: [] };
-
-        // Permissions
-        permissionOverrides = permissionOverridesData || [];
-
-        // Command Cooldowns
-        commandCooldowns = (commandCooldownsData as any) || [];
-
-        // Advanced Operations - parse JSON string into object if present
-        const banMessageStr = typeof banMessageData === "string" ? banMessageData : ((banMessageData as any)?.message || "");
-        try {
-          banMessage = banMessageStr && banMessageStr.trim().startsWith("{") ? JSON.parse(banMessageStr) : (banMessageStr ? { content: banMessageStr } : {});
-        } catch {
-          banMessage = banMessageStr ? { content: banMessageStr } : {};
-        }
-        savedBanMessage = $state.snapshot(banMessage);
-
-        // Process commands and modules data
-        if (commandsAndModulesData) {
-          const commandMap = new Map<string, { id: string; name: string; label: string }>();
-
-          // The API returns an array of objects with "commands" arrays
-          commandsAndModulesData.forEach(moduleData => {
-            if (moduleData.commands) {
-              moduleData.commands.forEach(command => {
-                const commandId = command.commandName;
-                // Only add if not already exists (deduplication)
-                if (!commandMap.has(commandId)) {
-                  commandMap.set(commandId, {
-                    id: commandId,
-                    name: commandId,
-                    label: m.administration.pageCommandLabel({ command: commandId, description: command.description || m.administration.pageNoDescription() })
-                  });
-                }
-              });
-            }
-          });
-
-          availableCommands = Array.from(commandMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-        }
-
-        // Set up available Discord permissions
-        availablePermissions = [
-          { id: "Administrator", name: m.common.permAdministrator() },
-          { id: "ManageGuild", name: m.common.manageServer() },
-          { id: "ManageRoles", name: m.common.permManageRoles() },
-          { id: "ManageChannels", name: m.common.permManageChannels() },
-          { id: "ManageMessages", name: m.common.permManageMessages() },
-          { id: "KickMembers", name: m.common.permKickMembers() },
-          { id: "BanMembers", name: m.common.permBanMembers() },
-          { id: "ModerateMembers", name: m.common.permModerateMembers() },
-          { id: "ViewChannel", name: m.administration.pagePermViewChannel() },
-          { id: "SendMessages", name: m.common.sendMessages() },
-          { id: "EmbedLinks", name: m.administration.pagePermEmbedLinks() },
-          { id: "AttachFiles", name: m.administration.pagePermAttachFiles() },
-          { id: "ReadMessageHistory", name: m.administration.pagePermReadMessageHistory() },
-          { id: "MentionEveryone", name: m.common.mentionEveryone() },
-          { id: "UseExternalEmojis", name: m.administration.pagePermUseExternalEmojis() },
-          { id: "Connect", name: m.administration.pagePermConnect() },
-          { id: "Speak", name: m.administration.pagePermSpeak() },
-          { id: "MuteMembers", name: m.administration.pagePermMuteMembers() },
-          { id: "DeafenMembers", name: m.administration.pagePermDeafenMembers() },
-          { id: "MoveMembers", name: m.administration.pagePermMoveMembers() }
-        ];
-
-        // Available data
-        availableRoles = rolesData || [];
-        textChannels = textChannelsData || [];
-        voiceChannels = voiceChannelsData || [];
-        guildChannels = [...textChannels, ...voiceChannels];
-
-
-        // Ensure proper timing for pre-population after roles/channels are loaded
-        setTimeout(() => {
-          newStaffRole = [...(staffRoleString ? [staffRoleString] : [])][0] || null;
-          newMemberRole = [...(memberRoleString ? [memberRoleString] : [])][0] || null;
-          // Re-find timezone option in case options loaded after initial assignment
-          const currentTimezoneOption = availableTimezones.find((tz: any) =>
-            tz.id === guildTimezone ||
-            (tz.displayName && tz.displayName.includes(guildTimezone)) ||
-            tz.id.includes(guildTimezone)
-          );
-          newTimezone = currentTimezoneOption ? currentTimezoneOption.id : (guildTimezone || "UTC");
-          selectedNormalRoles = [...normalRoleIds];
-          selectedBotRoles = [...botRoleIds];
-        }, 0);
-
-      } catch (err) {
-        logger.error("Failed to fetch administration data:", err);
-        error = m.administration.pageErrorLoad();
-      } finally {
-        loading = false;
-      }
-    }, "api", m.administration.pageLoading());
-  }
-
-  function showConfirm(title: string, message: string, action: () => void, variant: "danger" | "warning" | "info" = "danger") {
-    confirmModalData = { title, message, action, variant };
-    showConfirmModal = true;
-  }
-
-  /**
-   * Saves the auto-assign roles for normal users as soon as the picker changes,
-   * restoring the last saved selection if the bot rejects it.
-   */
-  function saveNormalRoles() {
-    if (!$currentGuild?.id) return;
-    const guildId = $currentGuild.id;
-    const selection = [...selectedNormalRoles];
-    const previous = autoAssignRoles.normalRoles.map(id => id.toString());
-    autoSave.now("autoAssignNormalRoles", async () => {
-      try {
-        const roleIds = selection.map(id => BigInt(id));
-        await administrationApi.setAutoAssignRoles(guildId, roleIds);
-        if ($currentGuild?.id === guildId) autoAssignRoles = { ...autoAssignRoles, normalRoles: roleIds };
-      } catch (err) {
-        if ($currentGuild?.id === guildId) selectedNormalRoles = previous;
-        throw err;
-      }
-    });
-  }
-
-  /**
-   * Saves the auto-assign roles for bots as soon as the picker changes,
-   * restoring the last saved selection if the bot rejects it.
-   */
-  function saveBotRoles() {
-    if (!$currentGuild?.id) return;
-    const guildId = $currentGuild.id;
-    const selection = [...selectedBotRoles];
-    const previous = autoAssignRoles.botRoles.map(id => id.toString());
-    autoSave.now("autoAssignBotRoles", async () => {
-      try {
-        const roleIds = selection.map(id => BigInt(id));
-        await administrationApi.setBotAutoAssignRoles(guildId, roleIds);
-        if ($currentGuild?.id === guildId) autoAssignRoles = { ...autoAssignRoles, botRoles: roleIds };
-      } catch (err) {
-        if ($currentGuild?.id === guildId) selectedBotRoles = previous;
-        throw err;
-      }
-    });
-  }
-
-  /** Records a self-assignable group name the bot confirmed, without refetching the page. */
-  function applySelfAssignableGroupName(groupId: number, name: string | null) {
-    const groups = { ...selfAssignableRoles.groups };
-    if (name) groups[groupId] = name;
-    else delete groups[groupId];
-    selfAssignableRoles = { ...selfAssignableRoles, groups };
-  }
-
-  /** Records a self-assignable level requirement the bot confirmed, without refetching the page. */
-  function applySelfAssignableLevel(roleId: bigint, level: number) {
-    selfAssignableRoles = {
-      ...selfAssignableRoles,
-      roles: selfAssignableRoles.roles.map(r =>
-        r.model.roleId === roleId ? { ...r, model: { ...r.model, levelRequirement: level } } : r
-      )
-    };
-  }
-
-  /** Saves the staff role as soon as it is picked, restoring the saved one if the bot rejects it. */
-  function saveStaffRole(value: string | null) {
-    if (!$currentGuild?.id || !value || value === (staffRole?.toString() ?? null)) return;
-    const guildId = $currentGuild.id;
-    autoSave.now("staffRole", async () => {
-      try {
-        await administrationApi.setStaffRole(guildId, BigInt(value));
-        if ($currentGuild?.id === guildId) staffRole = BigInt(value);
-      } catch (err) {
-        if ($currentGuild?.id === guildId) newStaffRole = staffRole?.toString() ?? null;
-        throw err;
-      }
-    });
-  }
-
-  /** Saves the member role as soon as it is picked, restoring the saved one if the bot rejects it. */
-  function saveMemberRole(value: string | null) {
-    if (!$currentGuild?.id || !value || value === (memberRole?.toString() ?? null)) return;
-    const guildId = $currentGuild.id;
-    autoSave.now("memberRole", async () => {
-      try {
-        await administrationApi.setMemberRole(guildId, BigInt(value));
-        if ($currentGuild?.id === guildId) memberRole = BigInt(value);
-      } catch (err) {
-        if ($currentGuild?.id === guildId) newMemberRole = memberRole?.toString() ?? null;
-        throw err;
-      }
-    });
-  }
-
-  /** The timezone option that matches a saved timezone name. */
-  function timezoneOptionId(timezone: string): string {
-    const option = availableTimezones.find((tz) =>
-      tz.id === timezone || (tz.displayName && tz.displayName.includes(timezone)) || tz.id.includes(timezone)
-    );
-    return option ? option.id : (timezone || "UTC");
-  }
-
-  /** Saves the server timezone as soon as it is picked, restoring the saved one if the bot rejects it. */
-  function saveTimezone(value: string | null) {
-    if (!$currentGuild?.id || !value || value === timezoneOptionId(guildTimezone)) return;
-    const guildId = $currentGuild.id;
-    autoSave.now("timezone", async () => {
-      try {
-        await administrationApi.setGuildTimezone(guildId, { timezoneId: value });
-        if ($currentGuild?.id === guildId) guildTimezone = value;
-      } catch (err) {
-        if ($currentGuild?.id === guildId) newTimezone = timezoneOptionId(guildTimezone);
-        throw err;
-      }
-    });
-  }
-
-  async function toggleGameVoiceChannel(channelId: bigint) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await administrationApi.toggleGameVoiceChannel($currentGuild.id, { channelId });
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to toggle game voice channel:", err);
-    }
-  }
-
-  async function addAutoBanRole() {
-    if (!$currentGuild?.id || !newAutoBanRole) return;
-
-    try {
-      await administrationApi.addAutoBanRole($currentGuild.id, BigInt(newAutoBanRole));
-      await fetchAllData();
-      expandedRoleCard = null;
-      newAutoBanRole = null;
-    } catch (err) {
-      logger.error("Failed to add auto-ban role:", err);
-    }
-  }
-
-  async function removeAutoBanRole(roleId: bigint) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await administrationApi.removeAutoBanRole($currentGuild.id, roleId);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to remove auto-ban role:", err);
-    }
-  }
-
-  async function addVoiceChannelRole() {
-    if (!$currentGuild?.id || !newVoiceChannelRole.channelId || !newVoiceChannelRole.roleId) return;
-
-    try {
-      await administrationApi.addVoiceChannelRole($currentGuild.id, {
-        channelId: BigInt(newVoiceChannelRole.channelId),
-        roleId: BigInt(newVoiceChannelRole.roleId)
-      });
-      await fetchAllData();
-      expandedRoleCard = null;
-      newVoiceChannelRole = { channelId: null, roleId: null };
-    } catch (err) {
-      logger.error("Failed to add voice channel role:", err);
-    }
-  }
-
-  async function removeVoiceChannelRole(channelId: bigint) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await administrationApi.removeVoiceChannelRole($currentGuild.id, channelId);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to remove voice channel role:", err);
-    }
-  }
-
-  async function toggleSelfAssignableRolesExclusive() {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await administrationApi.toggleSelfAssignableRoleExclusive($currentGuild.id);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to toggle self-assignable roles exclusivity:", err);
-    }
-  }
-
-  async function deleteSelectedPermissionOverrides() {
-    if (!$currentGuild?.id || selectedPermissionOverrides.length === 0) return;
-
-    try {
-      await Promise.all(
-        selectedPermissionOverrides.map(command =>
-          administrationApi.removePermissionOverride($currentGuild.id, command)
-        )
-      );
-      selectedPermissionOverrides = [];
-      selectAllPermissionOverrides = false;
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to delete selected permission overrides:", err);
-    }
-  }
-
-  // Protection Configuration Functions
-  async function configureProtection(type: string, config: any, throwOnError = false) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      saving = true;
-      switch (type) {
-        case "antiRaid":
-          await administrationApi.configureAntiRaid($currentGuild.id, config);
-          break;
-        case "antiSpam":
-          await administrationApi.configureAntiSpam($currentGuild.id, config);
-          break;
-        case "antiAlt":
-          await administrationApi.configureAntiAlt($currentGuild.id, config);
-          break;
-        case "antiMassMention":
-          await administrationApi.configureAntiMassMention($currentGuild.id, config);
-          break;
-        case "antiPattern":
-          await protectionApi.configureAntiPattern($currentGuild.id, config);
-          break;
-        case "antiMassPost":
-          await administrationApi.configureAntiMassPost($currentGuild.id, config);
-          break;
-        case "antiPostChannel":
-          await administrationApi.configureAntiPostChannel($currentGuild.id, config);
-          break;
-        case "antiImageHash":
-          await protectionApi.configureAntiImageHash($currentGuild.id, config);
-          break;
-        case "antiExternalApp":
-          await protectionApi.configureAntiExternalApp($currentGuild.id, config);
-          break;
-      }
-      if (!throwOnError) await fetchAllData();
-    } catch (err) {
-      logger.error(`Failed to configure ${type}:`, err);
-      if (throwOnError) throw err;
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function toggleProtection(type: string) {
-    if (!$currentGuild?.id || !protectionStatus) return;
-
-    const isEnabled = protectionStatus[type]?.enabled;
-
-    // When enabling, send default values that meet validation requirements
-    if (!isEnabled) {
-      const defaultConfigs: Record<string, any> = {
-        antiRaid: {
-          enabled: true,
-          userThreshold: 5,
-          seconds: 10,
-          action: 1, // Mute = 1
-          punishDuration: 60
-        },
-        antiSpam: {
-          enabled: true,
-          messageThreshold: 5,
-          action: 1, // Mute = 1
-          muteTime: 5,
-          roleId: null
-        },
-        antiAlt: {
-          enabled: true,
-          minAgeMinutes: 1440,
-          action: 2, // Kick = 2
-          actionDurationMinutes: 0,
-          roleId: null
-        },
-        antiMassMention: {
-          enabled: true,
-          mentionThreshold: 5,
-          timeWindowSeconds: 30,
-          maxMentionsInTimeWindow: 10,
-          ignoreBots: true,
-          action: 1, // Mute = 1
-          muteTime: 5,
-          roleId: null
-        },
-        antiPattern: {
-          enabled: true,
-          action: 1, // Mute = 1
-          punishDuration: 60,
-          roleId: null,
-          checkAccountAge: true,
-          maxAccountAgeMonths: 6,
-          checkJoinTiming: true,
-          maxJoinHours: 48.0,
-          checkBatchCreation: true,
-          checkOfflineStatus: true,
-          checkNewAccounts: true,
-          newAccountDays: 7,
-          minimumScore: 15
-        },
-        antiMassPost: {
-          enabled: true,
-          channelThreshold: 3,
-          timeWindowSeconds: 60,
-          contentSimilarityThreshold: 0.8,
-          minContentLength: 20,
-          checkLinksOnly: true,
-          checkDuplicateContent: true,
-          requireIdenticalContent: false,
-          caseSensitive: false,
-          deleteMessages: true,
-          notifyUser: true,
-          action: 2, // Ban
-          punishDuration: 0,
-          roleId: null,
-          ignoreBots: true,
-          maxMessagesTracked: 50
-        },
-        antiPostChannel: {
-          enabled: true,
-          action: 2, // Ban
-          punishDuration: 0,
-          roleId: null,
-          deleteMessages: true,
-          notifyUser: true,
-          ignoreBots: true
-        },
-        antiImageHash: {
-          enabled: true,
-          action: 2, // Ban
-          punishDuration: 0,
-          roleId: null,
-          hashThreshold: 31,
-          deleteMessages: true,
-          notifyUser: true,
-          ignoreBots: true,
-          checkEmbeds: true,
-          checkBorders: true,
-          usePresetList: true,
-          maxImageSizeMb: 8
-        },
-        antiExternalApp: {
-          enabled: true,
-          action: 10,
-          punishDuration: 60,
-          roleId: null,
-          mentionThreshold: 5,
-          blockInvites: true,
-          maxMessages: 5,
-          timeWindowSeconds: 10,
-          deleteMessages: true,
-          notifyUser: true
-        }
-      };
-
-      await configureProtection(type, defaultConfigs[type]);
-    } else {
-      await configureProtection(type, { enabled: false });
-    }
-  }
-
-  function toggleProtectionCard(type: string) {
-    void autoSave.flush("protectionConfig");
-    invalidProtectionInputs.clear();
-    if (expandedProtectionCard === type) {
-      expandedProtectionCard = null;
-      tempProtectionConfig = {};
-    } else {
-      expandedProtectionCard = type;
-      tempProtectionConfig = { ...protectionStatus[type] };
-      // Convert action to string for DiscordSelector
-      tempProtectionConfig.action = tempProtectionConfig.action?.toString() || "0";
-      protectionBaseline = $state.snapshot(tempProtectionConfig);
-    }
-  }
-
-  /** The config as text, with bigints made printable, for change tracking. */
-  function configText(config: unknown): string {
-    return JSON.stringify(config, (_key, value) => (typeof value === "bigint" ? value.toString() : value));
-  }
-
-  /** Notes whether a number field the user just edited is out of range, so it is not saved until fixed. */
-  function trackProtectionInput(event: Event) {
-    const input = event.target;
-    if (!(input instanceof HTMLInputElement)) return;
-    const { rangeUnderflow, rangeOverflow, badInput } = input.validity;
-    if (rangeUnderflow || rangeOverflow || badInput) invalidProtectionInputs.add(input);
-    else invalidProtectionInputs.delete(input);
-  }
-
-  /** Whether the open protection card holds values that can be sent. */
-  function protectionConfigValid(type: string, config: Record<string, unknown>): boolean {
-    const saved = protectionStatus[type] ?? {};
-    for (const [key, value] of Object.entries(config)) {
-      if (key !== "action" && typeof saved[key] === "number" && (typeof value !== "number" || !Number.isFinite(value))) {
-        return false;
-      }
-    }
-    for (const input of invalidProtectionInputs) {
-      if (input.isConnected) return false;
-      invalidProtectionInputs.delete(input);
-    }
-    return true;
-  }
-
-  /** Puts the open protection card back to what the bot has. */
-  function resetProtectionForm(type: string) {
-    tempProtectionConfig = { ...protectionStatus[type], action: protectionStatus[type]?.action?.toString() || "0" };
-    protectionBaseline = $state.snapshot(tempProtectionConfig);
-  }
-
-  /** Sends the open protection card's settings, restoring the card if the bot rejects them. */
-  async function persistProtection(type: string, sent: Record<string, any>) {
-    if (!$currentGuild?.id || !protectionConfigValid(type, sent)) return;
-    const guildId = $currentGuild.id;
-    const config = { ...sent, action: parseInt(sent.action) || 0 };
-    try {
-      await configureProtection(type, config, true);
-    } catch (err) {
-      if ($currentGuild?.id === guildId && expandedProtectionCard === type) resetProtectionForm(type);
-      throw err;
-    }
-    if ($currentGuild?.id !== guildId) return;
-    protectionStatus = { ...protectionStatus, [type]: { ...protectionStatus[type], ...config } };
-    if (expandedProtectionCard === type) protectionBaseline = sent;
   }
 
   $effect(() => {
-    const type = expandedProtectionCard;
-    const current = $state.snapshot(tempProtectionConfig);
-    untrack(() => {
-      if (!type || configText(current) === configText(protectionBaseline)) return;
-      autoSave.schedule("protectionConfig", () => persistProtection(type, current));
-    });
-  });
-
-  /** Records anti-post-channel lists the bot confirmed, without refetching the page. */
-  function applyPostChannelLists(patch: Record<string, unknown>) {
-    protectionStatus = { ...protectionStatus, antiPostChannel: { ...protectionStatus.antiPostChannel, ...patch } };
-    if (expandedProtectionCard === "antiPostChannel") {
-      tempProtectionConfig = { ...tempProtectionConfig, ...patch };
-      protectionBaseline = { ...protectionBaseline, ...patch };
+    if (!$currentGuild) {
+      void goto("/dashboard");
+      return;
     }
-  }
-
-  /** Saves the honeypot channel list as soon as it changes, restoring the confirmed list on failure. */
-  function saveHoneypotChannels(selection: string[]) {
-    if (!$currentGuild?.id) return;
-    const guildId = $currentGuild.id;
-    autoSave.now("honeypotChannels", async () => {
-      const applied: bigint[] = [...(protectionStatus.antiPostChannel.channels || [])];
-      const selectedIds = selection.map(c => BigInt(c));
-      try {
-        for (const channelId of selectedIds) {
-          if (!applied.some(c => c === channelId)) {
-            await administrationApi.addAntiPostChannel(guildId, channelId);
-            applied.push(channelId);
-          }
-        }
-        for (const channelId of [...applied]) {
-          if (!selectedIds.some(id => id === channelId)) {
-            await administrationApi.removeAntiPostChannel(guildId, channelId);
-            applied.splice(applied.indexOf(channelId), 1);
-          }
-        }
-      } catch (err) {
-        if ($currentGuild?.id === guildId) selectedHoneypotChannels = applied.map(id => id.toString());
-        throw err;
-      } finally {
-        if ($currentGuild?.id === guildId) applyPostChannelLists({ channels: applied });
-      }
-    });
-  }
-
-  /** Saves the ignored role list as soon as it changes, restoring the confirmed list on failure. */
-  function saveIgnoredRoles(selection: string[]) {
-    if (!$currentGuild?.id) return;
-    const guildId = $currentGuild.id;
-    autoSave.now("ignoredRoles", async () => {
-      const applied: bigint[] = [...(protectionStatus.antiPostChannel.ignoredRoles || [])];
-      const selectedIds = selection.map(r => BigInt(r));
-      try {
-        for (const roleId of selectedIds) {
-          if (!applied.some(r => r === roleId)) {
-            await administrationApi.toggleAntiPostChannelIgnoredRole(guildId, roleId);
-            applied.push(roleId);
-          }
-        }
-        for (const roleId of [...applied]) {
-          if (!selectedIds.some(id => id === roleId)) {
-            await administrationApi.toggleAntiPostChannelIgnoredRole(guildId, roleId);
-            applied.splice(applied.indexOf(roleId), 1);
-          }
-        }
-      } catch (err) {
-        if ($currentGuild?.id === guildId) selectedIgnoredRoles = applied.map(id => id.toString());
-        throw err;
-      } finally {
-        if ($currentGuild?.id === guildId) applyPostChannelLists({ ignoredRoles: applied });
-      }
-    });
-  }
-
-  async function addIgnoredUser() {
-    if (!$currentGuild?.id || !selectedIgnoredUsers) return;
-
-    try {
-      saving = true;
-      await administrationApi.toggleAntiPostChannelIgnoredUser($currentGuild.id, BigInt(selectedIgnoredUsers));
-      selectedIgnoredUsers = "";
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to add ignored user:", err);
-    } finally {
-      saving = false;
+    if ($currentGuild.icon) {
+      const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
+      colorStore.extractFromServerIcon(serverIconUrl);
+    } else if ($currentInstance?.botAvatar) {
+      colorStore.extractFromImage($currentInstance.botAvatar);
     }
-  }
-
-  // Permission Functions
-  async function addPermissionOverride() {
-    if (!$currentGuild?.id || !newPermissionOverride.command || !newPermissionOverride.permission) return;
-
-    try {
-      saving = true;
-      await administrationApi.addPermissionOverride($currentGuild.id, {
-        command: newPermissionOverride.command,
-        permission: newPermissionOverride.permission
-      });
-      newPermissionOverride = { command: "", permission: "Administrator" };
-      expandedRoleCard = null;
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to add permission override:", err);
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function removePermissionOverride(command: string) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await administrationApi.removePermissionOverride($currentGuild.id, command);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to remove permission override:", err);
-    }
-  }
-
-  async function resetPermissionOverrides() {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await administrationApi.clearAllPermissionOverrides($currentGuild.id);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to reset permission overrides:", err);
-    }
-  }
-
-  // Command Cooldown Functions
-  async function addCommandCooldown() {
-    if (!$currentGuild?.id || !newCommandCooldown.command || newCommandCooldown.seconds <= 0) return;
-
-    try {
-      saving = true;
-      await administrationApi.setCommandCooldown($currentGuild.id, newCommandCooldown.command, newCommandCooldown.seconds);
-      newCommandCooldown = { command: "", seconds: 5 };
-      expandedRoleCard = null;
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to add command cooldown:", err);
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function removeCommandCooldown(command: string) {
-    if (!$currentGuild?.id || !command) return;
-
-    try {
-      await administrationApi.removeCommandCooldown($currentGuild.id, command);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to remove command cooldown:", err);
-    }
-  }
-
-  // Advanced Operations Functions
-  /** Saves the ban message when the editor applies a change, restoring the saved one if the bot rejects it. */
-  function saveBanMessage(value: any) {
-    if (!$currentGuild?.id) return;
-    const guildId = $currentGuild.id;
-    const messageToSend = value && typeof value === "object" && Object.keys(value).length > 0
-      ? JSON.stringify(value)
-      : (typeof value === "string" ? value : "");
-    const sent = $state.snapshot(value);
-    autoSave.now("banMessage", async () => {
-      try {
-        await administrationApi.setBanMessage(guildId, { message: messageToSend });
-        savedBanMessage = sent;
-      } catch (err) {
-        if ($currentGuild?.id === guildId) banMessage = $state.snapshot(savedBanMessage);
-        throw err;
-      }
-    });
-  }
-
-
-  // Anti-Pattern Pattern Management
-  async function addAntiPatternPattern() {
-    if (!$currentGuild?.id || !newPattern.name.trim() || !newPattern.pattern.trim()) return;
-
-    try {
-      saving = true;
-      await protectionApi.addAntiPatternPattern(
-        $currentGuild.id,
-        newPattern.pattern,
-        newPattern.name,
-        newPattern.checkUsername,
-        newPattern.checkDisplayName
-      );
-
-      newPattern = { name: "", pattern: "", checkUsername: true, checkDisplayName: false };
-      showPatternManagement = false;
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to add anti-pattern pattern:", err);
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function removeAntiPatternPattern(patternId: number) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await protectionApi.removeAntiPatternPattern($currentGuild.id, patternId);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to remove anti-pattern pattern:", err);
-    }
-  }
-
-  // Utility Functions
-  function formatAction(action: string | number) {
-    if (typeof action === 'number') {
-      const actions = [
-        m.common.actionMute(), m.common.actionKick(), m.common.actionBan(),
-        m.features.wizardPun3(), m.common.removeRoles(), m.features.wizardPun5(),
-        m.features.wizardPun6(), m.common.addRole(), m.common.delete(),
-        m.common.warn(), m.common.timeout()
-      ];
-      return actions[action] || m.common.unknown();
-    }
-    return action || m.common.unknown();
-  }
-
-  onMount(() => {
-    fetchAllData();
-  });
-
-  $effect(() => {
-    if ($currentGuild) {
-      fetchAllData();
-    }
-  });
-
-  $effect(() => {
-    const requestedTab = page.url.searchParams.get("tab");
-    if (requestedTab && tabs.some(tab => tab.id === requestedTab)) {
-      activeTab = requestedTab;
+    if (loadedGuildId !== $currentGuild.id.toString()) {
+      loadedGuildId = $currentGuild.id.toString();
+      void loadGuildData(BigInt($currentGuild.id));
     }
   });
 </script>
 
-<DashboardPageLayout
-  title={m.features.administrationName()}
-  subtitle={m.administration.pageSubtitle()}
-  icon="fa-gear"
-  guildName={$currentGuild?.name || m.common.dashboard()}
-  tabs={tabs}
-  bind:activeTab
-  {autoSave}
-  bind:notificationMessage
-  {notificationType}
->
-
-  {#if loading}
-    <div class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2" style="border-color: {$colorStore.primary}"></div>
-      <span class="ml-3" style="color: {$colorStore.text}">{m.administration.pageLoading()}</span>
+{#snippet statusMessages()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-[10001]" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
     </div>
-  {:else if error}
-    <div class=" p-6 rounded-xl mb-6 transition-all" role="alert"
-         style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}40;">
-      <div class="flex items-center gap-3">
-        <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-        <div style="color: {$colorStore.accent}">
-          <div class="font-semibold text-lg">{m.common.errorOccurred()}</div>
-          <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
-        </div>
-      </div>
-    </div>
-  {:else}
-
-    {#if activeTab === 'overview'}
-      <OverviewTab
-        {protectionStatus}
-        {selfAssignableRoles}
-        {autoAssignRoles}
-        {commandCooldowns}
-        {staffRole}
-        {memberRole}
-        {guildTimezone}
-        {gameVoiceChannel}
-        {availableRoles}
-        {guildChannels}
-        bind:activeTab
-      />
-    {/if}
-
-    {#if activeTab === 'protection'}
-      <div oninput={trackProtectionInput} onfocusout={() => autoSave.flush("protectionConfig")}>
-      <ProtectionTab
-        {protectionStatus}
-        bind:expandedProtectionCard
-        bind:tempProtectionConfig
-        bind:showPatternManagement
-        {antiPatternPatterns}
-        bind:newPattern
-        bind:selectedHoneypotChannels
-        bind:selectedIgnoredRoles
-        bind:selectedIgnoredUsers
-        {actionOptions}
-        {textChannels}
-        {availableRoles}
-        {saving}
-        {autoSave}
-        {notify}
-        {toggleProtection}
-        {toggleProtectionCard}
-        {saveHoneypotChannels}
-        {saveIgnoredRoles}
-        {addIgnoredUser}
-        {fetchAllData}
-        {formatAction}
-        {addAntiPatternPattern}
-        {removeAntiPatternPattern}
-      />
-      </div>
-    {/if}
-
-    {#if activeTab === 'roles'}
-      <RolesTab
-        {autoAssignRoles}
-        bind:selectedNormalRoles
-        bind:selectedBotRoles
-        {autoBanRoles}
-        {selfAssignableRoles}
-        {voiceChannelRoles}
-        {reactionRoles}
-        bind:expandedRoleCard
-        bind:newAutoBanRole
-        bind:newVoiceChannelRole
-        {availableRoles}
-        {voiceChannels}
-        {textChannels}
-        {saving}
-        {autoSave}
-        {saveNormalRoles}
-        {saveBotRoles}
-        {applySelfAssignableGroupName}
-        {applySelfAssignableLevel}
-        {showConfirm}
-        {removeAutoBanRole}
-        {addAutoBanRole}
-        {toggleSelfAssignableRolesExclusive}
-        {removeVoiceChannelRole}
-        {addVoiceChannelRole}
-        {fetchAllData}
-      />
-    {/if}
-
-    {#if activeTab === 'automation'}
-      <AutomationTab
-        bind:newStaffRole
-        bind:newMemberRole
-        bind:newTimezone
-        {availableTimezones}
-        {gameVoiceChannel}
-        {commandCooldowns}
-        {permissionOverrides}
-        bind:expandedRoleCard
-        bind:newCommandCooldown
-        bind:newPermissionOverride
-        bind:newVoiceChannelRole
-        {selectedPermissionOverrides}
-        {availableRoles}
-        {voiceChannels}
-        {guildChannels}
-        {textChannels}
-        {availableCommands}
-        {availablePermissions}
-        {saving}
-        {saveStaffRole}
-        {saveMemberRole}
-        {saveTimezone}
-        {removeCommandCooldown}
-        {addCommandCooldown}
-        {showConfirm}
-        {removePermissionOverride}
-        {addPermissionOverride}
-        {resetPermissionOverrides}
-        {deleteSelectedPermissionOverrides}
-        {toggleGameVoiceChannel}
-        {fetchAllData}
-      />
-    {/if}
-
-    {#if activeTab === 'advanced'}
-      <AdvancedTab
-        bind:banMessage
-        {textChannels}
-        {saveBanMessage}
-        {showConfirm}
-        {fetchAllData}
-        guildId={$currentGuild?.id}
-        user={data.user}
-      />
-    {/if}
   {/if}
-</DashboardPageLayout>
+{/snippet}
 
-<ConfirmationModal
-  bind:isOpen={showConfirmModal}
-  title={confirmModalData.title}
-  message={confirmModalData.message}
-  variant={confirmModalData.variant}
-  oncancel={() => showConfirmModal = false}
-  onconfirm={() => confirmModalData.action?.()}
-/>
+<PluginPage
+  {statusMessages}
+  {autoSave}
+  icon="fa-cog"
+  guildName={$currentGuild?.name || m.common.dashboard()}
+  title={m.features.administrationName()}
+  subtitle={m.serverTools.subtitle()}
+>
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2" role="group" aria-label={m.serverTools.tabsAria()}>
+    {#each tabs as item (item.id)}
+      {@const selected = tab === item.id}
+      <button
+        type="button"
+        class="min-h-[44px] px-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2"
+        style="background: {selected ? $colorStore.selectedSurface : `${$colorStore.primary}08`}; border-color: {selected ? $colorStore.selectedBorder : `${$colorStore.primary}20`}; color: {$colorStore.text};"
+        aria-pressed={selected}
+        onclick={() => select(item.id as TabId)}
+      >
+        <i class={item.icon} aria-hidden="true"></i>
+        {item.label}
+      </button>
+    {/each}
+  </div>
 
-<style lang="postcss">
-    @reference '../../../app.css';
-</style>
+  {#if guildId}
+    {#key `${guildId}:${tab}`}
+      {#if tab === "automation"}
+        <AutomationTab {guildId} {channels} {textChannels} {voiceChannels} {roles} {autoSave} {notify} user={data.user} />
+      {:else if tab === "commands"}
+        <CommandsTab {guildId} {channels} {textChannels} {voiceChannels} {roles} {autoSave} {notify} user={data.user} />
+      {:else if tab === "roles"}
+        <RolesTab {guildId} {channels} {textChannels} {voiceChannels} {roles} {autoSave} {notify} user={data.user} />
+      {:else if tab === "backups"}
+        <BackupsTab {guildId} {channels} {textChannels} {voiceChannels} {roles} {autoSave} {notify} user={data.user} />
+      {:else if tab === "channels"}
+        <ChannelsTab {guildId} {channels} {textChannels} {voiceChannels} {roles} {autoSave} {notify} user={data.user} />
+      {:else}
+        <AdvancedTab {guildId} {channels} {textChannels} {voiceChannels} {roles} {autoSave} {notify} user={data.user} />
+      {/if}
+    {/key}
+  {/if}
+</PluginPage>

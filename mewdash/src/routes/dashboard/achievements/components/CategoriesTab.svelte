@@ -15,9 +15,9 @@
   } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
   import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
+  import PluginCard from "$lib/components/plugin/PluginCard.svelte";
   import AchievementIcon from "./AchievementIcon.svelte";
-  import DuoIcon from "./DuoIcon.svelte";
-  import IconPicker from "./IconPicker.svelte";
+  import CategorySheet from "./CategorySheet.svelte";
 
   /** Tab inputs. */
   interface Props {
@@ -32,17 +32,9 @@
   let { catalog, lookups, settings, onchanged, onerror }: Props = $props();
 
   let saving = $state(false);
-  let creating = $state(false);
-  let newName = $state("");
-  let newIcon = $state<string | null>(null);
-  let newDescription = $state("");
-  let editingId = $state<number | null>(null);
-  let editName = $state("");
-  let editIcon = $state<string | null>(null);
-  let editDescription = $state("");
+  let editing = $state<{ category: AchievementCategory | null } | null>(null);
 
   let ordered = $derived(catalog.categories);
-  let customCount = $derived(catalog.categories.filter((c) => !c.isBuiltIn).length);
 
   /** The list as the drag and drop zone holds it, following the catalog between drags. */
   let dragItems = $state<{ id: string; category: AchievementCategory }[]>([]);
@@ -104,52 +96,6 @@
     saveLayout(ordered.map((c) => c.key), disabled);
   }
 
-  /** Makes a new category from the form. */
-  async function create() {
-    if (!$currentGuild?.id || creating || !newName.trim()) return;
-    creating = true;
-    try {
-      await achievementsApi.createCategory($currentGuild.id, newName.trim(), newDescription.trim() || null, newIcon);
-      newName = "";
-      newIcon = null;
-      newDescription = "";
-      await onchanged();
-    } catch (err: any) {
-      logger.error("Failed to make a category:", err);
-      onerror(err?.message || m.achievements.categoriesErrorCreate());
-    } finally {
-      creating = false;
-    }
-  }
-
-  /**
-   * Opens the inline editor on a server category.
-   * @param category The category
-   */
-  function startEdit(category: AchievementCategory) {
-    editingId = category.id ?? null;
-    editName = category.name;
-    editIcon = category.icon === "fa:folder" ? null : category.icon;
-    editDescription = category.description;
-  }
-
-  /** Saves the inline editor. */
-  async function saveEdit() {
-    if (!$currentGuild?.id || editingId === null || !editName.trim()) return;
-    saving = true;
-    try {
-      await achievementsApi.updateCategory($currentGuild.id, editingId, editName.trim(),
-        editDescription.trim() || null, editIcon);
-      editingId = null;
-      await onchanged();
-    } catch (err: any) {
-      logger.error("Failed to rename a category:", err);
-      onerror(err?.message || m.achievements.categoriesErrorSave());
-    } finally {
-      saving = false;
-    }
-  }
-
   /**
    * Deletes a server category after asking.
    * @param category The category
@@ -177,20 +123,17 @@
   }
 </script>
 
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start" in:fade={{ duration: 200 }}>
-  <div class="xl:col-span-2 rounded-2xl border p-5 md:p-6"
-       style="background: {$colorStore.primary}0c;
-              border-color: {$colorStore.primary}30;">
-    <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
-      <DuoIcon icon="fa-layer-group" />
-      {m.achievements.categoriesOrderTitle()}
-    </h2>
-    <p class="text-sm mt-1 mb-5" style="color: {$colorStore.muted}">
-      {m.achievements.categoriesOrderHint()}
-    </p>
-
+<div class="space-y-4" in:fade={{ duration: 200 }}>
+  <PluginCard title={m.achievements.categoriesOrderTitle()} alwaysOpen>
+    {#snippet actions()}
+      <button type="button" class="flex items-center justify-center gap-2 px-5 rounded-xl min-h-[50px] font-medium"
+              style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+              onclick={() => { editing = { category: null }; }}>
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>{m.achievements.categoriesNewTitle()}
+      </button>
+    {/snippet}
     <ol class="space-y-2" aria-label={m.common.categories()}
-        use:dragHandleZone={{ items: dragItems, flipDurationMs: 150, dragDisabled: saving || editingId !== null,
+        use:dragHandleZone={{ items: dragItems, flipDurationMs: 150, dragDisabled: saving,
                               dropTargetStyle: {} }}
         onconsider={(e) => { dragItems = e.detail.items; }}
         onfinalize={dropped}>
@@ -206,18 +149,6 @@
                   style="color: {$colorStore.muted};">
               <i class="fa-solid fa-grip-vertical" aria-hidden="true"></i>
             </span>
-            <div class="flex flex-col gap-1">
-              <button type="button" class="w-8 h-7 rounded-md disabled:opacity-30" aria-label={m.common.ariaMoveNamedUp({ name: category.name })}
-                      style="background: {$colorStore.primary}10; color: {$colorStore.text};"
-                      disabled={saving || index === 0} onclick={() => move(index, -1)}>
-                <i class="fa-solid fa-chevron-up text-xs" aria-hidden="true"></i>
-              </button>
-              <button type="button" class="w-8 h-7 rounded-md disabled:opacity-30" aria-label={m.common.ariaMoveNamedDown({ name: category.name })}
-                      style="background: {$colorStore.primary}10; color: {$colorStore.text};"
-                      disabled={saving || index === ordered.length - 1} onclick={() => move(index, 1)}>
-                <i class="fa-solid fa-chevron-down text-xs" aria-hidden="true"></i>
-              </button>
-            </div>
             <AchievementIcon icon={category.icon} iconUrl={category.iconUrl} color={$colorStore.primary} size={40} />
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2">
@@ -232,13 +163,23 @@
             </div>
           </div>
           <div class="flex items-center gap-2 ml-auto shrink-0">
+            <button type="button" class="w-11 h-11 rounded-lg disabled:opacity-30" aria-label={m.common.ariaMoveNamedUp({ name: category.name })}
+                    style="background: {$colorStore.primary}10; color: {$colorStore.text};"
+                    disabled={saving || index === 0} onclick={() => move(index, -1)}>
+              <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="w-11 h-11 rounded-lg disabled:opacity-30" aria-label={m.common.ariaMoveNamedDown({ name: category.name })}
+                    style="background: {$colorStore.primary}10; color: {$colorStore.text};"
+                    disabled={saving || index === ordered.length - 1} onclick={() => move(index, 1)}>
+              <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+            </button>
             {#if !category.isBuiltIn}
-              <button type="button" class="w-10 h-10 rounded-lg" aria-label={m.common.editName({ name: category.name })}
+              <button type="button" class="w-11 h-11 rounded-lg" aria-label={m.common.editName({ name: category.name })}
                       style="background: {$colorStore.primary}10; color: {$colorStore.text};"
-                      onclick={() => startEdit(category)}>
+                      onclick={() => { editing = { category }; }}>
                 <i class="fa-solid fa-pen" aria-hidden="true"></i>
               </button>
-              <button type="button" class="w-10 h-10 rounded-lg" aria-label={m.common.ariaDeleteNamed({ name: category.name })}
+              <button type="button" class="w-11 h-11 rounded-lg" aria-label={m.common.ariaDeleteNamed({ name: category.name })}
                       style="background: #ef444420; color: #ef4444;"
                       onclick={() => remove(category)}>
                 <i class="fa-solid fa-trash" aria-hidden="true"></i>
@@ -247,79 +188,31 @@
             {#if category.key !== "global"}
               <button type="button" role="switch" aria-checked={category.enabled}
                       aria-label={category.enabled ? m.achievements.libraryDeactivateLabel({ name: category.name }) : m.achievements.libraryActivateLabel({ name: category.name })}
-                      class="w-12 h-7 rounded-full relative transition-all shrink-0 disabled:opacity-50"
-                      style="background: {category.enabled ? $colorStore.primary : $colorStore.primary + '20'};"
+                      class="w-12 h-11 flex items-center justify-center shrink-0 disabled:opacity-50"
                       disabled={saving}
                       onclick={() => setEnabled(category, !category.enabled)}>
-                <span class="absolute top-0.5 w-6 h-6 rounded-full bg-white transition-all"
-                      style="left: {category.enabled ? '22px' : '2px'};"></span>
+                <span class="block w-11 h-6 rounded-full relative transition-all"
+                      style="background: {category.enabled ? $colorStore.primary : $colorStore.primary + '20'};">
+                  <span class="absolute top-[2px] w-5 h-5 rounded-full bg-white transition-all"
+                        style="left: {category.enabled ? '22px' : '2px'};"></span>
+                </span>
               </button>
             {/if}
           </div>
-          {#if editingId !== null && editingId === category.id}
-            <div class="basis-full grid grid-cols-1 gap-3 pt-2" transition:slide={{ duration: 150 }}>
-              <input type="text" bind:value={editName} maxlength={catalog.limits.nameLength} aria-label={m.common.name()}
-                     class="px-3 h-[44px] rounded-xl border text-sm"
-                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
-              <input type="text" bind:value={editDescription} maxlength={catalog.limits.descriptionLength}
-                     aria-label={m.common.description()} placeholder={m.achievements.categoriesDescriptionPlaceholder()}
-                     class="px-3 h-[44px] rounded-xl border text-sm"
-                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
-              <IconPicker value={editIcon} defaultIcon="fa:folder" defaultLabel={m.achievements.categoriesFolderIcon()}
-                          uploads={catalog.uploads} emojis={lookups?.emojis ?? []} color={$colorStore.primary}
-                          label={m.achievements.categoriesChangeIcon({ name: category.name })}
-                          onchange={(icon) => { editIcon = icon; }} onuploadschanged={onchanged} {onerror} />
-              <div class="flex gap-2 justify-end">
-                <button type="button" class="px-4 py-2 rounded-xl min-h-[44px]"
-                        style="background: {$colorStore.primary}08; color: {$colorStore.text};"
-                        onclick={() => { editingId = null; }}>{m.common.cancel()}</button>
-                <button type="button" class="px-4 py-2 rounded-xl min-h-[44px] font-semibold disabled:opacity-50"
-                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                        disabled={saving || !editName.trim()} onclick={saveEdit}>{m.common.save()}</button>
-              </div>
-            </div>
-          {/if}
         </li>
       {/each}
     </ol>
-  </div>
+  </PluginCard>
 
-  <div class="rounded-2xl border p-5 md:p-6 xl:sticky xl:top-4"
-       style="background: {$colorStore.primary}0c;
-              border-color: {$colorStore.primary}30;">
-    <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
-      <DuoIcon icon="fa-folder-plus" />
-      {m.achievements.categoriesNewTitle()}
-    </h2>
-    <p class="text-sm mt-1 mb-5" style="color: {$colorStore.muted}">
-      {m.achievements.categoriesNewHint({ used: customCount, max: catalog.limits.maxCustomCategories })}
-    </p>
-    <div class="space-y-3">
-      <input type="text" bind:value={newName} maxlength={catalog.limits.nameLength} aria-label={m.common.name()} placeholder={m.common.events()}
-             class="w-full px-3 h-[44px] rounded-xl border text-sm"
-             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
-      <IconPicker value={newIcon} defaultIcon="fa:folder" defaultLabel={m.achievements.categoriesFolderIcon()}
-                  uploads={catalog.uploads} emojis={lookups?.emojis ?? []} color={$colorStore.primary}
-                  label={m.achievements.categoriesNewIconLabel()}
-                  onchange={(icon) => { newIcon = icon; }} onuploadschanged={onchanged} {onerror} />
-      <input type="text" bind:value={newDescription} maxlength={catalog.limits.descriptionLength}
-             aria-label={m.common.description()} placeholder={m.achievements.categoriesDescriptionPlaceholder()}
-             class="w-full px-3 h-[44px] rounded-xl border text-sm"
-             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
-      <button type="button" class="w-full px-4 py-3 rounded-xl min-h-[44px] font-semibold disabled:opacity-50"
-              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-              disabled={creating || !newName.trim() || customCount >= catalog.limits.maxCustomCategories}
-              onclick={create}>
-        <i class="fa-solid fa-plus mr-2" aria-hidden="true"></i>{m.achievements.categoriesMake()}
-      </button>
-    </div>
-    <div class="mt-6">
-      <ToggleRow checked={!settings.disabledCategories.includes("prestige")}
-                 title={m.achievements.categoriesPrestigeTitle()}
-                 subtitle={m.achievements.categoriesPrestigeSubtitle()}
-                 colors={$colorStore}
-                 disabled={saving}
-                 onchange={(on) => { const p = ordered.find((c) => c.key === "prestige"); if (p) setEnabled(p, on); }} />
-    </div>
-  </div>
+  <PluginCard title={m.achievements.categoriesPrestigeTitle()} alwaysOpen>
+    <ToggleRow checked={!settings.disabledCategories.includes("prestige")}
+               title={m.achievements.categoriesPrestigeSubtitle()}
+               colors={$colorStore}
+               disabled={saving}
+               onchange={(on) => { const p = ordered.find((c) => c.key === "prestige"); if (p) setEnabled(p, on); }} />
+  </PluginCard>
 </div>
+
+{#if editing}
+  <CategorySheet category={editing.category} {catalog} {lookups} {onchanged} {onerror} onclose={() => { editing = null; }} />
+{/if}

@@ -41,30 +41,54 @@
 
   let scrollArea: HTMLDivElement | undefined = $state();
 
+  let dragging = false;
+  let lastY = 0;
+  let lastTime = 0;
+  let velocity = 0;
+  let dismissing = $state(false);
+
   function onTouchStart(event: TouchEvent) {
-    if (!isMobile) return;
+    if (!isMobile || dismissing) return;
     if (scrollArea && scrollArea.scrollTop > 0) return;
     dragStartY = event.touches[0].clientY;
+    dragging = false;
+    lastY = dragStartY;
+    lastTime = event.timeStamp;
+    velocity = 0;
   }
 
   function onTouchMove(event: TouchEvent) {
     if (dragStartY === null) return;
-    const delta = event.touches[0].clientY - dragStartY;
-    if (delta <= 0) {
-      dragStartY = null;
-      dragOffset = 0;
-      return;
+    const y = event.touches[0].clientY;
+    const delta = y - dragStartY;
+    if (!dragging) {
+      if (delta < 0) {
+        dragStartY = null;
+        return;
+      }
+      if (delta < 6) return;
+      dragging = true;
     }
-    dragOffset = delta;
+    const elapsed = event.timeStamp - lastTime;
+    if (elapsed > 0) velocity = (y - lastY) / elapsed;
+    lastY = y;
+    lastTime = event.timeStamp;
+    dragOffset = Math.max(0, delta);
     if (event.cancelable) event.preventDefault();
   }
 
   function onTouchEnd() {
     if (dragStartY === null) return;
-    const shouldClose = dragOffset > 120;
+    const shouldClose = dragging && (dragOffset > 120 || (velocity > 0.5 && dragOffset > 24));
     dragStartY = null;
-    dragOffset = 0;
-    if (shouldClose) close();
+    dragging = false;
+    if (!shouldClose) {
+      dragOffset = 0;
+      return;
+    }
+    dismissing = true;
+    dragOffset = window.innerHeight;
+    setTimeout(close, 200);
   }
 
   $effect(() => {
@@ -78,6 +102,8 @@
 
   $effect(() => {
     if (!browser || !open) return;
+    dismissing = false;
+    dragOffset = 0;
     window.addEventListener("keydown", handleKey);
     window.addEventListener("popstate", handlePopState);
     document.body.style.overflow = "hidden";
@@ -103,14 +129,15 @@
 
       <div
         class="relative flex flex-col shadow-lg w-full {isMobile ? 'h-[92dvh] rounded-t-2xl border-t' : 'h-full max-w-2xl border-l'}"
-        style="background: {$colorStore.background};
+        style="background: {$colorStore.surface};
                border-color: {$colorStore.primary}30;
                transform: translateY({dragOffset}px);
-               transition: {dragStartY === null ? 'transform 150ms ease-out' : 'none'};"
+               transition: {dragStartY !== null ? 'none' : dismissing ? 'transform 200ms ease-in' : 'transform 150ms ease-out'};"
         role="dialog"
         aria-modal="true"
         aria-labelledby="wiki-drawer-title"
-        transition:fly={isMobile ? { y: 400, duration: 300 } : { x: 400, duration: 300 }}
+        in:fly={isMobile ? { y: 400, duration: 300 } : { x: 400, duration: 300 }}
+        out:fly={dismissing ? { duration: 0 } : isMobile ? { y: 400, duration: 300 } : { x: 400, duration: 300 }}
         ontouchstart={onTouchStart}
         ontouchmove={onTouchMove}
         ontouchend={onTouchEnd}

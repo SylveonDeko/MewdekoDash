@@ -24,6 +24,7 @@
 
     // Import  components
     import TabbedDashboard from "$lib/components/layout/TabbedDashboard.svelte";
+    import FeatureGrid from "$lib/components/dashboard/FeatureGrid.svelte";
     import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
     import KeyboardShortcuts from "$lib/components/specialized/KeyboardShortcuts.svelte";
 
@@ -739,6 +740,8 @@
                         </div>
                     </div>
                 {/if}
+
+                <FeatureGrid />
 
                 <!-- Tabbed Dashboard -->
                 {#key $currentGuild?.id}

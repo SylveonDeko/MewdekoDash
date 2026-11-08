@@ -1,9 +1,10 @@
 ---
 title: NSFW
 slug: nsfw
-summary: Adult image commands that only work in channels marked NSFW, with a per-server tag blacklist and optional timed auto posting.
+summary: Adult image commands that only work in NSFW channels, with a tag blacklist for your server
 icon: fa-eye-slash
 category: Entertainment
+dashboard: /dashboard/utility?tab=nsfw
 module: Nsfw
 tags: [nsfw, hentai, booru, rule34, e621, danbooru, gelbooru, nhentai, reddit, tag blacklist, autohentai, nsfwtoggle]
 related: [servermanagement, permissions, filter]
@@ -15,12 +16,11 @@ The NSFW module fetches adult images from image boards and Reddit on request. Ev
 
 Staff control two things. `nsfwtoggle` (in the Administration module) flips the NSFW flag on the current channel, which is what unlocks these commands there. `nsfwtagbl` keeps a list of tags that are removed from every image board search in this server, so a server can allow the module while excluding content it does not want.
 
-Members run a source command with optional tags and get one image with its rating, source and first few tags. The "bomb" variants post four at once. Moderators can also start a timer that posts a new image into a channel every so many seconds.
+Members run a source command with optional tags and get one image, shown with its rating and source. The first few tags appear under it. The "bomb" variants post four at once. Moderators can also start a timer that posts a new image into a channel every so many seconds.
 
 ## Why you would use it
 
-- An 18+ server wants image commands confined to its marked channels.
-- Staff want certain tags blocked server-wide without turning the module off.
+- An 18+ server wants image commands confined to its marked channels, with certain tags blocked server-wide and the module left on.
 - A dedicated channel should get a fresh image on a timer without anyone typing.
 
 ## Channel requirement
@@ -49,25 +49,27 @@ Tags are separated by spaces. On e621 and Derpibooru the tag `yuri` is translate
 
 `nsfwtagbl` with no argument lists the blacklisted tags. `nsfwtagbl <tag>` adds the tag, or removes it if it is already on the list. Results that carry a blacklisted tag are skipped for every image board command in the server. It needs Manage Messages.
 
+The dashboard edits the same list. Open the **NSFW filter** tab on the Utility page. The **Blocked NSFW tags** card shows the count and a chip for every blocked tag. Type a tag (up to 100 characters, stored in lowercase) in the box that reads "Tag to block, e.g. gore" and press **Block tag**. Remove a tag with the remove button on its chip. The list says "No tags blocked." when it is empty.
+
 ## Auto posting
 
 `autohentai <seconds> [tags]`, `autoboobs <seconds>` and `autobutts <seconds>` start a timer in the current channel. The interval must be at least 20 seconds for `autohentai` and `autobutts`; `autoboobs` does not enforce a minimum. Running the command with `0`, or with no interval, stops the timer for that channel. For `autohentai`, separate alternative tag sets with `|` and the bot picks one at random each time; leave the tags out for random images. These need Manage Messages and the channel must be NSFW. Timers do not survive a bot restart.
 
 ## Settings
 
-There is no dashboard page for this module.
+The only dashboard setting is the tag blacklist, in the **NSFW filter** tab of the Utility page. The rest is done with commands.
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
 | Channel NSFW flag | off | Whether any of these commands run in a channel |
-| Tag blacklist | empty | Tags excluded from image board results in this server |
+| Blocked NSFW tags | empty | Tags excluded from image board results in this server |
 | Auto post timers | none | Per channel timers started with the `auto...` commands |
 
 ## Setup walkthrough
 
 1. Pick the channel and run `nsfwtoggle` in it, or set the flag in Discord's channel settings.
 2. Use Command Permissions to keep the module out of everywhere else, for example `srvrmdl nsfw disable` followed by `chnlmdl nsfw enable #adult`.
-3. Add tags you do not want with `nsfwtagbl <tag>`, one per command.
+3. Add tags you do not want under **Blocked NSFW tags** in the **NSFW filter** tab, or with `nsfwtagbl <tag>`, one per command.
 4. Test with `hentai` or `rule34 <tag>` in the channel.
 5. Optionally start `autohentai 300 <tags>` and stop it later with `autohentai 0`.
 

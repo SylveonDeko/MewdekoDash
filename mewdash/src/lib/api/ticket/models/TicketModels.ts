@@ -12,58 +12,122 @@ export enum ButtonStyle {
 }
 
 /**
- * Ticket
- * Maps to DataModel.Ticket
+ * Ticket as the list and detail endpoints return it
  */
 export interface Ticket {
   id: number;
   guildId: bigint;
   channelId: bigint;
+  channelName?: string;
   creatorId: bigint;
+  creatorName?: string;
   buttonId: number | null;
+  buttonLabel?: string | null;
   selectOptionId: number | null;
+  optionLabel?: string | null;
   createdAt: string;
   closedAt: string | null;
   isArchived: boolean;
   tags: string[] | null;
   claimedBy: bigint | null;
+  claimedByName?: string | null;
   lastActivityAt: string | null;
   caseId: number | null;
-  modalResponses: string | null;
+  modalResponses?: string | null;
   priority: string | null;
   transcriptUrl: string | null;
   isDeleted: boolean;
 }
 
 /**
- * Ticket panel
- * Maps to DataModel.TicketPanel
+ * Staff note on a ticket
+ */
+export interface TicketNote {
+  id: number;
+  authorId: bigint;
+  authorName: string;
+  content: string;
+  createdAt: string;
+}
+
+/**
+ * Ticket panel as the panel list returns it
  */
 export interface TicketPanel {
   id: number;
   guildId: bigint;
   channelId: bigint;
+  channelName: string;
+  channelMention?: string | null;
   embedJson: string;
   messageId: bigint;
+  buttonCount: number;
+  selectMenuCount: number;
 }
 
 /**
- * Panel button
- * Maps to Mewdeko.Database.L2DB.PanelButton
+ * Button on a panel, as the panel's button list returns it
  */
 export interface PanelButton {
   id: number;
-  panelId: number;
+  customId: string;
   label: string;
   emoji: string | null;
-  customId: string;
   style: number;
-  openMessageJson: string | null;
-  modalJson: string | null;
-  channelNameFormat: string;
   categoryId: bigint | null;
   archiveCategoryId: bigint | null;
-  threadChannelId?: bigint | null;
+  threadChannelId: bigint | null;
+  supportRoles: bigint[];
+  viewerRoles: bigint[];
+  hasModal: boolean;
+  hasCustomOpenMessage: boolean;
+}
+
+/**
+ * Option in a panel's select menu
+ */
+export interface PanelSelectOption {
+  id: number;
+  label: string;
+  value: string;
+  description: string | null;
+  emoji: string | null;
+  categoryId: bigint | null;
+  archiveCategoryId: bigint | null;
+  threadChannelId: bigint | null;
+  hasModal: boolean;
+  hasCustomOpenMessage: boolean;
+}
+
+/**
+ * Select menu on a panel
+ */
+export interface PanelSelectMenu {
+  id: number;
+  customId: string;
+  placeholder: string;
+  options: PanelSelectOption[];
+}
+
+/**
+ * Full settings of one button or select option. TimeSpans arrive as "d.hh:mm:ss".
+ */
+export interface TicketComponentDetail {
+  id: number;
+  label: string;
+  style?: number;
+  description?: string | null;
+  emoji: string | null;
+  customId?: string;
+  value?: string;
+  channelNameFormat: string | null;
+  categoryId: bigint | null;
+  categoryName?: string | null;
+  archiveCategoryId: bigint | null;
+  archiveCategoryName?: string | null;
+  claimedCategoryId: bigint | null;
+  dmTranscript: boolean;
+  threadChannelId: bigint | null;
   supportRoles: bigint[];
   viewerRoles: bigint[];
   autoCloseTime: string | null;
@@ -71,7 +135,7 @@ export interface PanelButton {
   maxActiveTickets: number;
   allowedPriorities: string[] | null;
   defaultPriority: string | null;
-  saveTranscript: boolean;
+  saveTranscript: boolean | null;
   deleteOnClose: boolean;
   lockOnClose: boolean;
   renameOnClose: boolean;
@@ -81,22 +145,12 @@ export interface PanelButton {
   renameOnArchive: boolean;
   removeCreatorOnArchive: boolean;
   autoArchiveOnClose: boolean;
-}
-
-/**
- * Panel select menu
- * Maps to DataModel.PanelSelectMenu
- */
-export interface PanelSelectMenu {
-  id: number;
-  panelId: number;
-  customId: string;
-  placeholder: string;
+  openMessageJson: string | null;
+  modalJson: string | null;
 }
 
 /**
  * Ticket case
- * Maps to DataModel.TicketCase
  */
 export interface TicketCase {
   id: number;
@@ -105,12 +159,45 @@ export interface TicketCase {
   description: string | null;
   createdAt: string;
   createdBy: bigint;
+  createdByName?: string;
   closedAt: string | null;
+  linkedTickets: number;
+}
+
+/**
+ * Ticket linked to a case
+ */
+export interface CaseTicket {
+  id: number;
+  channelId: bigint;
+  channelName: string;
+  creatorId: bigint;
+  creatorName: string;
+  createdAt: string;
+  closedAt: string | null;
+  isArchived: boolean;
+}
+
+/**
+ * Note on a case
+ */
+export interface CaseNote {
+  id: number;
+  content: string;
+  authorId: bigint;
+  createdAt: string;
+}
+
+/**
+ * Case with its tickets and notes
+ */
+export interface TicketCaseDetail extends Omit<TicketCase, "linkedTickets"> {
+  linkedTickets: CaseTicket[];
+  notes: CaseNote[];
 }
 
 /**
  * Ticket priority
- * Maps to DataModel.TicketPriority
  */
 export interface TicketPriority {
   id: number;
@@ -127,7 +214,6 @@ export interface TicketPriority {
 
 /**
  * Ticket tag
- * Maps to DataModel.TicketTag
  */
 export interface TicketTag {
   id: number;
@@ -146,59 +232,44 @@ export interface GuildStatistics {
   totalTickets: number;
   openTickets: number;
   closedTickets: number;
-  archivedTickets: number;
-  averageResponseTime: string;
-  averageResolutionTime: string;
+  averageResponseTime: number | string;
+  averageResolutionTime: number | string;
+  ticketsByPriority?: Record<string, number>;
 }
 
 /**
- * User statistics
+ * Statistics for one user
  */
-export interface UserStatistics {
-  userId: bigint;
-  ticketsCreated: number;
-  ticketsClaimed: number;
-  averageResponseTime: string;
-  rating: number;
-}
+export type UserStatistics = Record<string, unknown>;
+
+/**
+ * Tickets opened per day
+ */
+export type TicketActivity = Record<string, number>;
 
 /**
  * Staff response stats
  */
 export interface StaffResponseStats {
   staffId: bigint;
-  username: string;
-  ticketsClaimed: number;
-  averageResponseTime: string;
-  rating: number;
+  staffName: string;
+  averageResponseTimeMinutes: number;
 }
 
 /**
- * Ticket activity
- */
-export interface TicketActivity {
-  date: string;
-  opened: number;
-  closed: number;
-}
-
-/**
- * Panel status
+ * Panel status: 0 is fine, 1 means the message is gone, 2 means the channel is gone
  */
 export interface PanelStatus {
-  panelId: number;
-  channelId: bigint;
-  messageExists: boolean;
-  buttonCount: number;
-  selectMenuCount: number;
+  panelId: bigint;
+  status: number;
 }
 
 /**
  * Recreate all panels response
  */
 export interface RecreateAllPanelsResponse {
-  recreatedCount: number;
-  failedCount: number;
+  recreated: number;
+  failed: number;
   errors: string[];
 }
 
@@ -208,7 +279,32 @@ export interface RecreateAllPanelsResponse {
 export interface BlacklistedUserResponse {
   userId: bigint;
   username: string;
-  reason: string | null;
-  blacklistedAt: string;
-  blacklistedBy: bigint;
+  restrictedTypes: string[] | null;
+}
+
+/**
+ * Server-wide ticket settings
+ */
+export interface TicketSettings {
+  transcriptChannelId?: bigint | null;
+  logChannelId?: bigint | null;
+  defaultMaxTickets?: number;
+  blacklistedUsers?: bigint[];
+  dmTranscriptOnClose?: boolean;
+  enableStaffPings?: boolean;
+  enableDmNotifications?: boolean;
+  notificationRoles?: bigint[];
+}
+
+/**
+ * What the overview endpoint returns
+ */
+export interface TicketOverview {
+  statistics: GuildStatistics | null;
+  ticketActivity: Record<string, number> | null;
+  staffResponseStats: StaffResponseStats[];
+  panels: Array<{ messageId: bigint; channelId: bigint; channelName: string; buttonCount: number; selectMenuCount: number }>;
+  priorities: TicketPriority[];
+  tags: TicketTag[];
+  cases: Array<{ id: number; title: string; createdAt: string; closedAt: string | null }>;
 }

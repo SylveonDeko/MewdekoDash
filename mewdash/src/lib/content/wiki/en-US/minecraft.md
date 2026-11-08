@@ -1,7 +1,7 @@
 ---
 title: Minecraft
 slug: minecraft
-summary: Register your Minecraft servers, post live status embeds that update themselves, get online and offline alerts, run RCON commands, and bridge in-game chat, joins, deaths and advancements to Discord with the companion plugin.
+summary: Connect your Minecraft servers to Discord with live status embeds and in-game chat
 icon: fa-server
 category: Entertainment
 dashboard: /dashboard/minecraft
@@ -12,7 +12,7 @@ related: [statchannels, logging, utility]
 
 ## What it does
 
-Staff register one or more Minecraft servers by name and address. Any member can then run `mcstatus` to see whether the server is up, its MOTD, version, latency and who is online. A server can also be watched: the bot posts a status embed in a channel and edits it on a timer, or writes the player count into the channel topic, and announces when the server goes down or comes back.
+Staff register one or more Minecraft servers by name and address. Any member can then run `mcstatus` to see whether the server is up, its MOTD, version, latency and who is online. A server can also be watched: the bot posts a status embed in a channel and edits it on a timer, or writes the player count into the channel topic. It also announces when the server goes down or comes back.
 
 If the server has RCON enabled, staff can send console commands and manage the whitelist from Discord or the dashboard console without joining the game.
 
@@ -23,7 +23,7 @@ The optional companion plugin turns the link into a two-way bridge. Player chat,
 - Show a live "who is online" embed so members know when it is worth logging in.
 - Alert the community the moment the server crashes or comes back after maintenance.
 - Whitelist new members from Discord without opening the server console.
-- Keep Discord-only members in the loop with in-game chat, deaths and advancements.
+- Keep Discord-only members in the loop with in-game chat and deaths.
 - Look up a player's UUID or skin render while handling an application or report.
 
 ## Server types
@@ -38,21 +38,21 @@ Each server has a name that is stored lowercased, and the first server you add b
 
 ## Watching a server
 
-Set a **Watch Channel** and the bot queries the server every **Watch Interval** minutes (default 5, minimum 1). What it does with the result depends on the **Watch Mode**.
+Set a **Watch channel** and the bot queries the server every **Watch interval (minutes)** (default 5, dashboard range 1 to 60). What it does with the result depends on the **Watch mode**.
 
 | Mode | Behaviour |
 | --- | --- |
 | Embed (edit in place) | Posts one status embed and edits it every tick; reposts if the message is deleted |
-| Channel Topic | Writes a short status line into the channel topic, at most once every five minutes |
+| Channel topic | Writes a short status line into the channel topic, at most once every five minutes |
 | Both | Does both of the above |
 
 Every tick also records a snapshot of online state, player count, latency and version. The dashboard **History** tab charts these over time.
 
-When the online state flips, the bot posts an alert in the watch channel: a green "came online" or red "went offline" embed by default, or your own **Server Online Alert** and **Server Offline Alert** templates.
+When the online state flips, the bot posts an alert in the watch channel: a green "came online" or red "went offline" embed by default, or your own **Server online alert** and **Server offline alert** templates.
 
 ### Status placeholders
 
-The **Custom Watch Embed** and both alert templates are run through the embed parser and support these placeholders.
+The **Custom watch embed** and both alert templates are run through the embed parser and support these placeholders.
 
 | Placeholder | Value |
 | --- | --- |
@@ -76,22 +76,22 @@ The **Custom Watch Embed** and both alert templates are run through the embed pa
 
 ## RCON and the whitelist
 
-Turn on **RCON Settings** for a server and enter the **RCON Port** and **RCON Password** from `server.properties`. `mcrcon` then sends any console command and returns the output. `mcwhitelist` wraps the whitelist commands with the actions `add`, `remove`, `list`, `on`, `off` and `reload`. The dashboard shows the whitelist as a list with add and remove buttons, and the **Console** tab gives a command prompt for servers with RCON enabled.
+Turn on **RCON settings** for a server and enter the **RCON port** and **RCON password** from `server.properties`. `mcrcon` then sends any console command and returns the output. `mcwhitelist` wraps the whitelist commands with the actions `add`, `remove`, `list`, `on`, `off` and `reload`. The dashboard shows the **Whitelist** card as a list with add and remove buttons, and the **Console** tab gives a command prompt for servers with RCON enabled.
 
 > [!WARNING]
 > RCON gives full console access. Keep `mcrcon` limited to administrators and treat the password like any other server credential.
 
 ## The companion plugin bridge
 
-The bridge needs the MewdekoMC plugin on the game server: a Paper plugin for Paper 1.21+ or a NeoForge mod for 21.1.x, both on Java 21. On the dashboard, open the server's **Companion Plugin** section and generate a key. Copy the **API URL** and **API key** into the plugin's `config.yml` (Paper) or `config/mewdeko-server.toml` (NeoForge), then restart or run `/mewdeko reconnect`. The key is only shown once; generate a new one to replace it.
+The bridge needs the MewdekoMC plugin on the game server: a Paper plugin for Paper 1.21+ or a NeoForge mod for 21.1.x, both on Java 21. On the dashboard, open the server's **Integrations** section and press **Generate key** in the **Companion plugin** card. Copy the `api-url` and `api-key` values into the plugin's `config.yml` (Paper) or `config/mewdeko-server.toml` (NeoForge), then restart or run `/mewdeko reconnect`. The key is only shown once. **Regenerate key** replaces it, which stops the old key working, and **Revoke key** disconnects the plugin.
 
 Once connected, the plugin streams events over a WebSocket and the bot routes them to channels.
 
 | Event | Goes to | Default look |
 | --- | --- | --- |
-| Player join | **Join/Leave** channel | Green embed with the player's name and avatar |
-| Player leave | **Join/Leave** channel | Red embed with the player's name and avatar |
-| Chat | **Chat Bridge** channel | `**player**: message` |
+| Player join | **Join/leave** channel | Green embed with the player's name and avatar |
+| Player leave | **Join/leave** channel | Red embed with the player's name and avatar |
+| Chat | **Chat bridge** channel | `**player**: message` |
 | Death | **Deaths** channel | Gray embed with the death message |
 | Advancement | **Advancements** channel | Green embed with the advancement name |
 | Server status | Nowhere; stored as a history snapshot with TPS and memory | |
@@ -100,7 +100,7 @@ Any event channel left empty falls back to the **Watch Channel**. Messages sent 
 
 ### Bridge event templates
 
-Each Discord-bound event can have its own template under **Bridge Event Templates**. They accept embed builder output, mentions are neutralised, and these placeholders are replaced.
+Each Discord-bound event can have its own template under **Bridge Event Templates**. They accept embed builder output and replace these placeholders. Mentions are neutralised.
 
 | Template | Placeholders |
 | --- | --- |
@@ -113,33 +113,55 @@ Each Discord-bound event can have its own template under **Bridge Event Template
 
 ## Settings
 
-The Minecraft page has a **Servers** tab, an **Add Server** tab, **History**, **Console**, and a tab named after the selected server for editing it.
+The Minecraft page has three tabs: **Servers**, **History** and **Console**. **Query all** in the page header polls every registered server at once. Changes save automatically.
+
+### Servers tab
+
+The **Add server** card sits above the list of registered servers. Each server card shows its status, player count, whether RCON is enabled and the watch channel and interval. Opening a server slides out a panel named after it, with a refresh button, a **Set as default** star and a remove button in the header, and four sections: **Status**, **Settings**, **Messages** and **Integrations**.
+
+| Section | Contents |
+| --- | --- |
+| Status | Players, **Version**, latency, **Software**, **Map** and **MOTD**, plus the online player list and plugin list when the server reports them. Shows **Server is offline or unreachable** when it cannot be reached |
+| Settings | **Connection**, **Status watch** and **Event channels (leave empty to use watch channel)** cards |
+| Messages | **Status messages** and **Bridge event templates** |
+| Integrations | **RCON settings**, **Whitelist** and **Companion plugin** cards |
+
+### Settings
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
-| Name | | Short identifier used in commands, for example `survival` |
+| Server name | | Short identifier used in commands, for example `survival` |
 | Address | | Host name or IP |
-| Port | 25565 | Game port; 19132 for Bedrock |
-| Type | Java Edition | Java, Bedrock or Geyser |
-| Query Port (0 = game port) | 0 | Port for the extended query protocol |
-| Watch Channel | none | Channel that receives the status embed and alerts |
-| Watch Interval (minutes) | 5 | How often the server is polled |
-| Watch Mode | Embed | Embed, Channel Topic or Both |
-| Custom Watch Embed | default embed | Your own status embed using the placeholders above |
-| Server Online Alert | default embed | Posted when the server comes back |
-| Server Offline Alert | default embed | Posted when the server goes down |
-| Event Channels | watch channel | Chat Bridge, Join/Leave, Deaths, Advancements |
-| Bridge Event Templates | defaults | Per-event templates listed above |
-| RCON Settings | off | Enabled toggle, RCON Port, RCON Password |
-| Companion Plugin | no key | Generate or revoke the plugin API key and copy the API URL |
+| Port | 25565 | Game port, 1 to 65535; 19132 for Bedrock |
+| Server type / Type | Java Edition | Java Edition, Bedrock Edition or Geyser (Java + Bedrock) |
+| Query port (0 = game port) | 0 | Port for the extended query protocol |
+| Watch channel | none | Channel that receives the status embed and alerts |
+| Watch mode | Embed (edit in place) | Embed (edit in place), Channel topic or Both |
+| Watch interval (minutes) | 5 | How often the server is polled, 1 to 60 |
+| Chat bridge, Join/leave, Deaths, Advancements | watch channel | Channel for each bridge event |
+| Custom watch embed | default embed | Your own status embed using the placeholders above |
+| Server online alert | default embed | Posted when the server comes back |
+| Server offline alert | default embed | Posted when the server goes down |
+| Bridge event templates | defaults | Player join (Discord), Player leave (Discord), Chat message (Discord), Chat from Discord (in-game format), Death message (Discord) and Advancement (Discord) |
+| RCON settings | Off | **Enabled** toggle, **RCON port** and **RCON password**. The saved password is never shown again, only replaced |
+| Whitelist | | Shown once RCON is enabled: add a player by name or from the online player suggestions, and remove with the button on each entry |
+| Companion plugin | No key configured | **Generate key**, **Regenerate key** and **Revoke key** |
+
+### History tab
+
+Pick a server and a period of 24h, 7d or 30d. The tab shows **Avg players**, **Peak players**, **Avg latency** and uptime, plus charts for players online and latency. It shows **Not enough data yet.** until the watch has recorded snapshots.
+
+### Console tab
+
+Pick a server with RCON enabled and type a command at the prompt. The tab shows **No servers have RCON enabled** when none qualify.
 
 ## Setup walkthrough
 
-1. Open **Minecraft** in the dashboard and go to **Add Server**.
-2. Enter a **Name**, the **Address** and **Port**, pick the **Type**, and choose a **Watch Channel** and **Watch Mode**. Save.
-3. Check the **Servers** tab: the status card should show the server online within a few seconds.
-4. Edit the server to enable **RCON Settings** if you want console and whitelist access, then try the **Console** tab.
-5. For chat bridging, set the **Event Channels**, generate a key under **Companion Plugin**, install the plugin on the game server and paste the URL and key into its config.
+1. Open **Minecraft** in the dashboard. On the **Servers** tab, fill in the **Add server** card with the name, **Address**, **Port**, server type and optional query port, then press **Add server**.
+2. The new server opens automatically. In **Settings**, choose a **Watch channel** and **Watch mode** under **Status watch**.
+3. Open **Status** and refresh: the server should show its players and version within a few seconds.
+4. In **Integrations**, turn on **RCON settings** and enter the port and password if you want console and whitelist access, then try the **Console** tab.
+5. For chat bridging, set the **Event channels** in **Settings**, generate a key under **Companion plugin**, install the plugin on the game server and paste the URL and key into its config.
 6. Join the game and say something: it should appear in the Chat Bridge channel, and a reply there should appear in game.
 
 ## Commands

@@ -1495,7 +1495,7 @@
     {#if bottomSheetOpen}
       <div
         class="fixed inset-x-0 bottom-0 z-20 rounded-t-3xl border-t shadow-2xl transition-all"
-        style="background: {$colorStore.background}; border-color: {$colorStore.primary}30;
+        style="background: {$colorStore.surface}; border-color: {$colorStore.primary}30;
              max-height: 70vh;"
         transition:fly={{ y: 100, duration: 300 }}
       >
@@ -1673,6 +1673,8 @@
                           options={textAlignOptions}
                           selected={element.textAlign || "left"}
                           searchable={false}
+                          clearable={false}
+                          customIcon="fa-text"
                           ariaLabel={m.xp.editorTextAlignment()}
                           onchange={(e) => updateCustomElement(element.id, { textAlign: String(e.selected) })}
                         />
@@ -1692,6 +1694,8 @@
                             options={progressStyleOptions}
                             selected={element.progressStyle || "rounded"}
                             searchable={false}
+                            clearable={false}
+                            customIcon="fa-palette"
                             ariaLabel={m.xp.editorProgressStyleAria()}
                             onchange={(e) => updateCustomElement(element.id, { progressStyle: String(e.selected) })}
                           />

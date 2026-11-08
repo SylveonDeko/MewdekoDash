@@ -6,6 +6,8 @@
   import PreviewCard from "./PreviewCard.svelte";
   import EmbedEditor from "./EmbedEditor.svelte";
   import ComponentEditor from "./ComponentEditor.svelte";
+  import ImagePlaceholderChip from "./ImagePlaceholderChip.svelte";
+  import { newImagePlaceholder, removePlaceholder } from "$lib/utils/imagePlaceholders";
   import ValidationCard from "./ValidationCard.svelte";
   import Notification from "$lib/components/ui/Notification.svelte";
   import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
@@ -42,6 +44,8 @@
     user?: DiscordUser | null;
     id?: string;
     ariaLabelledby?: string;
+    // A drawn card shown in the previews: the embed's image or a file below the message
+    previewCard?: { image: string; placement: "EmbedImage" | "Attached" } | null;
     // Events
     onchange?: (value: any) => void;
     onclose?: () => void;
@@ -137,6 +141,7 @@
     user = null,
     id,
     ariaLabelledby,
+    previewCard = null,
     onchange,
     onclose
   }: Props = $props();
@@ -151,6 +156,33 @@
   let contentTextarea: HTMLTextAreaElement | null = $state(null);
   let componentRows: ComponentRow[] = $state([]);
 
+  let contentImageToken: string | null = $state(null);
+  let lastCheckedContent = "";
+
+  $effect(() => {
+    lastCheckedContent = content;
+  });
+
+  function checkContentImage(next: string) {
+    const token = newImagePlaceholder(lastCheckedContent, next);
+    if (token) {
+      contentImageToken = token;
+    } else if (contentImageToken && !next.includes(contentImageToken)) {
+      contentImageToken = null;
+    }
+  }
+
+  function moveContentImage(mediaField: "thumbnail" | "image") {
+    const token = contentImageToken;
+    if (!token) return;
+    if (embeds.length === 0) addEmbed();
+    if (embeds.length === 0) return;
+    embeds[0] = { ...embeds[0], [mediaField]: { url: token } };
+    embeds = [...embeds];
+    content = removePlaceholder(content, token);
+    contentImageToken = null;
+  }
+
   /**
    * Inserts a placeholder token into the message content at the caret,
    * mirroring the percent button every embed field already has.
@@ -160,6 +192,7 @@
     const start = element?.selectionStart ?? content.length;
     const end = element?.selectionEnd ?? content.length;
     content = content.substring(0, start) + placeholder.name + content.substring(end);
+    checkContentImage(content);
     showContentPlaceholders = false;
     contentPlaceholderSearch = "";
     if (element) {
@@ -181,6 +214,7 @@
   let editingComponentKey = $state<string | null>(null);
   let editHistory = $state<string[]>([]);
   let historyIndex = $state(-1);
+  let headerMenuOpen = $state(false);
   let initialSnapshot = $state("");
   let restoringHistory = false;
   let historyDebounce: ReturnType<typeof setTimeout> | null = null;
@@ -1200,6 +1234,7 @@
 
   // Check if has content
   let hasContent = $derived(
+    !!previewCard ||
     (allowContent && typeof content === "string" && content.trim()) ||
     embeds.some(e => e.title || e.description || e.fields?.length > 0) ||
     (allowComponents && componentRows.some(row => row.components && row.components.length > 0))
@@ -1216,13 +1251,12 @@
 <button
   {id}
   aria-labelledby={ariaLabelledby}
-  class="w-full text-left rounded-xl border transition-all cursor-pointer p-4"
+  class="w-full text-left cursor-pointer"
   onclick={open}
-  style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
   type="button"
 >
-  <div class="flex items-start gap-4">
-    <div class="flex-shrink-0 mt-1">
+  <div class="flex items-start gap-3">
+    <div class="hidden sm:block flex-shrink-0 mt-1">
       <i class="fa-solid {icon}" style="color: {$colorStore.primary}; font-size: 24px;"></i>
     </div>
 
@@ -1236,14 +1270,15 @@
 
       {#if hasContent}
         <!-- Mini preview using PreviewCard -->
-        <div class="max-h-[200px] overflow-hidden rounded-lg border" style="border-color: {$colorStore.primary}20;">
-          <div class="scale-75 origin-top-left" style="width: 133.33%;">
+        <div class="max-w-2xl max-h-[240px] overflow-hidden rounded-lg">
+          <div style="zoom: 0.75;">
             <PreviewCard
               {content}
               {embeds}
               {componentRows}
               {user}
               {guildId}
+              card={previewCard}
               showEmpty={false}
             />
           </div>
@@ -1284,19 +1319,84 @@
       >
         <!-- Header -->
         <div
-          class="flex items-center justify-between px-4 md:px-6 py-4 border-b"
+          class="flex items-center gap-2 sm:gap-3 px-3 md:px-6 py-2 md:py-4 border-b"
           style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
         >
-          <div>
-            <h2 class="text-lg md:text-xl font-bold" style="color: {$colorStore.text};">
+          <button
+            class="sm:hidden shrink-0 size-11 rounded-lg flex items-center justify-center"
+            style="color: {$colorStore.text};"
+            onclick={cancel}
+            type="button"
+            aria-label={m.common.cancel()}
+          >
+            <i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i>
+          </button>
+
+          <div class="min-w-0 flex-1">
+            <h2 class="text-base md:text-xl font-bold truncate" style="color: {$colorStore.text};">
               {previewTitle}
             </h2>
-            <p class="text-xs md:text-sm" style="color: {$colorStore.muted};">
+            <p class="hidden sm:block text-sm truncate" style="color: {$colorStore.muted};">
               {previewDescription}
             </p>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="relative sm:hidden shrink-0">
+            <button
+              class="size-11 rounded-lg flex items-center justify-center"
+              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+              onclick={() => (headerMenuOpen = !headerMenuOpen)}
+              type="button"
+              aria-label={m.common.moreActions()}
+              aria-expanded={headerMenuOpen}
+            >
+              <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+            </button>
+            {#if headerMenuOpen}
+              <div
+                class="absolute right-0 top-full mt-2 z-20 w-48 rounded-lg border p-1 shadow-lg"
+                style="background: {$colorStore.surface}; border-color: {$colorStore.primary}30;"
+              >
+                <button
+                  class="w-full min-h-[44px] px-3 rounded-md flex items-center gap-3 text-sm disabled:opacity-50"
+                  style="color: {$colorStore.text};"
+                  onclick={() => { undo(); headerMenuOpen = false; }}
+                  disabled={historyIndex <= 0}
+                  type="button"
+                >
+                  <i class="fa-solid fa-rotate-left w-4" aria-hidden="true"></i>{m.common.undo()}
+                </button>
+                <button
+                  class="w-full min-h-[44px] px-3 rounded-md flex items-center gap-3 text-sm disabled:opacity-50"
+                  style="color: {$colorStore.text};"
+                  onclick={() => { redo(); headerMenuOpen = false; }}
+                  disabled={historyIndex >= editHistory.length - 1}
+                  type="button"
+                >
+                  <i class="fa-solid fa-rotate-right w-4" aria-hidden="true"></i>{m.common.redo()}
+                </button>
+                <button
+                  class="w-full min-h-[44px] px-3 rounded-md flex items-center gap-3 text-sm"
+                  style="color: #ED4245;"
+                  onclick={() => { clearAll(); headerMenuOpen = false; }}
+                  type="button"
+                >
+                  <i class="fa-solid fa-eraser w-4" aria-hidden="true"></i>{m.common.clearAll()}
+                </button>
+              </div>
+            {/if}
+          </div>
+
+          <button
+            class="sm:hidden shrink-0 min-h-[44px] px-4 rounded-lg font-medium text-sm"
+            style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
+            onclick={save}
+            type="button"
+          >
+            {m.common.save()}
+          </button>
+
+          <div class="hidden sm:flex items-center gap-2 shrink-0">
             <button
               class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all disabled:opacity-50"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -1420,6 +1520,7 @@
                         placeholder={m.embedbuilder.fullscreenContentPlaceholder()}
                         bind:value={content}
                         bind:this={contentTextarea}
+                        oninput={(e) => checkContentImage(e.currentTarget.value)}
                       ></textarea>
                       <button
                         class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
@@ -1441,6 +1542,14 @@
                         onsearch={(detail) => contentPlaceholderSearch = detail.term}
                       />
                     </div>
+                    {#if contentImageToken}
+                      <ImagePlaceholderChip
+                        token={contentImageToken}
+                        onthumbnail={() => moveContentImage("thumbnail")}
+                        onimage={() => moveContentImage("image")}
+                        ondismiss={() => (contentImageToken = null)}
+                      />
+                    {/if}
                   </div>
                 {/if}
 
@@ -1828,6 +1937,7 @@
                 {componentRows}
                 {user}
                 {guildId}
+                card={previewCard}
                 emptyMessage={m.embedbuilder.previewEmptyMessage()}
               />
             </div>
@@ -1911,6 +2021,7 @@
               {componentRows}
               {user}
               {guildId}
+              card={previewCard}
               emptyMessage={m.embedbuilder.previewEmptyMessage()}
             />
           </div>

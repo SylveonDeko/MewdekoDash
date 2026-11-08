@@ -46,7 +46,6 @@
   "import_post_in": "Opublikuj na",
   "import_retire_subtitle": "Zatrzymuje starą konfigurację z emoji i czyści jej emoji. Jeśli bot opublikował oryginalną wiadomość, zostanie usunięta.",
   "import_retire_title": "Wycofaj starą konfigurację",
-  "list_count": "Menu: {count} z {max}",
   "list_create_first": "Utwórz swoje pierwsze menu",
   "list_empty_text": "Opublikuj wiadomość z listą rozwijaną lub przyciskami, a członkowie sami wybiorą swoje role. Zaimki, kolory, pingi, regiony: po jednym menu na każde.",
   "list_empty_title": "Brak menu ról",

@@ -1094,6 +1094,22 @@ A unified navigation component that provides responsive navigation with server a
                     <div class="text-xs" style="color: {$colorStore.muted};">{m.layout.navMySettingsHint()}</div>
                   </div>
                 </a>
+                <a
+                  href="/custom-bot"
+                  class="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 ease-in-out border text-sm font-medium w-full"
+                  style="background: {$colorStore.primary}15;
+                         color: {$colorStore.text};
+                         border-color: {$colorStore.primary}30;"
+                  role="menuitem"
+                >
+                  <div class="p-1.5 rounded transition-all" style="background: {$colorStore.primary}20;">
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color: {$colorStore.primary}; font-size: 14px;"></i>
+                  </div>
+                  <div class="flex-1">
+                    <div class="font-semibold">{m.customBot.navTitle()}</div>
+                    <div class="text-xs" style="color: {$colorStore.muted};">{m.customBot.navHint()}</div>
+                  </div>
+                </a>
               </div>
 
               <!-- Logout -->
@@ -1312,6 +1328,22 @@ A unified navigation component that provides responsive navigation with server a
             <div class="flex-1">
               <div class="font-semibold">{m.common.mySettings()}</div>
               <div class="text-xs" style="color: {$colorStore.muted};">{m.layout.navMySettingsHint()}</div>
+            </div>
+          </a>
+          <a
+            href="/custom-bot"
+            class=" flex items-center gap-3 px-4 py-3 mt-2 rounded-lg transition-all duration-200 ease-in-out border font-medium w-full"
+            style="background: {$colorStore.primary}15;
+                   color: {$colorStore.text};
+                   border-color: {$colorStore.primary}30;"
+            onclick={closeMobileMenu}
+          >
+            <div class="p-2 rounded transition-all" style="background: {$colorStore.primary}20;">
+              <i class="fa-solid fa-wand-magic-sparkles" style="color: {$colorStore.primary}; font-size: 16px;"></i>
+            </div>
+            <div class="flex-1">
+              <div class="font-semibold">{m.customBot.navTitle()}</div>
+              <div class="text-xs" style="color: {$colorStore.muted};">{m.customBot.navHint()}</div>
             </div>
           </a>
         </div>

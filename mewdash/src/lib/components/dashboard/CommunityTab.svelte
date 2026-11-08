@@ -758,7 +758,7 @@
               <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.communityStreamsDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all"
-                 href="/dashboard/streams"
+                 href="/dashboard/alerts?tab=streams"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               {m.common.manage()}
             </a>

@@ -1,476 +1,223 @@
 <!-- routes/dashboard/highlights/+page.svelte -->
 <script lang="ts">
   import { m } from "$lib/i18n";
-    import { onMount } from "svelte";
-    import { fade, fly } from "svelte/transition";
-    import { colorStore } from "$lib/stores/colorStore";
-    import { currentGuild } from "$lib/stores/currentGuild";
-    import { type Highlight as HighlightType, highlightsApi } from "$lib/api/index.ts";
-    import { logger } from "$lib/logger";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/state";
+  import { fade } from "svelte/transition";
+  import { clientApi, highlightsApi } from "$lib/api/index.ts";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { logger } from "$lib/logger";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import PluginPage from "$lib/components/plugin/PluginPage.svelte";
+  import DisabledTab from "./components/DisabledTab.svelte";
+  import MemberSheet from "./components/MemberSheet.svelte";
+  import MembersTab from "./components/MembersTab.svelte";
+  import StatsTab from "./components/StatsTab.svelte";
+  import {
+    errorText,
+    groupByMember,
+    TABS,
+    type DisabledUser,
+    type HighlightRow,
+    type HighlightStats,
+    type Member,
+    type Named,
+    type TabId
+  } from "./components/highlightsModel";
 
-    import StatCard from "$lib/components/monitoring/StatCard.svelte";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import { requestConfirmation } from "$lib/stores/confirmationStore";
+  let rows: HighlightRow[] = $state([]);
+  let stats: HighlightStats | null = $state(null);
+  let disabled: DisabledUser[] = $state([]);
+  let channels: Named[] = $state([]);
+  let loading = $state(true);
+  let openUserId: string | null = $state(null);
+  let showNotification = $state(false);
+  let notificationMessage = $state("");
+  let notificationType: "success" | "error" = $state("success");
+  let loadedGuildId = "";
 
-    // Component state
-    let loading = $state(false);
-    let message = $state("");
-    let messageType: "success" | "error" | "info" = $state("info");
+  const guildId = $derived($currentGuild?.id ? BigInt($currentGuild.id) : null);
 
-    // Data state
-    let highlights: HighlightType[] = $state([]);
-    let stats: {
-        totalHighlights: number;
-        totalUsers: number;
-        topHighlightedWords: Array<{ word: string; count: number }>;
-        topUsers: Array<{ userId: bigint; username: string; highlightCount: number }>;
-        recentHighlights: Array<{ word: string; userId: bigint; username: string; dateAdded: string }>;
-    } | null = $state(null);
-    let disabledUsers: Array<{
-        userId: bigint;
-        username: string;
-        ignoredChannelsCount: number;
-        ignoredUsersCount: number;
-    }> = $state([]);
+  const tab: TabId = $derived.by(() => {
+    const requested = page.url.searchParams.get("tab");
+    return TABS.find(id => id === requested) ?? "members";
+  });
 
-    // UI state
-    let activeTab = $state("highlights");
-    let searchQuery = $state("");
-    let searchResults: typeof highlights = $state([]);
+  const labels = $derived<Record<TabId, { label: string; icon: string }>>({
+    members: { label: m.highlights.tabMembers(), icon: "fa-solid fa-bolt" },
+    disabled: { label: m.highlights.pageTabDisabled(), icon: "fa-solid fa-eye-slash" },
+    stats: { label: m.common.statistics(), icon: "fa-solid fa-chart-column" }
+  });
 
-    // Load all highlight data
-    async function loadAllHighlightData() {
-        if (!$currentGuild?.id) return;
+  const openMember = $derived(
+    openUserId === null ? null : (groupByMember(rows).find(member => member.userId === openUserId) ?? null)
+  );
 
-        loading = true;
-        try {
-            const [
-                highlightsData,
-                statsData,
-                disabledData
-            ] = await Promise.all([
-                highlightsApi.getAllHighlights($currentGuild.id).catch(() => []),
-                highlightsApi.getHighlightStats($currentGuild.id).catch(() => null),
-                highlightsApi.getDisabledUsers($currentGuild.id).catch(() => [])
-            ]);
+  const actionButtons = $derived([
+    { label: m.common.refresh(), icon: "fa-arrows-rotate", action: () => void load(), loading }
+  ]);
 
-            highlights = highlightsData;
-            stats = statsData;
-            disabledUsers = disabledData;
-        } catch (err) {
-            logger.error("Failed to load highlight data:", err);
-            showMessage(m.highlights.pageErrorLoad(), "error");
-        } finally {
-            loading = false;
-        }
+  function notify(message: string, type: "success" | "error" = "success") {
+    notificationMessage = message;
+    notificationType = type;
+    showNotification = true;
+    setTimeout(() => {
+      showNotification = false;
+    }, 3000);
+  }
+
+  function select(id: TabId) {
+    if (id === tab) return;
+    const url = new URL(page.url);
+    url.search = "";
+    url.searchParams.set("tab", id);
+    void goto(url, { replaceState: true, noScroll: true, keepFocus: true });
+  }
+
+  async function load() {
+    if (!guildId) return;
+    loading = true;
+    const id = guildId;
+    const results = await Promise.allSettled([
+      highlightsApi.getAllHighlights(id),
+      highlightsApi.getHighlightStats(id),
+      highlightsApi.getDisabledUsers(id)
+    ]);
+    if (guildId !== id) return;
+    if (results[0].status === "fulfilled") rows = results[0].value as HighlightRow[];
+    if (results[1].status === "fulfilled") stats = results[1].value;
+    if (results[2].status === "fulfilled") disabled = results[2].value;
+    for (const result of results) {
+      if (result.status === "rejected") {
+        logger.error("Failed to load highlight data:", result.reason);
+        notify(m.highlights.pageErrorLoad(), "error");
+        break;
+      }
     }
+    loading = false;
+  }
 
-    // Search highlights
-    async function searchHighlights() {
-        if (!$currentGuild?.id || !searchQuery.trim()) {
-            searchResults = [];
-            return;
-        }
-
-        try {
-            searchResults = await highlightsApi.searchHighlights($currentGuild.id, searchQuery);
-        } catch (err) {
-            logger.error("Failed to search highlights:", err);
-            showMessage(m.highlights.pageErrorSearch(), "error");
-        }
+  async function removeWord(row: HighlightRow) {
+    if (!guildId) return;
+    const confirmed = await requestConfirmation({ message: m.highlights.pageConfirmDelete(), confirmText: m.common.delete() });
+    if (!confirmed) return;
+    try {
+      await highlightsApi.removeHighlight(guildId, row.id);
+      notify(m.highlights.pageNotifyDeleted());
+    } catch (err) {
+      logger.error("Failed to delete highlight:", err);
+      notify(errorText(err, m.highlights.pageErrorDelete()), "error");
     }
+    await load();
+  }
 
-    // Delete highlight
-    async function deleteHighlight(highlightId: number) {
-        if (!$currentGuild?.id) return;
-        if (!(await requestConfirmation({ message: m.highlights.pageConfirmDelete(), confirmText: m.common.delete() }))) return;
-
-        try {
-            await highlightsApi.removeHighlight($currentGuild.id, highlightId);
-            showMessage(m.highlights.pageNotifyDeleted(), "success");
-            await loadAllHighlightData();
-            if (searchQuery.trim()) {
-                await searchHighlights();
-            }
-        } catch (err) {
-            logger.error("Failed to delete highlight:", err);
-            showMessage(m.highlights.pageErrorDelete(), "error");
-        }
-    }
-
-    // Delete all user highlights
-    async function deleteUserHighlights(userId: bigint, username: string) {
-        if (!$currentGuild?.id) return;
-        if (!(await requestConfirmation({ message: m.highlights.pageConfirmDeleteUser({ username }), confirmText: m.highlights.pageDeleteAll() }))) return;
-
-        try {
-            const result = await highlightsApi.removeUserHighlights($currentGuild.id, userId);
-            showMessage(m.highlights.pageNotifyDeletedCount({ count: result.removedCount }), "success");
-            await loadAllHighlightData();
-        } catch (err) {
-            logger.error("Failed to delete user highlights:", err);
-            showMessage(m.highlights.pageErrorDeleteMany(), "error");
-        }
-    }
-
-    // Utility functions
-    function showMessage(text: string, type: "success" | "error" | "info") {
-        message = text;
-        messageType = type;
-        setTimeout(() => {
-            message = "";
-        }, 5000);
-    }
-
-    function formatDate(dateString: string | null): string {
-        if (!dateString) return m.common.unknown();
-        return new Date(dateString).toLocaleString();
-    }
-
-    function groupHighlightsByUser() {
-        const grouped = new Map<string, HighlightType[]>();
-        highlights.forEach(h => {
-            const key = h.userId.toString();
-            if (!grouped.has(key)) {
-                grouped.set(key, []);
-            }
-            grouped.get(key)!.push(h);
-        });
-        return Array.from(grouped.entries()).map(([userId, userHighlights]) => ({
-            userId: BigInt(userId),
-            username: m.common.userFallback({ id: userId }),
-            highlights: userHighlights
-        }));
-    }
-
-    onMount(() => {
-        loadAllHighlightData();
+  async function removeAll(member: Member) {
+    if (!guildId) return;
+    const name = member.username ?? m.common.userFallback({ id: member.userId });
+    const confirmed = await requestConfirmation({
+      message: m.highlights.pageConfirmDeleteUser({ username: name }),
+      confirmText: m.highlights.pageDeleteAll()
     });
+    if (!confirmed) return;
+    try {
+      const result = await highlightsApi.removeUserHighlights(guildId, BigInt(member.userId));
+      notify(m.highlights.pageNotifyDeletedCount({ count: result.removedCount }));
+      if (openUserId === member.userId) openUserId = null;
+    } catch (err) {
+      logger.error("Failed to delete user highlights:", err);
+      notify(errorText(err, m.highlights.pageErrorDeleteMany()), "error");
+    }
+    await load();
+  }
 
-    // Tabs configuration
-    const tabs = $derived([
-        { id: "highlights", label: m.highlights.pageTabAll(), icon: "fa-bolt" },
-        { id: "search", label: m.common.search(), icon: "fa-magnifying-glass" },
-        { id: "disabled", label: m.highlights.pageTabDisabled(), icon: "fa-eye-slash" },
-        { id: "stats", label: m.common.statistics(), icon: "fa-chart-column" }
-    ]);
+  async function removeEverywhere(word: string) {
+    if (!guildId) return;
+    const confirmed = await requestConfirmation({
+      message: m.highlights.confirmRemoveWord({ word }),
+      confirmText: m.common.remove()
+    });
+    if (!confirmed) return;
+    try {
+      const result = await highlightsApi.removeWord(guildId, word);
+      notify(m.highlights.pageNotifyDeletedCount({ count: result.removedCount }));
+    } catch (err) {
+      logger.error("Failed to remove word:", err);
+      notify(errorText(err, m.highlights.pageErrorDeleteMany()), "error");
+    }
+    await load();
+  }
 
-    // Action buttons configuration
-    let actionButtons = $derived([
-        {
-            label: m.common.refresh(),
-            icon: "fa-arrows-rotate",
-            action: loadAllHighlightData,
-            loading: loading
-        }
-    ]);
-
-
-    let groupedHighlights = $derived(groupHighlightsByUser());
+  $effect(() => {
+    if (!$currentGuild) {
+      void goto("/dashboard");
+      return;
+    }
+    if (loadedGuildId !== $currentGuild.id.toString()) {
+      loadedGuildId = $currentGuild.id.toString();
+      openUserId = null;
+      void load();
+      clientApi
+        .getTextChannels(BigInt($currentGuild.id))
+        .then(value => (channels = value as Named[]))
+        .catch(err => logger.error("Failed to load channels:", err));
+    }
+  });
 </script>
 
-{#snippet statusMessageContent()}
-    {#if message}
-        <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
-             style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
-                border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
-             in:fly={{ x: 20, duration: 300 }}>
-            {#if messageType === 'success'}
-                <i class="fa-utility-duo fa-regular fa-circle-check"
-                   style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
-            {:else if messageType === 'error'}
-                <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-                   style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
-            {:else}
-                <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            {/if}
-            <span
-              style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
-        </div>
-    {/if}
+{#snippet statusMessages()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-[10001]" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
 {/snippet}
 
-<DashboardPageLayout
+<PluginPage
+  {statusMessages}
   {actionButtons}
-  bind:activeTab
-  guildName={$currentGuild?.name || m.common.dashboard()}
   icon="fa-bolt"
-  statusMessages={statusMessageContent}
-  subtitle={m.highlights.pageSubtitle()}
-  {tabs}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   title={m.features.highlightsName()}
+  subtitle={m.highlights.pageSubtitle()}
 >
+  <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 [&>:last-child:nth-child(odd)]:col-span-2 sm:[&>:last-child:nth-child(odd)]:col-span-1" role="group" aria-label={m.highlights.tabAria()}>
+    {#each TABS as id (id)}
+      {@const selected = tab === id}
+      <button
+        type="button"
+        class="min-h-[44px] px-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2"
+        style="background: {selected ? $colorStore.selectedSurface : `${$colorStore.primary}08`}; border-color: {selected ? $colorStore.selectedBorder : `${$colorStore.primary}20`}; color: {$colorStore.text};"
+        aria-pressed={selected}
+        onclick={() => select(id)}
+      >
+        <i class={labels[id].icon} aria-hidden="true"></i>
+        {labels[id].label}
+      </button>
+    {/each}
+  </div>
 
-    {#if activeTab === 'highlights'}
-        <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
-            <div class=" rounded-2xl border p-6 md:p-8 transition-all relative z-20"
-                 style="background: {$colorStore.primary}0c;
-                        border-color: {$colorStore.primary}30;">
-                <div class="flex items-center gap-3 mb-6">
-                    <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.highlights.pageAllTitle({ count: highlights.length })}</h2>
-                </div>
+  {#if guildId}
+    {#key tab}
+      {#if tab === "members"}
+        <MembersTab {rows} {loading} onopen={member => (openUserId = member.userId)} onremoveall={removeAll} />
+      {:else if tab === "disabled"}
+        <DisabledTab users={disabled} {loading} />
+      {:else}
+        <StatsTab {stats} {rows} {loading} onremoveword={removeEverywhere} />
+      {/if}
+    {/key}
 
-                <div class="space-y-4">
-                    {#if highlights.length === 0}
-                        <div class="text-center py-8">
-                            <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.highlights.pageAllEmptyTitle()}</h3>
-                        </div>
-                    {:else}
-                        {#each groupedHighlights as userGroup}
-                            <div class="rounded-xl border p-4 transition-all"
-                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
-                                <div class="flex items-center justify-between mb-3">
-                                    <div class="flex items-center gap-3">
-                                        <i class="fa-utility-duo fa-regular fa-user-check" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                                        <div>
-                                            <div class="font-semibold" style="color: {$colorStore.text}">
-                                                {userGroup.username}
-                                            </div>
-                                            <div class="text-sm" style="color: {$colorStore.muted}">
-                                                {userGroup.highlights.length === 1 ? m.highlights.pageUserHighlightsOne({ count: userGroup.highlights.length }) : m.highlights.pageUserHighlightsOther({ count: userGroup.highlights.length })}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button
-                                      class="px-3 py-2 rounded-lg text-sm transition-all"
-                                            style="background: #ef444420; color: #ef4444;"
-                                            onclick={() => deleteUserHighlights(userGroup.userId, userGroup.username)}
-                                    >
-                                        {m.highlights.pageDeleteAll()}
-                                    </button>
-                                </div>
-
-                                <div class="flex flex-wrap gap-2">
-                                    {#each userGroup.highlights as highlight}
-                                        <div class="flex items-center gap-2 px-3 py-2 rounded-lg"
-                                             style="background: {$colorStore.primary}10;">
-                                            <span class="text-sm font-medium" style="color: {$colorStore.text}">
-                                                "{highlight.word}"
-                                            </span>
-                                          <button aria-label={m.highlights.pageDeleteHighlightAria()}
-                                                    class="p-1 rounded hover:bg-red-500/20 transition-colors"
-                                                    onclick={() => deleteHighlight(highlight.id)}
-                                            >
-                                                <i class="fa-solid fa-circle-xmark" style="color: #ef4444; font-size: 12px;"></i>
-                                            </button>
-                                        </div>
-                                    {/each}
-                                </div>
-                            </div>
-                        {/each}
-                    {/if}
-                </div>
-            </div>
-        </div>
-
-    {:else if activeTab === 'search'}
-        <div class="w-full" in:fade={{ duration: 200 }}>
-            <div class=" rounded-2xl border p-6 md:p-8 transition-all relative z-20"
-                 style="background: {$colorStore.primary}0c;
-                        border-color: {$colorStore.primary}30;">
-                <div class="flex items-center gap-3 mb-6">
-                    <i class="fa-utility-duo fa-regular fa-magnifying-glass" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.highlights.pageSearchAria()}</h2>
-                </div>
-
-                <div class="mb-6">
-                    <div class="flex gap-2">
-                        <input
-                                type="text"
-                                bind:value={searchQuery}
-                                placeholder={m.highlights.pageSearchPlaceholder()}
-                                class="flex-1 p-3 rounded-xl border transition-all text-base"
-                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                onkeydown={(e) => e.key === 'Enter' && searchHighlights()}
-                        >
-                      <button aria-label={m.highlights.pageSearchAria()}
-                              class="flex items-center justify-center px-6 py-3 rounded-xl font-medium transition-all min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-                                onclick={searchHighlights}
-                        >
-                        <i class="fa-solid fa-magnifying-glass" style="font-size: 18px;"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="space-y-3">
-                    {#if searchResults.length === 0 && searchQuery.trim()}
-                        <div class="text-center py-8">
-                            <i class="fa-utility-duo fa-regular fa-magnifying-glass" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.highlights.pageSearchNoResultsTitle()}</h3>
-                        </div>
-                    {:else if searchResults.length > 0}
-                        {#each searchResults as highlight}
-                            <div class="flex items-center justify-between p-4 rounded-xl"
-                                 style="background: {$colorStore.primary}08;">
-                                <div class="flex items-center gap-3">
-                                    <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                                    <div>
-                                        <div class="font-semibold" style="color: {$colorStore.text}">
-                                            "{highlight.word}"
-                                        </div>
-                                        <div class="text-sm" style="color: {$colorStore.muted}">
-                                            {m.highlights.pageSearchUserLine({ id: highlight.userId.toString(), date: formatDate(highlight.dateAdded) })}
-                                        </div>
-                                    </div>
-                                </div>
-                              <button aria-label={m.highlights.pageDeleteWordAria()}
-                                        class="p-2 rounded-lg transition-all"
-                                        style="background: #ef444420; color: #ef4444;"
-                                        onclick={() => deleteHighlight(highlight.id)}
-                                >
-                                    <i class="fa-solid fa-circle-xmark" style="font-size: 16px;"></i>
-                                </button>
-                            </div>
-                        {/each}
-                    {:else if !searchQuery.trim()}
-                        <div class="text-center py-8">
-                            <i class="fa-utility-duo fa-regular fa-magnifying-glass" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                            <p class="text-sm" style="color: {$colorStore.muted}">
-                                {m.highlights.pageSearchPrompt()}
-                            </p>
-                        </div>
-                    {/if}
-                </div>
-            </div>
-        </div>
-
-    {:else if activeTab === 'disabled'}
-        <div class="w-full" in:fade={{ duration: 200 }}>
-            <div class=" rounded-2xl border p-6 md:p-8 transition-all relative z-20"
-                 style="background: {$colorStore.primary}0c;
-                        border-color: {$colorStore.primary}30;">
-                <div class="flex items-center gap-3 mb-6">
-                    <i class="fa-utility-duo fa-regular fa-eye-slash" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.highlights.pageDisabledTitle({ count: disabledUsers.length })}</h2>
-                </div>
-
-                <div class="space-y-3">
-                    {#if disabledUsers.length === 0}
-                        <div class="text-center py-8">
-                            <i class="fa-utility-duo fa-regular fa-eye" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">{m.highlights.pageDisabledEmptyTitle()}</h3>
-                        </div>
-                    {:else}
-                        {#each disabledUsers as user}
-                            <div class="flex items-center justify-between p-4 rounded-xl"
-                                 style="background: {$colorStore.primary}08;">
-                                <div class="flex items-center gap-3">
-                                    <i class="fa-utility-duo fa-regular fa-eye-slash" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 20px;"></i>
-                                    <div>
-                                        <div class="font-semibold" style="color: {$colorStore.text}">
-                                            {user.username}
-                                        </div>
-                                        <div class="text-sm" style="color: {$colorStore.muted}">
-                                            {m.highlights.pageDisabledIgnoring({ channels: user.ignoredChannelsCount, users: user.ignoredUsersCount })}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {/each}
-                    {/if}
-                </div>
-            </div>
-        </div>
-
-    {:else if activeTab === 'stats'}
-        <div class="w-full" in:fade={{ duration: 200 }}>
-            {#if stats}
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6">
-                    <StatCard
-                            icon="fa-bolt"
-                            label={m.highlights.pageStatTotal()}
-                            value={stats.totalHighlights}
-                            subtitle={m.highlights.pageStatTotalSub()}
-                            iconColor="primary"
-                            animationDelay={0}
-                    />
-
-                    <StatCard
-                            icon="fa-users"
-                            label={m.highlights.pageStatUsers()}
-                            value={stats.totalUsers}
-                            subtitle={m.highlights.pageStatUsersSub()}
-                            iconColor="secondary"
-                            animationDelay={100}
-                    />
-
-                    <StatCard
-                      icon="fa-star"
-                            label={m.highlights.pageStatTopWord()}
-                            value={stats.topHighlightedWords[0]?.count || 0}
-                            subtitle={stats.topHighlightedWords[0]?.word || m.common.noneLower()}
-                            iconColor="accent"
-                            animationDelay={200}
-                    />
-
-                    <StatCard
-                            icon="fa-user-check"
-                            label={m.common.mostActive()}
-                            value={stats.topUsers[0]?.highlightCount || 0}
-                            subtitle={stats.topUsers[0]?.username || m.common.noneLower()}
-                            iconColor="primary"
-                            animationDelay={300}
-                    />
-                </div>
-
-                {#if stats.topHighlightedWords.length > 0}
-                    <div class=" rounded-2xl border p-6 md:p-8 transition-all mb-6"
-                         style="background: {$colorStore.primary}0c;
-                                border-color: {$colorStore.primary}30;">
-                        <div class="flex items-center gap-3 mb-6">
-                            <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.highlights.pageTopWordsTitle()}</h2>
-                        </div>
-
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {#each stats.topHighlightedWords.slice(0, 6) as word}
-                                <div class="p-4 rounded-xl" style="background: {$colorStore.primary}08;">
-                                    <div class="font-semibold mb-1" style="color: {$colorStore.text}">
-                                        "{word.word}"
-                                    </div>
-                                    <div class="text-sm" style="color: {$colorStore.primary}">
-                                        {word.count === 1 ? m.highlights.pageTopWordUsersOne({ count: word.count }) : m.highlights.pageTopWordUsersOther({ count: word.count })}
-                                    </div>
-                                </div>
-                            {/each}
-                        </div>
-                    </div>
-                {/if}
-
-                {#if stats.recentHighlights.length > 0}
-                    <div class=" rounded-2xl border p-6 md:p-8 transition-all"
-                         style="background: {$colorStore.primary}0c;
-                                border-color: {$colorStore.primary}30;">
-                        <div class="flex items-center gap-3 mb-6">
-                            <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.highlights.pageRecentTitle()}</h2>
-                        </div>
-
-                        <div class="space-y-2">
-                            {#each stats.recentHighlights.slice(0, 10) as highlight}
-                                <div class="flex items-center justify-between p-3 rounded-lg"
-                                     style="background: {$colorStore.primary}08;">
-                                    <span style="color: {$colorStore.text}">
-                                        {m.highlights.pageRecentLine({ word: highlight.word, username: highlight.username })}
-                                    </span>
-                                    <span class="text-sm" style="color: {$colorStore.muted}">
-                                        {formatDate(highlight.dateAdded)}
-                                    </span>
-                                </div>
-                            {/each}
-                        </div>
-                    </div>
-                {/if}
-            {:else}
-                <div class="text-center py-12">
-                    <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                    <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">{m.common.noStatisticsAvailable()}</h3>
-                </div>
-            {/if}
-        </div>
+    {#if openMember}
+      <MemberSheet
+        {guildId}
+        member={openMember}
+        {channels}
+        onclose={() => (openUserId = null)}
+        onremoveword={removeWord}
+        onremoveall={removeAll}
+      />
     {/if}
-</DashboardPageLayout>
+  {/if}
+</PluginPage>

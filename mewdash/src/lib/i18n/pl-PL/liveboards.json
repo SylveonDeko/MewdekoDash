@@ -5,7 +5,6 @@
   "board_meta": "#{channel} · co {minutes} min · zaktualizowano {updated}",
   "board_rows": "· wierszy: {count}",
   "boards_empty": "Brak tablic na żywo. Dodaj jedną, a bot od razu ją opublikuje i przypnie.",
-  "boards_subtitle": "Do 10 na serwer, każda odświeżana we własnym interwale",
   "confirm_delete_message": "Usunąć {kind} na #{channel}? Jej wiadomość również zostanie usunięta.",
   "confirm_delete_title": "Usuń tablicę na żywo",
   "contents_activity": "💬 Wiadomości, 🔊 czas na głosowym i aktywni członkowie",

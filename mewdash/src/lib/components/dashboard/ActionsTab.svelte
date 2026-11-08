@@ -181,7 +181,7 @@
           <!-- View More Button -->
           <a
             class="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all text-sm"
-             href="/dashboard/rolegreets"
+             href="/dashboard/roles?tab=greets"
              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
             <i class="fa-utility-duo fa-regular fa-user-check text-sm"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
@@ -240,7 +240,7 @@
               </div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all"
-               href="/dashboard/rolestates"
+               href="/dashboard/roles?tab=states"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               {m.common.configure()}
             </a>
@@ -348,7 +348,7 @@
               <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsRepeatersDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all"
-               href="/dashboard/repeaters"
+               href="/dashboard/channel-messages?tab=repeaters"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               {m.common.manage()}
             </a>
@@ -373,7 +373,7 @@
               <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsRssFeedsDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all"
-               href="/dashboard/feeds"
+               href="/dashboard/alerts?tab=feeds"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               {m.common.manage()}
             </a>
@@ -398,7 +398,7 @@
               <div class="text-xs" style="color: {$colorStore.muted}">{m.dashboard.actionsStatusRolesDesc()}</div>
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all"
-               href="/dashboard/statusroles"
+               href="/dashboard/roles?tab=status"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               {m.common.manage()}
             </a>

@@ -1,6 +1,17 @@
 // lib/api/reputation/reputation.ts
 import { apiRequest } from "../core";
-import type { RepConfig, RoleRewardRequest } from "./models";
+import type {
+  CustomRepType,
+  DecaySettingsRequest,
+  RepLeaderboardEntry,
+  ReactionRule,
+  ReactionRuleRequest,
+  RepConfig,
+  RepHistoryEntry,
+  RepStats,
+  RoleReward,
+  RoleRewardRequest,
+} from "./models";
 
 export const reputationApi = {
   getRepConfig: (guildId: bigint) =>
@@ -77,12 +88,12 @@ export const reputationApi = {
     ),
 
   getLeaderboard: (guildId: bigint, page: number = 1, pageSize: number = 20) =>
-    apiRequest<any[]>(
+    apiRequest<RepLeaderboardEntry[]>(
       `Reputation/${guildId}/leaderboard?page=${page}&pageSize=${pageSize}`,
     ),
 
   getRoleRewards: (guildId: bigint) =>
-    apiRequest<any[]>(`Reputation/${guildId}/roleRewards`),
+    apiRequest<RoleReward[]>(`Reputation/${guildId}/roleRewards`),
 
   addOrUpdateRoleReward: (guildId: bigint, request: RoleRewardRequest) =>
     apiRequest<void>(`Reputation/${guildId}/roleRewards`, "POST", request),
@@ -96,13 +107,55 @@ export const reputationApi = {
     page: number = 1,
     pageSize: number = 20,
   ) =>
-    apiRequest<any[]>(
+    apiRequest<RepHistoryEntry[]>(
       `Reputation/${guildId}/history/${userId}?page=${page}&pageSize=${pageSize}`,
     ),
 
   getReputationStats: (guildId: bigint) =>
-    apiRequest<any>(`Reputation/${guildId}/stats`),
+    apiRequest<RepStats>(`Reputation/${guildId}/stats`),
 
   getCustomReputationTypes: (guildId: bigint) =>
     apiRequest<string[]>(`Reputation/${guildId}/customTypes`),
+
+  setDecay: (guildId: bigint, request: DecaySettingsRequest) =>
+    apiRequest<void>(`Reputation/${guildId}/decay`, "POST", request),
+
+  getReactionRules: (guildId: bigint) =>
+    apiRequest<ReactionRule[]>(`Reputation/${guildId}/reactions`),
+
+  addReactionRule: (guildId: bigint, request: ReactionRuleRequest) =>
+    apiRequest<void>(`Reputation/${guildId}/reactions`, "POST", request),
+
+  removeReactionRule: (guildId: bigint, emoji: string) =>
+    apiRequest<void>(
+      `Reputation/${guildId}/reactions?emoji=${encodeURIComponent(emoji)}`,
+      "DELETE",
+    ),
+
+  getMemberRep: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ totalRep: number; isFrozen: boolean }>(`Reputation/${guildId}/members/${userId}`),
+
+  takeMemberRep: (guildId: bigint, userId: bigint, amount: number, adminId: bigint) =>
+    apiRequest<{ totalRep: number }>(`Reputation/${guildId}/members/${userId}/take`, "POST", { amount, adminId }),
+
+  setMemberRep: (guildId: bigint, userId: bigint, amount: number, adminId: bigint) =>
+    apiRequest<{ totalRep: number }>(`Reputation/${guildId}/members/${userId}/set`, "POST", { amount, adminId }),
+
+  setMemberFrozen: (guildId: bigint, userId: bigint, frozen: boolean) =>
+    apiRequest<void>(`Reputation/${guildId}/members/${userId}/freeze`, "POST", frozen),
+
+  resetMemberRep: (guildId: bigint, userId: bigint) =>
+    apiRequest<void>(`Reputation/${guildId}/members/${userId}/reset`, "POST"),
+
+  getCustomTypes: (guildId: bigint) =>
+    apiRequest<CustomRepType[]>(`Reputation/${guildId}/types`),
+
+  addCustomType: (guildId: bigint, typeName: string, displayName: string) =>
+    apiRequest<void>(`Reputation/${guildId}/types`, "POST", { typeName, displayName }),
+
+  removeCustomType: (guildId: bigint, typeName: string) =>
+    apiRequest<void>(
+      `Reputation/${guildId}/types/${encodeURIComponent(typeName)}`,
+      "DELETE",
+    ),
 };

@@ -1,20 +1,19 @@
 <!-- routes/dashboard/linkfix/+page.svelte -->
 <script lang="ts">
   import { m } from "$lib/i18n";
-  import { onMount, untrack } from "svelte";
   import { goto } from "$app/navigation";
+  import { fade } from "svelte/transition";
   import { linkFixApi, type LinkFixSettings } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
   import { createAutoSave } from "$lib/utils/autoSave.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import SettingToggle from "$lib/components/forms/SettingToggle.svelte";
-  import SettingField from "$lib/components/forms/SettingField.svelte";
-  import Card from "$lib/components/analytics/Card.svelte";
-  import SectionHeader from "$lib/components/stats/SectionHeader.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
   import AsyncState from "$lib/components/stats/AsyncState.svelte";
+  import PluginPage from "$lib/components/plugin/PluginPage.svelte";
+  import PluginCard from "$lib/components/plugin/PluginCard.svelte";
+  import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
+  import SettingField from "$lib/components/forms/SettingField.svelte";
 
   const HOST_PATTERN = /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
 
@@ -22,13 +21,16 @@
   let hosts = $state<Record<string, string>>({});
   let loading = $state(false);
   let error = $state<string | null>(null);
+  let showNotification = $state(false);
   let notificationMessage = $state("");
   let notificationType = $state<"success" | "error">("success");
+  let loadedFor = "";
 
   function notify(message: string, type: "success" | "error" = "error") {
     notificationMessage = message;
     notificationType = type;
-    setTimeout(() => (notificationMessage = ""), 4000);
+    showNotification = true;
+    setTimeout(() => (showNotification = false), 3000);
   }
 
   const autoSave = createAutoSave({
@@ -37,15 +39,14 @@
 
   function apply(next: LinkFixSettings) {
     settings = next;
-    hosts = Object.fromEntries(next.platforms.map((p) => [p.name, p.host]));
+    hosts = Object.fromEntries(next.platforms.map(platform => [platform.name, platform.host]));
   }
 
-  async function load() {
-    if (!$currentGuild?.id) return;
+  async function load(guildId: bigint) {
     loading = true;
     error = null;
     try {
-      apply(await linkFixApi.get($currentGuild.id));
+      apply(await linkFixApi.get(guildId));
     } catch (err) {
       error = err instanceof Error ? err.message : m.linkfix.errorLoad();
       logger.error("Failed to load link fixing settings", err);
@@ -57,11 +58,12 @@
   async function update(request: Parameters<typeof linkFixApi.update>[1]) {
     if (!$currentGuild?.id || !settings) return;
     const previous = settings;
+    const previousHosts = { ...hosts };
     try {
-      const next = await linkFixApi.update($currentGuild.id, request);
-      settings = next;
+      settings = await linkFixApi.update($currentGuild.id, request);
     } catch (err) {
       settings = previous;
+      hosts = previousHosts;
       throw err;
     }
   }
@@ -72,7 +74,7 @@
   }
 
   function saveHost(name: string) {
-    if (!settings || hostInvalid(name)) return;
+    if (hostInvalid(name)) return;
     const host = hosts[name]?.trim() || null;
     autoSave.schedule(`host:${name}`, () => update({ platforms: [{ name, host }] }));
   }
@@ -91,66 +93,78 @@
     void autoSave.flush(`host:${platform.name}`);
   }
 
-  let loadedFor = $state("");
-
-  async function loadAll() {
-    if (!$currentGuild?.id) return;
-    const key = `${$currentGuild.id}:${$currentInstance?.port ?? ""}`;
-    if (loadedFor === key) return;
-    loadedFor = key;
-    await load();
-  }
-
-  onMount(async () => {
+  $effect(() => {
     if (!$currentGuild) {
-      await goto("/dashboard");
+      void goto("/dashboard");
       return;
     }
-    await loadAll();
+    const id = $currentGuild.id.toString();
+    if (loadedFor !== id) {
+      loadedFor = id;
+      void load(BigInt($currentGuild.id));
+    }
   });
-
-  $effect(() => {
-    if ($currentGuild && $currentInstance) untrack(() => loadAll());
-  });
-
-  const inputStyle = $derived(`background: ${$colorStore.primary}10; color: ${$colorStore.text};`);
 </script>
 
-<DashboardPageLayout
+{#snippet statusMessages()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-[10001]" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
+
+<PluginPage
+  {statusMessages}
+  {autoSave}
+  icon="fa-link"
+  guildName={$currentGuild?.name || m.common.dashboard()}
   title={m.features.linkfixName()}
   subtitle={m.linkfix.pageSubtitle()}
-  icon="fa-link"
-  guildName={$currentGuild?.name || "Dashboard"}
-  {autoSave}
-  bind:notificationMessage
-  {notificationType}
+  enabled={settings?.enabled}
+  onToggle={(value) => autoSave.now("enabled", () => update({ enabled: value }))}
 >
   <AsyncState {loading} {error} empty={!settings}>
-    {#if settings}
-      <div class="space-y-6">
-        <Card title={m.features.linkfixName()}>
-          <SettingToggle id="lf-enabled" label={m.linkfix.enabledLabel()} hint={m.linkfix.enabledHint()} checked={settings.enabled} onchange={(v) => autoSave.now("enabled", () => update({ enabled: v }))} />
-        </Card>
-
-        <section>
-          <SectionHeader icon="fa-globe" title={m.linkfix.sitesTitle()} subtitle={m.linkfix.sitesSubtitle()} />
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {#each settings.platforms as platform (platform.name)}
-              <Card title={platform.displayName}>
-                <div class="space-y-4">
-                  <SettingToggle id="lf-{platform.name}" label={platform.displayName} checked={platform.enabled} disabled={!settings.enabled} onchange={(v) => autoSave.now(`enabled:${platform.name}`, () => update({ platforms: [{ name: platform.name, enabled: v, host: platform.host }] }))} />
-                  <SettingField label={m.linkfix.hostLabel()} hint={m.linkfix.hostHint({ host: platform.defaultHost })} id="lf-host-{platform.name}">
-                    <div class="flex gap-2">
-                      <input id="lf-host-{platform.name}" type="text" bind:value={hosts[platform.name]} oninput={() => saveHost(platform.name)} onblur={() => finishHost(platform)} placeholder={platform.defaultHost} class="w-full rounded-lg p-2 min-h-[44px]" style={inputStyle} />
-                      <button type="button" class="px-3 min-h-[44px] rounded-lg text-sm font-medium whitespace-nowrap" style="background: {$colorStore.primary}20; color: {$colorStore.primary};" onclick={() => resetHost(platform)}>{m.linkfix.hostReset()}</button>
-                    </div>
-                  </SettingField>
+    {#if settings?.enabled}
+      <PluginCard title={m.linkfix.sitesTitle()} alwaysOpen>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-5">
+          {#each settings.platforms as platform (platform.name)}
+            <div class="space-y-2 min-w-0">
+              <ToggleRow
+                id="lf-{platform.name}"
+                title={platform.displayName}
+                checked={platform.enabled}
+                colors={$colorStore}
+                onchange={(value) => autoSave.now(`enabled:${platform.name}`, () => update({ platforms: [{ name: platform.name, enabled: value, host: platform.host }] }))}
+              />
+              <SettingField label={m.linkfix.hostLabel()} id="lf-host-{platform.name}">
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <input
+                    id="lf-host-{platform.name}"
+                    type="text"
+                    inputmode="url"
+                    autocapitalize="none"
+                    bind:value={hosts[platform.name]}
+                    oninput={() => saveHost(platform.name)}
+                    onblur={() => finishHost(platform)}
+                    placeholder={platform.defaultHost}
+                    class="grow min-w-0 p-3 rounded-lg border focus:ring-2 min-h-[50px]"
+                    style="background: {$colorStore.primary}10; border-color: {hostInvalid(platform.name) ? '#ef4444' : `${$colorStore.primary}30`}; color: {$colorStore.text};"
+                  >
+                  <button
+                    type="button"
+                    class="px-4 min-h-[50px] rounded-lg text-sm font-medium"
+                    style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
+                    onclick={() => resetHost(platform)}
+                  >
+                    {m.linkfix.hostReset()}
+                  </button>
                 </div>
-              </Card>
-            {/each}
-          </div>
-        </section>
-      </div>
+              </SettingField>
+            </div>
+          {/each}
+        </div>
+      </PluginCard>
     {/if}
   </AsyncState>
-</DashboardPageLayout>
+</PluginPage>

@@ -1,102 +1,25 @@
 <script lang="ts">
-  import { fly } from "svelte/transition";
-  import AutoAssignRolesCard from "../roles/AutoAssignRolesCard.svelte";
+  import { m } from "$lib/i18n";
+  import { colorStore } from "$lib/stores/colorStore";
+  import type { TabProps } from "../toolsModel";
   import AutoBanRolesCard from "../roles/AutoBanRolesCard.svelte";
-  import AddSelfAssignableRoleCard from "../roles/AddSelfAssignableRoleCard.svelte";
+  import ReactionRolesCard from "../roles/ReactionRolesCard.svelte";
   import SelfAssignableRolesCard from "../roles/SelfAssignableRolesCard.svelte";
   import VoiceChannelRolesCard from "../roles/VoiceChannelRolesCard.svelte";
-  import AddReactionRoleCard from "../roles/AddReactionRoleCard.svelte";
-  import ReactionRolesCard from "../roles/ReactionRolesCard.svelte";
 
-  let {
-    autoAssignRoles,
-    selectedNormalRoles = $bindable(),
-    selectedBotRoles = $bindable(),
-    autoBanRoles,
-    selfAssignableRoles,
-    voiceChannelRoles,
-    reactionRoles,
-    expandedRoleCard = $bindable(),
-    newAutoBanRole = $bindable(),
-    newVoiceChannelRole = $bindable(),
-    availableRoles,
-    voiceChannels,
-    textChannels,
-    saving,
-    autoSave,
-    saveNormalRoles,
-    saveBotRoles,
-    applySelfAssignableGroupName,
-    applySelfAssignableLevel,
-    showConfirm,
-    removeAutoBanRole,
-    addAutoBanRole,
-    toggleSelfAssignableRolesExclusive,
-    removeVoiceChannelRole,
-    addVoiceChannelRole,
-    fetchAllData
-  } = $props();
+  let { guildId, textChannels, voiceChannels, roles, autoSave, notify, user }: TabProps = $props();
 </script>
 
-<div class="w-full space-y-6" in:fly={{ y: 20, duration: 300 }}>
-  <AutoAssignRolesCard
-    {autoAssignRoles}
-    {availableRoles}
-    bind:selectedBotRoles
-    bind:selectedNormalRoles
-    {saveBotRoles}
-    {saveNormalRoles}
-  />
+<a
+  href="/dashboard/multigreets"
+  class="flex items-center justify-between gap-3 px-4 rounded-xl min-h-[44px]"
+  style="background: {$colorStore.primary}08; color: {$colorStore.text};"
+>
+  <span class="truncate">{m.administration.rolesJoinRolesMoved()}</span>
+  <i class="fa-solid fa-arrow-right shrink-0" style="color: {$colorStore.primary}" aria-hidden="true"></i>
+</a>
 
-  <AutoBanRolesCard
-    {addAutoBanRole}
-    {autoBanRoles}
-    {availableRoles}
-    bind:expandedRoleCard
-    bind:newAutoBanRole
-    {removeAutoBanRole}
-    {saving}
-    {showConfirm}
-  />
-
-  <AddSelfAssignableRoleCard
-    {availableRoles}
-    {fetchAllData}
-  />
-
-  <SelfAssignableRolesCard
-    {applySelfAssignableGroupName}
-    {applySelfAssignableLevel}
-    {autoSave}
-    {fetchAllData}
-    {selfAssignableRoles}
-    {toggleSelfAssignableRolesExclusive}
-  />
-
-  <VoiceChannelRolesCard
-    {addVoiceChannelRole}
-    {availableRoles}
-    bind:expandedRoleCard
-    bind:newVoiceChannelRole
-    {removeVoiceChannelRole}
-    {saving}
-    {showConfirm}
-    {voiceChannelRoles}
-    {voiceChannels}
-  />
-
-  <AddReactionRoleCard
-    {availableRoles}
-    {reactionRoles}
-    {textChannels}
-    {fetchAllData}
-  />
-
-  <ReactionRolesCard
-    {availableRoles}
-    {fetchAllData}
-    {reactionRoles}
-    {showConfirm}
-    {textChannels}
-  />
-</div>
+<SelfAssignableRolesCard {guildId} {roles} {autoSave} {notify} />
+<ReactionRolesCard {guildId} {roles} {textChannels} {notify} {user} />
+<VoiceChannelRolesCard {guildId} {roles} {voiceChannels} {notify} />
+<AutoBanRolesCard {guildId} {roles} {notify} />

@@ -81,13 +81,14 @@
     {
       title: m.home.navMisc(),
       elements: [
+        { href: "/reviews", title: m.common.reviews() },
         { href: "/placeholders", title: m.common.placeholders() },
         { href: "/credguide", title: m.home.navCredentialsGuide() },
         { title: m.common.privacy(), href: "/privacy" },
         { title: m.home.navTerms(), href: "/terms" }
       ]
     },
-    { title: m.common.reviews(), elements: [{ href: "/reviews" }] },
+    { title: m.customBot.navTitle(), elements: [{ href: "/custom-bot" }] },
     { title: m.layout.navDonate(), elements: [{ href: "https://ko-fi.com/mewdeko" }] }
   ]);
 

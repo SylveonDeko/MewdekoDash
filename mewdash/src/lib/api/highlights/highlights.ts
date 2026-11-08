@@ -26,6 +26,12 @@ export const highlightsApi = {
       "DELETE",
     ),
 
+  removeWord: (guildId: bigint, word: string) =>
+    apiRequest<{ removedCount: number }>(
+      `Highlights/${guildId}/word?word=${encodeURIComponent(word)}`,
+      "DELETE",
+    ),
+
   getDisabledUsers: (guildId: bigint) =>
     apiRequest<any[]>(`Highlights/${guildId}/disabled`),
 

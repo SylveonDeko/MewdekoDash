@@ -1,1194 +1,194 @@
-<!-- routes/dashboard/currency/+page.svelte -->
 <script lang="ts">
   import { m } from "$lib/i18n";
-  import { onDestroy } from "svelte";
-  import { fade, fly } from "svelte/transition";
-  import {
-    CategoryScale,
-    Chart,
-    Filler,
-    Legend,
-    LinearScale,
-    LineController,
-    LineElement,
-    PointElement,
-    Tooltip,
-  } from "chart.js";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { currentGuild } from "$lib/stores/currentGuild";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/state";
+  import { fade } from "svelte/transition";
   import { clientApi, currencyApi } from "$lib/api/index.ts";
-  import { ShopItemType } from "$lib/api/currency/models";
-  import type {
-    EconomyAnalytics,
-    EconomyConfig,
-    LeaderboardEntry,
-    ShopItem,
-    ShopItemRequest,
-  } from "$lib/api/currency/models";
+  import type { GuildEmojiInfo } from "$lib/api/client/models";
+  import type { PageData } from "./$types";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { currentInstance } from "$lib/stores/instanceStore";
+  import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
-
-  import StatCard from "$lib/components/monitoring/StatCard.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import { requestConfirmation } from "$lib/stores/confirmationStore";
   import { createAutoSave } from "$lib/utils/autoSave.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import PluginPage from "$lib/components/plugin/PluginPage.svelte";
+  import SetupTab from "./components/SetupTab.svelte";
+  import AnalyticsTab from "./components/AnalyticsTab.svelte";
+  import ConfigTab from "./components/ConfigTab.svelte";
+  import ShopTab from "./components/ShopTab.svelte";
+  import BoostsTab from "./components/BoostsTab.svelte";
+  import DesignsTab from "./components/DesignsTab.svelte";
+  import MembersTab from "./components/MembersTab.svelte";
+  import type { Named } from "./components/currencyModel";
+
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
+
+  const TABS = ["setup", "analytics", "config", "shop", "designs", "boosts", "members"] as const;
+  type TabId = (typeof TABS)[number];
+
+  let roles: Named[] = $state([]);
+  let emojis: GuildEmojiInfo[] = $state([]);
+  let defaultTab = $state<TabId | null>(null);
+  let shopStartNew = $state(false);
+  let showNotification = $state(false);
+  let notificationMessage = $state("");
+  let notificationType: "success" | "error" | "warning" = $state("success");
+  let loadedGuildId = "";
 
   const autoSave = createAutoSave({
-    onError: (_err, key) => notify(
-      typeof savedConfig?.[key as keyof EconomyConfig] === "boolean"
-        ? m.currency.notifySaveFailedUndone()
-        : m.currency.notifySaveFailed(),
-      "error",
-    ),
+    onError: (_err, key) =>
+      notify(key.endsWith("Enabled") ? m.currency.notifySaveFailedUndone() : m.currency.notifySaveFailed(), "error")
   });
 
-  Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip, Legend);
+  const guildId = $derived($currentGuild?.id ? BigInt($currentGuild.id) : null);
 
-  let loading = $state(false);
-  let saving = $state(false);
-  let message = $state("");
-  let messageType: "success" | "error" | "info" = $state("info");
+  const requestedTab = $derived(TABS.find((id) => id === page.url.searchParams.get("tab")) ?? null);
+  const tab = $derived(requestedTab ?? defaultTab ?? "analytics");
 
-  let analytics = $state<EconomyAnalytics | null>(null);
-  let config = $state<EconomyConfig | null>(null);
-  /** Last config the server confirmed, so a failed toggle can be put back. */
-  let savedConfig: EconomyConfig | null = null;
+  const labels = $derived<Record<TabId, { label: string; icon: string }>>({
+    setup: { label: m.common.setup(), icon: "fa-wand-magic-sparkles" },
+    analytics: { label: m.features.analyticsName(), icon: "fa-chart-line" },
+    config: { label: m.common.configuration(), icon: "fa-gear" },
+    shop: { label: m.currency.tabShop(), icon: "fa-bag-shopping" },
+    designs: { label: m.designs.title(), icon: "fa-palette" },
+    boosts: { label: m.currency.tabBoosts(), icon: "fa-bolt" },
+    members: { label: m.common.members(), icon: "fa-users" }
+  });
 
-  type KeysOfType<T, V> = { [K in keyof T]: T[K] extends V ? K : never }[keyof T];
-  type BoolSetting = KeysOfType<EconomyConfig, boolean>;
-  type NumberSetting = Exclude<KeysOfType<EconomyConfig, number>, "id">;
-
-  /** The only settings the API stores as decimals; every other number is a whole number. */
-  const DECIMAL_SETTINGS = new Set<NumberSetting>(["payoutMultiplier", "bankInterestPercent"]);
-  let shopItems = $state<ShopItem[]>([]);
-  let leaderboard = $state<LeaderboardEntry[]>([]);
-  let leaderboardTotal = $state(0);
-  let guildRoles = $state<Array<{ id: string; name: string; color: number }>>([]);
-  let guildMembers = $state<Array<{ id: string; name: string }>>([]);
-
-  let activeTab = $state("analytics");
-  let windowDays = $state(30);
-  let leaderboardPage = $state(0);
-  const leaderboardPageSize = 25;
-
-  let showShopEditor = $state(false);
-  let editingName = $state<string | null>(null);
-  let shopForm = $state<ShopItemRequest>(blankShopItem());
-
-  let adjustUserId = $state<string | null>(null);
-  let adjustAmount = $state(0);
-  let adjustReason = $state("");
-
-  let supplyCanvas = $state<HTMLCanvasElement | null>(null);
-  let supplyChart: Chart<"line", number[], string> | null = null;
-
-  const itemTypeOptions = $derived([
-    { id: ShopItemType.Role.toString(), name: m.common.role(), label: m.currency.itemTypeRoleLabel() },
-    { id: ShopItemType.Collectible.toString(), name: m.currency.itemTypeCollectible(), label: m.currency.itemTypeCollectibleLabel() },
-    { id: ShopItemType.Text.toString(), name: m.common.text(), label: m.currency.itemTypeTextLabel() },
-  ]);
-
-  function blankShopItem(): ShopItemRequest {
-    return {
-      name: "",
-      description: "",
-      price: 100,
-      itemType: ShopItemType.Collectible,
-      roleId: null,
-      textContent: "",
-      stock: -1,
-      maxPerUser: 0,
-      requiredRoleId: null,
-      consumable: false,
-      enabled: true,
-      sortOrder: 0,
-    };
+  function notify(message: string, type: "success" | "error" | "warning" = "success") {
+    notificationMessage = message;
+    notificationType = type;
+    showNotification = true;
+    setTimeout(() => {
+      showNotification = false;
+    }, 3000);
   }
 
-  function notify(text: string, type: "success" | "error" | "info" = "success") {
-    message = text;
-    messageType = type;
-    setTimeout(() => (message = ""), 5000);
+  function select(id: TabId, newShopItem = false) {
+    shopStartNew = newShopItem;
+    if (id === tab) return;
+    void autoSave.flush();
+    const url = new URL(page.url);
+    url.search = "";
+    url.searchParams.set("tab", id);
+    void goto(url, { replaceState: true, noScroll: true, keepFocus: true });
   }
 
-  function formatNumber(value: number | null | undefined): string {
-    return (value ?? 0).toLocaleString();
+  function finishSetup() {
+    defaultTab = "analytics";
+    const url = new URL(page.url);
+    url.search = "";
+    void goto(url, { replaceState: true, noScroll: true, keepFocus: true });
   }
 
-  function formatSigned(value: number): string {
-    return `${value > 0 ? "+" : ""}${value.toLocaleString()}`;
-  }
-
-  function formatPercent(value: number, digits = 1): string {
-    return `${(value * 100).toFixed(digits)}%`;
-  }
-
-  function formatDuration(seconds: number): string {
-    if (seconds <= 0) return m.common.noneLower();
-    if (seconds < 60) return `${seconds}s`;
-    if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
-    return `${(seconds / 3600).toFixed(seconds % 3600 === 0 ? 0 : 1)}h`;
-  }
-
-  /**
-   * Faucets and sinks are the same shape with opposite signs, so the split is by
-   * net rather than by category name. Anything net-zero counts as a sink so it
-   * does not read as free currency.
-   */
-  let faucets = $derived((analytics?.flow ?? []).filter((f) => f.net > 0));
-  let sinks = $derived((analytics?.flow ?? []).filter((f) => f.net <= 0));
-  let largestFlow = $derived(
-    Math.max(1, ...(analytics?.flow ?? []).map((f) => Math.abs(f.net))),
-  );
-
-  async function loadAll() {
-    if (!$currentGuild?.id) return;
-
-    // Let queued edits land first so the reload does not show stale values over them.
-    await autoSave.flush();
-    if (!$currentGuild?.id) return;
-
-    loading = true;
+  async function loadDefaultTab(id: bigint) {
     try {
-      const [analyticsData, configData, shopData, leaderboardData, rolesData, membersData] = await Promise.all([
-        currencyApi.getAnalytics($currentGuild.id, windowDays).catch(() => null),
-        currencyApi.getConfig($currentGuild.id).catch(() => null),
-        currencyApi.getShop($currentGuild.id).catch(() => []),
-        currencyApi.getLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize).catch(() => null),
-        clientApi.getRoles($currentGuild.id).catch(() => []),
-        clientApi.getMembers($currentGuild.id).catch(() => []),
-      ]);
+      defaultTab = (await currencyApi.getSetup(id)).configured ? "analytics" : "setup";
+    } catch (err) {
+      logger.error("Failed to load the currency setup", err);
+      defaultTab = "analytics";
+    }
+  }
 
-      analytics = analyticsData;
-      config = configData;
-      savedConfig = configData ? { ...configData } : null;
-      shopItems = shopData ?? [];
-      leaderboard = leaderboardData?.entries ?? [];
-      leaderboardTotal = leaderboardData?.total ?? 0;
+  async function loadEmojis() {
+    if (!data.user?.id) return;
+    try {
+      emojis = await clientApi.getEmojis(data.user.id, true);
+    } catch (err) {
+      logger.error("Failed to load emojis", err);
+    }
+  }
 
-      guildRoles = (rolesData || [])
-        .filter((role: any) => role.id !== $currentGuild?.id?.toString() && !role.managed && !role.name.startsWith("@"))
-        .map((role: any) => ({ id: role.id.toString(), name: role.name, color: role.color || 0 }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-      guildMembers = (membersData || [])
-        .map((member: any) => ({ id: member.id.toString(), name: member.username ?? member.id.toString() }))
+  async function loadRoles(id: bigint) {
+    try {
+      roles = ((await clientApi.getRoles(id)) as any[])
+        .filter((role) => !role.managed && !role.name.startsWith("@"))
+        .map((role) => ({ id: role.id.toString(), name: role.name, color: role.color || 0 }))
         .sort((a, b) => a.name.localeCompare(b.name));
     } catch (err) {
-      logger.error("Failed to load currency data", err);
-      notify(m.currency.notifyLoadFailed(), "error");
-    } finally {
-      loading = false;
+      logger.error("Failed to load roles", err);
     }
-  }
-
-  async function reloadAnalytics() {
-    if (!$currentGuild?.id) return;
-
-    loading = true;
-    try {
-      analytics = await currencyApi.getAnalytics($currentGuild.id, windowDays);
-    } catch (err) {
-      logger.error("Failed to load analytics", err);
-      notify(m.common.failedToLoadAnalytics(), "error");
-    } finally {
-      loading = false;
-    }
-  }
-
-  async function loadLeaderboardPage(page: number) {
-    if (!$currentGuild?.id) return;
-
-    leaderboardPage = Math.max(0, page);
-    try {
-      const data = await currencyApi.getLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize);
-      leaderboard = data.entries;
-      leaderboardTotal = data.total;
-    } catch (err) {
-      logger.error("Failed to load leaderboard", err);
-      notify(m.common.failedToLoadLeaderboard(), "error");
-    }
-  }
-
-  /** Turns a setting on or off and saves it at once, rolling back if the save fails. */
-  function toggleSetting(key: BoolSetting) {
-    if (!$currentGuild?.id || !config) return;
-    const guildId = $currentGuild.id;
-    const value = !config[key];
-    config[key] = value;
-
-    autoSave.now(key, async () => {
-      try {
-        const updated = await currencyApi.updateConfig(guildId, { [key]: value });
-        if ($currentGuild?.id === guildId && savedConfig) savedConfig[key] = updated[key];
-      } catch (err) {
-        if ($currentGuild?.id === guildId && config && savedConfig) config[key] = savedConfig[key];
-        throw err;
-      }
-    });
-  }
-
-  /**
-   * Saves a typed number once the field has been still for a moment. Empty, non-numeric and
-   * below-minimum values are not sent; whole-number settings also reject fractions. The server
-   * clamps some ranges, so its value is shown back when the field has not changed since.
-   */
-  function updateNumberSetting(key: NumberSetting, raw: string, min: number) {
-    if (!$currentGuild?.id || !config) return;
-    if (raw.trim() === "") return;
-    const value = Number(raw);
-    if (!Number.isFinite(value) || value < min) return;
-    if (!DECIMAL_SETTINGS.has(key) && !Number.isInteger(value)) return;
-
-    const guildId = $currentGuild.id;
-    config[key] = value;
-
-    autoSave.schedule(key, async () => {
-      const updated = await currencyApi.updateConfig(guildId, { [key]: value });
-      if ($currentGuild?.id !== guildId) return;
-      if (savedConfig) savedConfig[key] = updated[key];
-      if (config && config[key] === value && updated[key] !== value) config[key] = updated[key];
-    });
-  }
-
-  async function resetConfig() {
-    if (!$currentGuild?.id) return;
-    if (!(await requestConfirmation({ message: m.currency.confirmReset(), confirmText: m.common.reset() }))) return;
-
-    saving = true;
-    try {
-      // Settle queued saves first so none of them lands on top of the reset.
-      await autoSave.flush();
-      config = await currencyApi.resetConfig($currentGuild.id);
-      savedConfig = { ...config };
-      notify(m.currency.notifyResetDone());
-    } catch (err) {
-      logger.error("Failed to reset economy config", err);
-      notify(m.currency.notifyResetFailed(), "error");
-    } finally {
-      saving = false;
-    }
-  }
-
-  function openShopEditor(item: ShopItem | null) {
-    if (item) {
-      editingName = item.name;
-      shopForm = {
-        name: item.name,
-        description: item.description ?? "",
-        price: item.price,
-        itemType: item.itemType,
-        roleId: item.roleId,
-        textContent: item.textContent ?? "",
-        stock: item.stock,
-        maxPerUser: item.maxPerUser,
-        requiredRoleId: item.requiredRoleId,
-        consumable: item.consumable,
-        enabled: item.enabled,
-        sortOrder: item.sortOrder,
-      };
-    } else {
-      editingName = null;
-      shopForm = blankShopItem();
-    }
-
-    showShopEditor = true;
-  }
-
-  async function saveShopItem() {
-    if (!$currentGuild?.id) return;
-
-    if (!shopForm.name.trim()) {
-      notify(m.currency.notifyItemNeedsName(), "error");
-      return;
-    }
-
-    if (shopForm.itemType === ShopItemType.Role && !shopForm.roleId) {
-      notify(m.currency.notifyItemNeedsRole(), "error");
-      return;
-    }
-
-    saving = true;
-    try {
-      if (editingName) {
-        await currencyApi.updateShopItem($currentGuild.id, editingName, shopForm);
-        notify(m.currency.notifyItemUpdated({ name: shopForm.name }));
-      } else {
-        await currencyApi.createShopItem($currentGuild.id, shopForm);
-        notify(m.currency.notifyItemAdded({ name: shopForm.name }));
-      }
-
-      showShopEditor = false;
-      shopItems = await currencyApi.getShop($currentGuild.id);
-    } catch (err: any) {
-      logger.error("Failed to save shop item", err);
-      notify(err?.message ?? m.currency.notifyItemSaveFailed(), "error");
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function deleteShopItem(item: ShopItem) {
-    if (!$currentGuild?.id) return;
-    if (!(await requestConfirmation({ message: m.currency.confirmDeleteItem({ name: item.name }), confirmText: m.common.delete() }))) return;
-
-    try {
-      await currencyApi.deleteShopItem($currentGuild.id, item.name);
-      shopItems = shopItems.filter((x) => x.id !== item.id);
-      notify(m.currency.notifyItemDeleted({ name: item.name }));
-    } catch (err) {
-      logger.error("Failed to delete shop item", err);
-      notify(m.currency.notifyItemDeleteFailed(), "error");
-    }
-  }
-
-  async function toggleShopItem(item: ShopItem) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await currencyApi.updateShopItem($currentGuild.id, item.name, {
-        name: item.name,
-        description: item.description,
-        price: item.price,
-        itemType: item.itemType,
-        roleId: item.roleId,
-        textContent: item.textContent,
-        stock: item.stock,
-        maxPerUser: item.maxPerUser,
-        requiredRoleId: item.requiredRoleId,
-        consumable: item.consumable,
-        enabled: !item.enabled,
-        sortOrder: item.sortOrder,
-      });
-
-      shopItems = await currencyApi.getShop($currentGuild.id);
-    } catch (err) {
-      logger.error("Failed to toggle shop item", err);
-      notify(m.currency.notifyItemUpdateFailed(), "error");
-    }
-  }
-
-  async function adjustBalance() {
-    if (!$currentGuild?.id) return;
-
-    if (!adjustUserId) {
-      notify(m.currency.notifyPickMember(), "error");
-      return;
-    }
-
-    const userId = BigInt(adjustUserId);
-
-    if (!adjustAmount) {
-      notify(m.currency.notifyAmountZero(), "error");
-      return;
-    }
-
-    saving = true;
-    try {
-      const result = await currencyApi.adjustBalance($currentGuild.id, {
-        userId,
-        amount: adjustAmount,
-        reason: adjustReason || null,
-      });
-
-      notify(m.currency.notifyAdjusted({ wallet: formatNumber(result.wallet) }));
-      adjustUserId = null;
-      adjustAmount = 0;
-      adjustReason = "";
-      await loadLeaderboardPage(leaderboardPage);
-    } catch (err) {
-      logger.error("Failed to adjust balance", err);
-      notify(m.currency.notifyAdjustFailed(), "error");
-    } finally {
-      saving = false;
-    }
-  }
-
-  /**
-   * Draws the supply history. Rebuilt rather than updated in place because the
-   * dataset is small and the window can change its length entirely.
-   */
-  function renderSupplyChart() {
-    if (!supplyCanvas || !analytics) return;
-
-    supplyChart?.destroy();
-
-    const points = analytics.supplyHistory;
-    let running = 0;
-    const cumulative = points.map((p) => (running += p.net));
-
-    // A line needs two points to draw a segment, so a window with activity on a single day
-    // would otherwise render an empty chart that still answers tooltips. Show the markers
-    // themselves whenever there is too little data to form a visible line.
-    const sparse = points.length < 3;
-
-    supplyChart = new Chart(supplyCanvas, {
-      type: "line",
-      data: {
-        labels: points.map((p) => new Date(p.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })),
-        datasets: [
-          {
-            label: m.currency.chartCumulative(),
-            data: cumulative,
-            borderColor: $colorStore.primary,
-            backgroundColor: `${$colorStore.primary}20`,
-            fill: true,
-            tension: 0.3,
-            pointRadius: sparse ? 5 : 0,
-            pointHoverRadius: sparse ? 7 : 4,
-            pointBackgroundColor: $colorStore.primary,
-            borderWidth: 2,
-          },
-          {
-            label: m.currency.chartDailyNet(),
-            data: points.map((p) => p.net),
-            borderColor: $colorStore.accent,
-            backgroundColor: "transparent",
-            fill: false,
-            tension: 0.3,
-            pointRadius: sparse ? 5 : 0,
-            pointHoverRadius: sparse ? 7 : 4,
-            pointBackgroundColor: $colorStore.accent,
-            borderWidth: 1,
-            borderDash: [4, 4],
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: "index", intersect: false },
-        plugins: {
-          legend: { labels: { color: $colorStore.text } },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => `${ctx.dataset.label}: ${formatSigned(Number(ctx.parsed.y))}`,
-            },
-          },
-        },
-        scales: {
-          x: { ticks: { color: $colorStore.muted }, grid: { color: `${$colorStore.muted}20` } },
-          y: { ticks: { color: $colorStore.muted }, grid: { color: `${$colorStore.muted}20` } },
-        },
-      },
-    });
   }
 
   $effect(() => {
-    if ($currentGuild?.id) {
-      loadAll();
+    if (!$currentGuild) {
+      void goto("/dashboard");
+      return;
+    }
+    if ($currentGuild.icon) {
+      const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
+      colorStore.extractFromServerIcon(serverIconUrl);
+    } else if ($currentInstance?.botAvatar) {
+      colorStore.extractFromImage($currentInstance.botAvatar);
+    }
+    if (loadedGuildId !== $currentGuild.id.toString()) {
+      loadedGuildId = $currentGuild.id.toString();
+      defaultTab = null;
+      void loadRoles(BigInt($currentGuild.id));
+      void loadDefaultTab(BigInt($currentGuild.id));
+      void loadEmojis();
     }
   });
-
-  $effect(() => {
-    if (activeTab === "analytics" && supplyCanvas && analytics) {
-      renderSupplyChart();
-    }
-  });
-
-  onDestroy(() => supplyChart?.destroy());
-
-  const tabs = $derived([
-    { id: "analytics", label: m.features.analyticsName(), icon: "fa-chart-line" },
-    { id: "config", label: m.common.configuration(), icon: "fa-gear" },
-    { id: "shop", label: m.currency.tabShop(), icon: "fa-bag-shopping" },
-    { id: "leaderboard", label: m.common.leaderboard(), icon: "fa-ranking-star" },
-  ]);
-
-  let actionButtons = $derived([
-    {
-      label: m.common.refresh(),
-      icon: "fa-arrows-rotate",
-      action: loadAll,
-      loading: loading,
-    },
-  ]);
 </script>
 
+<svelte:head>
+  <title>{m.currency.pageTitle()}</title>
+</svelte:head>
+
 {#snippet statusMessages()}
-  {#if message}
-    <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
-         style="background: {messageType === 'error' ? $colorStore.accent + '20' : $colorStore.primary + '20'};
-          border: 1px solid {messageType === 'error' ? $colorStore.accent : $colorStore.primary}30;"
-         in:fly={{ x: 20, duration: 300 }}>
-      {#if messageType === 'success'}
-        <i class="fa-utility-duo fa-regular fa-circle-check"
-           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-      {:else if messageType === 'error'}
-        <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-           style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-      {:else}
-        <i class="fa-utility-duo fa-regular fa-bell"
-           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-      {/if}
-      <span style="color: {messageType === 'error' ? $colorStore.accent : $colorStore.primary}">{message}</span>
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-[10001]" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
     </div>
   {/if}
 {/snippet}
 
-{#snippet switchControl(label: string, value: boolean, onToggle: () => void)}
-  <button aria-label={label} aria-pressed={value} onclick={onToggle}
-          class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors shrink-0"
-          style="background: {value ? $colorStore.primary : $colorStore.muted};">
-    <span class="inline-block w-4 h-4 transform transition-transform bg-white rounded-full"
-          style="transform: translateX({value ? '1.5rem' : '0.25rem'})"></span>
-  </button>
-{/snippet}
-
-{#snippet switchRow(label: string, description: string, value: boolean, onToggle: () => void)}
-  <div class="flex items-center justify-between gap-4 p-4 rounded-xl"
-       style="background: {$colorStore.primary}08;">
-    <div>
-      <div class="font-medium mb-1" style="color: {$colorStore.text}">{label}</div>
-      {#if description}
-        <div class="text-sm" style="color: {$colorStore.muted}">{description}</div>
-      {/if}
-    </div>
-    {@render switchControl(label, value, onToggle)}
-  </div>
-{/snippet}
-
-<DashboardPageLayout
-  {actionButtons}
+<PluginPage
+  {statusMessages}
   {autoSave}
-  bind:activeTab
+  icon="fa-circle-dollar"
   guildName={$currentGuild?.name || m.common.dashboard()}
-  icon="fa-money-bill"
-  statusMessages={statusMessages}
-  subtitle={m.currency.pageSubtitle()}
-  {tabs}
   title={m.currency.pageTitle()}
+  subtitle={m.currency.pageSubtitle()}
 >
+  <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 [&>:last-child:nth-child(odd)]:col-span-2 sm:[&>:last-child:nth-child(odd)]:col-span-1" role="group" aria-label={m.currency.tabsAria()}>
+    {#each TABS as id (id)}
+      {@const selected = tab === id}
+      <button
+        type="button"
+        class="min-h-[44px] px-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2"
+        style="background: {selected ? $colorStore.selectedSurface : `${$colorStore.primary}08`}; border-color: {selected ? $colorStore.selectedBorder : `${$colorStore.primary}20`}; color: {$colorStore.text};"
+        aria-pressed={selected}
+        onclick={() => select(id)}
+      >
+        <i class="fa-solid {labels[id].icon}" aria-hidden="true"></i>
+        {labels[id].label}
+      </button>
+    {/each}
+  </div>
 
-  {#if activeTab === 'analytics'}
-    <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
-
-      <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-        <span id="window-label" class="text-sm font-medium shrink-0" style="color: {$colorStore.muted}">{m.common.window()}</span>
-        <div class="grid grid-cols-4 gap-2 sm:flex sm:gap-3" role="radiogroup" aria-labelledby="window-label">
-          {#each [{ days: 7, short: m.currency.window7dShort(), long: m.currency.window7d() }, { days: 30, short: m.common.thirtyDaysShort(), long: m.currency.window30d() }, { days: 90, short: m.currency.window90dShort(), long: m.currency.window90d() }, { days: 365, short: m.currency.window1yShort(), long: m.currency.window1y() }] as option}
-            <button
-              onclick={() => { windowDays = option.days; reloadAnalytics(); }}
-              role="radio"
-              aria-checked={windowDays === option.days}
-              aria-label={option.long}
-              class="px-2 sm:px-4 py-2 rounded-xl text-sm font-medium transition-all min-h-[44px] whitespace-nowrap"
-              style="background: {windowDays === option.days ? $colorStore.primary + '20' : 'transparent'};
-                     color: {windowDays === option.days ? $colorStore.primary : $colorStore.muted};
-                     border: 1px solid {windowDays === option.days ? $colorStore.primary + '40' : $colorStore.primary + '20'};"
-            >
-              <span class="sm:hidden">{option.short}</span>
-              <span class="hidden sm:inline">{option.long}</span>
-            </button>
-          {/each}
-        </div>
-      </div>
-
-      {#if analytics && analytics.snapshot.holders > 0}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div class="rounded-2xl border p-3 sm:p-4"
-               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
-            <StatCard
-              icon="fa-circle-dollar"
-              label={m.currency.statMoneySupply()}
-              value={formatNumber(analytics.snapshot.moneySupply)}
-              subtitle={m.currency.statHolders({ count: formatNumber(analytics.snapshot.holders) })}
-              iconColor="primary"
-            />
-          </div>
-          <div class="rounded-2xl border p-3 sm:p-4"
-               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
-            <StatCard
-              icon="fa-chart-simple"
-              label={m.currency.statNetChange()}
-              value={formatSigned(analytics.snapshot.netChange)}
-              subtitle={m.currency.statOverDays({ count: analytics.windowDays })}
-              iconColor={analytics.snapshot.netChange >= 0 ? "accent" : "secondary"}
-              trend={analytics.snapshot.netChange > 0 ? "up" : analytics.snapshot.netChange < 0 ? "down" : "neutral"}
-            />
-          </div>
-          <div class="rounded-2xl border p-3 sm:p-4"
-               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
-            <StatCard
-              icon="fa-chart-pie"
-              label={m.currency.statGini()}
-              value={analytics.snapshot.gini.toFixed(3)}
-              subtitle={m.currency.statTopTen({ share: formatPercent(analytics.snapshot.topTenPercentShare) })}
-              iconColor="secondary"
-            />
-          </div>
-          <div class="rounded-2xl border p-3 sm:p-4"
-               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
-            <StatCard
-              icon="fa-credit-card"
-              label={m.currency.statMedian()}
-              value={formatNumber(analytics.snapshot.median)}
-              subtitle={m.currency.statMean({ value: formatNumber(analytics.snapshot.mean) })}
-              iconColor="primary"
-            />
-          </div>
-        </div>
-
-        <!-- Supply over time -->
-        <div class="rounded-2xl border p-6 md:p-8"
-             style="background: {$colorStore.primary}0c;
-                    border-color: {$colorStore.primary}30;">
-          <div class="flex items-center gap-3 mb-2">
-            <i class="fa-utility-duo fa-regular fa-clock"
-               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.currency.supplyTitle()}</h2>
-          </div>
-
-          {#if analytics.supplyHistory.length > 0}
-            <div class="h-64 md:h-80">
-              <canvas bind:this={supplyCanvas}></canvas>
-            </div>
-          {:else}
-            <p class="text-center py-12" style="color: {$colorStore.muted}">{m.currency.supplyEmpty()}</p>
-          {/if}
-        </div>
-
-        <!-- Wallet vs bank -->
-        <div class="rounded-2xl border p-6 md:p-8"
-             style="background: {$colorStore.primary}0c;
-                    border-color: {$colorStore.primary}30;">
-          <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">{m.currency.whereTitle()}</h2>
-          <div class="flex h-8 rounded-full overflow-hidden mb-3" style="background: {$colorStore.primary}10;">
-            {#if analytics.snapshot.moneySupply > 0}
-              <div style="width: {(analytics.snapshot.inWallets / analytics.snapshot.moneySupply) * 100}%; background: {$colorStore.primary}; color: {$colorStore.onPrimary};"></div>
-              <div style="width: {(analytics.snapshot.inBanks / analytics.snapshot.moneySupply) * 100}%; background: {$colorStore.secondary}; color: {$colorStore.onSecondary};"></div>
-            {/if}
-          </div>
-          <div class="flex flex-wrap gap-6 text-sm">
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary}"></span>
-              <span style="color: {$colorStore.text}">{m.currency.whereWallets({ amount: formatNumber(analytics.snapshot.inWallets) })}</span>
-              <span style="color: {$colorStore.muted}">{m.currency.whereWalletsNote()}</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full" style="background: {$colorStore.secondary}; color: {$colorStore.onSecondary}"></span>
-              <span style="color: {$colorStore.text}">{m.currency.whereBanked({ amount: formatNumber(analytics.snapshot.inBanks) })}</span>
-              <span style="color: {$colorStore.muted}">{m.currency.whereBankedNote()}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Faucets and sinks -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {#each [{ title: m.currency.flowFaucets(), note: m.currency.flowFaucetsNote(), data: faucets, color: $colorStore.primary }, { title: m.currency.flowSinks(), note: m.currency.flowSinksNote(), data: sinks, color: $colorStore.accent }] as panel}
-            <div class="rounded-2xl border p-6"
-                 style="background: {$colorStore.primary}0c;
-                        border-color: {$colorStore.primary}30;">
-              <h3 class="text-lg font-bold" style="color: {$colorStore.text}">{panel.title}</h3>
-              <p class="text-sm mb-4" style="color: {$colorStore.muted}">{panel.note}</p>
-
-              {#if panel.data.length === 0}
-                <p class="text-sm py-6 text-center" style="color: {$colorStore.muted}">{m.currency.flowEmpty()}</p>
-              {:else}
-                <div class="space-y-3">
-                  {#each panel.data as bucket}
-                    <div>
-                      <div class="flex justify-between text-sm mb-1">
-                        <span style="color: {$colorStore.text}">{bucket.category}</span>
-                        <span style="color: {panel.color}">{formatSigned(bucket.net)}</span>
-                      </div>
-                      <div class="h-2 rounded-full overflow-hidden" style="background: {$colorStore.primary}10;">
-                        <div class="h-full rounded-full"
-                             style="width: {(Math.abs(bucket.net) / largestFlow) * 100}%; background: {panel.color};"></div>
-                      </div>
-                      <div class="text-xs mt-1" style="color: {$colorStore.muted}">
-                        {bucket.entries === 1 ? m.currency.flowEntriesOne({ count: formatNumber(bucket.entries) }) : m.currency.flowEntriesOther({ count: formatNumber(bucket.entries) })}
-                      </div>
-                    </div>
-                  {/each}
-                </div>
-              {/if}
-            </div>
-          {/each}
-        </div>
-
-        {#if analytics.transferTax > 0}
-          <div class="rounded-xl p-4 text-sm" style="background: {$colorStore.primary}08; color: {$colorStore.muted};">
-            {m.currency.transferTaxNote({ amount: formatNumber(analytics.transferTax) })}
-          </div>
-        {/if}
-
-        <!-- Game performance -->
-        <div class="rounded-2xl border p-6 md:p-8"
-             style="background: {$colorStore.primary}0c;
-                    border-color: {$colorStore.primary}30;">
-          <div class="flex items-center gap-3 mb-2">
-            <i class="fa-utility-duo fa-regular fa-gamepad-modern"
-               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.currency.gamesTitle()}</h2>
-          </div>
-          <p class="text-sm mb-6" style="color: {$colorStore.muted}">
-            {m.currency.gamesHint()}
-          </p>
-
-          {#if analytics.games.length === 0}
-            <p class="text-center py-8" style="color: {$colorStore.muted}">{m.currency.gamesEmpty()}</p>
-          {:else}
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead>
-                <tr style="color: {$colorStore.muted}">
-                  <th class="text-left py-2 px-3">{m.currency.gamesColGame()}</th>
-                  <th class="text-right py-2 px-3">{m.currency.gamesColRtp()}</th>
-                  <th class="text-right py-2 px-3">{m.currency.gamesColWagered()}</th>
-                  <th class="text-right py-2 px-3">{m.currency.gamesColReturned()}</th>
-                  <th class="text-right py-2 px-3">{m.currency.gamesColHouse()}</th>
-                  <th class="text-right py-2 px-3">{m.currency.gamesColPlays()}</th>
-                  <th class="text-right py-2 px-3">{m.common.players()}</th>
-                </tr>
-                </thead>
-                <tbody>
-                {#each analytics.games as game}
-                  <tr style="border-top: 1px solid {$colorStore.primary}15;">
-                    <td class="py-2 px-3 font-medium" style="color: {$colorStore.text}">{game.game}</td>
-                    <td class="py-2 px-3 text-right font-bold"
-                        style="color: {game.actualRtp > 1 ? '#ef4444' : game.actualRtp > 0.97 ? '#f59e0b' : '#10b981'}">
-                      {formatPercent(game.actualRtp)}
-                    </td>
-                    <td class="py-2 px-3 text-right" style="color: {$colorStore.text}">{formatNumber(game.wagered)}</td>
-                    <td class="py-2 px-3 text-right" style="color: {$colorStore.text}">{formatNumber(game.returned)}</td>
-                    <td class="py-2 px-3 text-right"
-                        style="color: {game.houseTake >= 0 ? $colorStore.text : '#ef4444'}">
-                      {formatSigned(game.houseTake)}
-                    </td>
-                    <td class="py-2 px-3 text-right" style="color: {$colorStore.muted}">{formatNumber(game.plays)}</td>
-                    <td class="py-2 px-3 text-right" style="color: {$colorStore.muted}">{formatNumber(game.players)}</td>
-                  </tr>
-                {/each}
-                </tbody>
-              </table>
-            </div>
-          {/if}
-        </div>
-      {:else if !loading}
-        <div class="rounded-2xl border p-12 text-center"
-             style="border-color: {$colorStore.primary}30; color: {$colorStore.muted};">
-          {m.currency.analyticsEmpty()}
-        </div>
-      {/if}
-    </div>
-  {/if}
-
-  {#if activeTab === 'config'}
-    <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
-      {#if config}
-        {#snippet toggle(label: string, value: boolean, onToggle: () => void)}
-          <div class="md:col-span-2 lg:col-span-3">
-            {@render switchRow(label, "", value, onToggle)}
-          </div>
-        {/snippet}
-
-        {#snippet numberField(label: string, hint: string, key: NumberSetting, min = 0)}
-          <div>
-            <label for="cfg-{label.replace(/\W+/g, '-').toLowerCase()}" class="block text-sm font-medium mb-2"
-                   style="color: {$colorStore.text}">{label}</label>
-            <input id="cfg-{label.replace(/\W+/g, '-').toLowerCase()}" type="number" min={min} value={config?.[key]}
-                   step={DECIMAL_SETTINGS.has(key) ? "any" : 1}
-                   oninput={(e) => updateNumberSetting(key, (e.currentTarget as HTMLInputElement).value, min)}
-                   onblur={() => autoSave.flush(key)}
-                   class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
-                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-            {#if hint}
-              <p class="text-xs mt-1" style="color: {$colorStore.muted}">{hint}</p>
-            {/if}
-          </div>
-        {/snippet}
-
-        <!-- Betting -->
-        <div class="rounded-2xl border p-6 md:p-8"
-             style="background: {$colorStore.primary}0c;
-                    border-color: {$colorStore.primary}30;">
-          <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.currency.configBetting()}</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle(m.currency.cfgEnableGambling(), config.gamblingEnabled, () => toggleSetting("gamblingEnabled"))}
-            {@render numberField(m.currency.cfgMinimumBet(), "", "minBet", 1)}
-            {@render numberField(m.currency.cfgMaximumBet(), m.currency.cfghint0ForUnlimitedACeilingStopsOneLuck(), "maxBet")}
-            {@render numberField(m.currency.cfgPayoutMultiplier(), m.currency.cfghintScalesWinningsOnlyNeverTheReturned(), "payoutMultiplier")}
-            {@render numberField(m.currency.cfgGameCooldownSeconds(), formatDuration(config.gameCooldownSeconds), "gameCooldownSeconds")}
-            {@render numberField(m.currency.cfgDailyLossLimit(), m.currency.cfghint0ToDisableCutsAUserOffAfterLosin(), "lossLimitPerDay")}
-          </div>
-        </div>
-
-        <!-- Earning -->
-        <div class="rounded-2xl border p-6 md:p-8"
-             style="background: {$colorStore.primary}0c;
-                    border-color: {$colorStore.primary}30;">
-          <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.currency.configEarning()}</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle(m.currency.cfgEnableWork(), config.workEnabled, () => toggleSetting("workEnabled"))}
-            {@render numberField(m.currency.cfgWorkMinimum(), "", "workMinReward")}
-            {@render numberField(m.currency.cfgWorkMaximum(), "", "workMaxReward")}
-            {@render numberField(m.currency.cfgWorkCooldownSeconds(), formatDuration(config.workCooldownSeconds), "workCooldownSeconds")}
-            {@render toggle(m.currency.cfgEnableCrime(), config.crimeEnabled, () => toggleSetting("crimeEnabled"))}
-            {@render numberField(m.currency.cfgCrimeMinimum(), "", "crimeMinReward")}
-            {@render numberField(m.currency.cfgCrimeMaximum(), "", "crimeMaxReward")}
-            {@render numberField(m.currency.cfgCrimeSuccessChance(), "", "crimeSuccessChance")}
-            {@render numberField(m.currency.cfgCrimeFineMinimum(), "", "crimeFineMin")}
-            {@render numberField(m.currency.cfgCrimeFineMaximum(), "", "crimeFineMax")}
-            {@render numberField(m.currency.cfgCrimeCooldownSeconds(), formatDuration(config.crimeCooldownSeconds), "crimeCooldownSeconds")}
-          </div>
-        </div>
-
-        <!-- Bank -->
-        <div class="rounded-2xl border p-6 md:p-8"
-             style="background: {$colorStore.primary}0c;
-                    border-color: {$colorStore.primary}30;">
-          <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">{m.currency.configBank()}</h2>
-          <p class="text-sm mb-6" style="color: {$colorStore.muted}">
-            {m.currency.configBankHint()}
-          </p>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle(m.currency.cfgEnableBank(), config.bankEnabled, () => toggleSetting("bankEnabled"))}
-            {@render numberField(m.currency.cfgBankCapacity(), m.currency.shopMaxPerUserHint(), "bankCapacity")}
-            {@render numberField(m.currency.cfgInterest(), m.currency.cfghintPaidPerIntervalOnTheBankedBalance(), "bankInterestPercent")}
-            {@render numberField(m.currency.cfgInterestIntervalHours(), "", "bankInterestHours", 1)}
-          </div>
-        </div>
-
-        <!-- Transfers -->
-        <div class="rounded-2xl border p-6 md:p-8"
-             style="background: {$colorStore.primary}0c;
-                    border-color: {$colorStore.primary}30;">
-          <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">{m.currency.configTransfers()}</h2>
-          <p class="text-sm mb-6" style="color: {$colorStore.muted}">
-            {m.currency.configTransfersHint()}
-          </p>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle(m.currency.cfgEnableTransfers(), config.payEnabled, () => toggleSetting("payEnabled"))}
-            {@render numberField(m.currency.cfgTransferTax(), "", "payTaxPercent")}
-            {@render numberField(m.currency.cfgTransferCooldownSeconds(), formatDuration(config.payCooldownSeconds), "payCooldownSeconds")}
-            {@render numberField(m.currency.cfgMinimumTransfer(), "", "payMinimum", 1)}
-          </div>
-        </div>
-
-        <!-- Robbery -->
-        <div class="rounded-2xl border p-6 md:p-8"
-             style="background: {$colorStore.primary}0c;
-                    border-color: {$colorStore.primary}30;">
-          <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text}">{m.currency.configRobbery()}</h2>
-          <p class="text-sm mb-6" style="color: {$colorStore.muted}">
-            {m.currency.configRobberyHint()}
-          </p>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle(m.currency.cfgEnableRobbery(), config.robEnabled, () => toggleSetting("robEnabled"))}
-            {@render numberField(m.currency.cfgSuccessChance(), "", "robSuccessChance")}
-            {@render numberField(m.currency.cfgMaximumSteal(), m.currency.cfghintShareOfTheTargetSWalletASuccessT(), "robMaxStealPercent", 1)}
-            {@render numberField(m.currency.cfgFailureFine(), m.currency.cfghintShareOfTheRobberSWalletDestroyedO(), "robFinePercent")}
-            {@render numberField(m.currency.cfgProtectedBelow(), m.currency.cfghintTargetsHoldingLessThanThisCannotBe(), "robMinimumWallet")}
-            {@render numberField(m.currency.cfgRobberyCooldownSeconds(), formatDuration(config.robCooldownSeconds), "robCooldownSeconds")}
-          </div>
-        </div>
-
-        <!-- Daily -->
-        <div class="rounded-2xl border p-6 md:p-8"
-             style="background: {$colorStore.primary}0c;
-                    border-color: {$colorStore.primary}30;">
-          <h2 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">{m.currency.configDaily()}</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {@render toggle(m.currency.cfgEnableStreaks(), config.dailyStreakEnabled, () => toggleSetting("dailyStreakEnabled"))}
-            {@render numberField(m.currency.cfgBonusPerDay(), m.currency.cfghintAddedPerConsecutiveDayClaimed(), "dailyStreakBonus")}
-            {@render numberField(m.currency.cfgMaximumBonus(), m.currency.cfghint0ForUncapped(), "dailyStreakMaxBonus")}
-          </div>
-        </div>
-
-        <div class="flex flex-wrap gap-3">
-          <button onclick={resetConfig} disabled={saving}
-                  class="px-6 py-3 rounded-xl font-medium transition-all min-h-[44px] disabled:opacity-50"
-                  style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;">
-            {m.currency.configReset()}
-          </button>
-        </div>
-      {:else if !loading}
-        <p class="text-center py-12" style="color: {$colorStore.muted}">{m.currency.configLoadFailed()}</p>
-      {/if}
-    </div>
-  {/if}
-
-  {#if activeTab === 'shop'}
-    <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.currency.shopTitle()}</h2>        </div>
-        <button onclick={() => openShopEditor(null)}
-                class="px-6 py-3 rounded-xl font-medium transition-all min-h-[44px]"
-                style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-          {m.common.addItem()}
-        </button>
-      </div>
-
-      {#if shopItems.length === 0}
-        <div class="rounded-2xl border p-12 text-center"
-             style="border-color: {$colorStore.primary}30; color: {$colorStore.muted};">
-          {m.currency.shopEmpty()}
-        </div>
+  {#if guildId && (requestedTab || defaultTab)}
+    {#key `${guildId}:${tab}`}
+      {#if tab === "setup"}
+        <SetupTab {guildId} {emojis} {autoSave} {notify} onaddshopitem={() => select("shop", true)} oncomplete={finishSetup} />
+      {:else if tab === "analytics"}
+        <AnalyticsTab {guildId} {notify} />
+      {:else if tab === "config"}
+        <ConfigTab {guildId} {autoSave} {notify} />
+      {:else if tab === "shop"}
+        <ShopTab {guildId} {roles} {notify} startNew={shopStartNew} />
+      {:else if tab === "designs"}
+        <DesignsTab {guildId} {roles} {autoSave} {notify} />
+      {:else if tab === "boosts"}
+        <BoostsTab {guildId} {notify} />
       {:else}
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {#each shopItems as item}
-            <div class="rounded-2xl border p-5 transition-all"
-                 style="background: {$colorStore.primary}0c;
-                        border-color: {$colorStore.primary}30; opacity: {item.enabled ? 1 : 0.55};">
-              <div class="flex items-start justify-between gap-3 mb-2">
-                <div>
-                  <h3 class="font-bold text-lg" style="color: {$colorStore.text}">{item.name}</h3>
-                  <div class="text-sm font-medium" style="color: {$colorStore.primary}">
-                    {formatNumber(item.price)}
-                  </div>
-                </div>
-                <span class="text-xs px-2 py-1 rounded-lg shrink-0"
-                      style="background: {$colorStore.primary}15; color: {$colorStore.muted};">
-                  {item.itemType === ShopItemType.Role ? m.common.role() : item.itemType === ShopItemType.Text ? m.common.text() : m.currency.shopTypeItem()}
-                </span>
-              </div>
-
-              {#if item.description}
-                <p class="text-sm mb-3" style="color: {$colorStore.muted}">{item.description}</p>
-              {/if}
-
-              <div class="text-xs space-y-1 mb-4" style="color: {$colorStore.muted}">
-                {#if item.roleName}<div>{m.common.grantsRole({ role: item.roleName })}</div>{/if}
-                {#if item.requiredRoleName}<div>{m.currency.shopRequires({ role: item.requiredRoleName })}</div>{/if}
-                <div>{item.stock < 0 ? m.currency.shopStockUnlimited() : m.currency.shopStockCount({ count: item.stock })}</div>
-                {#if item.maxPerUser > 0}<div>{m.currency.shopLimit({ count: item.maxPerUser })}</div>{/if}
-                <div>{m.currency.shopOwnedSpent({ owned: formatNumber(item.owned), spent: formatNumber(item.revenue) })}</div>
-              </div>
-
-              <div class="flex flex-wrap gap-2">
-                <button onclick={() => openShopEditor(item)}
-                        class="px-3 py-2 rounded-lg text-sm transition-all"
-                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{m.common.edit()}
-                </button>
-                <button onclick={() => toggleShopItem(item)}
-                        class="px-3 py-2 rounded-lg text-sm transition-all"
-                        style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;">
-                  {item.enabled ? m.common.hide() : m.common.show()}
-                </button>
-                <button onclick={() => deleteShopItem(item)}
-                        class="px-3 py-2 rounded-lg text-sm transition-all"
-                        style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;">{m.common.delete()}
-                </button>
-              </div>
-            </div>
-          {/each}
-        </div>
+        <MembersTab {guildId} {notify} />
       {/if}
-
-      {#if showShopEditor}
-        <div class="rounded-2xl border p-6 md:p-8"
-             style="background: {$colorStore.primary}0c;
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 200 }}>
-          <h3 class="text-lg font-bold mb-6" style="color: {$colorStore.text}">
-            {editingName ? m.currency.shopEditing({ name: editingName }) : m.currency.shopNew()}
-          </h3>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div>
-              <label for="shop-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.name()}</label>
-              <input id="shop-name" type="text" bind:value={shopForm.name}
-                     class="w-full p-3 rounded-xl border min-h-[44px]"
-                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-            </div>
-
-            <div>
-              <label for="shop-price" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.currency.shopPrice()}</label>
-              <input id="shop-price" type="number" min="0" bind:value={shopForm.price}
-                     class="w-full p-3 rounded-xl border min-h-[44px]"
-                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-            </div>
-
-            <div class="md:col-span-2">
-              <label for="shop-desc" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.description()}</label>
-              <input id="shop-desc" type="text" bind:value={shopForm.description}
-                     class="w-full p-3 rounded-xl border min-h-[44px]"
-                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-            </div>
-
-            <div>
-              <label for="shop-type" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.type()}</label>
-              <DiscordSelector id="shop-type" ariaLabel={m.currency.shopTypeAria()} type="custom" options={itemTypeOptions}
-                               selected={shopForm.itemType.toString()}
-                               onchange={(d) => (shopForm.itemType = Number(d.selected) as ShopItemType)} />
-            </div>
-
-            {#if shopForm.itemType === ShopItemType.Role}
-              <div>
-                <label for="shop-role" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.currency.shopRoleGranted()}</label>
-                <DiscordSelector id="shop-role" ariaLabel={m.currency.shopRoleGranted()} type="role" options={guildRoles}
-                                 selected={shopForm.roleId?.toString() ?? null}
-                                 placeholder={m.common.pickRolePlaceholder()}
-                                 onchange={(d) => (shopForm.roleId = d.selected ? BigInt(d.selected as string) : null)} />
-              </div>
-            {/if}
-
-            {#if shopForm.itemType === ShopItemType.Text}
-              <div class="md:col-span-2">
-                <label for="shop-text" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.currency.shopText()}</label>
-                <textarea id="shop-text" rows="3" bind:value={shopForm.textContent}
-                          class="w-full p-3 rounded-xl border"
-                          style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"></textarea>
-              </div>
-            {/if}
-
-            <div>
-              <label for="shop-stock" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.currency.shopStock()}</label>
-              <input id="shop-stock" type="number" min="-1" bind:value={shopForm.stock}
-                     class="w-full p-3 rounded-xl border min-h-[44px]"
-                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-              <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.currency.shopStockHint()}</p>
-            </div>
-
-            <div>
-              <label for="shop-max" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.currency.shopMaxPerUser()}</label>
-              <input id="shop-max" type="number" min="0" bind:value={shopForm.maxPerUser}
-                     class="w-full p-3 rounded-xl border min-h-[44px]"
-                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-              <p class="text-xs mt-1" style="color: {$colorStore.muted}">{m.currency.shopMaxPerUserHint()}</p>
-            </div>
-
-            <div>
-              <label for="shop-required-role" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.requiredRole()}</label>
-              <DiscordSelector id="shop-required-role" ariaLabel={m.common.requiredRole()} type="role" options={guildRoles}
-                               selected={shopForm.requiredRoleId?.toString() ?? null}
-                               placeholder={m.currency.shopRequiredRolePlaceholder()}
-                               onchange={(d) => (shopForm.requiredRoleId = d.selected ? BigInt(d.selected as string) : null)} />
-            </div>
-
-            <div>
-              <label for="shop-sort" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.currency.shopSortOrder()}</label>
-              <input id="shop-sort" type="number" bind:value={shopForm.sortOrder}
-                     class="w-full p-3 rounded-xl border min-h-[44px]"
-                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-            </div>
-
-            <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {@render switchRow(m.currency.shopConsumable(), m.currency.shopConsumableHint(), shopForm.consumable,
-                () => (shopForm.consumable = !shopForm.consumable))}
-              {@render switchRow(m.currency.shopVisible(), m.currency.shopVisibleHint(), shopForm.enabled,
-                () => (shopForm.enabled = !shopForm.enabled))}
-            </div>
-          </div>
-
-          <div class="flex flex-wrap gap-3 mt-6">
-            <button onclick={saveShopItem} disabled={saving}
-                    class="px-6 py-3 rounded-xl font-medium min-h-[44px] disabled:opacity-50"
-                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-              {saving ? m.common.saving() : editingName ? m.common.saveChanges() : m.currency.shopCreate()}
-            </button>
-            <button onclick={() => (showShopEditor = false)}
-                    class="px-6 py-3 rounded-xl font-medium min-h-[44px]"
-                    style="background: transparent; color: {$colorStore.muted}; border: 1px solid {$colorStore.primary}30;">
-              {m.common.cancel()}
-            </button>
-          </div>
-        </div>
-      {/if}
-    </div>
+    {/key}
   {/if}
-
-  {#if activeTab === 'leaderboard'}
-    <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
-
-      <!-- Balance adjustment -->
-      <div class="rounded-2xl border p-6"
-           style="background: {$colorStore.primary}0c;
-                  border-color: {$colorStore.primary}30;">
-        <h2 class="text-lg font-bold mb-4" style="color: {$colorStore.text}">{m.currency.adjustTitle()}</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label for="adj-user" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.member()}</label>
-            <DiscordSelector id="adj-user" ariaLabel={m.common.member()} type="user" options={guildMembers}
-                             bind:selected={adjustUserId} searchable placeholder={m.currency.adjustMemberPlaceholder()} />
-          </div>
-          <div>
-            <label for="adj-amount" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.amount()}</label>
-            <input id="adj-amount" type="number" bind:value={adjustAmount}
-                   class="w-full p-3 rounded-xl border min-h-[44px]"
-                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-          </div>
-          <div>
-            <label for="adj-reason" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.reason()}</label>
-            <input id="adj-reason" type="text" bind:value={adjustReason} placeholder={m.currency.adjustReasonPlaceholder()}
-                   class="w-full p-3 rounded-xl border min-h-[44px]"
-                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-          </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-3 mt-4">
-          <button onclick={adjustBalance} disabled={saving}
-                  class="px-6 py-3 rounded-xl font-medium min-h-[44px] disabled:opacity-50"
-                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-            {m.common.apply()}
-          </button>        </div>
-      </div>
-
-      <!-- Leaderboard -->
-      <div class="rounded-2xl border p-6"
-           style="background: {$colorStore.primary}0c;
-                  border-color: {$colorStore.primary}30;">
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">{m.currency.boardTitle()}</h2>
-          <span class="text-sm" style="color: {$colorStore.muted}">{m.currency.statHolders({ count: formatNumber(leaderboardTotal) })}</span>
-        </div>
-
-        {#if leaderboard.length === 0}
-          <p class="text-center py-12" style="color: {$colorStore.muted}">{m.currency.boardEmpty()}</p>
-        {:else}
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-              <tr style="color: {$colorStore.muted}">
-                <th class="text-left py-2 px-3">#</th>
-                <th class="text-left py-2 px-3">{m.common.member()}</th>
-                <th class="text-right py-2 px-3">{m.currency.boardColWallet()}</th>
-                <th class="text-right py-2 px-3">{m.currency.configBank()}</th>
-                <th class="text-right py-2 px-3">{m.currency.boardColNetWorth()}</th>
-                <th class="text-right py-2 px-3">{m.currency.boardColShare()}</th>
-              </tr>
-              </thead>
-              <tbody>
-              {#each leaderboard as entry}
-                <tr style="border-top: 1px solid {$colorStore.primary}15;">
-                  <td class="py-2 px-3" style="color: {$colorStore.muted}">{entry.rank}</td>
-                  <td class="py-2 px-3">
-                    <div class="flex items-center gap-2">
-                      {#if entry.avatarUrl}
-                        <img src={entry.avatarUrl} alt="" class="w-6 h-6 rounded-full" />
-                      {/if}
-                      <span style="color: {$colorStore.text}">{entry.username ?? entry.userId.toString()}</span>
-                    </div>
-                  </td>
-                  <td class="py-2 px-3 text-right" style="color: {$colorStore.text}">{formatNumber(entry.wallet)}</td>
-                  <td class="py-2 px-3 text-right" style="color: {$colorStore.muted}">{formatNumber(entry.bank)}</td>
-                  <td class="py-2 px-3 text-right font-bold" style="color: {$colorStore.primary}">{formatNumber(entry.netWorth)}</td>
-                  <td class="py-2 px-3 text-right" style="color: {$colorStore.muted}">{formatPercent(entry.shareOfSupply)}</td>
-                </tr>
-              {/each}
-              </tbody>
-            </table>
-          </div>
-
-          <div class="flex items-center justify-between mt-4">
-            <button onclick={() => loadLeaderboardPage(leaderboardPage - 1)} disabled={leaderboardPage === 0}
-                    class="px-4 py-2 rounded-xl text-sm min-h-[40px] disabled:opacity-40"
-                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{m.common.previous()}
-            </button>
-            <span class="text-sm" style="color: {$colorStore.muted}">
-              {m.common.pageOfTotal({ page: leaderboardPage + 1, total: Math.max(1, Math.ceil(leaderboardTotal / leaderboardPageSize)) })}
-            </span>
-            <button onclick={() => loadLeaderboardPage(leaderboardPage + 1)}
-                    disabled={(leaderboardPage + 1) * leaderboardPageSize >= leaderboardTotal}
-                    class="px-4 py-2 rounded-xl text-sm min-h-[40px] disabled:opacity-40"
-                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">{m.common.next()}
-            </button>
-          </div>
-        {/if}
-      </div>
-    </div>
-  {/if}
-
-</DashboardPageLayout>
+</PluginPage>

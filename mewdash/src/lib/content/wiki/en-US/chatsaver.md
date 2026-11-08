@@ -1,7 +1,7 @@
 ---
 title: Chat Saver
 slug: chatsaver
-summary: Pull the recent history of a channel into the dashboard, read it there, and keep named snapshots for later, or export an HTML transcript from Discord with a command.
+summary: Pull a channel's recent history into the dashboard so you can read it or save a snapshot
 icon: fa-folder
 category: Security
 dashboard: /dashboard/chatsaver
@@ -12,11 +12,11 @@ related: [tickets, logging, auditlog]
 
 ## What it does
 
-Chat Saver has two halves. On the dashboard, staff pick a channel and a time window, and the bot fetches every message from that period: text, author, attachments and embeds. They can read it on the page and, if it is worth keeping, save it as a named log. Saved logs live in the bot's database, so they survive the original messages being deleted.
+Chat Saver has two halves. On the dashboard, staff pick a channel and a time window, and the bot fetches every message from that period: text, author, attachments and embeds. They can read it on the page and save it as a named log if it is worth keeping. Saved logs live in the bot's database, so they survive the original messages being deleted.
 
-In Discord, `savechat` runs a full transcript export of a channel for the last few minutes, hours or days and gives you a link to an HTML file that looks like Discord, including media.
+In Discord, `savechat` runs a full transcript export of a channel for a window of up to three days and gives you a link to an HTML file that looks like Discord, including media.
 
-Ticket transcripts also land here. When a ticket closes in a server that has a ticket transcript channel set, the ticket system stores the conversation as a saved log named `Ticket #<id> - <channel>`, so it shows up under **Saved Logs** with everything else.
+Ticket transcripts also land here. When a ticket closes in a server that has a ticket transcript channel set, the ticket system stores the conversation as a saved log named `Ticket #<id> - <channel>`, so it shows up under **Saved logs** with everything else.
 
 ## Why you would use it
 
@@ -27,7 +27,7 @@ Ticket transcripts also land here. When a ticket closes in a server that has a t
 
 ## Fetching messages
 
-On the **Fetch Messages** tab, choose a **Channel**, a **Time Amount** and a **Time Unit**, then click **Load Messages**. The bot reads the channel from newest to oldest and stops when it reaches messages older than your window or has collected 5000 messages, whichever comes first. Messages are shown oldest first on the **View Messages** tab.
+On the **Fetch messages** tab, under **Chat options**, choose a **Channel**, a **Time amount** and a **Time unit**, then click **Load messages**. The bot reads the channel from newest to oldest and stops when it reaches messages older than your window or has collected 5000 messages, whichever comes first. The result opens in a panel with the messages oldest first, grouped by day and author. If nothing is found you get a "No messages found in the selected time range" notice instead.
 
 | Time unit | Maximum |
 | --- | --- |
@@ -35,19 +35,21 @@ On the **Fetch Messages** tab, choose a **Channel**, a **Time Amount** and a **T
 | Hours | 72 |
 | Days | 3 |
 
-All three caps are the same three day window. Fetching does not store anything; close the page and it is gone.
+All three caps are the same three day window, and the amount must be above 0. Fetching does not store anything. Close the panel and it is gone.
+
+In the panel, the **Search** box filters the loaded messages and shows how many match. When the fetch hit the 5000 message limit the panel says "Showing 5000 messages. There may be more."
 
 ## Saving a log
 
-With messages loaded, click **Save Log** on the **View Messages** tab. The log is named `<channel> - <today's date>` and stored with the channel, who saved it and the message count. Each saved log records the message text, author name and avatar, timestamp, attachment links and embed titles, descriptions and thumbnails.
+With messages loaded, click **Save log** at the top of the panel. The log is named `<channel> - <today's date>` and stored with the channel and the message count, and it notes who saved it. Each saved log records the message text, author name and avatar, timestamp, attachment links and embed details such as title, description and thumbnail.
 
 Attachment and avatar links point at Discord's CDN. If Discord removes the file, the link in the saved log stops working, though the text stays.
 
-**Export HTML**, next to **Save Log**, downloads the loaded messages as a standalone HTML transcript built in your browser. Nothing is stored on the bot.
+**Export HTML**, next to **Save log**, downloads the loaded messages as a standalone HTML transcript built in your browser. Nothing is stored on the bot. It is also available when you open a saved log.
 
 ## Saved logs
 
-The **Saved Logs** tab lists every log for the server, newest first, with its channel and message count. Each entry has **View log**, **Rename log** and **Delete log**. Renaming changes only the label. Deleting is permanent and happens as soon as you click; there is no confirmation prompt.
+The **Saved logs** tab lists every log for the server with its name, channel, date and message count. Click a log to open it in the same panel, with **Search** and **Export HTML**. A saved log has a name box and a **Rename log** button instead of **Save log**. Renaming changes only the label. The trash button (**Delete log**) asks for confirmation, and deleting is permanent.
 
 Renames and deletions are recorded in the dashboard audit log.
 
@@ -58,26 +60,26 @@ Renames and deletions are recorded in the dashboard audit log.
 The window is limited to three days. Larger values are rejected. The export needs the bot's configured chat save directory to exist, otherwise the command errors out.
 
 > [!NOTE]
-> `savechat` exports do not appear under **Saved Logs**. They are files on the host, not database entries.
+> `savechat` exports do not appear under **Saved logs**. They are files on the host, not database entries.
 
 ## Settings
 
-Chat Saver has no configuration. The dashboard page has three tabs: **Fetch Messages**, **Saved Logs** and **View Messages**.
+Chat Saver has no configuration. The dashboard page has two tabs, **Fetch messages** and **Saved logs**.
 
 | Control | Default | What it controls |
 | --- | --- | --- |
 | Channel | none | The text channel to read |
-| Time Amount | 1 | How far back to fetch |
-| Time Unit | Hours | Minutes, Hours or Days |
+| Time amount | 1 | How far back to fetch |
+| Time unit | Hours | Minutes, Hours or Days |
 
 ## Setup walkthrough
 
 1. Open **Chat Saver** in the dashboard.
-2. On **Fetch Messages**, select the **Channel** and set **Time Amount** and **Time Unit**, for example 6 hours.
-3. Click **Load Messages** and wait for the message count to appear.
-4. Switch to **View Messages** to read what came back.
-5. Click **Save Log** to keep it. It appears on **Saved Logs**.
-6. Use **Rename log** to give it a meaningful name, such as the incident or date.
+2. On **Fetch messages**, select the **Channel** and set **Time amount** and **Time unit**, for example 6 hours.
+3. Click **Load messages**. The messages open in a panel.
+4. Read through them, using **Search** to narrow them down.
+5. Click **Save log** to keep it. It appears on **Saved logs**.
+6. Open the log from **Saved logs** and use **Rename log** to give it a meaningful name, such as the incident or date.
 
 ## Commands
 

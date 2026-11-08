@@ -1,1446 +1,190 @@
 <!-- routes/dashboard/xp/+page.svelte -->
 <script lang="ts">
   import { m } from "$lib/i18n";
-  import { onDestroy, onMount } from "svelte";
+  import { goto } from "$app/navigation";
+  import { fade } from "svelte/transition";
+  import type { PageData } from "./$types";
   import { clientApi, xpApi } from "$lib/api/index.ts";
   import type { GuildXpSetting } from "$lib/api/xp/models/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { goto } from "$app/navigation";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import XpSettings from "$lib/components/dashboard/xp/XpSettings.svelte";
-  import XpStats from "$lib/components/dashboard/xp/XpStats.svelte";
-  import XpLeaderboard from "$lib/components/dashboard/xp/XpLeaderboard.svelte";
-
-  /** Manual XP adjustment requested from the leaderboard */
-  type XpAdjustment =
-    | { mode: "add"; userId: string; amount: number }
-    | { mode: "set"; userId: string; amount: number }
-    | { mode: "reset"; userId: string; resetBonus: boolean };
-  import XpRewards from "$lib/components/dashboard/xp/XpRewards.svelte";
-  import XpExclusions from "$lib/components/dashboard/xp/XpExclusions.svelte";
-  import XpTemplateEditor from "$lib/components/dashboard/xp/XpTemplateEditor.svelte";
-  import XpMobileTemplateEditor from "$lib/components/dashboard/xp/XpMobileTemplateEditor.svelte";
-  import { browser } from "$app/environment";
-  import { colorStore } from "$lib/stores/colorStore";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { colorStore } from "$lib/stores/colorStore.ts";
   import { logger } from "$lib/logger.ts";
   import { createAutoSave } from "$lib/utils/autoSave.svelte";
-  import type { PageData } from "./$types";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import PluginPage from "$lib/components/plugin/PluginPage.svelte";
+  import StatsCard from "./components/StatsCard.svelte";
+  import GainCard from "./components/GainCard.svelte";
+  import LevelUpCard from "./components/LevelUpCard.svelte";
+  import RewardsCard from "./components/RewardsCard.svelte";
+  import MultipliersCard from "./components/MultipliersCard.svelte";
+  import CompetitionsCard from "./components/CompetitionsCard.svelte";
+  import ExclusionsCard from "./components/ExclusionsCard.svelte";
+  import RankCardCard from "./components/RankCardCard.svelte";
+  import LeaderboardCard from "./components/LeaderboardCard.svelte";
+  import DataCard from "./components/DataCard.svelte";
+  import DesignsLinkCard from "$lib/components/designs/DesignsLinkCard.svelte";
+  import { errorText, type Channel, type Role, type SaveMode } from "./components/xpModel";
 
   interface Props {
-        data: PageData;
-    }
-
-    let {data}: Props = $props();
-
-  // State management
-    let notificationMessage = $state("");
-    let notificationType: "success" | "error" = $state("success");
-    let isMobile = $state(false);
-  let lastDragUpdate = 0;
-  const THROTTLE_MS = 16;
-  let dragAnimationFrameId: number | null = null;
-
-  function canvasHex(color: unknown, fallback = "#ffffff", alphaFirst = false): string {
-    if (typeof color !== "string") return fallback;
-
-    const raw = color.trim().replace(/^#/, "");
-    if (!/^([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(raw)) {
-      return fallback;
-    }
-
-    if (raw.length === 3 || raw.length === 4) {
-      return `#${raw.slice(0, 3).split("").map((char) => char + char).join("")}`;
-    }
-
-    return `#${raw.length === 8 && alphaFirst ? raw.slice(2, 8) : raw.slice(0, 6)}`;
+    data: PageData;
   }
 
-    interface CurrentUserData {
-      username: string;
-      avatarUrl: string;
-      level: number;
-      rank: number;
-      timeOnLevel: string;
-      clubName: string;
-      progress: number;
-    }
+  let { data }: Props = $props();
 
-    let currentUserData: CurrentUserData | null = $state(null);
-
-  // XP Settings
-    let xpSettings: GuildXpSetting | null = $state(null);
-    /** The settings as the server last confirmed them, for putting a toggle back when its save fails. */
-    let savedXpSettings: GuildXpSetting | null = null;
-    /** The settings as of the last change, to tell which field the next change touched. */
-    let lastTriggeredXpSettings: GuildXpSetting | null = null;
+  let channels: Channel[] = $state([]);
+  let roles: Role[] = $state([]);
+  let settings: GuildXpSetting | null = $state(null);
+  let showNotification = $state(false);
+  let notificationMessage = $state("");
+  let notificationType: "success" | "error" = $state("success");
+  let loadedGuildId = "";
+  let savedSettings: GuildXpSetting | null = null;
 
   const autoSave = createAutoSave({
-    onError: () => showNotificationMessage(m.xp.pageErrorAutosave(), "error")
+    onError: (err) => notify(errorText(err, m.xp.errorSaveSettings()), "error")
   });
 
-  // XP Stats
-    let serverStats = $state({
-    totalUsers: 0,
-    totalXp: 0,
-    averageLevel: 0,
-    highestLevel: 0,
-    recentActivity: [] as Array<{
-      userId: string;
-      username: string;
-      avatarUrl: string;
-      timestamp: string;
-    }>
-    });
+  let guildId = $derived($currentGuild?.id ? BigInt($currentGuild.id) : null);
 
-  // XP Leaderboard
-  let leaderboard: Array<{
-    userId: string;
-    guildId: string;
-    totalXp: number;
-    level: number;
-    levelXp: number;
-    requiredXp: number;
-    rank: number;
-    username: string;
-    avatarUrl: string;
-  }> = $state([]);
-    let leaderboardPage = $state(1);
-  let leaderboardPageSize = 9;
-
-  // XP Template
-    let template: any = $state(null);
-
-  // XP Rewards
-  let roleRewards: Array<{
-    id: number;
-    guildId: string;
-    level: number;
-    roleId: string;
-    roleName: string;
-  }> = $state([]);
-
-  let currencyRewards: Array<{
-    id: number;
-    guildId: string;
-    level: number;
-    amount: number;
-  }> = $state([]);
-
-  // XP Exclusions
-    let excludedChannels: string[] = $state([]);
-    let excludedRoles: string[] = $state([]);
-
-  // Management
-    /** Unsaved template designer changes; settings auto-save and are not tracked here. */
-    let changedSettings = $state(new Set<string>());
-    /** What XpSettings reads as its change set. It only ever adds to a copy, so this stays empty. */
-    const noXpSettingChanges = new Set<string>();
-    let activeTab: "settings" | "stats" | "leaderboard" | "rewards" | "template" | "exclusions" = $state("settings");
-    let guildChannels: Array<{ id: string; name: string }> = $state([]);
-    let guildRoles: Array<{ id: string; name: string }> = $state([]);
-    let loading = $state({
-    settings: true,
-    stats: true,
-    leaderboard: true,
-    rewards: true,
-    exclusions: true,
-    template: true
-    });
-    let error = $state({
-    settings: null as string | null,
-    stats: null as string | null,
-    leaderboard: null as string | null,
-    rewards: null as string | null,
-    exclusions: null as string | null,
-    template: null as string | null
-    });
-
-  // Template Editor State
-    interface TemplateData {
-      id: number;
-      guildId: bigint;
-      outputSizeX: number;
-      outputSizeY: number;
-      customXpImageUrl?: string;
-      customElementsJson?: string;
-      customElements?: any[];
-      builtInOrderJson?: string;
-      builtInOrder?: string[];
-      templateBar?: {
-        barWidth?: number;
-        barLength?: number;
-        barDirection?: number;
-        barColor?: string;
-        barTransparency?: number;
-        showBar?: boolean;
-        barPointAx: number;
-        barPointAy: number;
-        barPointBx: number;
-        barPointBy: number;
-      };
-      templateUser?: {
-        showIcon?: boolean;
-        iconX?: number;
-        iconY?: number;
-        iconSizeX?: number;
-        iconSizeY?: number;
-        showText?: boolean;
-        textColor?: string;
-        fontSize?: number;
-        textX?: number;
-        textY?: number;
-      };
-      templateGuild?: {
-        showGuildRank?: boolean;
-        guildRankColor?: string;
-        guildRankFontSize?: number;
-        guildRankX?: number;
-        guildRankY?: number;
-        showGuildLevel?: boolean;
-        guildLevelColor?: string;
-        guildLevelFontSize?: number;
-        guildLevelX?: number;
-        guildLevelY?: number;
-      };
-    }
-
-    let localTemplate: TemplateData | null = $state(null);
-    let previewContainerRef: HTMLDivElement | undefined = undefined;
-    let draggingElement: ElementHelper | null = null;
-    let showTemplateEditor = $state(false);
-    let previewCanvas: HTMLCanvasElement | null = $state(null);
-    let previewBgImage = $state<HTMLImageElement | null>(null);
-    let defaultBgImage = $state<HTMLImageElement | null>(null);
-    const customPreviewImages = new Map<string, HTMLImageElement>();
-  let dragStartPos = { x: 0, y: 0 };
-  let dragStartElementPos = { x: 0, y: 0 };
-  let previewScale = 1;
-  let gridSize = 10;
-  let snapToGrid = false;
-  let undoStack: string[] = [];
-
-    interface ElementHelper {
-      getX(): number;
-
-      getY(): number;
-
-      setPos(x: number, y: number): void;
-
-      isVisible(): boolean;
-    }
-
-  // Enhanced sample data for preview with realistic information
-    let sampleData = $state({
-    username: "QuantumViper42",
-    avatarUrl: "https://cdn.discordapp.com/avatars/123456789012345678/a_1234567890abcdef1234567890abcdef.gif",
-    discriminator: "0001",
-    displayName: "Quantum Viper",
-    level: 47,
-    rank: 12,
-    totalXp: 234567,
-    levelXp: 4890,
-    requiredXp: 7200,
-    timeOnLevel: "2d 8h 23m",
-    clubName: "Elite Gamers",
-    clubIcon: "🏆",
-    joinDate: "2021-03-15",
-    messageCount: 15432,
-    voiceTime: "127h 45m",
-    lastActive: "2 hours ago",
-    badges: ["🎖️", "⚡", "🔥"],
-    progress: 68, // percentage (levelXp / requiredXp * 100)
-    streak: 15,
-    favoriteChannel: "general-chat",
-    topEmoji: "😎"
-    });
-
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
-  }
-
-  async function fetchCurrentUserData() {
-    try {
-      if (!$currentGuild?.id) return;
-
-      const currentUserId = data.user?.id;
-
-      if (!currentUserId) return;
-
-      // Fetch the user's XP stats
-      const userData = await xpApi.getUserXpStats($currentGuild.id, currentUserId);
-
-      // Format the timeOnLevel for display
-      const timeStr = userData.timeOnLevel ?
-        m.xp.pageTimeOnLevel({ days: userData.timeOnLevel.days, hours: userData.timeOnLevel.hours, minutes: userData.timeOnLevel.minutes }) :
-        m.xp.pageTimeOnLevel({ days: 0, hours: 0, minutes: 0 });
-
-      // Calculate progress percentage
-      const progress = userData.requiredXp ?
-        Math.round((userData.levelXp / userData.requiredXp) * 100) :
-        0;
-
-      // Update currentUserData with the received data
-      currentUserData = {
-        username: userData.username,
-        avatarUrl: userData.avatarUrl,
-        level: userData.level,
-        rank: userData.rank,
-        timeOnLevel: timeStr,
-        clubName: m.xp.pageClubFallback(),
-        progress: progress
-      };
-    } catch (err) {
-      logger.error("Failed to fetch user XP data:", err);
-      showNotificationMessage(m.xp.pageErrorUserData(), "error");
-    }
-  }
-
-  function showNotificationMessage(message: string, type: "success" | "error" = "success") {
+  function notify(message: string, type: "success" | "error" = "success") {
     notificationMessage = message;
     notificationType = type;
+    showNotification = true;
+    setTimeout(() => {
+      showNotification = false;
+    }, 3000);
   }
 
-  async function fetchXpSettings() {
+  async function loadGuildData(id: bigint) {
     try {
-      loading.settings = true;
-      error.settings = null;
-      if (!$currentGuild?.id) {
-        throw new Error(m.common.noGuildSelected());
-      }
-
-      xpSettings = await xpApi.getXpSettings($currentGuild.id);
-      savedXpSettings = $state.snapshot(xpSettings) as GuildXpSetting;
-      lastTriggeredXpSettings = null;
-    } catch (err) {
-      logger.error("Failed to fetch XP settings:", err);
-      error.settings = err instanceof Error ? err.message : m.xp.pageErrorFetchSettings();
-    } finally {
-      loading.settings = false;
-    }
-  }
-
-  async function fetchServerStats() {
-    try {
-      loading.stats = true;
-      error.stats = null;
-      if (!$currentGuild?.id) {
-        throw new Error(m.common.noGuildSelected());
-      }
-
-      const stats = await xpApi.getXpServerStats($currentGuild.id);
-      serverStats = {
-        ...stats,
-        recentActivity: stats.recentActivity.map(activity => ({
-          ...activity,
-          userId: activity.userId.toString()
-        }))
-      };
-    } catch (err) {
-      logger.error("Failed to fetch XP server stats:", err);
-      error.stats = err instanceof Error ? err.message : m.xp.pageErrorFetchStats();
-    } finally {
-      loading.stats = false;
-    }
-  }
-
-  async function fetchLeaderboard() {
-    try {
-      loading.leaderboard = true;
-      error.leaderboard = null;
-      if (!$currentGuild?.id) {
-        throw new Error(m.common.noGuildSelected());
-      }
-
-      const board = await xpApi.getXpLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize);
-      leaderboard = board.map(entry => ({
-        ...entry,
-        userId: entry.userId.toString(),
-        guildId: entry.guildId.toString()
-      }));
-    } catch (err) {
-      logger.error("Failed to fetch XP leaderboard:", err);
-      error.leaderboard = err instanceof Error ? err.message : m.xp.pageErrorFetchLeaderboard();
-    } finally {
-      loading.leaderboard = false;
-    }
-  }
-
-  async function fetchXpTemplate() {
-    try {
-        loading = {...loading, template: true};
-        error = {...error, template: null};
-
-      if (!$currentGuild?.id) {
-        throw new Error(m.common.noGuildSelected());
-      }
-
-
-        // Fetch template and settings together to ensure we have the custom image URL
-        const [templateData, settingsData] = await Promise.all([
-          xpApi.getXpTemplate($currentGuild.id),
-          xpApi.getXpSettings($currentGuild.id).catch(() => xpSettings) // Fallback to existing settings
-        ]);
-
-        template = templateData;
-
-      localTemplate = JSON.parse(JSON.stringify(template));
-
-        // Initialize missing properties with C# defaults
-      if (localTemplate) {
-        try {
-          localTemplate.customElements = JSON.parse(localTemplate.customElementsJson || "[]");
-        } catch {
-          localTemplate.customElements = [];
-        }
-        try {
-          localTemplate.builtInOrder = JSON.parse(localTemplate.builtInOrderJson || "[]");
-        } catch {
-          localTemplate.builtInOrder = [];
-        }
-        if (localTemplate.templateBar) {
-          if (!localTemplate.templateBar.barWidth) {
-            localTemplate.templateBar.barWidth = 20; // C# default
-          }
-          if (typeof localTemplate.templateBar.barLength === "undefined") {
-            localTemplate.templateBar.barLength = 452; // C# default value from DrawXpBar
-          }
-          if (typeof localTemplate.templateBar.barDirection === "undefined") {
-            localTemplate.templateBar.barDirection = 3; // Default to Right (3 in C# enum)
-          }
-        }
-
-        // Set customXpImageUrl from settings
-        localTemplate.customXpImageUrl = settingsData?.customXpImageUrl || xpSettings?.customXpImageUrl || "";
-      }
-
-    } catch (err) {
-      logger.error("Failed to fetch XP template:", err);
-        error = {...error, template: err instanceof Error ? err.message : m.xp.pageErrorFetchTemplate()};
-    } finally {
-        loading = {...loading, template: false};
-    }
-  }
-
-  async function fetchRewards() {
-    try {
-      loading.rewards = true;
-      error.rewards = null;
-      if (!$currentGuild?.id) {
-        throw new Error(m.common.noGuildSelected());
-      }
-
-      const [roles, currency] = await Promise.all([
-        xpApi.getXpRoleRewards($currentGuild.id),
-        xpApi.getXpCurrencyRewards($currentGuild.id)
+      const [loadedChannels, loadedRoles, loadedSettings] = await Promise.all([
+        clientApi.getTextChannels(id),
+        clientApi.getRoles(id),
+        xpApi.getXpSettings(id)
       ]);
-
-      roleRewards = roles.map(reward => ({
-        ...reward,
-        guildId: reward.guildId.toString(),
-        roleId: reward.roleId.toString()
-      }));
-      currencyRewards = currency.map(reward => ({
-        ...reward,
-        guildId: reward.guildId.toString()
-      }));
+      channels = loadedChannels;
+      roles = loadedRoles as Role[];
+      settings = loadedSettings;
+      savedSettings = { ...loadedSettings };
     } catch (err) {
-      logger.error("Failed to fetch XP rewards:", err);
-      error.rewards = err instanceof Error ? err.message : m.xp.pageErrorFetchRewards();
-    } finally {
-      loading.rewards = false;
+      logger.error("Failed to load XP data:", err);
+      notify(errorText(err, m.xp.errorLoadSettings()), "error");
     }
   }
-
-  async function fetchExclusions() {
-    try {
-      loading.exclusions = true;
-      error.exclusions = null;
-      if (!$currentGuild?.id) {
-        throw new Error(m.common.noGuildSelected());
-      }
-
-      const [channels, roles] = await Promise.all([
-        xpApi.getXpExcludedChannels($currentGuild.id),
-        xpApi.getXpExcludedRoles($currentGuild.id)
-      ]);
-
-      excludedChannels = channels.map(id => id.toString());
-      excludedRoles = roles.map(id => id.toString());
-    } catch (err) {
-      logger.error("Failed to fetch XP exclusions:", err);
-      error.exclusions = err instanceof Error ? err.message : m.xp.pageErrorFetchExclusions();
-    } finally {
-      loading.exclusions = false;
-    }
-  }
-
-  async function fetchChannelsAndRoles() {
-    try {
-      if (!$currentGuild?.id) {
-        throw new Error(m.common.noGuildSelected());
-      }
-
-      const [channels, roles] = await Promise.all([
-        clientApi.getTextChannels($currentGuild.id),
-        clientApi.getRoles($currentGuild.id)
-      ]);
-
-      guildChannels = channels;
-      guildRoles = roles;
-    } catch (err) {
-      logger.error("Failed to fetch channels and roles:", err);
-    }
-  }
-
-  /** Settings that save at once and are put back if the save fails; everything else is typed. */
-  const instantXpFields = ["xpCurveType", "xpGainDisabled"] as const;
 
   /**
-   * Builds the save for the whole settings object, as the API only takes it in bulk. The guild id
-   * and payload are taken now, so a save still queued after switching servers cannot carry the
-   * new server's values.
+   * Applies a settings change and saves the whole object.
+   * @param changes The fields that changed
+   * @param mode Whether to save now or once typing stops
    */
-  function buildXpSettingsSave(rollbackFields: readonly (keyof GuildXpSetting)[] = []) {
-    if (!$currentGuild?.id || !xpSettings) return null;
-    const guildId = $currentGuild.id;
-    const payload = $state.snapshot(xpSettings) as GuildXpSetting;
-    const previous = savedXpSettings;
-    return async () => {
+  function patch(changes: Partial<GuildXpSetting>, mode: SaveMode = "typing") {
+    const id = guildId;
+    if (!settings || !id) return;
+    const previous = savedSettings;
+    Object.assign(settings, changes);
+    const payload = { ...settings } as GuildXpSetting;
+    const save = async () => {
       try {
-        await xpApi.updateXpSettings(guildId, payload);
-        savedXpSettings = payload;
+        await xpApi.updateXpSettings(id, payload);
+        savedSettings = payload;
       } catch (err) {
-        if ($currentGuild?.id === guildId && xpSettings && previous) {
-          for (const field of rollbackFields) {
-            (xpSettings as any)[field] = previous[field];
-            if (lastTriggeredXpSettings) (lastTriggeredXpSettings as any)[field] = previous[field];
+        if (mode === "now" && settings && previous && guildId === id) {
+          for (const key of Object.keys(changes) as (keyof GuildXpSetting)[]) {
+            (settings as any)[key] = previous[key];
           }
         }
         throw err;
       }
     };
-  }
-
-  /** True when the focused number input is empty or out of its range, which should not be sent. */
-  function focusedNumberInputInvalid(): boolean {
-    if (!browser) return false;
-    const el = document.activeElement;
-    if (!(el instanceof HTMLInputElement) || el.type !== "number") return false;
-    return el.value === "" || el.validity.badInput || el.validity.rangeOverflow || el.validity.rangeUnderflow;
+    if (mode === "now") void autoSave.now("xpSettings", save);
+    else autoSave.schedule("xpSettings", save);
   }
 
   /**
-   * Called by XpSettings each time it marks a change. Toggles and pickers save straight away;
-   * typed fields wait for typing to stop, and on blur.
+   * Keeps the page's copy of the background in step.
+   * @param value The stored background
    */
-  function onXpSettingsChanged(changes: Set<string>) {
-    if (!changes.has("xpSettings") || !xpSettings || !savedXpSettings) return;
-    const current = xpSettings;
-    const before = lastTriggeredXpSettings ?? savedXpSettings;
-    const changedFields = (Object.keys(current) as (keyof GuildXpSetting)[]).filter((k) => current[k] !== before[k]);
-    lastTriggeredXpSettings = $state.snapshot(xpSettings) as GuildXpSetting;
+  function syncBackground(value: string) {
+    if (settings) settings.customXpImageUrl = value;
+    if (savedSettings) savedSettings.customXpImageUrl = value;
+  }
 
-    const instant = changedFields.length > 0
-      && changedFields.every((f) => (instantXpFields as readonly string[]).includes(f as string));
-    if (instant) {
-      const save = buildXpSettingsSave(changedFields);
-      if (save) autoSave.now("xpSettings", save);
+  $effect(() => {
+    if (!$currentGuild) {
+      void goto("/dashboard");
       return;
     }
-
-    if (focusedNumberInputInvalid()) return;
-    const save = buildXpSettingsSave();
-    if (save) autoSave.schedule("xpSettings", save);
-  }
-
-  async function updateXpTemplate() {
-    try {
-      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
-      if (!localTemplate) throw new Error(m.xp.pageErrorNoTemplate());
-      if (!xpSettings) throw new Error(m.common.settingsNotLoaded());
-
-      const templateCopy = JSON.parse(JSON.stringify(localTemplate));
-      const imageUrl = templateCopy.customXpImageUrl;
-
-      templateCopy.customElementsJson = JSON.stringify(templateCopy.customElements || []);
-      delete templateCopy.customElements;
-      templateCopy.builtInOrderJson = JSON.stringify(templateCopy.builtInOrder || []);
-      delete templateCopy.builtInOrder;
-
-      delete templateCopy.customXpImageUrl;
-
-      await xpApi.updateXpTemplate($currentGuild.id, templateCopy);
-
-      if (imageUrl && imageUrl !== xpSettings.customXpImageUrl) {
-        // The image URL lives on the settings, so save it through the same queue as the
-        // settings tab; a separate write could land out of order with an auto-save.
-        xpSettings.customXpImageUrl = imageUrl;
-        const save = buildXpSettingsSave();
-        let settingsSaved = true;
-        if (save) {
-          await autoSave.now("xpSettings", async () => {
-            try {
-              await save();
-            } catch (err) {
-              settingsSaved = false;
-              throw err;
-            }
-          });
-        }
-        // The auto-save error toast has already said what went wrong.
-        if (!settingsSaved) return;
-      }
-
-      showNotificationMessage(m.xp.pageNotifyTemplateUpdated(), "success");
-      const newSet = new Set(changedSettings);
-      newSet.delete("template");
-      changedSettings = newSet;
-    } catch (err) {
-      logger.error("Failed to update XP template:", err);
-      showNotificationMessage(m.xp.pageErrorTemplateUpdate(), "error");
+    if ($currentGuild.icon) {
+      const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
+      colorStore.extractFromServerIcon(serverIconUrl);
+    } else if ($currentInstance?.botAvatar) {
+      colorStore.extractFromImage($currentInstance.botAvatar);
     }
-  }
-
-  async function addRoleReward(level: number, roleId: string) {
-    try {
-      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
-      if (!roleId) throw new Error(m.common.notifySelectRole());
-      if (level < 1) throw new Error(m.xp.pageErrorLevelMin());
-
-      await xpApi.addXpRoleReward($currentGuild.id, level, BigInt(roleId));
-
-      showNotificationMessage(m.common.roleRewardAdded(), "success");
-      await fetchRewards();
-    } catch (err) {
-      logger.error("Failed to add role reward:", err);
-      showNotificationMessage(err instanceof Error ? err.message : m.common.failedToAddRoleReward(), "error");
-    }
-  }
-
-  async function removeRoleReward(level: number) {
-    try {
-      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
-
-      await xpApi.removeXpRoleReward($currentGuild.id, level);
-      showNotificationMessage(m.common.roleRewardRemoved(), "success");
-      await fetchRewards();
-    } catch (err) {
-      logger.error("Failed to remove role reward:", err);
-      showNotificationMessage(m.common.failedToRemoveRoleReward(), "error");
-    }
-  }
-
-  async function addCurrencyReward(level: number, amount: number) {
-    try {
-      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
-      if (amount <= 0) throw new Error(m.xp.pageErrorAmountMin());
-      if (level < 1) throw new Error(m.xp.pageErrorLevelMin());
-
-      await xpApi.addXpCurrencyReward($currentGuild.id, level, amount);
-      showNotificationMessage(m.xp.pageNotifyCurrencyRewardAdded(), "success");
-      await fetchRewards();
-    } catch (err) {
-      logger.error("Failed to add currency reward:", err);
-      showNotificationMessage(err instanceof Error ? err.message : m.xp.pageErrorCurrencyRewardAdd(), "error");
-    }
-  }
-
-  async function removeCurrencyReward(level: number) {
-    try {
-      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
-
-      await xpApi.removeXpCurrencyReward($currentGuild.id, level);
-      showNotificationMessage(m.xp.pageNotifyCurrencyRewardRemoved(), "success");
-      await fetchRewards();
-    } catch (err) {
-      logger.error("Failed to remove currency reward:", err);
-      showNotificationMessage(m.xp.pageErrorCurrencyRewardRemove(), "error");
-    }
-  }
-
-  async function excludeChannel(channelId: string) {
-    try {
-      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
-      if (!channelId) throw new Error(m.common.notifySelectChannel());
-
-      await xpApi.excludeXpChannel($currentGuild.id, BigInt(channelId));
-      showNotificationMessage(m.xp.pageNotifyChannelExcluded(), "success");
-      await fetchExclusions();
-    } catch (err) {
-      logger.error("Failed to exclude channel:", err);
-      showNotificationMessage(m.xp.pageErrorChannelExclude(), "error");
-    }
-  }
-
-  async function includeChannel(channelId: string) {
-    try {
-      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
-
-      await xpApi.includeXpChannel($currentGuild.id, BigInt(channelId));
-      showNotificationMessage(m.xp.pageNotifyChannelIncluded(), "success");
-      await fetchExclusions();
-    } catch (err) {
-      logger.error("Failed to include channel:", err);
-      showNotificationMessage(m.xp.pageErrorChannelInclude(), "error");
-    }
-  }
-
-  async function excludeRole(roleId: string) {
-    try {
-      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
-      if (!roleId) throw new Error(m.common.notifySelectRole());
-
-      await xpApi.excludeXpRole($currentGuild.id, BigInt(roleId));
-      showNotificationMessage(m.xp.pageNotifyRoleExcluded(), "success");
-      await fetchExclusions();
-    } catch (err) {
-      logger.error("Failed to exclude role:", err);
-      showNotificationMessage(m.xp.pageErrorRoleExclude(), "error");
-    }
-  }
-
-  async function includeRole(roleId: string) {
-    try {
-      if (!$currentGuild?.id) throw new Error(m.common.noGuildSelected());
-
-      await xpApi.includeXpRole($currentGuild.id, BigInt(roleId));
-      showNotificationMessage(m.xp.pageNotifyRoleIncluded(), "success");
-      await fetchExclusions();
-    } catch (err) {
-      logger.error("Failed to include role:", err);
-      showNotificationMessage(m.xp.pageErrorRoleInclude(), "error");
-    }
-  }
-
-  function goToPage(page: number) {
-    if (page < 1) return;
-    leaderboardPage = page;
-    fetchLeaderboard();
-  }
-
-  /** Applies a manual XP change requested from the leaderboard */
-  async function adjustUserXp(adjustment: XpAdjustment) {
-    if (!$currentGuild?.id) return;
-    const userId = BigInt(adjustment.userId);
-    try {
-      if (adjustment.mode === "add") await xpApi.addUserXp($currentGuild.id, userId, adjustment.amount);
-      else if (adjustment.mode === "set") await xpApi.setUserXp($currentGuild.id, userId, adjustment.amount);
-      else await xpApi.resetUserXp($currentGuild.id, userId, adjustment.resetBonus);
-      await Promise.all([fetchLeaderboard(), fetchServerStats()]);
-    } catch (err) {
-      logger.error("Failed to adjust user XP:", err);
-      showNotificationMessage(m.xp.pageErrorUpdateXp(), "error");
-      throw err;
-    }
-  }
-
-  // Save current state for undo functionality
-  function saveStateForUndo() {
-    if (localTemplate) {
-      undoStack.push(JSON.stringify(localTemplate));
-      // Keep undo stack limited to prevent memory issues
-      if (undoStack.length > 20) {
-        undoStack = undoStack.slice(-20);
-      }
-    }
-  }
-
-  // Apply snap to grid
-  function applySnapToGrid(x: number, y: number) {
-    if (!snapToGrid) return { x, y };
-
-    return {
-      x: Math.round(x / gridSize) * gridSize,
-      y: Math.round(y / gridSize) * gridSize
-    };
-  }
-
-  // Reset changes
-  function resetChanges() {
-    // Save current state for undo
-    saveStateForUndo();
-    localTemplate = JSON.parse(JSON.stringify(template));
-    const newSet = new Set(changedSettings);
-    newSet.delete("template");
-    changedSettings = newSet;
-  }
-
-  function handleDragMove(event: MouseEvent | TouchEvent) {
-    if (!draggingElement) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    const now = Date.now();
-    if (now - lastDragUpdate < THROTTLE_MS) return;
-    lastDragUpdate = now;
-
-    if (dragAnimationFrameId) {
-      cancelAnimationFrame(dragAnimationFrameId);
-    }
-
-    dragAnimationFrameId = requestAnimationFrame(() => {
-      const clientX = event.type.includes("mouse")
-        ? (event as MouseEvent).clientX
-        : (event as TouchEvent).touches && (event as TouchEvent).touches[0]
-          ? (event as TouchEvent).touches[0].clientX : 0;
-
-      const clientY = event.type.includes("mouse")
-        ? (event as MouseEvent).clientY
-        : (event as TouchEvent).touches && (event as TouchEvent).touches[0]
-          ? (event as TouchEvent).touches[0].clientY : 0;
-
-      const deltaX = (clientX - dragStartPos.x) / previewScale;
-      const deltaY = (clientY - dragStartPos.y) / previewScale;
-
-      let newX = dragStartElementPos.x + deltaX;
-      let newY = dragStartElementPos.y + deltaY;
-
-      if (snapToGrid) {
-        const snapped = applySnapToGrid(newX, newY);
-        newX = snapped.x;
-        newY = snapped.y;
-      }
-
-      if (draggingElement) {
-        draggingElement.setPos(newX, newY);
-      }
-
-      if (localTemplate) {
-        localTemplate = { ...localTemplate } as TemplateData;
-      }
-    });
-  }
-
-  function endDrag() {
-    if (dragAnimationFrameId) {
-      cancelAnimationFrame(dragAnimationFrameId);
-      dragAnimationFrameId = null;
-    }
-
-    document.body.classList.remove("dragging-active");
-
-    draggingElement = null;
-
-    window.removeEventListener("mousemove", handleDragMove);
-    window.removeEventListener("touchmove", handleDragMove);
-    window.removeEventListener("mouseup", endDrag);
-    window.removeEventListener("touchend", endDrag);
-
-    if (localTemplate) {
-      localTemplate = { ...localTemplate } as TemplateData;
-    }
-  }
-
-  function updatePreviewScale() {
-    if (!previewContainerRef || !localTemplate) return;
-
-    const containerWidth = previewContainerRef.clientWidth;
-    const containerHeight = previewContainerRef.clientHeight;
-    const templateWidth = localTemplate.outputSizeX;
-    const templateHeight = localTemplate.outputSizeY;
-
-    const widthScale = (containerWidth - 40) / templateWidth;
-    const heightScale = (containerHeight - 40) / templateHeight;
-    previewScale = Math.min(widthScale, heightScale, 1);
-  }
-
-  onMount(() => {
-    if (!$currentGuild) goto("/dashboard");
-    Promise.all([
-      fetchXpSettings(),
-      fetchServerStats(),
-      fetchLeaderboard(),
-      fetchXpTemplate(),
-      fetchCurrentUserData(),
-      fetchRewards(),
-      fetchExclusions(),
-      fetchChannelsAndRoles()
-    ]);
-    checkMobile();
-
-    if (browser) {
-      window.addEventListener("resize", checkMobile);
-      window.addEventListener("resize", updatePreviewScale);
+    if (loadedGuildId !== $currentGuild.id.toString()) {
+      loadedGuildId = $currentGuild.id.toString();
+      settings = null;
+      void loadGuildData(BigInt($currentGuild.id));
     }
   });
-
-  onDestroy(() => {
-    if (browser) {
-      window.removeEventListener("resize", checkMobile);
-      window.removeEventListener("resize", updatePreviewScale);
-      window.removeEventListener("mousemove", handleDragMove);
-      window.removeEventListener("touchmove", handleDragMove);
-      window.removeEventListener("mouseup", endDrag);
-      window.removeEventListener("touchend", endDrag);
-    }
-  });
-
-    function renderCustomPreviewElements(ctx: CanvasRenderingContext2D) {
-      if (!localTemplate) return;
-      const data: any = currentUserData || sampleData;
-      const resolveText = (text: string) => (text || "")
-        .replaceAll(/%xp\.user(%|\.name%)/gi, data?.username || m.common.username())
-        .replaceAll(/%xp\.user\.displayname%/gi, data?.displayName || data?.username || m.common.displayName())
-        .replaceAll(/%xp\.level\.current%/gi, String(data?.level || 1))
-        .replaceAll(/%xp\.level\.next%/gi, String((data?.level || 1) + 1))
-        .replaceAll(/%xp\.rank%/gi, String(data?.rank || 1))
-        .replaceAll(/%xp\.current%/gi, String(data?.currentXp || data?.xp || 0))
-        .replaceAll(/%xp\.needed%/gi, String(data?.requiredXp || 100))
-        .replaceAll(/%xp\.total%/gi, String(data?.totalXp || 0))
-        .replaceAll(/%xp\.progress%/gi, `${Math.round(data?.progress || 0)}%`);
-
-      for (const element of [...(localTemplate.customElements || [])].filter((item: any) => item.visible !== false).sort((a: any, b: any) => a.zIndex - b.zIndex)) {
-        ctx.save();
-        ctx.globalAlpha = element.opacity ?? 1; ctx.shadowColor = element.shadowColor || "transparent";
-        ctx.shadowBlur = element.shadowBlur || 0; ctx.shadowOffsetX = element.shadowX || 0; ctx.shadowOffsetY = element.shadowY || 0;
-        ctx.translate(element.x + element.width / 2, element.y + element.height / 2);
-        ctx.rotate((element.rotation || 0) * Math.PI / 180); ctx.translate(-(element.x + element.width / 2), -(element.y + element.height / 2));
-        let fill: string | CanvasGradient = element.fill || "#5865F2";
-        if (element.gradientEnd) {
-          const angle = (element.gradientAngle || 0) * Math.PI / 180, radius = Math.max(element.width, element.height) / 2;
-          const cx = element.x + element.width / 2, cy = element.y + element.height / 2;
-          const gradient = ctx.createLinearGradient(cx - Math.cos(angle) * radius, cy - Math.sin(angle) * radius, cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
-          gradient.addColorStop(0, element.fill); gradient.addColorStop(1, element.gradientEnd); fill = gradient;
-        }
-        ctx.fillStyle = fill; ctx.strokeStyle = element.stroke || "transparent"; ctx.lineWidth = element.strokeWidth || 0;
-        if (element.type === "text") {
-          ctx.font = `${element.fontSize || 24}px sans-serif`; ctx.textBaseline = "top"; ctx.textAlign = element.textAlign || "left";
-          const x = element.textAlign === "center" ? element.x + element.width / 2 : element.textAlign === "right" ? element.x + element.width : element.x;
-          ctx.fillText(resolveText(element.text), x, element.y);
-        } else if (element.type === "image") {
-          let image = customPreviewImages.get(element.url);
-          if (!image && element.url) {
-            image = new Image(); image.crossOrigin = "anonymous"; image.onload = renderPreview; image.src = element.url; customPreviewImages.set(element.url, image);
-          }
-          if (image?.complete) ctx.drawImage(image, element.x, element.y, element.width, element.height);
-        } else if (element.type === "progress") {
-          const progress = Math.max(0, Math.min(100, data?.progress || 0)) / 100;
-          if (element.progressStyle === "radial") {
-            const radius = Math.min(element.width, element.height) / 2 - Math.max(2, element.strokeWidth || 8) / 2;
-            ctx.lineWidth = Math.max(2, element.strokeWidth || 8); ctx.lineCap = "round"; ctx.strokeStyle = element.trackFill;
-            ctx.beginPath(); ctx.arc(element.x + element.width / 2, element.y + element.height / 2, radius, -.5 * Math.PI, 1.5 * Math.PI); ctx.stroke();
-            ctx.strokeStyle = element.fill; ctx.beginPath(); ctx.arc(element.x + element.width / 2, element.y + element.height / 2, radius, -.5 * Math.PI, (-.5 + progress * 2) * Math.PI); ctx.stroke();
-          } else if (element.progressStyle === "segmented") {
-            const count = Math.max(2, element.segments || 10), gap = 3, width = (element.width - gap * (count - 1)) / count;
-            for (let i = 0; i < count; i++) { ctx.fillStyle = i < Math.ceil(progress * count) ? fill : element.trackFill; ctx.beginPath(); ctx.roundRect(element.x + i * (width + gap), element.y, width, element.height, element.cornerRadius || 0); ctx.fill(); }
-          } else {
-            ctx.fillStyle = element.trackFill; ctx.beginPath(); ctx.roundRect(element.x, element.y, element.width, element.height, element.cornerRadius || 0); ctx.fill();
-            ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect(element.x, element.y, element.width * progress, element.height, element.cornerRadius || 0); ctx.fill();
-          }
-        } else {
-          ctx.beginPath();
-          if (element.type === "ellipse") ctx.ellipse(element.x + element.width / 2, element.y + element.height / 2, Math.abs(element.width / 2), Math.abs(element.height / 2), 0, 0, Math.PI * 2);
-          else if (element.type === "line") { ctx.moveTo(element.x, element.y); ctx.lineTo(element.x + element.width, element.y + element.height); ctx.strokeStyle = element.fill; ctx.lineWidth = Math.max(1, element.strokeWidth || 1); }
-          else ctx.roundRect(element.x, element.y, element.width, element.height, element.cornerRadius || 0);
-          if (element.type !== "line") ctx.fill(); if (element.type === "line" || element.strokeWidth > 0) ctx.stroke();
-        }
-        ctx.restore();
-      }
-    }
-
-    // Render XP card preview
-    function renderPreview() {
-        if (!previewCanvas || !localTemplate) return;
-
-        const activeBackground = previewBgImage || defaultBgImage;
-        if (activeBackground?.naturalWidth && activeBackground?.naturalHeight) {
-            if (localTemplate.outputSizeX !== activeBackground.naturalWidth ||
-                localTemplate.outputSizeY !== activeBackground.naturalHeight) {
-                localTemplate.outputSizeX = activeBackground.naturalWidth;
-                localTemplate.outputSizeY = activeBackground.naturalHeight;
-                changedSettings = changedSettings.add("template");
-            }
-            // Set the backing bitmap directly. Waiting for Svelte to update width/height attributes
-            // can leave one frame rendered into the previous aspect ratio.
-            if (previewCanvas.width !== activeBackground.naturalWidth)
-                previewCanvas.width = activeBackground.naturalWidth;
-            if (previewCanvas.height !== activeBackground.naturalHeight)
-                previewCanvas.height = activeBackground.naturalHeight;
-        }
-
-        const ctx = previewCanvas.getContext('2d');
-        if (!ctx) return;
-
-        // Clear canvas
-        ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-
-        // Draw background
-        if (previewBgImage) {
-            // Custom background image
-            ctx.drawImage(previewBgImage, 0, 0);
-        } else if (defaultBgImage) {
-            // Default background with gradient (since default is transparent)
-            // First draw gradient
-            const gradient = ctx.createLinearGradient(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
-            gradient.addColorStop(0, `${canvasHex($colorStore.primary, "#3b82f6")}15`);
-            gradient.addColorStop(0.5, `${canvasHex($colorStore.primary, "#3b82f6")}20`);
-            gradient.addColorStop(1, `${canvasHex($colorStore.secondary, "#8b5cf6")}15`);
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
-
-            // Then draw transparent default image on top
-            ctx.drawImage(defaultBgImage, 0, 0);
-        }
-
-        // Draw username
-        if (localTemplate.templateUser?.showText) {
-            ctx.fillStyle = canvasHex(localTemplate.templateUser.textColor, "#ffffff");
-            ctx.font = `${localTemplate.templateUser.fontSize || 24}px sans-serif`;
-            ctx.fillText(
-                currentUserData?.username || sampleData.username,
-                localTemplate.templateUser.textX || 120,
-                localTemplate.templateUser.textY || 50
-            );
-        }
-
-        // Draw progress bar (matching C# DrawXpBar method exactly)
-        if (localTemplate.templateBar?.showBar) {
-            const percent = (currentUserData?.progress || sampleData.progress) / 100;
-            const x1 = localTemplate.templateBar.barPointAx;
-            const y1 = localTemplate.templateBar.barPointAy;
-            const x2 = localTemplate.templateBar.barPointBx;
-            const y2 = localTemplate.templateBar.barPointBy;
-            const length = (localTemplate.templateBar.barLength || 452) * percent;
-            const direction = localTemplate.templateBar.barDirection ?? 3; // Default to 3 (Right) as per C#
-
-            // Calculate the four corners based on C# XpTemplateDirection enum
-            // 0=Up, 1=Down, 2=Left, 3=Right
-            let x3, x4, y3, y4;
-            switch (direction) {
-                case 1: // Down
-                    x3 = x1;
-                    x4 = x2;
-                    y3 = y1 + length;
-                    y4 = y2 + length;
-                    break;
-                case 0: // Up
-                    x3 = x1;
-                    x4 = x2;
-                    y3 = y1 - length;
-                    y4 = y2 - length;
-                    break;
-                case 2: // Left
-                    x3 = x1 - length;
-                    x4 = x2 - length;
-                    y3 = y1;
-                    y4 = y2;
-                    break;
-                default: // Right (3)
-                    x3 = x1 + length;
-                    x4 = x2 + length;
-                    y3 = y1;
-                    y4 = y2;
-                    break;
-            }
-
-            // Draw as filled path
-            ctx.save();
-
-            // Parse color - handle ARGB format (e.g., "FF000000")
-            let barColor = localTemplate.templateBar.barColor || '4CAF50';
-            ctx.fillStyle = canvasHex(barColor, "#4caf50", true);
-            ctx.globalAlpha = (localTemplate.templateBar.barTransparency || 255) / 255;
-
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x3, y3);
-            ctx.lineTo(x4, y4);
-            ctx.lineTo(x2, y2);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.restore();
-        }
-
-        // Draw guild rank
-        if (localTemplate.templateGuild?.showGuildRank) {
-            ctx.fillStyle = canvasHex(localTemplate.templateGuild.guildRankColor, "#ffffff");
-            ctx.font = `${localTemplate.templateGuild.guildRankFontSize || 18}px sans-serif`;
-            ctx.fillText(
-                String(currentUserData?.rank || sampleData.rank),
-                localTemplate.templateGuild.guildRankX || 50,
-                localTemplate.templateGuild.guildRankY || 150
-            );
-        }
-
-        // Draw guild level
-        if (localTemplate.templateGuild?.showGuildLevel) {
-            ctx.fillStyle = canvasHex(localTemplate.templateGuild.guildLevelColor, "#ffffff");
-            ctx.font = `${localTemplate.templateGuild.guildLevelFontSize || 18}px sans-serif`;
-            ctx.fillText(
-                String(currentUserData?.level || sampleData.level),
-                localTemplate.templateGuild.guildLevelX || 350,
-                localTemplate.templateGuild.guildLevelY || 150
-            );
-        }
-
-        // Draw the built-in avatar with the same circular mask used by the bot renderer.
-        if (localTemplate.templateUser?.showIcon) {
-            const avatarUrl = currentUserData?.avatarUrl || sampleData.avatarUrl;
-            if (avatarUrl) {
-                let avatar = customPreviewImages.get(avatarUrl);
-                if (!avatar) {
-                    avatar = new Image();
-                    avatar.crossOrigin = "anonymous";
-                    avatar.onload = renderPreview;
-                    avatar.src = avatarUrl;
-                    customPreviewImages.set(avatarUrl, avatar);
-                }
-                if (avatar.complete && avatar.naturalWidth > 0) {
-                    const x = localTemplate.templateUser.iconX ?? 27;
-                    const y = localTemplate.templateUser.iconY ?? 24;
-                    const width = localTemplate.templateUser.iconSizeX ?? 73;
-                    const height = localTemplate.templateUser.iconSizeY ?? 74;
-                    const radius = Math.min(width, height) / 2;
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.arc(x + width / 2, y + height / 2, radius, 0, Math.PI * 2);
-                    ctx.clip();
-                    ctx.drawImage(avatar, x, y, width, height);
-                    ctx.restore();
-                }
-            }
-        }
-        renderCustomPreviewElements(ctx);
-    }
-
-    // Load default background image once
-    onMount(() => {
-        const img = new Image();
-        img.onload = () => {
-            defaultBgImage = img;
-            if (localTemplate && !localTemplate.customXpImageUrl &&
-                (localTemplate.outputSizeX !== img.naturalWidth || localTemplate.outputSizeY !== img.naturalHeight)) {
-                localTemplate.outputSizeX = img.naturalWidth;
-                localTemplate.outputSizeY = img.naturalHeight;
-                changedSettings = changedSettings.add("template");
-            }
-            if (previewCanvas && localTemplate) {
-                renderPreview();
-            }
-        };
-        img.onerror = () => {
-            defaultBgImage = null;
-        };
-        img.src = '/img/default_xp_background.png';
-    });
-
-  // Update preview on template change
-    $effect(() => {
-        if (localTemplate && activeTab === "template") {
-
-            // Load background image if available
-            if (localTemplate.customXpImageUrl) {
-                const img = new Image();
-                img.onload = () => {
-                    if (localTemplate && (localTemplate.outputSizeX !== img.naturalWidth || localTemplate.outputSizeY !== img.naturalHeight)) {
-                        localTemplate.outputSizeX = img.naturalWidth;
-                        localTemplate.outputSizeY = img.naturalHeight;
-                        changedSettings = changedSettings.add("template");
-                    }
-                    previewBgImage = img;
-                    renderPreview();
-                };
-              img.onerror = () => {
-                    previewBgImage = null;
-                    renderPreview();
-                };
-                img.src = localTemplate.customXpImageUrl;
-            } else {
-                previewBgImage = null;
-                renderPreview();
-            }
-        }
-    });
-
-    $effect(() => {
-        if (previewCanvas && localTemplate && activeTab === "template") {
-            // Small delay to ensure canvas is ready
-            setTimeout(() => renderPreview(), 50);
-        }
-    });
 </script>
 
 <svelte:head>
   <title>{m.xp.pageHeadTitle()}</title>
 </svelte:head>
 
-<DashboardPageLayout
-  title={m.xp.pageTitle()}
+{#snippet statusMessages()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-50" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
+
+<PluginPage
+  {statusMessages}
   {autoSave}
   icon="fa-star"
-  bind:notificationMessage
-  bind:activeTab
-  guildName={$currentGuild?.name || "Dashboard"}
+  guildName={$currentGuild?.name || m.common.dashboard()}
+  title={m.xp.pageTitle()}
   subtitle={m.xp.pageSubtitle()}
-  notificationType={notificationType}
-  tabs={[
-    {id: "settings", label: m.common.settings(), icon: "fa-gear"},
-    {id: "stats", label: m.xp.pageTabStats(), icon: "fa-chart-bar"},
-    {id: "leaderboard", label: m.common.leaderboard(), icon: "fa-users"},
-    {id: "rewards", label: m.common.rewards(), icon: "fa-star"},
-    {id: "template", label: m.common.template(), icon: "fa-image"},
-    {id: "exclusions", label: m.features.wizardXpStepExclusionsTitle(), icon: "fa-bell"}
-  ]}
 >
-
-  <!-- Tab Content -->
-  <div
-    class=" border"
-    class:rounded-2xl={activeTab !== 'template'}
-    class:p-6={activeTab !== 'template'}
-    class:h-[calc(100vh-200px)]={activeTab === 'template'}
-    style="background: {$colorStore.primary}0c;
-           border-color: {$colorStore.primary}30;"
-  >
-    <!-- Settings Panel -->
-    <div
-      aria-labelledby="settings-tab"
-      class:hidden={activeTab !== 'settings'}
-      id="settings-panel"
-      role="tabpanel"
-      onfocusout={() => autoSave.flush("xpSettings")}
-    >
-      <!-- XpSettings reports each edit by setting changedSettings; the setter turns that into a save. -->
-      <XpSettings
-        bind:xpSettings={xpSettings}
-        loading={loading.settings}
-        error={error.settings}
-        bind:changedSettings={() => noXpSettingChanges, onXpSettingsChanged}
-      />
-    </div>
-
-    <!-- Stats Panel -->
-    <div
-      aria-labelledby="stats-tab"
-      class:hidden={activeTab !== 'stats'}
-      id="stats-panel"
-      role="tabpanel"
-    >
-      <XpStats 
-        serverStats={serverStats}
-        loading={loading.stats}
-        error={error.stats}
-      />
-    </div>
-
-    <!-- Leaderboard Panel -->
-    <div
-      aria-labelledby="leaderboard-tab"
-      class:hidden={activeTab !== 'leaderboard'}
-      id="leaderboard-panel"
-      role="tabpanel"
-    >
-      <XpLeaderboard 
-        leaderboard={leaderboard}
-        leaderboardPage={leaderboardPage}
-        loading={loading.leaderboard}
-        error={error.leaderboard}
-        onPageChange={goToPage}
-        onAdjust={adjustUserXp}
-      />
-    </div>
-
-    <!-- Rewards Panel -->
-    <div
-      aria-labelledby="rewards-tab"
-      class:hidden={activeTab !== 'rewards'}
-      id="rewards-panel"
-      role="tabpanel"
-    >
-      <XpRewards 
-        roleRewards={roleRewards}
-        currencyRewards={currencyRewards}
-        guildRoles={guildRoles}
-        loading={loading.rewards}
-        error={error.rewards}
-        onAddRoleReward={addRoleReward}
-        onRemoveRoleReward={removeRoleReward}
-        onAddCurrencyReward={addCurrencyReward}
-        onRemoveCurrencyReward={removeCurrencyReward}
-      />
-    </div>
-
-    <!-- Template Panel (kept mostly as is since user said don't touch it) -->
-    <div
-      aria-labelledby="template-tab"
-      class:hidden={activeTab !== 'template'}
-      id="template-panel"
-      role="tabpanel"
-    >
-
-      {#if loading.template}
-        <div class="flex justify-center items-center min-h-[200px]">
-          <div
-            class="w-12 h-12 border-4 rounded-full animate-spin"
-            style="border-color: {$colorStore.primary}20;
-             border-top-color: {$colorStore.primary};"
-            aria-label={m.common.loading()}
-          >
-          </div>
-        </div>
-      {:else if error.template}
-        <div
-          class="rounded-xl p-4 flex items-center gap-3"
-          style="background: {$colorStore.accent}10;"
-          role="alert"
-        >
-          <i class="fa-utility-duo fa-regular fa-bell"
-             style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
-             aria-hidden="true"></i>
-          <p style="color: {$colorStore.accent}">{error.template}</p>
-        </div>
-      {:else if template}
-        {#if localTemplate}
-            <!-- XP Card Preview -->
-            <div class="flex flex-col items-center gap-4 sm:gap-6 py-4 sm:py-8">
-                <h3 class="text-lg sm:text-xl font-semibold" style="color: {$colorStore.text}">{m.xp.pageCardPreview()}</h3>
-
-                <!-- Preview Container -->
-                <div
-                        class="relative rounded-2xl overflow-hidden {isMobile ? 'max-w-full mx-4' : ''}"
-                        style="width: {isMobile ? '100%' : Math.min(localTemplate.outputSizeX, 600) + 'px'};
-                     max-width: {isMobile ? 'calc(100vw - 2rem)' : '600px'};
-                     height: auto;
-                     aspect-ratio: {localTemplate.outputSizeX} / {localTemplate.outputSizeY};
-                     background: {$colorStore.primary}10;
-                     border: 2px solid {$colorStore.primary}30;"
-                >
-                    <canvas
-                            bind:this={previewCanvas}
-                            id="xp-preview-canvas"
-                            width={localTemplate.outputSizeX}
-                            height={localTemplate.outputSizeY}
-                            style="display: block; width: 100%; height: auto; aspect-ratio: {localTemplate.outputSizeX} / {localTemplate.outputSizeY}; image-rendering: crisp-edges;"
-                    ></canvas>
-
-                    {#if isMobile}
-                        <!-- Tap-to-edit overlay -->
-                        <button
-                                class="absolute inset-0 flex items-end justify-end p-3"
-                                onclick={() => { showTemplateEditor = true; }}
-                                aria-label={m.xp.pageEditTemplateAria()}
-                        >
-                            <span
-                                    class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium"
-                                    style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
-                            >
-                                <i class="fa-solid fa-pen" style="font-size: 14px;"></i>
-                                {m.common.edit()}
-                            </span>
-                        </button>
-                    {/if}
-                </div>
-
-                {#if !isMobile}
-                    <!-- Edit Button -->
-                    <button
-                      class="px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2 text-base"
-                            style="background: {$colorStore.primary};
-                         color: {$colorStore.onPrimary};"
-                            onclick={() => { showTemplateEditor = true; }}
-                    >
-                      <i class="fa-solid fa-image" style="font-size: 20px;"></i>
-                        {m.xp.pageEditTemplate()}
-                    </button>
-                {/if}
-
-                <!-- Template Info -->
-                <div class="flex flex-row flex-wrap justify-center gap-x-3 gap-y-1 text-xs sm:text-sm"
-                     style="color: {$colorStore.muted}">
-                    <span>{m.xp.pageTemplateSize({ width: localTemplate.outputSizeX, height: localTemplate.outputSizeY })}</span>
-                    <span>•</span>
-                    <span>{m.xp.pageTemplateBackground({ background: localTemplate.customXpImageUrl ? m.xp.pageTemplateBackgroundCustom() : m.common.default() })}</span>
-                </div>
-            </div>
-
-            <!-- Fullscreen Template Editor -->
-            {#if showTemplateEditor}
-                {#if isMobile}
-                    <XpMobileTemplateEditor
-                            bind:localTemplate={localTemplate}
-                            bind:changedSettings={changedSettings}
-                            bind:currentUserData={currentUserData}
-                            bind:sampleData={sampleData}
-                            bind:showEditor={showTemplateEditor}
-                    />
-                {:else}
-                    <XpTemplateEditor
-                            bind:localTemplate={localTemplate}
-                            bind:changedSettings={changedSettings}
-                            bind:currentUserData={currentUserData}
-                            bind:sampleData={sampleData}
-                            bind:showEditor={showTemplateEditor}
-                    />
-                {/if}
-          {/if}
-        {:else}
-          <div class="text-center py-12" style="color: {$colorStore.muted}">
-            {m.xp.pageTemplateInconsistent({ raw: JSON.stringify(template) })}
-          </div>
+  {#if guildId}
+    {#key guildId}
+      <div class="space-y-4 min-w-0" onfocusout={() => autoSave.flush("xpSettings")}>
+        <StatsCard {guildId} onerror={(message) => notify(message, "error")} />
+        {#if settings}
+          <GainCard {settings} onpatch={patch} />
+          <LevelUpCard
+            {guildId}
+            {settings}
+            {channels}
+            user={data.user}
+            onpatch={patch}
+            onerror={(message) => notify(message, "error")}
+          />
+          <RewardsCard
+            {guildId}
+            {settings}
+            {roles}
+            onpatch={patch}
+            onerror={(message) => notify(message, "error")}
+            onsuccess={(message) => notify(message)}
+          />
         {/if}
-
-        <!-- Save/Reset buttons -->
-        <div class="flex justify-end gap-3 mt-4 mb-16 md:mb-4">
-          {#if changedSettings.has("template")}
-            <button
-              class="px-4 py-2 rounded-lg transition-all duration-200 min-h-[44px]"
-              onclick={resetChanges}
-              style="background: {$colorStore.accent}30; color: {$colorStore.accent};"
-              aria-label={m.xp.pageResetChanges()}
-            >
-              {m.xp.pageResetChanges()}
-            </button>
-            <button
-              class="px-6 py-2 rounded-lg font-medium transition-all duration-200 min-h-[44px]"
-              onclick={updateXpTemplate}
-              style="background: {$colorStore.primary};
-               color: {$colorStore.onPrimary};"
-              aria-label={m.xp.pageSaveTemplate()}
-            >
-              {m.xp.pageSaveTemplate()}
-            </button>
-          {/if}
-        </div>
-      {:else}
-        <div class="text-center py-12" style="color: {$colorStore.muted}">
-          {m.xp.pageNoTemplate()}
-        </div>
-      {/if}
-    </div>
-
-    <!-- Exclusions Panel -->
-    <div
-      aria-labelledby="exclusions-tab"
-      class:hidden={activeTab !== 'exclusions'}
-      id="exclusions-panel"
-      role="tabpanel"
-    >
-      <XpExclusions 
-        excludedChannels={excludedChannels}
-        excludedRoles={excludedRoles}
-        guildChannels={guildChannels}
-        guildRoles={guildRoles}
-        loading={loading.exclusions}
-        error={error.exclusions}
-        onExcludeChannel={excludeChannel}
-        onIncludeChannel={includeChannel}
-        onExcludeRole={excludeRole}
-        onIncludeRole={includeRole}
-      />
-    </div>
-  </div>
-</DashboardPageLayout>
-
-<style lang="postcss">
-    @reference '../../../app.css'; /* Improve touchable area on mobile */
-    @media (max-width: 768px) {
-    }
-
-    /* Prevent zoom on focus in mobile Safari */
-    @media not all and (min-resolution: .001dpcm) {
-        @supports (-webkit-appearance:none) {
-        }
-    }
-</style>
+        <MultipliersCard {guildId} {channels} {roles} onerror={(message) => notify(message, "error")} />
+        <CompetitionsCard {guildId} {channels} {roles} onerror={(message) => notify(message, "error")} />
+        <ExclusionsCard {guildId} {channels} {roles} onerror={(message) => notify(message, "error")} />
+        <RankCardCard
+          {guildId}
+          userId={data.user?.id}
+          onerror={(message) => notify(message, "error")}
+          onbackground={syncBackground}
+        />
+        <DesignsLinkCard />
+        <LeaderboardCard {guildId} onerror={(message) => notify(message, "error")} />
+        <DataCard {guildId} onerror={(message) => notify(message, "error")} onsuccess={(message) => notify(message)} />
+      </div>
+    {/key}
+  {/if}
+</PluginPage>

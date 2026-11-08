@@ -5,7 +5,6 @@
   "board_meta": "#{channel} · 每 {minutes} 分钟 · 更新于 {updated}",
   "board_rows": "· {count} 行",
   "boards_empty": "尚无实时看板。添加后，机器人会立即发布并置顶。",
-  "boards_subtitle": "每个服务器最多 10 个，各自按独立间隔刷新",
   "confirm_delete_message": "要删除 #{channel} 中的{kind}吗？其消息也会一并删除。",
   "confirm_delete_title": "删除实时看板",
   "contents_activity": "💬 消息、🔊 语音时长和活跃成员",

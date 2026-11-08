@@ -1,7 +1,7 @@
 ---
 title: Embeds
 slug: embedbuilder
-summary: Build rich Discord messages with embeds, buttons, and select menus, save them as templates, send them to a channel, and reuse the same JSON anywhere the bot accepts a custom message.
+summary: Design embed messages with buttons and menus, then save them as reusable templates
 icon: fa-link
 category: Actions
 dashboard: /dashboard/embedbuilder
@@ -12,7 +12,7 @@ related: [multigreets, chat-triggers, afk, feeds, giveaways, suggestions]
 
 ## What it does
 
-The embed builder is a visual editor for Discord messages. You fill in a title, description, colour, fields, images, and optional buttons or select menus, watch a live preview, and get a block of JSON at the end. That JSON is the bot's universal message format. Paste it into `say` to post it, save it as a named template, or drop it into any feature that takes a custom message, such as greets, chat triggers, AFK replies, feed updates, or the giveaway winner DM.
+The embed builder is a visual editor for Discord messages. You fill in a title, description, colour, fields, images and optional buttons or select menus while a live preview updates, and you get a block of JSON at the end. That JSON is the bot's universal message format. Paste it into `say` to post it or save it as a named template, or drop it into any feature that takes a custom message, such as greets, chat triggers, AFK replies, feed updates, or the giveaway winner DM.
 
 Templates can be personal, visible only to you across every server, or shared with a server so any staff member can load them. The dashboard can also send a finished message straight to a channel, optionally through a webhook with a custom name and avatar, called a persona.
 
@@ -48,14 +48,16 @@ A component has `row` (which row it sits in), `displayName`, and either `url` fo
 
 The builder's **%** button inserts placeholders from the placeholders page (user, server, channel, bot, time, and so on). The dashboard does not replace them: a message sent from the **Send** tab goes out with the literal text. The bot replaces them when JSON passes through a command or feature, for example `say`, `embedpreview`, greets, and triggers. Each feature adds its own set, such as `%afk.message%` or `%giveawayitem%`, on top of the general ones.
 
+Placeholders that resolve to an image or GIF, such as `%user.avatar%`, `%server.icon%`, `%bot.avatar%`, banners and the `%...gif%` ones, only show as a link in text. When one lands in a text field, a chip offers **Move to thumbnail** or **Move to image**. The thumbnail, image and icon URL fields have their own **%** button.
+
 ## Templates
 
 A template is a name plus the JSON. Two scopes exist.
 
 | Scope | Who sees it | Created by |
 | --- | --- | --- |
-| Personal | Only you, in any server and in DMs | `embedsave`, or **Save** on the dashboard with sharing unticked |
-| Guild shared | Anyone with access in that server | `guildembedsave` (Manage Messages), or **Save** with **Share with everyone in (server)** ticked |
+| Personal | Only you, in any server and in DMs | `embedsave`, or **Save** on the dashboard with sharing off |
+| Guild shared | Anyone with access in that server | `guildembedsave` (Manage Messages), or **Save** with **Share with everyone on this server** on |
 
 Names must be unique within a scope. `embedpreview <name>` looks up your personal template first, then the server's shared one, replaces placeholders, and posts it in the current channel.
 
@@ -63,22 +65,39 @@ Some commands accept a template reference in place of raw JSON: write `{template
 
 ## The dashboard page
 
-The page is titled **Discord Embed Builder** and has six tabs, with a **Live Preview** and an **Issues** panel alongside. **Undo**, **Redo**, **Cancel edits**, and **Copy JSON** sit in the header.
+The page is titled **Discord embed builder** and has six tabs. On wide screens the **Live preview** and the **Issues** list sit beside the tab. **Undo**, **Redo**, **Cancel edits**, and **Copy JSON** sit in the page header. **Copy JSON** stays disabled until there is a title, description, field, or message content. The open tab is kept in the URL as `?tab=`.
 
 | Tab | What you do there |
 | --- | --- |
-| Templates | Pick from a gallery of starting points or **Start from Scratch** |
-| Editor | **Message Content** plus up to ten embeds. Each embed has title, description, URL, colour, author, footer, up to 25 fields, thumbnail, and image, with character counters. |
-| Components | Up to five rows and 25 components. Add buttons (text, style, emoji, URL or trigger) and select menus (placeholder, options with trigger bindings). |
-| JSON | The raw payload. **Refresh from Builder** regenerates it; **Apply to Builder** loads pasted JSON, either a full payload or a single embed object. |
-| Saved | **Save Current Embed** with a name and the share checkbox, then lists of **Shared in (server)** and **My Embeds** with **Load** and **Delete** |
-| Send | Choose a channel, review your permissions there, optionally send through a webhook as a persona or with a custom name and avatar URL, then **Send Message** |
+| Templates | **Choose a template** from a gallery, filtered by category (All templates, Information, Fun, Interactive and others), or press **Start from scratch** |
+| Editor | **Message content (optional)** plus **Embeds (n/10)** with **Add embed**. Each embed can be duplicated or removed and has four sections: **Content**, **Appearance**, **Fields** (up to 25) and **Media**. |
+| Components | Up to five rows and 25 components. **Add row**, then add buttons and select menus to a row. Drag the handle to reorder rows. Rows can be duplicated or removed. |
+| JSON | The **Raw JSON** payload. **Refresh from builder** regenerates it and **Apply to builder** loads pasted JSON, either a full payload or a single embed object. |
+| Saved | **Save current embed** with a name and **Share with everyone on this server**, then **Shared on this server** and **My embeds** lists with **Load**, **Overwrite** (replaces the saved embed with the builder's current state) and **Delete** |
+| Send | Choose a channel, review your permissions there, optionally send through a webhook as a persona or with a custom name and avatar URL, then **Send message** |
+
+### Embed sections
+
+| Section | Contains |
+| --- | --- |
+| Content | Title, title URL and description |
+| Appearance | **Embed color** from a preset list (Brand green, Fuchsia, Orange, Purple, Yellow, White, Black and others) or a custom hex value, plus the author (name, URL, icon) and the footer (text, icon) |
+| Fields | Name, value and **Display inline (up to 3 fields per row)** for each field |
+| Media | **Thumbnail URL** and image URL, with tips on formats (PNG, JPG, GIF, WebP) and the 8MB image size |
+
+The editor checks as you type. Problems that Discord would reject, such as a title over 256 characters, a description over 4096, a field without both name and value, an author with an icon but no name, or an empty embed, show in **Issues** and block sending.
+
+### Components
+
+Buttons need a label and either a URL (link button) or a trigger. Select menus need a name and a trigger, and at least one option. A row holds up to five buttons, or one select menu on its own. Options in a select menu need a name and a description, and a select menu allows up to 25 options with **Min options** and **Max options**.
 
 ### Sending and personas
 
-The **Send** tab only lists channels where both you and the bot can post. Sending embeds needs Embed Links for both. If you lack Mention Everyone, everyone, here, and role mentions are stripped and the tab warns you.
+The **Send** tab is titled **Send to {server}**. It only lists channels where both you and the bot can post, and shows **Your permissions in #channel** for sending embeds and mentioning everyone and roles. Sending embeds needs Embed Links for both. If you lack Mention Everyone, everyone, here, and role mentions are stripped and the tab warns you. A confirmation shows before each send.
 
-Webhook sending needs Manage Webhooks for you and the bot. A **persona** is a saved name and avatar, personal or shared with the server; **Manage** opens the persona list. Personas with an uploaded image get their own webhook in each channel, so a channel can hold at most fifteen of them. The **Custom** option takes a display name and an avatar link instead. Every send is written to the dashboard audit log.
+To send through a webhook, tick **Send through a webhook with a custom name and avatar**. This needs Manage Webhooks for you and the bot. Under **Send as**, pick a persona or **Custom**. **Custom** takes a **Webhook display name (optional)** and **Webhook avatar URL (optional)** for that send only.
+
+A **persona** is a saved name and avatar, personal or shared with the server. The manage button opens **Send as personas**, where **New persona** takes a name (up to 80 characters), an avatar by **Choose an image** or **Link**, and **Share with everyone in {server}**. Uploaded avatars are PNG, JPG or GIF up to 8MB and use one webhook per channel the persona posts in, so a channel can hold at most fifteen. A linked avatar does not use one. Every send is recorded in the dashboard audit log.
 
 The same builder opens as a popup inside other dashboard pages (greets, triggers, and others) with the **Editor**, **Components**, **JSON**, and **Saved** tabs only.
 
@@ -88,11 +107,11 @@ The builder has no server settings. Everything is per message or per template.
 
 ## Setup walkthrough
 
-1. Open **Embeds** in the dashboard and pick a template or **Start from Scratch**.
-2. In **Editor**, write the content and fill in the embed. Watch the **Issues** panel for anything Discord would reject.
+1. Open **Embeds** in the dashboard and pick a template or press **Start from scratch**.
+2. In **Editor**, write the content and fill in the embed. Watch **Issues** for anything Discord would reject.
 3. Add buttons or menus in **Components** if you need them, binding each to a chat trigger or a URL.
-4. Go to **Saved**, give it a name, tick **Share with everyone in (server)** if staff should use it, and press **Save**.
-5. To post it now, open **Send**, pick a channel, and press **Send Message**. To use it elsewhere, press **Copy JSON** and paste it into the other feature.
+4. Go to **Saved**, give it a name, turn on **Share with everyone on this server** if staff should use it, and press **Save**.
+5. To post it now, open **Send**, pick a channel, and press **Send message**. To use it elsewhere, press **Copy JSON** and paste it into the other feature.
 6. In Discord, `embedpreview <name>` posts a saved template with placeholders filled in.
 
 ## Commands

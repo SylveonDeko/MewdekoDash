@@ -122,8 +122,12 @@
           return;
         }
       } else if (instances.length > 0) {
-        // Check all instances in parallel
-        await Promise.all(instances.map(checkInstanceMutualGuilds));
+        const results = await Promise.all(instances.map(checkInstanceMutualGuilds));
+        const available = instances.filter((_, index) => results[index]);
+        if (available.length === 1) {
+          await handleInstanceSelect(available[0]);
+          return;
+        }
       }
 
       checkingInstances = false;
@@ -177,6 +181,7 @@
   style="background: {$colorStore.primary}08;"
 >
   <div class="max-w-4xl mx-auto space-y-8">
+    {#if !showLoading}
     <div
       class="text-center p-8 rounded-2xl  border"
       in:fly={{ y: 20, duration: 300 }}
@@ -186,6 +191,7 @@
       <h1 class="text-3xl font-bold mb-2" id="instance-selector-title" style="color: {$colorStore.text}">{m.layout.instanceTitle()}</h1>
       <p style="color: {$colorStore.muted}">{m.layout.instanceSubtitle()}</p>
     </div>
+    {/if}
 
   {#if showLoading}
     <div

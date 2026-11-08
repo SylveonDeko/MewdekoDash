@@ -1,7 +1,7 @@
 ---
 title: Activity Stats
 slug: serverstats
-summary: Messages, voice time, games and member growth for the whole server, a member or a channel over any window up to ninety days, with charts, rankings, exports and a privacy opt out.
+summary: Activity charts for the whole server or for a single member
 icon: fa-chart-simple
 category: Analytics
 dashboard: /dashboard/serverstats
@@ -12,7 +12,7 @@ related: [messagestats, statroles, liveboards, statchannels, invites]
 
 ## What it does
 
-The bot already counted messages. Activity Stats adds voice time, games and apps, hourly member and status snapshots, and a way to ask about any of it over a window: the last day, week, month, up to ninety days, or all time. Everything is available in the dashboard, as commands, as charts, as CSV, and to stat roles, live boards, reports and stat channels.
+The bot already counted messages. Activity Stats adds voice time and game and app tracking. It also takes hourly member and status snapshots. You can ask about any of it over a window of a day, a week, a month, up to ninety days, or all time. Everything is available in the dashboard, as commands, as charts and as CSV, and it feeds stat roles, live boards, reports and stat channels.
 
 ## What is tracked
 
@@ -30,7 +30,7 @@ Windows up to ninety days read the timestamped data. **All time** reads the life
 
 Game tracking is off until you turn it on, because it is the heaviest tracker. Once on, the bot watches every member's presence and records how long each game, stream, Spotify session or watched app lasts.
 
-- **Verify activities** (on by default) only counts activities Discord itself attests to: ones with a registered application ID, Spotify, and streams. A modified client can claim to be playing anything, so plain named activities are ignored while this is on.
+- **Verify activities** (on by default) only counts activities Discord itself attests to, which means anything with a registered application ID. Spotify and streams count too. A modified client can claim to be playing anything, so plain named activities are ignored while this is on.
 - The **activity filter** is a list of game names that is either a **blacklist** (listed games are ignored) or a **whitelist** (only listed games count).
 - Custom statuses are never counted.
 
@@ -38,28 +38,33 @@ Game tracking is off until you turn it on, because it is the heaviest tracker. O
 
 | Tab | What it shows |
 | --- | --- |
-| Overview | Messages, voice time, chatters, joins, leaves, net growth, members now, the top chatter, top voice member, busiest channel and most played game, and charts for messages, voice hours, members, member status and joins and leaves |
-| Rankings | Members and channels ranked by messages, voice or game time, and the top games with player counts, exportable as CSV. Click a member, channel or game to open it |
-| Member & Channel | One member's messages, voice time, ranks, lifetime totals, favourite channels and games; one channel's activity and top members; and **Who plays** for any game |
-| Settings | Every tracker, the default window, message cooldown, bots, voice states that do not count, ignored channels, roles and members, and the activity filter |
+| Overview | **Server activity**: messages, **Voice time**, chatters, joins, leaves, **Net growth**, **Members now**, **Top chatter**, **Top voice**, **Busiest channel** and **Most played**, and charts for messages, **Voice hours**, members, **Member status** (**Online**, **Idle**, **DND**, **In voice**) and **Joins and leaves**. A **Time window** picker sets the range |
+| Rankings | Members and channels ranked by messages or by time in voice or games, plus **Top games and apps** with player counts. **CSV** exports the ranking. Click a member, channel or game to open it |
+| Member & channel | **Look up** a member (messages, voice time, ranks, **Lifetime messages**, **Lifetime voice**, **Chats most in**, **Games and apps**), a channel (**Top chatters**, **Voice channels**) or a game with **Who plays** (**Playing now** and **People**) |
+| Settings | **Tracking settings**, **Voice states that do not count**, ignored channels, roles and members, and the **Activity filter** |
+
+The tab is kept in the address as `?tab=overview`, `top`, `lookup` or `settings`.
 
 ## Settings
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
-| Default window | 14 days | What commands and the page use when no window is given |
-| Message cooldown | 0 | Seconds between counted messages from one member. Stops spam from inflating counts |
-| Track voice time | on | Whether voice segments are recorded |
-| Hourly snapshots | on | Whether member and status counts are sampled every hour |
+| Default window (days) | 14 | What commands and the page use when no window is given, 1 to 90 |
+| Message cooldown (seconds) | 0 | Counts a member's messages once per this many seconds. 0 counts all |
+| Track voice time | on | Whether voice segments are recorded, per member and channel |
+| Hourly snapshots | on | Whether member and status counts are sampled every hour for the charts |
 | Count bots | off | Whether bot accounts are included |
 | Track games and apps | off | Whether presence activities are recorded |
-| Verify activities | on | Only count Discord attested activities |
-| Voice states that do not count | none | Any of self muted, self deafened, server muted, server deafened, AFK channel, alone, streaming, camera on |
-| Ignored channels, roles, members | none | Nothing from these is counted |
+| Verify activities | on | Ignore spoofed presences |
+| Voice states that do not count | none | Toggle any of **Self muted**, **Self deafened**, **Server muted**, **Server deafened**, **AFK channel**, **Alone**, **Streaming**, **Camera on** to leave that time out of voice stats |
+| Ignored channels, Ignored roles, Ignored members | none | Nothing from these is counted. Add each with its picker and **Add** |
+| Activity filter mode | none | **Blacklist** ignores the listed games, **Whitelist** tracks only the listed games |
+
+Settings save as you change them. Add a game to the **Activity filter** by typing its name under **Game or app name** and pressing **Add**.
 
 ## Privacy
 
-Any member can run `statsprivacy` (or `/serverstats privacy`) to opt out. Their recorded messages, voice time and game time are deleted in every server the bot shares with them, and nothing new is recorded until they run it again to opt back in. Server admins cannot override it.
+Any member can run `statsprivacy` (or `/serverstats privacy`) to opt out. Their recorded messages and their voice and game time are deleted in every server the bot shares with them, and nothing new is recorded until they run it again to opt back in. Server admins cannot override it.
 
 ## Commands
 

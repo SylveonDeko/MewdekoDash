@@ -146,10 +146,16 @@ export async function filterInstancesForUser(
  * tampering.
  */
 export async function resolveInstanceURL(botId: string): Promise<string | null> {
-  const raw = await fetchInstances();
-  const match = raw.find((i) => i.botId.toString() === botId && i.isActive);
-  if (!match) return null;
-  return instanceUrl(match);
+  const match = await findActiveInstance((i) => i.botId.toString() === botId);
+  return match ? instanceUrl(match) : null;
+}
+
+/** Finds an active instance, refetching the list once on a miss. */
+async function findActiveInstance(predicate: (instance: RawInstance) => boolean): Promise<RawInstance | null> {
+  const match = (await fetchInstances()).find((i) => predicate(i) && i.isActive);
+  if (match) return match;
+  cache = null;
+  return (await fetchInstances()).find((i) => predicate(i) && i.isActive) ?? null;
 }
 
 /**
@@ -159,10 +165,8 @@ export async function resolveInstanceURL(botId: string): Promise<string | null> 
  * proxy (which attaches the bot API key) at an arbitrary host.
  */
 export async function resolveInstanceURLByPort(port: number): Promise<string | null> {
-  const raw = await fetchInstances();
-  const match = raw.find((i) => i.port === port && i.isActive);
-  if (!match) return null;
-  return instanceUrl(match);
+  const match = await findActiveInstance((i) => i.port === port);
+  return match ? instanceUrl(match) : null;
 }
 
 /**

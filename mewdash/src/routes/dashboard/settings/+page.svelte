@@ -1,115 +1,52 @@
 <!-- routes/dashboard/settings/+page.svelte -->
 <script lang="ts">
   import { m } from "$lib/i18n";
-  import { onMount } from "svelte";
-  import { guildApi, clientApi, administrationApi, type GuildConfig } from "$lib/api/index.ts";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { fade } from "svelte/transition";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import { fade } from "svelte/transition";
+  import type { PageData } from "./$types";
+  import { clientApi, guildApi } from "$lib/api/index.ts";
+  import type { GuildEmojiInfo } from "$lib/api/client/models";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { colorStore } from "$lib/stores/colorStore.ts";
+  import { logger } from "$lib/logger.ts";
   import { createAutoSave } from "$lib/utils/autoSave.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import PluginPage from "$lib/components/plugin/PluginPage.svelte";
+  import GeneralCard from "./components/GeneralCard.svelte";
+  import ModerationCard from "./components/ModerationCard.svelte";
+  import ChatCard from "./components/ChatCard.svelte";
+  import {
+    DEFAULT_CURRENCY_EMOJI,
+    DEFAULT_PREFIX,
+    errorText,
+    type Named,
+    type SaveMode,
+    type Settings
+  } from "./components/settingsModel";
 
-  let guildConfig: GuildConfig | null = null;
-  let loading = $state(true);
-  let error: string | null = $state(null);
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
+
+  let channels: Named[] = $state([]);
+  let emojis: GuildEmojiInfo[] = $state([]);
+  let settings: Settings | null = $state(null);
+  let saved: Settings | null = null;
   let showNotification = $state(false);
   let notificationMessage = $state("");
   let notificationType: "success" | "error" = $state("success");
-  let channels: Array<{ id: string; name: string }> = $state([]);
-
-  // Only track settings that are unique to this page
-  const DEFAULT_SETTINGS = {
-    prefix: ".",
-    commandLogChannel: "0",
-    currencyEmoji: "💰",
-    warnlogChannelId: "0",
-    warnExpireHours: 0,
-    locale: "",
-    snipeset: false,
-    previewLinks: false,
-    muteRoleName: "",
-    removeRolesOnMute: false
-  };
-  let settings = $state({ ...DEFAULT_SETTINGS });
-
-  /** The settings as the server last confirmed them, and which guild they belong to. */
-  let savedSettings = { ...DEFAULT_SETTINGS };
-  let loadedGuildId: string | null = null;
+  let loadedGuildId = "";
 
   const autoSave = createAutoSave({
-    onError: () => showNotificationMessage(m.settings.pageSaveFailed(), "error")
+    onError: (err) => notify(errorText(err, m.settings.pageSaveFailed()), "error")
   });
 
-  /** Languages the bot ships response strings for */
-  const languageOptions = $derived([
-    { id: "", name: m.settings.pageLanguageDefault() },
-    { id: "en-US", name: "English" },
-    { id: "ar", name: "العربية (Arabic)" },
-    { id: "cs-CZ", name: "Čeština (Czech)" },
-    { id: "da-DK", name: "Dansk (Danish)" },
-    { id: "de-DE", name: "Deutsch (German)" },
-    { id: "es-ES", name: "Español (Spanish)" },
-    { id: "fr-FR", name: "Français (French)" },
-    { id: "he-IL", name: "עברית (Hebrew)" },
-    { id: "hi-IN", name: "हिन्दी (Hindi)" },
-    { id: "hu-HU", name: "Magyar (Hungarian)" },
-    { id: "id-ID", name: "Bahasa Indonesia" },
-    { id: "it-IT", name: "Italiano (Italian)" },
-    { id: "ja-JP", name: "日本語 (Japanese)" },
-    { id: "ko-KR", name: "한국어 (Korean)" },
-    { id: "nb-NO", name: "Norsk (Norwegian)" },
-    { id: "nl-NL", name: "Nederlands (Dutch)" },
-    { id: "pl-PL", name: "Polski (Polish)" },
-    { id: "pt-BR", name: "Português (Brazil)" },
-    { id: "ro-RO", name: "Română (Romanian)" },
-    { id: "ru-RU", name: "Русский (Russian)" },
-    { id: "sr-RS", name: "Srpski (Serbian)" },
-    { id: "sv-SE", name: "Svenska (Swedish)" },
-    { id: "tr-TR", name: "Türkçe (Turkish)" },
-    { id: "uk-UA", name: "Українська (Ukrainian)" },
-    { id: "zh-CN", name: "简体中文 (Chinese, Simplified)" },
-    { id: "zh-TW", name: "繁體中文 (Chinese, Traditional)" },
-    { id: "owo", name: "OwO" }
-  ]);
+  let guildId = $derived($currentGuild?.id ? BigInt($currentGuild.id) : null);
 
-  /** Server timezone state, saved separately from the guild config */
-  let timezones: Array<{ id: string; name: string; label: string; offset: string; value: string }> = $state([]);
-  let guildTimezone = $state<string | null>(null);
-
-  async function fetchTimezone() {
-    try {
-      if (!$currentGuild?.id) return;
-      const [list, current] = await Promise.all([
-        administrationApi.getTimezones($currentGuild.id).catch(() => []),
-        administrationApi.getGuildTimezone($currentGuild.id).catch(() => null)
-      ]);
-      timezones = (list || []).map(tz => ({ id: tz.id, name: tz.displayName, label: tz.displayName, offset: tz.offset, value: tz.id }));
-      guildTimezone = current || null;
-    } catch (err) {
-      logger.error("Failed to fetch timezone:", err);
-    }
-  }
-
-  function saveTimezone(timezoneId: string | null) {
-    if (!$currentGuild?.id || !timezoneId || timezoneId === guildTimezone) return;
-    const guildId = $currentGuild.id;
-    const previous = guildTimezone;
-    guildTimezone = timezoneId;
-    autoSave.now("timezone", async () => {
-      try {
-        await administrationApi.setGuildTimezone(guildId, { timezoneId });
-      } catch (err) {
-        if ($currentGuild?.id === guildId) guildTimezone = previous;
-        throw err;
-      }
-    });
-  }
-
-  function showNotificationMessage(message: string, type: "success" | "error" = "success") {
+  function notify(message: string, type: "success" | "error" = "success") {
     notificationMessage = message;
     notificationType = type;
     showNotification = true;
@@ -118,429 +55,106 @@
     }, 3000);
   }
 
-  async function fetchGuildSettings() {
-    try {
-      if (!$currentGuild?.id) return;
-      const guildId = $currentGuild.id;
-      const config = await guildApi.getGuildConfig(guildId);
-      if ($currentGuild?.id !== guildId) return;
-      guildConfig = config;
-      loadedGuildId = guildId.toString();
-
-      // Update local settings - only properties shown in this page
-      settings = {
-        prefix: config.prefix || ".",
-        commandLogChannel: config.commandLogChannel?.toString() || "0",
-        currencyEmoji: config.currencyEmoji || "💰",
-        warnlogChannelId: config.warnlogChannelId?.toString() || "0",
-        warnExpireHours: config.warnExpireHours,
-        locale: config.locale || "",
-        snipeset: Boolean(config.snipeset),
-        previewLinks: config.previewLinks === 1,
-        muteRoleName: config.muteRoleName || "",
-        removeRolesOnMute: config.removeroles === 1
+  async function loadGuildData(id: bigint) {
+    const [loadedChannels, loadedSettings, loadedEmojis] = await Promise.allSettled([
+      clientApi.getTextChannels(id),
+      guildApi.getBotSettings(id),
+      data.user?.id ? clientApi.getEmojis(data.user.id, true) : Promise.resolve([])
+    ]);
+    if (loadedChannels.status === "fulfilled") channels = loadedChannels.value;
+    if (loadedEmojis.status === "fulfilled") emojis = loadedEmojis.value;
+    if (loadedSettings.status === "fulfilled") {
+      const value = loadedSettings.value;
+      const next: Settings = {
+        prefix: value.prefix || DEFAULT_PREFIX,
+        commandLogChannel: value.commandLogChannel ?? 0n,
+        currencyEmoji: value.currencyEmoji || DEFAULT_CURRENCY_EMOJI,
+        warnlogChannelId: value.warnlogChannelId ?? 0n,
+        warnExpireHours: value.warnExpireHours ?? 0,
+        warnExpireAction: value.warnExpireAction ?? 0,
+        locale: value.locale ?? "",
+        snipeset: value.snipeset ?? false,
+        previewLinks: value.previewLinks ?? false,
+        muteRoleName: value.muteRoleName ?? "",
+        removeRolesOnMute: value.removeRolesOnMute ?? false,
+        verboseErrors: value.verboseErrors ?? false
       };
-      savedSettings = { ...settings };
-    } catch (err) {
-      logger.error("Failed to fetch guild settings:", err);
-      error = err instanceof Error ? err.message : m.settings.pageFetchFailed();
+      settings = next;
+      saved = { ...next };
+    } else {
+      logger.error("Failed to load bot settings:", loadedSettings.reason);
+      notify(errorText(loadedSettings.reason, m.settings.pageFetchFailed()), "error");
     }
-  }
-
-  async function fetchChannels() {
-    try {
-      if (!$currentGuild?.id) return;
-      channels = await clientApi.getTextChannels($currentGuild.id);
-    } catch (err) {
-      logger.error("Failed to fetch channels:", err);
-    }
-  }
-
-  type Settings = typeof settings;
-
-  function isValidWarnExpiry(value: unknown): value is number {
-    return typeof value === "number" && Number.isInteger(value) && value >= 0;
   }
 
   /**
-   * Builds a save of the whole guild config from the form as it is right now. Everything is
-   * captured here, not when the save runs, so a save still waiting after switching servers
-   * cannot carry the new server's state. A field that is currently invalid (empty prefix,
-   * bad warn expiry) is sent with its last saved value instead.
+   * Shows a change and sends only the fields in it.
+   * @param changes The fields that changed
+   * @param mode Whether to save now or once typing stops
    */
-  function buildSave(rollback?: () => void) {
-    if (!$currentGuild?.id || !guildConfig || loadedGuildId !== $currentGuild.id.toString()) return null;
-    const guildId = $currentGuild.id;
-    const snapshot: Settings = { ...settings };
-    if (!snapshot.prefix.trim()) snapshot.prefix = savedSettings.prefix;
-    if (!isValidWarnExpiry(snapshot.warnExpireHours)) snapshot.warnExpireHours = savedSettings.warnExpireHours;
-
-    const config: GuildConfig = {
-      ...guildConfig,
-      prefix: snapshot.prefix,
-      commandLogChannel: snapshot.commandLogChannel === "0" ? BigInt(0) : BigInt(snapshot.commandLogChannel),
-      currencyEmoji: snapshot.currencyEmoji,
-      warnlogChannelId: snapshot.warnlogChannelId === "0" ? BigInt(0) : BigInt(snapshot.warnlogChannelId),
-      warnExpireHours: snapshot.warnExpireHours,
-      locale: snapshot.locale || null,
-      snipeset: snapshot.snipeset,
-      previewLinks: snapshot.previewLinks ? 1 : 0,
-      muteRoleName: snapshot.muteRoleName.trim() || null,
-      removeroles: snapshot.removeRolesOnMute ? 1 : 0
-    };
-
-    return async () => {
+  function patch(changes: Partial<Settings>, mode: SaveMode = "typing") {
+    const id = guildId;
+    const current = settings;
+    const confirmed = saved;
+    if (!current || !confirmed || !id) return;
+    const keys = Object.keys(changes) as (keyof Settings)[];
+    const previous = Object.fromEntries(keys.map((key) => [key, confirmed[key]]));
+    Object.assign(current, changes);
+    const save = async () => {
       try {
-        await guildApi.updateGuildConfig(guildId, config);
-        if ($currentGuild?.id === guildId) {
-          guildConfig = config;
-          savedSettings = snapshot;
-        }
+        await guildApi.updateBotSettings(id, changes);
+        Object.assign(confirmed, changes);
       } catch (err) {
-        if ($currentGuild?.id === guildId) rollback?.();
+        if (mode === "now") Object.assign(current, previous);
         throw err;
       }
     };
-  }
-
-  /** Saves straight away (toggles, selectors), putting the field back if the save fails. */
-  function saveNow<K extends keyof Settings>(field: K, previous: Settings[K]) {
-    const save = buildSave(() => {
-      settings[field] = previous;
-    });
-    if (save) autoSave.now("config", save);
-  }
-
-  /** Saves once typing stops. Text fields are not rolled back on failure; the header offers Retry. */
-  function scheduleSave() {
-    const save = buildSave();
-    if (save) autoSave.schedule("config", save);
-  }
-
-  /** Leaving a field that must not be empty or invalid puts back its last saved value. */
-  function handleBlur(field: "prefix" | "warnExpireHours") {
-    switch (field) {
-      case "prefix":
-        if (!settings.prefix.trim()) settings.prefix = savedSettings.prefix;
-        break;
-      case "warnExpireHours":
-        if (!isValidWarnExpiry(settings.warnExpireHours)) settings.warnExpireHours = savedSettings.warnExpireHours;
-        break;
-    }
-    void autoSave.flush("config");
-  }
-
-  function handleCommandLogChannelChange(detail: { selected: string | string[] | null }) {
-    const previous = savedSettings.commandLogChannel;
-    settings.commandLogChannel = typeof detail.selected === "string" && detail.selected ? detail.selected : "0";
-    saveNow("commandLogChannel", previous);
-  }
-
-  function handleWarnlogChannelChange(detail: { selected: string | string[] | null }) {
-    const previous = savedSettings.warnlogChannelId;
-    settings.warnlogChannelId = typeof detail.selected === "string" && detail.selected ? detail.selected : "0";
-    saveNow("warnlogChannelId", previous);
-  }
-
-  function handleLocaleChange(detail: { selected: string | string[] | null }) {
-    const previous = savedSettings.locale;
-    settings.locale = typeof detail.selected === "string" ? detail.selected : "";
-    saveNow("locale", previous);
-  }
-
-  function handleToggle(field: "snipeset" | "previewLinks" | "removeRolesOnMute") {
-    saveNow(field, !settings[field]);
+    if (mode === "now") void autoSave.now(keys[0], save);
+    else autoSave.schedule(keys[0], save);
   }
 
   $effect(() => {
-    if ($currentGuild) {
-      fetchGuildSettings();
-      fetchChannels();
-      fetchTimezone();
+    if (!$currentGuild) {
+      void goto("/dashboard");
+      return;
     }
-  });
-
-  onMount(async () => {
-    if (!$currentGuild) await goto("/dashboard");
-    loading = true;
-    try {
-      await Promise.all([
-        fetchGuildSettings(),
-        fetchChannels()
-      ]);
-    } catch (err) {
-      error = m.common.failedToFetchData();
-      logger.error(error, err);
-    } finally {
-      loading = false;
+    if ($currentGuild.icon) {
+      const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
+      colorStore.extractFromServerIcon(serverIconUrl);
+    } else if ($currentInstance?.botAvatar) {
+      colorStore.extractFromImage($currentInstance.botAvatar);
+    }
+    if (loadedGuildId !== $currentGuild.id.toString()) {
+      loadedGuildId = $currentGuild.id.toString();
+      settings = null;
+      void loadGuildData(BigInt($currentGuild.id));
     }
   });
 </script>
 
 {#snippet statusMessages()}
   {#if showNotification}
-    <div class="fixed top-4 right-4 z-50" transition:fade>
+    <div class="fixed top-4 right-4 z-[10001]" transition:fade>
       <Notification message={notificationMessage} type={notificationType} />
     </div>
   {/if}
 {/snippet}
 
-<DashboardPageLayout
+<PluginPage
+  {statusMessages}
   {autoSave}
-  statusMessages={statusMessages}
   icon="fa-gear"
   guildName={$currentGuild?.name || m.common.dashboard()}
-  subtitle={m.settings.pageSubtitle()}
   title={m.common.botSettings()}
+  subtitle={m.settings.pageSubtitle()}
 >
-
-  {#if loading}
-    <div class="flex justify-center items-center min-h-[200px]">
-      <div
-        class="w-12 h-12 border-4 rounded-full animate-spin"
-        style="border-color: {$colorStore.primary}20;
-               border-top-color: {$colorStore.primary};">
+  {#if guildId && settings}
+    {#key guildId}
+      <div class="space-y-4 min-w-0" onfocusout={() => autoSave.flush()}>
+        <GeneralCard {guildId} {settings} {emojis} {autoSave} onpatch={patch} />
+        <ModerationCard {settings} {channels} onpatch={patch} />
+        <ChatCard {settings} onpatch={patch} />
       </div>
-    </div>
-  {:else if error}
-    <div
-      class="rounded-xl p-4 flex items-center gap-3"
-      style="background: {$colorStore.accent}10;"
-      role="alert"
-    >
-      <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-         style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-      <p style="color: {$colorStore.accent}">{error}</p>
-    </div>
-  {:else}
-    <div class="space-y-6">
-      <!-- Bot Configuration -->
-      <div class="rounded-2xl border p-6"
-           style="background: {$colorStore.primary}0c;
-                  border-color: {$colorStore.primary}30;">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="p-3 rounded-xl"
-               style="background: {$colorStore.primary}20;">
-            <i class="fa-utility-duo fa-regular fa-gear"
-               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-          </div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.common.botConfiguration()}</h2>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Prefix -->
-          <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
-            <div class="flex items-center gap-2 mb-3">
-              <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.common.commandPrefix()}</h3>
-            </div>
-            <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              {m.settings.pagePrefixHint()}
-            </p>
-            <input
-              type="text"
-              bind:value={settings.prefix}
-              oninput={scheduleSave}
-              onblur={() => handleBlur("prefix")}
-              class="w-full p-3 rounded-lg border transition-all"
-              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-              placeholder="."
-            >
-          </div>
-
-          <!-- Command Log Channel -->
-          <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
-            <div class="flex items-center gap-2 mb-3">
-              <i class="fa-solid fa-list" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.settings.pageCmdlogTitle()}</h3>
-            </div>
-            <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              {m.settings.pageCmdlogHint()}
-            </p>
-            <DiscordSelector
-              type="channel"
-              options={channels}
-              bind:selected={settings.commandLogChannel}
-              placeholder={m.settings.pageCmdlogPlaceholder()}
-              onchange={handleCommandLogChannelChange}
-            />
-          </div>
-
-          <!-- Currency Emoji -->
-          <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
-            <div class="flex items-center gap-2 mb-3">
-              <i class="fa-solid fa-coins" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.settings.pageCurrencyTitle()}</h3>
-            </div>
-            <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              {m.settings.pageCurrencyHint()}
-            </p>
-            <input
-              type="text"
-              bind:value={settings.currencyEmoji}
-              oninput={scheduleSave}
-              onblur={() => autoSave.flush("config")}
-              class="w-full p-3 rounded-lg border transition-all"
-              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-              placeholder="💰"
-            >
-          </div>
-
-          <!-- Warnlog Channel -->
-          <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
-            <div class="flex items-center gap-2 mb-3">
-              <i class="fa-solid fa-triangle-exclamation" style="color: {$colorStore.accent}; font-size: 20px;"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.common.warningLogChannel()}</h3>
-            </div>
-            <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              {m.settings.pageWarnlogHint()}
-            </p>
-            <DiscordSelector
-              type="channel"
-              options={channels}
-              bind:selected={settings.warnlogChannelId}
-              placeholder={m.settings.pageWarnlogPlaceholder()}
-              onchange={handleWarnlogChannelChange}
-            />
-          </div>
-
-          <!-- Warn Expire Hours -->
-          <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
-            <div class="flex items-center gap-2 mb-3">
-              <i class="fa-solid fa-clock" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.settings.pageWarnexpiryTitle()}</h3>
-            </div>
-            <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              {m.settings.pageWarnexpiryHint()}
-            </p>
-            <input
-              type="number"
-              bind:value={settings.warnExpireHours}
-              oninput={scheduleSave}
-              onblur={() => handleBlur("warnExpireHours")}
-              min="0"
-              class="w-full p-3 rounded-lg border transition-all"
-              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-              placeholder="0"
-            >
-          </div>
-
-          <!-- Language -->
-          <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
-            <div class="flex items-center gap-2 mb-3">
-              <i class="fa-solid fa-language" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-              <h3 id="language-label" class="font-semibold" style="color: {$colorStore.text}">{m.common.language()}</h3>
-            </div>
-            <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              {m.settings.pageLanguageHint()}
-            </p>
-            <DiscordSelector
-              type="custom"
-              options={languageOptions}
-              selected={settings.locale}
-              placeholder={m.settings.pageLanguageDefault()}
-              ariaLabelledby="language-label"
-              onchange={handleLocaleChange}
-            />
-          </div>
-
-          <!-- Timezone -->
-          <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
-            <div class="flex items-center gap-2 mb-3">
-              <i class="fa-solid fa-earth-americas" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
-              <h3 id="timezone-label" class="font-semibold" style="color: {$colorStore.text}">{m.common.serverTimezone()}</h3>
-            </div>
-            <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              {m.settings.pageTimezoneHint()}
-            </p>
-            <DiscordSelector
-              type="timezone"
-              options={timezones}
-              selected={guildTimezone}
-              placeholder={timezones.length ? m.common.selectTimezonePlaceholder() : m.settings.pageTimezoneLoading()}
-              ariaLabelledby="timezone-label"
-              disabled={timezones.length === 0}
-              onchange={(e) => saveTimezone(typeof e.selected === "string" ? e.selected : null)}
-            />
-          </div>
-
-          <!-- Mute role -->
-          <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
-            <div class="flex items-center gap-2 mb-3">
-              <i class="fa-solid fa-volume-xmark" style="color: {$colorStore.accent}; font-size: 20px;"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.settings.pageMuteTitle()}</h3>
-            </div>
-            <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              {m.settings.pageMuteHint()}
-            </p>
-            <input
-              type="text"
-              bind:value={settings.muteRoleName}
-              oninput={scheduleSave}
-              onblur={() => autoSave.flush("config")}
-              maxlength="100"
-              class="w-full p-3 rounded-lg border transition-all"
-              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-              placeholder={m.settings.pageMutePlaceholder()}
-            >
-            <label class="flex items-center gap-3 mt-3 cursor-pointer min-h-[32px]" style="color: {$colorStore.text};">
-              <input type="checkbox" bind:checked={settings.removeRolesOnMute} onchange={() => handleToggle("removeRolesOnMute")} class="w-4 h-4 rounded" style="accent-color: {$colorStore.primary};">
-              <span class="text-sm">{m.settings.pageMuteRemoveRoles()}</span>
-            </label>
-          </div>
-
-          <!-- Chat utilities -->
-          <div class="rounded-xl p-4" style="background: {$colorStore.primary}10;">
-            <div class="flex items-center gap-2 mb-3">
-              <i class="fa-solid fa-comments" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">{m.settings.pageChatTitle()}</h3>
-            </div>
-            <div class="space-y-3">
-              <label class="flex items-start gap-3 cursor-pointer" style="color: {$colorStore.text};">
-                <input type="checkbox" bind:checked={settings.snipeset} onchange={() => handleToggle("snipeset")} class="w-4 h-4 rounded mt-0.5" style="accent-color: {$colorStore.primary};">
-                <span>
-                  <span class="text-sm font-medium block">{m.settings.pageSnipeTitle()}</span>
-                  <span class="text-xs" style="color: {$colorStore.muted}">{m.settings.pageSnipeHint()}</span>
-                </span>
-              </label>
-              <label class="flex items-start gap-3 cursor-pointer" style="color: {$colorStore.text};">
-                <input type="checkbox" bind:checked={settings.previewLinks} onchange={() => handleToggle("previewLinks")} class="w-4 h-4 rounded mt-0.5" style="accent-color: {$colorStore.primary};">
-                <span>
-                  <span class="text-sm font-medium block">{m.settings.pagePreviewsTitle()}</span>
-                  <span class="text-xs" style="color: {$colorStore.muted}">{m.settings.pagePreviewsHint()}</span>
-                </span>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Info Note -->
-      <div class="rounded-xl p-4 border"
-           style="background: {$colorStore.secondary}08; border-color: {$colorStore.secondary}30;">
-        <div class="flex items-start gap-3">
-          <i class="fa-solid fa-circle-info" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <div>
-            <h3 class="font-semibold mb-1" style="color: {$colorStore.text}">{m.settings.pageMoreTitle()}</h3>
-            <p class="text-sm" style="color: {$colorStore.muted}">
-              {@html m.settings.pageMoreHint()}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    {/key}
   {/if}
-</DashboardPageLayout>
-
-<style lang="postcss">
-    /* Remove number input spinners */
-    input[type="number"]::-webkit-inner-spin-button,
-    input[type="number"]::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-
-    input[type="number"] {
-        appearance: textfield;
-    }
-</style>
+</PluginPage>

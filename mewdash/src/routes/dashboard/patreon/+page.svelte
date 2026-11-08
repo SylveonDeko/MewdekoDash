@@ -2,1000 +2,245 @@
 <script lang="ts">
   import { m } from "$lib/i18n";
   import { onMount } from "svelte";
-  import {
-    clientApi,
-    patreonApi,
-    type PatreonConfigUpdateRequest,
-    type PatreonOAuthStatusResponse
-  } from "$lib/api/index.ts";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/state";
+  import { fade } from "svelte/transition";
   import type { PageData } from "./$types";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { fade, fly } from "svelte/transition";
-  import { goto, invalidateAll } from "$app/navigation";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import { browser } from "$app/environment";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger";
-  import { userStore } from "$lib/stores/userStore";
+  import { clientApi, patreonApi, type PatreonOAuthStatusResponse } from "$lib/api/index.ts";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { colorStore } from "$lib/stores/colorStore.ts";
+  import { logger } from "$lib/logger.ts";
   import { createAutoSave } from "$lib/utils/autoSave.svelte";
-  import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import PluginCard from "$lib/components/plugin/PluginCard.svelte";
+  import PluginPage from "$lib/components/plugin/PluginPage.svelte";
+  import OverviewTab from "./components/OverviewTab.svelte";
+  import SupportersTab from "./components/SupportersTab.svelte";
+  import TiersTab from "./components/TiersTab.svelte";
+  import SettingsTab from "./components/SettingsTab.svelte";
+  import { errorText, TABS, type Named, type TabId } from "./components/patreonModel";
 
   interface Props {
-        data: PageData;
-    }
-
-    let {data}: Props = $props();
-
-    let loading = $state(true);
-    let error: string | null = $state(null);
-    let notificationMessage = $state("");
-    let notificationType: "success" | "error" = $state("success");
-    let patreonStatus: PatreonOAuthStatusResponse | null = $state(null);
-
-  const autoSave = createAutoSave({
-    onError: () => showNotificationMessage(m.patreon.notifyConfigFailed(), "error")
-  });
-
-  function showNotificationMessage(message: string, type: "success" | "error" = "success") {
-    notificationMessage = message;
-    notificationType = type;
+    data: PageData;
   }
 
-    let patreonAnalytics: any = $state(null);
-    let patreonSupporters: any[] = $state([]);
-    let patreonConfig: any = $state(null);
-    let patreonTiers: any[] = $state([]);
-    let patreonCreator: any = $state(null);
-    let guildRoles: Array<{ id: string; name: string }> = $state([]);
-    let guildChannels: Array<{ id: string; name: string }> = $state([]);
-    let isConnecting = $state(false);
-    let isRefreshing = $state(false);
-    let isSyncing = $state(false);
-    let showNotification = $state(false);
+  let { data }: Props = $props();
 
-  type PatreonConfigForm = Omit<PatreonConfigUpdateRequest, "message"> & {
-    message: string | Record<string, any> | null | undefined;
-  };
-    let configForm: PatreonConfigForm = $state({
-    channelId: undefined,
-      message: {},
-    announcementDay: undefined,
-    toggleAnnouncements: undefined,
-    toggleRoleSync: undefined
-    });
+  let status: PatreonOAuthStatusResponse | null = $state(null);
+  let channels: Named[] = $state([]);
+  let roles: Named[] = $state([]);
+  let loading = $state(true);
+  let error: string | null = $state(null);
+  let connecting = $state(false);
+  let refreshKey = $state(0);
+  let showNotification = $state(false);
+  let notificationMessage = $state("");
+  let notificationType: "success" | "error" = $state("success");
+  let loadedGuildId = "";
 
-  // Tier mapping state
-    let selectedTierId = $state("");
-    let selectedRoleId = $state("");
-    let isMappingTier = $state(false);
-  
-  // Layout state
-    let activeTab = $state("overview");
-  
-  const tabs = $derived([
-    { id: "overview", label: m.common.overview(), icon: "fa-heart" },
-    { id: "supporters", label: m.patreon.supportersTitle(), icon: "fa-users" },
-    { id: "tiers", label: m.patreon.tabTiers(), icon: "fa-star" },
-    { id: "settings", label: m.common.configuration(), icon: "fa-gear" }
-  ]);
-
-  // Handle URL parameters for success/error messages
-  onMount(async () => {
-    if (browser) {
-      await invalidateAll();
-
-      const urlParams = new URL(window.location.href).searchParams;
-      const success = urlParams.get("success");
-      const errorParam = urlParams.get("error");
-      const code = urlParams.get("code");
-      const state = urlParams.get("state");
-
-      if (code && state) {
-        await handleOAuthCallback(code, state);
-        const cleanUrl = new URL(window.location.href);
-        cleanUrl.searchParams.delete("code");
-        cleanUrl.searchParams.delete("state");
-        await goto(cleanUrl.toString(), { replaceState: true });
-        await loadAllData();
-        return;
-      }
-
-      if (success === "true") {
-        showNotificationMessage(m.patreon.notifyConfigured(), "success");
-        const cleanUrl = new URL(window.location.href);
-        cleanUrl.searchParams.delete("success");
-        await goto(cleanUrl.toString(), { replaceState: true });
-      } else if (errorParam) {
-        showNotificationMessage(decodeURIComponent(errorParam), "error");
-        const cleanUrl = new URL(window.location.href);
-        cleanUrl.searchParams.delete("error");
-        await goto(cleanUrl.toString(), { replaceState: true });
-      }
-
-      await loadAllData();
-    }
+  const autoSave = createAutoSave({
+    onError: () => notify(m.patreon.notifyConfigFailed(), "error")
   });
 
-  async function loadAllData() {
-    if (!$currentGuild) {
-      if (data.user || $userStore) return;
-      return;
-    }
+  let guildId = $derived($currentGuild?.id ? BigInt($currentGuild.id) : null);
 
+  const tab: TabId = $derived.by(() => {
+    const requested = page.url.searchParams.get("tab");
+    return TABS.find((id) => id === requested) ?? "overview";
+  });
+
+  const labels = $derived<Record<TabId, { label: string; icon: string }>>({
+    overview: { label: m.common.overview(), icon: "fa-solid fa-heart" },
+    supporters: { label: m.patreon.supportersTitle(), icon: "fa-solid fa-users" },
+    tiers: { label: m.patreon.tabTiers(), icon: "fa-solid fa-star" },
+    settings: { label: m.common.settings(), icon: "fa-solid fa-gear" }
+  });
+
+  function notify(message: string, type: "success" | "error" = "success") {
+    notificationMessage = message;
+    notificationType = type;
+    showNotification = true;
+    setTimeout(() => {
+      showNotification = false;
+    }, 3000);
+  }
+
+  function select(id: TabId) {
+    if (id === tab) return;
+    void autoSave.flush();
+    const url = new URL(page.url);
+    url.search = "";
+    url.searchParams.set("tab", id);
+    void goto(url, { replaceState: true, noScroll: true, keepFocus: true });
+  }
+
+  async function loadStatus(id: bigint) {
+    loading = true;
+    error = null;
     try {
-      loading = true;
-      error = null;
-
-      // Load basic data first
-      await Promise.allSettled([
-        loadPatreonStatus(),
-        loadGuildRoles(),
-        loadGuildChannels()
-      ]);
-
-      // If configured, load additional data
-      if (patreonStatus?.isConfigured) {
-        await Promise.allSettled([
-          loadPatreonAnalytics(),
-          loadPatreonSupporters(),
-          loadPatreonConfig(),
-          loadPatreonTiers(),
-          loadPatreonCreator()
-        ]);
-      }
+      status = await patreonApi.getPatreonOAuthStatus(id);
     } catch (err) {
-      logger.error("Failed to load data:", err);
-      error = err instanceof Error ? err.message : m.common.failedToLoadData();
+      logger.error("Failed to load Patreon status:", err);
+      error = errorText(err, m.common.failedToLoadData());
     } finally {
       loading = false;
     }
   }
 
-  async function loadPatreonStatus() {
-    if (!$currentGuild) return;
-    patreonStatus = await patreonApi.getPatreonOAuthStatus(BigInt($currentGuild.id));
-  }
-
-  async function loadPatreonAnalytics() {
-    if (!$currentGuild) return;
-    try {
-      patreonAnalytics = await patreonApi.getPatreonAnalytics(BigInt($currentGuild.id));
-    } catch (err) {
-      logger.error("Failed to load analytics:", err);
+  async function loadGuildData(id: bigint) {
+    const results = await Promise.allSettled([
+      clientApi.getTextChannels(id).then((value) => (channels = value as Named[])),
+      clientApi.getRoles(id).then((value) => (roles = value as Named[])),
+      loadStatus(id)
+    ]);
+    for (const result of results) {
+      if (result.status === "rejected") logger.error("Failed to load Patreon data:", result.reason);
     }
   }
 
-  async function loadPatreonSupporters() {
-    if (!$currentGuild) return;
+  async function connect() {
+    if (!guildId) return;
+    connecting = true;
     try {
-      patreonSupporters = await patreonApi.getPatreonSupporters(BigInt($currentGuild.id));
+      const oauth = await patreonApi.getPatreonOAuthUrl(guildId);
+      window.location.href = oauth.authorizationUrl;
     } catch (err) {
-      logger.error("Failed to load supporters:", err);
+      logger.error("Failed to get the Patreon OAuth URL:", err);
+      notify(errorText(err, m.patreon.errorOauthStart()), "error");
+      connecting = false;
     }
   }
 
-  async function loadPatreonConfig() {
-    if (!$currentGuild) return;
-    try {
-      patreonConfig = await patreonApi.getPatreonConfig(BigInt($currentGuild.id));
+  async function refresh() {
+    if (!guildId) return;
+    await loadStatus(guildId);
+    refreshKey++;
+  }
 
-      // Parse message if it's a JSON string
-      let parsedMessage: any = patreonConfig.patreonMessage || undefined;
-      if (parsedMessage && typeof parsedMessage === "string") {
-        try {
-          if (parsedMessage.trim().startsWith("{")) {
-            parsedMessage = JSON.parse(parsedMessage);
-          } else {
-            parsedMessage = { content: parsedMessage };
-          }
-        } catch {
-          parsedMessage = { content: parsedMessage };
-        }
-      } else if (!parsedMessage) {
-        parsedMessage = {};
+  async function handleReturn() {
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("code");
+    const state = url.searchParams.get("state");
+    const success = url.searchParams.get("success");
+    const failure = url.searchParams.get("error");
+    if (!code && !state && !success && !failure) return;
+
+    for (const key of ["code", "state", "success", "error"]) url.searchParams.delete(key);
+    void goto(url, { replaceState: true, noScroll: true });
+
+    if (code && state) {
+      if (!state.split(":")[0]) {
+        notify(m.patreon.errorOauthState(), "error");
+        return;
       }
-
-      // Populate form with current config
-      configForm = {
-        channelId: patreonConfig.patreonChannelId || undefined,
-        message: parsedMessage,
-        announcementDay: patreonConfig.patreonAnnouncementDay || undefined,
-        toggleAnnouncements: patreonConfig.patreonEnabled,
-        toggleRoleSync: patreonConfig.patreonRoleSync
-      };
-    } catch (err) {
-      logger.error("Failed to load config:", err);
-    }
-  }
-
-  async function loadPatreonTiers() {
-    if (!$currentGuild) return;
-    try {
-      patreonTiers = await patreonApi.getPatreonTiers(BigInt($currentGuild.id));
-    } catch (err) {
-      logger.error("Failed to load tiers:", err);
-    }
-  }
-
-  async function loadPatreonCreator() {
-    if (!$currentGuild) return;
-    try {
-      patreonCreator = await patreonApi.getPatreonCreator(BigInt($currentGuild.id));
-    } catch (err) {
-      logger.error("Failed to load creator:", err);
-    }
-  }
-
-
-  async function loadGuildRoles() {
-    if (!$currentGuild) return;
-    try {
-      guildRoles = await clientApi.getRoles(BigInt($currentGuild.id));
-    } catch (err) {
-      logger.error("Failed to load roles:", err);
-    }
-  }
-
-  async function loadGuildChannels() {
-    if (!$currentGuild) return;
-    try {
-      guildChannels = await clientApi.getTextChannels(BigInt($currentGuild.id));
-    } catch (err) {
-      logger.error("Failed to load channels:", err);
-    }
-  }
-
-  async function handleOAuthCallback(code: string, state: string) {
-    const stateParts = state.split(":");
-    const guildId = stateParts[0];
-
-    if (!guildId) {
-      showNotificationMessage(m.patreon.errorOauthState(), "error");
-      return;
-    }
-
-    try {
-      isConnecting = true;
-      const result = await patreonApi.handlePatreonOAuthCallback(code, state);
-
-      showNotificationMessage(result.message || m.patreon.notifyConfigured(), "success");
-
-      if ($currentGuild) {
-        await loadAllData();
-      }
-    } catch (err) {
-      logger.error("OAuth callback failed:", err);
-      showNotificationMessage(err instanceof Error ? err.message : m.patreon.errorConfigureFailed(), "error");
-    } finally {
-      isConnecting = false;
-    }
-  }
-
-  async function connectPatreon() {
-    if (!$currentGuild) {
-      showNotificationMessage(m.patreon.errorSelectServer(), "error");
-      return;
-    }
-
-    try {
-      isConnecting = true;
-      const oauthData = await patreonApi.getPatreonOAuthUrl(BigInt($currentGuild.id));
-      window.location.href = oauthData.authorizationUrl;
-    } catch (err) {
-      logger.error("Failed to get OAuth URL:", err);
-      showNotificationMessage(err instanceof Error ? err.message : m.patreon.errorOauthStart(), "error");
-      isConnecting = false;
-    }
-  }
-
-  async function refreshData() {
-    isRefreshing = true;
-    try {
-      await loadAllData();
-      showNotificationMessage(m.patreon.notifyRefreshed(), "success");
-    } catch (err) {
-      showNotificationMessage(m.patreon.notifyRefreshFailed(), "error");
-    } finally {
-      isRefreshing = false;
-    }
-  }
-
-    async function triggerOperation(operation: "sync" | "syncRoles" | "announceGoals") {
-    if (!$currentGuild) return;
-
-    try {
-      isSyncing = true;
-      const result = await patreonApi.triggerPatreonOperation(BigInt($currentGuild.id), { operation });
-      showNotificationMessage(result.message, "success");
-
-      // Refresh relevant data after operation
-      if (operation === "sync" || operation === "syncRoles") {
-        await loadPatreonSupporters();
-        await loadPatreonTiers();
-        await loadPatreonAnalytics();
-        await loadPatreonCreator();
-      }
-    } catch (err) {
-      logger.error(`Failed to trigger ${operation}:`, err);
-      showNotificationMessage(
-        operation === "sync" ? m.patreon.notifySyncFailed()
-          : operation === "syncRoles" ? m.patreon.notifySyncRolesFailed()
-          : m.patreon.notifyAnnounceFailed(),
-        "error"
-      );
-    } finally {
-      isSyncing = false;
-    }
-  }
-
-  /** Sends the whole announcement config. Skipped while the day is outside 1 to 28. */
-  async function sendConfig() {
-    if (!$currentGuild) return;
-    const day = configForm.announcementDay;
-    if (day !== undefined && day !== null && !(Number.isInteger(day) && day >= 1 && day <= 28)) return;
-
-    const messageToSend = typeof configForm.message === "object" && configForm.message !== null && Object.keys(configForm.message).length > 0
-      ? JSON.stringify(configForm.message)
-      : (typeof configForm.message === "string" ? configForm.message : undefined);
-
-    const configToSave = {
-      ...configForm,
-      // 0 clears the announcement channel (undefined would be dropped from the payload)
-      channelId: configForm.channelId ?? BigInt(0),
-      message: messageToSend
-    };
-
-    patreonConfig = await patreonApi.updatePatreonConfig(BigInt($currentGuild.id), configToSave);
-  }
-
-  /** Saves a toggle or picker straight away and puts the field back if the save fails. */
-  function saveConfigNow<K extends keyof PatreonConfigForm>(field: K, value: PatreonConfigForm[K]) {
-    const previous = configForm[field];
-    configForm[field] = value;
-    void autoSave.now("config", async () => {
       try {
-        await sendConfig();
+        const result = await patreonApi.handlePatreonOAuthCallback(code, state);
+        notify(result.message || m.patreon.notifyConfigured());
+        if (guildId) await loadStatus(guildId);
       } catch (err) {
-        configForm[field] = previous;
-        throw err;
+        logger.error("Patreon OAuth callback failed:", err);
+        notify(errorText(err, m.patreon.errorConfigureFailed()), "error");
       }
-    });
-  }
-
-  function saveConfigLater() {
-    autoSave.schedule("config", sendConfig);
-  }
-
-  async function mapTierToRole() {
-    if (!$currentGuild || !selectedTierId || !selectedRoleId) return;
-
-    try {
-      isMappingTier = true;
-      const result = await patreonApi.mapPatreonTierToRole(BigInt($currentGuild.id), {
-        tierId: selectedTierId,
-        roleId: BigInt(selectedRoleId)
-      });
-
-      showNotificationMessage(result.message, "success");
-
-      selectedTierId = "";
-      selectedRoleId = "";
-
-      await loadPatreonTiers();
-    } catch (err) {
-      logger.error("Failed to map tier to role:", err);
-      showNotificationMessage(m.patreon.notifyMapFailed(), "error");
-    } finally {
-      isMappingTier = false;
+    } else if (success === "true") {
+      notify(m.patreon.notifyConfigured());
+    } else if (failure) {
+      notify(decodeURIComponent(failure), "error");
     }
   }
 
-  function formatCurrency(cents: number) {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD"
-    }).format(cents / 100);
-  }
+  onMount(() => {
+    void handleReturn();
+  });
 
-  function formatDate(dateString?: string | null) {
-    if (!dateString) return m.common.never();
-    return new Date(dateString).toLocaleDateString();
-  }
-
-  async function disconnectPatreon() {
-    if (!$currentGuild) return;
-
-    try {
-      isConnecting = true;
-      const result = await patreonApi.disconnectPatreon(BigInt($currentGuild.id));
-      showNotificationMessage(result.message, "success");
-
-      // Reload data to show disconnected state
-      await loadAllData();
-    } catch (err) {
-      logger.error("Failed to disconnect Patreon:", err);
-      showNotificationMessage(err instanceof Error ? err.message : m.patreon.errorDisconnectFailed(), "error");
-    } finally {
-      isConnecting = false;
+  $effect(() => {
+    if (!$currentGuild) {
+      void goto("/dashboard");
+      return;
     }
-  }
-
-    // Handler functions for DiscordSelector
-    function handleTierChange(detail: any) {
-      if (detail.selected && typeof detail.selected === "string") {
-        selectedTierId = detail.selected;
-      }
+    if ($currentGuild.icon) {
+      const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
+      colorStore.extractFromServerIcon(serverIconUrl);
+    } else if ($currentInstance?.botAvatar) {
+      colorStore.extractFromImage($currentInstance.botAvatar);
     }
-
-    function handleRoleChange(detail: any) {
-      if (detail.selected && typeof detail.selected === "string") {
-        selectedRoleId = detail.selected;
-      }
+    if (loadedGuildId !== $currentGuild.id.toString()) {
+      loadedGuildId = $currentGuild.id.toString();
+      status = null;
+      void loadGuildData(BigInt($currentGuild.id));
     }
-
-    function handleChannelChange(detail: any) {
-      saveConfigNow("channelId", detail.selected && typeof detail.selected === "string" ? BigInt(detail.selected) : undefined);
-    }
-
-    function getTierOptions() {
-      return patreonTiers.map((tier: any) => ({
-        id: tier.id,
-        name: `${tier.attributes?.title || m.common.unknown()} - ${formatCurrency(tier.attributes?.amountCents || 0)}`
-      }));
-    }
+  });
 </script>
 
 {#snippet statusMessages()}
-  {#if notificationMessage}
-    <div class="fixed top-4 right-4 z-50" transition:fade>
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-[10001]" transition:fade>
       <Notification message={notificationMessage} type={notificationType} />
     </div>
   {/if}
 {/snippet}
 
-<svelte:head>
-  <title>{m.patreon.pageHeadTitle({ guild: $currentGuild?.name || m.patreon.pageHeadFallback() })}</title>
-</svelte:head>
-
-<DashboardPageLayout
-  actionButtons={patreonStatus?.isConfigured ? [
-    {
-      label: m.common.refreshData(),
-      icon: "fa-arrows-rotate",
-      action: refreshData,
-      loading: isRefreshing
-    },
-    {
-      label: m.patreon.actionSyncSupporters(),
-      icon: "fa-users",
-      action: () => triggerOperation("sync"),
-      loading: isSyncing
-    }
-  ] : []}
-  icon="fa-heart"
-  subtitle={m.patreon.pageSubtitle()}
-  guildName={$currentGuild?.name || m.common.dashboard()}
-  tabs={tabs}
-  bind:activeTab
-  statusMessages={statusMessages}
+<PluginPage
+  {statusMessages}
   {autoSave}
+  icon="fa-heart"
+  guildName={$currentGuild?.name || m.common.dashboard()}
   title={m.patreon.pageTitle()}
+  subtitle={m.patreon.pageSubtitle()}
+  actionButtons={status?.isConfigured
+    ? [{ label: m.common.refreshData(), icon: "fa-arrows-rotate", action: refresh, loading }]
+    : []}
 >
-
-    {#if loading}
-      <div
-        class="rounded-2xl border p-8 transition-all text-center"
-        style="background: {$colorStore.primary}0c;
-               border-color: {$colorStore.primary}30;"
-        in:fade
-      >
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
-             style="border-color: {$colorStore.primary};"></div>
-        <p style="color: {$colorStore.text};">{m.patreon.loading()}</p>
-      </div>
-    {:else if error}
-      <div
-        class="rounded-2xl border p-6"
-        style="background: {$colorStore.primary}0c;
-               border-color: {$colorStore.accent}30;"
-        in:fade
-      >
-        <div class="flex items-center gap-3 mb-2">
-          <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-             style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-          <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.common.error()}</h3>
-        </div>
-        <p style="color: {$colorStore.accent};">{error}</p>
+  {#if loading && !status}
+    <div class="flex justify-center py-12">
+      <div class="w-10 h-10 border-4 rounded-full animate-spin"
+           style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"></div>
+    </div>
+  {:else if error}
+    <PluginCard title={m.common.error()} alwaysOpen>
+      <p class="text-sm" style="color: {$colorStore.text}">{error}</p>
+      <button type="button" class="px-5 rounded-xl min-h-[50px] font-medium"
+              style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
+              onclick={refresh}>
+        {m.common.retry()}
+      </button>
+    </PluginCard>
+  {:else if status && !status.isConfigured}
+    <PluginCard title={m.patreon.connectTitle()} alwaysOpen>
+      <button type="button" class="px-6 rounded-xl min-h-[50px] font-semibold flex items-center justify-center gap-2 w-full sm:w-auto disabled:opacity-50"
+              style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
+              disabled={connecting} onclick={connect}>
+        <i class="fa-solid fa-heart" aria-hidden="true"></i>
+        {connecting ? m.patreon.connectConnecting() : m.patreon.connectButton()}
+      </button>
+    </PluginCard>
+  {:else if status && guildId}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 [&>:last-child:nth-child(odd)]:col-span-2 sm:[&>:last-child:nth-child(odd)]:col-span-1" role="group" aria-label={m.patreon.tabsAria()}>
+      {#each TABS as id (id)}
+        {@const selected = tab === id}
         <button
-          class="px-4 py-2 rounded-lg mt-4 transition-colors"
-          style="background: {$colorStore.accent}; color: {$colorStore.onAccent};"
-          onclick={loadAllData}
+          type="button"
+          class="min-h-[44px] px-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2"
+          style="background: {selected ? $colorStore.selectedSurface : `${$colorStore.primary}08`}; border-color: {selected ? $colorStore.selectedBorder : `${$colorStore.primary}20`}; color: {$colorStore.text};"
+          aria-pressed={selected}
+          onclick={() => select(id)}
         >
-          <i class="fa-solid fa-arrows-rotate" style="font-size: 16px;"></i>
-          {m.common.retry()}
+          <i class={labels[id].icon} aria-hidden="true"></i>
+          {labels[id].label}
         </button>
-      </div>
-    {:else if !patreonStatus?.isConfigured}
-      <!-- Connection Setup -->
-      <div
-        class="rounded-2xl border p-8 transition-all text-center"
-        style="background: {$colorStore.primary}0c;
-               border-color: {$colorStore.primary}30;"
-        in:fade
-      >
-        <i class="fa-utility-duo fa-regular fa-heart"
-           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-        <h3 class="text-2xl font-bold mb-2" style="color: {$colorStore.text};">{m.patreon.connectTitle()}</h3>
-        <div class="mb-8"></div>
+      {/each}
+    </div>
 
-        <button
-          class="px-8 py-4 rounded-xl font-semibold transition-all flex items-center gap-3 mx-auto text-lg"
-          style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
-          onclick={connectPatreon}
-          disabled={isConnecting}
-        >
-          {#if isConnecting}
-            <div class="animate-spin rounded-full h-5 w-5 border-b-2" style="border-color: {$colorStore.onPrimary};"></div>
-            {m.patreon.connectConnecting()}
-          {:else}
-            <i class="fa-solid fa-heart" style="font-size: 20px;"></i>
-            {m.patreon.connectButton()}
-          {/if}
-        </button>
-      </div>
-    {:else}
-      <!-- Tab Content -->
-      <div class="space-y-6">
-        {#if activeTab === "overview"}
-          <!-- Overview Tab -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" in:fly={{ y: 20, duration: 300 }}>
-            <!-- Status Card -->
-            <div
-              class="rounded-2xl border p-6"
-              style="background: {$colorStore.primary}0c;
-                     border-color: {$colorStore.primary}30;"
-            >
-              <div class="flex items-center gap-3 mb-4">
-                <i class="fa-utility-duo fa-regular fa-circle-check"
-                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-                <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.patreon.overviewConnected()}</h3>
-              </div>
-              <div class="space-y-2">
-                <div>
-                  <p class="text-sm" style="color: {$colorStore.muted};">{m.patreon.overviewCampaignId()}</p>
-                  <p class="font-mono text-sm"
-                     style="color: {$colorStore.text};">{patreonStatus.campaignId || m.common.unknown()}</p>
-                </div>
-                <div>
-                  <p class="text-sm" style="color: {$colorStore.muted};">{m.patreon.overviewLastSync()}</p>
-                  <p class="text-sm" style="color: {$colorStore.text};">{formatDate(patreonStatus.lastSync)}</p>
-                </div>
-                <div>
-                  <p class="text-sm" style="color: {$colorStore.muted};">{m.patreon.overviewTokenExpires()}</p>
-                  <p class="text-sm" style="color: {$colorStore.text};">{formatDate(patreonStatus.tokenExpiry)}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Analytics Cards -->
-            {#if patreonAnalytics}
-              <div
-                class="rounded-2xl border p-6 transition-all"
-                style="background: {$colorStore.primary}0c;
-                       border-color: {$colorStore.primary}30;"
-              >
-                <div class="flex items-center gap-3 mb-4">
-                  <i class="fa-utility-duo fa-regular fa-users"
-                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-                  <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.patreon.supportersTitle()}</h3>
-                </div>
-                <!-- FIX: Use activeSupporters for the count -->
-                <p class="text-3xl font-bold mb-2"
-                   style="color: {$colorStore.text};">{patreonAnalytics.activeSupporters}</p>
-                <p class="text-sm" style="color: {$colorStore.muted};">{m.placeholders.supporterCount()}</p>
-              </div>
-
-              <div
-                class="rounded-2xl border p-6 transition-all"
-                style="background: {$colorStore.primary}0c;
-                       border-color: {$colorStore.primary}30;"
-              >
-                <div class="flex items-center gap-3 mb-4">
-                  <i class="fa-utility-duo fa-regular fa-circle"
-                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-                  <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.patreon.overviewRevenue()}</h3>
-                </div>
-                <p class="text-3xl font-bold mb-2"
-                   style="color: {$colorStore.text};">{formatCurrency(patreonAnalytics.totalMonthlyRevenue)}</p>
-                <p class="text-sm" style="color: {$colorStore.muted};">{m.patreon.overviewMonthly()}</p>
-              </div>
-            {/if}
-
-            <!-- Creator Card -->
-            {#if patreonCreator}
-              <div
-                class="rounded-2xl border p-4 md:p-6 transition-all col-span-1 md:col-span-2 lg:col-span-1"
-                style="background: {$colorStore.primary}0c;
-                       border-color: {$colorStore.primary}30;"
-              >
-                <div class="flex items-center gap-3 mb-4">
-                  <i class="fa-utility-duo fa-regular fa-heart"
-                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-                  <h3 class="text-base md:text-lg font-semibold" style="color: {$colorStore.text};">{m.patreon.creatorTitle()}</h3>
-                </div>
-                
-                <!-- Mobile-first layout -->
-                <div class="space-y-3">
-                  <div class="flex items-center gap-3">
-                    {#if patreonCreator.imageUrl}
-                      <img
-                        src={patreonCreator.imageUrl}
-                              alt={m.patreon.creatorAvatarAlt()}
-                              class="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover shrink-0"
-                      >
-                    {:else}
-                        <div
-                                class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center shrink-0"
-                        style="background: {$colorStore.primary}20;"
-                      >
-                          <i class="fa-utility-duo fa-regular fa-heart"
-                             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 28px;"></i>
-                      </div>
-                    {/if}
-
-                    <div class="flex-1 min-w-0">
-                      <p class="font-semibold text-sm md:text-base truncate" style="color: {$colorStore.text};">
-                        {patreonCreator.fullName || m.patreon.creatorUnknown()}
-                      </p>
-
-                      <div class="flex items-center gap-1 mt-1">
-                        <div class="w-2 h-2 rounded-full" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"></div>
-                        <span class="text-xs"
-                              style="color: {$colorStore.muted};">{m.patreon.creatorPatronCount({ count: patreonCreator.patronCount || 0 })}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Action button -->
-                  {#if patreonCreator.url}
-                    <a
-                      href={patreonCreator.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors w-full justify-center"
-                      style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                    >
-                      <i class="fa-solid fa-heart" style="font-size: 16px;"></i>
-                      {m.patreon.creatorViewProfile()}
-                    </a>
-                  {/if}
-                </div>
-              </div>
-            {/if}
-          </div>
-
-          <!-- Quick Actions -->
-          <div
-            class="rounded-2xl border p-6"
-            style="background: {$colorStore.primary}0c;
-                   border-color: {$colorStore.primary}30;"
-          >
-            <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.common.quickActions()}</h3>
-            <div class="flex flex-wrap gap-3">
-              <button
-                class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                onclick={() => triggerOperation("sync")}
-                disabled={isSyncing}
-              >
-                <i class="fa-solid fa-sync {isSyncing ? 'fa-spin' : ''}" style="font-size: 16px;"></i>
-                {m.patreon.actionSyncAll()}
-              </button>
-
-              <button
-                class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                onclick={() => triggerOperation("syncRoles")}
-                disabled={isSyncing}
-              >
-                <i class="fa-solid fa-star" style="font-size: 16px;"></i>
-                {m.patreon.actionSyncRoles()}
-              </button>
-
-              <button
-                class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                onclick={() => triggerOperation("announceGoals")}
-                disabled={isSyncing}
-              >
-                <i class="fa-solid fa-comment" style="font-size: 16px;"></i>
-                {m.patreon.actionAnnounce()}
-              </button>
-
-              <button
-                class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                onclick={disconnectPatreon}
-                disabled={isConnecting}
-              >
-                <i class="fa-solid fa-link-slash" style="font-size: 16px;"></i>
-                {m.patreon.actionRelogin()}
-              </button>
-            </div>
-          </div>
-
-        {:else if activeTab === "supporters"}
-          <!-- Supporters Tab -->
-          <div
-            class="rounded-2xl border p-6"
-            style="background: {$colorStore.primary}0c;
-                   border-color: {$colorStore.primary}30;"
-            in:fly={{ y: 20, duration: 300 }}
-          >
-            <div class="flex items-center justify-between mb-6">
-              <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.patreon.supportersAll({ count: patreonSupporters.length })}</h3>
-              <button
-                class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
-                onclick={() => triggerOperation("sync")}
-                disabled={isSyncing}
-              >
-                <i class="fa-solid fa-sync {isSyncing ? 'fa-spin' : ''}" style="font-size: 16px;"></i>
-                {m.patreon.actionSyncNow()}
-              </button>
-            </div>
-
-            {#if patreonSupporters.length === 0}
-              <div class="text-center py-8">
-                <i class="fa-utility-duo fa-regular fa-users"
-                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                <p style="color: {$colorStore.muted};">{m.patreon.supportersEmpty()}</p>
-              </div>
-            {:else}
-              <div class="overflow-x-auto">
-                <table class="w-full">
-                  <thead>
-                  <tr class="border-b" style="border-color: {$colorStore.primary}30;">
-                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">{m.common.name()}</th>
-                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">{m.patreon.supportersPledge()}</th>
-                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">{m.common.joined()}</th>
-                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">{m.common.status()}</th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  {#each patreonSupporters as supporter}
-                    <tr class="border-b" style="border-color: {$colorStore.primary}20;">
-                      <td class="py-3 px-4">
-                        <div>
-                          <p class="font-medium" style="color: {$colorStore.text};">{supporter.fullName}</p>
-                          <p class="text-sm" style="color: {$colorStore.muted};">{supporter.email || m.patreon.supportersNoEmail()}</p>
-                        </div>
-                      </td>
-                      <td class="py-3 px-4"
-                          style="color: {$colorStore.text};">{formatCurrency(supporter.amountCents)}</td>
-                      <td class="py-3 px-4"
-                          style="color: {$colorStore.text};">{formatDate(supporter.pledgeRelationshipStart)}</td>
-                      <td class="py-3 px-4">
-                          <span
-                            class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
-                            style="background: {supporter.patronStatus === 'active_patron' ? $colorStore.primary + '20' : $colorStore.accent + '20'};
-                                   color: {supporter.patronStatus === 'active_patron' ? $colorStore.primary : $colorStore.accent};">
-                            {supporter.patronStatus.replace('_', ' ')}
-                          </span>
-                      </td>
-                    </tr>
-                  {/each}
-                  </tbody>
-                </table>
-              </div>
-            {/if}
-          </div>
-        {:else if activeTab === "tiers"}
-          <!-- Tiers & Roles Tab -->
-          <div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
-            <!-- Tier Mapping -->
-            <div
-              class="rounded-2xl border p-6"
-              style="background: {$colorStore.primary}0c;
-                     border-color: {$colorStore.primary}30;"
-            >
-              <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.patreon.tiersMapTitle()}</h3>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                <div>
-                  <label for="patreon-tier" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">{m.patreon.tiersPatreonTier()}</label>
-                  <DiscordSelector
-                    id="patreon-tier"
-                    type="custom"
-                    options={getTierOptions()}
-                    selected={selectedTierId}
-                    placeholder={m.patreon.tiersPlaceholder()}
-                    customIcon="fa-star"
-                    onchange={handleTierChange}
-                  />
-                </div>
-                <div>
-                  <label for="discord-role" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">{m.patreon.tiersDiscordRole()}</label>
-                  <DiscordSelector
-                    id="discord-role"
-                    type="role"
-                    options={guildRoles}
-                    selected={selectedRoleId}
-                    placeholder={m.common.selectARolePlaceholder()}
-                    onchange={handleRoleChange}
-                  />
-                </div>
-                <div>
-                  <button
-                    class="w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
-                    style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
-                    onclick={mapTierToRole}
-                    disabled={isMappingTier || !selectedTierId || !selectedRoleId}
-                  >
-                    {#if isMappingTier}
-                      <div class="animate-spin rounded-full h-4 w-4 border-b-2"
-                           style="border-color: {$colorStore.text};"></div>
-                    {:else}
-                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                    {/if}
-                    {m.patreon.tiersMapButton()}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Tiers List -->
-            <div
-              class="rounded-2xl border p-6"
-              style="background: {$colorStore.primary}0c;
-                     border-color: {$colorStore.primary}30;"
-            >
-              <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.patreon.tiersAvailableTitle()}</h3>
-              {#if patreonTiers.length === 0}
-                <div class="text-center py-8">
-                  <i class="fa-utility-duo fa-regular fa-star"
-                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                  <p style="color: {$colorStore.muted};">{m.patreon.tiersEmpty()}</p>
-                </div>
-              {:else}
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {#each patreonTiers as tier}
-                    <div
-                      class="rounded-lg p-4 border"
-                      style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
-                    >
-                      <div class="flex items-start justify-between mb-2">
-                        <h4 class="font-semibold"
-                            style="color: {$colorStore.text};">{tier.attributes?.title || m.patreon.tiersUnknown()}</h4>
-                        <span class="text-sm px-2 py-1 rounded-full"
-                              style="background: {$colorStore.primary}20; color: {$colorStore.text};">
-                          {tier.attributes?.discordRoleIds?.length ? m.patreon.tiersMapped() : m.patreon.tiersUnmapped()}
-                        </span>
-                      </div>
-                      <p class="text-lg font-bold mb-2"
-                         style="color: {$colorStore.primary};">{formatCurrency(tier.attributes?.amountCents || 0)}</p>
-                      {#if tier.attributes?.description}
-                        <p class="text-sm mb-3" style="color: {$colorStore.muted};">{tier.attributes.description}</p>
-                      {/if}
-                    </div>
-                  {/each}
-                </div>
-              {/if}
-            </div>
-          </div>
-        {:else if activeTab === "settings"}
-          <!-- Settings Tab -->
-          <div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
-            <div
-              class="rounded-2xl border p-6"
-              style="background: {$colorStore.primary}0c;
-                     border-color: {$colorStore.primary}30;"
-            >
-              <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.common.configuration()}</h3>
-              <div class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label for="announcement-channel" class="block text-sm font-medium mb-2"
-                           style="color: {$colorStore.text};">{m.patreon.settingsChannel()}</label>
-                    <DiscordSelector
-                      id="announcement-channel"
-                      type="channel"
-                      options={guildChannels}
-                      selected={configForm.channelId ? configForm.channelId.toString() : ""}
-                      placeholder={m.common.selectAChannelPlaceholder()}
-                      onchange={handleChannelChange}
-                    />
-                  </div>
-                  <div>
-                    <label for="announcement-day" class="block text-sm font-medium mb-2"
-                           style="color: {$colorStore.text};">{m.patreon.settingsDay()}</label>
-                    <input
-                      id="announcement-day"
-                      type="number"
-                      min="1"
-                      max="28"
-                      bind:value={configForm.announcementDay}
-                      oninput={saveConfigLater}
-                      onblur={() => autoSave.flush("config")}
-                      class="w-full px-3 py-2 rounded-lg border"
-                      style="background: {$colorStore.primary}10; color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
-                      placeholder={m.patreon.settingsDayPlaceholder()}
-                    >
-                  </div>
-                </div>
-
-                <div>
-                  <label for="f-+page-custom-announcement-message-957" class="block text-sm font-medium mb-3" style="color: {$colorStore.text};">
-                    <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
-                    {m.features.wizardStreamsBenefit4()}
-                  </label>
-
-                  <FullscreenEmbedBuilder id="f-+page-custom-announcement-message-957"
-                    bind:value={configForm.message}
-                    onclose={() => autoSave.now("config", sendConfig)}
-                    previewTitle={m.patreon.settingsPreviewTitle()}
-                    previewDescription={m.patreon.settingsPreviewDescription()}
-                    icon="fa-heart"
-                    allowContent={true}
-                    allowMultipleEmbeds={true}
-                    maxEmbeds={10}
-                    allowComponents={true}
-                    additionalPlaceholders={[
-                      { category: "Patreon", name: "%month%", description: m.placeholders.month() },
-                      { category: "Patreon", name: "%year%", description: m.placeholders.timeYear() },
-                      { category: "Patreon", name: "%patreon.link%", description: m.placeholders.patreonLink() },
-                      { category: "Patreon", name: "%patron.name%", description: m.placeholders.patronName() },
-                      { category: "Patreon", name: "%patron.tier%", description: m.placeholders.patronTier() },
-                      { category: "Patreon", name: "%patron.amount%", description: m.placeholders.patronAmount() },
-                      { category: "Patreon", name: "%supporter.count%", description: m.placeholders.supporterCount() },
-                      { category: "Patreon", name: "%supporter.total%", description: m.placeholders.supporterTotal() },
-                      { category: "Patreon", name: "%supporter.new%", description: m.placeholders.supporterNew() },
-                      { category: "Patreon", name: "%supporter.former%", description: m.placeholders.supporterFormer() },
-                      { category: "Patreon", name: "%supporter.linked%", description: m.placeholders.supporterLinked() },
-                      { category: "Patreon", name: "%revenue.monthly%", description: m.placeholders.revenueMonthly() },
-                      { category: "Patreon", name: "%revenue.average%", description: m.placeholders.revenueAverage() },
-                      { category: "Patreon", name: "%revenue.lifetime%", description: m.placeholders.revenueLifetime() },
-                      { category: "Patreon", name: "%tiers.count%", description: m.placeholders.tiersCount() },
-                      { category: "Patreon", name: "%tier.popular%", description: m.placeholders.tierPopular() },
-                      { category: "Patreon", name: "%tier.popular.count%", description: m.placeholders.tierPopularCount() },
-                      { category: "Patreon", name: "%supporters.summary%", description: m.placeholders.supportersSummary() },
-                      { category: "Patreon", name: "%revenue.summary%", description: m.placeholders.revenueSummary() },
-                      { category: "Patreon", name: "%growth.summary%", description: m.placeholders.growthSummary() }
-                    ]}
-                    guildId={$currentGuild?.id}
-                    user={data.user}
-                    placeholder={m.patreon.settingsMessagePlaceholder()}
-                  />
-                </div>
-
-                <div class="flex items-center gap-4">
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={!!configForm.toggleAnnouncements}
-                      onchange={(e) => saveConfigNow("toggleAnnouncements", e.currentTarget.checked)}
-                      class="rounded-sm"
-                      style="accent-color: {$colorStore.primary};"
-                    >
-                    <span style="color: {$colorStore.text};">{m.patreon.settingsEnableAnnouncements()}</span>
-                  </label>
-
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={!!configForm.toggleRoleSync}
-                      onchange={(e) => saveConfigNow("toggleRoleSync", e.currentTarget.checked)}
-                      class="rounded-sm"
-                      style="accent-color: {$colorStore.primary};"
-                    >
-                    <span style="color: {$colorStore.text};">{m.patreon.settingsEnableRoleSync()}</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        {/if}
-      </div>
-    {/if}
-</DashboardPageLayout>
+    {#key `${guildId}:${tab}:${refreshKey}`}
+      {#if tab === "overview"}
+        <OverviewTab {guildId} {status} {notify} ondisconnect={refresh} />
+      {:else if tab === "supporters"}
+        <SupportersTab {guildId} {notify} />
+      {:else if tab === "tiers"}
+        <TiersTab {guildId} {roles} {notify} />
+      {:else}
+        <SettingsTab {guildId} {channels} {autoSave} user={data.user} {notify} />
+      {/if}
+    {/key}
+  {/if}
+</PluginPage>

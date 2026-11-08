@@ -3,24 +3,40 @@
 export interface TodoList {
   id: number;
   guildId: bigint;
-  userId: bigint;
+  ownerId: bigint;
   name: string;
   description: string | null;
   isServerList: boolean;
-  dateAdded: string | null;
+  isPublic: boolean;
+  color: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 export interface TodoItem {
   id: number;
-  listId: number;
+  todoListId: number;
   title: string;
   description: string | null;
   isCompleted: boolean;
   priority: number;
   dueDate: string | null;
+  createdAt: string | null;
   completedAt: string | null;
   createdBy: bigint;
-  dateAdded: string | null;
+  completedBy: bigint | null;
+  tags: string[] | null;
+  position: number;
+}
+
+export interface TodoListAccess {
+  isOwner: boolean;
+  canView: boolean;
+  canAdd: boolean;
+  canEdit: boolean;
+  canComplete: boolean;
+  canDelete: boolean;
+  canManage: boolean;
 }
 
 export interface CreateTodoListRequest {
@@ -30,12 +46,22 @@ export interface CreateTodoListRequest {
   isServerList: boolean;
 }
 
+export interface UpdateTodoListRequest {
+  userId: bigint;
+  name?: string | null;
+  /** Empty or null clears the description. */
+  description?: string | null;
+  color?: string | null;
+  isPublic?: boolean | null;
+}
+
 export interface AddTodoItemRequest {
   userId: bigint;
   title: string;
   description?: string | null;
   priority?: number;
   dueDate?: string | null;
+  tags?: string[];
 }
 
 export interface UpdateTodoItemRequest {
@@ -44,14 +70,18 @@ export interface UpdateTodoItemRequest {
   title?: string;
   description?: string | null;
   priority?: number;
-  /** Due date as an ISO string, or null to leave it unchanged. */
-  dueDate?: string | null;
-  isCompleted?: boolean;
 }
 
 export interface SetDueDateRequest {
   userId: bigint;
+  /** Null clears the due date. */
   dueDate: string | null;
+}
+
+export interface ReorderTodoItemRequest {
+  userId: bigint;
+  /** 1-based. */
+  position: number;
 }
 
 export interface TagRequest {
@@ -62,12 +92,17 @@ export interface TagRequest {
 export interface GrantPermissionRequest {
   targetUserId: bigint;
   requestingUserId: bigint;
+  canView: boolean;
+  canAdd: boolean;
   canEdit: boolean;
+  canComplete: boolean;
   canDelete: boolean;
+  canManage: boolean;
 }
 
 export interface TodoListPermission {
-  listId: number;
+  id: number;
+  todoListId: number;
   userId: bigint;
   canView: boolean;
   canAdd: boolean;
@@ -75,4 +110,6 @@ export interface TodoListPermission {
   canComplete: boolean;
   canDelete: boolean;
   canManageList: boolean;
+  grantedBy: bigint;
+  grantedAt: string | null;
 }

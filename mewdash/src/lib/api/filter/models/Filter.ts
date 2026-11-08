@@ -28,6 +28,29 @@ export interface FilterSettings {
   };
 }
 
+export interface FilterLinkLimit {
+  channelId: bigint;
+  maxLinks: number;
+  windowSeconds: number;
+}
+
+export interface FilterExtras {
+  normalizeWords: boolean;
+  inviteNoRolesOnly: boolean;
+  linkNoRolesOnly: boolean;
+  allowedDomains: string[];
+  blockedDomains: string[];
+  linkLimits: FilterLinkLimit[];
+}
+
+export interface FilterExtrasRequest {
+  normalizeWords?: boolean;
+  inviteNoRolesOnly?: boolean;
+  linkNoRolesOnly?: boolean;
+  allowedDomains?: string[];
+  blockedDomains?: string[];
+}
+
 export interface AutomodRule {
   id: number;
   guildId: bigint;

@@ -58,7 +58,6 @@
   "landing_multi_greets": "多重问候",
   "landing_music_bot": "音乐机器人",
   "landing_no_servers_to_show_right_now": "暂时没有可显示的服务器。",
-  "landing_or_just_hop_in_discord_for": "或直接加入 Discord 咨询问题并获取帮助",
   "landing_our_top_servers": "热门服务器",
   "landing_per_server_bot_profile": "按服务器的机器人资料",
   "landing_polls_with_buttons": "带按钮的投票",
@@ -130,7 +129,5 @@
   "tails_subheading": "每条尾巴都不止一个用途。",
   "tails_tag_text": "让成员通过按钮或下拉菜单自行选择身份组。",
   "tails_wrench_text": "编写你自己的命令和回复，并更改机器人在你服务器中的外观。",
-  "tails_wrench_title": "按你的喜好定制",
-  "update_next": "下一条更新",
-  "update_previous": "上一条更新"
+  "tails_wrench_title": "按你的喜好定制"
 }

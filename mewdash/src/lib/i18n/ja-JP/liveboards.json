@@ -5,7 +5,6 @@
   "board_meta": "#{channel} · {minutes}分ごと · 更新 {updated}",
   "board_rows": "· {count}行",
   "boards_empty": "ライブボードはまだありません。追加すると、Botがすぐに投稿してピン留めします。",
-  "boards_subtitle": "サーバーごとに最大10個。それぞれ独自の間隔で更新されます",
   "confirm_delete_message": "#{channel}の{kind}を削除しますか？そのメッセージも削除されます。",
   "confirm_delete_title": "ライブボードを削除",
   "contents_activity": "💬 メッセージ、🔊 ボイス時間、アクティブなメンバー",

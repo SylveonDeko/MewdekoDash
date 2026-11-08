@@ -1,129 +1,113 @@
 <script lang="ts">
   import { m } from "$lib/i18n";
-  import { fly, slide } from "svelte/transition";
+  import { administrationApi } from "$lib/api/index.ts";
   import { colorStore } from "$lib/stores/colorStore";
+  import { logger } from "$lib/logger";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import PluginCard from "$lib/components/plugin/PluginCard.svelte";
+  import { errorText, type Named, type Notify } from "../toolsModel";
+  import RoleRow from "./RoleRow.svelte";
 
-  let {
-    autoBanRoles,
-    expandedRoleCard = $bindable(),
-    newAutoBanRole = $bindable(),
-    availableRoles,
-    saving,
-    showConfirm,
-    removeAutoBanRole,
-    addAutoBanRole
-  } = $props();
+  interface Props {
+    guildId: bigint;
+    roles: Named[];
+    notify: Notify;
+  }
+
+  let { guildId, roles, notify }: Props = $props();
+
+  let items: Array<{ roleId: bigint; roleName: string }> = $state([]);
+  let loading = $state(true);
+  let busy = $state(false);
+  let roleId: string | null = $state(null);
+
+  async function load() {
+    try {
+      items = (await administrationApi.getAutoBanRoles(guildId)) ?? [];
+    } catch (err) {
+      logger.error("Failed to load auto-ban roles:", err);
+      notify(errorText(err, m.administrationRoles.loadFailed()), "error");
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function add() {
+    if (busy || !roleId) return;
+    busy = true;
+    try {
+      await administrationApi.addAutoBanRole(guildId, BigInt(roleId));
+      roleId = null;
+      notify(m.administrationRoles.added());
+      await load();
+    } catch (err) {
+      logger.error("Failed to add auto-ban role:", err);
+      notify(errorText(err, m.administrationRoles.addFailed()), "error");
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function remove(item: { roleId: bigint; roleName: string }) {
+    const confirmed = await requestConfirmation({
+      message: m.administrationRoles.autoBanRemoveConfirm({ role: item.roleName }),
+      confirmText: m.common.remove()
+    });
+    if (!confirmed) return;
+    try {
+      await administrationApi.removeAutoBanRole(guildId, item.roleId);
+      notify(m.administrationRoles.removed());
+    } catch (err) {
+      logger.error("Failed to remove auto-ban role:", err);
+      notify(errorText(err, m.administrationRoles.removeFailed()), "error");
+    }
+    await load();
+  }
+
+  void load();
 </script>
 
-<div class=" rounded-2xl border p-6 transition-all"
-     in:fly={{ y: 20, duration: 300, delay: 200 }}
-     style="background: {$colorStore.primary}0c;
-            border-color: {$colorStore.primary}30;">
-
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-    <div class="flex items-center gap-4">
-      <div class="p-3 rounded-xl"
-           style="background: {$colorStore.accent}20;">
-        <i class="fa-utility-duo fa-regular fa-shield"
-           style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
+<PluginCard title={m.administrationRoles.autoBanTitle()} alwaysOpen>
+  <div class="space-y-3">
+    <div class="flex flex-col sm:flex-row gap-3">
+      <div class="grow min-w-0">
+        <DiscordSelector
+          type="role"
+          options={roles}
+          selected={roleId}
+          placeholder={m.common.selectARolePlaceholder()}
+          onchange={(detail) => (roleId = typeof detail.selected === "string" ? detail.selected : null)}
+        />
       </div>
-      <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.rolesAutoBanTitle()}</h2>
+      <button
+        type="button"
+        class="flex items-center justify-center gap-2 px-5 rounded-xl min-h-[50px] font-medium disabled:opacity-50"
+        style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
+        disabled={busy || !roleId}
+        onclick={add}
+      >
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        {m.administrationRoles.addRole()}
+      </button>
     </div>
 
-    <button
-      class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
-      onclick={() => expandedRoleCard = expandedRoleCard === 'autoBan' ? null : 'autoBan'}
-      style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-    >
-      {#if expandedRoleCard === 'autoBan'}
-        <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
-      {:else}
-        <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-      {/if}
-      {expandedRoleCard === 'autoBan' ? m.common.collapse() : m.common.addRole()}
-    </button>
-  </div>
-
-  <div class="space-y-4">
-    <p class="text-sm" style="color: {$colorStore.muted}">
-      {m.administration.rolesAutoBanDescription()}
-    </p>
-
-    {#if autoBanRoles.length === 0}
-      <div class="text-center py-8">
-        <i class="fa-utility-duo fa-regular fa-shield"
-           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-        <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">{m.administration.rolesAutoBanEmptyTitle()}</p>
-        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.rolesAutoBanEmptyHint()}</p>
+    {#if loading}
+      <div class="flex justify-center py-6">
+        <div class="w-10 h-10 border-4 rounded-full animate-spin" style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary}"></div>
       </div>
+    {:else if items.length === 0}
+      <p class="py-4 text-center" style="color: {$colorStore.muted}">{m.administrationRoles.autoBanEmpty()}</p>
     {:else}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {#each autoBanRoles as role (role.roleId)}
-          <div
-            class="flex items-center justify-between p-4 rounded-lg transition-all duration-200  border"
-            style="background: {$colorStore.accent}05; border-color: {$colorStore.accent}20;">
-            <span class="font-medium" style="color: {$colorStore.text}">
-              {role.roleName}
-            </span>
-            <button
-              class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
-              style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-              onclick={() => showConfirm(m.administration.rolesAutoBanRemoveTitle(), m.administration.rolesAutoBanRemoveConfirm({ role: role.roleName }), () => removeAutoBanRole(role.roleId))}
-              aria-label={m.administration.rolesAutoBanRemoveAria({ role: role.roleName })}
-            >
-              {m.common.remove()}
-            </button>
-          </div>
+      <div class="space-y-2">
+        {#each items as item (item.roleId)}
+          <RoleRow
+            title={item.roleName}
+            removeLabel={m.administrationRoles.autoBanRemoveAria({ role: item.roleName })}
+            onremove={() => remove(item)}
+          />
         {/each}
       </div>
     {/if}
-
-    <!-- Inline Add Form -->
-    {#if expandedRoleCard === 'autoBan'}
-      <div transition:slide={{ duration: 300 }} class="mt-4 pt-4 border-t"
-           style="border-color: {$colorStore.primary}20;">
-        <div class="p-4 rounded-xl border-2 border-dashed"
-             style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
-          <h5 class="font-medium mb-3" style="color: {$colorStore.text}">{m.administration.rolesAutoBanFormTitle()}</h5>
-
-          <div class="space-y-4">
-            <div>
-              <span id="autoban-role-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.role()}</span>
-              <DiscordSelector
-                type="role"
-                options={availableRoles}
-                bind:selected={newAutoBanRole}
-                placeholder={m.common.selectRolePlaceholder()}
-                multiple={false}
-              />
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-3">
-              <button
-                class="px-4 py-2 rounded-lg font-medium transition-all"
-                style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                onclick={() => { expandedRoleCard = null; newAutoBanRole = null; }}
-              >
-                {m.common.cancel()}
-              </button>
-              <button
-                class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2"
-                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                onclick={addAutoBanRole}
-                disabled={!newAutoBanRole || saving}
-              >
-                {#if saving}
-                  <i class="fa-solid fa-rotate-right fa-spin" style="font-size: 16px;"></i>
-                {:else}
-                  <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                {/if}
-                {m.common.addRole()}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    {/if}
   </div>
-</div>
+</PluginCard>

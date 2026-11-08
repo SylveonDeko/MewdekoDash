@@ -294,11 +294,11 @@
             </div>
             <div class="flex gap-2 mt-2">
               <a class="text-xs"
-                 href="/dashboard/rolestates" style="color: {$colorStore.accent}">
+                 href="/dashboard/roles?tab=states" style="color: {$colorStore.accent}">
                 {m.dashboard.settingsTabStatesArrow()}
               </a>
               <a class="text-xs"
-                 href="/dashboard/rolegreets" style="color: {$colorStore.accent}">
+                 href="/dashboard/roles?tab=greets" style="color: {$colorStore.accent}">
                 {m.features.multigreetsName()}
               </a>
             </div>

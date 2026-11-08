@@ -1,10 +1,10 @@
 ---
 title: Command Permissions
 slug: permissions
-summary: Decide who can run which commands and where, with an ordered list of allow and deny rules for commands and modules scoped to the whole server, a role, a channel, a category or a single member.
+summary: Decide who can run which commands, and where, with ordered allow and deny rules
 icon: fa-cog
 category: Security
-dashboard: /dashboard/administration
+dashboard: /dashboard/administration?tab=commands
 module: Permissions
 tags: [permissions, command permissions, allow, deny, permission role, verbose, disable command, disable module, cooldown, dpo, permission override, blacklist]
 related: [administration, help, filter, moderation]
@@ -12,11 +12,11 @@ related: [administration, help, filter, moderation]
 
 ## What it does
 
-By default every command is available to everyone the Discord permissions allow. Command Permissions adds a server-specific rule list on top. Each rule says whether a command, a module, or all modules is allowed or denied for the whole server, a role, a channel, a category, or one member. When someone runs a command, the bot walks the list, applies the first rule that matches, and either lets the command through or stops it.
+By default every command is available to everyone the Discord permissions allow. Command Permissions adds a server-specific rule list on top. Each rule says whether a command, a module or all modules is allowed or denied, and it applies to the whole server, a role, a channel, a category or one member. When someone runs a command, the bot walks the list and applies the first rule that matches, which either lets the command through or stops it.
 
 Blocked commands fail quietly unless **verbose** mode is on, in which case the bot replies with the number and text of the rule that blocked it. Slash commands always get an ephemeral explanation.
 
-Rules can be managed by administrators, or by anyone holding the **permission role** you choose. The same list is on the dashboard under **Administration**, in the **Automation & Settings** section, as the **Command Permissions** card.
+Rules can be managed by administrators, or by anyone holding the **permission role** you choose. The same list is on the dashboard under **Administration**, on the **Commands** tab, as the **Permission rules** card.
 
 Two related tools live alongside it. Command cooldowns limit how often a command can be used per member in a server. Discord permission overrides, in the Administration module, replace the Discord permission a command normally demands, for example letting Manage Messages holders use a command that normally needs Administrator.
 
@@ -71,7 +71,7 @@ New rules are appended to the end of the list. When a command runs, the bot chec
 
 `moveperm <from> <to>` changes a rule's position and renumbers everything, so you can push an exception above or below a broader rule without recreating it. `removeperm <number>` deletes one rule. `resetperms` wipes the list back to rule 1 and needs Administrator.
 
-The dashboard lists the same rules with move up and move down arrows and a delete button per rule.
+The dashboard lists the same rules, numbered and in the same order, with move up, move down and delete buttons per rule. The first entry is the default "Everyone can use everything" rule and has no buttons. **Reset all** removes every custom rule after a confirmation.
 
 ## Verbose mode
 
@@ -103,15 +103,24 @@ Three groups of commands are restricted to the bot owners and affect every serve
 
 ## Settings
 
-On the dashboard, open **Administration**, then the **Automation & Settings** section, then the **Command Permissions** card.
+On the dashboard, open **Administration** and switch to the **Commands** tab. It holds four cards: **Command cooldowns**, **Permission overrides**, **Permission settings** and **Permission rules**.
 
-| Setting | Default | What it controls |
-| --- | --- | --- |
-| Verbose permissions | off | Tell users when a rule blocks a command |
-| Permission role | none | Members with this role can edit rules via commands |
-| Rules | rule 1 only | The ordered list; add with **Action**, **What** and **For**, then a module, command, role, channel, category or user ID |
+| Card | Setting | Default | What it controls |
+| --- | --- | --- | --- |
+| Permission settings | Verbose permissions | off | Tell users when a rule blocks a command |
+| Permission settings | Permission role | No permission role | Members with this role can edit rules via commands |
+| Permission rules | Rules | default rule only | The ordered list, shown as "No custom rules. Everyone can use every command." when empty |
+| Command cooldowns | Command cooldown | none | Per-member cooldown for a command, 1 to 90,000 seconds |
+| Permission overrides | Permission override | none | The permission a command requires instead of its built-in one |
 
-The card also shows counts of custom rules and whether verbose mode is on. The **Permission Overrides** card in the same section manages Discord permission overrides: pick a bot command and the **Required Discord Permission** it should need instead of its built-in one.
+Under **Permission rules**, press **Add rule** and fill in the sheet:
+
+1. **Action**: **Allow** or **Deny**.
+2. **What**: **All modules**, **One module** or **One command**. The last two show a **Module** or **Command** picker.
+3. **For**: **Whole server**, **A role**, **A channel**, **A category** or **A specific user**. Each shows a matching picker, and the user option takes a pasted Discord user ID.
+4. Press **Add rule**.
+
+The **Permission overrides** card manages Discord permission overrides: press **Add override**, pick a bot command and the **Required permission** it should need. It supports selecting several overrides to delete, and **Clear all overrides**.
 
 ## Setup walkthrough
 
@@ -171,4 +180,4 @@ Run these with your server's prefix (`.` unless you changed it). Slash versions 
 - Category rules use the channel's parent category at the time the command runs; threads inherit from their parent channel.
 - Discord permission overrides change what Discord permission is required, not who the rules allow. Use both together: an override to lower the bar, then a rule to restrict where.
 - Permission rules never apply in DMs.
-- The dashboard labels the target choices Whole server, A role, A channel, A category and A specific user; the user option takes a pasted user ID.
+- Rules added from the dashboard are always for commands and modules, not chat triggers. Use the chat commands above for those.

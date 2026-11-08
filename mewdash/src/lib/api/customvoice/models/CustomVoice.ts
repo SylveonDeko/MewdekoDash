@@ -20,6 +20,16 @@ export interface CustomVoiceConfigurationResponse {
   persistUserPreferences: boolean;
   autoPermission: boolean;
   customVoiceAdminRoleId: bigint | null;
+  createTextChannel?: boolean;
+  hubName?: string | null;
+  ownerLockMinutes?: number;
+  ownerManageChannel?: boolean;
+  ownerManageRoles?: boolean;
+  ownerMoveMembers?: boolean;
+  ownerPrioritySpeaker?: boolean;
+  syncPermissions?: number;
+  moderatorRoleIds?: bigint[];
+  cleanupLeftovers?: boolean;
 }
 
 export interface CustomVoiceConfigurationRequest {
@@ -41,6 +51,16 @@ export interface CustomVoiceConfigurationRequest {
   persistUserPreferences: boolean;
   autoPermission: boolean;
   customVoiceAdminRoleId?: bigint | null;
+  createTextChannel?: boolean;
+  hubName?: string | null;
+  ownerLockMinutes?: number | null;
+  ownerManageChannel?: boolean | null;
+  ownerManageRoles?: boolean | null;
+  ownerMoveMembers?: boolean | null;
+  ownerPrioritySpeaker?: boolean | null;
+  syncPermissions?: number | null;
+  moderatorRoleIds?: bigint[] | null;
+  cleanupLeftovers?: boolean | null;
 }
 
 export interface CustomVoiceChannelResponse {
@@ -50,6 +70,9 @@ export interface CustomVoiceChannelResponse {
   lastActive: string;
   isLocked: boolean;
   keepAlive: boolean;
+  isHidden?: boolean;
+  hubVoiceChannelId?: bigint | null;
+  ownerLeftAt?: string | null;
   allowedUsers: bigint[];
   deniedUsers: bigint[];
 }

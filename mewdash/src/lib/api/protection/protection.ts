@@ -8,6 +8,11 @@ import type {
   AddBannedImageHashRequest,
   BannedImageHash,
   ImageHashPreview,
+  AutomodRuleName,
+  AutomodRuleRequest,
+  AutomodRuleSettings,
+  AutomodSharedRequest,
+  AutomodSharedSettings,
 } from "./models";
 import type {
   ProtectionStatus,
@@ -15,6 +20,8 @@ import type {
   AntiSpamConfig,
   AntiAltConfig,
   AntiMassMentionConfig,
+  AntiMassPostConfig,
+  AntiPostChannelConfig,
 } from "../administration/models";
 
 export const protectionApi = {
@@ -163,6 +170,68 @@ export const protectionApi = {
   toggleAntiImageHashIgnoredChannel: (guildId: bigint, channelId: bigint) =>
     apiRequest<{ added: boolean }>(
       `Protection/${guildId}/anti-image-hash/ignored-channels/${channelId}`,
+      "POST",
+    ),
+
+  getAutomodSettings: (guildId: bigint) =>
+    apiRequest<AutomodSharedSettings>(`Protection/${guildId}/automod-settings`),
+
+  updateAutomodSettings: (guildId: bigint, request: AutomodSharedRequest) =>
+    apiRequest<AutomodSharedSettings>(
+      `Protection/${guildId}/automod-settings`,
+      "PUT",
+      request,
+    ),
+
+  getAutomodRules: (guildId: bigint) =>
+    apiRequest<AutomodRuleSettings[]>(`Protection/${guildId}/automod-rules`),
+
+  configureAutomodRule: (
+    guildId: bigint,
+    rule: AutomodRuleName,
+    request: AutomodRuleRequest,
+  ) =>
+    apiRequest<AutomodRuleSettings>(
+      `Protection/${guildId}/automod-rules/${rule}`,
+      "PUT",
+      request,
+    ),
+
+  configureAntiMassPost: (guildId: bigint, config: AntiMassPostConfig) =>
+    apiRequest<{ success: boolean }>(
+      `Protection/${guildId}/anti-mass-post`,
+      "PUT",
+      config,
+    ),
+
+  configureAntiPostChannel: (guildId: bigint, config: AntiPostChannelConfig) =>
+    apiRequest<{ success: boolean }>(
+      `Protection/${guildId}/anti-post-channel`,
+      "PUT",
+      config,
+    ),
+
+  addAntiPostChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<{ success: boolean }>(
+      `Protection/${guildId}/anti-post-channel/channels/${channelId}`,
+      "POST",
+    ),
+
+  removeAntiPostChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<{ success: boolean }>(
+      `Protection/${guildId}/anti-post-channel/channels/${channelId}`,
+      "DELETE",
+    ),
+
+  toggleAntiPostChannelIgnoredRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<{ added: boolean }>(
+      `Protection/${guildId}/anti-post-channel/ignored-roles/${roleId}`,
+      "POST",
+    ),
+
+  toggleAntiPostChannelIgnoredUser: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ added: boolean }>(
+      `Protection/${guildId}/anti-post-channel/ignored-users/${userId}`,
       "POST",
     ),
 };

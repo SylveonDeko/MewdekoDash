@@ -1,10 +1,10 @@
 ---
 title: Stream Alerts
 slug: streams
-summary: Follow streamers on Twitch, YouTube, Kick and Picarto and post an announcement in a channel of your choice when they go live or offline.
+summary: Announce in a channel when a streamer you follow goes live
 icon: fa-video
 category: Community
-dashboard: /dashboard/streams
+dashboard: /dashboard/alerts?tab=streams
 module: Searches
 tags: [streams, stream alerts, go live, live notifications, twitch, youtube, kick, picarto, trovo, streamadd, streamtemplate]
 related: [twitch, utility, administration]
@@ -12,14 +12,14 @@ related: [twitch, utility, administration]
 
 ## What it does
 
-Staff paste a stream URL and pick a Discord channel. The bot then polls that streamer's platform and, when the stream flips from offline to online, posts a go-live message in the chosen channel. By default that is an embed with the streamer's name linked to the stream, the stream title, the game or category, the viewer count, the streamer's avatar, and a preview image.
+Staff paste a stream URL and pick a Discord channel. The bot then polls that streamer's platform and, when the stream flips from offline to online, posts a go-live message in the chosen channel. By default that is an embed with the streamer's name linked to the stream, the stream title, the game or category and the viewer count. The streamer's avatar and a preview image are included too.
 
 You can replace the default embed with your own message. There is a server-wide template that applies to every followed stream, and each stream can also have its own online message and its own offline message. All of them accept the `%stream.*%` placeholders listed below and can be plain text or a full embed built in the dashboard's embed editor.
 
-Offline notices are off by default. Turn them on and the bot also posts when a followed stream ends, using the stream's offline message if one is set, otherwise the server template, otherwise the default embed showing "Offline".
+Offline notices are off by default. Turn them on and the bot also posts when a followed stream ends, using the stream's offline message if one is set. If there is none, it uses the server template, and the default embed showing "Offline" is the last resort.
 
 > [!NOTE]
-> Stream Alerts announces other people's streams into your Discord. The separate Twitch Bot feature connects the bot to your own Twitch chat for commands, timers and events. See the Twitch Bot article for that.
+> Stream Alerts announces other people's streams into your Discord. The separate Twitch Bot feature connects the bot to your own Twitch chat for commands, timers, events and more. See the Twitch Bot article for that.
 
 ## Why you would use it
 
@@ -86,28 +86,28 @@ Only this set is replaced in stream messages. The general server and user placeh
 
 ## Settings
 
-The Stream Notifications page has four tabs: **Streams**, **Follow Stream**, **Settings** and **Statistics**.
+Streams live on the **Streams** tab of the **Alerts** page. The tab has three cards.
 
-| Setting | Default | What it controls |
-| --- | --- | --- |
-| Notification Channel | none | The channel a new stream's alerts go to, chosen on **Follow Stream** |
-| Stream URL | none | The link to follow, on **Follow Stream** |
-| Online Message | none | Per-stream message when it goes live, edited from the stream's card on **Streams** |
-| Offline Message | none | Per-stream message when it ends, edited from the same card |
-| Global Stream Message | none | Server-wide template used when a stream has no message of its own, on **Settings** |
-| Offline Notifications | off | Whether the bot posts when followed streams go offline, on **Settings** |
+| Card | Setting | Default | What it controls |
+| --- | --- | --- | --- |
+| Follow a stream | Channel | none | The channel a new stream's alerts go to |
+| Follow a stream | Stream URL | none | The link to follow, for example `https://twitch.tv/name` |
+| Streams | Online message | none | Per-stream message when it goes live, opened from the stream's row |
+| Streams | Offline message | none | Per-stream message when it ends, opened from the same row |
+| Messages | Message for all streams | none | Server-wide template used when a stream has no message of its own |
+| Messages | Post when a stream goes offline | Off | Whether the bot posts when followed streams go offline |
 
-**Streams** lists every followed stream with its platform, channel and the date it was added, with a delete button on each card and a **Clear All** button. **Statistics** shows total streams, unique streamers, channels with notifications, platforms in use and a breakdown by platform.
+In **Follow a stream**, pick a channel, paste the link and press **Follow stream**. The button stays disabled until both are filled.
 
-A server can follow at most ten streams. Adding an eleventh fails.
+The **Streams** card lists every followed stream with its platform and channel. A row shows an **Online** or **Offline** badge when the stream has its own message for that state. Click a row to open **Messages for** that streamer, with **Online message** and **Offline message** editors. Both save as you type and an empty message resets to the default. The bin button on a row asks before it unfollows. **Unfollow all** appears when more than one stream is followed and also asks first. With none followed the card says **No streams yet**.
 
 ## Setup walkthrough
 
-1. Open **Stream Alerts** in the dashboard and go to the **Follow Stream** tab.
-2. Pick the **Notification Channel**, paste the **Stream URL**, and click **Follow Stream**.
-3. On **Settings**, build a **Global Stream Message** in the embed editor using the placeholders above, then click **Save Message**. Skip this to keep the built-in embed.
-4. Turn on **Offline Notifications** if you want "stream ended" posts as well.
-5. Back on **Streams**, open a stream's card to give it its own **Online Message** or **Offline Message** if it needs something different from the global template.
+1. Open **Alerts** in the dashboard and go to the **Streams** tab.
+2. In **Follow a stream**, pick the channel, paste the **Stream URL**, and press **Follow stream**.
+3. In **Messages**, build the **Message for all streams** in the embed editor using the placeholders above. Skip this to keep the built-in embed.
+4. Turn on **Post when a stream goes offline** if you want "stream ended" posts as well.
+5. Click a stream's row to give it its own online or offline message if it needs something different from the default.
 6. Test with `streamcheck <url>` to confirm the bot can read the stream, then wait for the next go-live.
 
 ## Commands
@@ -132,5 +132,5 @@ Run these with your server's prefix (`.` unless you changed it).
 - Stream numbers come from `streamlist` and start at 1. They shift when a stream is removed, so check the list before removing by number.
 - The bot needs Send Messages and Embed Links in the notification channel. Alerts to a channel it cannot see are skipped with a log entry.
 - If your server has the Twitch Bot connected with a go-live channel set for the same Twitch channel, that integration takes over and Stream Alerts stays silent for it, so you do not get two posts.
-- YouTube data is scraped rather than read from an API. Titles, categories and viewer counts may be missing or read as `Live Stream`.
+- YouTube data is scraped rather than read from an API. Details such as titles and viewer counts may be missing or read as `Live Stream`.
 - Streams whose lookups keep failing for twelve hours are removed automatically. If a streamer renames their channel, follow the new URL.

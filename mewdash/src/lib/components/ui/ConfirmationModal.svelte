@@ -140,7 +140,7 @@
     <div
       bind:this={dialogEl}
       class="rounded-2xl border shadow-lg max-w-md w-full"
-      style="background-color: {$colorStore.background}; border-color: {$colorStore.primary}30;"
+      style="background-color: {$colorStore.surface}; border-color: {$colorStore.primary}30;"
       in:fly={{ y: 20, duration: 200 }}
       out:fly={{ y: -20, duration: 150 }}
       role="dialog"

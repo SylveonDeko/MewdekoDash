@@ -58,7 +58,6 @@
   "landing_multi_greets": "Багато привітань",
   "landing_music_bot": "Музичний бот",
   "landing_no_servers_to_show_right_now": "Зараз немає серверів для показу.",
-  "landing_or_just_hop_in_discord_for": "Або просто заходьте в Discord для швидких питань і допомоги",
   "landing_our_top_servers": "Наші топ-сервери",
   "landing_per_server_bot_profile": "Профіль бота для кожного сервера",
   "landing_polls_with_buttons": "Опитування з кнопками",
@@ -130,7 +129,5 @@
   "tails_subheading": "Кожен хвіст має більше однієї роботи.",
   "tails_tag_text": "Дозвольте учасникам обирати собі ролі за допомогою кнопок або випадаючого списку.",
   "tails_wrench_text": "Пишіть власні команди та відповіді й змінюйте вигляд бота на вашому сервері.",
-  "tails_wrench_title": "Зробіть його своїм",
-  "update_next": "Наступне оновлення",
-  "update_previous": "Попереднє оновлення"
+  "tails_wrench_title": "Зробіть його своїм"
 }

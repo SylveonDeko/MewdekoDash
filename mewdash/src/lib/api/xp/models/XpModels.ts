@@ -15,6 +15,12 @@ export interface GuildXpSetting {
   xpCurveType: number;
   customXpImageUrl: string | null;
   xpGainDisabled: boolean;
+  levelUpMessage: string | null;
+  levelUpChannel: bigint | string | number;
+  exclusiveRoleRewards: boolean;
+  levelUpInterval: number;
+  levelUpMinLevel: number;
+  levelUpRewardsOnly: boolean;
   dateAdded: string | null;
 }
 
@@ -137,4 +143,108 @@ export interface TemplateGuild {
   guildRankY: number;
   showGuildLevel: boolean;
   showGuildRank: boolean;
+}
+
+/**
+ * A temporary XP boost
+ * Maps to the anonymous objects of XpController.GetBoosts
+ */
+export interface XpBoost {
+  id: number;
+  name: string;
+  multiplier: number;
+  startTime: string;
+  endTime: string;
+  active: boolean;
+  channelIds: string[];
+  roleIds: string[];
+}
+
+/**
+ * A placement reward of a competition
+ * Maps to the anonymous objects of XpController.GetCompetitions
+ */
+export interface XpCompetitionReward {
+  id: number;
+  position: number;
+  roleId: string;
+  roleName: string | null;
+  xpAmount: number;
+  currencyAmount: number;
+}
+
+/**
+ * An XP competition
+ * Maps to the anonymous objects of XpController.GetCompetitions
+ */
+export interface XpCompetition {
+  id: number;
+  name: string;
+  /** 0 most gained, 1 reach level, 2 highest total */
+  type: number;
+  startTime: string;
+  endTime: string;
+  targetLevel: number;
+  announcementChannelId: string | null;
+  active: boolean;
+  participants: number;
+  rewards: XpCompetitionReward[];
+}
+
+/**
+ * One standing of a competition
+ * Maps to the anonymous objects of XpController.GetCompetitionStandings
+ */
+export interface XpCompetitionStanding {
+  position: number;
+  userId: string;
+  username: string;
+  gained: number;
+  total: number;
+  achievedTargetAt: string | null;
+  finalPlacement: number;
+}
+
+/**
+ * What a new competition is made from
+ * Maps to Mewdeko.Controllers.Common.XpEvents.XpCompetitionRequest
+ */
+export interface XpCompetitionRequest {
+  name: string;
+  type: number;
+  durationMinutes: number;
+  targetLevel: number;
+  announcementChannelId: bigint;
+  rewards: Array<{ position: number; roleId: bigint; xpAmount: number; currencyAmount: number }>;
+}
+
+/**
+ * A custom level-up message
+ * Maps to the anonymous objects of XpController.GetLevelUpMessages
+ */
+export interface XpLevelUpMessage {
+  id: number;
+  messageContent: string;
+  isEnabled: boolean;
+}
+
+/**
+ * A level-up in the log
+ * Maps to the anonymous objects of XpController.GetLevelUpLog
+ */
+export interface XpLevelUpLogEntry {
+  userId: bigint;
+  username: string;
+  oldLevel: number;
+  newLevel: number;
+  dateAdded: string;
+}
+
+/**
+ * The rank card background in use
+ * Maps to the anonymous object of XpController.GetBackground
+ */
+export interface XpBackground {
+  value: string;
+  image: string;
 }

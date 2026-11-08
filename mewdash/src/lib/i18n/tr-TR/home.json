@@ -58,7 +58,6 @@
   "landing_multi_greets": "Çoklu Karşılamalar",
   "landing_music_bot": "Müzik Botu",
   "landing_no_servers_to_show_right_now": "Şu anda gösterilecek sunucu yok.",
-  "landing_or_just_hop_in_discord_for": "Ya da hızlı sorular ve yardım için Discord'a gel",
   "landing_our_top_servers": "En İyi Sunucularımız",
   "landing_per_server_bot_profile": "Sunucuya Özel Bot Profili",
   "landing_polls_with_buttons": "Düğmeli anketler",
@@ -130,7 +129,5 @@
   "tails_subheading": "Her kuyruğun birden fazla görevi var.",
   "tails_tag_text": "Üyelerin düğmelerden ya da açılır listeden kendi rollerini seçmesine izin ver.",
   "tails_wrench_text": "Kendi komutlarını ve yanıtlarını yaz, botun sunucundaki görünümünü değiştir.",
-  "tails_wrench_title": "Kendi tarzına göre yap",
-  "update_next": "Sonraki güncelleme",
-  "update_previous": "Önceki güncelleme"
+  "tails_wrench_title": "Kendi tarzına göre yap"
 }

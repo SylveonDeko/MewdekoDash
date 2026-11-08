@@ -1708,6 +1708,8 @@
                             options={textAlignOptions}
                             selected={element.textAlign || "left"}
                             searchable={false}
+                            clearable={false}
+                            customIcon="fa-text"
                             ariaLabel={m.xp.editorTextAlignment()}
                             onchange={(e) => updateCustomElement(element.id, { textAlign: String(e.selected) })}
                           />
@@ -1727,6 +1729,8 @@
                               options={progressStyleOptions}
                               selected={element.progressStyle || "rounded"}
                               searchable={false}
+                              clearable={false}
+                              customIcon="fa-palette"
                               ariaLabel={m.xp.editorProgressStyleAria()}
                               onchange={(e) => updateCustomElement(element.id, { progressStyle: String(e.selected) })}
                             />

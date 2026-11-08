@@ -46,7 +46,6 @@
   "import_post_in": "Pubblica in",
   "import_retire_subtitle": "Ferma la vecchia configurazione con emoji e ne rimuove le emoji. Se il messaggio originale è stato pubblicato dal bot, viene eliminato.",
   "import_retire_title": "Ritira la vecchia configurazione",
-  "list_count": "{count} menu su {max}",
   "list_create_first": "Crea il tuo primo menu",
   "list_empty_text": "Pubblica un messaggio con un menu a tendina o pulsanti, e i membri sceglieranno i propri ruoli. Pronomi, colori, notifiche, regioni: un menu per ciascuno.",
   "list_empty_title": "Ancora nessun menu dei ruoli",

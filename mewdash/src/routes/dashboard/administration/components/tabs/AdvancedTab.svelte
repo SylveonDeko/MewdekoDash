@@ -1,33 +1,18 @@
 <script lang="ts">
-  import { fly } from "svelte/transition";
   import BanMessageCard from "../advanced/BanMessageCard.svelte";
-  import MassOperationsCard from "../advanced/MassOperationsCard.svelte";
   import ServerRecoveryCard from "../advanced/ServerRecoveryCard.svelte";
+  import PruneMembersCard from "../advanced/PruneMembersCard.svelte";
+  import MassBanCard from "../advanced/MassBanCard.svelte";
+  import MassRenameCard from "../advanced/MassRenameCard.svelte";
+  import type { TabProps } from "../toolsModel";
 
-  let {
-    banMessage = $bindable(),
-    textChannels,
-    saveBanMessage,
-    showConfirm,
-    fetchAllData,
-    guildId = null,
-    user = null
-  } = $props();
+  let { guildId, autoSave, notify, user }: TabProps = $props();
 </script>
 
-<div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
-  <BanMessageCard
-    bind:banMessage
-    {saveBanMessage}
-    {guildId}
-    {user}
-  />
-
-  <ServerRecoveryCard {showConfirm} />
-
-  <MassOperationsCard
-    {fetchAllData}
-    {showConfirm}
-    {textChannels}
-  />
+<div class="w-full space-y-6">
+  <BanMessageCard {guildId} {autoSave} {notify} {user} />
+  <ServerRecoveryCard {guildId} {notify} />
+  <PruneMembersCard {guildId} {notify} />
+  <MassBanCard {guildId} {notify} />
+  <MassRenameCard {guildId} {notify} />
 </div>

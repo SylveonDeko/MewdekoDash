@@ -193,7 +193,7 @@ async function resolveBackend(
     return json(
       {
         error: "unknown_instance",
-        message: `No active bot instance is registered on port ${port}.`,
+        message: "Mewdeko isn't reachable right now. Try again in a moment.",
       },
       { status: 404 },
     );

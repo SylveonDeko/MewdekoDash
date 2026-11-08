@@ -1,8 +1,15 @@
 // lib/api/xp/xp.ts
-import { apiRequest } from "../core";
+import { apiDownload, apiRequest } from "../core";
 import type {
   GuildXpSetting,
+  XpBackground,
+  XpBoost,
+  XpCompetition,
+  XpCompetitionRequest,
+  XpCompetitionStanding,
   XpCurrencyReward,
+  XpLevelUpLogEntry,
+  XpLevelUpMessage,
   XpTemplate,
 } from "./models";
 
@@ -133,11 +140,92 @@ export const xpApi = {
   includeXpRole: (guildId: bigint, roleId: bigint) =>
     apiRequest<void>(`xp/${guildId}/excluded/roles/${roleId}`, "DELETE"),
 
+  getXpExcludedUsers: (guildId: bigint) =>
+    apiRequest<Array<{ userId: bigint; username: string | null }>>(`xp/${guildId}/excluded/users`),
+
+  excludeXpUser: (guildId: bigint, userId: bigint) =>
+    apiRequest<void>(`xp/${guildId}/excluded/users`, "POST", userId),
+
+  includeXpUser: (guildId: bigint, userId: bigint) =>
+    apiRequest<void>(`xp/${guildId}/excluded/users/${userId}`, "DELETE"),
+
   getXpTemplate: (guildId: bigint) =>
     apiRequest<XpTemplate>(`xp/${guildId}/template`),
 
   updateXpTemplate: (guildId: bigint, template: XpTemplate) =>
     apiRequest<void>(`xp/${guildId}/template`, "POST", template),
+
+  getBackground: (guildId: bigint) =>
+    apiRequest<XpBackground>(`xp/${guildId}/background`),
+
+  setBackground: (guildId: bigint, url: string) =>
+    apiRequest<void>(`xp/${guildId}/background`, "POST", { url }),
+
+  clearBackground: (guildId: bigint) =>
+    apiRequest<void>(`xp/${guildId}/background`, "DELETE"),
+
+  exportXp: (guildId: bigint) => apiDownload(`xp/${guildId}/export`),
+
+  resetServerXp: (guildId: bigint, resetBonusXp: boolean) =>
+    apiRequest<number>(`xp/${guildId}/reset`, "POST", { resetBonusXp }),
+
+  syncRoles: (guildId: bigint) =>
+    apiRequest<void>(`xp/${guildId}/sync-roles`, "POST"),
+
+  getLevelUpLog: (guildId: bigint) =>
+    apiRequest<XpLevelUpLogEntry[]>(`xp/${guildId}/level-up-log`),
+
+  getLevelUpMessages: (guildId: bigint) =>
+    apiRequest<XpLevelUpMessage[]>(`xp/${guildId}/level-up-messages`),
+
+  addLevelUpMessage: (guildId: bigint, message: string) =>
+    apiRequest<void>(`xp/${guildId}/level-up-messages`, "POST", { message }),
+
+  toggleLevelUpMessage: (guildId: bigint, id: number, enabled: boolean) =>
+    apiRequest<void>(`xp/${guildId}/level-up-messages/${id}/toggle`, "POST", enabled),
+
+  removeLevelUpMessage: (guildId: bigint, id: number) =>
+    apiRequest<void>(`xp/${guildId}/level-up-messages/${id}`, "DELETE"),
+
+  getMultipliers: (guildId: bigint) =>
+    apiRequest<{
+      channels: Array<{ channelId: string; name: string | null; multiplier: number }>;
+      roles: Array<{ roleId: string; name: string | null; multiplier: number }>;
+    }>(`xp/${guildId}/multipliers`),
+
+  setChannelMultiplier: (guildId: bigint, id: bigint, multiplier: number) =>
+    apiRequest<void>(`xp/${guildId}/multipliers/channels`, "POST", { id, multiplier }),
+
+  removeChannelMultiplier: (guildId: bigint, id: bigint) =>
+    apiRequest<void>(`xp/${guildId}/multipliers/channels/${id}`, "DELETE"),
+
+  setRoleMultiplier: (guildId: bigint, id: bigint, multiplier: number) =>
+    apiRequest<void>(`xp/${guildId}/multipliers/roles`, "POST", { id, multiplier }),
+
+  removeRoleMultiplier: (guildId: bigint, id: bigint) =>
+    apiRequest<void>(`xp/${guildId}/multipliers/roles/${id}`, "DELETE"),
+
+  getBoosts: (guildId: bigint) => apiRequest<XpBoost[]>(`xp/${guildId}/boosts`),
+
+  createBoost: (
+    guildId: bigint,
+    boost: { name: string; multiplier: number; durationMinutes: number; channelIds: bigint[]; roleIds: bigint[] },
+  ) => apiRequest<void>(`xp/${guildId}/boosts`, "POST", boost),
+
+  cancelBoost: (guildId: bigint, id: number) =>
+    apiRequest<void>(`xp/${guildId}/boosts/${id}`, "DELETE"),
+
+  getCompetitions: (guildId: bigint) =>
+    apiRequest<XpCompetition[]>(`xp/${guildId}/competitions`),
+
+  createCompetition: (guildId: bigint, competition: XpCompetitionRequest) =>
+    apiRequest<number>(`xp/${guildId}/competitions`, "POST", competition),
+
+  getCompetitionStandings: (guildId: bigint, id: number) =>
+    apiRequest<XpCompetitionStanding[]>(`xp/${guildId}/competitions/${id}/standings`),
+
+  endCompetition: (guildId: bigint, id: number) =>
+    apiRequest<void>(`xp/${guildId}/competitions/${id}/end`, "POST"),
 
   getXpServerStats: (
     guildId: bigint,

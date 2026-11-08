@@ -1,27 +1,26 @@
 <!-- routes/dashboard/bridges/+page.svelte -->
 <script lang="ts">
   import { m } from "$lib/i18n";
-  import { onDestroy, onMount, untrack } from "svelte";
+  import { onDestroy } from "svelte";
   import { goto } from "$app/navigation";
+  import { fade } from "svelte/transition";
   import { ApiError } from "$lib/api/core";
-  import { bridgesApi, clientApi, type Bridge, type BridgeCode, type Pair } from "$lib/api/index.ts";
+  import { bridgesApi, clientApi, type Bridge, type Pair } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
   import type { PageData } from "./$types";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import PluginPage from "$lib/components/plugin/PluginPage.svelte";
+  import PluginCard from "$lib/components/plugin/PluginCard.svelte";
   import SettingToggle from "$lib/components/forms/SettingToggle.svelte";
-  import Card from "$lib/components/analytics/Card.svelte";
   import AsyncState from "$lib/components/stats/AsyncState.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
   import BridgeSettingsPanel from "$lib/components/forms/BridgeSettingsPanel.svelte";
   import BridgePairs from "$lib/components/forms/BridgePairs.svelte";
   import { createAutoSave } from "$lib/utils/autoSave.svelte";
-
-  const POLL_MS = 4000;
-  const LINK_COMMAND = ".bridge link CODE";
+  import ConnectCard from "./components/ConnectCard.svelte";
 
   interface Props {
     data: PageData;
@@ -37,31 +36,15 @@
   let error = $state<string | null>(null);
   let notificationMessage = $state("");
   let notificationType = $state<"success" | "error">("success");
-
-  let channelId = $state<string | null>(null);
-  let entering = $state(false);
-  let code = $state<BridgeCode | null>(null);
-  let codeChannelId = $state("");
-  let now = $state(Date.now());
-  let creating = $state(false);
-  let linking = $state(false);
-  let linkInput = $state("");
-  let copied = $state(false);
   let busy = $state<Record<string, boolean>>({});
 
   let removeTarget = $state<Bridge | null>(null);
   let removeOpen = $state(false);
 
-  let poll: ReturnType<typeof setInterval> | null = null;
-  let tick: ReturnType<typeof setInterval> | null = null;
   let notifyTimer: ReturnType<typeof setTimeout> | null = null;
   let loadedFor = $state("");
 
-  const bridgedIds = $derived(new Set(bridges.map((b) => b.channelId.toString())));
-  const freeChannels = $derived(channels.filter((c) => !bridgedIds.has(c.id)));
-  const remaining = $derived(code ? Math.max(0, Math.floor((new Date(code.expiresAt).getTime() - now) / 1000)) : 0);
-  const expired = $derived(!!code && remaining === 0);
-  const countdown = $derived(`${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`);
+  let guildId = $derived($currentGuild?.id ? BigInt($currentGuild.id) : null);
 
   function notify(message: string, type: "success" | "error" = "error") {
     notificationMessage = message;
@@ -93,54 +76,15 @@
     return m.bridges.errorUnknown();
   }
 
-  function stopPolling() {
-    if (poll) clearInterval(poll);
-    if (tick) clearInterval(tick);
-    poll = null;
-    tick = null;
-  }
-
-  function startPolling() {
-    stopPolling();
-    now = Date.now();
-    tick = setInterval(() => (now = Date.now()), 1000);
-    poll = setInterval(refresh, POLL_MS);
-  }
-
-  function clearCode() {
-    code = null;
-    copied = false;
-    stopPolling();
-  }
-
-  async function refresh() {
-    if (!$currentGuild?.id) return;
-    try {
-      bridges = await bridgesApi.list($currentGuild.id);
-    } catch (err) {
-      logger.error("Failed to refresh bridges", err);
-      return;
-    }
-
-    if (!code) return;
-    if (expired) {
-      stopPolling();
-      return;
-    }
-    const linked = bridges.find((b) => b.channelId.toString() === codeChannelId);
-    if (linked) {
-      notify(m.bridges.linked({ channel: linked.remoteChannelName, community: linked.remoteGuildName }), "success");
-      clearCode();
-      channelId = null;
-    }
-  }
-
-  async function load() {
-    if (!$currentGuild?.id) return;
+  async function load(id: bigint) {
     loading = true;
     error = null;
     try {
-      const [list, text, roleList] = await Promise.all([bridgesApi.list($currentGuild.id), clientApi.getTextChannels($currentGuild.id), clientApi.getRoles($currentGuild.id).catch(() => [])]);
+      const [list, text, roleList] = await Promise.all([
+        bridgesApi.list(id),
+        clientApi.getTextChannels(id),
+        clientApi.getRoles(id).catch(() => [])
+      ]);
       bridges = list;
       channels = text.map((c) => ({ id: c.id.toString(), name: c.name }));
       roles = roleList.map((r: any) => ({ id: r.id.toString(), name: r.name, color: r.color }));
@@ -152,61 +96,9 @@
     }
   }
 
-  async function createCode() {
-    if (!$currentGuild?.id || !channelId || !data.user?.id) return;
-    creating = true;
-    try {
-      code = await bridgesApi.createCode($currentGuild.id, {
-        channelId: BigInt(channelId),
-        userId: BigInt(data.user.id)
-      });
-      codeChannelId = channelId;
-      copied = false;
-      startPolling();
-    } catch (err) {
-      notify(errorText(err));
-      logger.error("Failed to create a bridge code", err);
-    } finally {
-      creating = false;
-    }
-  }
-
-  async function linkWithCode() {
-    if (!$currentGuild?.id || !channelId || !data.user?.id || !linkInput.trim()) return;
-    linking = true;
-    try {
-      const bridge = await bridgesApi.link($currentGuild.id, {
-        code: linkInput.trim(),
-        channelId: BigInt(channelId),
-        userId: BigInt(data.user.id)
-      });
-      notify(m.bridges.linked({ channel: bridge.remoteChannelName, community: bridge.remoteGuildName }), "success");
-      linkInput = "";
-      channelId = null;
-      entering = false;
-      bridges = await bridgesApi.list($currentGuild.id);
-    } catch (err) {
-      notify(errorText(err));
-      logger.error("Failed to link a bridge", err);
-    } finally {
-      linking = false;
-    }
-  }
-
-  async function copyCode() {
-    if (!code) return;
-    try {
-      await navigator.clipboard.writeText(code.code);
-      copied = true;
-      setTimeout(() => (copied = false), 2000);
-    } catch (err) {
-      logger.error("Failed to copy the bridge code", err);
-    }
-  }
-
   async function refreshBridges() {
-    if (!$currentGuild?.id) return;
-    bridges = await bridgesApi.list($currentGuild.id);
+    if (!guildId) return;
+    bridges = await bridgesApi.list(guildId);
   }
 
   function viaName(bridge: Bridge) {
@@ -235,16 +127,16 @@
   }
 
   function togglePause(bridge: Bridge) {
-    if (!$currentGuild?.id) return;
-    const guildId = $currentGuild.id;
+    if (!guildId) return;
+    const id = guildId;
     const paused = !bridge.paused;
-    void change(bridge, { paused }, () => (paused ? bridgesApi.pause(guildId, bridge.bridgeId) : bridgesApi.resume(guildId, bridge.bridgeId)), m.bridges.errorPause());
+    void change(bridge, { paused }, () => (paused ? bridgesApi.pause(id, bridge.bridgeId) : bridgesApi.resume(id, bridge.bridgeId)), m.bridges.errorPause());
   }
 
   function setAllowBots(bridge: Bridge, allow: boolean) {
-    if (!$currentGuild?.id) return;
-    const guildId = $currentGuild.id;
-    void change(bridge, { allowBots: allow }, () => bridgesApi.setAllowBots(guildId, bridge.bridgeId, allow), m.bridges.errorAllowBots());
+    if (!guildId) return;
+    const id = guildId;
+    void change(bridge, { allowBots: allow }, () => bridgesApi.setAllowBots(id, bridge.bridgeId, allow), m.bridges.errorAllowBots());
   }
 
   function askRemove(bridge: Bridge) {
@@ -254,9 +146,9 @@
 
   async function remove() {
     const target = removeTarget;
-    if (!target || !$currentGuild?.id) return;
+    if (!target || !guildId) return;
     try {
-      await bridgesApi.remove($currentGuild.id, target.bridgeId);
+      await bridgesApi.remove(guildId, target.bridgeId);
       bridges = bridges.filter((b) => b.bridgeId !== target.bridgeId);
       notify(m.bridges.bridgeRemoved(), "success");
     } catch (err) {
@@ -267,108 +159,75 @@
     }
   }
 
-  async function loadAll() {
-    if (!$currentGuild?.id) return;
-    const key = `${$currentGuild.id}:${$currentInstance?.port ?? ""}`;
-    if (loadedFor === key) return;
-    loadedFor = key;
-    clearCode();
-    await load();
-  }
-
-  onMount(async () => {
-    if (!$currentGuild) {
-      await goto("/dashboard");
-      return;
-    }
-    await loadAll();
-  });
-
   onDestroy(() => {
-    stopPolling();
     if (notifyTimer) clearTimeout(notifyTimer);
   });
 
   $effect(() => {
-    if ($currentGuild && $currentInstance) untrack(() => loadAll());
+    if (!$currentGuild) {
+      void goto("/dashboard");
+      return;
+    }
+    if ($currentGuild.icon) {
+      const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
+      colorStore.extractFromServerIcon(serverIconUrl);
+    } else if ($currentInstance?.botAvatar) {
+      colorStore.extractFromImage($currentInstance.botAvatar);
+    }
+    const key = `${$currentGuild.id}:${$currentInstance?.port ?? ""}`;
+    if (loadedFor !== key) {
+      loadedFor = key;
+      void load(BigInt($currentGuild.id));
+    }
   });
 
-  const inputStyle = $derived(`background: ${$colorStore.primary}10; color: ${$colorStore.text};`);
   const buttonStyle = $derived(`background: ${$colorStore.primary}20; color: ${$colorStore.text};`);
-  const primaryStyle = $derived(`background: ${$colorStore.primary}; color: ${$colorStore.onPrimary};`);
 </script>
 
-<DashboardPageLayout
+{#snippet statusMessages()}
+  {#if notificationMessage}
+    <div class="fixed top-4 right-4 z-[10001]" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
+
+<PluginPage
+  {statusMessages}
+  {autoSave}
+  icon="fa-link"
+  guildName={$currentGuild?.name || m.common.dashboard()}
   title={m.features.bridgesName()}
   subtitle={m.bridges.pageSubtitle()}
-  icon="fa-link"
-  guildName={$currentGuild?.name || "Dashboard"}
-  bind:notificationMessage
-  {notificationType}
-  {autoSave}
 >
   <AsyncState {loading} {error}>
-    <div class="space-y-6">
-      {#if $currentGuild}
-        <BridgePairs
-          guildId={$currentGuild.id}
-          userId={data.user?.id}
-          bind:pairs
-          {autoSave}
-          {notify}
-          errorText={errorText}
-          onrefresh={refreshBridges} />
-      {/if}
+    {#if guildId}
+      {#key `${guildId}:${$currentInstance?.port ?? ""}`}
+        <div class="space-y-4 min-w-0">
+          <BridgePairs
+            guildId={$currentGuild!.id}
+            userId={data.user?.id}
+            bind:pairs
+            {autoSave}
+            {notify}
+            {errorText}
+            onrefresh={refreshBridges} />
 
-      <Card title={m.bridges.connectTitle()}>
-        <div class="space-y-4">
-          <div>
-            <span id="bridge-channel-label" class="block text-sm mb-2" style="color: {$colorStore.muted};">{m.bridges.pickChannelHint()}</span>
-            <DiscordSelector type="channel" options={freeChannels} selected={channelId} placeholder={m.common.selectAChannelPlaceholder()} ariaLabelledby="bridge-channel-label" onchange={(d) => (channelId = typeof d.selected === "string" ? d.selected : null)} />
-          </div>
+          <ConnectCard
+            {guildId}
+            userId={data.user?.id}
+            {channels}
+            {bridges}
+            {notify}
+            {errorText}
+            onbridges={(list) => (bridges = list)} />
 
-          {#if code && !expired}
-            <div class="rounded-lg p-4 space-y-3" style="background: {$colorStore.primary}10;">
-              <p class="text-xs" style="color: {$colorStore.muted};">{m.bridges.codeLabel()}</p>
-              <div class="flex flex-wrap items-center gap-3">
-                <span class="text-3xl font-mono font-bold tracking-widest break-all" style="color: {$colorStore.text};">{code.code}</span>
-                <button type="button" class="px-4 min-h-[44px] rounded-lg text-sm font-medium" style={buttonStyle} onclick={copyCode}>
-                  {copied ? m.common.copied() : m.bridges.codeCopy()}
-                </button>
-              </div>
-              <p class="text-sm" style="color: {$colorStore.muted};" aria-live="off">{m.bridges.codeExpiresIn({ time: countdown })}</p>
-              <p class="text-sm" style="color: {$colorStore.muted};">{m.bridges.codeHint({ command: LINK_COMMAND })}</p>
-            </div>
-          {:else if entering}
-            <div class="flex flex-wrap gap-2">
-              <input type="text" bind:value={linkInput} placeholder={m.bridges.haveCodePlaceholder()} aria-label={m.bridges.codeLabel()} maxlength="32" autocomplete="off" class="rounded-lg p-2 min-h-[44px] font-mono uppercase flex-1 min-w-[10rem]" style={inputStyle} onkeydown={(e) => e.key === "Enter" && linkWithCode()} />
-              <button type="button" class="px-4 min-h-[44px] rounded-lg text-sm font-medium disabled:opacity-50" style={primaryStyle} disabled={!channelId || !linkInput.trim() || linking} onclick={linkWithCode}>
-                {m.bridges.link()}
-              </button>
-              <button type="button" class="px-4 min-h-[44px] rounded-lg text-sm font-medium" style={buttonStyle} onclick={() => (entering = false)}>{m.common.cancel()}</button>
-            </div>
-          {:else}
-            {#if expired}
-              <p class="text-sm" style="color: {$colorStore.muted};">{m.bridges.codeExpired()}</p>
+          <PluginCard title={m.bridges.listTitle()} alwaysOpen>
+            {#if bridges.length === 0}
+              <p class="text-sm" style="color: {$colorStore.muted};">{m.bridges.empty()}</p>
             {/if}
-            <div class="flex flex-wrap gap-2">
-              <button type="button" class="px-4 min-h-[44px] rounded-lg text-sm font-medium disabled:opacity-50" style={primaryStyle} disabled={!channelId || creating} onclick={createCode}>
-                {m.bridges.createCode()}
-              </button>
-              <button type="button" class="px-4 min-h-[44px] rounded-lg text-sm font-medium" style={buttonStyle} onclick={() => (entering = true)}>{m.bridges.haveCode()}</button>
-            </div>
-          {/if}
-        </div>
-      </Card>
-
-      {#if bridges.length === 0}
-        <p class="text-sm px-1" style="color: {$colorStore.muted};">{m.bridges.empty()}</p>
-      {:else}
-        <section class="space-y-3">
-          <h2 class="text-base font-semibold px-1" style="color: {$colorStore.text};">{m.bridges.listTitle()}</h2>
-          <div class="space-y-3">
             {#each bridges as bridge (bridge.bridgeId)}
-              <div class="rounded-xl border p-4 space-y-3" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
+              <div class="rounded-xl border p-4 space-y-3 min-w-0" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                   <div class="min-w-0">
                     <p class="font-medium break-words" style="color: {$colorStore.text};">#{bridge.channelName}</p>
@@ -397,17 +256,17 @@
                   {roles}
                   {autoSave}
                   examplePlatform={m.bridges.examplePlatform()}
-                  save={(settings) => bridgesApi.updateSettings($currentGuild!.id, bridge.bridgeId, settings)}
+                  save={(settings) => bridgesApi.updateSettings(guildId, bridge.bridgeId, settings)}
                   onupdate={replace}
                   notify={(message) => notify(message)} />
               </div>
             {/each}
-          </div>
-        </section>
-      {/if}
-    </div>
+          </PluginCard>
+        </div>
+      {/key}
+    {/if}
   </AsyncState>
-</DashboardPageLayout>
+</PluginPage>
 
 <ConfirmationModal
   bind:isOpen={removeOpen}

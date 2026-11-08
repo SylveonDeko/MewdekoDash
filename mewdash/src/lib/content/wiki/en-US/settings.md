@@ -1,7 +1,7 @@
 ---
 title: Settings
 slug: settings
-summary: The server-wide basics: command prefix, language, timezone, log channels, mute role, warning expiry and a few chat utilities.
+summary: The server-wide basics, like the command prefix and language
 icon: fa-cog
 category: Settings
 dashboard: /dashboard/settings
@@ -12,11 +12,11 @@ related: [administration, logging, filter, suggestions]
 
 ## What it does
 
-The Settings page holds the handful of options that affect every module at once rather than one feature. It is where you change the prefix members type before commands, the language the bot replies in, the timezone used for reminders and scheduled messages, and the channels where command usage and warnings are logged.
+The Settings page holds the handful of options that affect every module at once rather than one feature. It is where you change the prefix members type before commands and the language the bot replies in. You also set the timezone used for reminders and scheduled messages, and the channels where command usage and warnings are logged.
 
 It also covers the mute role name, whether a muted member loses their other roles, how long warnings last, and two chat utilities: message sniping and message link previews.
 
-Most of these settings have a matching text command, so staff can change them from Discord as well. A few extras live only in commands: the staff role, the member role and per-channel command message deletion.
+Most of these settings have a matching text command, so staff can change them from Discord as well. A few extras live only in commands: the staff and member roles, and per-channel command message deletion.
 
 ## Why you would use it
 
@@ -29,7 +29,7 @@ Most of these settings have a matching text command, so staff can change them fr
 
 ## Prefix
 
-The prefix is the text a member types before a command. It defaults to `.`. Anyone can run `prefix` with no argument to see the current prefix. Administrators change it with `prefix <new>` or, from the dashboard, the **Command Prefix** box. Slash commands are not affected by the prefix.
+The prefix is the text a member types before a command. It defaults to `.`. Anyone can run `prefix` with no argument to see the current prefix. Administrators change it with `prefix <new>` or, from the dashboard, the **Command prefix** box in the **General** card. Slash commands are not affected by the prefix.
 
 ## Language
 
@@ -37,28 +37,31 @@ Each server can pick its own reply language with `languageset <code>`, for examp
 
 ## Timezone
 
-The server timezone drives reminders, scheduled messages and any time display. `timezone` on its own shows the current value (UTC if none is set). `timezone <id>` sets it using an IANA or Windows timezone identifier such as `Europe/London`, and `timezones` pages through the identifiers the bot accepts. On the dashboard, **Server Timezone** saves the moment you pick a value; it does not wait for **Save Changes**.
+The server timezone drives reminders and scheduled messages. It also sets how times are displayed. `timezone` on its own shows the current value (UTC if none is set). `timezone <id>` sets it using an IANA or Windows timezone identifier such as `Europe/London`, and `timezones` pages through the identifiers the bot accepts. On the dashboard, **Server timezone** saves the moment you pick a value.
 
 ## Log channels
 
-**Command Log Channel** records command usage. Set it with `commandlogchannel #channel`; run the command with no channel to turn logging off.
+**Command log channel** records command usage. Set it with `commandlogchannel #channel`; run the command with no channel to turn logging off.
 
-**Warning Log Channel** records warnings issued by the moderation commands. This is set from the dashboard.
+**Warning log channel** records warnings issued by the moderation commands. This is set from the dashboard.
+
+Both are in the **Logs** card.
 
 ## Warnings
 
-**Warning Expiry** is stored in hours. Zero means warnings never expire. The `warnexpire` command works in days instead and takes a second word: `warnexpire 30 clear` marks warnings older than 30 days as cleared, `warnexpire 30 delete` removes them. The accepted range is 0 to 366 days, and `warnexpire 0` turns expiry off.
+**Warnings expire after** is stored in hours. Zero means warnings never expire. **Expired warnings** picks what happens to them: **Clear the warning** marks them as cleared, **Delete the warning** removes them. The `warnexpire` command works in days instead and takes a second word: `warnexpire 30 clear` marks warnings older than 30 days as cleared, `warnexpire 30 delete` removes them. The accepted range is 0 to 366 days, and `warnexpire 0` turns expiry off.
 
 ## Mute role and role removal
 
-**Mute Role** is the name of the role the mute commands and punishments apply. If a role with that name does not exist the bot creates it. From Discord, `muterole @role` points the setting at an existing role; the role must sit below your own highest role unless you are the server owner. `muterole` with no argument shows the current mute role.
+**Mute role name** is the name of the role the mute commands and punishments apply. If a role with that name does not exist the bot creates it. From Discord, `muterole @role` points the setting at an existing role; the role must sit below your own highest role unless you are the server owner. `muterole` with no argument shows the current mute role.
 
 **Remove all other roles while muted** strips a member's other roles for the duration of a mute and returns them afterwards. The command form is `removeonmute y` or `removeonmute n`.
 
-## Chat utilities
+## Chat
 
 | Setting | Command | Effect |
 | --- | --- | --- |
+| Explain command errors | `verboseerror` | When a command fails, the bot says what went wrong instead of staying quiet. |
 | Message sniping | `snipeset enable` or `snipeset disable` | Lets members use the snipe commands to recover recently deleted or edited messages. Off by default. |
 | Message link previews | `previewlinks y` or `previewlinks n` | When someone posts a link to a Discord message, the bot shows that message's contents. |
 
@@ -82,21 +85,23 @@ These are part of the same Administration module but have no dashboard control.
 
 ## Settings
 
-Everything below is on the single **Bot Settings** page. Press **Save Changes** after editing; only **Server Timezone** saves on its own.
+Everything below is on the **Bot settings** page, in four cards: **General**, **Logs**, **Moderation** and **Chat**. Each setting saves as you change it, and only the setting you changed is sent, so an old copy of the page can't undo changes made elsewhere. If a save fails, the page tells you and puts your last change back.
 
-| Setting | Default | What it controls |
-| --- | --- | --- |
-| Command Prefix | `.` | Text typed before commands |
-| Command Log Channel | none | Channel where command usage is logged |
-| Currency Emoji | none | Emoji shown for the server currency |
-| Warning Log Channel | none | Channel where warnings are logged |
-| Warning Expiry | 0 (never) | Hours until warnings expire |
-| Language | Bot default | Reply language for this server |
-| Server Timezone | UTC | Timezone for scheduled messages, reminders and time displays |
-| Mute Role | Muted | Name of the role applied by mutes and punishments |
-| Remove all other roles while muted | Off | Strip other roles for the length of a mute |
-| Message sniping | Off | Allow the snipe commands |
-| Message link previews | Off | Expand Discord message links |
+| Card | Setting | Default | What it controls |
+| --- | --- | --- | --- |
+| General | Command prefix | `.` | Text typed before commands. Can't be left empty |
+| General | Language | Bot default | Reply language for this server |
+| General | Server timezone | UTC | Timezone for scheduled messages and reminders |
+| General | Currency emoji | 💰 | Emoji displayed for your server currency |
+| Logs | Command log channel | none | Channel where command usage is logged |
+| Logs | Warning log channel | none | Channel where warnings are logged |
+| Moderation | Warnings expire after | 0 (never) | Hours until warnings expire |
+| Moderation | Expired warnings | Clear the warning | **Clear the warning** or **Delete the warning** once a warning expires |
+| Moderation | Mute role name | Muted | Role name applied on mute. Created if missing. Up to 100 characters |
+| Moderation | Remove all other roles while muted | Off | Strip other roles for the length of a mute |
+| Chat | Message sniping | Off | Let members recover deleted or edited messages |
+| Chat | Message link previews | Off | Preview posted message links |
+| Chat | Explain command errors | Off | Say what went wrong when a command fails |
 
 > [!NOTE]
 > The page only covers the shared basics. Logging, moderation, starboard and other features have their own pages with their own settings.
@@ -104,14 +109,12 @@ Everything below is on the single **Bot Settings** page. Press **Save Changes** 
 ## Setup walkthrough
 
 1. Open **Settings** in the dashboard.
-2. Set **Command Prefix** if `.` clashes with another bot.
-3. Pick a **Language** and a **Server Timezone**.
-4. Choose a **Command Log Channel** and a **Warning Log Channel** that only staff can read.
-5. Set **Warning Expiry** in hours, for example `720` for thirty days, or leave it at 0.
-6. Check the **Mute Role** name matches the role your moderators already use, or leave it as `Muted` and let the bot create one.
-7. Turn on **Message sniping** or **Message link previews** if you want them.
-8. Press **Save Changes**.
-9. In Discord, run `staffrole @YourStaffRole` so filters and suggestion limits skip your team.
+2. In **General**, set **Command prefix** if `.` clashes with another bot, then pick a **Language** and a **Server timezone**.
+3. In **Logs**, choose a **Command log channel** and a **Warning log channel** that only staff can read.
+4. In **Moderation**, set **Warnings expire after** in hours, for example `720` for thirty days, or leave it at 0.
+5. Check the **Mute role name** matches the role your moderators already use, or leave it as `Muted` and let the bot create one.
+6. In **Chat**, turn on **Message sniping** or **Message link previews** if you want them. Everything saves as you change it.
+7. In Discord, run `staffrole @YourStaffRole` so filters and suggestion limits skip your team.
 
 ## Commands
 

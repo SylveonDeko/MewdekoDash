@@ -46,7 +46,6 @@
   "import_post_in": "Publicar em",
   "import_retire_subtitle": "Interrompe a configuração antiga por emoji e limpa seus emojis. Se o bot publicou a mensagem original, ela é excluída.",
   "import_retire_title": "Aposentar a configuração antiga",
-  "list_count": "{count} de {max} menus",
   "list_create_first": "Crie seu primeiro menu",
   "list_empty_text": "Publique uma mensagem com um menu ou botões, e os membros escolhem seus próprios cargos. Pronomes, cores, pings, regiões: um menu para cada.",
   "list_empty_title": "Nenhum menu de cargos ainda",

@@ -29,6 +29,8 @@ interface ColorPalette {
   selectedSurface?: string;
   /** Border for selected and active states. */
   selectedBorder?: string;
+  /** Solid background for modals, sheets and menus, tinted with the primary color. */
+  surface?: string;
 }
 
 /** Dark text used on light fills. */
@@ -55,7 +57,7 @@ const DEFAULT_PALETTE: ColorPalette = {
 const DARK_BG_LUMINANCE = 0.03; // Pre-calculated luminance for performance
 let currentPalette = DEFAULT_PALETTE;
 
-const PALETTE_CACHE_KEY = "mewdeko-palette-cache";
+const PALETTE_CACHE_KEY = "mewdeko-palette-cache-v2";
 const LAST_PALETTE_KEY = "mewdeko-colors";
 const PALETTE_CACHE_LIMIT = 30;
 
@@ -446,9 +448,9 @@ function createColorStore() {
    * warm/cool accent contrast and prominent eye colours.
    */
   function buildCartoonPalette(palette: RGB[]): ColorPalette {
-    const colorAnalysis = palette.map((color) => {
+    const colorAnalysis = palette.map((color, rank) => {
       const [h, s, l] = rgbToHsl(...color);
-      return { color, h, s, l, score: scoreColor(color) };
+      return { color, rank, h, s, l, score: scoreColor(color) };
     });
 
     const scoredColors = colorAnalysis.sort((a, b) => b.score - a.score);
@@ -467,9 +469,12 @@ function createColorStore() {
     let primary, secondary, accent;
 
     if (warmAccents.length > 0 && coolAccents.length > 0) {
-      primary = coolAccents[0].color;
-      secondary = warmAccents[0].color;
-      accent = (warmAccents[1] || coolAccents[1] || scoredColors[2]).color;
+      // ColorThief rank 0 is the most covered colour
+      const warmLeads = Math.min(...warmAccents.map((c) => c.rank)) < Math.min(...coolAccents.map((c) => c.rank));
+      const [lead, other] = warmLeads ? [warmAccents, coolAccents] : [coolAccents, warmAccents];
+      primary = lead[0].color;
+      secondary = other[0].color;
+      accent = (lead[1] || other[1] || scoredColors[2]).color;
     } else {
       primary = topColors[0].color;
       secondary = topColors[1].color;
@@ -672,7 +677,21 @@ function createColorStore() {
     return onLight >= onDark ? light : DARK_TEXT;
   }
 
-  function withReadableColors(palette: ColorPalette): ColorPalette {
+  /** Tones an accent down to a pastel. */
+  function soften(color: string): string {
+    const rgb = toRgb(color);
+    if (!rgb) return color;
+    const [h, s, l] = rgbToHsl(...rgb);
+    return rgbToHex(...hslToRgb(h, Math.min(s, 60), Math.min(Math.max(l, 62), 78)));
+  }
+
+  function withReadableColors(source: ColorPalette): ColorPalette {
+    const palette = {
+      ...source,
+      primary: soften(source.primary),
+      secondary: soften(source.secondary),
+      accent: soften(source.accent)
+    };
     return {
       ...palette,
       onPrimary: readableOn(palette.primary, palette.text),
@@ -680,6 +699,7 @@ function createColorStore() {
       onAccent: readableOn(palette.accent, palette.text),
       selectedSurface: `color-mix(in srgb, ${palette.primary} 22%, ${palette.background})`,
       selectedBorder: `color-mix(in srgb, ${palette.primary} 65%, ${palette.background})`,
+      surface: `color-mix(in srgb, ${palette.primary} 7%, #16181f)`,
     };
   }
 

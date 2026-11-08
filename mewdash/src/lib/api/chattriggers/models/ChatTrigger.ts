@@ -164,6 +164,39 @@ export interface ChatTrigger {
   /** Category used to group and bulk-manage triggers */
   category: string | null;
 
+  /** Role an event trigger is limited to, or 0 for any role */
+  eventRoleId: bigint;
+
+  /** Whether only members with staff permissions can fire the trigger */
+  staffOnly: boolean;
+
+  /** Whether the trigger only fires in age-restricted channels */
+  nsfwOnly: boolean;
+
+  /** Channels the trigger is limited to, separated by "@@@" */
+  allowedChannelIds: string | null;
+
+  /** Channels the trigger never fires in, separated by "@@@" */
+  deniedChannelIds: string | null;
+
+  /** Roles that cannot fire the trigger, separated by "@@@" */
+  deniedRoleIds: string | null;
+
+  /** Whether the response is sent as the bot instead of replying to the member */
+  anonymous: boolean;
+
+  /** Channel the response is always sent to, or 0 for where it fired */
+  replyChannelId: bigint;
+
+  /** Member who created the trigger */
+  creatorId: bigint;
+
+  /** Question the bot asks before running the trigger, or null for none */
+  promptQuestion: string | null;
+
+  /** Seconds the member has to answer the question */
+  promptTimeoutSeconds: number;
+
   /** Date added */
   dateAdded: string | null;
 }

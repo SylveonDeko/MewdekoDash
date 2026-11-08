@@ -126,6 +126,16 @@ export const chatTriggersApi = {
     apiRequest<string[]>(`chattriggers/${guildId}/placeholders`),
 
   /**
+   * Describes the logic blocks available in trigger responses
+   * @param guildId The guild ID
+   * @returns The block syntax help text and the limits that apply to it
+   */
+  getBlocks: (guildId: bigint) =>
+    apiRequest<{ help: string; maxDepth: number; maxOutputLength: number; maxCommands: number; maxGateItems: number }>(
+      `chattriggers/${guildId}/blocks`
+    ),
+
+  /**
    * Dry runs a trigger against a sample message without firing it
    * @param guildId The guild ID
    * @param triggerId The trigger to test
@@ -150,5 +160,59 @@ export const chatTriggersApi = {
    * @returns The total fires and the most recent ones
    */
   getTriggerStats: (guildId: bigint, triggerId: number) =>
-    apiRequest<TriggerStats>(`chattriggers/${guildId}/${triggerId}/stats`)
+    apiRequest<TriggerStats>(`chattriggers/${guildId}/${triggerId}/stats`),
+
+  /**
+   * Gets whether members without staff permissions may manage their own triggers
+   * @param guildId The guild ID
+   */
+  getMemberCreate: (guildId: bigint) => apiRequest<boolean>(`chattriggers/${guildId}/member-create`),
+
+  /**
+   * Sets whether members without staff permissions may manage their own triggers
+   * @param guildId The guild ID
+   * @param enabled Whether members may create triggers
+   */
+  setMemberCreate: (guildId: bigint, enabled: boolean) =>
+    apiRequest<void>(`chattriggers/${guildId}/member-create`, "PUT", { enabled }),
+
+  /**
+   * Gets the code another server can use to import a trigger
+   * @param guildId The guild ID
+   * @param triggerId The trigger to share
+   */
+  getShareCode: (guildId: bigint, triggerId: number) =>
+    apiRequest<{ code: string }>(`chattriggers/${guildId}/${triggerId}/share`),
+
+  /**
+   * Imports a trigger from a share code
+   * @param guildId The guild ID
+   * @param code The share code
+   * @param userId The member the import runs as
+   */
+  importShareCode: (guildId: bigint, code: string, userId: string) =>
+    apiRequest<void>(`chattriggers/${guildId}/share/import`, "POST", { code, userId }),
+
+  /**
+   * Exports every trigger in the guild as a file
+   * @param guildId The guild ID
+   */
+  exportTriggers: (guildId: bigint) => apiRequest<{ text: string }>(`chattriggers/${guildId}/export`),
+
+  /**
+   * Imports triggers from an exported file
+   * @param guildId The guild ID
+   * @param text The exported file contents
+   * @param userId The member the import runs as
+   */
+  importTriggers: (guildId: bigint, text: string, userId: string) =>
+    apiRequest<void>(`chattriggers/${guildId}/import`, "POST", { text, userId }),
+
+  /**
+   * Gets the source text of every response of a trigger
+   * @param guildId The guild ID
+   * @param triggerId The trigger to read
+   */
+  getRawResponses: (guildId: bigint, triggerId: number) =>
+    apiRequest<{ responses: string[] }>(`chattriggers/${guildId}/${triggerId}/raw`)
 };

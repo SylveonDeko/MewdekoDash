@@ -5,7 +5,6 @@
   "board_meta": "#{channel} · ogni {minutes} min · aggiornato {updated}",
   "board_rows": "· {count} righe",
   "boards_empty": "Ancora nessun tabellone live. Aggiungine uno e il bot lo pubblica e lo fissa subito.",
-  "boards_subtitle": "Fino a 10 per server, ognuno aggiornato con il proprio intervallo",
   "confirm_delete_message": "Eliminare il {kind} in #{channel}? Viene rimosso anche il suo messaggio.",
   "confirm_delete_title": "Elimina tabellone live",
   "contents_activity": "💬 Messaggi, 🔊 tempo in vocale e membri attivi",

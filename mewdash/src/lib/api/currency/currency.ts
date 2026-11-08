@@ -3,11 +3,16 @@ import { apiRequest } from "../core";
 import {
   type AdjustBalanceRequest,
   type EconomyAnalytics,
+  type EconomyBoost,
+  type EconomyBoostRequest,
   type EconomyConfig,
+  type InventoryAdjustRequest,
   type InventoryItem,
   type LeaderboardPage,
   type ShopItem,
   type ShopItemRequest,
+  type CurrencySetup,
+  type UpdateCurrencySetupRequest,
   type UpdateEconomyConfigRequest,
   type UserBalance,
 } from "./models";
@@ -76,6 +81,22 @@ export const currencyApi = {
     apiRequest<EconomyConfig>(`Currency/${guildId}/config`, "PATCH", request),
 
   /**
+   * Gets the currency emoji, daily reward and whether setup is finished.
+   * @param guildId The guild ID
+   * @returns The setup values plus whether the guild counts as configured
+   */
+  getSetup: (guildId: bigint) => apiRequest<CurrencySetup>(`Currency/${guildId}/setup`),
+
+  /**
+   * Applies a partial update to the currency setup.
+   * @param guildId The guild ID
+   * @param request The fields to change
+   * @returns The setup after the update
+   */
+  updateSetup: (guildId: bigint, request: UpdateCurrencySetupRequest) =>
+    apiRequest<CurrencySetup>(`Currency/${guildId}/setup`, "PATCH", request),
+
+  /**
    * Restores the guild's economy settings to their defaults.
    * @param guildId The guild ID
    * @returns The freshly defaulted configuration
@@ -125,4 +146,55 @@ export const currencyApi = {
    */
   getInventory: (guildId: bigint, userId: bigint) =>
     apiRequest<InventoryItem[]>(`Currency/${guildId}/inventory/${userId}`),
+
+  /**
+   * Gives a user shop items.
+   * @param guildId The guild ID
+   * @param userId The receiving user
+   * @param request The item name and amount
+   * @param spawn Creates the item even when it is out of stock
+   */
+  giveInventoryItem: (guildId: bigint, userId: bigint, request: InventoryAdjustRequest, spawn = false) =>
+    apiRequest<void>(`Currency/${guildId}/inventory/${userId}/give?spawn=${spawn}`, "POST", request),
+
+  /**
+   * Takes shop items from a user.
+   * @param guildId The guild ID
+   * @param userId The user
+   * @param request The item name and amount
+   * @returns Whether anything was taken
+   */
+  takeInventoryItem: (guildId: bigint, userId: bigint, request: InventoryAdjustRequest) =>
+    apiRequest<{ taken: boolean }>(`Currency/${guildId}/inventory/${userId}/take`, "POST", request),
+
+  /**
+   * Gets the guild's earning boosts.
+   * @param guildId The guild ID
+   */
+  getBoosts: (guildId: bigint) => apiRequest<EconomyBoost[]>(`Currency/${guildId}/boosts`),
+
+  /**
+   * Creates an earning boost.
+   * @param guildId The guild ID
+   * @param request The boost to create
+   */
+  createBoost: (guildId: bigint, request: EconomyBoostRequest) =>
+    apiRequest<EconomyBoost>(`Currency/${guildId}/boosts`, "POST", request),
+
+  /**
+   * Replaces an earning boost's settings.
+   * @param guildId The guild ID
+   * @param name The current name of the boost
+   * @param request The new settings
+   */
+  updateBoost: (guildId: bigint, name: string, request: EconomyBoostRequest) =>
+    apiRequest<EconomyBoost>(`Currency/${guildId}/boosts/${encodeURIComponent(name)}`, "PUT", request),
+
+  /**
+   * Deletes an earning boost.
+   * @param guildId The guild ID
+   * @param name The name of the boost
+   */
+  deleteBoost: (guildId: bigint, name: string) =>
+    apiRequest<void>(`Currency/${guildId}/boosts/${encodeURIComponent(name)}`, "DELETE"),
 };

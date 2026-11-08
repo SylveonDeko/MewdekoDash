@@ -1,7 +1,7 @@
 ---
 title: User Profile
 slug: userprofile
-summary: Give every member a profile card the bot can show anywhere, with a bio, pronouns, zodiac sign, birthday, colour, image and Switch friend code, plus privacy controls over what other people see.
+summary: A profile card for every member, with a bio and privacy controls over what others see
 icon: fa-user
 category: Community
 module: UserProfile
@@ -15,7 +15,7 @@ Every member has a profile that follows them across every server the bot is in. 
 
 Members fill the profile in with a handful of `set...` commands, or from the **My Settings** page on the dashboard. Nothing is server specific: set your bio once and it shows the same everywhere.
 
-Privacy is under the member's control. A profile can be made private so only its owner can open it, the birthday can be trimmed to just the month or hidden entirely, and members can opt out of command statistics and of welcome DMs.
+Privacy is under the member's control. A profile can be made private so only its owner can open it, and the birthday can be trimmed to just the month or hidden entirely. Members can also opt out of command statistics and of welcome DMs.
 
 Pronouns are a little special. If a member has not set any with the bot, the bot looks them up on PronounDB. Members can override that with their own text, and anyone can report an abusive override to the bot owners.
 
@@ -83,12 +83,12 @@ Pronouns are a little special. If a member has not set any with the bot, the bot
 `pronouns [@user]` shows pronouns for you or someone else. Lookup order:
 
 1. Text the member set with `setpronouns`.
-2. The member's English pronoun set on PronounDB, if they linked their Discord account there. Standard sets are shown in the usual form, for example `he/him`, `Any pronouns`, or `Ask me my pronouns`.
+2. The member's English pronoun set on PronounDB, if they linked their Discord account there. Standard sets are shown in the usual form, for example `he/him` or `Any pronouns`.
 3. "Unspecified".
 
 `setpronouns <text>` stores an override. Run it with no text to see your current override with two buttons: **Overwrite** opens a form to type new pronouns, and **Clear** removes the override so PronounDB is used again.
 
-When the pronouns shown come from a member's own override (not PronounDB), the reply carries a **Report** button. Reports go to a channel the bot owners run, where they can clear the override, disable pronouns for that user, or blacklist them. A user whose pronouns have been disabled sees the reason whenever they try to use the pronoun commands.
+When the pronouns shown come from a member's own override (not PronounDB), the reply carries a **Report** button. Reports go to a channel the bot owners run, where they can clear the override. They can also disable pronouns for that user or blacklist them. A user whose pronouns have been disabled sees the reason whenever they try to use the pronoun commands.
 
 > [!NOTE]
 > The bot owner command `pronounsforceclear` is how those reports are acted on. Server staff cannot clear another member's pronouns.

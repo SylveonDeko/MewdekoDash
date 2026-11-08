@@ -1,23 +1,23 @@
 ---
 title: Server Management
 slug: servermanagement
-summary: Bulk tools for the shape of your server: create and delete channels and roles, hand roles to hundreds of members in one job, lock the server down, sync channel overrides, steal emotes and watch for dangerous role changes.
+summary: Bulk tools for reshaping your server, like creating channels or giving a role to many members at once
 icon: fa-server
 category: Actions
 module: ServerManagement
 tags: [server management, roles, mass role, channels, lockdown, slowmode, lock channel, nuke, emotes, steal emotes, webhook, permcontrol, role monitor, role jobs, server icon, server banner]
-related: [administration, permissions, moderation]
+related: [administration, channel-tools, server-backups, permissions, moderation]
 ---
 
 ## What it does
 
-Server Management collects the commands that change the structure of a server rather than the people in it. Staff can create a category and all its channels in one line, rename or delete channels, set topics, toggle NSFW, set slowmode, lock a channel, or delete and recreate one to wipe its history.
+Server Management collects the commands that change the structure of a server rather than the people in it. Staff can create a category and all its channels in one line, rename or delete channels and set topics, or toggle NSFW and slowmode. They can also lock a channel, or delete and recreate one to wipe its history.
 
-Roles get the most attention. One-off commands create, rename, recolour, hoist and delete roles or give a role to a single member, with an optional timer. Mass commands add or remove a role for every member, every human, every bot, everyone in another role, or everyone who joined before or after a cutoff. Those run as background jobs you can list and stop.
+Roles get the most attention. One-off commands create, rename, recolour, hoist and delete roles, and they can give a role to a single member with an optional timer. Mass commands add or remove a role for every member, every human, every bot, everyone in another role, or everyone who joined before or after a cutoff. Those run as background jobs you can list and stop.
 
-The module also covers the server's own look (icon, banner, splash, name), emote management including stealing emotes from other servers, per-channel permission overrides, voice channel moves, three kinds of lockdown, and a role monitor that reverts and punishes dangerous role changes.
+The module also covers the server's own look (icon, banner, splash, name) and emote management, including stealing emotes from other servers. It handles per-channel permission overrides and voice channel moves as well, and it has three kinds of lockdown plus a role monitor that reverts and punishes dangerous role changes.
 
-Nothing here is configured on the dashboard. Everything is run from commands.
+Lockdown, bulk channel actions, purging and voice text links are also on the **Channels** tab of the **Administration** page. See the Channel Tools article. Backups and templates are on the **Backups** tab, covered in Server Backups. Everything else is run from commands.
 
 ## Why you would use it
 
@@ -159,7 +159,7 @@ Punishment values are `None`, `Warn`, `Mute`, `ChatMute`, `VoiceMute`, `Timeout`
 
 ## Settings
 
-There is no dashboard page. The only stored settings belong to the role monitor and the lockdown state.
+There is no dashboard page for this module's commands. The only stored settings belong to the role monitor and the lockdown state.
 
 | Setting | Default | What it controls |
 | --- | --- | --- |

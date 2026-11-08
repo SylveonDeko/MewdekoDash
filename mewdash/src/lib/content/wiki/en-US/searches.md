@@ -1,7 +1,7 @@
 ---
 title: Searches
 slug: searches
-summary: Look things up without leaving Discord, from weather, time and dictionary definitions to anime, movies, images, osu! profiles, jokes and reaction GIFs.
+summary: Look up the weather, anime and plenty more without leaving Discord
 icon: fa-magnifying-glass
 category: Entertainment
 module: Searches
@@ -11,7 +11,7 @@ related: [streams, feeds, twitch, games, utility]
 
 ## What it does
 
-The Searches module is a set of lookup commands that fetch something from an outside service and post it in the channel. Members ask for the weather in a city, the time somewhere, a word's definition, an anime or movie, a Wikipedia summary, a random cat, or a reaction GIF for a hug or a slap. Most results come back as an embed, and searches with many results are paginated.
+The Searches module is a set of lookup commands that fetch something from an outside service and post it in the channel. Members ask for the weather in a city or the time somewhere, a word's definition, an anime or movie, a Wikipedia summary, a random cat, or a reaction GIF for a hug or a slap. Most results come back as an embed, and searches with many results are paginated.
 
 There is no dashboard page. Nearly every command is open to everyone, and only the translation auto-mode needs staff permission.
 
@@ -22,12 +22,12 @@ Stream notifications and RSS feeds live in the same bot module but have their ow
 - Settle "what time is it for you?" with `time` instead of maths.
 - Check the forecast before an event with an interactive `weather` card.
 - Look up an anime, manga or character while chatting about it.
-- Let members send hugs, pats and high-fives as GIFs.
+- Let members send hugs and high-fives as GIFs.
 - Translate a message on the spot, or auto-translate a channel for an international community.
 
 ## Weather and time
 
-`weather <place>` geocodes the place with Open-Meteo and shows current conditions: temperature, feels like, humidity, wind speed and gusts, pressure, cloud cover, visibility, and the day's high and low. Buttons and a dropdown switch to the hourly forecast, detailed hourly conditions, and a daily view with today and tomorrow's high, low and precipitation.
+`weather <place>` geocodes the place with Open-Meteo and shows current conditions: temperature, feels like, humidity, wind speed and gusts, pressure, cloud cover, visibility, and the day's high and low. Buttons and a dropdown switch to the hourly forecast and its detailed conditions, or to a daily view with today and tomorrow's temperatures and precipitation.
 
 `time <place>` searches for the place and shows the current time and timezone. When several places match, it offers the candidates to choose from.
 

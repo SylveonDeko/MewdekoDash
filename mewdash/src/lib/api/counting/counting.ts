@@ -4,6 +4,7 @@ import {
   type CountingChannelResponse,
   type CountingConfigResponse,
   type CountingStatsResponse,
+  type CountingViolationStats,
   type CountingUserStatsResponse,
   type LeaderboardResponse,
   type SavePointResponse,
@@ -159,19 +160,17 @@ export const countingApi = {
    * @param guildId The guild ID
    * @param channelId The channel ID
    * @param type Leaderboard type
-   * @param page Page number
-   * @param pageSize Items per page
+   * @param limit Entries to return, 1 to 100
    * @returns Leaderboard data
    */
   getLeaderboard: (
     guildId: bigint,
     channelId: bigint,
     type: LeaderboardType = LeaderboardType.Contributions,
-    page: number = 1,
-    pageSize: number = 20,
+    limit: number = 20,
   ) =>
     apiRequest<LeaderboardResponse>(
-      `Counting/${guildId}/channels/${channelId}/leaderboard?type=${type}&page=${page}&pageSize=${pageSize}`,
+      `Counting/${guildId}/channels/${channelId}/leaderboard?type=${LeaderboardType[type]}&limit=${limit}`,
     ),
 
   /**
@@ -364,5 +363,34 @@ export const countingApi = {
   getMilestones: (guildId: bigint, channelId: bigint) =>
     apiRequest<{ milestones: number[] }>(
       `Counting/${guildId}/channels/${channelId}/milestones`,
+    ),
+
+  /**
+   * Gets wrong counts, timeouts and bans in a recent window
+   * @param guildId The guild ID
+   * @param channelId The channel ID
+   * @param hours How far back to look
+   */
+  getViolationStats: (guildId: bigint, channelId: bigint, hours = 24) =>
+    apiRequest<CountingViolationStats>(
+      `Counting/${guildId}/channels/${channelId}/violations?hours=${hours}`,
+    ),
+
+  /**
+   * Gets how many wrong counts a user currently has
+   */
+  getWrongCount: (guildId: bigint, channelId: bigint, userId: bigint) =>
+    apiRequest<{ userId: bigint; wrongCount: number }>(
+      `Counting/${guildId}/channels/${channelId}/users/${userId}/wrongcount`,
+    ),
+
+  /**
+   * Clears a user's wrong count
+   * @param moderatorId The member clearing it
+   */
+  clearWrongCount: (guildId: bigint, channelId: bigint, userId: bigint, moderatorId: bigint) =>
+    apiRequest<string>(
+      `Counting/${guildId}/channels/${channelId}/users/${userId}/wrongcount?moderatorId=${moderatorId}`,
+      "DELETE",
     ),
 };

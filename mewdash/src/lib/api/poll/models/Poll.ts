@@ -97,6 +97,9 @@ export interface CreatePollRequest {
   allowMultipleVotes: boolean;
   isAnonymous: boolean;
   allowedRoles?: bigint[] | null;
+  blockedRoles?: bigint[] | null;
+  maxVotes?: number | null;
+  resultsMessage?: string | null;
   color?: string | null;
   allowVoteChanges?: boolean;
   showResults?: boolean;

@@ -3,3 +3,4 @@
 export * from "./GuildConfig";
 export * from "./GuildInfo";
 export * from "./BotGuildProfile";
+export * from "./BotSettings";

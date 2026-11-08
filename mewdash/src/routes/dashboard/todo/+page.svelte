@@ -1,1191 +1,428 @@
 <!-- routes/dashboard/todo/+page.svelte -->
 <script lang="ts">
   import { m } from "$lib/i18n";
-
-  import { onMount } from "svelte";
-  import { logger } from "$lib/logger";
-  import { fly, scale } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { userStore } from "$lib/stores/userStore";
-  import {
-    type AddTodoItemRequest,
-    type CreateTodoListRequest,
-    todoApi,
-    type TodoItem,
-    type TodoList
-  } from "$lib/api/index.ts";
-  import TodoPermissionManager from "$lib/components/specialized/TodoPermissionManager.svelte";
-  import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/state";
+  import { fade } from "svelte/transition";
+  import type { PageData } from "./$types";
+  import { clientApi, todoApi, type TodoItem, type TodoList, type TodoListAccess } from "$lib/api/index.ts";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { colorStore } from "$lib/stores/colorStore.ts";
+  import { logger } from "$lib/logger.ts";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { createAutoSave } from "$lib/utils/autoSave.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import PluginCard from "$lib/components/plugin/PluginCard.svelte";
+  import PluginPage from "$lib/components/plugin/PluginPage.svelte";
+  import ItemSheet from "./components/ItemSheet.svelte";
+  import ItemsPanel from "./components/ItemsPanel.svelte";
+  import ListSheet from "./components/ListSheet.svelte";
+  import { errorText, isOverdue, NO_ACCESS, sameId, type Named } from "./components/todoModel";
 
-  // Local interfaces for UI state (not from backend)
-  interface TodoFilterOptions {
-    completed?: boolean;
-    priority?: number;
-    search?: string;
-    sortBy?: string;
-    sortOrder?: string;
+  interface Props {
+    data: PageData;
   }
 
-  interface TodoStats {
-    totalItems: number;
-    completedItems: number;
-    pendingItems: number;
-    overdueItems: number;
-    completionRate: number;
+  let { data }: Props = $props();
+
+  let lists: TodoList[] = $state([]);
+  let items: TodoItem[] = $state([]);
+  let access: TodoListAccess = $state({ ...NO_ACCESS });
+  let members: Named[] = $state([]);
+  let loading = $state(true);
+  let itemsLoading = $state(false);
+  let listSheet: "create" | "settings" | null = $state(null);
+  let itemSheet: { item: TodoItem | null } | null = $state(null);
+  let showNotification = $state(false);
+  let notificationMessage = $state("");
+  let notificationType: "success" | "error" = $state("success");
+  let loadedGuildId = "";
+  let membersLoaded = false;
+  let itemsToken = 0;
+
+  const autoSave = createAutoSave();
+
+  const guildId = $derived($currentGuild?.id ? BigInt($currentGuild.id) : null);
+  const userId = $derived(data.user?.id ? BigInt(data.user.id) : null);
+  const me = $derived(data.user?.id ? String(data.user.id) : "");
+
+  const selectedId = $derived.by(() => {
+    const requested = Number(page.url.searchParams.get("list"));
+    return lists.find(list => list.id === requested)?.id ?? lists[0]?.id ?? null;
+  });
+  const selected = $derived(lists.find(list => list.id === selectedId) ?? null);
+
+  const listOptions = $derived(
+    lists.map(list => ({
+      id: String(list.id),
+      name: list.isServerList ? list.name : `${list.name} · ${m.todo.scopePersonal()}`
+    }))
+  );
+
+  const pending = $derived(items.filter(item => !item.isCompleted).length);
+  const done = $derived(items.length - pending);
+  const overdue = $derived(items.filter(isOverdue).length);
+  const progress = $derived(items.length ? Math.round((done / items.length) * 100) : 0);
+
+  function notify(message: string, type: "success" | "error" = "success") {
+    notificationMessage = message;
+    notificationType = type;
+    showNotification = true;
+    setTimeout(() => {
+      showNotification = false;
+    }, 3000);
   }
 
-  interface UserPermissions {
-    canView: boolean;
-    canAdd: boolean;
-    canEdit: boolean;
-    canComplete: boolean;
-    canDelete: boolean;
-    canManage: boolean;
+  function select(id: number | string | null) {
+    if (id === null) return;
+    const url = new URL(page.url);
+    url.searchParams.set("list", String(id));
+    void goto(url, { replaceState: true, noScroll: true, keepFocus: true });
   }
 
-
-  // State
-    let todoLists: TodoList[] = $state([]);
-    let selectedListId: number | null = $state(null);
-    let todoItems: TodoItem[] = $state([]);
-    let loading = $state(true);
-    let error: string | null = $state(null);
-
-  // UI State
-    let showNewListModal = $state(false);
-    let showPermissionManager = $state(false);
-    let selectedPermissionListId: number | null = $state(null);
-    let searchQuery = $state("");
-    let showFilters = $state(false);
-    let includeCompleted = $state(false);
-
-  // Filters
-    let filters: TodoFilterOptions = $state({
-    completed: false,
-    sortBy: 'priority',
-    sortOrder: 'desc'
-    });
-
-  // New list form
-    let newListName = $state("");
-    let newListDescription = $state("");
-  
-  // Quick add form
-    let showQuickAdd = $state(false);
-    let newItemTitle = $state("");
-    let newItemDescription = $state("");
-    let newItemPriority = $state(2);
-
-  // User permissions for selected list
-    let currentPermissions: UserPermissions = $state({
-    canView: false,
-    canAdd: false,
-    canEdit: false,
-    canComplete: false,
-    canDelete: false,
-    canManage: false
-    });
-
-  // Stats for selected list
-    let currentStats: TodoStats = $state({
-    totalItems: 0,
-    completedItems: 0,
-    pendingItems: 0,
-    overdueItems: 0,
-    completionRate: 0
-    });
-
-  // Computed values
-    let filteredLists = $derived(todoLists.filter(list =>
-    list.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (list.description && list.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    ));
-
-    let filteredItems = $derived(todoItems.filter(item => {
-    if (!includeCompleted && item.isCompleted) return false;
-    if (filters.completed !== undefined && item.isCompleted !== filters.completed) return false;
-    if (filters.priority && item.priority !== filters.priority) return false;
-    if (filters.search && !item.title.toLowerCase().includes(filters.search.toLowerCase()) &&
-        !item.description?.toLowerCase().includes(filters.search.toLowerCase())) return false;
-    return true;
-  }).sort((a, b) => {
-    const sortBy = filters.sortBy || 'priority';
-    const order = filters.sortOrder === 'asc' ? 1 : -1;
-    
-    switch (sortBy) {
-      case 'priority':
-        return (b.priority - a.priority) * order;
-      case 'dueDate':
-        if (!a.dueDate && !b.dueDate) return 0;
-        if (!a.dueDate) return 1 * order;
-        if (!b.dueDate) return -1 * order;
-        return (new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()) * order;
-      case "dateAdded":
-        if (!a.dateAdded && !b.dateAdded) return 0;
-        if (!a.dateAdded) return 1 * order;
-        if (!b.dateAdded) return -1 * order;
-        return (new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime()) * order;
-      case 'title':
-        return a.title.localeCompare(b.title) * order;
-      default:
-        return 0;
-    }
-    }));
-
-    let selectedList = $derived(todoLists.find(list => list.id === selectedListId));
-
-  // Load todo lists
-  async function loadTodoLists() {
-    if (!$currentGuild?.id || !$userStore?.id) return;
-
+  async function loadLists(keep?: number | null) {
+    if (!guildId || !userId) return;
     try {
-      loading = true;
-      error = null;
-
-      const lists = await todoApi.getTodoLists($currentGuild.id, BigInt($userStore.id));
-      
-      // Filter to only server lists as per requirements
-      todoLists = lists.filter(list => list.isServerList);
-      
-      // Auto-select first list if none selected
-      if (!selectedListId && todoLists.length > 0) {
-        selectedListId = todoLists[0].id;
-      }
-      
+      const result = await todoApi.getTodoLists(guildId, userId);
+      lists = [...(result ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+      if (keep) select(keep);
     } catch (err) {
       logger.error("Failed to load todo lists:", err);
-      error = m.todo.pageErrorLoadLists();
+      notify(errorText(err, m.todo.pageErrorLoadLists()), "error");
     } finally {
       loading = false;
     }
   }
 
-  // Load todo items for selected list
-  async function loadTodoItems() {
-    if (!$currentGuild?.id || !$userStore?.id || !selectedListId) {
-      todoItems = [];
-      return;
-    }
-
+  async function loadItems(listId: number, quiet = false) {
+    if (!guildId || !userId) return;
+    const token = ++itemsToken;
+    if (!quiet) itemsLoading = true;
     try {
-      const [items, permissions] = await Promise.all([
-        todoApi.getTodoItems($currentGuild.id, selectedListId, BigInt($userStore.id), includeCompleted),
-        checkPermissions(selectedListId)
+      const [loadedItems, loadedAccess] = await Promise.all([
+        todoApi.getTodoItems(guildId, listId, userId, true),
+        todoApi.getListAccess(guildId, listId, userId)
       ]);
-      
-      todoItems = items;
-      currentPermissions = permissions;
-      calculateStats();
-      
+      if (token !== itemsToken) return;
+      items = loadedItems ?? [];
+      access = loadedAccess;
     } catch (err) {
+      if (token !== itemsToken) return;
       logger.error("Failed to load todo items:", err);
-      error = m.todo.pageErrorLoadItems();
-    }
-  }
-
-  // Check user permissions for a list
-  async function checkPermissions(listId: number): Promise<UserPermissions> {
-    if (!$currentGuild?.id || !$userStore?.id) {
-      return {
-        canView: false,
-        canAdd: false,
-        canEdit: false,
-        canComplete: false,
-        canDelete: false,
-        canManage: false
-      };
-    }
-
-    try {
-      const list = todoLists.find(l => l.id === listId);
-      if (!list) {
-        return {
-          canView: false,
-          canAdd: false,
-          canEdit: false,
-          canComplete: false,
-          canDelete: false,
-          canManage: false
-        };
-      }
-
-      // List creator has all permissions
-      if (list.userId === BigInt($userStore.id)) {
-        return {
-          canView: true,
-          canAdd: true,
-          canEdit: true,
-          canComplete: true,
-          canDelete: true,
-          canManage: true
-        };
-      }
-
-      // Check explicit permissions
-      const permissions = await todoApi.getTodoListPermissions($currentGuild.id, listId, BigInt($userStore.id));
-      const userPermission = permissions.find(p => p.userId === BigInt($userStore.id));
-
-      if (userPermission) {
-        return {
-          canView: userPermission.canView,
-          canAdd: userPermission.canAdd,
-          canEdit: userPermission.canEdit,
-          canComplete: userPermission.canComplete,
-          canDelete: userPermission.canDelete,
-          canManage: userPermission.canManageList
-        };
-      }
-
-      // Server lists are viewable by all (default read access)
-      if (list.isServerList) {
-        return {
-          canView: true,
-          canAdd: false,
-          canEdit: false,
-          canComplete: false,
-          canDelete: false,
-          canManage: false
-        };
-      }
-
-      return {
-        canView: false,
-        canAdd: false,
-        canEdit: false,
-        canComplete: false,
-        canDelete: false,
-        canManage: false
-      };
-
-    } catch (err) {
-      logger.error("Failed to check permissions:", err);
-      return {
-        canView: false,
-        canAdd: false,
-        canEdit: false,
-        canComplete: false,
-        canDelete: false,
-        canManage: false
-      };
-    }
-  }
-
-  // Calculate stats for current list
-  function calculateStats() {
-    const total = todoItems.length;
-    const completed = todoItems.filter(item => item.isCompleted).length;
-    const pending = total - completed;
-    const overdue = todoItems.filter(item => 
-      item.dueDate && 
-      new Date(item.dueDate) < new Date() && 
-      !item.isCompleted
-    ).length;
-
-    currentStats = {
-      totalItems: total,
-      completedItems: completed,
-      pendingItems: pending,
-      overdueItems: overdue,
-      completionRate: total > 0 ? Math.round((completed / total) * 100) : 0
-    };
-  }
-
-  // Event handlers
-  async function handleSelectList({ detail }: { detail: { listId: number } }) {
-    selectedListId = detail.listId;
-    await loadTodoItems();
-  }
-
-  async function handleCreateList() {
-    if (!$currentGuild?.id || !$userStore?.id || !newListName.trim()) return;
-
-    try {
-      const request: CreateTodoListRequest = {
-        name: newListName.trim(),
-        description: newListDescription.trim() || undefined,
-        userId: BigInt($userStore.id),
-        isServerList: true // Only create server lists
-      };
-
-      await todoApi.createTodoList($currentGuild.id, request);
-
-      // Reset form and reload lists
-      newListName = "";
-      newListDescription = "";
-      showNewListModal = false;
-      await loadTodoLists();
-      
-    } catch (err) {
-      logger.error("Failed to create todo list:", err);
-      error = m.todo.pageErrorCreateList();
-    }
-  }
-
-  async function handleAddTodoItem({ detail }: { detail: { request: AddTodoItemRequest; listId: number } }) {
-    if (!$currentGuild?.id || !$userStore?.id) return;
-
-    try {
-      const request = {
-        ...detail.request,
-        userId: BigInt($userStore.id)
-      };
-
-      await todoApi.addTodoItem($currentGuild.id, detail.listId, request);
-      
-      // Reload items if this is the selected list
-      if (detail.listId === selectedListId) {
-        await loadTodoItems();
-      }
-      
-    } catch (err) {
-      logger.error("Failed to add todo item:", err);
-      error = m.todo.pageErrorAddItem();
-    }
-  }
-
-  async function handleCompleteItem({ detail }: { detail: { itemId: number } }) {
-    if (!$currentGuild?.id || !$userStore?.id) return;
-
-    try {
-      await todoApi.completeTodoItem($currentGuild.id, detail.itemId, BigInt($userStore.id));
-      await loadTodoItems();
-    } catch (err) {
-      logger.error("Failed to complete todo item:", err);
-      error = m.todo.pageErrorCompleteItem();
-    }
-  }
-
-  /** Item edit modal state */
-  let editingItem = $state<TodoItem | null>(null);
-  let editForm = $state({ title: "", description: "", priority: 2, dueDate: "" });
-  let editSaving = $state(false);
-  let editError = $state("");
-
-  /** Priority choices shared by the add form and the edit modal */
-  const priorityOptions = $derived([
-    { id: "1", name: m.todo.pagePriorityLow(), label: m.todo.pagePriorityLow(), emoji: "🟢" },
-    { id: "2", name: m.todo.pagePriorityMedium(), label: m.todo.pagePriorityMedium(), emoji: "🟠" },
-    { id: "3", name: m.todo.pagePriorityHigh(), label: m.todo.pagePriorityHigh(), emoji: "🟡" },
-    { id: "4", name: m.todo.pagePriorityCritical(), label: m.todo.pagePriorityCritical(), emoji: "🔴" }
-  ]);
-
-  /** Theme colors for the priority chips */
-  const priorityStyles: Record<number, { label: string; emoji: string; color: string }> = $derived({
-    1: { label: m.todo.pagePriorityChipLow(), emoji: "🟢", color: "#10b981" },
-    2: { label: m.common.medium(), emoji: "🟠", color: "#f97316" },
-    3: { label: m.common.high(), emoji: "🟡", color: "#eab308" },
-    4: { label: m.common.critical(), emoji: "🔴", color: "#ef4444" }
-  });
-
-  function openEditItem(item: TodoItem) {
-    editingItem = item;
-    editForm = {
-      title: item.title,
-      description: item.description ?? "",
-      priority: item.priority || 2,
-      dueDate: item.dueDate ? item.dueDate.slice(0, 10) : ""
-    };
-    editError = "";
-  }
-
-  function closeEditItem() {
-    editingItem = null;
-    editError = "";
-  }
-
-  async function saveEditItem() {
-    if (!editingItem || !$currentGuild?.id || !$userStore?.id) return;
-    if (!editForm.title.trim()) {
-      editError = m.todo.pageEditTitleRequired();
-      return;
-    }
-    editSaving = true;
-    editError = "";
-    try {
-      await todoApi.updateTodoItem($currentGuild.id, editingItem.id, {
-        userId: BigInt($userStore.id),
-        title: editForm.title.trim(),
-        description: editForm.description.trim() || null,
-        priority: editForm.priority
-      });
-      const originalDue = editingItem.dueDate ? editingItem.dueDate.slice(0, 10) : "";
-      if (editForm.dueDate !== originalDue) {
-        await todoApi.setTodoItemDueDate($currentGuild.id, editingItem.id, {
-          userId: BigInt($userStore.id),
-          dueDate: editForm.dueDate ? new Date(`${editForm.dueDate}T23:59:59`).toISOString() : null
-        });
-      }
-      closeEditItem();
-      await loadTodoItems();
-    } catch (err) {
-      logger.error("Failed to update todo item:", err);
-      editError = m.todo.pageEditSaveFailed();
+      notify(errorText(err, m.todo.pageErrorLoadItems()), "error");
     } finally {
-      editSaving = false;
+      if (token === itemsToken) itemsLoading = false;
     }
   }
 
-  async function handleDeleteList() {
-    if (!selectedListId || !$currentGuild?.id || !$userStore?.id) return;
-    const list = todoLists.find(l => l.id === selectedListId);
-    if (!(await requestConfirmation({
-      title: m.todo.pageConfirmDeleteListTitle(),
-      message: m.todo.pageConfirmDeleteListMessage({ name: list?.name ?? m.todo.pageConfirmDeleteListFallbackName() }),
-      confirmText: m.todo.pageDeleteList()
-    }))) return;
+  async function ensureMembers() {
+    if (membersLoaded || !guildId) return;
+    membersLoaded = true;
     try {
-      await todoApi.deleteTodoList($currentGuild.id, selectedListId, BigInt($userStore.id));
-      selectedListId = null;
-      await loadTodoLists();
+      const loaded = await clientApi.getMembers(guildId);
+      members = (loaded ?? [])
+        .filter(member => !member.isBot)
+        .map(member => ({ id: String(member.id), name: member.displayName || member.username }))
+        .sort((a, b) => a.name.localeCompare(b.name));
     } catch (err) {
-      logger.error("Failed to delete todo list:", err);
-      error = m.todo.pageErrorDeleteList();
+      membersLoaded = false;
+      logger.error("Failed to load members:", err);
     }
   }
 
-  async function handleDeleteItem({ detail }: { detail: { itemId: number } }) {
-    if (!$currentGuild?.id || !$userStore?.id) return;
+  function openSettings() {
+    void ensureMembers();
+    listSheet = "settings";
+  }
 
+  function replaceItem(next: TodoItem) {
+    items = items.map(item => (item.id === next.id ? next : item));
+  }
+
+  async function toggle(item: TodoItem) {
+    if (!guildId || !userId) return;
+    const next = !item.isCompleted;
+    replaceItem({ ...item, isCompleted: next });
     try {
-      await todoApi.deleteTodoItem($currentGuild.id, detail.itemId, BigInt($userStore.id));
-      await loadTodoItems();
+      if (next) await todoApi.completeTodoItem(guildId, item.id, userId);
+      else await todoApi.uncompleteTodoItem(guildId, item.id, userId);
+    } catch (err) {
+      logger.error("Failed to change todo item state:", err);
+      replaceItem(item);
+      notify(errorText(err, m.todo.pageErrorCompleteItem()), "error");
+    }
+  }
+
+  async function remove(item: TodoItem) {
+    if (!guildId || !userId) return;
+    const confirmed = await requestConfirmation({
+      message: m.todo.itemDeleteConfirm({ title: item.title }),
+      confirmText: m.common.delete()
+    });
+    if (!confirmed) return;
+    try {
+      await todoApi.deleteTodoItem(guildId, item.id, userId);
+      items = items.filter(existing => existing.id !== item.id);
     } catch (err) {
       logger.error("Failed to delete todo item:", err);
-      error = m.todo.pageErrorDeleteItem();
+      notify(errorText(err, m.todo.pageErrorDeleteItem()), "error");
     }
   }
 
-  function handleShowPermissions({ detail }: { detail: { listId: number } }) {
-    selectedPermissionListId = detail.listId;
-    showPermissionManager = true;
-  }
-
-  async function handlePermissionsUpdated() {
-    // Refresh permissions for current list
-    if (selectedListId) {
-      currentPermissions = await checkPermissions(selectedListId);
+  async function move(item: TodoItem, neighbor: TodoItem) {
+    if (!guildId || !userId || !selectedId) return;
+    const ranked = [...items].sort((a, b) => a.position - b.position);
+    const position = ranked.findIndex(existing => existing.id === neighbor.id) + 1;
+    try {
+      await todoApi.reorderTodoItem(guildId, item.id, { userId, position });
+      await loadItems(selectedId, true);
+    } catch (err) {
+      logger.error("Failed to move todo item:", err);
+      notify(errorText(err, m.todo.itemMoveFailed()), "error");
     }
   }
 
-  // Lifecycle
-  onMount(() => {
-    loadTodoLists();
+  function afterDelete() {
+    const removedId = selectedId;
+    lists = lists.filter(list => list.id !== removedId);
+    items = [];
+    access = { ...NO_ACCESS };
+    notify(m.todo.listDeleted());
+  }
+
+  $effect(() => {
+    if (!$currentGuild) {
+      void goto("/dashboard");
+      return;
+    }
+    if ($currentGuild.icon) {
+      const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
+      colorStore.extractFromServerIcon(serverIconUrl);
+    } else if ($currentInstance?.botAvatar) {
+      colorStore.extractFromImage($currentInstance.botAvatar);
+    }
+    if (loadedGuildId !== $currentGuild.id.toString()) {
+      loadedGuildId = $currentGuild.id.toString();
+      membersLoaded = false;
+      members = [];
+      loading = true;
+      void loadLists();
+    }
   });
 
   $effect(() => {
-        if ($currentGuild) {
-            loadTodoLists();
-        }
-    });
-
-  $effect(() => {
-        if (selectedListId) {
-            loadTodoItems();
-        }
-    });
+    const id = selectedId;
+    if (id === null) {
+      items = [];
+      access = { ...NO_ACCESS };
+      return;
+    }
+    void loadItems(id);
+  });
 </script>
+
+{#snippet statusMessages()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-[10001]" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
 
 <svelte:head>
   <title>{m.todo.pageTitle({ guild: $currentGuild?.name || "Mewdeko" })}</title>
 </svelte:head>
 
-{#snippet statusMessageContent()}
-  {#if error}
-    <div class="mb-8 p-4 rounded-2xl" style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;">
-      <div class="flex items-center gap-2">
-        <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-           style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 16px;"></i>
-        <span>{error}</span>
-      </div>
-    </div>
-  {/if}
-{/snippet}
-
-<ErrorBoundary fallback={m.todo.pageFallback()}>
-  <DashboardPageLayout
-    actionButtons={[
-      {
-        label: m.todo.pageActionCreateList(),
-        icon: "fa-plus",
-        action: () => showNewListModal = true,
-        style: `background: ${$colorStore.primary}; color: ${$colorStore.onPrimary};`
-      },
-      {
-        label: m.common.filters(),
-        icon: "fa-filter",
-        action: () => showFilters = !showFilters
-      }
-    ]}
-    icon="fa-list-ul"
-    subtitle={m.todo.pageSubtitle()}
-    guildName={$currentGuild?.name || m.common.dashboard()}
-    title={m.features.todoName()}
-    statusMessages={statusMessageContent}
-  >
-
-    <!-- Search Bar -->
-    <div class="mb-8">
-      <div class="relative max-w-md">
-        <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 z-10"
-           style="color: {$colorStore.primary}; font-size: 18px;"></i>
-        <input
-          type="text"
-          placeholder={m.todo.pageSearchPlaceholder()}
-          bind:value={searchQuery}
-          class="w-full pl-12 pr-4 py-4 rounded-2xl border text-lg"
-          style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}40; color: {$colorStore.text};"
+<PluginPage
+  {statusMessages}
+  {autoSave}
+  icon="fa-list-ul"
+  guildName={$currentGuild?.name || m.common.dashboard()}
+  title={m.features.todoName()}
+  subtitle={m.todo.pageSubtitle()}
+  actionButtons={[
+    {
+      label: m.todo.pageActionCreateList(),
+      icon: "fa-plus",
+      action: () => (listSheet = "create"),
+      style: `background: ${$colorStore.primary}; color: ${$colorStore.onPrimary};`
+    }
+  ]}
+>
+  {#if loading}
+    <p class="text-sm" style="color: {$colorStore.muted}">{m.common.loading()}</p>
+  {:else if lists.length === 0}
+    <PluginCard title={m.todo.pageLists()} alwaysOpen>
+      <div class="space-y-3">
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.todo.pageListsEmptyTitle()}</p>
+        <button
+          type="button"
+          class="px-5 rounded-xl min-h-[50px] font-medium"
+          style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
+          onclick={() => (listSheet = "create")}
         >
+          {m.todo.pageCreateFirstList()}
+        </button>
       </div>
-    </div>
+    </PluginCard>
+  {:else if selected}
+    <PluginCard title={m.todo.pageLists()} alwaysOpen>
+      <div class="space-y-4">
+        <DiscordSelector
+          type="custom"
+          customIcon="fa-list-ul"
+          options={listOptions}
+          selected={String(selected.id)}
+          placeholder={m.todo.pageLists()}
+          ariaLabel={m.todo.pageLists()}
+          clearable={false}
+          onchange={(detail) => select(typeof detail.selected === "string" ? detail.selected : null)}
+        />
 
-    <!-- Filters -->
-    {#if showFilters}
-      <div class="mb-8 p-6 rounded-2xl" style="background: {$colorStore.primary}08;" 
-           in:fly={{ y: -20, duration: 300 }}>
-        <div class="flex flex-wrap items-center gap-4">
-          <span id="input-typecheckbox-bindcheckedincludecompleted-cla-label"
-                class="flex items-center gap-3 px-4 py-2 rounded-xl cursor-pointer transition-all"
-                 style="background: {includeCompleted ? $colorStore.primary + '20' : 'transparent'};">
-              <input type="checkbox" bind:checked={includeCompleted} class="rounded-sm w-5 h-5">
-            <span style="color: {$colorStore.text}" class="font-medium">{m.todo.pageShowCompleted()}</span>
-          </span>
-
-          <DiscordSelector
-            type="custom"
-            customIcon="fa-chart-column"
-            placeholder={m.common.sortBy()}
-            searchable={false}
-            options={[
-              { id: "priority", name: m.common.priority(), label: m.todo.pageSortPriority(), emoji: "🎯" },
-              { id: "dueDate", name: m.todo.pageEditDueDate(), label: m.todo.pageSortDueDate(), emoji: "📅" },
-              { id: "dateAdded", name: m.common.created(), label: m.todo.pageSortCreated(), emoji: "🗓️" },
-              { id: "title", name: m.common.title(), label: m.todo.pageSortTitle(), emoji: "📝" }
-            ]}
-            selected={filters.sortBy}
-            onchange={(detail) => {
-              if (detail.selected && typeof detail.selected === 'string') {
-                filters.sortBy = detail.selected;
-              }
-            }}
-          />
-
-          <DiscordSelector
-            type="custom"
-            customIcon="fa-filter"
-            placeholder={m.todo.pageOrder()}
-            searchable={false}
-            options={[
-              { id: "desc", name: m.common.descending(), label: m.common.descending(), emoji: "⬇️" },
-              { id: "asc", name: m.common.ascending(), label: m.common.ascending(), emoji: "⬆️" }
-            ]}
-            selected={filters.sortOrder}
-            onchange={(detail) => {
-              if (detail.selected && typeof detail.selected === 'string') {
-                filters.sortOrder = detail.selected;
-              }
-            }}
-          />
+        <div class="flex flex-wrap items-start gap-3">
+          <div class="grow min-w-0 space-y-2">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="inline-block w-3 h-3 rounded-full" style="background: {selected.color || '#7289da'};"></span>
+              <span class="text-xs px-2 py-0.5 rounded-full" style="background: {$colorStore.primary}15; color: {$colorStore.text};">
+                {selected.isServerList ? m.todo.scopeServer() : m.todo.scopePersonal()}
+              </span>
+              {#if selected.isServerList && !selected.isPublic}
+                <span class="text-xs px-2 py-0.5 rounded-full" style="background: {$colorStore.primary}15; color: {$colorStore.text};">
+                  {m.todo.listPrivate()}
+                </span>
+              {/if}
+              {#if sameId(selected.ownerId, me)}
+                <span class="text-xs px-2 py-0.5 rounded-full" style="background: {$colorStore.primary}15; color: {$colorStore.text};">
+                  {m.common.owner()}
+                </span>
+              {/if}
+            </div>
+            {#if selected.description}
+              <p class="text-sm break-words" style="color: {$colorStore.muted}">{selected.description}</p>
+            {/if}
+          </div>
+          <button
+            type="button"
+            class="flex items-center justify-center gap-2 px-5 rounded-xl min-h-[44px] w-full sm:w-auto"
+            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
+            onclick={openSettings}
+          >
+            <i class="fa-solid fa-gear" aria-hidden="true"></i>
+            {m.todo.pageListSettingsAria()}
+          </button>
         </div>
-      </div>
-    {/if}
 
-    <!-- Main Content -->
-    {#if loading}
-      <!-- Beautiful Loading State -->
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {#each Array(6).fill(0) as _, index (index)}
-          <div class="p-6 rounded-2xl animate-pulse" 
-               style="background: {$colorStore.primary}08;"
-               in:scale={{ duration: 300, delay: index * 100 }}>
-            <div class="space-y-4">
-              <div class="h-6 rounded-xl" style="background: {$colorStore.primary}20; width: 70%;"></div>
-              <div class="h-4 rounded-lg" style="background: {$colorStore.primary}15; width: 90%;"></div>
-              <div class="h-4 rounded-lg" style="background: {$colorStore.primary}15; width: 60%;"></div>
-              <div class="h-3 rounded-lg" style="background: {$colorStore.primary}10; width: 100%;"></div>
+        {#if items.length}
+          <div class="space-y-2">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm" style="color: {$colorStore.text}">
+              <span>{m.todo.statPending({ count: pending })}</span>
+              <span>{m.todo.statDone({ count: done })}</span>
+              {#if overdue}
+                <span>{m.todo.statOverdue({ count: overdue })}</span>
+              {/if}
+              <span class="ml-auto" style="color: {$colorStore.muted}">{progress}%</span>
+            </div>
+            <div
+              class="w-full h-2 rounded-full overflow-hidden"
+              style="background: {$colorStore.primary}20;"
+              role="progressbar"
+              aria-label={m.common.progress()}
+              aria-valuenow={progress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div class="h-2 rounded-full" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary}; width: {progress}%;"></div>
             </div>
           </div>
-        {/each}
-      </div>
-    {:else if filteredLists.length === 0}
-      <!-- Beautiful Empty State -->
-      <div class="text-center py-20">
-        <div class="inline-flex p-6 rounded-3xl mb-6" 
-             style="background: {$colorStore.primary}12;">
-          <i class="fa-utility-duo fa-regular fa-list-ul"
-             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px;"></i>
-        </div>
-        <h3 class="text-2xl font-bold mb-4" style="color: {$colorStore.text}">
-          {searchQuery ? m.todo.pageListsEmptySearchTitle() : m.todo.pageListsEmptyTitle()}
-        </h3>
-        <p class="text-lg mb-8" style="color: {$colorStore.muted}">
-          {searchQuery ? m.todo.pageListsEmptySearchHint() : m.todo.pageListsEmptyHint()}
-        </p>
-        {#if !searchQuery}
-          <button
-            class="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-semibold transition-all duration-300 bg-white/10 border border-white/20"
-            style="color: {$colorStore.text};"
-            onclick={() => showNewListModal = true}
-          >
-            <span class="p-2 rounded-lg flex items-center justify-center"
-                  style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};">
-              <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
-            </span>
-            <span>{m.todo.pageCreateFirstList()}</span>
-          </button>
         {/if}
       </div>
-    {:else}
-      <!-- Beautiful Grid Layout -->
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {#each filteredLists as list, index (list.id)}
-          {@const listStats = list.id === selectedListId ? currentStats : { totalItems: 0, completedItems: 0, pendingItems: 0, overdueItems: 0, completionRate: 0 }}
-          {@const listPermissions = list.id === selectedListId ? currentPermissions : { canView: true, canAdd: false, canEdit: false, canComplete: false, canDelete: false, canManage: false }}
-          
-          <div class="group relative" in:scale={{ duration: 300, delay: index * 50 }}>
-            <!-- Todo List Card -->
-            <div class="relative p-6 rounded-2xl transition-all duration-300 cursor-pointer"
-                 class:ring-2={list.id === selectedListId}
-                 style="background: {$colorStore.primary}10;
-                        ring-color: {list.id === selectedListId ? $colorStore.primary : 'transparent'};"
-                 onclick={() => handleSelectList({ detail: { listId: list.id } })}
-                 onkeydown={(e) => e.key === 'Enter' && handleSelectList({ detail: { listId: list.id } })}
-                 tabindex="0"
-                 role="button"
-                 aria-label={m.todo.pageListSelectAria({ name: list.name })}>
+    </PluginCard>
 
-              <!-- Header -->
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex items-center gap-3 flex-1 min-w-0">
-                  <div class="p-2.5 rounded-xl" style="background: {$colorStore.primary}20;">
-                    <i class="fa-solid fa-list"
-                       style="color: {$colorStore.primary}; font-size: 20px;"></i>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <h3 class="font-bold text-lg truncate" style="color: {$colorStore.text}">
-                      {list.name}
-                    </h3>
-                    {#if list.description}
-                      <p class="text-sm mt-1 line-clamp-2" style="color: {$colorStore.muted}">
-                        {list.description}
-                      </p>
-                    {/if}
-                  </div>
-                </div>
-                
-                <!-- Actions -->
-                <div class="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300">
-                  {#if listPermissions.canView}
-                    <button aria-label={m.common.permissions()}
-                      class="p-3 rounded-lg transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
-                      style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-                            onclick={(e) => { e.stopPropagation(); handleShowPermissions({ detail: { listId: list.id } }); }}
-                      title={m.todo.permissionsManageTitle()}
-                    >
-                      <i class="fa-solid fa-shield" style="font-size: 16px;"></i>
-                    </button>
-                  {/if}
+    <PluginCard title={m.todo.pageItems()} alwaysOpen>
+      {#snippet actions()}
+        {#if access.canAdd}
+          <button
+            type="button"
+            class="flex items-center justify-center gap-2 px-5 rounded-xl min-h-[50px] font-medium"
+            style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+            onclick={() => (itemSheet = { item: null })}
+          >
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            {m.common.addItem()}
+          </button>
+        {/if}
+      {/snippet}
 
-                  {#if listPermissions.canManage}
-                    <button aria-label={m.todo.pageListSettingsAria()}
-                      class="p-3 rounded-lg transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
-                      style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
-                            onclick={(e) => e.stopPropagation()}
-                      title={m.todo.pageListSettingsAria()}
-                    >
-                      <i class="fa-solid fa-gear" style="font-size: 16px;"></i>
-                    </button>
-                  {/if}
-                </div>
-              </div>
-              
-              <!-- Badges -->
-              <div class="flex items-center gap-2 mb-4">
-                {#if list.isServerList}
-                  <div class="px-3 py-1.5 rounded-full text-xs font-medium"
-                       style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
-                    {m.todo.pageListBadgeServer()}
-                  </div>
-                {/if}
-              </div>
-              
-              <!-- Stats -->
-              <div class="space-y-3">
-                <div class="flex items-center justify-between text-sm">
-                  <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-1.5">
-                      <div class="w-2 h-2 rounded-full" style="background: {$colorStore.primary}; color: {$colorStore.onPrimary}"></div>
-                      <span style="color: {$colorStore.text}">{listStats.pendingItems}</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                      <div class="w-2 h-2 rounded-full" style="background: {$colorStore.secondary}; color: {$colorStore.onSecondary}"></div>
-                      <span style="color: {$colorStore.text}">{listStats.completedItems}</span>
-                    </div>
-                    {#if listStats.overdueItems > 0}
-                      <div class="flex items-center gap-1.5">
-                        <div class="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span class="text-red-500">{listStats.overdueItems}</span>
-                      </div>
-                    {/if}
-                  </div>
-                  
-                  <span class="text-xs font-medium px-2 py-1 rounded-full" 
-                        style="background: {$colorStore.primary}15; color: {$colorStore.primary};">
-                    {listStats.totalItems === 1 ? m.common.itemsOne({ count: listStats.totalItems }) : m.common.itemsOther({ count: listStats.totalItems })}
-                  </span>
-                </div>
-                
-                <!-- Progress Bar -->
-                {#if listStats.totalItems > 0}
-                  <div class="space-y-1">
-                    <div class="flex items-center justify-between text-xs">
-                      <span style="color: {$colorStore.muted}">{m.common.progress()}</span>
-                      <span style="color: {$colorStore.text}" class="font-medium">{listStats.completionRate}%</span>
-                    </div>
-                    <div class="w-full rounded-full h-2" style="background: {$colorStore.primary}20;">
-                      <div class="h-2 rounded-full transition-all duration-1000"
-                           style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};
-                                  width: {listStats.completionRate}%"></div>
-                    </div>
-                  </div>
-                {:else}
-                  <div class="text-center py-2">
-                    <span class="text-xs" style="color: {$colorStore.muted}">{m.todo.pageListEmpty()}</span>
-                  </div>
-                {/if}
-              </div>
-              
-              <!-- Selected Indicator -->
-              {#if list.id === selectedListId}
-                <div class="absolute inset-0 rounded-2xl pointer-events-none"
-                     style="box-shadow: 0 0 0 2px {$colorStore.primary};"></div>
-              {/if}
-            </div>
-          </div>
-        {/each}
-      </div>
-      
-      <!-- Selected List Items -->
-      {#if selectedListId && currentPermissions.canView}
-        <div class="mt-12 pt-8 border-t" style="border-color: {$colorStore.primary}20;">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-bold" style="color: {$colorStore.text}">
-              {m.todo.pageItemsHeading({ name: selectedList?.name ?? "" })}
-            </h2>
-
-            <div class="flex flex-wrap items-center gap-2">
-              {#if currentPermissions.canAdd}
-                <button
-                  class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 min-h-[44px]"
-                  style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-                  onclick={() => showQuickAdd = !showQuickAdd}
-                >
-                  <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                  <span>{m.common.addItem()}</span>
-                </button>
-              {/if}
-              {#if currentPermissions.canManage}
-                <button
-                  class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 min-h-[44px]"
-                  style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
-                  onclick={handleDeleteList}
-                >
-                  <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
-                  <span>{m.todo.pageDeleteList()}</span>
-                </button>
-              {/if}
-            </div>
-          </div>
-          
-          <!-- Quick Add Form -->
-          {#if showQuickAdd && currentPermissions.canAdd}
-            <div class="mb-6 p-6 rounded-2xl" 
-                 style="background: {$colorStore.primary}08;"
-                 in:fly={{ y: -20, duration: 300 }}>
-              <div class="space-y-4">
-                <input
-                  type="text"
-                  placeholder={m.todo.pageQuickTitlePlaceholder()}
-                  bind:value={newItemTitle}
-                  class="w-full px-4 py-3 rounded-xl border text-lg "
-                  style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}40; color: {$colorStore.text};"
-                >
-                <textarea
-                  placeholder={m.todo.pageQuickDescriptionPlaceholder()}
-                  bind:value={newItemDescription}
-                  rows="2"
-                  class="w-full px-4 py-3 rounded-xl border resize-none "
-                  style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}40; color: {$colorStore.text};"
-                ></textarea>
-                <div class="flex items-center justify-between">
-                  <DiscordSelector
-                    type="custom"
-                    customIcon="fa-bullseye"
-                    placeholder={m.todo.pagePriorityPlaceholder()}
-                    searchable={false}
-                    options={priorityOptions}
-                    selected={newItemPriority.toString()}
-                    onchange={(detail) => {
-                      if (detail.selected && typeof detail.selected === 'string') {
-                        newItemPriority = parseInt(detail.selected);
-                      }
-                    }}
-                  />
-                  
-                  <div class="flex flex-col sm:flex-row gap-3">
-                    <button
-                      aria-label={m.todo.pageAddItemAria()}
-                      class="w-full sm:flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-                      onclick={async () => {
-                        if (newItemTitle.trim() && selectedListId && $userStore?.id) {
-                          await handleAddTodoItem({
-                            detail: {
-                              request: {
-                                title: newItemTitle.trim(),
-                                description: newItemDescription.trim() || undefined,
-                                priority: newItemPriority,
-                                userId: BigInt($userStore.id)
-                              },
-                              listId: selectedListId
-                            }
-                          });
-                          newItemTitle = '';
-                          newItemDescription = '';
-                          newItemPriority = 2;
-                          showQuickAdd = false;
-                        }
-                      }}
-                      disabled={!newItemTitle.trim()}
-                    >
-                      <i class="fa-solid fa-plus" style="font-size: 18px;"></i>
-                      <span>{m.common.addItem()}</span>
-                    </button>
-                    <button
-                      class="w-full sm:w-auto px-6 py-3 rounded-xl transition-all duration-300 font-medium flex items-center justify-center"
-                      style="color: {$colorStore.muted}; border: 1px solid {$colorStore.primary}30;"
-                      onclick={() => showQuickAdd = false}
-                    >
-                      <span>{m.common.cancel()}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          {/if}
-          
-          <!-- Todo Items -->
-          <div class="space-y-3">
-            {#if filteredItems.length === 0}
-              <div class="text-center py-12">
-                <i class="fa-utility-duo fa-regular fa-circle-check"
-                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">
-                  {todoItems.length === 0 ? m.todo.pageItemsEmptyTitle() : m.todo.pageItemsFilteredTitle()}
-                </h3>
-                <p style="color: {$colorStore.muted}">
-                  {todoItems.length === 0 
-                    ? currentPermissions.canAdd 
-                      ? m.todo.pageItemsEmptyCanAdd()
-                      : m.todo.pageItemsEmptyReadOnly()
-                    : m.todo.pageItemsFilteredHint()}
-                </p>
-              </div>
-            {:else}
-              {#each filteredItems as item, index (item.id)}
-                <div class="p-4 rounded-xl transition-all" 
-                     class:opacity-60={item.isCompleted}
-                     style="background: {$colorStore.primary}08;"
-                     in:scale={{ duration: 200, delay: index * 30 }}>
-                  <div class="flex items-start gap-4">
-                    <!-- Completion Checkbox -->
-                    <button
-                            class="shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all mt-1"
-                      style="border-color: {item.isCompleted ? '#10b981' : $colorStore.primary}; 
-                             background: {item.isCompleted ? '#10b981' : 'transparent'};"
-                      onclick={() => handleCompleteItem({ detail: { itemId: item.id } })}
-                      disabled={!currentPermissions.canComplete && !currentPermissions.canEdit}
-                    >
-                      {#if item.isCompleted}
-                        <i class="fa-solid fa-check" style="color: white; font-size: 14px;"></i>
-                      {/if}
-                    </button>
-                    
-                    <!-- Item Content -->
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-start justify-between">
-                        <div class="flex-1">
-                          <h4 class="font-medium mb-1" 
-                              class:line-through={item.isCompleted}
-                              style="color: {item.isCompleted ? $colorStore.muted : $colorStore.text}">
-                            {item.title}
-                          </h4>
-                          {#if item.description}
-                            <p class="text-sm" style="color: {$colorStore.muted}">
-                              {item.description}
-                            </p>
-                          {/if}
-                          
-                          <!-- Metadata -->
-                          <div class="flex items-center gap-3 mt-2 text-xs" style="color: {$colorStore.muted}">
-                            <!-- Priority -->
-                            {#if priorityStyles[item.priority]}
-                              {@const p = priorityStyles[item.priority]}
-                              <span class="flex items-center gap-1 px-2 py-1 rounded-full font-medium"
-                                    style="background: {p.color}20; color: {p.color};">
-                                {p.emoji} {p.label}
-                              </span>
-                            {/if}
-                            
-                            <!-- Due Date -->
-                            {#if item.dueDate}
-                              {@const isOverdue = new Date(item.dueDate) < new Date() && !item.isCompleted}
-                              <span class="flex items-center gap-1">
-                                <i class="fa-solid fa-calendar" style="font-size: 10px;"></i>
-                                <span class={isOverdue ? 'text-red-500' : ''}>
-                                  {new Date(item.dueDate).toLocaleDateString()}
-                                </span>
-                              </span>
-                            {/if}
-
-                            {#if item.dateAdded}
-                              <span>{m.todo.pageItemCreated({ date: new Date(item.dateAdded).toLocaleDateString() })}</span>
-                            {/if}
-                          </div>
-                        </div>
-                        
-                        <!-- Actions -->
-                        {#if currentPermissions.canEdit || currentPermissions.canDelete}
-                          <div class="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
-                            {#if currentPermissions.canEdit}
-                              <button aria-label={m.todo.pageItemEdit()}
-                                class="p-2 rounded-lg transition-all flex items-center justify-center min-w-[36px] min-h-[36px]"
-                                style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-                                title={m.todo.pageItemEdit()}
-                                onclick={() => openEditItem(item)}
-                              >
-                                <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
-                              </button>
-                            {/if}
-
-                            {#if currentPermissions.canDelete}
-                              <button aria-label={m.todo.pageItemDelete()}
-                                class="p-2 rounded-lg transition-all flex items-center justify-center min-w-[36px] min-h-[36px]"
-                                style="background: #ef444420; color: #ef4444;"
-                                onclick={() => handleDeleteItem({ detail: { itemId: item.id } })}
-                                title={m.todo.pageItemDelete()}
-                              >
-                                <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
-                              </button>
-                            {/if}
-                          </div>
-                        {/if}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              {/each}
-            {/if}
-          </div>
-        </div>
+      {#if !access.canView}
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.todo.itemsNoAccess()}</p>
+      {:else if itemsLoading && items.length === 0}
+        <p class="text-sm" style="color: {$colorStore.muted}">{m.common.loading()}</p>
+      {:else}
+        {#key selected.id}
+          <ItemsPanel
+            {items}
+            {access}
+            {me}
+            ontoggle={toggle}
+            onopen={(item) => (itemSheet = { item })}
+            ondelete={remove}
+            onmove={move}
+          />
+        {/key}
       {/if}
-    {/if}
-  </DashboardPageLayout>
-
-  <!-- Edit Item Modal -->
-  {#if editingItem}
-    <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-         role="presentation"
-         onclick={closeEditItem}
-         onkeydown={(e) => { if (e.key === "Escape") closeEditItem(); }}
-         in:fly={{ opacity: 0, duration: 200 }}>
-      <div class="rounded-2xl shadow-2xl w-full max-w-lg border"
-           style="background: {$colorStore.background}; border-color: {$colorStore.primary}30;"
-           role="dialog"
-           aria-modal="true"
-           aria-labelledby="edit-item-title"
-           tabindex="-1"
-           onclick={(e) => e.stopPropagation()}
-           onkeydown={(e) => e.stopPropagation()}
-           in:fly={{ y: 20, duration: 300, delay: 100 }}>
-        <div class="p-6">
-          <div class="flex items-center gap-3 mb-6">
-            <div class="p-2 rounded-lg" style="background: {$colorStore.primary}20;">
-              <i class="fa-solid fa-pen" style="color: {$colorStore.primary}; font-size: 18px;"></i>
-            </div>
-            <h3 id="edit-item-title" class="text-xl font-bold" style="color: {$colorStore.text}">{m.todo.pageItemEdit()}</h3>
-          </div>
-
-          <form class="space-y-4" onsubmit={(e) => { e.preventDefault(); saveEditItem(); }}>
-            <div>
-              <label for="edit-item-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.todo.pageEditFieldTitle()}</label>
-              <input id="edit-item-name" type="text" bind:value={editForm.title}
-                     class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
-                     style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}50; color: {$colorStore.text};">
-            </div>
-            <div>
-              <label for="edit-item-description" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.description()}</label>
-              <textarea id="edit-item-description" rows="3" bind:value={editForm.description}
-                        class="w-full px-4 py-3 rounded-lg border resize-none"
-                        style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}50; color: {$colorStore.text};"></textarea>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <span id="edit-item-priority" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.priority()}</span>
-                <DiscordSelector type="custom" options={priorityOptions} searchable={false}
-                                 selected={editForm.priority.toString()}
-                                 ariaLabelledby="edit-item-priority"
-                                 onchange={(d) => { if (typeof d.selected === "string") editForm.priority = parseInt(d.selected); }} />
-              </div>
-              <div>
-                <label for="edit-item-due" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.todo.pageEditDueDate()}</label>
-                <input id="edit-item-due" type="date" bind:value={editForm.dueDate}
-                       class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
-                       style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}50; color: {$colorStore.text};">
-              </div>
-            </div>
-
-            {#if editError}
-              <div class="p-3 rounded-lg flex items-center gap-2 text-sm" role="alert"
-                   style="background: #ef444420; border: 1px solid #ef444430; color: #ef4444;">
-                <i class="fa-solid fa-circle-exclamation"></i>
-                <span>{editError}</span>
-              </div>
-            {/if}
-
-            <div class="flex flex-col sm:flex-row gap-3 pt-2">
-              <button type="button" onclick={closeEditItem}
-                      class="flex-1 px-4 py-3 rounded-lg font-medium transition-all min-h-[44px]"
-                      style="background: {$colorStore.muted}20; color: {$colorStore.muted};">
-                {m.common.cancel()}
-              </button>
-              <button type="submit" disabled={editSaving}
-                      class="flex-1 px-4 py-3 rounded-lg font-medium transition-all min-h-[44px] disabled:opacity-50"
-                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-                {#if editSaving}<i class="fa-solid fa-spinner fa-spin mr-2"></i>{/if}
-                {m.common.saveChanges()}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    </PluginCard>
   {/if}
+</PluginPage>
 
-  <!-- New List Modal -->
-  {#if showNewListModal}
-    <div class="fixed inset-0 bg-black/50  z-50 flex items-center justify-center p-4"
-         onclick={() => showNewListModal = false}
-           in:fly={{ opacity: 0, duration: 200 }}
-           role="button"
-           tabindex="0"
-           onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showNewListModal = false; } }}>
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md"
-           onclick={(e) => e.stopPropagation()}
-           in:fly={{ y: 20, duration: 300, delay: 100 }} role="button" tabindex="0"
-           onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); } }}>
-        <div class="p-6">
-          <div class="flex items-center gap-3 mb-6">
-            <div class="p-2 rounded-lg" style="background: {$colorStore.primary}20;">
-              <i class="fa-solid fa-plus" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-            </div>
-            <h3 class="text-xl font-bold" style="color: {$colorStore.text}">
-              {m.todo.pageNewListTitle()}
-            </h3>
-          </div>
-
-          <div class="space-y-4">
-            <div>
-              <label for="input-6264" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                {m.todo.pageNewListName()}
-              </label>
-              <input id="input-6264"
-                type="text"
-                placeholder={m.todo.pageNewListNamePlaceholder()}
-                bind:value={newListName}
-                     class="w-full px-4 py-3 rounded-lg border "
-                style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}50; color: {$colorStore.text};"
-                required
-              >
-            </div>
-
-            <div>
-              <label for="list-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                {m.common.description()}
-              </label>
-              <textarea id="list-name"
-                placeholder={m.todo.pageNewListDescriptionPlaceholder()}
-                bind:value={newListDescription}
-                rows="3"
-                        class="w-full px-4 py-3 rounded-lg border resize-none "
-                style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}50; color: {$colorStore.text};"
-              ></textarea>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-3 pt-4">
-              <button
-                aria-label={m.todo.pageNewListCreateAria()}
-                class="w-full sm:flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-                onclick={handleCreateList}
-                disabled={!newListName.trim()}
-              >
-                <i class="fa-solid fa-plus" style="font-size: 18px;"></i>
-                {m.todo.pageActionCreateList()}
-              </button>
-              <button
-                class="w-full sm:w-auto px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center min-h-[44px]"
-                style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
-                onclick={() => showNewListModal = false}
-              >
-                {m.common.cancel()}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  {/if}
-
-  <!-- Permission Manager -->
-  {#if selectedPermissionListId}
-    <TodoPermissionManager
-      listId={selectedPermissionListId}
-      isOpen={showPermissionManager}
-      onclose={() => showPermissionManager = false}
-      onpermissionsUpdated={handlePermissionsUpdated}
+{#if listSheet && guildId && userId}
+  {#if listSheet === "create"}
+    <ListSheet
+      {guildId}
+      {userId}
+      list={null}
+      access={{ ...NO_ACCESS, canManage: true }}
+      {members}
+      {autoSave}
+      {notify}
+      onclose={() => (listSheet = null)}
+      oncreated={(created) => void loadLists(created.id)}
+      onupdate={() => {}}
+      ondeleted={() => {}}
     />
+  {:else if selected}
+    {#key selected.id}
+      <ListSheet
+        {guildId}
+        {userId}
+        list={selected}
+        {access}
+        {members}
+        {autoSave}
+        {notify}
+        onclose={() => (listSheet = null)}
+        oncreated={() => {}}
+        onupdate={(next) => (lists = lists.map(list => (list.id === next.id ? next : list)))}
+        ondeleted={afterDelete}
+      />
+    {/key}
   {/if}
-</ErrorBoundary>
+{/if}
 
-<style>
-  /* Ensure proper touch targets for mobile */
-  button {
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  /* Focus styles for accessibility */
-  button:focus, input:focus, textarea:focus {
-    outline: 2px solid var(--focus-color, #3b82f6);
-    outline-offset: 2px;
-  }
-
-  /* Custom checkbox styling */
-  input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-  }
-
-  /* Line clamp utility */
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-      line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-</style>
+{#if itemSheet && guildId && userId && selectedId}
+  {#key itemSheet.item?.id ?? "new"}
+    <ItemSheet
+      {guildId}
+      {userId}
+      listId={selectedId}
+      item={itemSheet.item}
+      canEdit={itemSheet.item ? access.canEdit || sameId(itemSheet.item.createdBy, me) : true}
+      {autoSave}
+      {notify}
+      onclose={() => (itemSheet = null)}
+      onupdate={replaceItem}
+      onadded={() => void loadItems(selectedId, true)}
+    />
+  {/key}
+{/if}

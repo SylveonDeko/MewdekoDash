@@ -46,7 +46,6 @@
   "import_post_in": "Gönderilecek kanal",
   "import_retire_subtitle": "Eski emoji kurulumunu durdurur ve emojilerini temizler. Orijinal mesajı bot gönderdiyse silinir.",
   "import_retire_title": "Eski kurulumu kaldır",
-  "list_count": "{max} menüden {count} tanesi",
   "list_create_first": "İlk menünü oluştur",
   "list_empty_text": "Açılır liste veya düğmelerle bir mesaj gönder, üyeler kendi rollerini seçsin. Zamirler, renkler, bildirimler, bölgeler: her biri için ayrı bir menü.",
   "list_empty_title": "Henüz rol menüsü yok",

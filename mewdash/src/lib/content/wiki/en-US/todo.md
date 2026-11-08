@@ -1,7 +1,7 @@
 ---
 title: Todo Lists
 slug: todo
-summary: Shared and personal task lists inside Discord, with priorities, due dates, tags, search and per-person permissions.
+summary: Shared and personal task lists inside Discord, with due dates and permissions
 icon: fa-check
 category: Community
 dashboard: /dashboard/todo
@@ -12,13 +12,13 @@ related: [administration, tickets]
 
 ## What it does
 
-Todo Lists gives your server task lists that live in the bot. A member creates a list, adds items to it, marks them done, and can hand out access so other people can view or work on the same list. Staff with Manage Server can create server-wide lists that every member can see.
+Todo Lists gives your server task lists that live in the bot. A member creates a list and works through its items by adding them and marking them done. They can also hand out access so other people can view or work on the same list. Staff with Manage Server can create server-wide lists that every member can see.
 
 Each item has a title, an optional description, a priority from 1 to 4, optional tags, an optional due date and an optional reminder time. Items keep a position so you can reorder them, and completed items are stamped with who completed them and when.
 
 There are two kinds of list. A personal list belongs to one member and is invisible to everyone else unless the owner grants access. A server list belongs to the server; it is public by default so anyone can view it, but only people with explicit permission can add or change items.
 
-Lists show up as embeds in Discord and as cards on the dashboard. The dashboard also tracks progress, overdue counts and completion rate for the list you have open.
+Lists show up as embeds in Discord and on the dashboard, where you can also manage settings and access. The dashboard tracks progress and overdue counts for the list you have open.
 
 ## Why you would use it
 
@@ -43,7 +43,7 @@ Every list has an owner, the person who created it. The owner can do everything 
 
 Pass several as a comma-separated string, for example `todogrant 12 @user view,add,complete`. Granting again replaces that user's previous permissions. `todorevoke` removes them all.
 
-Two rules apply regardless of permissions: the person who created an item can always edit, complete and delete their own item, and the list owner can always do anything.
+Two rules apply regardless of permissions: the person who created an item can always manage their own item, and the list owner can always do anything.
 
 Who can see a list:
 
@@ -69,7 +69,7 @@ Who can see a list:
 
 `todoshow` lists pending items sorted by position, then priority, then creation time. Pass `true` as the second argument to also show up to five completed items with when they were completed. Dates for `todosetdue` and `todosetreminder` are parsed loosely, so `2026-10-01 18:00` and `October 1 2026` both work.
 
-`todosearch` matches the query against titles, descriptions and tags of pending items and shows up to ten results. `todofilter` narrows a list by a single tag (`todofilter 12 tag bug`) or by priority (`todofilter 12 priority 4`).
+`todosearch` matches the query against the text and tags of pending items and shows up to ten results. `todofilter` narrows a list by a single tag (`todofilter 12 tag bug`) or by priority (`todofilter 12 priority 4`).
 
 Each list can have a hex colour, set with `todosetcolor 12 #ff8800`, which is used for the embed border. The default is `#7289da`.
 
@@ -77,26 +77,41 @@ Each list can have a hex colour, set with `todosetcolor 12 #ff8800`, which is us
 
 There are no server-wide settings. Everything is per list or per item.
 
-The Todo Lists page has one view. The left side lists every list you can see, with a **Search todo lists** box, a **Show completed items** toggle, and **Sort by** (Priority, Due Date, Created, Title) with an order selector. Selecting a list shows its items with **Add Item** and **Delete List** buttons, an item editor with **Priority** and **Due date**, and a **Manage permissions** button per list.
+The Todo lists page has a **Create list** button in its header and two cards, **Lists** and **Items**. Changes save as you make them.
+
+### Lists card
+
+Pick a list from the dropdown. Personal lists are labelled with "Personal list". The URL keeps the open list as `?list=`, so a link opens straight on it. Under the dropdown you see the list's color dot, whether it is a **Server list** or **Personal list**, a **Private list** badge when a server list is hidden, an **Owner** badge when it is yours, and the description. When the list has items, a progress bar shows how many are done and how many are to do. A separate count shows overdue items. The **List settings** button opens the settings sheet.
+
+### List settings sheet
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
-| List name and description | required, none | Set when creating a list from the **Create List** button |
-| Priority (item) | Medium | The item's priority; shown as a coloured chip |
-| Due date (item) | none | Deadline used for the overdue counter |
-| Show completed items | off | Whether done items appear in the list view |
+| Name | required, max 100 characters | Shown in the dropdown and in Discord |
+| Description | none, max 500 characters | Shown under the list |
+| Color | `#7289da` | The list's embed color in Discord |
+| Visible to everyone | on | Server lists only. When off, only the owner and people with access can see it |
+
+**Delete list** removes the list and all its items after confirmation. Only the owner and people with the manage permission can change these settings or delete the list.
+
+**People with access** lists everyone who has been granted access. Pick a member under "Search members...", switch on what they may do and press **Save access**. The switches are **Add items**, **Edit items**, **Complete items**, **Delete items** and **Manage list**. Everyone granted access can view the list. Saving a member again replaces what they had. The pencil edits an entry and the bin removes it. A person with only view access shows as "Viewer" and a person with **Manage list** as "Manager".
+
+### Items card
+
+**Add item** opens a sheet with **Title** (required, max 200 characters), **Description**, **Priority** (Low, Medium, High or Critical, Medium by default), **Due date** and **Tags** (max 32 characters each). The button only shows if you can add items.
+
+Above the list are a search box, an **Any priority** filter, an **Any tag** filter, a **Sort by** dropdown (List order, Priority, Due date, Newest, Title) and the **Show completed items** switch, which is off by default. Tick the circle on a row to mark it done or not done. With **List order** selected and no filter active, the arrows move an item up or down. Open an item to edit it. Edits save as you make them, and rows you may not edit open read-only.
 
 > [!NOTE]
-> Lists created from the dashboard are always server lists. Create personal lists with `todocreatelist` in Discord.
+> **Create list** asks for a name, an optional description and a **Type** of Server list or Personal list. Server lists are the default. Color, visibility and access appear once the list exists. Personal lists only show up on the dashboard for their owner.
 
 ## Setup walkthrough
 
-1. Open **Todo Lists** in the dashboard and click **Create List**.
-2. Enter a name and optional description. The list is created as a public server list.
-3. Click the list, then **Add Item**. Fill in **What needs to be done?**, an optional description and a priority.
-4. Use **Manage permissions** on the list card to see who has access. Grant access from Discord with `todogrant <listId> @user add,complete` so those people can work on it.
+1. Open **Todo Lists** in the dashboard and click **Create list**.
+2. Enter a name, an optional description and the type, then click **Create**.
+3. Click **Add item** in the **Items** card. Fill in a title, an optional description, a priority, a due date and tags.
+4. Open **List settings** and add people under **People with access** so they can work on the list.
 5. In Discord, run `todolists` to get the list ID, then `todoshow <listId>` to check it renders.
-6. Mark things done with `todocomplete <itemId>`; the item ID is shown in backticks in `todoshow`.
 
 ## Commands
 
@@ -138,5 +153,5 @@ Run these with your server's prefix (`.` unless you changed it). List and item I
 - A list name must be unique per owner and type, so two members can each have a "Shopping" personal list but one member cannot have two.
 - `todoreorder` renumbers every item in the list, so positions stay contiguous.
 - Public server lists are readable by everyone but nobody except the owner can add to them until you grant `add`.
-- Use `todogrant` in Discord for the full permission set; the dashboard's **Manage permissions** view is for checking who has access.
+- Reminder times are not editable on the dashboard, since nothing sends them yet.
 - Deleting a list removes its permissions and items in one go and cannot be undone.

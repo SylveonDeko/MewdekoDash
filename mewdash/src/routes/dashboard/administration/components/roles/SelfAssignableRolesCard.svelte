@@ -1,306 +1,325 @@
 <script lang="ts">
   import { m } from "$lib/i18n";
-  import { fly, slide } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
   import { administrationApi } from "$lib/api/index.ts";
-  import { currentGuild } from "$lib/stores/currentGuild";
+  import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
+  import PluginCard from "$lib/components/plugin/PluginCard.svelte";
   import type { AutoSave } from "$lib/utils/autoSave.svelte";
+  import Sheet from "$lib/components/ui/Sheet.svelte";
+  import { errorText, type Named, type Notify } from "../toolsModel";
+  import RoleRow from "./RoleRow.svelte";
 
   interface Props {
-    selfAssignableRoles: any;
-    toggleSelfAssignableRolesExclusive: () => void;
-    fetchAllData: () => Promise<unknown>;
+    guildId: bigint;
+    roles: Named[];
     autoSave: AutoSave;
-    applySelfAssignableGroupName: (groupId: number, name: string | null) => void;
-    applySelfAssignableLevel: (roleId: bigint, level: number) => void;
+    notify: Notify;
   }
 
-  let {
-    selfAssignableRoles,
-    toggleSelfAssignableRolesExclusive,
-    fetchAllData,
-    autoSave,
-    applySelfAssignableGroupName,
-    applySelfAssignableLevel
-  }: Props = $props();
+  let { guildId, roles, autoSave, notify }: Props = $props();
 
-  /** Last known auto-delete state, null until toggled once this session */
-  let autoDeleteState = $state<boolean | null>(null);
+  type Entry = {
+    model: { roleId: bigint; group: number; levelRequirement: number };
+    role: { name: string } | null;
+  };
+
+  let entries: Entry[] = $state([]);
+  let groups: Record<number, string> = $state({});
+  let exclusive = $state(false);
+  let autoDelete = $state(false);
+  let loading = $state(true);
   let busy = $state(false);
-  let editingGroup = $state<string | null>(null);
-  let groupNameDraft = $state("");
-  let editingLevelRole = $state<string | null>(null);
-  let levelDraft = $state(0);
 
-  /** Groups roles by their group id for rendering */
-  let groupedRoles = $derived.by(() => {
-    const roles: any[] = Array.isArray(selfAssignableRoles?.roles) ? selfAssignableRoles.roles : [];
-    const groups: Record<string, string | null> = selfAssignableRoles?.groups || {};
-    const ids = new Set<number>([...Object.keys(groups).map(Number), ...roles.map(r => r.model.group)]);
-    return Array.from(ids).sort((a, b) => a - b).map(id => ({
-      id,
-      name: groups[id] ?? null,
-      roles: roles.filter(r => r.model.group === id)
-    })).filter(g => g.roles.length > 0 || g.name);
+  let newRole: string | null = $state(null);
+  let newGroup = $state("0");
+  let newLevel = $state("0");
+
+  let openRole: bigint | null = $state(null);
+  let levelDraft = $state("0");
+  let openGroup: number | null = $state(null);
+  let groupDraft = $state("");
+
+  const inputStyle = $derived(
+    `background: ${$colorStore.primary}10; border-color: ${$colorStore.primary}30; color: ${$colorStore.text};`
+  );
+
+  const grouped = $derived.by(() => {
+    const ids = new Set<number>([...Object.keys(groups).map(Number), ...entries.map(e => e.model.group)]);
+    return [...ids]
+      .sort((a, b) => a - b)
+      .map(id => ({ id, name: groups[id] ?? "", items: entries.filter(e => e.model.group === id) }))
+      .filter(g => g.items.length > 0 || g.name);
   });
 
+  const roleLabel = (entry: Entry) => entry.role?.name || m.common.roleFallback({ id: entry.model.roleId.toString() });
+  const levelText = (level: number) => (level > 0 ? m.common.levelMin({ level }) : m.administrationRoles.selfNoLevel());
+  const toInt = (value: string, max: number) => Math.min(max, Math.max(0, Math.floor(Number(value) || 0)));
+
+  function groupLabel(id: number, name: string) {
+    if (id === 0) return m.common.ungrouped();
+    return name ? m.administrationRoles.selfGroupNamed({ id, name }) : m.administrationRoles.selfGroup({ id });
+  }
+
+  async function load() {
+    try {
+      const data = (await administrationApi.getSelfAssignableRoles(guildId)) as any;
+      entries = Array.isArray(data?.roles) ? data.roles : [];
+      groups = data?.groups ?? {};
+      exclusive = !!data?.exclusive;
+    } catch (err) {
+      logger.error("Failed to load self-assignable roles:", err);
+      notify(errorText(err, m.administrationRoles.loadFailed()), "error");
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function toggleExclusive() {
+    try {
+      exclusive = await administrationApi.toggleSelfAssignableRoleExclusive(guildId);
+    } catch (err) {
+      logger.error("Failed to toggle exclusive:", err);
+      notify(errorText(err, m.administrationRoles.saveFailed()), "error");
+    }
+  }
+
   async function toggleAutoDelete() {
-    if (!$currentGuild) return;
+    try {
+      autoDelete = await administrationApi.toggleSelfAssignableRoleAutoDelete(guildId);
+    } catch (err) {
+      logger.error("Failed to toggle auto delete:", err);
+      notify(errorText(err, m.administrationRoles.saveFailed()), "error");
+    }
+  }
+
+  async function add() {
+    if (busy || !newRole) return;
     busy = true;
     try {
-      autoDeleteState = await administrationApi.toggleSelfAssignableRoleAutoDelete($currentGuild.id);
+      const roleId = BigInt(newRole);
+      await administrationApi.addSelfAssignableRole(guildId, roleId, { group: toInt(newGroup, 100) });
+      const level = toInt(newLevel, 1000);
+      if (level > 0) await administrationApi.setSelfAssignableRoleLevel(guildId, roleId, level);
+      newRole = null;
+      newGroup = "0";
+      newLevel = "0";
+      notify(m.administrationRoles.added());
+      await load();
     } catch (err) {
-      logger.error("Failed to toggle self-assign auto delete:", err);
+      logger.error("Failed to add self-assignable role:", err);
+      notify(errorText(err, m.administrationRoles.addFailed()), "error");
     } finally {
       busy = false;
     }
   }
 
-  async function removeRole(roleId: bigint) {
-    if (!$currentGuild) return;
-    busy = true;
+  async function remove(entry: Entry) {
+    const confirmed = await requestConfirmation({
+      message: m.administrationRoles.selfRemoveConfirm({ role: roleLabel(entry) }),
+      confirmText: m.common.remove()
+    });
+    if (!confirmed) return;
     try {
-      await administrationApi.removeSelfAssignableRole($currentGuild.id, roleId);
-      await fetchAllData();
+      autoSave.cancel(`selfLevel:${entry.model.roleId}`);
+      await administrationApi.removeSelfAssignableRole(guildId, entry.model.roleId);
+      notify(m.administrationRoles.removed());
     } catch (err) {
       logger.error("Failed to remove self-assignable role:", err);
-    } finally {
-      busy = false;
+      notify(errorText(err, m.administrationRoles.removeFailed()), "error");
     }
+    await load();
   }
 
-  /** Focuses an inline editor as soon as it opens, so leaving it (blur) saves and closes it. */
-  function focusOnMount(node: HTMLInputElement) {
-    node.focus();
-    node.select();
+  function openLevel(entry: Entry) {
+    levelDraft = String(entry.model.levelRequirement || 0);
+    openRole = entry.model.roleId;
   }
 
-  const groupKey = (groupId: number) => `selfAssignGroupName:${groupId}`;
-  const levelKey = (roleId: bigint) => `selfAssignLevel:${roleId}`;
-
-  function savedGroupName(groupId: number): string {
-    return selfAssignableRoles?.groups?.[groupId] ?? "";
-  }
-
-  function savedLevel(roleId: bigint): number {
-    const role = (selfAssignableRoles?.roles ?? []).find((r: any) => r.model.roleId === roleId);
-    return role?.model.levelRequirement || 0;
-  }
-
-  function startGroupRename(groupId: number, current: string | null) {
-    editingGroup = groupId.toString();
-    groupNameDraft = current ?? "";
-  }
-
-  /**
-   * Debounces the group name while typing. An empty name clears it, which the bot accepts.
-   * No rollback on failure: the header offers Retry instead of wiping what was typed.
-   */
-  function scheduleGroupName(groupId: number) {
-    if (!$currentGuild) return;
-    const guildId = $currentGuild.id;
-    const name = groupNameDraft.trim() || null;
-    const key = groupKey(groupId);
-    if ((name ?? "") === savedGroupName(groupId)) {
-      autoSave.cancel(key);
-      return;
-    }
-    autoSave.schedule(key, async () => {
-      await administrationApi.setSelfAssignableRoleGroup(guildId, { group: groupId, name });
-      if ($currentGuild?.id === guildId) applySelfAssignableGroupName(groupId, name);
+  function changeLevel(roleId: bigint) {
+    const level = toInt(levelDraft, 1000);
+    entries = entries.map(e => (e.model.roleId === roleId ? { ...e, model: { ...e.model, levelRequirement: level } } : e));
+    autoSave.schedule(`selfLevel:${roleId}`, async () => {
+      try {
+        await administrationApi.setSelfAssignableRoleLevel(guildId, roleId, level);
+      } catch (err) {
+        notify(m.administrationRoles.saveFailed(), "error");
+        throw err;
+      }
     });
   }
 
-  /** Saves anything waiting for the group name and closes the editor. */
-  function finishGroupRename(groupId: number) {
-    if (editingGroup !== groupId.toString()) return;
-    void autoSave.flush(groupKey(groupId));
-    editingGroup = null;
+  function closeLevel() {
+    if (openRole !== null) void autoSave.flush(`selfLevel:${openRole}`);
+    openRole = null;
   }
 
-  /** Escape: drop the pending save and go back to the last saved name. */
-  function cancelGroupRename(groupId: number) {
-    autoSave.cancel(groupKey(groupId));
-    groupNameDraft = savedGroupName(groupId);
-    editingGroup = null;
+  function openGroupSheet(id: number, name: string) {
+    groupDraft = name;
+    openGroup = id;
   }
 
-  function startLevelEdit(role: any) {
-    editingLevelRole = role.model.roleId.toString();
-    levelDraft = role.model.levelRequirement || 0;
-  }
-
-  /** Debounces the level requirement; an empty or non-numeric field is never sent. */
-  function scheduleLevel(roleId: bigint) {
-    if (!$currentGuild) return;
-    const key = levelKey(roleId);
-    if (typeof levelDraft !== "number" || !Number.isFinite(levelDraft)) {
-      autoSave.cancel(key);
-      return;
-    }
-    const guildId = $currentGuild.id;
-    const level = Math.min(1000, Math.max(0, Math.floor(levelDraft)));
-    if (level === savedLevel(roleId)) {
-      autoSave.cancel(key);
-      return;
-    }
-    autoSave.schedule(key, async () => {
-      await administrationApi.setSelfAssignableRoleLevel(guildId, roleId, level);
-      if ($currentGuild?.id === guildId) applySelfAssignableLevel(roleId, level);
+  function changeGroupName(id: number) {
+    const name = groupDraft.trim();
+    groups = { ...groups, [id]: name };
+    autoSave.schedule(`selfGroup:${id}`, async () => {
+      try {
+        await administrationApi.setSelfAssignableRoleGroup(guildId, { group: id, name: name || null });
+      } catch (err) {
+        notify(m.administrationRoles.saveFailed(), "error");
+        throw err;
+      }
     });
   }
 
-  /** Saves anything waiting for the level and closes the editor. */
-  function finishLevelEdit(roleId: bigint) {
-    if (editingLevelRole !== roleId.toString()) return;
-    void autoSave.flush(levelKey(roleId));
-    editingLevelRole = null;
+  function closeGroup() {
+    if (openGroup !== null) void autoSave.flush(`selfGroup:${openGroup}`);
+    openGroup = null;
   }
 
-  /** Escape: drop the pending save and go back to the last saved level. */
-  function cancelLevelEdit(roleId: bigint) {
-    autoSave.cancel(levelKey(roleId));
-    levelDraft = savedLevel(roleId);
-    editingLevelRole = null;
-  }
+  const levelEntry = $derived(entries.find(e => e.model.roleId === openRole) ?? null);
+
+  void load();
 </script>
 
-<div class=" rounded-2xl border p-6 transition-all"
-     in:fly={{ y: 20, duration: 300, delay: 300 }}
-     style="background: {$colorStore.primary}0c;
-            border-color: {$colorStore.primary}30;">
-
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-    <div class="flex items-center gap-4">
-      <div class="p-3 rounded-xl"
-           style="background: {$colorStore.primary}20;">
-        <i class="fa-utility-duo fa-regular fa-user-check"
-           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-      </div>
-      <div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.features.wizardRolesStepSelfassignTitle()}</h2>
-        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.rolesSelfAssignableSubtitle()}</p>
-      </div>
+<PluginCard title={m.administrationRoles.selfTitle()} alwaysOpen>
+  <div class="space-y-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <ToggleRow
+        checked={exclusive}
+        title={m.administrationRoles.selfExclusive()}
+        subtitle={m.administrationRoles.selfExclusiveHint()}
+        colors={$colorStore}
+        onchange={toggleExclusive}
+      />
+      <ToggleRow
+        checked={autoDelete}
+        title={m.administrationRoles.selfAutoDelete()}
+        subtitle={m.administrationRoles.selfAutoDeleteHint()}
+        colors={$colorStore}
+        onchange={toggleAutoDelete}
+      />
     </div>
 
-    <div class="flex flex-wrap items-center gap-4">
-      <div class="flex items-center gap-2">
-        <div class="text-right">
-          <div class="text-sm" style="color: {$colorStore.text}">{m.administration.rolesReactionRolesExclusive()}</div>
-          <div class="text-xs" style="color: {$colorStore.muted}">{m.administration.rolesSelfAssignableExclusiveHint()}</div>
-        </div>
-        <button aria-label={m.administration.rolesSelfAssignableToggleExclusive()}
-                role="switch"
-                aria-checked={selfAssignableRoles.exclusive}
-                class="p-2 rounded-lg transition-all min-h-[44px] min-w-[44px]"
-                onclick={toggleSelfAssignableRolesExclusive}
-                style="color: {selfAssignableRoles.exclusive ? $colorStore.secondary : $colorStore.muted}">
-          <i class="fa-solid {selfAssignableRoles.exclusive ? 'fa-toggle-on' : 'fa-toggle-off'}" style="font-size: 24px;"></i>
-        </button>
-      </div>
-      <div class="flex items-center gap-2">
-        <div class="text-right">
-          <div class="text-sm" style="color: {$colorStore.text}">{m.administration.rolesSelfAssignableAutoDelete()}</div>
-          <div class="text-xs" style="color: {$colorStore.muted}">
-            {#if autoDeleteState === null}{m.administration.rolesSelfAssignableAutoDeleteHint()}{:else}{autoDeleteState ? m.common.on() : m.common.off()}{/if}
-          </div>
-        </div>
-        <button aria-label={m.administration.rolesSelfAssignableToggleAutoDelete()}
-                class="p-2 rounded-lg transition-all min-h-[44px] min-w-[44px] disabled:opacity-50"
-                disabled={busy}
-                onclick={toggleAutoDelete}
-                style="color: {autoDeleteState ? $colorStore.secondary : $colorStore.muted}">
-          <i class="fa-solid {autoDeleteState ? 'fa-toggle-on' : 'fa-toggle-off'}" style="font-size: 24px;"></i>
-        </button>
-      </div>
+    <DiscordSelector
+      type="role"
+      options={roles}
+      selected={newRole}
+      placeholder={m.common.selectARolePlaceholder()}
+      onchange={(detail) => (newRole = typeof detail.selected === "string" ? detail.selected : null)}
+    />
+    <div class="flex flex-col sm:flex-row gap-3">
+      <label class="grow min-w-0 block">
+        <span class="block text-sm mb-1" style="color: {$colorStore.muted}">{m.common.group()}</span>
+        <input
+          type="number"
+          inputmode="numeric"
+          min="0"
+          max="100"
+          bind:value={newGroup}
+          class="w-full p-3 rounded-lg border focus:ring-2 min-h-[50px]"
+          style={inputStyle}
+        >
+      </label>
+      <label class="grow min-w-0 block">
+        <span class="block text-sm mb-1" style="color: {$colorStore.muted}">{m.administrationRoles.selfLevel()}</span>
+        <input
+          type="number"
+          inputmode="numeric"
+          min="0"
+          max="1000"
+          bind:value={newLevel}
+          class="w-full p-3 rounded-lg border focus:ring-2 min-h-[50px]"
+          style={inputStyle}
+        >
+      </label>
+      <button
+        type="button"
+        class="flex items-center justify-center gap-2 px-5 rounded-xl min-h-[50px] sm:self-end font-medium disabled:opacity-50"
+        style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
+        disabled={busy || !newRole}
+        onclick={add}
+      >
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        {m.administrationRoles.addRole()}
+      </button>
     </div>
-  </div>
 
-  {#if groupedRoles.length === 0}
-    <div class="text-center py-8">
-      <i class="fa-utility-duo fa-regular fa-user-check"
-         style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-      <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">{m.administration.rolesSelfAssignableEmptyTitle()}</p>
-      <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.rolesSelfAssignableEmptyHint()}</p>
-    </div>
-  {:else}
-    <div class="space-y-4">
-      {#each groupedRoles as group (group.id)}
-        <div class="border rounded-lg p-4" style="border-color: {$colorStore.primary}20;">
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-            {#if editingGroup === group.id.toString()}
-              <form class="flex items-center gap-2 flex-1 min-w-[220px]" onsubmit={(e) => { e.preventDefault(); finishGroupRename(group.id); }} transition:slide>
-                <input type="text" bind:value={groupNameDraft} placeholder={m.administration.rolesSelfAssignableGroupName()} aria-label={m.administration.rolesSelfAssignableGroupName()} maxlength="100"
-                       use:focusOnMount
-                       oninput={() => scheduleGroupName(group.id)}
-                       onblur={() => finishGroupRename(group.id)}
-                       onkeydown={(e) => { if (e.key === "Escape") { e.preventDefault(); cancelGroupRename(group.id); } }}
-                       title={m.administration.rolesSelfAssignableEditTitle()}
-                       class="flex-1 px-3 py-2 rounded-lg border text-sm min-h-[40px]"
-                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-              </form>
-            {:else}
-              <h3 class="font-semibold flex items-center gap-2" style="color: {$colorStore.text}">
-                {#if group.id === 0}
-                  {m.common.ungrouped()}
-                {:else}
-                  {group.name ? m.administration.rolesSelfAssignableGroupWithName({ id: group.id, name: group.name }) : m.administration.rolesSelfAssignableGroup({ id: group.id })}
-                {/if}
-                {#if group.id !== 0}
-                  <button class="p-1 rounded-sm hover:opacity-80 min-h-[28px] min-w-[28px]" aria-label={m.administration.rolesSelfAssignableRenameGroup()}
-                          onclick={() => startGroupRename(group.id, group.name)}>
-                    <i class="fa-solid fa-pen" style="color: {$colorStore.muted}; font-size: 12px;"></i>
-                  </button>
-                {/if}
-              </h3>
-            {/if}
-            <span class="text-xs px-2 py-1 rounded-full" style="background: {$colorStore.primary}15; color: {$colorStore.muted};">
-              {group.roles.length === 1 ? m.administration.rolesSelfAssignableRoleCountOne({ count: group.roles.length }) : m.common.rolesCount({ count: group.roles.length })}
-            </span>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {#each group.roles as role (role.model.roleId)}
-              <div class="flex items-center justify-between gap-2 p-3 rounded-lg transition-all duration-200 border"
-                   style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-                <div class="min-w-0">
-                  <div class="font-medium truncate" style="color: {$colorStore.text}">
-                    {role.role?.name || m.common.roleFallback({ id: role.model.roleId.toString() })}
-                  </div>
-                  {#if editingLevelRole === role.model.roleId.toString()}
-                    <form class="flex items-center gap-1 mt-1" onsubmit={(e) => { e.preventDefault(); finishLevelEdit(role.model.roleId); }}>
-                      <input type="number" min="0" max="1000" bind:value={levelDraft} aria-label={m.administration.rolesSelfAssignableRequiredLevel()}
-                             use:focusOnMount
-                             oninput={() => scheduleLevel(role.model.roleId)}
-                             onblur={() => finishLevelEdit(role.model.roleId)}
-                             onkeydown={(e) => { if (e.key === "Escape") { e.preventDefault(); cancelLevelEdit(role.model.roleId); } }}
-                             title={m.administration.rolesSelfAssignableEditTitle()}
-                             class="w-20 px-2 py-1 rounded-sm border text-xs min-h-[32px]"
-                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
-                    </form>
-                  {:else}
-                    <button class="text-xs mt-0.5 hover:underline" style="color: {$colorStore.muted}"
-                            onclick={() => startLevelEdit(role)}>
-                      {role.model.levelRequirement > 0 ? m.common.levelMin({ level: role.model.levelRequirement }) : m.administration.rolesSelfAssignableNoLevelRequirement()}
-                      <i class="fa-solid fa-pen ml-1" style="font-size: 10px;"></i>
-                    </button>
-                  {/if}
-                </div>
+    {#if loading}
+      <div class="flex justify-center py-6">
+        <div class="w-10 h-10 border-4 rounded-full animate-spin" style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary}"></div>
+      </div>
+    {:else if grouped.length === 0}
+      <p class="py-4 text-center" style="color: {$colorStore.muted}">{m.administrationRoles.selfEmpty()}</p>
+    {:else}
+      <div class="space-y-4">
+        {#each grouped as group (group.id)}
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-2 min-w-0">
+              <h3 class="text-sm font-semibold truncate" style="color: {$colorStore.text}">{groupLabel(group.id, group.name)}</h3>
+              {#if group.id !== 0}
                 <button
-                  class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80 shrink-0 min-h-[36px] disabled:opacity-50"
-                  style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                  disabled={busy}
-                  onclick={() => removeRole(role.model.roleId)}
-                  aria-label={m.administration.rolesSelfAssignableRemoveAria({ role: role.role?.name ?? "" })}
+                  type="button"
+                  class="shrink-0 rounded-lg min-h-[44px] min-w-[44px]"
+                  style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
+                  aria-label={m.administrationRoles.selfRenameGroup()}
+                  onclick={() => openGroupSheet(group.id, group.name)}
                 >
-                  {m.common.remove()}
+                  <i class="fa-solid fa-pen" aria-hidden="true"></i>
                 </button>
-              </div>
+              {/if}
+            </div>
+            {#each group.items as entry (entry.model.roleId)}
+              <RoleRow
+                title={roleLabel(entry)}
+                subtitle={levelText(entry.model.levelRequirement)}
+                removeLabel={m.administrationRoles.selfRemoveAria({ role: roleLabel(entry) })}
+                onopen={() => openLevel(entry)}
+                onremove={() => remove(entry)}
+              />
             {/each}
           </div>
-        </div>
-      {/each}
-    </div>
-  {/if}
-</div>
+        {/each}
+      </div>
+    {/if}
+  </div>
+</PluginCard>
+
+{#if levelEntry}
+  <Sheet title={roleLabel(levelEntry)} onclose={closeLevel}>
+    <label class="block">
+      <span class="block text-sm mb-1" style="color: {$colorStore.muted}">{m.administrationRoles.selfLevel()}</span>
+      <input
+        type="number"
+        inputmode="numeric"
+        min="0"
+        max="1000"
+        bind:value={levelDraft}
+        class="w-full p-3 rounded-lg border focus:ring-2 min-h-[50px]"
+        style={inputStyle}
+        oninput={() => changeLevel(levelEntry.model.roleId)}
+        onblur={() => autoSave.flush(`selfLevel:${levelEntry.model.roleId}`)}
+      >
+    </label>
+  </Sheet>
+{/if}
+
+{#if openGroup !== null}
+  {@const id = openGroup}
+  <Sheet title={groupLabel(id, groups[id] ?? "")} onclose={closeGroup}>
+    <label class="block">
+      <span class="block text-sm mb-1" style="color: {$colorStore.muted}">{m.administrationRoles.selfGroupName()}</span>
+      <input
+        type="text"
+        maxlength="100"
+        bind:value={groupDraft}
+        class="w-full p-3 rounded-lg border focus:ring-2 min-h-[50px]"
+        style={inputStyle}
+        oninput={() => changeGroupName(id)}
+        onblur={() => autoSave.flush(`selfGroup:${id}`)}
+      >
+    </label>
+  </Sheet>
+{/if}

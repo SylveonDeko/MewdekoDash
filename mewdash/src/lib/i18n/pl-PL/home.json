@@ -58,7 +58,6 @@
   "landing_multi_greets": "Powitania",
   "landing_music_bot": "Bot muzyczny",
   "landing_no_servers_to_show_right_now": "Na razie brak serwerów do pokazania.",
-  "landing_or_just_hop_in_discord_for": "Albo po prostu wskocz na Discorda, jeśli masz szybkie pytania lub potrzebujesz pomocy",
   "landing_our_top_servers": "Nasze najlepsze serwery",
   "landing_per_server_bot_profile": "Profil bota per serwer",
   "landing_polls_with_buttons": "Ankiety z przyciskami",
@@ -130,7 +129,5 @@
   "tails_subheading": "Każdy ogon ma więcej niż jedno zadanie.",
   "tails_tag_text": "Pozwól członkom wybierać własne role za pomocą przycisków lub listy rozwijanej.",
   "tails_wrench_text": "Pisz własne komendy i odpowiedzi oraz zmieniaj wygląd bota na swoim serwerze.",
-  "tails_wrench_title": "Dostosuj do siebie",
-  "update_next": "Następna aktualizacja",
-  "update_previous": "Poprzednia aktualizacja"
+  "tails_wrench_title": "Dostosuj do siebie"
 }

@@ -27,7 +27,9 @@ export class ApiError extends Error {
  */
 function errorMessageFrom(parsed: any, responseText: string, status: number): string {
   const error = parsed?.error;
+  const isCode = typeof error === "string" && /^[a-z0-9_]+$/.test(error.trim());
 
+  if (isCode && typeof parsed?.message === "string" && parsed.message.trim()) return parsed.message;
   if (typeof error === "string" && error.trim()) return error;
   if (typeof error?.message === "string" && error.message.trim()) return error.message;
   if (typeof parsed?.message === "string" && parsed.message.trim()) return parsed.message;

@@ -23,6 +23,16 @@
         border-color: var(--color-gray-200, currentcolor);
     }
 
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"] {
+        -webkit-appearance: none;
+        appearance: none;
+        min-width: 0;
+        max-width: 100%;
+        display: block;
+    }
+
     /* Restore cursor pointer for interactive elements */
     button:not(:disabled),
     [role="button"]:not(:disabled),
@@ -35,6 +45,10 @@
     select:not(:disabled),
     label:has(input:not(:disabled)) {
         cursor: pointer;
+    }
+
+    .relative:is([style*="z-index"], [class*="z-"]):has([aria-haspopup="listbox"][aria-expanded="true"]) {
+        z-index: 75 !important;
     }
 
     /* Global scrollbar styling */

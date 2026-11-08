@@ -109,7 +109,7 @@
     >
       <div
         class="w-full max-w-4xl rounded-2xl border shadow-2xl"
-        style="background: {$colorStore.background}; border-color: {$colorStore.primary}30;"
+        style="background: {$colorStore.surface}; border-color: {$colorStore.primary}30;"
         in:fly={{ y: 20, duration: 200 }}
         out:fly={{ y: -20, duration: 150 }}
         role="dialog"

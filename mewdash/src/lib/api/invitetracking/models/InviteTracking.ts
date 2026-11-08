@@ -224,3 +224,16 @@ export interface InviteAdjustRequest {
   bonus?: number;
   fake?: number;
 }
+
+export interface InviteMilestoneRole {
+  roleId: bigint;
+  roleName: string | null;
+  requiredInvites: number;
+}
+
+export interface InviteRolesConfig {
+  /** 0 keeps every role, 1 keeps only the highest */
+  mode: 0 | 1;
+  removeOnDrop: boolean;
+  roles: InviteMilestoneRole[];
+}

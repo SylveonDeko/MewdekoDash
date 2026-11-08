@@ -1,7 +1,7 @@
 ---
 title: Nintendo Switch
 slug: switch
-summary: Look up Nintendo Switch error codes, convert them between decimal and hex, search the switchbrew.org wiki, and get a readable breakdown of a Ryujinx log file.
+summary: Look up Nintendo Switch error codes and get a readable breakdown of a Ryujinx log
 icon: fa-gamepad-modern
 category: Entertainment
 module: Switch
@@ -11,9 +11,9 @@ related: [userprofile, help]
 
 ## What it does
 
-The Switch module is a support toolkit for servers around Nintendo Switch homebrew and emulation. When someone posts an error like `2168-0002`, a helper runs `err 2168-0002` and the bot replies with the module the error belongs to, what is known about it, and a link to Nintendo's support page when one exists.
+The Switch module is a support toolkit for servers around Nintendo Switch homebrew and emulation. When someone posts an error like `2168-0002`, a helper runs `err 2168-0002` and the bot replies with the module the error belongs to and what is known about it. A link to Nintendo's support page is included when one exists.
 
-Two small converters turn the `NNNN-NNNN` form into the raw hex value used in code and back. `switchbrew` searches the switchbrew.org wiki so people can find SVC, result code or hardware pages without leaving Discord.
+Two small converters turn the `NNNN-NNNN` form into the raw hex value used in code and back. `switchbrew` searches the switchbrew.org wiki so people can find SVC, result code, hardware and other pages without leaving Discord.
 
 The biggest feature is the Ryujinx log analyser. A user attaches their `Ryujinx.log`, someone runs `analyselog` on it or as a reply to it, and the bot produces an embed with the game, emulator version, hardware, every relevant setting, the last error, installed mods and cheats, and a list of notes pointing at common misconfigurations.
 

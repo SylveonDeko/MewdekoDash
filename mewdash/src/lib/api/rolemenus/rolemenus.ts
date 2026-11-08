@@ -1,6 +1,8 @@
 import { apiRequest } from "../core";
 import type {
   RoleMenu,
+  RoleMenuGroup,
+  RoleMenuGroupRequest,
   RoleMenuImportRequest,
   RoleMenuImportSource,
   RoleMenuLookups,
@@ -106,4 +108,38 @@ export const roleMenusApi = {
    */
   importSetup: (guildId: bigint, request: RoleMenuImportRequest) =>
     apiRequest<RoleMenu>(`rolemenus/${guildId}/import`, "POST", request),
+
+  /**
+   * Lists the menu groups, ordered by name
+   * @param guildId The guild ID
+   */
+  groups: (guildId: bigint) =>
+    apiRequest<RoleMenuGroup[]>(`rolemenus/${guildId}/groups`),
+
+  /**
+   * Creates a group, or changes the limit of the group with that name
+   * @param guildId The guild ID
+   * @param request The name and limit
+   * @returns The group
+   */
+  createGroup: (guildId: bigint, request: RoleMenuGroupRequest) =>
+    apiRequest<RoleMenuGroup>(`rolemenus/${guildId}/groups`, "POST", request),
+
+  /**
+   * Changes how many roles a member can hold across a group's menus
+   * @param guildId The guild ID
+   * @param groupId The group ID
+   * @param maxRoles The limit, 0 for none
+   * @returns The group
+   */
+  updateGroup: (guildId: bigint, groupId: number, maxRoles: number) =>
+    apiRequest<RoleMenuGroup>(`rolemenus/${guildId}/groups/${groupId}`, "PUT", { maxRoles }),
+
+  /**
+   * Deletes a group and unlinks its menus
+   * @param guildId The guild ID
+   * @param groupId The group ID
+   */
+  removeGroup: (guildId: bigint, groupId: number) =>
+    apiRequest<void>(`rolemenus/${guildId}/groups/${groupId}`, "DELETE"),
 };

@@ -5,7 +5,8 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import TabNavigation from "$lib/components/specialized/TabNavigation.svelte";
   import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
-
+  import ImagePlaceholderChip from "$lib/components/specialized/ImagePlaceholderChip.svelte";
+  import { isImagePlaceholder, newImagePlaceholder, removePlaceholder } from "$lib/utils/imagePlaceholders";
 
   interface Props {
     // Props
@@ -87,6 +88,7 @@
   function removeField(fieldIndex: number) {
     const updatedEmbed = { ...embed };
     updatedEmbed.fields = updatedEmbed.fields.filter((_: any, i: number) => i !== fieldIndex);
+    imageChip = null;
 
     embed = updatedEmbed;
     onupdate?.({ embed: updatedEmbed, index });
@@ -101,18 +103,73 @@
     onupdate?.({ embed: updatedEmbed, index });
   }
 
+  // Image-only placeholders typed into text fields get a chip that moves them to a media field
+  type ChipTarget = { kind: 'embed'; field: string } | { kind: 'field'; fieldIndex: number; field: string };
+  let imageChip: { key: string; token: string; target: ChipTarget } | null = $state(null);
+
+  const imagePlaceholderOptions = $derived.by(() => {
+    const images = placeholders.filter((p: any) => isImagePlaceholder(p.name));
+    return images.length > 0 ? images : placeholders;
+  });
+
+  function getEmbedValue(field: string): string {
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      return embed[parent]?.[child] ?? '';
+    }
+    return embed[field] ?? '';
+  }
+
+  function detectImagePlaceholder(key: string, target: ChipTarget, previous: string, next: string) {
+    const token = newImagePlaceholder(previous, next);
+    if (token) {
+      imageChip = { key, token, target };
+    } else if (imageChip?.key === key && !next.includes(imageChip.token)) {
+      imageChip = null;
+    }
+  }
+
+  function moveChipTo(mediaField: 'thumbnail' | 'image') {
+    if (!imageChip) return;
+    const { token, target } = imageChip;
+    const updatedEmbed = { ...embed, [mediaField]: { ...(embed[mediaField] ?? {}), url: token } };
+    if (target.kind === 'embed') {
+      if (target.field.includes('.')) {
+        const [parent, child] = target.field.split('.');
+        updatedEmbed[parent] = { ...updatedEmbed[parent], [child]: removePlaceholder(getEmbedValue(target.field), token) };
+      } else {
+        updatedEmbed[target.field] = removePlaceholder(getEmbedValue(target.field), token);
+      }
+    } else {
+      updatedEmbed.fields = updatedEmbed.fields.map((f: any, i: number) =>
+        i === target.fieldIndex ? { ...f, [target.field]: removePlaceholder(f[target.field] ?? '', token) } : f
+      );
+    }
+    imageChip = null;
+    embed = updatedEmbed;
+    onupdate?.({ embed: updatedEmbed, index });
+  }
+
   // Input handlers with placeholder support
   function handleInput(event: Event, field: string) {
     const target = event.target;
     if (target && ('value' in target)) {
-      updateEmbed(field, target.value);
+      const value = target.value as string;
+      if (['title', 'description', 'author.name', 'footer.text'].includes(field)) {
+        detectImagePlaceholder(field, { kind: 'embed', field }, getEmbedValue(field), value);
+      }
+      updateEmbed(field, value);
     }
   }
 
   function handleFieldInput(event: Event, fieldIndex: number, field: string) {
     const target = event.target;
     if (target && ('value' in target)) {
-      updateField(fieldIndex, field, target.value);
+      const value = target.value as string;
+      if (field === 'name' || field === 'value') {
+        detectImagePlaceholder(`field-${fieldIndex}-${field}`, { kind: 'field', fieldIndex, field }, embed.fields?.[fieldIndex]?.[field] ?? '', value);
+      }
+      updateField(fieldIndex, field, value);
     }
   }
 
@@ -180,6 +237,51 @@
 
 
 </script>
+
+{#snippet imageChipFor(key: string)}
+  {#if imageChip?.key === key}
+    <ImagePlaceholderChip
+      token={imageChip.token}
+      onthumbnail={() => moveChipTo('thumbnail')}
+      onimage={() => moveChipTo('image')}
+      ondismiss={() => (imageChip = null)}
+    />
+  {/if}
+{/snippet}
+
+{#snippet imageUrlInput(id: string, field: string, value: string, placeholderText: string)}
+  <div class="relative">
+    <input
+      {id}
+      type="url"
+      class="w-full px-3 py-2 pr-12 rounded-lg border min-h-[44px]"
+      style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+      placeholder={placeholderText}
+      {value}
+      oninput={(e) => handleInput(e, field)}
+    >
+    <button
+      type="button"
+      class="absolute right-1 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] rounded-sm hover:bg-black/10"
+      style="color: {$colorStore.muted};"
+      onclick={() => togglePlaceholderDropdown(id)}
+      title={m.embedbuilder.editorInsertPlaceholder()}
+      aria-label={m.embedbuilder.editorInsertPlaceholder()}
+    >
+      %
+    </button>
+    <PlaceholderPicker
+      visible={showPlaceholderDropdown === id}
+      placeholders={imagePlaceholderOptions}
+      searchTerm={placeholderSearch}
+      inline={true}
+      inputElement={currentInputElement}
+      onselect={(detail) => { insertPlaceholder(detail.placeholder, id); }}
+      onclose={() => showPlaceholderDropdown = ''}
+      onsearch={(detail) => placeholderSearch = detail.term}
+    />
+  </div>
+{/snippet}
 
 <div class="space-y-6">
   <!-- Header with Actions -->
@@ -264,6 +366,7 @@
               onsearch={(detail) => placeholderSearch = detail.term}
             />
           </div>
+          {@render imageChipFor('title')}
         </div>
 
         <!-- Description -->
@@ -308,6 +411,7 @@
               onsearch={(detail) => placeholderSearch = detail.term}
             />
           </div>
+          {@render imageChipFor('description')}
           <p class="text-xs mt-1" style="color: {$colorStore.muted};">
             {m.embedbuilder.editorDescriptionHint()}
           </p>
@@ -344,6 +448,8 @@
           </span>
           <DiscordSelector
             type="custom"
+            customIcon="fa-palette"
+            ariaLabelledby="embed-color-label"
             options={discordColors}
             selected={embed.color}
             placeholder={m.embedbuilder.editorEmbedColorPlaceholder()}
@@ -410,6 +516,7 @@
                   onsearch={(detail) => placeholderSearch = detail.term}
                 />
               </div>
+              {@render imageChipFor('author.name')}
             </div>
 
             <div>
@@ -431,15 +538,7 @@
               <label for="author-icon-{index}" class="block text-sm font-medium mb-1" style="color: {$colorStore.text};">
                 {m.embedbuilder.editorIconUrl()}
               </label>
-              <input
-                id="author-icon-{index}"
-                type="url"
-                class="w-full px-3 py-2 rounded-lg border"
-                style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                placeholder={m.embedbuilder.editorIconUrlPlaceholder()}
-                value={embed.author?.icon_url || ''}
-                oninput={(e) => handleInput(e, 'author.icon_url')}
-              >
+              {@render imageUrlInput(`author-icon-${index}`, 'author.icon_url', embed.author?.icon_url || '', m.embedbuilder.editorIconUrlPlaceholder())}
             </div>
           </div>
         </fieldset>
@@ -488,21 +587,14 @@
                   onsearch={(detail) => placeholderSearch = detail.term}
                 />
               </div>
+              {@render imageChipFor('footer.text')}
             </div>
 
             <div>
               <label for="footer-icon-{index}" class="block text-sm font-medium mb-1" style="color: {$colorStore.text};">
                 {m.embedbuilder.editorIconUrl()}
               </label>
-              <input
-                id="footer-icon-{index}"
-                type="url"
-                class="w-full px-3 py-2 rounded-lg border"
-                style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                placeholder={m.embedbuilder.editorIconUrlPlaceholder()}
-                value={embed.footer?.icon_url || ''}
-                oninput={(e) => handleInput(e, 'footer.icon_url')}
-              >
+              {@render imageUrlInput(`footer-icon-${index}`, 'footer.icon_url', embed.footer?.icon_url || '', m.embedbuilder.editorIconUrlPlaceholder())}
             </div>
           </div>
         </fieldset>
@@ -583,6 +675,7 @@
                       onsearch={(detail) => placeholderSearch = detail.term}
                     />
                   </div>
+                  {@render imageChipFor(`field-${fieldIndex}-name`)}
                 </div>
 
                 <!-- Field Value -->
@@ -625,6 +718,7 @@
                       onsearch={(detail) => placeholderSearch = detail.term}
                     />
                   </div>
+                  {@render imageChipFor(`field-${fieldIndex}-value`)}
                 </div>
 
                 <!-- Inline Toggle -->
@@ -659,15 +753,7 @@
           <label for="thumbnail-{index}" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
             {m.embedbuilder.editorThumbnailUrl()}
           </label>
-          <input
-            id="thumbnail-{index}"
-            type="url"
-            class="w-full px-3 py-2 rounded-lg border"
-            style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            placeholder={m.embedbuilder.editorThumbnailPlaceholder()}
-            value={embed.thumbnail?.url || ''}
-            oninput={(e) => handleInput(e, 'thumbnail.url')}
-          >
+          {@render imageUrlInput(`thumbnail-${index}`, 'thumbnail.url', embed.thumbnail?.url || '', m.embedbuilder.editorThumbnailPlaceholder())}
         </div>
 
         <!-- Image -->
@@ -675,15 +761,7 @@
           <label for="image-{index}" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
             {m.common.imageUrl()}
           </label>
-          <input
-            id="image-{index}"
-            type="url"
-            class="w-full px-3 py-2 rounded-lg border"
-            style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            placeholder={m.embedbuilder.editorImagePlaceholder()}
-            value={embed.image?.url || ''}
-            oninput={(e) => handleInput(e, 'image.url')}
-          >
+          {@render imageUrlInput(`image-${index}`, 'image.url', embed.image?.url || '', m.embedbuilder.editorImagePlaceholder())}
         </div>
 
         <!-- Media Tips -->

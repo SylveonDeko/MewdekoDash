@@ -76,6 +76,12 @@ export const birthdayApi = {
    * @param guildId The guild ID
    * @param feature The feature to enable
    */
+  setUserBirthday: (guildId: bigint, userId: bigint, birthday: string) =>
+    apiRequest<void>(`birthday/${guildId}/users/${userId}`, "PUT", { birthday }),
+
+  removeUserBirthday: (guildId: bigint, userId: bigint) =>
+    apiRequest<void>(`birthday/${guildId}/users/${userId}`, "DELETE"),
+
   enableBirthdayFeature: (guildId: bigint, feature: BirthdayFeatures) =>
     apiRequest<void>(`birthday/${guildId}/features/${feature}/enable`, "POST"),
 

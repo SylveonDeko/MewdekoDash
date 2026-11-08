@@ -5,7 +5,6 @@
   "board_meta": "#{channel} · toutes les {minutes} min · mis à jour {updated}",
   "board_rows": "· {count} lignes",
   "boards_empty": "Aucun tableau en direct pour l'instant. Ajoutez-en un, et le bot le publiera et l'épinglera immédiatement.",
-  "boards_subtitle": "Jusqu'à 10 par serveur, chacun actualisé selon son propre intervalle",
   "confirm_delete_message": "Supprimer le {kind} dans #{channel} ? Son message est supprimé aussi.",
   "confirm_delete_title": "Supprimer le tableau en direct",
   "contents_activity": "💬 Messages, 🔊 temps vocal et membres actifs",

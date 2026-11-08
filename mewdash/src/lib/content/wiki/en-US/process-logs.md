@@ -1,7 +1,7 @@
 ---
 title: Process Logs
 slug: process-logs
-summary: A bot owner only dashboard page that lists the processes pm2 runs on the bot's host and lets you read, follow, filter and download their console logs.
+summary: A page for bot owners to read the console logs of the processes pm2 runs on the bot's host
 icon: fa-rectangle-code
 category: Analytics
 dashboard: /owner/process-logs
@@ -11,7 +11,7 @@ related: [performance, analytics, leave-feedback]
 
 ## What it does
 
-Process Logs shows what the bot writes to its console, straight from the log files pm2 keeps for it, without opening a shell on the server. It is only visible to bot owners: the sidebar hides it for everyone else, opening the URL directly sends non owners back to the dashboard home, and the bot itself refuses the requests unless the signed in account is an owner.
+Process Logs shows what the bot writes to its console, straight from the log files pm2 keeps for it, without opening a shell on the server. It is only visible to bot owners: the sidebar hides it for everyone else and opening the URL directly sends non owners back to the dashboard home. The bot itself also refuses the requests unless the signed in account is an owner.
 
 The page asks the bot instance you have selected for its pm2 process table. Every process pm2 manages on that host is listed, not just the bot, with its status, pid, uptime, restart count, CPU and memory, and the size of its two log files. Pick one and the page loads the last few hundred lines of its stdout log, then keeps appending new lines every couple of seconds while **Following** is on.
 
@@ -28,7 +28,7 @@ Lines keep the colours Serilog prints with, and each line is tagged with its lev
 
 | Control | What it does |
 | --- | --- |
-| Process cards | One per pm2 process on the host. The card marked **this bot** is the instance answering the request. Click one to read its logs. |
+| **Processes** | One card per pm2 process on the host, with its status, **pm2 id** and pid, **Uptime** and restarts, **Usage** (CPU and memory) and **Logs** (out and err file sizes). The card marked **this bot** is the instance answering the request. Click one to read its logs. **Refresh** reloads the list, which also refreshes every 15 seconds. |
 | **stdout** / **stderr** | Switches between the process's out log, where normal logging goes, and its error log, where crashes and runtime diagnostics land. |
 | **100** to **2k** | How many lines to load when the log is opened or reloaded. The follow mode keeps up to 5,000 in the page before it starts dropping the oldest. |
 | Filter box | Hides every line whose text does not contain what you typed. Case does not matter. |

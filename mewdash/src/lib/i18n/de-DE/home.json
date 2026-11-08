@@ -58,7 +58,6 @@
   "landing_multi_greets": "Multi-Begrüßungen",
   "landing_music_bot": "Musik-Bot",
   "landing_no_servers_to_show_right_now": "Gerade keine Server zum Anzeigen.",
-  "landing_or_just_hop_in_discord_for": "Oder spring einfach auf Discord für schnelle Fragen und Hilfe",
   "landing_our_top_servers": "Unsere Top-Server",
   "landing_per_server_bot_profile": "Bot-Profil pro Server",
   "landing_polls_with_buttons": "Umfragen mit Buttons",
@@ -130,7 +129,5 @@
   "tails_subheading": "Jeder Schweif hat mehr als eine Aufgabe.",
   "tails_tag_text": "Lass Mitglieder ihre Rollen per Buttons oder Dropdown selbst auswählen.",
   "tails_wrench_text": "Schreibe eigene Befehle und Antworten und ändere, wie der Bot auf deinem Server aussieht.",
-  "tails_wrench_title": "Mach ihn zu deinem",
-  "update_next": "Nächstes Update",
-  "update_previous": "Vorheriges Update"
+  "tails_wrench_title": "Mach ihn zu deinem"
 }

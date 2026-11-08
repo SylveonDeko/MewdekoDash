@@ -1,7 +1,7 @@
 ---
 title: Highlights
 slug: highlights
-summary: Members pick words to watch for and get a DM with context whenever someone says one of them in the server.
+summary: Members pick words to watch for and get a DM when someone says one in the server
 icon: fa-bolt
 category: Community
 dashboard: /dashboard/highlights
@@ -12,15 +12,15 @@ related: [afk, utility]
 
 ## What it does
 
-A member adds a word or phrase with `highlight add`. From then on, whenever a message in the server contains that word, the bot sends them a DM. The DM says which server and channel it happened in, shows the last five messages before it plus the matching one, and has a **Jump to message** button.
+A member adds a word or phrase with `highlight add`. From then on, whenever a message in the server contains that word, the bot sends them a DM. The DM says which server and channel it happened in, and shows the last five messages before it plus the matching one. A **Jump to message** button takes them there.
 
-Highlights are personal. Each member manages their own list, chooses which channels and people to ignore, and can switch their highlights off without deleting them. Staff cannot add highlights for someone else, but the dashboard lets them see what is being watched and remove entries.
+Highlights are personal. Each member manages their own list and chooses which channels and people to ignore. They can also switch their highlights off without deleting them. Staff cannot add highlights for someone else, but the dashboard lets them see what is being watched and remove entries.
 
 Members only get DMs for channels they can actually see. A member who is typing in the server is assumed to be present, so highlights pause for them for two minutes.
 
 ## Why you would use it
 
-- Get pinged when your name, nickname or project is mentioned without an actual @mention.
+- Get pinged when your name or project is mentioned without an actual @mention.
 - Follow a topic such as "giveaway" or "patch notes" across a large server.
 - Staff can watch for words like "help" or "report" without reading every channel.
 - Moderators can audit what members are tracking and clean out abusive or spammy entries.
@@ -51,14 +51,15 @@ Each member has a settings row that is created the first time they toggle someth
 
 ## Settings
 
-The Highlights page in the dashboard is for staff. It does not add highlights; it shows and removes them.
+The Highlights page in the dashboard is for staff. It does not add highlights; it shows and removes them. The **Refresh** button at the top reloads the data.
 
 | Tab | What it shows |
 | --- | --- |
-| All Highlights | Every highlight in the server grouped by member, with a delete button per word and a button to remove all of one member's words |
-| Search | Find highlights containing a word across all members; the search ignores case |
-| Disabled Users | Members who have turned their highlights off, with how many channels and users they ignore |
-| Statistics | Total Highlights, Active Users, Top Word, Most Active, plus Top Highlighted Words and Recent Highlights |
+| Members | The **Members** list of everyone with highlights, with a **Filter by word or member** box. Each row shows the member's highlight count and their first four words, and has a button to delete all of their highlights. Open a member to see each word with the date it was added and a delete button, plus a **Delete all** button. A summary shows **Highlights on** or **Highlights paused** and lists their **Ignored channels** and **Ignored members** |
+| Disabled users | Members who have turned their highlights off, with how many channels and users each ignores. It shows **All users enabled** when nobody has. |
+| Statistics | A **Statistics** card with **Total highlights** and **Active users**, then **Top highlighted words** (how many users watch each, with a button to remove that word from every member), **Top members** and **Recent highlights** |
+
+Every delete asks for confirmation first.
 
 ## Setup walkthrough
 
@@ -68,7 +69,7 @@ There is nothing to enable. Highlights work as soon as the bot is in the server.
 2. Run `highlight list` to confirm it saved.
 3. Have someone type your name in another channel. Wait a couple of seconds and check your DMs.
 4. If you get too many, run `highlight toggleignore #busy-channel` or `highlight toggleignore @user`.
-5. Staff: open **Highlights** in the dashboard to review the **All Highlights** tab and remove anything unwanted.
+5. Staff: open **Highlights** in the dashboard, review the **Members** tab, and remove anything unwanted.
 
 ## Commands
 
@@ -88,5 +89,5 @@ Run these with your server's prefix (`.` unless you changed it). The same action
 - The bot needs to be able to read the channel to match in it, and you need DMs open from server members to receive alerts.
 - Adding a word you already have is rejected. The check for duplicates ignores case, but live matching does not.
 - Deleting by number uses the position shown in `highlight list`, which changes after every removal.
-- The highlight list and settings are cached for thirty minutes per server. Adding or deleting single words through commands or the dashboard updates the cache straight away; removing all of a member's words from the dashboard can take up to thirty minutes to stop DMs.
+- The highlight list and settings are cached for thirty minutes per server. Adding or deleting words through commands or the dashboard updates the cache straight away.
 - When the bot leaves a server, its highlights and settings are cleaned up the next time the bot restarts.

@@ -8,25 +8,33 @@ import type {
   CustomVoiceUserPreference,
 } from "./models";
 
+const hubQuery = (hub?: bigint | string | null) => (hub ? `?hub=${hub}` : "");
+
 export const customVoiceApi = {
   getCustomVoiceConfig: (guildId: bigint) =>
     apiRequest<CustomVoiceConfigurationResponse>(
       `customvoice/${guildId}/configuration`,
     ),
 
+  getCustomVoiceHubs: (guildId: bigint) =>
+    apiRequest<CustomVoiceConfigurationResponse[]>(
+      `customvoice/${guildId}/hubs`,
+    ),
+
   updateCustomVoiceConfig: (
     guildId: bigint,
     config: CustomVoiceConfigurationRequest,
+    hub?: bigint | string | null,
   ) =>
     apiRequest<{ success: boolean; message: string }>(
-      `customvoice/${guildId}/configuration`,
+      `customvoice/${guildId}/configuration${hubQuery(hub)}`,
       "PUT",
       config,
     ),
 
-  disableCustomVoice: (guildId: bigint) =>
+  disableCustomVoice: (guildId: bigint, hub?: bigint | string | null) =>
     apiRequest<{ success: boolean; message: string }>(
-      `customvoice/${guildId}/configuration`,
+      `customvoice/${guildId}/configuration${hubQuery(hub)}`,
       "DELETE",
     ),
 
@@ -47,6 +55,17 @@ export const customVoiceApi = {
       `customvoice/${guildId}/channels/${channelId}`,
       "PUT",
       update,
+    ),
+
+  setCustomVoiceChannelHidden: (
+    guildId: bigint,
+    channelId: bigint,
+    hidden: boolean,
+  ) =>
+    apiRequest<{ success: boolean; message: string }>(
+      `customvoice/${guildId}/channels/${channelId}/hidden`,
+      "PUT",
+      { hidden },
     ),
 
   deleteCustomVoiceChannel: (guildId: bigint, channelId: bigint) =>

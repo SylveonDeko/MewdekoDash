@@ -46,7 +46,6 @@
   "import_post_in": "게시할 위치",
   "import_retire_subtitle": "기존 이모지 설정을 중단하고 이모지를 지워요. 봇이 원본 메시지를 게시했다면 그 메시지도 삭제돼요.",
   "import_retire_title": "기존 설정 폐기",
-  "list_count": "메뉴 {count}/{max}개",
   "list_create_first": "첫 번째 메뉴 만들기",
   "list_empty_text": "드롭다운이나 버튼이 있는 메시지를 게시하면 멤버가 직접 역할을 고를 수 있어요. 대명사, 색상, 알림, 지역 등 메뉴별로 하나씩 만들어 보세요.",
   "list_empty_title": "아직 역할 메뉴가 없어요",

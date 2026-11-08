@@ -227,7 +227,7 @@
         {#each tabs as t (t.id)}
           {@const active = tab === t.id}
           <button type="button" aria-pressed={active}
-                  class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm min-h-[40px] whitespace-nowrap"
+                  class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm min-h-[44px] whitespace-nowrap"
                   style="background: {active ? $colorStore.primary + '20' : 'transparent'};
                          color: {active ? $colorStore.primary : $colorStore.text};
                          border: 1px solid {active ? $colorStore.primary + '40' : 'transparent'};"

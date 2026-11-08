@@ -26,7 +26,7 @@
   "no_overrides": "No channel overrides.",
   "no_search_match": "No words match your search.",
   "no_words": "No words added yet.",
-  "page_subtitle": "Block words, invites and links",
+  "page_subtitle": "Block words and links in chat",
   "remove_channel_aria": "Remove #{channel}",
   "search_words_aria": "Search filtered words",
   "search_words_placeholder": "Search words",

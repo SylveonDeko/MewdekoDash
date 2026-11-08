@@ -1,7 +1,7 @@
 {
   "emoji_add": "Add emoji",
   "emoji_clear_selection": "Clear selection",
-  "emoji_custom_input": "Custom Input",
+  "emoji_custom_input": "Custom input",
   "emoji_done_with_count": "Done ({count} selected)",
   "emoji_error_duplicate": "This emoji is already selected",
   "emoji_error_empty": "Please enter an emoji",

@@ -46,7 +46,6 @@
   "import_post_in": "Posten in",
   "import_retire_subtitle": "Beendet das alte Emoji-Setup und entfernt seine Emojis. Hat der Bot die Originalnachricht gepostet, wird sie gelöscht.",
   "import_retire_title": "Altes Setup stilllegen",
-  "list_count": "{count} von {max} Menüs",
   "list_create_first": "Erstelle dein erstes Menü",
   "list_empty_text": "Poste eine Nachricht mit Dropdown oder Buttons, und Mitglieder wählen ihre Rollen selbst. Pronomen, Farben, Pings, Regionen: je ein Menü.",
   "list_empty_title": "Noch keine Rollenmenüs",

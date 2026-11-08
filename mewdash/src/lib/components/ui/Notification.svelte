@@ -8,7 +8,7 @@
 
     interface Props {
     message: string;
-    type?: "success" | "error";
+    type?: "success" | "error" | "warning";
     timeout?: number;
     onDismiss?: (() => void) | undefined;
   }
@@ -70,15 +70,17 @@
     '#10B981');
   let errorColor = $derived($colorStore.primary ? 
     // Blend the primary color with red
-    blendColors($colorStore.primary, '#EF4444', 0.3) : 
+    blendColors($colorStore.primary, '#EF4444', 0.3) :
     '#EF4444');
+  let warningColor = $derived($colorStore.primary ? blendColors($colorStore.primary, '#F59E0B', 0.3) : '#F59E0B');
+  let accent = $derived(type === 'success' ? successColor : type === 'warning' ? warningColor : errorColor);
 </script>
 
 <div
         class="fixed top-20 md:top-4 right-4 p-4 rounded-xl shadow-lg border max-w-sm min-w-80 z-60"
   style="
-    background-color: {$colorStore.background};
-    border-color: {type === 'success' ? successColor : errorColor}50;
+    background-color: {$colorStore.surface};
+    border-color: {accent}50;
   "
   in:fly={{ 
     x: 400, 
@@ -95,12 +97,14 @@
       <!-- Icon -->
         <div
                 class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
-        style="background-color: {type === 'success' ? successColor : errorColor}20;"
+        style="background-color: {accent}20;"
       >
         {#if type === 'success'}
-          <i class="fa-solid fa-circle-check" style="color: {successColor}; font-size: 16px;"></i>
+          <i class="fa-solid fa-circle-check" style="color: {accent}; font-size: 16px;"></i>
+        {:else if type === 'warning'}
+          <i class="fa-solid fa-triangle-exclamation" style="color: {accent}; font-size: 16px;"></i>
         {:else}
-          <i class="fa-solid fa-circle-exclamation" style="color: {errorColor}; font-size: 16px;"></i>
+          <i class="fa-solid fa-circle-exclamation" style="color: {accent}; font-size: 16px;"></i>
         {/if}
       </div>
 
@@ -118,7 +122,7 @@
       <button aria-label={m.common.ariaDismissNotification()}
               class="shrink-0 p-1 rounded-lg transition-all duration-200"
         style="color: {$colorStore.muted};
-               hover:background-color: {type === 'success' ? successColor : errorColor}20;
+               hover:background-color: {accent}20;
                hover:color: {$colorStore.text};"
         onclick={handleDismiss}
 
@@ -130,7 +134,7 @@
       <div 
         class="absolute bottom-0 left-0 h-1 rounded-b-xl transition-all ease-linear"
         style="
-          background: {type === 'success' ? successColor : errorColor};
+          background: {accent};
           width: 100%;
           animation: notificationProgress {timeout}ms linear forwards;
         "

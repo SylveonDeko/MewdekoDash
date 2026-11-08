@@ -1,4 +1,4 @@
-import { derived, writable } from "svelte/store";
+import { derived, get, writable } from "svelte/store";
 import type { ProductUpdate } from "$lib/content/productUpdates";
 
 /**
@@ -23,17 +23,10 @@ export const updatesDialog = writable<{ open: boolean; archive: boolean }>({
 });
 
 /**
- * Opens the dialog on the full history.
+ * Opens the dialog on the unseen updates, or on the full history when there are none.
  */
 export function openProductUpdates() {
-  updatesDialog.set({ open: true, archive: true });
-}
-
-/**
- * Opens the dialog on the updates the viewer has not seen yet.
- */
-export function announceProductUpdates() {
-  updatesDialog.set({ open: true, archive: false });
+  updatesDialog.set({ open: true, archive: get(unseenUpdates).length === 0 });
 }
 
 /**

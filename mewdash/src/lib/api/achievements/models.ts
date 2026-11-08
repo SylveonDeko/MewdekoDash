@@ -1,3 +1,5 @@
+import type { CardBackground, CardBox, CardBuiltInType, CardCustomType, CardElement, CardPreview, CardTemplate } from "../cards/models";
+
 /** What unlocks an achievement. */
 export enum AchievementTrigger {
   Metric = 0,
@@ -178,8 +180,6 @@ export interface AchievementPlaceholder {
 
 /** Size limits. */
 export interface AchievementLimits {
-  maxCustomAchievements: number;
-  maxCustomCategories: number;
   nameLength: number;
   descriptionLength: number;
   keywordLength: number;
@@ -482,96 +482,20 @@ export interface AchievementMe {
   grades: AchievementGrade[];
 }
 
-/**
- * What fills an achievement card behind its elements
- * Maps to Mewdeko.Modules.Achievements.Common.AchievementCardBackground
- */
-export interface AchievementCardBackground {
-  /** palette, solid, gradient, or image */
-  kind: "palette" | "solid" | "gradient" | "image";
-  color: string;
-  color2: string;
-  angle: number;
-  /** An https URL or upload:id */
-  url: string;
-  fit: "cover" | "contain";
-  /** How much the page color covers an image, 0 to 1 */
-  dim: number;
-  /** Whether the palette wash is laid over solid, gradient, and image backgrounds */
-  wash: boolean;
-}
+/** An achievement card's background, on the shared card engine */
+export type AchievementCardBackground = CardBackground;
 
 /** Built in element kinds: shown once each, hidden rather than removed. */
-export type AchievementCardBuiltInType =
-  | "icon" | "grade" | "label" | "title" | "description" | "progress"
-  | "avatar" | "member" | "category" | "points" | "more";
+export type AchievementCardBuiltInType = CardBuiltInType;
 
 /** Element kinds a server can add any number of. */
-export type AchievementCardCustomType = "rectangle" | "ellipse" | "text" | "image" | "glyph";
+export type AchievementCardCustomType = CardCustomType;
 
-/**
- * One element of an achievement card. Colors are tokens: #rrggbb, #rrggbbaa, or a palette name
- * (primary, secondary, accent, text, muted, grade) with an optional hex alpha such as primary@30.
- * Maps to Mewdeko.Modules.Achievements.Common.AchievementCardElement
- */
-export interface AchievementCardElement {
-  id: string;
-  type: AchievementCardBuiltInType | AchievementCardCustomType;
-  name: string;
-  visible: boolean;
-  show: "always" | "unlocked" | "locked";
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  rotation: number;
-  opacity: number;
-  fill: string;
-  fill2: string;
-  fillAngle: number;
-  stroke: string;
-  strokeWidth: number;
-  radius: number;
-  shadowColor: string;
-  shadowBlur: number;
-  shadowX: number;
-  shadowY: number;
-  color: string;
-  color2: string;
-  color3: string;
-  fontSize: number;
-  bold: boolean;
-  align: "left" | "center" | "right";
-  uppercase: boolean;
-  spacing: number;
-  lineHeight: number;
-  maxLines: number;
-  text: string;
-  lockedText: string;
-  glyph: string;
-  url: string;
-  fit: "cover" | "contain";
-  autoWidth: boolean;
-  followId: string;
-  besideId: string;
-  gap: number;
-}
+/** One element of an achievement card */
+export type AchievementCardElement = CardElement;
 
-/**
- * A server's achievement card design
- * Maps to Mewdeko.Modules.Achievements.Common.AchievementCardTemplate
- */
-export interface AchievementCardTemplate {
-  width: number;
-  height: number;
-  radius: number;
-  borderColor: string;
-  borderWidth: number;
-  shadow: boolean;
-  background: AchievementCardBackground;
-  /** Back to front */
-  elements: AchievementCardElement[];
-}
+/** A server's achievement card design */
+export type AchievementCardTemplate = CardTemplate;
 
 /**
  * A server's card design and what the designer needs
@@ -600,7 +524,6 @@ export interface AchievementCard {
     maxElements: number;
     maxText: number;
     maxImages: number;
-    maxDesigns: number;
     nameLength: number;
   };
 }
@@ -617,25 +540,7 @@ export interface AchievementCardDesign {
 }
 
 /** Where one element landed on a drawn card, in card pixels. */
-export interface AchievementCardBox {
-  id: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  drawn: boolean;
-}
+export type AchievementCardBox = CardBox;
 
-/**
- * A drawn card preview
- * Maps to Mewdeko.Controllers.Common.Achievements.AchievementCardPreviewResponse
- */
-export interface AchievementCardPreview {
-  image: string;
-  width: number;
-  height: number;
-  /** Transparent space around the card on every side */
-  margin: number;
-  layout: AchievementCardBox[];
-  template: AchievementCardTemplate | null;
-}
+/** A drawn card preview */
+export type AchievementCardPreview = CardPreview;

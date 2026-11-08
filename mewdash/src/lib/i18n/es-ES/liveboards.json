@@ -5,7 +5,6 @@
   "board_meta": "#{channel} · cada {minutes} min · actualizado {updated}",
   "board_rows": "· {count} filas",
   "boards_empty": "Aún no hay paneles en vivo. Añade uno y el bot lo publica y lo fija enseguida.",
-  "boards_subtitle": "Hasta 10 por servidor, cada uno se actualiza en su propio intervalo",
   "confirm_delete_message": "¿Eliminar {kind} en #{channel}? Su mensaje también se elimina.",
   "confirm_delete_title": "Eliminar panel en vivo",
   "contents_activity": "💬 Mensajes, 🔊 tiempo de voz y miembros activos",

@@ -606,7 +606,7 @@
           <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
             {isCurrency ? m.import.flowMergeBalances() : m.import.flowMergeXp()}
           </span>
-          <DiscordSelector type="custom" options={mergeOptions} bind:selected={mergeMode} searchable={false} />
+          <DiscordSelector type="custom" options={mergeOptions} bind:selected={mergeMode} searchable={false} clearable={false} customIcon="fa-layer-group" ariaLabel={isCurrency ? m.import.flowMergeBalances() : m.import.flowMergeXp()} />
         </div>
 
         {#if !isCurrency}

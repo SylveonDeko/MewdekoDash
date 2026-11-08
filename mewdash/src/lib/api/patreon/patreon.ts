@@ -12,6 +12,7 @@ import type {
   PatreonAnalytics,
   PatreonOperationRequest,
   PatreonTierMappingRequest,
+  PatreonSupporterLinkRequest,
 } from "./models";
 
 /**
@@ -105,7 +106,7 @@ export const patreonApi = {
     apiRequest<PatreonCreator>(`patreon/creator?guildId=${guildId}`),
 
   /**
-   * Triggers a Patreon operation (sync, syncRoles, announceGoals)
+   * Triggers a Patreon operation (sync, sync_all, sync_roles, manual_announcement, refresh_token)
    * @param guildId The guild ID
    * @param operation Operation to trigger
    * @returns Operation result
@@ -131,6 +132,19 @@ export const patreonApi = {
       `patreon/tiers/map?guildId=${guildId}`,
       "POST",
       mapping,
+    ),
+
+  /**
+   * Links a supporter to a Discord member, or unlinks them with a Discord ID of 0
+   * @param guildId The guild ID
+   * @param link The supporter and member
+   * @returns Link result
+   */
+  linkPatreonSupporter: (guildId: bigint, link: PatreonSupporterLinkRequest) =>
+    apiRequest<{ message: string }>(
+      `patreon/supporters/link?guildId=${guildId}`,
+      "POST",
+      link,
     ),
 
   /**

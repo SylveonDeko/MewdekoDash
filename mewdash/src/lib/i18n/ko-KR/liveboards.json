@@ -5,7 +5,6 @@
   "board_meta": "#{channel} · {minutes}분마다 · 업데이트 {updated}",
   "board_rows": "· {count}개 행",
   "boards_empty": "아직 라이브 보드가 없어요. 하나 추가하면 봇이 바로 게시하고 고정해요.",
-  "boards_subtitle": "서버당 최대 10개, 각각 자체 간격으로 새로고침돼요",
   "confirm_delete_message": "#{channel}의 {kind}을(를) 삭제할까요? 해당 메시지도 함께 삭제돼요.",
   "confirm_delete_title": "라이브 보드 삭제",
   "contents_activity": "💬 메시지, 🔊 음성 시간 및 활동 멤버",

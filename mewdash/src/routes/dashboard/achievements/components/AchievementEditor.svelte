@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { onMount, untrack } from "svelte";
-  import { fade, fly } from "svelte/transition";
+  import { untrack } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
@@ -16,6 +15,7 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import EmojiPicker from "$lib/components/forms/EmojiPicker.svelte";
   import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
+  import Sheet from "$lib/components/ui/Sheet.svelte";
   import {
     criteriaText,
     CUSTOM_CATEGORY,
@@ -337,14 +337,6 @@
     const parsed = Number(value);
     return Number.isFinite(parsed) ? Math.round(parsed) : null;
   }
-
-  onMount(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  });
 </script>
 
 {#snippet field(label: string, id: string, hint: string | null)}
@@ -359,44 +351,52 @@
   </h3>
 {/snippet}
 
-<div class="fixed inset-0 z-50 flex items-stretch md:items-center justify-center md:p-6 backdrop-blur-md"
-     style="background: #00000080;"
-     role="presentation"
-     onclick={(e) => { if (e.target === e.currentTarget) close(); }}
-     transition:fade={{ duration: 150 }}>
-  <div class="w-full md:max-w-5xl md:max-h-[90vh] flex flex-col md:rounded-2xl border shadow-2xl overflow-hidden"
-       style="background: color-mix(in srgb, {$colorStore.primary} 6%, {$colorStore.background});
-              border-color: {$colorStore.primary}30;"
-       role="dialog"
-       aria-modal="true"
-       aria-labelledby="ach-editor-title"
-       in:fly={{ y: 24, duration: 200 }}>
-    <div class="flex items-center gap-3 p-4 md:p-5 border-b" style="border-color: {$colorStore.primary}20;">
-      <AchievementIcon icon={headerIcon} iconUrl={headerIconUrl} color={grade.color} />
-      <div class="flex-1 min-w-0">
-        <h2 id="ach-editor-title" class="text-lg font-bold truncate" style="color: {$colorStore.text}">
-          {isNew ? m.achievements.editorNewTitle() : previewName}
-        </h2>
-        <p class="text-xs truncate" style="color: {$colorStore.muted}">
+{#snippet footer()}
+  {#if !isNew && achievement?.isCustom}
+    <button type="button" class="px-4 py-2.5 rounded-xl min-h-[44px] font-medium disabled:opacity-50 sm:mr-auto"
+            style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
+            disabled={deleting} onclick={remove}>
+      <i class="fa-solid fa-trash mr-2" aria-hidden="true"></i>{m.common.delete()}
+    </button>
+  {:else if isBuiltIn && achievement?.isOverridden}
+    <button type="button" class="px-4 py-2.5 rounded-xl min-h-[44px] font-medium disabled:opacity-50 sm:mr-auto"
+            style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
+            disabled={saving} onclick={resetToDefault}>
+      <i class="fa-solid fa-rotate-left mr-2" aria-hidden="true"></i>{m.common.resetToDefault()}
+    </button>
+  {/if}
+  {#if blocker && dirty}
+    <span class="text-sm" style="color: {$colorStore.accent}">{blocker}</span>
+  {/if}
+  <button type="button" class="px-4 py-2.5 rounded-xl min-h-[44px] font-medium"
+          style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
+          onclick={close}>{m.common.cancel()}</button>
+  {#if !isGlobal}
+    <button type="button" class="px-5 py-2.5 rounded-xl min-h-[44px] font-semibold disabled:opacity-50"
+            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+            disabled={saving || !!blocker || (!dirty && !isNew)} onclick={save}>
+      {#if saving}<i class="fa-solid fa-spinner fa-spin mr-2" aria-hidden="true"></i>{/if}
+      {isNew ? m.achievements.editorCreate() : m.common.save()}
+    </button>
+  {/if}
+{/snippet}
+
+<Sheet title={isNew ? m.achievements.editorNewTitle() : previewName} onclose={close} size="xl" {footer}>
+      <div class="flex items-center gap-3">
+        <AchievementIcon icon={headerIcon} iconUrl={headerIconUrl} color={grade.color} />
+        <p class="text-xs min-w-0 truncate" style="color: {$colorStore.muted}">
           {#if isNew}{m.achievements.editorSubtitleNew()}{:else if isBuiltIn}{m.achievements.editorSubtitleBuiltIn({ criteria: achievement ? criteriaText(achievement, catalog) : "" })}{:else}{m.achievements.editorSubtitleCustom({ key: achievement?.key ?? "" })}{/if}
         </p>
       </div>
-      <button type="button" class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-              style="background: {$colorStore.primary}08; color: {$colorStore.text};"
-              aria-label={m.common.close()} onclick={close}>
-        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-      </button>
-    </div>
 
-    <div class="flex-1 overflow-y-auto p-4 md:p-6">
       {#if isGlobal}
         <div class="p-4 rounded-xl text-sm" style="background: {$colorStore.primary}08; color: {$colorStore.text}">
           {m.achievements.editorGlobalNotice()}
         </div>
       {:else}
-        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-          <div class="lg:col-span-3 space-y-6">
-            <section class="relative rounded-2xl border p-5" style="z-index: 40; background: {$colorStore.primary}05; border-color: {$colorStore.primary}25;">
+        <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] gap-6 items-start">
+          <div class="min-w-0 space-y-6">
+            <section class="relative rounded-xl border p-4" style="z-index: 4; background: {$colorStore.primary}05; border-color: {$colorStore.primary}25;">
               {@render sectionHeading("fa-circle-info", m.common.basics())}
               <div class="space-y-4">
                 <div>
@@ -417,7 +417,7 @@
                   <div>
                     <span id="ach-category-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.category()}</span>
                     <div class="min-h-[44px]">
-                      <DiscordSelector type="custom" options={categoryOptions} selected={draft.categoryKey}
+                      <DiscordSelector type="custom" customIcon="fa-layer-group" clearable={false} options={categoryOptions} selected={draft.categoryKey}
                                        placeholder={m.common.pickCategoryPlaceholder()} ariaLabelledby="ach-category-label"
                                        onchange={(detail) => { if (typeof detail.selected === "string") draft.categoryKey = detail.selected; }} />
                     </div>
@@ -444,7 +444,7 @@
             </section>
 
             {#if !isBuiltIn}
-              <section class="relative rounded-2xl border p-5" style="z-index: 30; background: {$colorStore.primary}05; border-color: {$colorStore.primary}25;">
+              <section class="relative rounded-xl border p-4" style="z-index: 3; background: {$colorStore.primary}05; border-color: {$colorStore.primary}25;">
                 {@render sectionHeading("fa-unlock", m.achievements.editorSectionUnlock())}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {#each triggerChoices as choice (choice.value)}
@@ -469,7 +469,7 @@
                     <div class="sm:col-span-2">
                       <span id="ach-metric-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.achievements.editorMetricLabel()}</span>
                       <div class="min-h-[44px]">
-                        <DiscordSelector type="custom" options={metricOptions} selected={draft.metric.toString()}
+                        <DiscordSelector type="custom" customIcon="fa-gauge" clearable={false} options={metricOptions} selected={draft.metric.toString()}
                                          placeholder={m.achievements.editorMetricPlaceholder()} ariaLabelledby="ach-metric-label"
                                          onchange={(detail) => { if (typeof detail.selected === "string") draft.metric = Number(detail.selected); }} />
                       </div>
@@ -523,7 +523,7 @@
               </section>
             {/if}
 
-            <section class="relative rounded-2xl border p-5" style="z-index: 20; background: {$colorStore.primary}05; border-color: {$colorStore.primary}25;">
+            <section class="relative rounded-xl border p-4" style="z-index: 2; background: {$colorStore.primary}05; border-color: {$colorStore.primary}25;">
               {@render sectionHeading(GRADE_ICON, isBuiltIn ? m.common.points() : m.achievements.editorSectionGradePoints())}
               {#if !isBuiltIn}
                 <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4" role="radiogroup" aria-label={m.achievements.editorGradeLabel()}>
@@ -555,7 +555,7 @@
               </div>
             </section>
 
-            <section class="relative rounded-2xl border p-5" style="z-index: 10; background: {$colorStore.primary}05; border-color: {$colorStore.primary}25;">
+            <section class="relative rounded-xl border p-4" style="z-index: 1; background: {$colorStore.primary}05; border-color: {$colorStore.primary}25;">
               {@render sectionHeading("fa-gift", m.common.rewards())}
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="sm:col-span-3">
@@ -594,7 +594,7 @@
             </section>
           </div>
 
-          <div class="lg:col-span-2 lg:sticky lg:top-0 space-y-4">
+          <div class="min-w-0 lg:sticky lg:top-6 space-y-4">
             <div class="text-xs font-semibold" style="color: {$colorStore.muted}">{m.achievements.editorUnlockImage()}</div>
             <div class="relative rounded-xl overflow-hidden" style="background: #2b2d31; aspect-ratio: 1200 / 420;">
               {#if previewImage}
@@ -621,38 +621,4 @@
           </div>
         </div>
       {/if}
-    </div>
-
-    <div class="flex flex-col-reverse sm:flex-row sm:items-center gap-3 p-4 md:p-5 border-t" style="border-color: {$colorStore.primary}20;">
-      {#if !isNew && achievement?.isCustom}
-        <button type="button" class="px-4 py-2.5 rounded-xl min-h-[44px] font-medium disabled:opacity-50"
-                style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
-                disabled={deleting} onclick={remove}>
-          <i class="fa-solid fa-trash mr-2" aria-hidden="true"></i>{m.common.delete()}
-        </button>
-      {:else if isBuiltIn && achievement?.isOverridden}
-        <button type="button" class="px-4 py-2.5 rounded-xl min-h-[44px] font-medium disabled:opacity-50"
-                style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
-                disabled={saving} onclick={resetToDefault}>
-          <i class="fa-solid fa-rotate-left mr-2" aria-hidden="true"></i>{m.common.resetToDefault()}
-        </button>
-      {/if}
-      <div class="sm:ml-auto flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-3">
-        {#if blocker && dirty}
-          <span class="text-sm" style="color: {$colorStore.accent}">{blocker}</span>
-        {/if}
-        <button type="button" class="px-4 py-2.5 rounded-xl min-h-[44px] font-medium"
-                style="background: {$colorStore.primary}08; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
-                onclick={close}>{m.common.cancel()}</button>
-        {#if !isGlobal}
-          <button type="button" class="px-5 py-2.5 rounded-xl min-h-[44px] font-semibold disabled:opacity-50"
-                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                  disabled={saving || !!blocker || (!dirty && !isNew)} onclick={save}>
-            {#if saving}<i class="fa-solid fa-spinner fa-spin mr-2" aria-hidden="true"></i>{/if}
-            {isNew ? m.achievements.editorCreate() : m.common.save()}
-          </button>
-        {/if}
-      </div>
-    </div>
-  </div>
-</div>
+</Sheet>

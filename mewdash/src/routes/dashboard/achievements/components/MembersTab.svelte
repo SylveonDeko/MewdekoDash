@@ -203,12 +203,12 @@
                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
       </div>
       <div class="sm:w-48">
-        <DiscordSelector type="custom" options={sortOptions} selected={sort} searchable={false} ariaLabel={m.achievements.membersSortLabel()}
+        <DiscordSelector type="custom" customIcon="fa-arrow-down-wide-short" clearable={false} options={sortOptions} selected={sort} searchable={false} ariaLabel={m.achievements.membersSortLabel()}
                          onchange={(d) => { if (typeof d.selected === "string") { sort = d.selected; page = 0; load(); } }} />
       </div>
     </div>
 
-    <div class="rounded-2xl border overflow-hidden"
+    <div class="rounded-xl border overflow-hidden"
          style="background: {$colorStore.primary}0c;
                 border-color: {$colorStore.primary}30;">
       {#if loading && members.length === 0}
@@ -267,20 +267,20 @@
     {#if detailLoading}
       <div class="p-10 text-center" style="color: {$colorStore.muted}"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i></div>
     {:else if !detail}
-      <div class="rounded-2xl border p-10 text-center"
+      <div class="rounded-xl border p-10 text-center"
            style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <DuoIcon icon="fa-user" size={36} />
         <p class="text-sm mt-4" style="color: {$colorStore.muted}">{m.achievements.membersPickPrompt()}</p>
       </div>
     {:else}
-      <div class="relative rounded-2xl border p-5 md:p-6 space-y-5" style="z-index: 10;
+      <div class="relative rounded-xl border p-5 md:p-6 space-y-5" style="z-index: 10;
            background: {$colorStore.primary}0c;
            border-color: {$colorStore.primary}30;"
            in:fly={{ x: 20, duration: 200 }}>
         <div class="flex items-center gap-4">
           {#if detail.member.avatarUrl}
-            <img src={detail.member.avatarUrl} alt="" class="w-14 h-14 rounded-full" style="box-shadow: 0 0 0 3px {tierColor(detail.member.tierGrade)};" />
+            <img src={detail.member.avatarUrl} alt="" class="w-14 h-14 rounded-full border-2" style="border-color: {tierColor(detail.member.tierGrade)};" />
           {/if}
           <div class="flex-1 min-w-0">
             <h3 class="text-lg font-bold truncate" style="color: {$colorStore.text}">{detail.member.displayName}</h3>
@@ -317,7 +317,7 @@
         {#if detail.member.inServer}
           <div class="flex flex-col sm:flex-row sm:items-center gap-3">
             <div class="flex-1 min-w-0">
-              <DiscordSelector type="custom" options={grantOptions} selected={grantKey} placeholder={m.achievements.membersGrantPlaceholder()}
+              <DiscordSelector type="custom" customIcon="fa-trophy" clearable={false} options={grantOptions} selected={grantKey} placeholder={m.achievements.membersGrantPlaceholder()}
                                ariaLabel={m.achievements.membersGrantLabel()}
                                onchange={(d) => { grantKey = typeof d.selected === "string" ? d.selected : null; }} />
             </div>
@@ -362,7 +362,7 @@
                       {/if}
                     </span>
                     {#if unlocked}
-                      <button type="button" class="w-9 h-9 rounded-lg shrink-0 disabled:opacity-50" aria-label={m.achievements.membersRevokeLabel({ name: a.name })}
+                      <button type="button" class="w-11 h-11 rounded-lg shrink-0 disabled:opacity-50" aria-label={m.achievements.membersRevokeLabel({ name: a.name })}
                               style="background: #ef444415; color: #ef4444;"
                               disabled={working} onclick={() => revoke(a.key)}>
                         <i class="fa-solid fa-xmark" aria-hidden="true"></i>

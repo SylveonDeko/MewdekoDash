@@ -1,86 +1,57 @@
 <script lang="ts">
   import { m } from "$lib/i18n";
-  import { fly } from "svelte/transition";
+  import { administrationApi } from "$lib/api/index.ts";
   import { colorStore } from "$lib/stores/colorStore";
+  import { logger } from "$lib/logger";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import PluginCard from "$lib/components/plugin/PluginCard.svelte";
+  import { errorText, type TabProps } from "../toolsModel";
 
-  let {
-    gameVoiceChannel,
-    newVoiceChannelRole = $bindable(),
-    voiceChannels,
-    guildChannels,
-    toggleGameVoiceChannel
-  } = $props();
+  type Props = Pick<TabProps, "guildId" | "voiceChannels" | "autoSave" | "notify">;
 
-  function getChannelName(channelId: bigint | null): string {
-    if (!channelId) return m.common.none();
-    const channel = guildChannels.find((c: any) => BigInt(c.id) === channelId);
-    return channel ? channel.name : m.common.channelFallback({ id: channelId.toString() });
+  let { guildId, voiceChannels, autoSave, notify }: Props = $props();
+
+  let channelId = $state<string | null>(null);
+
+  async function load() {
+    try {
+      const value = await administrationApi.getGameVoiceChannel(guildId);
+      channelId = value && value !== 0n ? String(value) : null;
+    } catch (err) {
+      logger.error("Failed to load game voice channel:", err);
+      notify(errorText(err, m.administration.automationLoadFailed()), "error");
+    }
   }
+
+  function change(value: string | null) {
+    const target = value ?? channelId;
+    if (!target || value === channelId) return;
+    const previous = channelId;
+    channelId = value;
+    autoSave.now("gameVoiceChannel", async () => {
+      try {
+        const result = await administrationApi.toggleGameVoiceChannel(guildId, { channelId: BigInt(target) });
+        channelId = result && result !== 0n ? String(result) : null;
+      } catch (err) {
+        channelId = previous;
+        throw err;
+      }
+    });
+  }
+
+  void load();
 </script>
 
-<div class=" rounded-2xl border p-6 transition-all"
-     in:fly={{ y: 20, duration: 300, delay: 500 }}
-     style="background: {$colorStore.primary}0c;
-            border-color: {$colorStore.primary}30;">
-
-  <div class="flex items-center gap-4 mb-6">
-    <div class="p-3 rounded-xl"
-         style="background: {$colorStore.primary}20;">
-      <i class="fa-utility-duo fa-regular fa-headphones"
-         style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-    </div>
-    <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.automationGameVoiceChannelTitle()}</h2>
+<PluginCard title={m.administration.automationGameVoiceChannelTitle()} alwaysOpen>
+  <div class="space-y-1">
+    <span class="block text-sm font-medium" style="color: {$colorStore.text}">{m.common.channel()}</span>
+    <DiscordSelector
+      type="channel"
+      options={voiceChannels}
+      selected={channelId}
+      clearable
+      placeholder={m.common.selectVoiceChannelPlaceholder()}
+      onchange={(detail) => change(typeof detail.selected === "string" ? detail.selected : null)}
+    />
   </div>
-
-  <div class="space-y-4">
-    <p class="text-sm" style="color: {$colorStore.muted}">
-      {m.administration.automationGameVoiceChannelDescription()}
-    </p>
-
-    <div class="flex items-center justify-between">
-      <div>
-        <p class="font-medium" style="color: {$colorStore.text}">
-          {m.administration.automationGameVoiceChannelCurrent({ channel: gameVoiceChannel ? getChannelName(gameVoiceChannel) : m.common.none() })}
-        </p>
-      </div>
-
-      {#if gameVoiceChannel}
-        <button
-          class="px-4 py-2 rounded-lg font-medium transition-colors"
-          style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-          onclick={() => toggleGameVoiceChannel(gameVoiceChannel)}
-        >
-          {m.common.disable()}
-        </button>
-      {/if}
-    </div>
-
-    <div class="space-y-2">
-      <span class="block text-sm font-medium" id="set-game-voice-channel-label"
-            style="color: {$colorStore.text}">
-        {m.administration.automationGameVoiceChannelSetLabel()}
-      </span>
-      <DiscordSelector
-        bind:selected={newVoiceChannelRole.channelId}
-        multiple={false}
-        options={voiceChannels}
-        placeholder={m.common.selectVoiceChannelPlaceholder()}
-        type="channel"
-      />
-      <p class="text-xs" style="color: {$colorStore.muted}">
-        {m.administration.automationGameVoiceChannelHint()}
-      </p>
-
-      {#if newVoiceChannelRole.channelId}
-        <button
-          class="px-4 py-2 rounded-lg font-medium transition-colors"
-          style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-          onclick={() => toggleGameVoiceChannel(BigInt(newVoiceChannelRole.channelId))}
-        >
-          {m.administration.automationGameVoiceChannelSetButton()}
-        </button>
-      {/if}
-    </div>
-  </div>
-</div>
+</PluginCard>

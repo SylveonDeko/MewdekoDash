@@ -24,9 +24,8 @@
 </script>
 
 <div
-  class="flex items-start justify-between gap-3 p-3 rounded-lg"
+  class="flex items-start justify-between gap-3 py-2"
   class:opacity-50={disabled}
-  style="background: {$colorStore.primary}08;"
 >
   <div class="min-w-0">
     <label for={id} class="block text-sm font-medium" style="color: {$colorStore.text};">

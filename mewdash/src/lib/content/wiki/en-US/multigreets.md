@@ -1,22 +1,29 @@
 ---
-title: Greets
+title: Welcome and goodbye
 slug: multigreets
-summary: Post welcome messages in up to thirty channels when someone joins, plus classic goodbye, boost and DM greetings.
+summary: Welcome new members in up to thirty channels, with image cards and an optional captcha
 icon: fa-bell
 category: Actions
 dashboard: /dashboard/multigreets
 module: MultiGreets
-tags: [greets, multigreets, welcome, join message, goodbye, bye, leave message, boost message, greet dm, webhook, placeholders]
+tags: [greets, multigreets, welcome, join message, goodbye, bye, leave message, boost message, greet dm, welcome card, join roles, auto assign, verification, captcha, webhook, placeholders]
 related: [rolegreets, invites, administration]
 ---
 
 ## What it does
 
-When a member joins, the bot posts a greeting in every channel you have set up as a greet. Each greet has its own message, its own delete timer, its own webhook identity and its own bot toggle. You can run all of them at once or pick one at random per join.
+The Welcome and goodbye page is one page of cards that cover everything that happens when a member arrives, leaves or boosts.
 
-Messages go through the embed parser, so a greet can be plain text, a full embed with buttons, or a webhook post with a custom name and avatar. Placeholders fill in the member's name, the server name, the member count and, if invite tracking is on, who invited them.
+| Card | What it does |
+| --- | --- |
+| Join messages | Greets posted in channels when someone joins. Each channel can have its own message, delete timer and webhook |
+| Goodbye message | One message posted when someone leaves |
+| DM welcome | A private message sent to the member on join |
+| Boost message | One message posted when someone boosts the server |
+| Join roles | Roles given automatically to new members and to new bots |
+| Verification | A captcha button new members must pass before they get access |
 
-The older single-message system still exists alongside this. It handles the goodbye message when someone leaves, the boost announcement when someone boosts, and a private welcome DM. Those live in the Administration module and are described further down.
+Messages go through the embed parser, so a message can be plain text or a full embed with buttons. Placeholders fill in the member's name and the server name. They also cover the member count and, if invite tracking is on, who invited them.
 
 ## Why you would use it
 
@@ -24,32 +31,97 @@ The older single-message system still exists alongside this. It handles the good
 - Different greeting styles per channel, for example an embed in one and a webhook "character" in another.
 - A pool of greetings where each new member gets one picked at random.
 - A short welcome that deletes itself after a minute so the channel does not fill up.
-- A goodbye or boost message without setting up anything else.
+- Keep raids and bots out with a captcha, while members who pass get their roles automatically.
 
-## Greet types
+## Join messages
 
-The **Greet Type** is server-wide and decides what happens on a join.
+The **Join messages** card has a switch in its header. Turning it off disables every join greet without deleting them, and turning it on restores the last mode.
 
-| Type | Dashboard label | What happens |
-| --- | --- | --- |
-| MultiGreet | All Greets | Every enabled greet fires, in the order they were added. Default. |
-| RandomGreet | Random Greet | One greet is chosen at random from the list and fires. Disabled greets can be picked and then skipped. |
-| Off | Disabled | No greets fire at all. |
+**Mode** decides what happens on a join.
 
-## What one greet holds
+| Mode | What happens |
+| --- | --- |
+| Send every message | Every enabled greet fires, in the order they were added. Default |
+| Send one at random | One greet is chosen at random from the list and fires. Disabled greets can be picked and then skipped |
 
-Each greet is tied to one channel. A channel can hold up to five greets, and a server can hold thirty in total. Greets are numbered by their position in the list, and that number is what the commands use.
+To add a greet, pick a channel under **Add a channel** and press **Add**. A channel can hold up to five greets and a server up to thirty. Each greet then gets its own card named after the channel, with a switch to disable it and a trash button to delete it. Until you add one the card says "No join messages yet".
 
 | Field | Default | Meaning |
 | --- | --- | --- |
-| Channel | the channel you added | Where this greet is posted |
-| Message | empty | Text or embed template. An empty greet sends nothing. |
-| Delete After | 0 (never) | Seconds until the greeting deletes itself |
-| Greet Bots | off | Whether the greet fires when a bot account joins |
-| Webhook | none | Post through a webhook with a custom name and avatar instead of as the bot |
-| Enabled | on | Disabled greets are skipped without being removed |
+| Message | empty | Text or embed template, edited in the message editor with a preview. An empty greet sends nothing |
+| Delete after | none | Time until the greeting deletes itself, written like `45s` or `1m30s` |
+| Greet bots | off | Whether the greet fires when a bot account joins |
+| Webhook | Not configured | Post through a webhook with a custom name and optional avatar URL instead of as the bot. Use the pen button to edit, enter a **Webhook name** and **Avatar URL (optional)**, then **Save** |
+| Switch | on | Disabled greets are skipped without being removed |
 
 If the channel is deleted, the greet is removed the next time it tries to fire. If a webhook is deleted or the bot loses permission to post, the greet is switched to disabled instead of erroring every join.
+
+## Goodbye, DM welcome and boost messages
+
+These three cards work the same way. Each has a header switch and a message editor.
+
+| Card | Channel | Delete after (seconds) | Fires when |
+| --- | --- | --- | --- |
+| Goodbye message | Yes | 0 to 600 | A member leaves |
+| Boost message | Yes | 0 to 600 | A member starts boosting, or boosts again |
+| DM welcome | No, sent privately | None | A member joins |
+
+Messages are not sent until the switch is on and a message is written. Goodbye and boost messages also need a channel. In the goodbye message `%user%` mentions the member who left.
+
+Greet DMs need care: mass DMs from unverified bots can get the bot flagged. Any member can block these DMs for themselves with `greetdmoptout`, or with the **Welcome DMs** toggle on their own profile page in the dashboard.
+
+The goodbye message can also be sent through a webhook with `leavehook`, which is command only.
+
+## Cards on messages
+
+Every join greet, the goodbye message, the DM welcome, the boost message and every role greet can carry an image card drawn for the member. The message editor has a **Card** section with a placement and a **Design card** button.
+
+| Placement | What it does |
+| --- | --- |
+| None | The message has no card |
+| Embed image | The card is the embed's image. A message with no embed gets the card attached instead |
+| Attached | The card is sent as a file with the message |
+
+Each message keeps its own card, so two join greets can look different. **Design card** opens the card designer, where you can start from a starter layout or one of the background presets, then add and arrange text and image layers. Text accepts placeholders, and a new text layer starts as `%user.name%`. The message preview shows the card where it will appear, drawn with your own account. A server can store up to 30 uploaded images, each up to 8 MB, shared by all its cards.
+
+If a card can't be drawn, the message is sent without it. Cards sent through a webhook are uploaded with the message. A goodbye message sent for several members at once has no card.
+
+The text commands can set the basics: `welcomecard <greet, bye, dmgreet, boost or rolegreet> <option> [value]` with the options `show`, `enable`, `disable`, `placement`, `color`, `textcolor`, `background`, `overlay`, `title`, `subtitle`, `font`, `avatar` and `reset`. For greet and rolegreet a change applies to every message of that kind. `enable` attaches the card and `placement` takes `none`, `embed` or `attached`. `welcomecardpreview [target]` sends a preview, and `backgroundpresets [category]` lists the presets. `welcomecard` and `welcomecardpreview` need Manage Server. The slash command is `/welcomecard` with `show`, `toggle`, `placement`, `text`, `style`, `background`, `reset`, `presets` and `preview`.
+
+## Join roles
+
+**Join roles** has two multi-select role pickers: **Members** and **Bots**. Every new member gets the member roles and every new bot gets the bot roles. These are the same auto-assign roles managed with `autoassignrole` and `autoassignbotrole` in Administration.
+
+> [!WARNING]
+> Do not use the Verified role as a join role. That would give everyone the role without passing the captcha, and the bot refuses the setting.
+
+## Verification
+
+Verification makes new members pass a captcha before they get access. The card has a header switch and these settings.
+
+| Setting | Default | What it controls |
+| --- | --- | --- |
+| Verification channel | none | Channel where the verification button is posted |
+| Log channel | none | Optional channel for verification results |
+| Unverified role | none | Role new members hold until they pass |
+| Verified role | none | Role given when they pass |
+| Attempts allowed | 3 | Wrong answers allowed, 1 to 10 |
+| Time to verify (minutes) | 10 | How long a captcha stays valid, and how long a member who ran out of attempts is locked out, 1 to 60 |
+| Kick after too many failed attempts | off | Kick instead of only locking out |
+
+The buttons under the settings do the work.
+
+| Button | What it does |
+| --- | --- |
+| Set up | Uses the chosen channel, or creates a `verify` channel if none is set, and posts the verification button |
+| Post button again | Replaces the verification message in the channel |
+| Preview channel changes | Lists the channels whose permissions would change so the Unverified role cannot see them, with an **Apply** button |
+| Restore channels | Undoes the permission changes |
+| Verify current members | Counts the members who would be verified without a captcha, then **Verify them** runs it in the background |
+
+A member presses the button, receives a captcha image, and types the answer. Passing gives them the Verified role.
+
+The Unverified role and Verified role cannot be the same, and the bot's highest role must sit above both.
 
 ## Placeholders
 
@@ -82,50 +154,19 @@ Greets are built with the user, server and bot placeholder sets. Inviter placeho
 > [!EXAMPLE]
 > `Welcome %user.mention% to %server%! You are member #%server.members%.`
 
-The full list of server, channel and bot placeholders is on the placeholders page. Channel placeholders are not filled in for greets.
-
-## The classic greet, bye and boost commands
-
-These predate multi greets and live in the Administration module. They are one message each, stored on the server config, and toggled from the channel you run the command in.
-
-| Message | Fires when | Placeholders |
-| --- | --- | --- |
-| Bye | A member leaves | User, server and bot sets, plus channel placeholders. `%user%` mentions the member who left. |
-| Boost | A member starts boosting, or boosts again | User, channel, server, bot and gif sets |
-| Greet DM | A member joins, sent as a private message | User, channel, server, bot and gif sets |
-
-Running `bye` or `boost` toggles that message on or off and sets the channel to the one you typed in. `byedel` and `boostdel` set a self-delete timer in seconds; `boostdel` is capped at 600. The message commands with no text show the current message. `leavehook` wraps the bye message in a webhook with a custom name and avatar, and `leavehook disable` removes it.
-
-Greet DMs need care. The bot asks you to confirm before enabling them unless it is a verified bot, because mass DMs from unverified bots can get the bot flagged. Any member can block these DMs for themselves with `greetdmoptout`, or with the **Welcome DMs** toggle on their own profile page in the dashboard.
-
-There is no classic channel greet command. Use a multi greet for channel welcomes.
-
-## Settings
-
-Everything is on the Greets page in the dashboard.
-
-| Setting | Default | What it controls |
-| --- | --- | --- |
-| Greet Type | All Greets | All Greets, Random Greet or Disabled |
-| Add New Greet | | Pick a channel, then click **Add Greet** |
-| Greeting Message | empty | The embed builder for one greet. Supports content, up to ten embeds and components. |
-| Delete After | Never | Enter a time like `1m30s` or `45s` |
-| Webhook | Not configured | Webhook name and optional avatar URL |
-| Greet Bots | off | Fire for bot accounts too |
-| Enabled | on | Turn one greet off without deleting it |
-
-The bye, boost and greet DM messages are not on this page. Set them with the commands above.
+The full list of placeholders is on the placeholders page.
 
 ## Setup walkthrough
 
-1. Open **Greets** in the dashboard and leave **Greet Type** on **All Greets**.
-2. Under **Add New Greet**, choose the welcome channel and click **Add Greet**.
-3. On the new card, open **Greeting Message** and build your message, using the placeholders above. Save it.
-4. Optionally set **Delete After**, add a **Webhook** name and avatar, and turn on **Greet Bots** if you want bot joins announced.
-5. Repeat for any other channels. Switch to **Random Greet** if you added several to the same channel and want variety.
-6. For a goodbye message, run `byemsg Goodbye %user%, we will miss you` in the channel you want, then `bye` to turn it on.
-7. For a boost message, run `boostmsg Thanks for boosting, %user%!` and then `boost`.
-8. Test with `byetest` and `boosttest`. Multi greets have a preview: run `multigreetmessage 1` and press **Preview**.
+1. Open **Welcome and goodbye** in the dashboard. In **Join messages**, leave **Mode** on **Send every message**.
+2. Under **Add a channel**, choose the welcome channel and press **Add**.
+3. On the new card, open the message editor, build your message with the placeholders above and save it.
+4. Optionally set **Delete after**, add a **Webhook**, and turn on **Greet bots** if you want bot joins announced.
+5. Repeat for any other channels. Switch **Mode** to **Send one at random** if you added several and want variety.
+6. For a goodbye message, open **Goodbye message**, pick a channel, write the message and turn the card on. Do the same for **Boost message** and **DM welcome**.
+7. In **Join roles**, pick the roles new members and new bots should get.
+8. To add an image to a message, open its editor, set **Card** to **Embed image** or **Attached**, and press **Design card**.
+9. For a captcha gate, fill in **Verification**, press **Set up**, use **Preview channel changes** and **Apply**, then turn the card on.
 
 ## Commands
 
@@ -155,12 +196,16 @@ Run these with your server's prefix (`.` unless you changed it). Multi greet com
 | `greetdmmsg [text]` | | Manage Server | Show or set the welcome DM text |
 | `greetdmtest [@user]` | | Manage Server | Send the welcome DM as a test |
 | `greetdmoptout` | `gdmoptout` | Nobody | Stop receiving welcome DMs from this bot anywhere |
+| `welcomecard <target> [option] [value]` | `wcard` | Manage Server | Set up the card on a kind of message |
+| `welcomecardpreview [target]` | `wcardpreview`, `wcp` | Manage Server | Preview a message card |
+| `verification [option] [value]` | `verify`, `vgate` | Administrator | Show or change the verification gate. Options: `setup`, `enable`, `disable`, `channel`, `unverifiedrole`, `verifiedrole`, `attempts`, `timeout`, `kickonfail`, `logchannel`, `panel`, `permissions`, `verifyexisting` |
 
 ## Tips and gotchas
 
 - `multigreetdelete` needs the bot to have Manage Messages, and `multigreetwebhook` and `leavehook` need Manage Webhooks.
-- Greet numbers are positions in the list, so removing one shifts the numbers of everything after it. Run `multigreetlist` before editing.
-- The `off` option of `multigreettype`, `/multigreets type` and the dashboard's **Disabled** button all set the same greet type, so any of them turns the system off without deleting your greets.
+- Greet numbers used by commands are positions in the list, so removing one shifts the numbers of everything after it. Run `multigreetlist` before editing.
+- The **Join messages** switch, `multigreettype off` and `/multigreets type` all set the same greet type, so any of them turns the system off without deleting your greets.
 - Invite placeholders wait up to five seconds for the join to be attributed before the greet goes out, so the inviter is right even when several people join at once.
 - The welcome DM only works if the member allows DMs from server members. Failed DMs are ignored.
 - Role Greets are a separate feature that fires when a role is given rather than on join.
+- Run **Preview channel changes** before **Apply** and make sure the bot can still see and manage every channel it needs.

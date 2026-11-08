@@ -58,7 +58,6 @@
   "landing_multi_greets": "Multisaludos",
   "landing_music_bot": "Bot de música",
   "landing_no_servers_to_show_right_now": "No hay servidores que mostrar ahora mismo.",
-  "landing_or_just_hop_in_discord_for": "O pásate por Discord para dudas rápidas y ayuda",
   "landing_our_top_servers": "Nuestros mejores servidores",
   "landing_per_server_bot_profile": "Perfil del bot por servidor",
   "landing_polls_with_buttons": "Encuestas con botones",
@@ -130,7 +129,5 @@
   "tails_subheading": "Cada cola tiene más de un trabajo.",
   "tails_tag_text": "Deja que los miembros elijan sus propios roles con botones o un menú desplegable.",
   "tails_wrench_text": "Escribe tus propios comandos y respuestas, y cambia el aspecto del bot en tu servidor.",
-  "tails_wrench_title": "Hazlo tuyo",
-  "update_next": "Siguiente actualización",
-  "update_previous": "Actualización anterior"
+  "tails_wrench_title": "Hazlo tuyo"
 }

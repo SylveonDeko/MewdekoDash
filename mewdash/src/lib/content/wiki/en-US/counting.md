@@ -1,7 +1,7 @@
 ---
 title: Counting
 slug: counting
-summary: Turn a channel into a counting game where members take turns posting the next number, with reactions, streaks, leaderboards, save points and optional punishments for breaking the count.
+summary: Turns a channel into a counting game where members take turns posting the next number
 icon: fa-list-numeric
 category: Community
 dashboard: /dashboard/counting
@@ -14,9 +14,9 @@ related: [administration, xp]
 
 Staff pick a channel and run `countingsetup`. From then on the bot watches every message in that channel. If a message is the next expected number, the bot reacts with a tick and records the count for that member. If it is the wrong number, the bot reacts with a cross and, by default, deletes the message two seconds later so the channel stays clean.
 
-The bot keeps a current number, the highest number ever reached, the total number of counts and who counted last. By default the same member may not count twice in a row, so the game needs at least two people. Members can check their own stats, streaks and accuracy, and there is a per-channel leaderboard.
+The bot keeps the current number and the highest number ever reached, along with the total number of counts and who counted last. By default the same member may not count twice in a row, so the game needs at least two people. Members can check their own stats, which include streaks and accuracy. There is also a per-channel leaderboard.
 
-For staff there are save points that let you roll the count back after a bad run, a moderation layer that tracks wrong counts per member inside a time window and applies tiered punishments, counting bans and timeouts, and role rules for who may take part. Several channels can run counting at the same time, each with its own settings.
+For staff there are save points that let you roll the count back after a bad run, and role rules for who may take part. A moderation layer tracks wrong counts per member inside a time window and applies tiered punishments, including counting bans and timeouts. Several channels can run counting at the same time, each with its own settings.
 
 ## Why you would use it
 
@@ -32,15 +32,15 @@ When a member posts in a counting channel the bot runs these checks in order:
 1. Members who are banned from counting are ignored entirely.
 2. Members with a banned role, or without one of the required roles, or with an ignored role, are skipped. Ignored-role messages are deleted if you asked for that.
 3. If the message looks like a valid number, the bot tests that it can react to it. If the reaction fails, the bot treats it as the member blocking the bot, deletes the message and posts a short warning that disappears after five seconds.
-4. A member still on **Cooldown** is rejected.
+4. A member still on **Cooldown (seconds)** is rejected.
 5. If **Allow repeated users** is off and the same member counted last, the message is rejected.
 6. The text is parsed with the channel's pattern. Anything that is not a number is handled by the non-number rules below.
 7. The number must equal the current number plus the **Increment**. A wrong number counts as an error for that member, and if **Reset count on error** is on the channel resets to the start number.
-8. If **Max Number** is set and the number passes it, the count stops and staff are notified.
+8. If **Max number** is set and the number passes it, the count stops and staff are notified.
 
 A correct count updates the channel, the member's stats and streak, starts their cooldown, checks milestones and logs the event.
 
-Successful counts get the **Success Emote** reaction (a tick by default) and failures get the **Error Emote** (a cross by default). Both can be a standard emoji or a custom emote.
+Successful counts get the **Success emote** reaction (a tick by default) and failures get the **Error emote** (a cross by default). Both can be a standard emoji or a custom emote.
 
 ## Counting patterns
 
@@ -48,31 +48,29 @@ The pattern decides how members must write numbers. The bot parses these pattern
 
 | Pattern | Members type |
 | --- | --- |
-| Normal | Plain digits: `1`, `2`, `3`. With a **Number Base** other than 10 the digits are read in that base. |
+| Normal | Plain digits: `1`, `2`, `3`. With a **Number base** other than 10 the digits are read in that base. |
 | Roman | Roman numerals: `I`, `II`, `III`, `IV` |
 | Binary | `1`, `10`, `11`, `100` |
 | Hexadecimal | `1` to `9`, then `A`, `B`, `C` |
 | Words | Written words such as `twenty-one` or `one hundred and five` |
-| Ordinal | `1st`, `2nd`, `3rd`, `4th` |
 | Fibonacci | The Fibonacci sequence: `1`, `1`, `2`, `3`, `5`, `8` |
 | Primes | Prime numbers only: `2`, `3`, `5`, `7`, `11` |
 
-Normal is the default. The pattern is set from the dashboard; there is no command for it.
-
-> [!WARNING]
-> The **Counting Pattern** dropdown on the dashboard currently lists Sequential, Skip Multiples, Fibonacci, Primes and Powers of Two, and its values do not line up with the bot's pattern list above. Only Sequential (Normal) is safe to pick from the dashboard for now.
+Normal is the default. The pattern is set from the **Counting pattern** dropdown on the dashboard, which lists the same patterns (Normal is called Sequential there). There is no command for it.
 
 ## Milestones
 
-The bot records a milestone the first time the count lands on a multiple of 100, 500, 1,000, 5,000 or 10,000. Milestones show in the **Statistics** tab and in `countingstatus`.
+The bot records a milestone the first time the count lands on one of the channel's milestone numbers. Until you set your own list the defaults are 100, 250, 500, 1,000, 2,500, 5,000 and 10,000. The **Statistics** tab shows **Milestones reached** and `countingstatus` shows them too.
 
-The dashboard's **Management** tab and `countingmilestones` let you store a custom list of milestone numbers per channel, the same tab and `countingmilestonemessage` store a milestone message, and `countingmilestonechannel` stores a milestone announcement channel. These values are stored, but the bot does not post a milestone announcement yet, so treat them as reserved for a future version.
+The **Milestones** card on the **Settings** tab and `countingmilestones` store a custom list of milestone numbers per channel. Type a number and click **Add**, or click the X on one to remove it. With no custom list the card says it is using the default milestones. When the count reaches a milestone, the bot posts the channel's **Milestone message** if it has one.
+
+The **Messages** card holds a **Correct count message**, a **Wrong count message** and a **Milestone message**. The first two are sent after each correct or wrong count. All three take placeholders `%number%`, `%expected%`, `%user%`, `%user.mention%`, `%server%` and `%channel%`, and can be an embed. `countingmilestonechannel` stores a milestone announcement channel that the bot does not use yet.
 
 ## Stats and leaderboards
 
 Every member has per-channel stats: contributions, current streak, highest streak, accuracy, errors, total numbers counted and last contribution. `countingstats` shows them with the member's rank.
 
-`countingleaderboard` and the **Leaderboard** tab sort by one of four types:
+`countingleaderboard` and the **Leaderboard** card on the **Statistics** tab sort by one of four types:
 
 | Type | Ranked by |
 | --- | --- |
@@ -81,11 +79,11 @@ Every member has per-channel stats: contributions, current streak, highest strea
 | `accuracy` | Correct counts as a percentage |
 | `totalnumbers` | Total numbers counted |
 
-The command shows the top 20, ten per page.
+The command shows the top 20, ten per page. On the page the sort dropdown reads **Contributions**, **Highest streak**, **Accuracy** or **Total numbers**, and a second dropdown picks how many entries to show: 10, 20, 50 or 100.
 
 ## Save points
 
-`countingsave` stores the current number with an optional reason and gives you a save ID. `countingrestore <id>` puts the channel back to that number after a confirmation prompt. `countingreset` sets the count to any number directly, with a confirmation, and defaults to 0. All three are also on the **Management** tab.
+`countingsave` stores the current number with an optional reason and gives you a save ID. `countingrestore <id>` puts the channel back to that number after a confirmation prompt. `countingreset` sets the count to any number directly, with a confirmation, and defaults to 0. All three are also on the **Management** tab, under **Save points** and **Reset channel**.
 
 ## Moderation
 
@@ -98,31 +96,57 @@ Two extra rules only apply when moderation is on:
 - **Non-numbers**: `countmodnonnumbers` decides whether chat messages in the channel are deleted (default yes) and whether they count as a violation (default no).
 - **Edits**: `countmodedits` decides whether editing a message in the channel deletes it (default yes) and whether it counts as a violation (default no).
 
-Role rules: **Required Roles** means a member needs at least one of them to count, **Banned Roles** blocks members who hold any of them, and `countmodignore` skips members with the listed roles and optionally deletes their messages.
+Role rules: **Required roles** means a member needs at least one of them to count, and **Banned roles** blocks members who hold any of them. `countmodignore` skips members with the listed roles and optionally deletes their messages.
 
-`countingban`, `countingtimeout` and `countingunban` block a single member from a channel, permanently or for a duration. The **Management** tab has the same controls by user ID, plus a **Purge Channel Data** button that matches `countingdisable` with purge.
+`countingban`, `countingtimeout` and `countingunban` block a single member from a channel, permanently or for a duration. The **Management** tab has the same controls. It also has violation stats and a **Purge channel data** card that matches `countingdisable` with purge. The moderation tiers, thresholds, window, non-number and edit rules are commands only. The dashboard has no controls for them.
 
-## Settings
+## The Counting page
 
-The dashboard has five tabs: **Channels**, **Configuration**, **Statistics**, **Leaderboard** and **Management**. Pick a channel in **Channels** first; the other tabs act on that channel.
+The page has four tabs: **Channels (N)** with the number of counting channels, **Settings**, **Statistics** and **Management**. Everything except **Channels** acts on one channel. Pick it with the channel dropdown above the tab, or open it from **Channels**. The tab and channel are kept in the URL. With no counting channel set up, those tabs say "No counting channels configured".
+
+### Channels tab
+
+**Setup new counting channel** has a channel picker, **Start number** (default 1, minimum 0) and **Increment** (default 1, minimum 1). Click **Setup channel** to start counting there. Channels that already count are not offered. After setup the **Settings** tab opens for the new channel.
+
+Each counting channel then shows a card with its **Current** number, **Highest** number and **Last by**, a status of **Active**, **Inactive** or **Active - record high**, a **Settings** button and **Disable channel**. Disabling asks for confirmation and keeps the stored data. Use **Purge everything** on the **Management** tab to remove data.
+
+### Settings tab
+
+Settings save as you change them. The **Rules** card:
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
-| Start Number | 1 | The number the count starts from, set at setup |
-| Increment | 1 | How much each count adds; must be positive |
-| Counting Pattern | Normal | How numbers are written, see above |
-| Number Base | 10 | Base used by the Normal pattern |
+| Counting pattern | Normal | How numbers are written, see above |
+| Number base | 10 | Base used by the Normal pattern, 2 to 36 |
+| Max number | 0 (unlimited) | Count stops when this is passed |
 | Cooldown (seconds) | 0 | Wait between two counts by the same member, 0 to 300 |
-| Max Number | 0 (unlimited) | Count stops when this is passed |
-| Success Emote | tick | Reaction on a correct count |
-| Error Emote | cross | Reaction on a wrong count |
 | Allow repeated users | Off | Let one member count twice in a row |
 | Reset count on error | Off | Wrong number resets the channel to the start |
 | Delete wrong messages | On | Delete wrong numbers after two seconds |
-| Enable achievements | On | Stored flag shown in `countingconfig` |
-| Enable competitions | On | Stored flag shown in `countingconfig` |
-| Required Roles | none | Members need one of these to count |
-| Banned Roles | none | Members with these cannot count |
+
+The other cards:
+
+| Card | Settings |
+| --- | --- |
+| Reactions | **Success emote** (tick by default) and **Error emote** (cross by default), each a standard or custom emoji |
+| Role restrictions | **Required roles** and **Banned roles**, both empty by default |
+| Features | **Enable achievements** and **Enable competitions**, both on by default, stored flags shown in `countingconfig` |
+| Milestones | The custom milestone list, see above |
+| Messages | **Correct count message**, **Wrong count message** and **Milestone message** |
+
+### Statistics tab
+
+Tiles for the channel: **Current number**, **Highest number**, **Total participants**, **Total errors**, **Milestones reached**, **Average accuracy**, **Last activity** and **Top contributor**. Below them is the **Leaderboard** card, see above.
+
+### Management tab
+
+| Card | What it does |
+| --- | --- |
+| Save points | Type an optional reason and click **Create save point**. Each save point shows its number, age, who saved it and why, with buttons to restore (after a confirmation) or delete it |
+| Reset channel | **Reset to number** with an optional reason. Asks for confirmation. The default is 1 here, while `countingreset` defaults to 0 |
+| Counting bans | Pick a member, optionally set **Minutes**, add a reason and click **Ban**. With no minutes the ban is permanent. Banned members are listed with **Unban** |
+| Violations | A window dropdown (**Last 24 hours**, **Last 7 days**, **Last 30 days**) with tiles for **Total**, **Wrong counts**, **Timeouts** and **Bans**, the top violators, and a member picker with **Clear wrong count** |
+| Purge channel data | **Purge everything** deletes every count, statistic, streak, ban and save point, and the channel stays configured. Asks for confirmation and cannot be undone |
 
 > [!NOTE]
 > The `countingfailurethreshold` command stores a value from 1 to 10 (default 3) and `countmodthreshold` stores a wrong-count threshold, but punishments only fire from the tiers you set with `countmodpunish`.
@@ -130,9 +154,9 @@ The dashboard has five tabs: **Channels**, **Configuration**, **Statistics**, **
 ## Setup walkthrough
 
 1. Create a channel and give the bot View Channel, Send Messages, Add Reactions, Manage Messages and Read Message History there.
-2. Open **Counting** in the dashboard, pick the channel under **Setup New Counting Channel**, set **Start Number** and **Increment**, and save.
-3. In **Configuration**, set a **Cooldown** if you want to slow the game down, and choose emotes.
-4. Optionally add **Required Roles** or **Banned Roles**.
+2. Open **Counting** in the dashboard, pick the channel under **Setup new counting channel**, set **Start number** and **Increment**, and click **Setup channel**.
+3. On **Settings**, set a **Cooldown (seconds)** if you want to slow the game down, and choose emotes under **Reactions**.
+4. Optionally add **Required roles** or **Banned roles**.
 5. If you want automatic punishments, run `countmodenable true` in the channel and add tiers with `countmodpunish`.
 6. Post `1` from one account and `2` from another to confirm the reactions work.
 

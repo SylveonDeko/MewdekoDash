@@ -13,6 +13,7 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import { TIMEZONE_OPTIONS } from "$lib/config/timezones";
   import MyAchievements from "./MyAchievements.svelte";
+  import MyDesigns from "./MyDesigns.svelte";
 
   /** Zodiac sign options for the profile editor */
   const zodiacOptions = $derived([
@@ -1343,6 +1344,8 @@
           {#key selectedGuild.id}
             <MyAchievements guildId={selectedGuild.id} {userId} onerror={(text) => showMessage(text, "error")} />
           {/key}
+
+          <MyDesigns guildId={selectedGuild.id} {userId} onerror={(text) => showMessage(text, "error")} onsuccess={(text) => showMessage(text, "success")} />
 
           <!-- Settings & Activity Grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

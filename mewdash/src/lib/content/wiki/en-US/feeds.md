@@ -1,10 +1,10 @@
 ---
 title: Feeds
 slug: feeds
-summary: Subscribe a channel to an RSS or Atom feed and have the bot post every new item, either as a default embed or in a message you design yourself.
+summary: Subscribe a channel to an RSS or Atom feed and the bot posts each new item
 icon: fa-newspaper
 category: Actions
-dashboard: /dashboard/feeds
+dashboard: /dashboard/alerts?tab=feeds
 module: Searches
 tags: [rss, atom, feed, news, blog, youtube, updates, subscriptions, feedadd]
 related: [embedbuilder, utility]
@@ -12,15 +12,15 @@ related: [embedbuilder, utility]
 
 ## What it does
 
-You give the bot a feed URL and a channel. From then on the bot checks the feed regularly and posts anything published since the last check. Members see a new message in the channel each time the site publishes something, with the item's title, a link, and, where the feed provides one, the description and an image.
+You give the bot a feed URL and a channel. From then on the bot checks the feed regularly and posts anything published since the last check. Members see a new message in the channel each time the site publishes something, with the item's title and a link. The description and an image are included where the feed provides them.
 
-Staff can subscribe up to ten feeds per server and can give each one its own message. The message is run through the embed parser, so a feed update can be plain text, an embed, or an embed with buttons, and it can use placeholders that pull the item's title, link, author, and so on.
+Staff can subscribe as many feeds as they like and can give each one its own message. The message is run through the embed parser, so a feed update can be plain text or an embed with buttons, and it can use placeholders that pull the item's title, link, author and more.
 
 Nothing is required from members. They just read the channel.
 
 ## Why you would use it
 
-- Post your community's blog, patch notes, or changelog into an announcements channel automatically.
+- Post your community's blog or patch notes into an announcements channel automatically.
 - Mirror a news site or subreddit feed into a discussion channel.
 - Follow a YouTube channel or podcast through its RSS feed.
 - Keep a status or release feed visible without anyone copying links by hand.
@@ -47,9 +47,9 @@ If a feed has no custom message, the bot sends an embed with:
 
 ### Custom messages and placeholders
 
-Set a custom message with `feedmessage` or the **Edit Message** button on the dashboard. The text goes through the embed parser, so anything from the [embed builder](/wiki/embedbuilder) works: plain text, embed JSON, or both. Role and user mentions in the plain text part will ping.
+Set a custom message with `feedmessage` or by opening a feed in the **Feeds** list on the dashboard, which shows the **Feed message** editor. The text goes through the embed parser, so anything from the [embed builder](/wiki/embedbuilder) works: plain text, embed JSON, or both. Role and user mentions in the plain text part will ping.
 
-These placeholders are replaced in the custom message, on top of the general server, channel, and bot placeholders from the placeholders page.
+These placeholders are replaced in the custom message, on top of the general placeholders from the placeholders page.
 
 | Placeholder | Value |
 | --- | --- |
@@ -70,22 +70,16 @@ Set the message to `-` to go back to the default embed.
 
 ## Settings
 
-Feeds have no server-wide settings. Each subscription has a channel and URL, chosen when it is added, plus an optional message. The dashboard page is called **RSS Feeds** and has three tabs.
-
-| Tab | What it shows |
-| --- | --- |
-| RSS Feeds | Every subscription with its channel, URL, and date added. **Edit Message** or **Add Custom Message** opens a text box; a preview of the message renders under it. **Delete** removes the feed after a confirmation. |
-| Add Feed | A **Channel** picker and an **RSS Feed URL** box, with an **Add RSS Feed** button |
-| Statistics | **Total Feeds**, **Unique Feeds**, **Channels**, and a **Feeds by Channel** breakdown |
+Feeds have no server-wide settings. Each subscription has a channel and URL, chosen when it is added. It can also have a message. Feeds live on the **Feeds** tab of the **Alerts** page, next to the other alert tabs. The **Add feed** card takes a channel and a **Feed URL**. The **Feeds** card lists every subscription with its channel and URL, and marks the ones that have a custom message. Open a feed to write its message in the **Feed message** editor, which lists the placeholders above. Use the remove button to delete a feed after the **Remove this feed?** confirmation. Message changes save as you type.
 
 The channel and URL of an existing feed cannot be changed. Remove the feed and add it again.
 
 ## Setup walkthrough
 
-1. Open **Feeds** in the dashboard and switch to **Add Feed**.
-2. Pick the **Channel** the updates should go to.
-3. Paste the feed address into **RSS Feed URL** and press **Add RSS Feed**. It must be a full `http` or `https` address to an RSS or Atom document, not the site's home page.
-4. Back on **RSS Feeds**, press **Add Custom Message** if you want your own wording, then **Save**.
+1. Open **Alerts** in the dashboard and switch to **Feeds**.
+2. In the **Add feed** card, pick the channel the updates should go to.
+3. Paste the feed address into the URL box and press **Add feed**. It must be a full `http` or `https` address to an RSS or Atom document, not the site's home page.
+4. Open the feed in the **Feeds** card if you want your own wording.
 5. Run `feedtest 1` in Discord to post the newest item and check the result. The number is the feed's position in `feedlist`.
 
 ## Commands
@@ -102,7 +96,7 @@ Run these with your server's prefix (`.` unless you changed it). All feed comman
 
 ## Tips and gotchas
 
-- The limit is ten feeds per server, and the same URL cannot be added twice. `feedadd` reports one combined error for an unreadable link, a duplicate, and the limit, so check `feedlist` if you are not sure which it was.
+- The same URL cannot be added twice. `feedadd` reports one combined error for an unreadable link and a duplicate, so check `feedlist` if you are not sure which it was.
 - Adding a feed through the dashboard does not test the URL first. Use `feedtest` afterwards to make sure the bot can read it.
 - Numbers in `feedremove`, `feedmessage`, and `feedtest` come from `feedlist`, which orders feeds by when they were added.
 - The bot needs Send Messages and Embed Links in the target channel. Without Embed Links the default embed will not appear.

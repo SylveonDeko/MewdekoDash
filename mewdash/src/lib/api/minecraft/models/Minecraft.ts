@@ -74,6 +74,11 @@ export interface UpdateMinecraftServerRequest {
   serverType?: number;
   queryPort?: number;
   isDefault?: boolean;
+  /** A channel id, or 0 to clear it. */
+  chatChannelId?: bigint;
+  joinLeaveChannelId?: bigint;
+  deathChannelId?: bigint;
+  advancementChannelId?: bigint;
 }
 
 /**

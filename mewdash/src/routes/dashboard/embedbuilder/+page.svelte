@@ -2,7 +2,7 @@
 <script lang="ts">
   import { m } from "$lib/i18n";
   import type { PageData } from "./$types";
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount, untrack } from "svelte";
   import { get } from "svelte/store";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { chatTriggersApi, embedsApi } from "$lib/api/index.ts";
@@ -13,7 +13,9 @@
     SendableChannel,
     SendEmbedResult
   } from "$lib/api/embeds/models";
-  import { fade, fly } from "svelte/transition";
+  import { fade } from "svelte/transition";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/state";
   import { logger } from "$lib/logger.ts";
   import { colorStore } from "$lib/stores/colorStore.ts";
 
@@ -21,13 +23,17 @@
   import EmbedEditor from "$lib/components/specialized/EmbedEditor.svelte";
   import ComponentEditor from "$lib/components/specialized/ComponentEditor.svelte";
   import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import ImagePlaceholderChip from "$lib/components/specialized/ImagePlaceholderChip.svelte";
+  import { newImagePlaceholder, removePlaceholder } from "$lib/utils/imagePlaceholders";
   import PersonaManager from "$lib/components/specialized/PersonaManager.svelte";
   import ValidationCard from "$lib/components/specialized/ValidationCard.svelte";
   import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
   import Notification from "$lib/components/ui/Notification.svelte";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import PluginPage from "$lib/components/plugin/PluginPage.svelte";
+  import JsonTab from "./components/JsonTab.svelte";
+  import SavedTab from "./components/SavedTab.svelte";
+  import SendTab from "./components/SendTab.svelte";
 
   interface Props {
     data: PageData;
@@ -126,7 +132,44 @@
 
 
   // Main navigation state
-    let activeMainTab = $state("templates");
+  const TAB_IDS = ["templates", "editor", "components", "json", "saved", "send"];
+  const activeMainTab = $derived(
+    TAB_IDS.find(id => id === page.url.searchParams.get("tab")) ?? "templates"
+  );
+
+  function selectTab(id: string) {
+    if (id === activeMainTab) return;
+    const url = new URL(page.url);
+    url.searchParams.set("tab", id);
+    void goto(url, { replaceState: true, noScroll: true, keepFocus: true });
+  }
+
+  let contentImageToken: string | null = $state(null);
+  let lastCheckedContent = "";
+
+  $effect(() => {
+    lastCheckedContent = content;
+  });
+
+  function checkContentImage(next: string) {
+    const token = newImagePlaceholder(lastCheckedContent, next);
+    if (token) {
+      contentImageToken = token;
+    } else if (contentImageToken && !next.includes(contentImageToken)) {
+      contentImageToken = null;
+    }
+  }
+
+  function moveContentImage(mediaField: "thumbnail" | "image") {
+    const token = contentImageToken;
+    if (!token) return;
+    if (embeds.length === 0) addEmbed();
+    if (embeds.length === 0) return;
+    embeds[0] = { ...embeds[0], [mediaField]: { url: token } };
+    embeds = [...embeds];
+    content = removePlaceholder(content, token);
+    contentImageToken = null;
+  }
 
   // UI state
     let showNotification = $state(false);
@@ -178,7 +221,10 @@
   let saveAsGuildShared = $state(false);
   let savingEmbed = $state(false);
   let showDeleteConfirm = $state(false);
+  let showOverwriteConfirm = $state(false);
+  let embedPendingOverwrite: SavedEmbed | null = $state(null);
   let embedPendingDelete: SavedEmbed | null = $state(null);
+  let openSavedEmbed: SavedEmbed | null = $state(null);
 
   // Send tab state
   let sendChannels: SendableChannel[] = $state([]);
@@ -439,7 +485,7 @@
     validateComponents();
     if (notify) {
       showNotificationMessage(m.embedbuilder.fullscreenNotifyJsonApplied());
-      activeMainTab = "editor";
+      selectTab("editor");
     }
   }
 
@@ -476,13 +522,13 @@
 
     savingEmbed = true;
     try {
-      await embedsApi.createEmbed({
+      openSavedEmbed = await embedsApi.createEmbed({
         userId: data.user.id,
         guildId: saveAsGuildShared ? guildId : undefined,
         embedName: name,
         jsonCode: JSON.stringify(exportData),
         isGuildShared: saveAsGuildShared
-      });
+      }) ?? null;
 
       showNotificationMessage(m.embedbuilder.fullscreenNotifySavedNamed({ name }));
       saveEmbedName = "";
@@ -497,7 +543,47 @@
 
   function loadSavedEmbed(saved: SavedEmbed) {
     applyImportedJson(saved.jsonCode);
+    openSavedEmbed = saved;
     showNotificationMessage(m.embedbuilder.fullscreenNotifyLoadedNamed({ name: saved.embedName ?? m.embedbuilder.fullscreenSavedNameFallback() }));
+    selectTab("editor");
+  }
+
+  function requestOverwriteSavedEmbed(saved: SavedEmbed) {
+    embedPendingOverwrite = saved;
+    showOverwriteConfirm = true;
+  }
+
+  async function confirmOverwriteSavedEmbed() {
+    const saved = embedPendingOverwrite;
+    embedPendingOverwrite = null;
+    await writeSavedEmbed(saved);
+  }
+
+  async function writeSavedEmbed(saved: SavedEmbed | null) {
+    if (!saved || !data.user?.id) return;
+
+    const exportData = buildExportData();
+    if (Object.keys(exportData).length === 0) {
+      showNotificationMessage(m.embedbuilder.fullscreenNotifyNothingToSave(), "error");
+      return;
+    }
+
+    savingEmbed = true;
+    try {
+      await embedsApi.updateEmbed(saved.id, {
+        userId: data.user.id,
+        jsonCode: JSON.stringify(exportData)
+      });
+      openSavedEmbed = saved;
+      showNotificationMessage(m.embedbuilder.fullscreenNotifySavedNamed({ name: saved.embedName ?? m.embedbuilder.fullscreenSavedNameFallback() }));
+      const guild = get(currentGuild);
+      await loadSavedEmbeds(guild ? BigInt(guild.id) : undefined);
+    } catch (error) {
+      logger.error("Failed to overwrite embed:", error);
+      showNotificationMessage(m.embedbuilder.fullscreenNotifySaveFailed(), "error");
+    } finally {
+      savingEmbed = false;
+    }
   }
 
   function requestDeleteSavedEmbed(saved: SavedEmbed) {
@@ -512,6 +598,7 @@
 
     try {
       await embedsApi.deleteEmbed(saved.id, data.user.id);
+      if (openSavedEmbed?.id === saved.id) openSavedEmbed = null;
       showNotificationMessage(m.embedbuilder.personaDeleted({ name: saved.embedName ?? m.embedbuilder.fullscreenSavedNameFallback() }));
       const guild = get(currentGuild);
       await loadSavedEmbeds(guild ? BigInt(guild.id) : undefined);
@@ -631,13 +718,14 @@
   // Template handling
   function handleTemplateSelect(detail: { template: any }) {
     const template = detail.template;
+    openSavedEmbed = null;
 
     // Apply template to first embed
     embeds[0] = { ...template.embed };
     embeds = [...embeds];
 
     // Switch to editor tab
-    activeMainTab = "editor";
+    selectTab("editor");
     showNotificationMessage(m.embedbuilder.pageNotifyTemplateApplied({ name: template.name }));
   }
 
@@ -1529,25 +1617,26 @@
   ]);
 
 
-  // Tab change handler for DashboardPageLayout
-  function handleMainTabChange(detail: { tabId: string }) {
-    activeMainTab = detail.tabId;
-
-    // Validate when switching tabs
+  function handleMainTabChange(tab: string) {
     validateEmbeds();
     validateComponents();
 
-    if (activeMainTab === "json") {
+    if (tab === "json") {
       refreshJsonPreview();
-    } else if (activeMainTab === "saved") {
+    } else if (tab === "saved") {
       const guild = get(currentGuild);
       loadSavedEmbeds(guild ? BigInt(guild.id) : undefined);
-    } else if (activeMainTab === "send") {
+    } else if (tab === "send") {
       const guild = get(currentGuild);
       if (guild) loadSendableChannels(BigInt(guild.id));
       loadPersonas(guild ? BigInt(guild.id) : undefined);
     }
   }
+
+  $effect(() => {
+    const tab = activeMainTab;
+    untrack(() => handleMainTabChange(tab));
+  });
 
   let selectedPersona = $derived(personas.find(persona => persona.id === selectedPersonaId) ?? null);
 
@@ -1658,50 +1747,78 @@
 
 {#snippet statusMessageContent()}
   {#if showNotification}
-    <div class="fixed top-4 right-4 z-50" transition:fade>
+    <div class="fixed top-4 right-4 z-[10001]" transition:fade>
       <Notification message={notificationMessage} type={notificationType} />
     </div>
   {/if}
 {/snippet}
 
-<DashboardPageLayout
+<PluginPage
   title={m.embedbuilder.pageTitle()}
   subtitle={m.embedbuilder.pageSubtitle()}
   icon="fa-layer-group"
-  guildName={m.common.embedBuilder()}
-  {tabs}
-  activeTab={activeMainTab}
+  guildName={$currentGuild?.name ?? m.common.embedBuilder()}
   {actionButtons}
-  ontabChange={handleMainTabChange}
   statusMessages={statusMessageContent}
 >
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full w-full">
-    <!-- Editor Side -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 [&>:last-child:nth-child(odd)]:col-span-2 sm:[&>:last-child:nth-child(odd)]:col-span-1" role="group" aria-label={m.embedbuilder.pageTabsAria()}>
+    {#each tabs as tab (tab.id)}
+      {@const selected = activeMainTab === tab.id}
+      <button
+        type="button"
+        class="min-h-[44px] px-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2"
+        style="background: {selected ? $colorStore.selectedSurface : `${$colorStore.primary}08`}; border-color: {selected ? $colorStore.selectedBorder : `${$colorStore.primary}20`}; color: {$colorStore.text};"
+        aria-pressed={selected}
+        onclick={() => selectTab(tab.id)}
+      >
+        <i class="fa-solid {tab.icon}" aria-hidden="true"></i>
+        {tab.label}
+      </button>
+    {/each}
+  </div>
+
+  {#if openSavedEmbed}
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg border"
+      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;"
+    >
+      <span class="text-sm font-medium truncate" style="color: {$colorStore.text};">
+        <i class="fa-solid fa-pen mr-2" aria-hidden="true"></i>{m.embedbuilder.pageSavedEditing({ name: openSavedEmbed.embedName ?? m.embedbuilder.fullscreenSavedNameFallback() })}
+      </span>
+      <button
+        type="button"
+        class="min-h-[44px] px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
+        style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
+        disabled={savingEmbed}
+        onclick={() => writeSavedEmbed(openSavedEmbed)}
+      >
+        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+        {savingEmbed ? m.common.saving() : m.embedbuilder.pageSavedSaveChanges()}
+      </button>
+    </div>
+  {/if}
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
     <section
       class="rounded-2xl border min-w-0"
-      style="background: {$colorStore.primary}0c;
-             border-color: {$colorStore.primary}30;"
+      style="background: {$colorStore.surface}; border-color: {$colorStore.primary}30;"
     >
       <div class="p-4 sm:p-6 lg:min-h-[600px]">
         {#if activeMainTab === "templates"}
-          <!-- Templates Tab -->
           <div class="space-y-6">
-            <div class="text-center mb-6">
-              <h2 class="text-xl font-semibold mb-2" style="color: {$colorStore.text};">{m.embedbuilder.pageTemplatesHeading()}</h2>
-            </div>
+            <h2 class="text-xl font-semibold" style="color: {$colorStore.text};">{m.embedbuilder.pageTemplatesHeading()}</h2>
 
             <TemplateGallery
               onselect={handleTemplateSelect}
             />
-            
-            <div class="text-center pt-6 border-t" style="border-color: {$colorStore.primary}20;">
+
+            <div class="pt-6 border-t" style="border-color: {$colorStore.primary}20;">
               <button
+                type="button"
                 aria-label={m.embedbuilder.pageStartFromScratch()}
-                class="px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 mx-auto"
-                style="background: {$colorStore.primary}20;
-                       color: {$colorStore.primary};
-                       border: 1px solid {$colorStore.primary}30;"
-                onclick={() => activeMainTab = "editor"}
+                class="w-full sm:w-auto px-6 min-h-[44px] rounded-lg font-medium flex items-center justify-center gap-2"
+                style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
+                onclick={() => selectTab("editor")}
               >
                 <i class="fa-solid fa-layer-group" style="font-size: 16px;"></i>
                 {m.embedbuilder.pageStartFromScratch()}
@@ -1724,31 +1841,40 @@
                           style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           placeholder={m.embedbuilder.pageContentPlaceholder()}
                           bind:value={content}
+                          oninput={(e) => checkContentImage(e.currentTarget.value)}
                 ></textarea>
                 <button
-                  class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
+                  type="button"
+                  class="absolute right-1 top-1 min-h-[44px] min-w-[44px] rounded-sm hover:bg-black/10"
                   style="color: {$colorStore.muted};"
                   onclick={(e) => showPlaceholderFromButton(e.currentTarget, 'content')}
                   title={m.embedbuilder.editorInsertPlaceholder()}
+                  aria-label={m.embedbuilder.editorInsertPlaceholder()}
                 >
                   %
                 </button>
               </div>
-              <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                {m.embedbuilder.pageContentHint()}
-              </p>
+              {#if contentImageToken}
+                <ImagePlaceholderChip
+                  token={contentImageToken}
+                  onthumbnail={() => moveContentImage("thumbnail")}
+                  onimage={() => moveContentImage("image")}
+                  ondismiss={() => (contentImageToken = null)}
+                />
+              {/if}
             </div>
 
             <!-- Embeds List -->
             <div class="space-y-4">
-              <div class="flex justify-between items-center z-50">
+              <div class="flex justify-between items-center gap-2">
                 <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">
                   {m.embedbuilder.fullscreenEmbedsHeading({ count: embeds.length, max: 10 })}
                 </h3>
                 <button
+                  type="button"
                   aria-label={m.embedbuilder.fullscreenAddEmbed()}
-                  class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 disabled:opacity-50"
-                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                  class="px-4 min-h-[44px] rounded-lg font-medium flex items-center gap-2 disabled:opacity-50"
+                  style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                   disabled={embeds.length >= 10}
                   onclick={addEmbed}
                 >
@@ -1785,9 +1911,10 @@
               </div>
 
               <button
+                type="button"
                 aria-label={m.embedbuilder.fullscreenAddRow()}
-                class="px-2 sm:px-4 py-1 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2 disabled:opacity-50"
-                style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                class="px-4 min-h-[44px] rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+                style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                 disabled={componentRows.length >= 5 || getTotalComponentCount() >= 25}
                 onclick={addRow}
               >
@@ -1852,7 +1979,7 @@
                     <div class="flex items-center justify-between mb-2 sm:mb-3">
                       <div class="flex items-center gap-1 sm:gap-2">
                         <div
-                          class="cursor-grab p-1 rounded-md hover:bg-white/5 active:bg-white/10 transition-colors"
+                          class="cursor-grab min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md transition-colors"
                           style="touch-action: none; background: {$colorStore.primary}10;"
                           role="button"
                           tabindex="0"
@@ -1879,8 +2006,8 @@
                       <div class="flex gap-1 sm:gap-2">
                         <button
                           aria-label={m.embedbuilder.pageRowDuplicateAria()}
-                          class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                          class="px-3 min-h-[44px] min-w-[44px] text-sm rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                          style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
                           disabled={row.components.length === 0}
                           onclick={(e) => {
                             e.stopPropagation();
@@ -1892,7 +2019,7 @@
                         </button>
                         <button
                           aria-label={m.embedbuilder.pageRowRemoveAria()}
-                          class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all font-medium"
+                          class="px-3 min-h-[44px] min-w-[44px] text-sm rounded-lg font-medium flex items-center justify-center gap-2"
                           style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
                           onclick={(e) => {
                             e.stopPropagation();
@@ -1914,8 +2041,8 @@
                         <div class="flex gap-1 sm:gap-2 justify-center">
                           <button
                             aria-label={m.common.addButton()}
-                            class="px-2 sm:px-3 py-1 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center gap-1 sm:gap-2"
-                            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                            class="px-3 min-h-[44px] rounded-lg text-sm font-medium flex items-center gap-2"
+                            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
                             onclick={(e) => {
                               e.stopPropagation();
                               addComponentToRow(row.rowKey, 'button');
@@ -1926,8 +2053,8 @@
                           </button>
                           <button
                             aria-label={m.embedbuilder.fullscreenAddSelect()}
-                            class="px-2 sm:px-3 py-1 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center gap-1 sm:gap-2"
-                            style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
+                            class="px-3 min-h-[44px] rounded-lg text-sm font-medium flex items-center gap-2"
+                            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
                             onclick={(e) => {
                               e.stopPropagation();
                               addComponentToRow(row.rowKey, 'select');
@@ -1964,8 +2091,8 @@
                                style="border-color: {$colorStore.secondary}20;">
                             <button
                               aria-label={m.common.cancel()}
-                              class="px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-base rounded-md sm:rounded-lg font-medium transition-all"
-                              style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
+                              class="px-4 min-h-[44px] rounded-lg font-medium"
+                              style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
                               onclick={(e) => {
                                 e.stopPropagation();
                                 editingComponent = null;
@@ -1975,8 +2102,8 @@
                             </button>
                             <button
                               aria-label={m.common.done()}
-                              class="px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-base rounded-md sm:rounded-lg font-medium transition-all"
-                              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                              class="px-4 min-h-[44px] rounded-lg font-medium"
+                              style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
                               onclick={(e) => {
                                 e.stopPropagation();
                                 if (editingComponent) {
@@ -2059,8 +2186,8 @@
                              style="border-color: {$colorStore.primary}20;">
                           <button
                             aria-label={m.embedbuilder.pageRowAddButtonAria()}
-                            class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium transition-all flex items-center gap-1"
-                            style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}25;"
+                            class="px-3 min-h-[44px] rounded-lg text-sm font-medium flex items-center gap-2"
+                            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
                             onclick={(e) => {
                               e.stopPropagation();
                               addComponentToRow(row.rowKey, 'button');
@@ -2087,414 +2214,48 @@
           </div>
 
         {:else if activeMainTab === "json"}
-          <!-- JSON Tab -->
-          <div class="space-y-4">
-            <div class="flex justify-between items-center flex-wrap gap-2">
-              <div>
-                <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.embedbuilder.fullscreenJsonHeading()}</h3>
-                <p class="text-sm" style="color: {$colorStore.muted};">
-                  {m.embedbuilder.fullscreenJsonHint()}
-                </p>
-              </div>
-              <div class="flex gap-2">
-                <button
-                  aria-label={m.embedbuilder.pageJsonRefreshAria()}
-                  class="px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
-                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                  onclick={refreshJsonPreview}
-                >
-                  <i class="fa-solid fa-rotate" style="font-size: 14px;"></i>
-                  {m.embedbuilder.pageJsonRefresh()}
-                </button>
-                <button
-                  aria-label={m.embedbuilder.pageJsonApplyAria()}
-                  class="px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
-                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                  onclick={applyJsonText}
-                >
-                  <i class="fa-solid fa-check" style="font-size: 14px;"></i>
-                  {m.embedbuilder.pageJsonApply()}
-                </button>
-              </div>
-            </div>
-
-            <textarea
-              rows="20"
-              spellcheck="false"
-              class="w-full px-3 py-2 rounded-lg border font-mono text-xs resize-y"
-              style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-              placeholder={m.embedbuilder.fullscreenJsonPlaceholder()}
-              bind:value={jsonText}
-            ></textarea>
-
-            {#if jsonParseError}
-              <p class="text-sm" style="color: #ED4245;">{jsonParseError}</p>
-            {/if}
-
-            <p class="text-xs" style="color: {$colorStore.muted};">
-              {m.embedbuilder.pageJsonFooter({ payload: "{ content, embeds, components }" })}
-            </p>
-          </div>
+          <JsonTab bind:jsonText {jsonParseError} onrefresh={refreshJsonPreview} onapply={applyJsonText} />
 
         {:else if activeMainTab === "saved"}
-          <!-- Saved Embeds Tab -->
-          <div class="space-y-6">
-            <!-- Save current embed -->
-            <div
-              class="p-4 rounded-lg border space-y-3"
-              style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
-            >
-              <h3 class="text-base font-semibold" style="color: {$colorStore.text};">{m.embedbuilder.fullscreenSaveHeading()}</h3>
-              <div class="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="text"
-                  class="flex-1 px-3 py-2 rounded-lg border min-h-[44px]"
-                  style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                  placeholder={m.embedbuilder.fullscreenSaveNamePlaceholder()}
-                  bind:value={saveEmbedName}
-                />
-                <button
-                  aria-label={m.common.saveEmbed()}
-                  class="px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
-                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                  disabled={savingEmbed || !saveEmbedName.trim()}
-                  onclick={saveCurrentEmbed}
-                >
-                  <i class="fa-solid fa-floppy-disk" style="font-size: 14px;"></i>
-                  {savingEmbed ? m.common.saving() : m.common.save()}
-                </button>
-              </div>
-              {#if $currentGuild}
-                <label class="flex items-center gap-2 text-sm min-h-[44px]" style="color: {$colorStore.muted};">
-                  <input type="checkbox" bind:checked={saveAsGuildShared} />
-                  {m.embedbuilder.personaShareWithEveryone({ server: $currentGuild.name })}
-                </label>
-              {/if}
-            </div>
-
-            <!-- Guild-shared embeds -->
-            {#if $currentGuild}
-              <div class="space-y-2">
-                <h3 class="text-base font-semibold" style="color: {$colorStore.text};">
-                  {m.embedbuilder.pageSavedSharedHeading({ server: $currentGuild.name, count: savedGuildEmbeds.length })}
-                </h3>
-                {#if loadingSavedEmbeds}
-                  <p class="text-sm" style="color: {$colorStore.muted};">{m.common.loading()}</p>
-                {:else if savedGuildEmbeds.length === 0}
-                  <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.pageSavedSharedEmpty()}</p>
-                {:else}
-                  {#each savedGuildEmbeds as saved (saved.id)}
-                    <div
-                      class="flex items-center justify-between gap-2 p-3 rounded-lg border"
-                      style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
-                    >
-                      <span class="text-sm font-medium truncate" style="color: {$colorStore.text};">
-                        {saved.embedName}
-                      </span>
-                      <div class="flex gap-2 shrink-0">
-                        <button
-                          aria-label={m.embedbuilder.pageSavedLoadAria()}
-                          class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
-                          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                          onclick={() => loadSavedEmbed(saved)}
-                        >
-                          {m.common.load()}
-                        </button>
-                        <button
-                          aria-label={m.embedbuilder.pageSavedDeleteAria()}
-                          class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
-                          style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
-                          onclick={() => requestDeleteSavedEmbed(saved)}
-                        >
-                          {m.common.delete()}
-                        </button>
-                      </div>
-                    </div>
-                  {/each}
-                {/if}
-              </div>
-            {/if}
-
-            <!-- Personal embeds -->
-            <div class="space-y-2">
-              <h3 class="text-base font-semibold" style="color: {$colorStore.text};">
-                {m.embedbuilder.fullscreenMineHeading({ count: savedUserEmbeds.length })}
-              </h3>
-              {#if !data.user}
-                <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.pageSavedLogin()}</p>
-              {:else if loadingSavedEmbeds}
-                <p class="text-sm" style="color: {$colorStore.muted};">{m.common.loading()}</p>
-              {:else if savedUserEmbeds.length === 0}
-                <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.fullscreenMineEmpty()}</p>
-              {:else}
-                {#each savedUserEmbeds as saved (saved.id)}
-                  <div
-                    class="flex items-center justify-between gap-2 p-3 rounded-lg border"
-                    style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
-                  >
-                    <span class="text-sm font-medium truncate" style="color: {$colorStore.text};">
-                      {saved.embedName}
-                    </span>
-                    <div class="flex gap-2 shrink-0">
-                      <button
-                        aria-label={m.embedbuilder.pageSavedLoadAria()}
-                        class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
-                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                        onclick={() => loadSavedEmbed(saved)}
-                      >
-                        {m.common.load()}
-                      </button>
-                      <button
-                        aria-label={m.embedbuilder.pageSavedDeleteAria()}
-                        class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px]"
-                        style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
-                        onclick={() => requestDeleteSavedEmbed(saved)}
-                      >
-                        {m.common.delete()}
-                      </button>
-                    </div>
-                  </div>
-                {/each}
-              {/if}
-            </div>
-          </div>
+          <SavedTab
+            guildName={$currentGuild?.name ?? null}
+            loggedIn={!!data.user}
+            guildEmbeds={savedGuildEmbeds}
+            userEmbeds={savedUserEmbeds}
+            loading={loadingSavedEmbeds}
+            bind:saveName={saveEmbedName}
+            bind:saveShared={saveAsGuildShared}
+            saving={savingEmbed}
+            onsave={saveCurrentEmbed}
+            onload={loadSavedEmbed}
+            onoverwrite={requestOverwriteSavedEmbed}
+            ondelete={requestDeleteSavedEmbed}
+          />
 
         {:else if activeMainTab === "send"}
-          <!-- Send Tab -->
-          <div class="space-y-6">
-            {#if !$currentGuild}
-              <p class="text-sm" style="color: {$colorStore.muted};">
-                {m.embedbuilder.pageSendNoGuild()}
-              </p>
-            {:else}
-              <div class="space-y-2">
-                <h3 class="text-base font-semibold" style="color: {$colorStore.text};">
-                  {m.embedbuilder.pageSendHeading({ server: $currentGuild.name })}
-                </h3>
-                <p class="text-xs" style="color: {$colorStore.muted};">
-                  {m.embedbuilder.pageSendAuditHint()}
-                </p>
-              </div>
-
-              <!-- Channel picker -->
-              <div class="space-y-2">
-                <span class="block text-sm font-medium" style="color: {$colorStore.text};">{m.common.channel()}</span>
-                {#if loadingSendChannels}
-                  <p class="text-sm" style="color: {$colorStore.muted};">{m.common.loadingChannels()}</p>
-                {:else if sendChannelsError}
-                  <p class="text-sm" style="color: #ED4245;">{sendChannelsError}</p>
-                {:else if sendableChannelOptions.length === 0}
-                  <p class="text-sm" style="color: #ED4245;">
-                    {m.embedbuilder.pageSendNoChannels()}
-                  </p>
-                {:else}
-                  <DiscordSelector
-                    type="channel"
-                    options={sendableChannelOptions}
-                    bind:selected={selectedSendChannelId}
-                    placeholder={m.common.selectAChannelPlaceholder()}
-                    ariaLabel={m.embedbuilder.pageSendChannelAria()}
-                  />
-                {/if}
-              </div>
-
-              <!-- Permissions for the selected channel -->
-              {#if selectedSendChannel}
-                <div
-                  class="p-4 rounded-lg border space-y-2"
-                  style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
-                  transition:fly={{ y: -8, duration: 200 }}
-                >
-                  <h4 class="text-sm font-semibold" style="color: {$colorStore.text};">
-                    {m.embedbuilder.pageSendPermissionsHeading({ channel: selectedSendChannel.name })}
-                  </h4>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs" style="color: {$colorStore.muted};">
-                    <span>{selectedSendChannel.canSend ? "✓" : "✕"} {m.common.sendMessages()}</span>
-                    <span>{selectedSendChannel.canEmbed ? "✓" : "✕"} {m.embedbuilder.pageSendPermEmbeds()}</span>
-                    <span>{selectedSendChannel.canMentionEveryone ? "✓" : "✕"} {m.embedbuilder.pageSendPermMentions()}</span>
-                    <span>{selectedSendChannel.canUseWebhooks ? "✓" : "✕"} {m.common.manageWebhooks()}</span>
-                  </div>
-                  {#if !selectedSendChannel.canMentionEveryone}
-                    <p class="text-xs" style="color: {$colorStore.muted};">
-                      {m.embedbuilder.pageSendMentionsStripped()}
-                    </p>
-                  {/if}
-                  {#if embedPermissionBlock}
-                    <p class="text-xs" style="color: #ED4245;">{embedPermissionBlock}</p>
-                  {/if}
-                </div>
-              {/if}
-
-              <!-- Webhook options, revealed once a channel is chosen -->
-              {#if selectedSendChannel}
-                <div
-                  class="p-4 rounded-lg border space-y-3"
-                  style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
-                  transition:fly={{ y: -8, duration: 200 }}
-                >
-                  <label class="flex items-center gap-2 text-sm min-h-[44px]" style="color: {$colorStore.text};">
-                    <input
-                      type="checkbox"
-                      bind:checked={sendAsWebhook}
-                      disabled={!webhookAvailable}
-                    />
-                    {m.embedbuilder.pageSendWebhookToggle()}
-                  </label>
-
-                  {#if !webhookAvailable}
-                    <p class="text-xs" style="color: #ED4245;">
-                      {selectedSendChannel.canUseWebhooks
-                        ? m.embedbuilder.pageSendWebhookNeedBot()
-                        : m.embedbuilder.pageSendWebhookNeedUser()}
-                    </p>
-                  {/if}
-
-                  {#if sendAsWebhook}
-                    <div class="space-y-2" transition:fly={{ y: -8, duration: 200 }}>
-                      <!-- Send as: a saved persona, or a one-off name and avatar -->
-                      <span class="block text-sm font-medium" style="color: {$colorStore.text};">{m.embedbuilder.pageSendAs()}</span>
-
-                      <div class="flex flex-wrap items-center gap-2">
-                        <button
-                          aria-label={m.embedbuilder.pageSendCustomAria()}
-                          class="px-3 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px]"
-                          style="background: {$colorStore.primary}{selectedPersonaId === null ? '30' : '10'};
-                                 color: {$colorStore.primary};
-                                 border: 1px solid {$colorStore.primary}{selectedPersonaId === null ? '60' : '30'};"
-                          onclick={() => (selectedPersonaId = null)}
-                        >
-                          {m.common.custom()}
-                        </button>
-                        {#each personas as persona (persona.id)}
-                          <button
-                            aria-label={m.embedbuilder.pageSendAsPersonaAria({ name: persona.name })}
-                            class="px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 min-h-[44px]"
-                            style="background: {$colorStore.primary}{selectedPersonaId === persona.id ? '30' : '10'};
-                                   color: {$colorStore.primary};
-                                   border: 1px solid {$colorStore.primary}{selectedPersonaId === persona.id ? '60' : '30'};"
-                            onclick={() => (selectedPersonaId = persona.id)}
-                          >
-                            {#if persona.avatarUrl}
-                              <img alt="" class="w-5 h-5 rounded-full object-cover" src={persona.avatarUrl} />
-                            {/if}
-                            {persona.name}
-                            {#if persona.isGuildShared}
-                              <i class="fa-solid fa-users" style="font-size: 10px;"></i>
-                            {/if}
-                          </button>
-                        {/each}
-                        {#if loadingPersonas}
-                          <span class="text-xs" style="color: {$colorStore.muted};">{m.common.loading()}</span>
-                        {/if}
-
-                        <!-- Trailing action, dashed so it does not read as another persona to pick -->
-                        <button
-                          aria-label={m.embedbuilder.pageSendManageAria()}
-                          class="px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 min-h-[44px]"
-                          style="color: {$colorStore.muted}; border: 1px dashed {$colorStore.primary}40;"
-                          onclick={() => (showPersonaManager = true)}
-                        >
-                          <i class="fa-solid fa-gear" style="font-size: 12px;"></i>
-                          {m.common.manage()}
-                        </button>
-                      </div>
-
-                    </div>
-
-                    <!-- One-off name and avatar, used when no persona is picked -->
-                    {#if selectedPersonaId === null}
-                      <div class="space-y-2" transition:fly={{ y: -8, duration: 200 }}>
-                        <input
-                          type="text"
-                          class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
-                          style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          placeholder={m.embedbuilder.pageSendWebhookNamePlaceholder()}
-                          maxlength="80"
-                          bind:value={webhookUsername}
-                        />
-
-                        <input
-                          type="url"
-                          class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
-                          style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          placeholder={m.embedbuilder.pageSendWebhookAvatarPlaceholder()}
-                          bind:value={webhookAvatarUrl}
-                        />
-
-                        <p class="text-xs" style="color: {$colorStore.muted};">
-                          {m.embedbuilder.pageSendLinksOnly()}
-                          <button
-                            class="underline"
-                            style="color: {$colorStore.primary};"
-                            onclick={() => (showPersonaManager = true)}
-                          >
-                            {m.embedbuilder.pageSendSavePersona()}
-                          </button>
-                        </p>
-                      </div>
-                    {/if}
-                  {/if}
-                </div>
-              {/if}
-
-              <!-- Send button -->
-              <button
-                aria-label={m.embedbuilder.pageSendButton()}
-                class="w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
-                style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                disabled={sending || !selectedSendChannelId || !canCopyJson || !!embedPermissionBlock || validationErrors.length > 0}
-                onclick={() => (showSendConfirm = true)}
-              >
-                <i class="fa-solid fa-paper-plane" style="font-size: 14px;"></i>
-                {sending ? m.common.sending() : m.embedbuilder.pageSendButton()}
-              </button>
-
-              {#if validationErrors.length > 0}
-                <p class="text-xs" style="color: #ED4245;">{m.embedbuilder.pageSendBlockedByErrors()}</p>
-              {/if}
-
-              {#if lastSendResult}
-                <div
-                  class="p-3 rounded-lg border text-sm"
-                  style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20; color: {$colorStore.text};"
-                >
-                  {lastSendResult.personaName
-                    ? m.embedbuilder.pageSendResultPersona({ channel: lastSendResult.channelName, persona: lastSendResult.personaName })
-                    : lastSendResult.sentViaWebhook
-                      ? m.embedbuilder.pageSendResultWebhook({ channel: lastSendResult.channelName })
-                      : m.embedbuilder.pageSendResultBot({ channel: lastSendResult.channelName })}
-                  <a
-                    class="underline"
-                    href={lastSendResult.messageLink}
-                    rel="noopener noreferrer"
-                    style="color: {$colorStore.primary};"
-                    target="_blank"
-                  >
-                    {m.embedbuilder.pageSendJump()}
-                  </a>
-                </div>
-              {/if}
-
-              <!-- Channels that exist but cannot be used -->
-              {#if blockedChannels.length > 0}
-                <div class="space-y-2">
-                  <h4 class="text-sm font-semibold" style="color: {$colorStore.text};">
-                    {m.embedbuilder.pageSendUnavailable({ count: blockedChannels.length })}
-                  </h4>
-                  {#each blockedChannels as channel (channel.id)}
-                    <div
-                      class="flex items-center justify-between gap-2 p-2 rounded-lg border text-xs"
-                      style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
-                    >
-                      <span class="truncate" style="color: {$colorStore.text};">#{channel.name}</span>
-                      <span class="shrink-0" style="color: {$colorStore.muted};">{channel.restriction}</span>
-                    </div>
-                  {/each}
-                </div>
-              {/if}
-            {/if}
-          </div>
-
+          <SendTab
+            guildName={$currentGuild?.name ?? null}
+            channelOptions={sendableChannelOptions}
+            loadingChannels={loadingSendChannels}
+            channelsError={sendChannelsError}
+            bind:selectedChannelId={selectedSendChannelId}
+            selectedChannel={selectedSendChannel}
+            {blockedChannels}
+            {embedPermissionBlock}
+            bind:sendAsWebhook
+            {webhookAvailable}
+            {personas}
+            {loadingPersonas}
+            bind:selectedPersonaId
+            bind:webhookUsername
+            bind:webhookAvatarUrl
+            {sending}
+            canSend={!sending && !!selectedSendChannelId && canCopyJson && !embedPermissionBlock && validationErrors.length === 0}
+            hasValidationErrors={validationErrors.length > 0}
+            lastResult={lastSendResult}
+            onmanage={() => (showPersonaManager = true)}
+            onsend={() => (showSendConfirm = true)}
+          />
         {/if}
       </div>
     </section>
@@ -2502,8 +2263,7 @@
     <!-- Preview Side -->
     <section
       class="rounded-2xl border lg:sticky lg:top-4 self-start min-w-0"
-      style="background: {$colorStore.primary}0c;
-             border-color: {$colorStore.primary}30;"
+      style="background: {$colorStore.surface}; border-color: {$colorStore.primary}30;"
     >
       <div class="p-4">
         <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.embedbuilder.fullscreenLivePreview()}</h3>
@@ -2530,7 +2290,7 @@
       </div>
     </section>
   </div>
-</DashboardPageLayout>
+</PluginPage>
 
 <!-- Placeholder Picker -->
 <PlaceholderPicker
@@ -2552,6 +2312,16 @@
   variant="danger"
   oncancel={() => embedPendingDelete = null}
   onconfirm={confirmDeleteSavedEmbed}
+/>
+
+<ConfirmationModal
+  bind:isOpen={showOverwriteConfirm}
+  title={m.embedbuilder.pageSavedOverwriteAria()}
+  message={m.embedbuilder.pageSavedOverwriteMessage({ name: embedPendingOverwrite?.embedName ?? m.embedbuilder.fullscreenSavedNameFallbackThis() })}
+  confirmText={m.embedbuilder.pageSavedOverwrite()}
+  variant="warning"
+  oncancel={() => embedPendingOverwrite = null}
+  onconfirm={confirmOverwriteSavedEmbed}
 />
 
 <ConfirmationModal

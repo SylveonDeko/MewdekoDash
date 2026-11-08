@@ -8,10 +8,7 @@
   import { buildTails, type MascotExpression, type MascotToolName } from "$lib/components/brand/mascotGeometry";
 
   /**
-   * What the bot does, shown on the cat's tails. The cat stays pinned while the visitor scrolls, and each step
-   * turns the tails so the one carrying the current part comes to the top. On wide screens a small card
-   * travels beside every tail and the part at the top opens out above the cat. There are more parts than
-   * tails, so a tail picks up a new one each time it passes behind the cat.
+   * What the bot does, shown on the cat's tails.
    */
   interface Feature {
     tool: MascotToolName;
@@ -173,20 +170,12 @@
 
   const toolSet = features.map((item) => item.tool);
 
-  /**
-   * How far the visitor scrolls between one part and the next, in pixels. It is under two notches of a mouse
-   * wheel, so a single notch always carries past the half way point and on to the next part.
-   */
-  const STEP_PX = 150;
-
   /** The stage the cat and its cards are laid out on, in the cat's own drawing units. */
-  const STAGE = { x: -500, y: -560, width: 1480, height: 1040 };
+  const STAGE = { x: -500, y: -260, width: 1480, height: 740 };
   /** The part of the stage the cat's drawing covers. */
   const CAT = { x: -160, y: -175, width: 810, height: 635 };
 
-  let section: HTMLElement | undefined = $state();
   let active = $state(0);
-  let turn = $state(0);
   let position = $state(0);
   let wide = $state(false);
   let feature = $derived(features[active]);
@@ -209,62 +198,39 @@
   }
 
   /**
-   * Works out how far the visitor has scrolled through the parts, which turns the tails by exactly that much,
-   * fractions included, and which part is nearest. The page only settles on resting points while the
-   * visitor is strictly between the first and last of them. On those two it scrolls freely, so the visitor can
-   * always leave the section in either direction. The points never force a stop, so a long scroll carries
-   * through several parts and settles on whichever it ends nearest.
-   */
-  function track() {
-    if (!section) return;
-    const rect = section.getBoundingClientRect();
-    const span = rect.height - window.innerHeight;
-    if (span <= 0) return;
-    const offset = -rect.top;
-    const along = Math.min(Math.max(offset / STEP_PX - 0.5, 0), features.length - 1);
-    turn = -along;
-    active = Math.round(along);
-
-    const first = STEP_PX / 2;
-    const last = (features.length - 0.5) * STEP_PX;
-    const between = offset > first + 8 && offset < last - 8;
-    const root = document.documentElement;
-    if (root.classList.contains("snap-y") !== between) {
-      root.classList.toggle("snap-y", between);
-      root.classList.toggle("snap-proximity", between);
-    }
-  }
-
-  /**
-   * Scrolls to a part.
-   * @param index Which part
+   * Turns the tails to a part.
+   * @param index Which part, wrapping at either end
    */
   function go(index: number) {
-    if (!section) return;
-    const target = ((index % features.length) + features.length) % features.length;
-    const span = section.offsetHeight - window.innerHeight;
-    const top = section.getBoundingClientRect().top + window.scrollY;
-    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: top + (span * (target + 0.5)) / features.length, behavior: smooth ? "smooth" : "auto" });
+    active = ((index % features.length) + features.length) % features.length;
   }
 
   onMount(() => {
     const query = window.matchMedia("(min-width: 1024px)");
     const size = () => { wide = query.matches; };
-    const root = document.documentElement;
     size();
-    track();
     query.addEventListener("change", size);
-    window.addEventListener("scroll", track, { passive: true });
-    window.addEventListener("resize", track);
-    return () => {
-      root.classList.remove("snap-y", "snap-proximity");
-      query.removeEventListener("change", size);
-      window.removeEventListener("scroll", track);
-      window.removeEventListener("resize", track);
-    };
+    return () => query.removeEventListener("change", size);
   });
 </script>
+
+{#snippet stepper()}
+  <div class="flex items-center gap-3">
+    <button type="button" class="w-[44px] h-[44px] rounded-xl flex items-center justify-center"
+            style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+            aria-label={m.home.tailsPrevious()} onclick={() => go(active - 1)}>
+      <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+    </button>
+    <span class="min-w-[4.5rem] text-center text-sm tabular-nums" style="color: {$colorStore.muted}">
+      {m.common.currentOfTotal({ current: active + 1, total: features.length })}
+    </span>
+    <button type="button" class="w-[44px] h-[44px] rounded-xl flex items-center justify-center"
+            style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+            aria-label={m.home.tailsNext()} onclick={() => go(active + 1)}>
+      <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+    </button>
+  </div>
+{/snippet}
 
 {#snippet details()}
   <div class="flex items-center gap-3">
@@ -289,28 +255,34 @@
     {m.home.tailsReadGuide()}  </a>
 {/snippet}
 
-<section bind:this={section} aria-labelledby="tails-heading" class="relative"
-         style="height: calc({features.length * STEP_PX}px + 100vh);">
-  {#each features as item, index (item.tool)}
-    <div class="snap-start absolute left-0 w-px h-px pointer-events-none" aria-hidden="true"
-         style="top: {(index + 0.5) * STEP_PX}px;"></div>
-  {/each}
-  <div class="sticky top-0 h-[100svh] flex flex-col justify-center px-4 py-3 overflow-hidden">
-    <div class="text-center mb-2">
-      <h2 id="tails-heading" class="text-2xl sm:text-3xl lg:text-4xl font-extrabold" style="color: {$colorStore.text}">
-        {m.home.tailsHeading()}
-      </h2>
-      <p class="text-sm sm:text-base mt-1" style="color: {$colorStore.muted}">
-        {m.home.tailsSubheading()}
-      </p>
-    </div>
+<section aria-labelledby="tails-heading" class="relative px-4 py-16">
+  <div class="text-center mb-6">
+    <h2 id="tails-heading" class="text-2xl sm:text-3xl lg:text-4xl font-extrabold" style="color: {$colorStore.text}">
+      {m.home.tailsHeading()}
+    </h2>
+    <p class="text-sm sm:text-base mt-1" style="color: {$colorStore.muted}">
+      {m.home.tailsSubheading()}
+    </p>
+  </div>
 
-    {#if wide}
-      <div class="stage relative mx-auto mt-3"
-           style="width: min(100%, calc((100svh - 140px) * {STAGE.width / STAGE.height})); aspect-ratio: {STAGE.width} / {STAGE.height};">
+  {#if wide}
+    <div class="max-w-7xl mx-auto grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-8 items-center">
+      <div class="space-y-4">
+        <div class="min-h-[240px] rounded-2xl border p-5"
+             style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;" aria-live="polite">
+          {#key active}
+            <div in:fade={{ duration: 250 }}>
+              {@render details()}
+            </div>
+          {/key}
+        </div>
+        {@render stepper()}
+      </div>
+
+      <div class="stage relative w-full" style="aspect-ratio: {STAGE.width} / {STAGE.height};">
         <div class="absolute"
              style="left: {across(CAT.x)}%; top: {down(CAT.y)}%; width: {(CAT.width / STAGE.width) * 100}%; height: {(CAT.height / STAGE.height) * 100}%;">
-          <Mascot {turn} follow bind:position {toolSet} label={null} pixel={4.5} expression={features[active].expression}
+          <Mascot turn={-active} bind:position {toolSet} label={null} pixel={4.5} expression={features[active].expression}
                   class="w-full h-full" />
         </div>
 
@@ -329,49 +301,26 @@
             <span class="label font-semibold" style="color: {$colorStore.text}">{item.title()}</span>
           </button>
         {/each}
-
-        <div class="absolute rounded-2xl border p-4 xl:p-5"
-             style="left: {across(240)}%; top: {down(-196)}%; width: 40%; transform: translate(-50%, -100%);
-                    background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;"
-             aria-live="polite">
-          {#key active}
-            <div in:fade={{ duration: 250 }}>
-              {@render details()}
-            </div>
-          {/key}
-        </div>
       </div>
-    {:else}
-      <div class="w-full max-w-xl mx-auto">
-        <div class="min-h-[214px] rounded-2xl border p-4 mt-1"
-             style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;" aria-live="polite">
-          {#key active}
-            <div in:fade={{ duration: 250 }}>
-              {@render details()}
-            </div>
-          {/key}
-        </div>
-        <div class="mx-auto w-full max-w-[min(100%,40svh)]">
-          <Mascot {turn} follow bind:position {toolSet} label={null} pixel={4.5} expression={features[active].expression} />
-        </div>
-        <div class="flex items-center justify-center gap-3">
-          <button type="button" class="w-[44px] h-[44px] rounded-xl flex items-center justify-center"
-                  style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                  aria-label={m.home.tailsPrevious()} onclick={() => go(active - 1)}>
-            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-          </button>
-          <span class="min-w-[4.5rem] text-center text-sm tabular-nums" style="color: {$colorStore.muted}">
-            {m.common.currentOfTotal({ current: active + 1, total: features.length })}
-          </span>
-          <button type="button" class="w-[44px] h-[44px] rounded-xl flex items-center justify-center"
-                  style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                  aria-label={m.home.tailsNext()} onclick={() => go(active + 1)}>
-            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-          </button>
-        </div>
+    </div>
+  {:else}
+    <div class="w-full max-w-xl mx-auto">
+      <div class="min-h-[214px] rounded-2xl border p-4"
+           style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;" aria-live="polite">
+        {#key active}
+          <div in:fade={{ duration: 250 }}>
+            {@render details()}
+          </div>
+        {/key}
       </div>
-    {/if}
-  </div>
+      <div class="mx-auto w-full max-w-[min(100%,40svh)]">
+        <Mascot turn={-active} bind:position {toolSet} label={null} pixel={4.5} expression={features[active].expression} />
+      </div>
+      <div class="flex justify-center">
+        {@render stepper()}
+      </div>
+    </div>
+  {/if}
 </section>
 
 <style>

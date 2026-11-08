@@ -1,7 +1,7 @@
 ---
 title: Leave Feedback
 slug: leave-feedback
-summary: When a server removes the bot, its owner gets a DM asking why. The answers are collected on an owner-only dashboard page.
+summary: Asks a server's owner why they removed the bot and collects the answers on an owner-only page
 icon: fa-comments
 category: Analytics
 dashboard: /owner/leave-feedback
@@ -11,7 +11,7 @@ related: [invites]
 
 ## What it does
 
-Every time the bot is kicked from or leaves a server, it sends the server owner a short DM. The DM has a dropdown of common reasons, a **Write something** button that opens a text box, and a **No thanks** button. Answering is optional and the DM says so.
+Every time the bot is kicked from or leaves a server, it sends the server owner a short DM. The DM has a dropdown of common reasons. Two buttons sit under it: **Write something**, which opens a text box, and **No thanks**. Answering is optional and the DM says so.
 
 Each answer is stored with the server's name, its member count, its owner and how long the bot had been in it. If a report channel is set, a summary embed is posted there as well, and it is updated if the owner adds a comment later.
 
@@ -22,7 +22,7 @@ This is a bot-level feature. There is no per-server setting, and the dashboard p
 
 ## Why you would use it
 
-- Learn whether servers leave because of missing features, setup confusion or reliability problems.
+- Learn whether servers leave because of missing features or reliability problems.
 - Spot servers that only added the bot to test it, so their departures can be ignored.
 - Reach out to owners who wrote a comment and left contact details.
 - Track how often owners bother to answer at all.
@@ -70,7 +70,7 @@ The page has two tabs, **Responses** and **Settings**.
 
 Below the channel field the page shows which channel and server the ID resolves to and whether the bot can reach it.
 
-The **Responses** tab has six counters, **Prompts sent**, **Answered**, **With a comment**, **Dismissed**, **No response** and **Response rate**, a **Reasons given** breakdown, and a table with columns **Left**, **Server**, **Reason** and **Status**. You can filter by reason and status (the status filter also has a **Left a comment** option), search by server name or comment text, open a row to read the full comment, and delete a record. **Response rate** counts answered and dismissed prompts together.
+The **Responses** tab has six counters, **Prompts sent**, **Answered**, **With a comment**, **Dismissed**, **No response** and **Response rate**, a **Reasons given** breakdown, and a table with columns **Left**, **Server**, **Reason** and **Status**. You can filter by reason and status (the status filter also has a **Left a comment** option), search by server name or comment text, use **Show comment** and **Hide comment** on a row to read the full comment, and delete a record after confirmation. The table shows 50 records per page, and on narrow screens each record is a card instead of a table row. **Response rate** counts answered and dismissed prompts together.
 
 ## Setup walkthrough
 

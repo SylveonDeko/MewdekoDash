@@ -14,6 +14,20 @@ export interface Starboard {
   removeOnBelowThreshold: boolean;
   repostThreshold: number;
   dateAdded: string | null;
+  allowSelfStar: boolean;
+  allowNsfw: boolean;
+  lockedUntil: string | null;
+  autoStarChannels: string;
+  enabled: boolean;
+  postDesign: string | null;
+  autoReact: number;
+  countMultipleReactions: boolean;
+  allowedRoles: string;
+  deniedRoles: string;
+  minMessageAgeMinutes: number;
+  maxMessageAgeMinutes: number;
+  repostCooldownMinutes: number;
+  removeInvalidStars: boolean;
 }
 
 export interface StarboardHighlight {

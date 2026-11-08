@@ -1,148 +1,127 @@
 <script lang="ts">
   import { m } from "$lib/i18n";
-  import { fly, slide } from "svelte/transition";
+  import { administrationApi } from "$lib/api/index.ts";
   import { colorStore } from "$lib/stores/colorStore";
+  import { logger } from "$lib/logger";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import PluginCard from "$lib/components/plugin/PluginCard.svelte";
+  import { errorText, type Named, type Notify } from "../toolsModel";
+  import RoleRow from "./RoleRow.svelte";
 
-  let {
-    voiceChannelRoles,
-    expandedRoleCard = $bindable(),
-    newVoiceChannelRole = $bindable(),
-    voiceChannels,
-    availableRoles,
-    saving,
-    showConfirm,
-    removeVoiceChannelRole,
-    addVoiceChannelRole
-  } = $props();
+  interface Props {
+    guildId: bigint;
+    roles: Named[];
+    voiceChannels: Named[];
+    notify: Notify;
+  }
+
+  let { guildId, roles, voiceChannels, notify }: Props = $props();
+
+  type Mapping = { channelId: bigint; channelName: string; roleId: bigint; roleName: string };
+
+  let items: Mapping[] = $state([]);
+  let loading = $state(true);
+  let busy = $state(false);
+  let channelId: string | null = $state(null);
+  let roleId: string | null = $state(null);
+
+  async function load() {
+    try {
+      items = (await administrationApi.getVoiceChannelRoles(guildId)) ?? [];
+    } catch (err) {
+      logger.error("Failed to load voice channel roles:", err);
+      notify(errorText(err, m.administrationRoles.loadFailed()), "error");
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function add() {
+    if (busy || !channelId || !roleId) return;
+    busy = true;
+    try {
+      await administrationApi.addVoiceChannelRole(guildId, {
+        channelId: BigInt(channelId),
+        roleId: BigInt(roleId)
+      });
+      channelId = null;
+      roleId = null;
+      notify(m.administrationRoles.added());
+      await load();
+    } catch (err) {
+      logger.error("Failed to add voice channel role:", err);
+      notify(errorText(err, m.administrationRoles.addFailed()), "error");
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function remove(item: Mapping) {
+    const confirmed = await requestConfirmation({
+      message: m.administrationRoles.voiceRemoveConfirm({ channel: item.channelName }),
+      confirmText: m.common.remove()
+    });
+    if (!confirmed) return;
+    try {
+      await administrationApi.removeVoiceChannelRole(guildId, item.channelId);
+      notify(m.administrationRoles.removed());
+    } catch (err) {
+      logger.error("Failed to remove voice channel role:", err);
+      notify(errorText(err, m.administrationRoles.removeFailed()), "error");
+    }
+    await load();
+  }
+
+  void load();
 </script>
 
-<div class=" rounded-2xl border p-6 transition-all"
-     in:fly={{ y: 20, duration: 300, delay: 400 }}
-     style="background: {$colorStore.primary}0c;
-            border-color: {$colorStore.primary}30;">
-
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-    <div class="flex items-center gap-4">
-      <div class="p-3 rounded-xl"
-           style="background: {$colorStore.primary}20;">
-        <i class="fa-utility-duo fa-regular fa-volume"
-           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-      </div>
-      <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{m.administration.rolesVoiceChannelTitle()}</h2>
+<PluginCard title={m.administrationRoles.voiceTitle()} alwaysOpen>
+  <div class="space-y-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <DiscordSelector
+        type="channel"
+        options={voiceChannels}
+        selected={channelId}
+        placeholder={m.common.selectVoiceChannelPlaceholder()}
+        onchange={(detail) => (channelId = typeof detail.selected === "string" ? detail.selected : null)}
+      />
+      <DiscordSelector
+        type="role"
+        options={roles}
+        selected={roleId}
+        placeholder={m.common.selectARolePlaceholder()}
+        onchange={(detail) => (roleId = typeof detail.selected === "string" ? detail.selected : null)}
+      />
     </div>
-
     <button
-      class="px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 min-h-[44px]"
-      onclick={() => expandedRoleCard = expandedRoleCard === 'voiceChannel' ? null : 'voiceChannel'}
-      style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
+      type="button"
+      class="flex items-center justify-center gap-2 px-5 rounded-xl min-h-[50px] w-full sm:w-auto font-medium disabled:opacity-50"
+      style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
+      disabled={busy || !channelId || !roleId}
+      onclick={add}
     >
-      {#if expandedRoleCard === 'voiceChannel'}
-        <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
-      {:else}
-        <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-      {/if}
-      {expandedRoleCard === 'voiceChannel' ? m.common.collapse() : m.administration.rolesVoiceChannelAddMapping()}
+      <i class="fa-solid fa-plus" aria-hidden="true"></i>
+      {m.common.add()}
     </button>
-  </div>
 
-  <div class="space-y-4">
-    <p class="text-sm" style="color: {$colorStore.muted}">
-      {m.administration.rolesVoiceChannelDescription()}
-    </p>
-
-    {#if voiceChannelRoles.length === 0}
-      <div class="text-center py-8">
-        <i class="fa-utility-duo fa-regular fa-volume"
-           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-        <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">{m.administration.rolesVoiceChannelEmptyTitle()}</p>
-        <p class="text-sm" style="color: {$colorStore.muted}">{m.administration.rolesVoiceChannelEmptyHint()}</p>
+    {#if loading}
+      <div class="flex justify-center py-6">
+        <div class="w-10 h-10 border-4 rounded-full animate-spin" style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary}"></div>
       </div>
+    {:else if items.length === 0}
+      <p class="py-4 text-center" style="color: {$colorStore.muted}">{m.administrationRoles.voiceEmpty()}</p>
     {:else}
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {#each voiceChannelRoles as vcRole (`${vcRole.channelId}-${vcRole.roleId}`)}
-          <div
-            class="flex items-center justify-between p-4 rounded-lg transition-all duration-200  border"
-            style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-            <div class="space-y-1">
-              <p class="font-medium" style="color: {$colorStore.text}">
-                <i class="fa-solid fa-volume-high mr-1" style="color: {$colorStore.muted}"></i>{vcRole.channelName}
-              </p>
-              <p class="text-sm" style="color: {$colorStore.muted}">
-                → {vcRole.roleName}
-              </p>
-            </div>
-            <button
-              class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
-              style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-              onclick={() => showConfirm(m.administration.rolesVoiceChannelRemoveTitle(), m.administration.rolesVoiceChannelRemoveConfirm({ channel: vcRole.channelName }), () => removeVoiceChannelRole(vcRole.channelId))}
-              aria-label={m.administration.rolesVoiceChannelRemoveAria({ channel: vcRole.channelName })}
-            >
-              {m.common.remove()}
-            </button>
-          </div>
+      <div class="space-y-2">
+        {#each items as item (`${item.channelId}-${item.roleId}`)}
+          <RoleRow
+            title={item.channelName}
+            subtitle={item.roleName}
+            removeLabel={m.administrationRoles.voiceRemoveAria({ channel: item.channelName })}
+            onremove={() => remove(item)}
+          />
         {/each}
       </div>
     {/if}
-
-    <!-- Inline Add Voice Channel Role Form -->
-    {#if expandedRoleCard === 'voiceChannel'}
-      <div transition:slide={{ duration: 300 }} class="mt-4 pt-4 border-t"
-           style="border-color: {$colorStore.primary}20;">
-        <div class="p-4 rounded-xl border-2 border-dashed"
-             style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
-          <h5 class="font-medium mb-3" style="color: {$colorStore.text}">{m.administration.rolesVoiceChannelFormTitle()}</h5>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <span id="voice-channel-label" class="block text-sm font-medium mb-2"
-                    style="color: {$colorStore.text}">{m.common.voiceChannel()}</span>
-              <DiscordSelector
-                type="channel"
-                options={voiceChannels}
-                bind:selected={newVoiceChannelRole.channelId}
-                placeholder={m.common.selectVoiceChannelPlaceholder()}
-                multiple={false}
-              />
-            </div>
-
-            <div>
-              <span id="role-to-assign-label" class="block text-sm font-medium mb-2"
-                    style="color: {$colorStore.text}">{m.administration.rolesVoiceChannelRoleToAssign()}</span>
-              <DiscordSelector
-                type="role"
-                options={availableRoles}
-                bind:selected={newVoiceChannelRole.roleId}
-                placeholder={m.common.selectRolePlaceholder()}
-                multiple={false}
-              />
-            </div>
-          </div>
-
-          <div class="flex flex-col sm:flex-row gap-3 mt-4">
-            <button
-              class="px-4 py-2 rounded-lg font-medium transition-all"
-              style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-              onclick={() => { expandedRoleCard = null; newVoiceChannelRole = { channelId: null, roleId: null }; }}
-            >
-              {m.common.cancel()}
-            </button>
-            <button
-              class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2"
-              style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-              onclick={addVoiceChannelRole}
-              disabled={!newVoiceChannelRole.channelId || !newVoiceChannelRole.roleId || saving}
-            >
-              {#if saving}
-                <i class="fa-solid fa-rotate-right animate-spin" style="font-size: 16px;"></i>
-              {:else}
-                <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-              {/if}
-              {m.administration.rolesVoiceChannelAddMapping()}
-            </button>
-          </div>
-        </div>
-      </div>
-    {/if}
   </div>
-</div>
+</PluginCard>

@@ -14,6 +14,10 @@ export const liveBoardsApi = {
   create: (guildId: bigint, request: LiveBoardRequest) =>
     apiRequest<LiveBoard>(`LiveBoards/${guildId}`, "POST", request),
 
+  /** Changes a live board and refreshes it */
+  update: (guildId: bigint, id: number, request: LiveBoardRequest) =>
+    apiRequest<LiveBoard>(`LiveBoards/${guildId}/${id}`, "PUT", request),
+
   /** Deletes a live board and its message */
   remove: (guildId: bigint, id: number) => apiRequest<boolean>(`LiveBoards/${guildId}/${id}`, "DELETE"),
 

@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { page } from "$app/stores";
+  import { page } from "$app/state";
   import { goto } from "$app/navigation";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import FormResponseQueue from "$lib/components/forms/FormResponseQueue.svelte";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade } from "svelte/transition";
   import { m } from "$lib/i18n";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import PluginPage from "$lib/components/plugin/PluginPage.svelte";
+  import ResponsesTab from "../../components/ResponsesTab.svelte";
   import type { PageData } from "./$types";
 
   interface Props {
@@ -15,20 +15,22 @@
 
   let { data }: Props = $props();
 
-  let formId = $derived(parseInt($page.params.formId ?? ""));
+  const formId = $derived.by(() => {
+    const parsed = parseInt(page.params.formId ?? "");
+    return Number.isNaN(parsed) ? null : parsed;
+  });
+
   let showNotification = $state(false);
   let notificationMessage = $state("");
   let notificationType: "success" | "error" = $state("success");
 
-  function showNotificationMessage(message: string, type: "success" | "error" = "success") {
+  function notify(message: string, type: "success" | "error" = "success") {
     notificationMessage = message;
     notificationType = type;
     showNotification = true;
-    setTimeout(() => (showNotification = false), 3000);
-  }
-
-  function goBackToForms() {
-    goto("/dashboard/forms");
+    setTimeout(() => {
+      showNotification = false;
+    }, 3000);
   }
 </script>
 
@@ -37,34 +39,21 @@
   <meta content={m.forms.reviewHeadDescription()} name="description" />
 </svelte:head>
 
-{#snippet statusMessagesSnippet()}
+{#snippet statusMessages()}
   {#if showNotification}
-    <div class="fixed top-4 right-4 z-50" transition:fade>
+    <div class="fixed top-4 right-4 z-[10001]" transition:fade>
       <Notification message={notificationMessage} type={notificationType} />
     </div>
   {/if}
 {/snippet}
 
-<DashboardPageLayout
-  actionButtons={[
-    {
-      label: m.forms.reviewBack(),
-      icon: "fa-arrow-left",
-      action: goBackToForms,
-    }
-  ]}
-  guildName={$currentGuild?.name || m.common.dashboard()}
+<PluginPage
+  {statusMessages}
   icon="fa-clipboard-check"
-  subtitle={m.forms.reviewSubtitle()}
-  tabs={[
-    { id: "back", label: m.forms.reviewBack(), icon: "fa-arrow-left" }
-  ]}
+  guildName={$currentGuild?.name || m.common.dashboard()}
   title={m.forms.reviewTitle()}
-  statusMessages={statusMessagesSnippet}
+  subtitle={m.forms.reviewSubtitle()}
+  actionButtons={[{ label: m.forms.reviewBack(), icon: "fa-arrow-left", action: () => goto("/dashboard/forms") }]}
 >
-  <FormResponseQueue
-    {formId}
-    onShowNotification={showNotificationMessage}
-    userId={data.user.id}
-  />
-</DashboardPageLayout>
+  <ResponsesTab forms={[]} {formId} userId={BigInt(data.user.id)} {notify} fixedForm />
+</PluginPage>

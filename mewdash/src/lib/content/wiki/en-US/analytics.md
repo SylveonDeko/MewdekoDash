@@ -1,7 +1,7 @@
 ---
 title: Analytics
 slug: analytics
-summary: A bot owner only dashboard page with stored history of commands, gateway events, latency, errors, server growth, feature adoption, AI and music use, website traffic, and webhook alert rules.
+summary: A page for bot owners with stored history of commands and server growth
 icon: fa-chart-simple
 category: Analytics
 dashboard: /owner/analytics
@@ -13,14 +13,14 @@ related: [performance, leave-feedback, administration]
 
 Analytics is the history page for whoever runs the bot. It is only visible to bot owners: the sidebar hides it for everyone else, and opening the URL directly sends non owners back to the dashboard home. There is nothing here for server staff to configure.
 
-Where [Performance](/wiki/performance) shows the live process and forgets on restart, Analytics reads what the bot has written to its own database. Every running instance records commands, gateway events, shard latency, REST calls, database timings, process gauges, exceptions, feature use, AI and music activity, and dashboard page views. Numbers are aggregated in memory per minute, flushed every minute, folded into 5 minute and hourly buckets, and pruned on a fixed schedule, so you can look at last week, compare it with the week before, and filter by instance, shard or guild.
+Where [Performance](/wiki/performance) shows the live process and forgets on restart, Analytics reads what the bot has written to its own database. Every running instance records commands, gateway events, shard latency, REST calls, database timings, process gauges, exceptions, feature use, AI and music activity, and dashboard page views. Numbers are aggregated in memory and flushed every minute, then folded into 5 minute and hourly buckets and pruned on a fixed schedule. That lets you look at last week and compare it with the week before. You can also filter by instance, shard or guild.
 
 A weekly digest can be posted to a Discord webhook, and alert rules on any stored metric notify a webhook when a threshold is crossed.
 
 ## Why you would use it
 
 - You want to know whether an error spike started before or after a deploy, not just what is failing right now.
-- A guild reports the bot being slow and you want its command latency, activity and security events for a date range.
+- A guild reports the bot being slow and you want its command latency and its activity and security events for a date range.
 - You want to see which features servers actually configure and use, and how that changed over months.
 - You need a Discord ping when shard latency, error rate or REST 429s go past a limit, without watching a page.
 - You want a Monday summary of growth, commands, errors and top features in a channel.
@@ -33,12 +33,12 @@ A weekly digest can be posted to a Discord webhook, and alert rules on any store
 | Commands | Kind, module and outcome selects; **Invocations**, **Errors**, **Duration p95** and **p50**; invocations by module; errors by class; p50, p95, p99 duration; invocations by kind; a UTC hour by server size heatmap; **Top commands**, a paged **Invocation log**, **Top failing commands** where a row opens its recent error samples |
 | Events | Gateway events per second by type; count in range and a per type table; events per shard; handler p95 by type; handler errors by module and by event type |
 | Latency | **REST p95**, **REST 5xx**, **REST 429**, **Ratelimit hits**, **DB p95**, **DB errors**, **Shard reconnects**, **Unhandled errors**; REST latency and rate by route; rate limit hits by route; database p95 and errors by operation; CPU, RSS, threads and gen 2 GCs; a per shard table with state, latency, peak, guilds and reconnects; unhandled exception groups where a row opens its occurrences; errors by type |
-| Servers | **Servers**, **Users**, **Joined**, **Left**, **Net**; 30 day server and user snapshots; joins and leaves per day; churn with bounce rate and joins and leaves by size; retention by join day; joins by size; **Bounced guilds** and **Went silent** tables where a row opens the guild card |
+| Servers | **Servers**, **Users**, **Joined**, **Left**, **Net**; 30 day server and user snapshots; joins and leaves per day; churn with bounce rate and joins and leaves by size; retention by join day; joins by size; a **Server overview** table with a search box and, per server, members, humans, bots, online, boosts, commands, events, features, shard and join time, 25 rows per page, where a row opens the guild card; **Bounced guilds** and **Went silent** tables where a row also opens the guild card |
 | Guilds | Event type select and a minimum events per hour; a guild id opens the **Guild card**, an activity by type and hour heatmap, and a paged, filterable **Security events** log; **Top guilds by events**; **Unusual activity** scored against the same hour over the previous 14 days |
 | Features | **Feature adoption** with configured and enabled counts from the nightly census, active guilds, activity and error rate; features used per guild; server size against features used; for the selected feature, **Settings usage** from the latest census and a configured or enabled census series over 90, 180 or 365 days |
 | AI | **Requests**, **Tokens in**, **Tokens out**, **Est. cost** at list prices for priced models; a per model table with failures, tokens, p95 and cost; requests, tokens and p95 by model; top guilds by AI chat use |
 | Music | **Players**, **Tracks started**, **Errors**; players by node; tracks started by source; errors by kind; node state; tracks ended by reason |
-| Website | **Page views**, **Visitors**, **Request p95**, **5xx**; views by route; request duration; a per route table with visitors, p95 and 5xx; 4xx and 5xx by route; a login to OAuth callback to dashboard funnel with drop off |
+| Website | **Page views**, **Visitors**, **Request p95**, **5xx**; views by route; request duration; a **Routes** table with views, visitors, p95 and 5xx; an **Errors** table of 4xx and 5xx by route; a login to OAuth callback to dashboard funnel with drop off |
 | Alerts | Firing groups; the rules table with enable, test, mute for 1 hour and delete; a paged event log of state transitions with the value against the threshold and whether a webhook was sent; **New rule** and **Send digest now** |
 | Pipeline | A status pill; **Last flush**, **Last rollup**, **Last maintenance**, **Pending series**, **Pending rows**; the last flush error if any; row counts and newest row per table; registered instances with heartbeat and last guild count; flush duration and rows per flush |
 
@@ -49,7 +49,7 @@ Pipeline status is `healthy` when the last flush is at most 60 seconds old, the 
 
 ### Filter bar
 
-The bar above the tabs applies to every tab and is kept in the URL, so switching tabs, reloading or sharing the link keeps the same view.
+The bar above the tabs applies to every tab and is kept in the URL, so the same view survives a reload and carries over when you switch tabs or share the link.
 
 | Control | What it does |
 | --- | --- |

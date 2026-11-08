@@ -1,5 +1,5 @@
 // lib/api/poll/poll.ts
-import { apiRequest } from "../core";
+import { apiDownload, apiRequest } from "../core";
 import type {
   ClosePollRequest,
   CreatePollRequest,
@@ -54,6 +54,12 @@ export const pollApi = {
    */
   deletePoll: (guildId: bigint, pollId: number, userId: bigint) =>
     apiRequest<void>(`Poll/${guildId}/${pollId}/${userId}`, "DELETE"),
+
+  /**
+   * Downloads a poll's votes as CSV
+   */
+  exportPoll: (guildId: bigint, pollId: number) =>
+    apiDownload(`Poll/${guildId}/${pollId}/export?format=csv`),
 
   /**
    * Gets guild wide poll analytics

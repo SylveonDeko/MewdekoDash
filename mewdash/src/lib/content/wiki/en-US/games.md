@@ -1,7 +1,7 @@
 ---
 title: Games
 slug: games
-summary: Chat games members can start in any channel, from trivia, hangman and word chains to typing races, acrophobia and polls.
+summary: Chat games like trivia and hangman that members can start in any channel
 icon: fa-gamepad-modern
 category: Entertainment
 module: Games
@@ -11,7 +11,7 @@ related: [polls, currency, xp, searches, utility]
 
 ## What it does
 
-Games are played in the channel where they are started. A member runs a command, the bot posts the game, and everyone in the channel plays by typing answers or pressing buttons. Only one game of each kind runs per channel (or per server for Nunchi and Kaladont) at a time, and most games can be stopped early with a matching stop command.
+Games are played in the channel where they are started. A member runs a command and the bot posts the game. Everyone in the channel plays by typing answers or pressing buttons. Only one game of each kind runs per channel (or per server for Nunchi and Kaladont) at a time, and most games can be stopped early with a matching stop command.
 
 Trivia, hangman, Kaladont, Nunchi, the typing race, acrophobia and tic-tac-toe are multiplayer. Polls let staff put a question to the channel with buttons or a dropdown. `choose` and `8ball` are one-off toys.
 
@@ -26,7 +26,7 @@ There is no dashboard page for this module. Everything is done with commands, an
 
 ## Trivia
 
-`trivia` starts a quiz. The bot posts a question, shows a hint halfway through the question timer unless hints are off, and the first member to type the answer gets a point. When a member reaches the win requirement the game ends and they win. If enough questions in a row go unanswered, the game stops.
+`trivia` starts a quiz. The bot posts a question and shows a hint halfway through the question timer unless hints are off. The first member to type the answer gets a point. When a member reaches the win requirement the game ends and they win. If enough questions in a row go unanswered, the game stops.
 
 | Option | Default | What it does |
 | --- | --- | --- |
@@ -65,7 +65,7 @@ Kaladont is a word chain. Each word must start with the last two letters of the 
 
 ## Typing race
 
-`typestart` counts down (five seconds by default, `-s` or `--start-time` sets 3 to 30) and then posts a sentence. The first member to type it back closely enough wins; a few typos are tolerated, roughly one per 25 characters. The result shows words per minute and error count. `typestop` ends a race, `typelist` shows the sentence pool, and bot owners can add or delete sentences with `typeadd` and `typedel`.
+`typestart` counts down (five seconds by default, `-s` or `--start-time` sets 3 to 30) and then posts a sentence. The first member to type it back closely enough wins; a few typos are tolerated, roughly one per 25 characters. The result shows words per minute and error count. `typestop` ends a race and `typelist` shows the sentence pool. Bot owners can add or delete sentences with `typeadd` and `typedel`.
 
 ## Acrophobia
 

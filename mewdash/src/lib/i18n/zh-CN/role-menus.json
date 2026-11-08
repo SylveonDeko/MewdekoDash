@@ -46,7 +46,6 @@
   "import_post_in": "发布到",
   "import_retire_subtitle": "停用旧的表情设置并清除其表情。如果原消息由机器人发布，则会将其删除。",
   "import_retire_title": "停用旧设置",
-  "list_count": "{count} / {max} 个菜单",
   "list_create_first": "创建你的第一个菜单",
   "list_empty_text": "发布一条带有下拉菜单或按钮的消息，成员即可自行选择身份组。代词、颜色、提醒、地区：每类一个菜单。",
   "list_empty_title": "还没有身份组菜单",

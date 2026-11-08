@@ -24,6 +24,7 @@ export interface RepeaterResponse {
   startTimeOfDay: string | null;
   noRedundant: boolean;
   isEnabled: boolean;
+  disabledReason?: string | null;
   triggerMode: StickyTriggerMode;
   activityThreshold: number;
   activityTimeWindow: string;

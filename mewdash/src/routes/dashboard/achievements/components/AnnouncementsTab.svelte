@@ -1,7 +1,6 @@
 <script lang="ts">
   import { m } from "$lib/i18n";
   import { untrack } from "svelte";
-  import { fade } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
   import {
@@ -16,11 +15,10 @@
   import type { AutoSave } from "$lib/utils/autoSave.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
-  import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
-  import { ANNOUNCE_MODES, parseMessageSource, serializeMessage } from "../achievementHelpers";
-  import DuoIcon from "./DuoIcon.svelte";
+  import PluginCard from "$lib/components/plugin/PluginCard.svelte";
+  import MessageField from "$lib/components/plugin/MessageField.svelte";
+  import { ANNOUNCE_MODES } from "../achievementHelpers";
 
-  /** Tab inputs. */
   interface Props {
     settings: AchievementSettings;
     catalog: AchievementCatalog;
@@ -29,31 +27,32 @@
     autoSave: AutoSave;
     onsaved: (settings: AchievementSettings) => void;
     onerror: (text: string) => void;
-    onsuccess: (text: string) => void;
   }
 
   let { settings, catalog, lookups, user, autoSave, onsaved, onerror }: Props = $props();
 
   let mode = $state(untrack(() => settings.announceMode));
-  let logChannelId = $state<string | null>(untrack(() => settings.logChannelId ? settings.logChannelId.toString() : null));
+  let logChannelId = $state<string | null>(untrack(() => (settings.logChannelId ? settings.logChannelId.toString() : null)));
   let dmByDefault = $state(untrack(() => settings.dmByDefault));
   let mentionUsers = $state(untrack(() => settings.mentionUsers));
   let unlockImage = $state(untrack(() => settings.unlockImage));
   let deleteAfter = $state(untrack(() => settings.deleteAfter ?? 0));
   let quietChannels = $state<string[]>(untrack(() => (settings.quietChannelIds ?? []).map((id) => id.toString())));
   let requireSendPermission = $state(untrack(() => settings.requireSendPermission ?? true));
-  let message = $state<any>(untrack(() => parseMessageSource(settings.unlockMessage)));
+  let message = $state(untrack(() => settings.unlockMessage ?? ""));
 
-  let channelOptions = $derived(
+  const channelOptions = $derived(
     (lookups?.channels ?? []).filter((c) => c.type === 0).map((c) => ({ id: c.id.toString(), name: c.name, type: 0 }))
   );
-  let quietOptions = $derived(
-    (lookups?.channels ?? []).filter((c) => c.id.toString() !== logChannelId).map((c) => ({ id: c.id.toString(), name: c.name, type: c.type }))
+  const quietOptions = $derived(
+    (lookups?.channels ?? [])
+      .filter((c) => c.id.toString() !== logChannelId)
+      .map((c) => ({ id: c.id.toString(), name: c.name, type: c.type }))
   );
-  let logChannelProblem = $derived(
+  const logChannelProblem = $derived(
     logChannelId && lookups ? !(lookups.channels.find((c) => c.id.toString() === logChannelId)?.canSend ?? false) : false
   );
-  /** How long unlock messages stay, from never to a day. */
+  const needsLog = $derived(mode === AchievementAnnounceMode.LogChannel && !logChannelId);
   const deleteOptions = $derived([
     { id: "0", name: m.common.never() },
     { id: "5", name: m.achievements.announcementsDelete5s() },
@@ -65,19 +64,21 @@
     { id: "3600", name: m.achievements.announcementsDelete1h() },
     { id: "86400", name: m.achievements.announcementsDelete1d() }
   ]);
-  let modeChoices = $derived(ANNOUNCE_MODES.map((choice) => {
-    switch (choice.value) {
-      case 0: return { ...choice, title: m.achievements.cardDesignerAutomatic(), text: m.achievements.announcementsMode0Text() };
-      case 1: return { ...choice, title: m.achievements.announcementsMode1Title(), text: m.achievements.announcementsMode1Text() };
-      case 2: return { ...choice, title: m.achievements.announcementsMode2Title(), text: m.achievements.announcementsMode2Text() };
-      case 3: return { ...choice, title: m.achievements.announcementsMode3Title(), text: m.achievements.announcementsMode3Text() };
-      default: return { ...choice, title: m.achievements.announcementsMode4Title(), text: m.achievements.announcementsMode4Text() };
-    }
-  }));
-  let needsLog = $derived(mode === AchievementAnnounceMode.LogChannel && !logChannelId);
-  let placeholders = $derived(catalog.placeholders.map((p) => ({ category: m.features.achievementsName(), name: p.name, description: p.description })));
+  const modeChoices = $derived(
+    ANNOUNCE_MODES.map((choice) => {
+      switch (choice.value) {
+        case 0: return { ...choice, title: m.achievements.cardDesignerAutomatic(), text: m.achievements.announcementsMode0Text() };
+        case 1: return { ...choice, title: m.achievements.announcementsMode1Title(), text: m.achievements.announcementsMode1Text() };
+        case 2: return { ...choice, title: m.achievements.announcementsMode2Title(), text: m.achievements.announcementsMode2Text() };
+        case 3: return { ...choice, title: m.achievements.announcementsMode3Title(), text: m.achievements.announcementsMode3Text() };
+        default: return { ...choice, title: m.achievements.announcementsMode4Title(), text: m.achievements.announcementsMode4Text() };
+      }
+    })
+  );
+  const placeholders = $derived(
+    catalog.placeholders.map((p) => ({ category: m.features.achievementsName(), name: p.name, description: p.description }))
+  );
 
-  /** Puts the form back to the last saved settings. */
   function restore() {
     mode = settings.announceMode;
     logChannelId = settings.logChannelId ? settings.logChannelId.toString() : null;
@@ -87,13 +88,9 @@
     deleteAfter = settings.deleteAfter ?? 0;
     quietChannels = (settings.quietChannelIds ?? []).map((id) => id.toString());
     requireSendPermission = settings.requireSendPermission ?? true;
-    message = parseMessageSource(settings.unlockMessage);
+    message = settings.unlockMessage ?? "";
   }
 
-  /**
-   * Saves the announcement settings through the page's auto-save. A log channel the bot can't send in is
-   * not saved; the inline warning stays until it is changed.
-   */
   function queue() {
     const guildId = $currentGuild?.id;
     if (!guildId) return;
@@ -112,7 +109,7 @@
           deleteAfter,
           quietChannelIds: quietChannels.filter((id) => id !== logChannelId),
           requireSendPermission,
-          unlockMessage: serializeMessage(message)
+          unlockMessage: message
         });
         onsaved(saved);
       } catch (err: any) {
@@ -125,46 +122,58 @@
   }
 </script>
 
-<div class="space-y-6" in:fade={{ duration: 200 }}>
-  <div class="relative rounded-2xl border p-5 md:p-6" style="z-index: 30;
-       background: {$colorStore.primary}0c;
-       border-color: {$colorStore.primary}30;">
-    <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
-      <DuoIcon icon="fa-bell" />
-      {m.achievements.announcementsWhereTitle()}
-    </h2>
-    <p class="text-sm mt-1 mb-5" style="color: {$colorStore.muted}">
-      {m.achievements.announcementsWhereHint()}
-    </p>
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3" role="radiogroup" aria-label={m.achievements.announcementsModeLabel()}>
+<div class="space-y-4 min-w-0">
+  <PluginCard title={m.achievements.announcementsWhereTitle()} alwaysOpen>
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2" role="radiogroup" aria-label={m.achievements.announcementsModeLabel()}>
       {#each modeChoices as choice (choice.value)}
         {@const pressed = mode === choice.value}
-        <button type="button" role="radio" aria-checked={pressed}
-                class="flex items-start gap-3 p-4 rounded-xl border text-left transition-all min-h-[44px]"
-                style="background: {pressed ? $colorStore.primary + '20' : $colorStore.primary + '08'};
-                       border-color: {pressed ? $colorStore.primary : $colorStore.primary + '30'};"
-                onclick={() => { mode = choice.value; queue(); }}>
-          <DuoIcon icon={choice.icon} color={pressed ? null : $colorStore.muted} class="mt-1" />
+        <button
+          type="button"
+          role="radio"
+          aria-checked={pressed}
+          class="flex items-start gap-3 p-3 rounded-lg border text-left min-h-[44px]"
+          style="background: {pressed ? $colorStore.selectedSurface : `${$colorStore.primary}08`}; border-color: {pressed ? $colorStore.selectedBorder : `${$colorStore.primary}20`};"
+          onclick={() => {
+            mode = choice.value;
+            queue();
+          }}
+        >
+          <i class="fa-solid {choice.icon} mt-1 w-4 text-center" style="color: {$colorStore.muted}" aria-hidden="true"></i>
           <span class="min-w-0">
-            <span class="block font-semibold" style="color: {pressed ? $colorStore.primary : $colorStore.text}">{choice.title}</span>
-            <span class="block text-sm" style="color: {$colorStore.muted}">{choice.text}</span>
+            <span class="block text-sm font-semibold" style="color: {$colorStore.text}">{choice.title}</span>
+            <span class="block text-xs" style="color: {$colorStore.muted}">{choice.text}</span>
           </span>
         </button>
       {/each}
     </div>
 
-    <div class="mt-6 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
-      <span id="ach-log-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.logChannel()}</span>
+    <div>
+      <span id="ach-log-label" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.common.logChannel()}</span>
       <div class="flex items-center gap-2 md:max-w-xl">
         <div class="flex-1 min-w-0">
-          <DiscordSelector type="channel" options={channelOptions} selected={logChannelId}
-                           placeholder={m.common.noLogChannel()} ariaLabelledby="ach-log-label"
-                           onchange={(d) => { logChannelId = typeof d.selected === "string" && d.selected ? d.selected : null; queue(); }} />
+          <DiscordSelector
+            type="channel"
+            options={channelOptions}
+            selected={logChannelId}
+            placeholder={m.common.noLogChannel()}
+            ariaLabelledby="ach-log-label"
+            onchange={(d) => {
+              logChannelId = typeof d.selected === "string" && d.selected ? d.selected : null;
+              queue();
+            }}
+          />
         </div>
         {#if logChannelId}
-          <button type="button" class="w-[44px] h-[44px] rounded-xl shrink-0" aria-label={m.common.noLogChannel()}
-                  style="background: {$colorStore.primary}08; color: {$colorStore.muted};"
-                  onclick={() => { logChannelId = null; queue(); }}>
+          <button
+            type="button"
+            class="min-w-[50px] min-h-[50px] rounded-lg shrink-0"
+            aria-label={m.common.noLogChannel()}
+            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
+            onclick={() => {
+              logChannelId = null;
+              queue();
+            }}
+          >
             <i class="fa-solid fa-xmark" aria-hidden="true"></i>
           </button>
         {/if}
@@ -173,85 +182,103 @@
         <p class="text-xs mt-2" style="color: #ef4444">{m.achievements.announcementsLogProblem()}</p>
       {:else if needsLog}
         <p class="text-xs mt-2" style="color: {$colorStore.accent}">{m.achievements.announcementsLogNeeded()}</p>
-      {:else}
-        <p class="text-xs mt-2" style="color: {$colorStore.muted}">{m.achievements.announcementsLogHint()}</p>
       {/if}
     </div>
 
-    <div class="mt-6 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
-      <span id="ach-quiet-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.achievements.announcementsQuietLabel()}</span>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 items-start">
-        <div>
-          <DiscordSelector type="channel" multiple={true} options={quietOptions} selected={quietChannels}
-                           placeholder={m.achievements.announcementsQuietPlaceholder()} ariaLabelledby="ach-quiet-label"
-                           onchange={(d) => { quietChannels = Array.isArray(d.selected) ? d.selected : []; queue(); }} />
-          <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-            {m.achievements.announcementsQuietHint()}
-          </p>
-        </div>
-        <ToggleRow checked={requireSendPermission} title={m.achievements.announcementsRequireSendTitle()}
-                   subtitle={m.achievements.announcementsRequireSendSubtitle()}
-                   colors={$colorStore} onchange={(v) => { requireSendPermission = v; queue(); }} />
-      </div>
+    <div class="md:max-w-xl">
+      <span id="ach-quiet-label" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.achievements.announcementsQuietLabel()}</span>
+      <DiscordSelector
+        type="channel"
+        multiple={true}
+        options={quietOptions}
+        selected={quietChannels}
+        placeholder={m.achievements.announcementsQuietPlaceholder()}
+        ariaLabelledby="ach-quiet-label"
+        onchange={(d) => {
+          quietChannels = Array.isArray(d.selected) ? d.selected : [];
+          queue();
+        }}
+      />
     </div>
 
-    <div class="mt-6 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
-      <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.achievements.announcementsDelivery()}</span>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <ToggleRow checked={dmByDefault} title={m.achievements.announcementsDmTitle()} class="h-full"
-                   subtitle={m.achievements.announcementsDmSubtitle()}
-                   colors={$colorStore} onchange={(v) => { dmByDefault = v; queue(); }} />
-        <ToggleRow checked={mentionUsers} title={m.achievements.announcementsMentionTitle()} class="h-full"
-                   subtitle={m.achievements.announcementsMentionSubtitle()}
-                   colors={$colorStore} onchange={(v) => { mentionUsers = v; queue(); }} />
-        <ToggleRow checked={unlockImage} title={m.achievements.announcementsImageTitle()} class="h-full"
-                   subtitle={m.achievements.announcementsImageSubtitle()}
-                   colors={$colorStore} onchange={(v) => { unlockImage = v; queue(); }} />
-      </div>
-    </div>
+    <ToggleRow
+      checked={requireSendPermission}
+      title={m.achievements.announcementsRequireSendTitle()}
+      subtitle={m.achievements.announcementsRequireSendSubtitle()}
+      colors={$colorStore}
+      onchange={(v) => {
+        requireSendPermission = v;
+        queue();
+      }}
+    />
+  </PluginCard>
 
-    <div class="mt-6 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
-      <span id="ach-delete-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.achievements.announcementsDeleteLabel()}</span>
-      <div class="md:max-w-xs">
-        <DiscordSelector type="custom" options={deleteOptions} selected={deleteAfter.toString()} searchable={false}
-                         ariaLabelledby="ach-delete-label" customIcon="fa-clock"
-                         onchange={(d) => { deleteAfter = typeof d.selected === "string" ? Number(d.selected) : 0; queue(); }} />
-      </div>
-      <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-        {m.achievements.announcementsDeleteHint()}
-      </p>
+  <PluginCard title={m.achievements.announcementsDelivery()} alwaysOpen>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+      <ToggleRow
+        checked={dmByDefault}
+        title={m.achievements.announcementsDmTitle()}
+        subtitle={m.achievements.announcementsDmSubtitle()}
+        class="h-full"
+        colors={$colorStore}
+        onchange={(v) => {
+          dmByDefault = v;
+          queue();
+        }}
+      />
+      <ToggleRow
+        checked={mentionUsers}
+        title={m.achievements.announcementsMentionTitle()}
+        subtitle={m.achievements.announcementsMentionSubtitle()}
+        class="h-full"
+        colors={$colorStore}
+        onchange={(v) => {
+          mentionUsers = v;
+          queue();
+        }}
+      />
+      <ToggleRow
+        checked={unlockImage}
+        title={m.achievements.announcementsImageTitle()}
+        subtitle={m.achievements.announcementsImageSubtitle()}
+        class="h-full"
+        colors={$colorStore}
+        onchange={(v) => {
+          unlockImage = v;
+          queue();
+        }}
+      />
     </div>
-  </div>
-
-  <div class="relative rounded-2xl border p-5 md:p-6" style="z-index: 20;
-       background: {$colorStore.primary}0c;
-       border-color: {$colorStore.primary}30;">
-    <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
-      <DuoIcon icon="fa-envelope-open" />
-      {m.achievements.announcementsMessageTitle()}
-    </h2>
-    <p class="text-sm mt-1 mb-5" style="color: {$colorStore.muted}">
-      {m.achievements.announcementsMessageHint()}
-    </p>
-    <FullscreenEmbedBuilder id="achievement-unlock-message"
-                            bind:value={message}
-                            onchange={() => queue()}
-                            previewTitle={m.achievements.announcementsMessageTitle()}
-                            previewDescription={m.achievements.announcementsMessagePreviewDescription()}
-                            icon="fa-crown"
-                            allowContent={true}
-                            allowMultipleEmbeds={true}
-                            maxEmbeds={10}
-                            allowComponents={true}
-                            additionalPlaceholders={placeholders}
-                            guildId={$currentGuild?.id ?? null}
-                            user={user ?? null}
-                            placeholder={m.achievements.announcementsMessagePlaceholder()} />
-    <div class="flex flex-wrap gap-2 mt-4">
-      {#each catalog.placeholders as p (p.name)}
-        <code class="text-xs px-2 py-1 rounded-md" style="background: {$colorStore.primary}10; color: {$colorStore.primary}" title={p.description}>{p.name}</code>
-      {/each}
+    <div class="md:max-w-xs">
+      <span id="ach-delete-label" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.achievements.announcementsDeleteLabel()}</span>
+      <DiscordSelector
+        type="custom"
+        options={deleteOptions}
+        selected={deleteAfter.toString()}
+        searchable={false}
+        ariaLabelledby="ach-delete-label"
+        customIcon="fa-clock"
+        clearable={false}
+        onchange={(d) => {
+          deleteAfter = typeof d.selected === "string" ? Number(d.selected) : 0;
+          queue();
+        }}
+      />
     </div>
-  </div>
+  </PluginCard>
 
+  <PluginCard title={m.achievements.announcementsMessageTitle()} alwaysOpen>
+    <MessageField
+      value={message}
+      previewTitle={m.achievements.announcementsMessageTitle()}
+      icon="fa-crown"
+      user={user ?? null}
+      {placeholders}
+      placeholder={m.achievements.announcementsMessagePlaceholder()}
+      onchange={(next) => {
+        message = next;
+        queue();
+      }}
+    />
+  </PluginCard>
 </div>

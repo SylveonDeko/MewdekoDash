@@ -9,7 +9,8 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { currentInstance } from "$lib/stores/instanceStore";
-  import { allDashboardFeatures } from "$lib/config/navigationItems";
+  import { groupFeatures, navigationGroups } from "$lib/config/navigationItems";
+  import { featureSlug, featureStatus } from "$lib/stores/featureStatusStore";
   import { type BotInstance, clientApi, instanceManagementApi, ownershipApi } from "$lib/api/index";
   import { userStore } from "$lib/stores/userStore";
   import { switchingServer } from "$lib/stores/guildSwitchStore";
@@ -65,39 +66,41 @@
     return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${ext}`;
   });
 
+  let closedGroups = $state<string[]>([]);
+
   /**
-   * Every feature the viewer may reach, in alphabetical order.
-   *
-   * Sorted here rather than relying on the order of the source array, which had drifted out of
-   * alphabetical in several places as features were appended next to related ones.
+   * The task groups with the features the viewer may reach, narrowed by the search box.
    */
-  let filteredFeatures = $derived.by(() => {
+  let filteredGroups = $derived.by(() => {
     // Dashboard Access is pinned above this list alongside the Dashboard Home link. Owner tools
     // are not in this list at all: they live under /owner behind the Owner Panel link below.
-    let features = allDashboardFeatures.filter(item => item.href !== "/dashboard/access");
+    return navigationGroups
+      .map(group => {
+        let features = groupFeatures(group).filter(item => item.href !== "/dashboard/access");
 
-    if (searchTerm.trim()) {
-      features = features.filter(f =>
-        matchesSearchTerms(
-          { title: f.label(), description: f.description?.() ?? "", category: f.category, keywords: f.keywords },
-          searchTerm
-        )
-      );
-    }
+        if (searchTerm.trim()) {
+          features = features.filter(f =>
+            matchesSearchTerms(
+              { title: f.label(), description: f.description?.() ?? "", category: f.category, keywords: f.keywords },
+              searchTerm
+            )
+          );
+        }
 
-    return [...features].sort((a, b) => a.label().localeCompare(b.label()));
+        return { group, features };
+      })
+      .filter(entry => entry.features.length > 0);
   });
 
-  /**
-   * The letter to show above an entry, when it is the first of its letter. Gives the eye something
-   * to jump between in a long list without reintroducing groups that have to be opened.
-   */
-  function letterFor(index: number): string | null {
-    const letter = filteredFeatures[index].label()[0].toUpperCase();
+  let matchCount = $derived(filteredGroups.reduce((total, entry) => total + entry.features.length, 0));
 
-    if (index === 0) return letter;
+  function isGroupOpen(id: string): boolean {
+    return collapsed || !!searchTerm.trim() || !closedGroups.includes(id);
+  }
 
-    return filteredFeatures[index - 1].label()[0].toUpperCase() === letter ? null : letter;
+  function toggleGroup(id: string) {
+    closedGroups = closedGroups.includes(id) ? closedGroups.filter(g => g !== id) : [...closedGroups, id];
+    safeLocalStorage.setItem("sidebar-closed-groups", JSON.stringify(closedGroups));
   }
 
   let filteredGuilds = $derived(
@@ -323,8 +326,11 @@
     if (browser) {
       collapsed = safeLocalStorage.getItem("sidebar-collapsed") === "true";
 
-      // Left over from when the sidebar grouped features into collapsible categories.
       safeLocalStorage.removeItem("sidebar-collapsed-categories");
+      try {
+        const saved = JSON.parse(safeLocalStorage.getItem("sidebar-closed-groups") ?? "[]");
+        if (Array.isArray(saved)) closedGroups = saved.filter((id): id is string => typeof id === "string");
+      } catch {}
 
       window.addEventListener("keydown", handleGlobalKeydown);
       window.addEventListener("resize", handleWindowResize);
@@ -705,13 +711,19 @@
                       --fa-secondary-color: {$unreadUpdateCount > 0 ? $colorStore.secondary : $colorStore.muted};
                       --fa-secondary-opacity: 0.4;"
                aria-hidden="true"></i>
-            {#if $unreadUpdateCount > 0}
+            {#if $unreadUpdateCount > 0 && collapsed}
               <span class="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full"
                     style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"></span>
             {/if}
           </span>
           {#if !collapsed}
-            <span class="text-[15px] font-medium">{m.layout.sidebarWhatsNew()}</span>
+            <span class="text-[15px] font-medium flex-1 text-left">{m.layout.sidebarWhatsNew()}</span>
+            {#if $unreadUpdateCount > 0}
+              <span class="min-w-5 rounded-full px-1.5 text-center text-[11px] font-semibold"
+                    style="background: {$colorStore.primary}20; color: {$colorStore.text};">
+                {$unreadUpdateCount}
+              </span>
+            {/if}
           {/if}
         </button>
       </div>
@@ -719,26 +731,35 @@
       <div class="mx-3 my-2 h-px" style="background: {$colorStore.primary}10;"></div>
 
     <div class="px-2 space-y-0.5">
-      {#each filteredFeatures as feature, index (feature.href)}
-        {@const active = isActive(feature.href)}
-        {@const letter = collapsed || searchTerm.trim() ? null : letterFor(index)}
-
-        {#if letter}
-          <div class="px-3 pt-2 pb-0.5 text-[11px] font-semibold"
-               style="color: {$colorStore.muted}; opacity: 0.5;"
-               aria-hidden="true">
-            {letter}
-          </div>
+      {#each filteredGroups as { group, features } (group.id)}
+        {#if !collapsed}
+          <button
+            type="button"
+            class="w-full flex items-center gap-2 px-3 pt-2 pb-0.5 text-[11px] font-semibold text-left"
+            style="color: {$colorStore.muted};"
+            aria-expanded={isGroupOpen(group.id)}
+            onclick={() => toggleGroup(group.id)}
+          >
+            <span class="flex-1">{group.label()}</span>
+            <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"
+               class:-rotate-90={!isGroupOpen(group.id)}
+               aria-hidden="true"></i>
+          </button>
         {/if}
+
+        {#if isGroupOpen(group.id)}
+        {#each features as feature (feature.href)}
+        {@const active = isActive(feature.href)}
+        {@const state = $featureStatus?.[featureSlug(feature.href)]}
 
         <a
           href={noGuild ? undefined : feature.href}
                   class="flex items-center gap-3 px-3 py-2 max-lg:py-3 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group relative"
                   class:justify-center={collapsed}                  class:opacity-40={noGuild}
                   class:pointer-events-none={noGuild}
-                  style="background: {active ? $colorStore.primary + '12' : 'transparent'};
+                  style="background: {active ? $colorStore.selectedSurface : 'transparent'};
                          color: {active ? $colorStore.text : $colorStore.muted};
-                         border: 1px solid {active ? $colorStore.primary + '20' : 'transparent'};"
+                         border: 1px solid {active ? $colorStore.selectedBorder : 'transparent'};"
                   aria-current={active ? 'page' : undefined}
                   aria-disabled={noGuild}
                   onmouseenter={(e) => showTooltip(e, noGuild ? m.common.selectAServerFirstPlaceholder() : feature.label())}
@@ -762,12 +783,19 @@
                           style="color: {active ? $colorStore.text : $colorStore.muted};">
                       {feature.label()}
                     </span>
+                    {#if state}
+                      <span class="h-1.5 w-1.5 rounded-full shrink-0"
+                            style="background: {$colorStore.primary}; color: {$colorStore.onPrimary}; opacity: {state.enabled ? 1 : 0.25};"
+                            aria-hidden="true"></span>
+                    {/if}
                   {/if}
         </a>
+        {/each}
+        {/if}
       {/each}
     </div>
 
-    {#if searchTerm && filteredFeatures.length === 0}
+    {#if searchTerm && matchCount === 0}
       <div class="px-4 py-8 text-center">
         <i class="fa-solid fa-search text-2xl mb-2 block" style="color: {$colorStore.muted}; opacity: 0.3;"></i>
         <p class="text-xs" style="color: {$colorStore.muted};">{m.layout.sidebarNoFeaturesMatch({ term: searchTerm })}</p>

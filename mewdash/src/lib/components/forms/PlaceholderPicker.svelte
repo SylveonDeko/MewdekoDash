@@ -455,7 +455,7 @@
             <div class="flex items-center gap-3">
               <span>↑↓ Navigate</span>
               <span>↵ Select</span>
-              <span>Esc Close</span>
+              <span>Esc close</span>
             </div>
             <div>
               {filteredPlaceholders.length} result{filteredPlaceholders.length !== 1 ? 's' : ''}
@@ -583,7 +583,7 @@
           <div class="flex items-center gap-3">
             <span>↑↓ Navigate</span>
             <span>↵ Select</span>
-            <span>Esc Close</span>
+            <span>Esc close</span>
           </div>
           <div>
             {filteredPlaceholders.length} result{filteredPlaceholders.length !== 1 ? 's' : ''}

@@ -1,7 +1,7 @@
 ---
 title: Feature Requests
 slug: feature-requests
-summary: Suggest features, report bugs, and upvote what other people asked for, straight from the dashboard.
+summary: Suggest features and report bugs from the dashboard, and upvote other people's ideas
 icon: fa-lightbulb
 category: Community
 dashboard: /dashboard/feature-requests
@@ -11,34 +11,44 @@ related: [leave-feedback]
 
 ## What it does
 
-The Feature Requests page is where anyone logged in to the dashboard can tell the developers what they want. A request has a category (feature idea, bug report, or something else), a title, and a description. Once sent it shows up in the shared list where other users can upvote it, and the developers can mark it as planned, done, or declined and leave a note.
+The Feature Requests page is where anyone logged in to the dashboard can tell the developers what they want. A request is a title and details filed under a category. Once sent it appears in a shared list where other people can upvote it. The developers can set a status on it, such as planned or declined, and leave a note.
 
-Every new request is also posted as an embed in a channel the bot owner picks, so nothing sits unread.
+Every new request is also posted in a channel the bot owner picks, so nothing sits unread.
 
-## Submitting
+The page has four tabs: **Browse**, **Suggest**, **Mine**, and, for bot owners only, **Settings**. The open tab is kept in the URL as `?tab=`.
 
-1. Open **Feature Requests** from the sidebar and pick the **Suggest** tab.
-2. Choose a category, write a title and the details, and send it.
-3. If you were managing a server at the time, you can attach its name so the developers have context. Untick the box if you would rather not.
+## Suggest
 
-You can send up to three requests an hour. Your Discord name is attached so the developers can follow up.
+1. Open **Feature Requests** and switch to **Suggest**.
+2. Under **What kind of request is this?** pick **Feature idea**, **Bug report**, or **Something else**.
+3. Write a **Title** (3 to 120 characters) and the **Details** (10 to 2000 characters). A counter shows how many characters are left.
+4. If you are managing a community at the time, the toggle **Mention that I was managing {name}** attaches its name. Turn it off to leave it out.
+5. Press **Send to the developers**.
 
-## Browsing and voting
+You can send three requests an hour. Your Discord name is attached so the developers can follow up. After sending, **Mine** takes you to the request.
 
-The **Browse** tab lists everything, most upvoted first by default. Switch to **New** to see the latest, filter by status or category, or search. Press the thumbs up on a request to upvote it. Pressing it again takes the vote back.
+## Browse
 
-Open a request to read the full description and any note the developers left.
+The **Browse** card lists requests 25 to a page. Search by title or details, or by who submitted it. Two dropdowns filter by status and category, and the **Top** and **New** buttons sort by votes or by date. The status filter starts on **Open**. Choose **Any status** to see everything.
 
-## Following your own requests
+Press the thumbs up on a request to upvote it. Press it again to take the vote back.
 
-The **Mine** tab shows everything you submitted with its current status. When a developer changes the status or leaves a note, it appears here.
+## Mine
+
+**Mine** lists everything you submitted with its current status. When a developer changes the status or leaves a note, it shows here as **Note from the developers:**. Your own requests also carry a **Yours** badge in Browse.
 
 ## For bot owners
 
-Bot owners get two extra things on this page:
+Owners get extra controls:
 
-- A **Change status** and **Delete** button on every request, plus counts by status and category at the top of the Browse tab.
-- A **Settings** tab to choose the channel new requests are posted to. Leave it empty to reuse the join/leave channel from the bot's credentials.
+- Counts at the top of **Browse** for Total, Open, Planned, Done, Declined, and Bugs.
+- **Change status** on each request. Pick a status and add an optional **Note for the submitter**.
+- **Delete** on each request. A confirmation warns that the request and its votes will be removed and this cannot be undone.
+- The **Settings** tab, with the **Report channel** card.
+
+### Report channel
+
+Enter the **Channel ID new requests get posted to**. Leave it empty to use the join/leave channel. A line under the field tells you where requests will go, and warns if no channel is set (requests are stored but not posted) or if the bot cannot see the channel. The value saves automatically.
 
 > [!NOTE]
-> Statuses and notes are visible to everyone. Deleting a request also removes its votes and cannot be undone.
+> Statuses and notes are visible to everyone.

@@ -23,9 +23,8 @@
 </script>
 
 <label
-  class="flex items-start gap-3 p-3 rounded-lg min-h-[44px] cursor-pointer {extra}"
+  class="flex {subtitle ? 'items-start' : 'items-center'} gap-3 py-2 min-h-[44px] cursor-pointer {extra}"
   class:opacity-50={disabled}
-  style="background: {colors.primary}08;"
 >
   <input
     {id}
@@ -36,7 +35,7 @@
     onchange={(e) => onchange?.((e.target as HTMLInputElement).checked)}
   />
   <div
-    class="switch-toggle shrink-0 mt-0.5 w-11 h-6 rounded-full relative transition-all
+    class="switch-toggle shrink-0 {subtitle ? 'mt-0.5' : ''} w-11 h-6 rounded-full relative transition-all
            peer-focus-visible:ring-2
            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
            after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all

@@ -52,6 +52,7 @@
   "gate_log_channel_placeholder": "No logging",
   "gate_min_server_age": "Min time in server (days)",
   "gate_no_time_limit": "no time limit",
+  "gate_open_count": "{count} open",
   "gate_pick_outcome": "Pick an outcome",
   "gate_ping_placeholder": "No ping",
   "gate_ping_role": "Ping role on new applications",
@@ -61,6 +62,7 @@
   "gate_summary": "{grant} • ✅ {approvals} / ❌ {denials} • {window} • {open} open",
   "gate_voter_role": "Voter role",
   "gate_voter_role_placeholder": "Everyone with the access role",
+  "gate_votes_needed": "{approvals} to approve, {denials} to deny",
   "gate_voting_window": "Voting window (hours)",
   "gate_when_closes": "When the window closes",
   "gate_window_hours": "{hours}h window",
@@ -87,5 +89,7 @@
   "stat_open_applications": "Open applications",
   "status_withdrawn": "Withdrawn",
   "tab_blocked": "Blocked",
-  "tab_gates": "Gates"
+  "tab_gates": "Gates",
+  "tabs_aria": "Channel access sections",
+  "vote_abstain": "Abstain"
 }

@@ -1,6 +1,8 @@
 // lib/api/filter/filter.ts
 import { apiRequest } from "../core";
 import type {
+  FilterExtras,
+  FilterExtrasRequest,
   FilterSettings,
   ServerFilterSettingsRequest,
   WarningSettingsRequest,
@@ -49,6 +51,24 @@ export const filterApi = {
       `Filter/${guildId}/warnings`,
       "PUT",
       settings,
+    ),
+
+  getFilterExtras: (guildId: bigint) =>
+    apiRequest<FilterExtras>(`Filter/${guildId}/extras`),
+
+  updateFilterExtras: (guildId: bigint, request: FilterExtrasRequest) =>
+    apiRequest<FilterExtras>(`Filter/${guildId}/extras`, "PUT", request),
+
+  setLinkLimit: (
+    guildId: bigint,
+    channelId: bigint,
+    maxLinks: number,
+    windowSeconds: number,
+  ) =>
+    apiRequest<{ success: boolean }>(
+      `Filter/${guildId}/channels/${channelId}/link-limit`,
+      "PUT",
+      { maxLinks, windowSeconds },
     ),
 
   toggleChannelFilter: (

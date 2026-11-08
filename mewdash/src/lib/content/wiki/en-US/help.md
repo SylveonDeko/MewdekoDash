@@ -1,7 +1,7 @@
 ---
 title: Help and Commands
 slug: help
-summary: How to find and understand the bot's commands from inside Discord: the category help menu, module overviews, per-command help pages, command search, and the dashboard setup wizard the bot links to when it joins.
+summary: How to find the bot's commands and learn what they do from inside Discord
 icon: fa-life-ring
 category: General
 module: Help
@@ -11,9 +11,9 @@ related: [permissions, administration, userprofile]
 
 ## What it does
 
-The Help module is how members discover what the bot can do. `help` (or `cmds`) opens a menu that lists the command categories with a module and command count for each, plus a dropdown to open one. Picking a category shows its modules; picking a module shows its commands ten per page with short descriptions, or, for very large modules, an overview split into sections first.
+The Help module is how members discover what the bot can do. `help` (or `cmds`) opens a menu that lists the command categories with a module and command count for each. A dropdown opens one. Picking a category shows its modules; picking a module shows its commands ten per page with short descriptions, or, for very large modules, an overview split into sections first.
 
-`help <command>` shows a single command: its name and first alias, what it does, the Discord permissions it needs from you and from the bot, a cooldown if it has one, the matching slash command, each parameter, alternative forms, usage examples, and a link to the documentation. A **Run** button lets you run the command straight from the help page, opening a form for its arguments if it has any.
+`help <command>` shows a single command: its name and first alias, what it does, the Discord permissions it needs from you and from the bot, and a cooldown if it has one. It also lists the matching slash command, each parameter, alternative forms, usage examples and a link to the documentation. A **Run** button lets you run the command straight from the help page, opening a form for its arguments if it has any.
 
 `searchcommand <term>` finds commands whose name or description contains the term. Mentioning the bot with no text replies with the current prefix and a pointer to `cmds`.
 
@@ -70,7 +70,7 @@ Text commands use the server prefix, `.` by default, and the exact names in the 
 
 ## When the bot joins
 
-When the bot is added to a server it finds who invited it from the audit log (it needs View Audit Log for this) and DMs them. The message has a **Set Up Mewdeko** button linking to the dashboard wizard for that server, a three-step reminder of `cmds`, `cmds mod` and `h purge`, and the support server link. If the inviter cannot be identified or has DMs closed, nothing is sent; there is no channel announcement.
+When the bot is added to a server it finds who invited it from the audit log (it needs View Audit Log for this) and DMs them. The message has a **Set Up Mewdeko** button linking to the dashboard wizard for that server, and a three-step reminder of `cmds`, `cmds mod` and `h purge`. The support server link is included too. If the inviter cannot be identified or has DMs closed, nothing is sent; there is no channel announcement.
 
 ## The setup wizard
 
@@ -80,10 +80,11 @@ The wizard lives at `/wizard?guild=<id>` on the dashboard. The link in the welco
 | --- | --- |
 | Welcome | Explains what is about to happen |
 | Permissions | First-time only: checks the bot has what it needs |
-| Server Basics | Prefix, bot language, and server timezone |
-| Select Features | Choose what to configure; features are marked as full setup or quick enable |
+| Server basics | Prefix, bot language, and server timezone. Leave the prefix blank to keep the default. |
+| Bring your data | Import XP, levels, level roles and balances from another bot. Skip it if you are starting fresh. |
+| Select features | The features suggested for your server, based on its channels, roles and size, which you can adjust or browse in full. Each is set to **Full setup**, **Quick enable** or **Skip**. |
 | One step per full-setup feature | Guided configuration for that feature |
-| Quick Setup | Bulk-enable the remaining features with their defaults |
+| Quick setup | Pick the basic channels for the quick-enabled features and enable them with their defaults |
 | Complete | Summary, including anything that failed to save |
 
 Progress is stored per server, so leaving and coming back resumes. A server can be marked skipped so the wizard stops offering itself, and the **My Settings** page has a toggle for whether you prefer guided setup and a reset for a server's wizard state.

@@ -17,8 +17,11 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import AchievementIcon from "./AchievementIcon.svelte";
   import DuoIcon from "./DuoIcon.svelte";
-  import CardDesigner from "./card/CardDesigner.svelte";
-  import { cloneTemplate } from "./card/cardHelpers";
+  import DesignsLinkCard from "$lib/components/designs/DesignsLinkCard.svelte";
+  import CardDesigner from "$lib/components/cards/CardDesigner.svelte";
+  import { cloneTemplate } from "$lib/components/cards/cardHelpers";
+  import { guildEmojiGroups } from "../achievementHelpers";
+  import { achievementCardConfig } from "./cardDesignerConfig";
 
   /**
    * Card designs: saved designs with previews, which one is the server's default, the designer, and which
@@ -64,6 +67,8 @@
       .map((a) => ({ id: `a:${a.key}`, name: a.name }))
   ]);
   let defaultName = $derived(card?.designs.find((d) => d.id === card?.defaultId)?.name ?? m.achievements.cardsTabBuiltIn());
+  let designerConfig = $derived(card ? achievementCardConfig(card, catalog) : null);
+  let guildEmojis = $derived(guildEmojiGroups(lookups, $currentGuild));
 
   onMount(load);
 
@@ -131,10 +136,6 @@
    */
   function startNew(name: string, template: AchievementCardTemplate, makeDefault = false) {
     if (!card) return;
-    if (card.designs.length >= card.limits.maxDesigns) {
-      onerror(m.achievements.cardsTabErrorMaxDesigns({ max: card.limits.maxDesigns }));
-      return;
-    }
     session++;
     editing = { id: null, name, template: cloneTemplate(template), makeDefault };
   }
@@ -233,7 +234,7 @@
 </script>
 
 {#snippet tile(key: string, title: string, isDefault: boolean, subtitle: string, actions: Snippet)}
-  <div class="rounded-2xl border overflow-hidden flex flex-col"
+  <div class="rounded-xl border overflow-hidden flex flex-col"
        style="background: {$colorStore.primary}05; border-color: {isDefault ? $colorStore.primary + '60' : $colorStore.primary + '20'};">
     <div class="aspect-[1280/500] w-full flex items-center justify-center" style="background: {$colorStore.primary}05;">
       {#if thumbnails[key]}
@@ -260,7 +261,7 @@
 {/snippet}
 
 {#snippet button(label: string, icon: string, onclick: () => void, danger = false)}
-  <button type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-medium min-h-[34px] disabled:opacity-50"
+  <button type="button" class="px-3 rounded-lg text-xs font-medium min-h-[44px] disabled:opacity-50"
           style="background: {danger ? '#ef444420' : $colorStore.primary + '15'}; color: {danger ? '#ef4444' : $colorStore.text};"
           disabled={busy} {onclick}>
     <i class="fa-solid {icon} mr-1" aria-hidden="true"></i>{label}
@@ -272,14 +273,14 @@
     <i class="fa-solid fa-spinner fa-spin text-2xl" aria-hidden="true"></i>
     <span class="sr-only">{m.common.loading()}</span>
   </div>
-{:else if card && editing}
+{:else if card && editing && designerConfig}
   {#key session}
-    <CardDesigner name={editing.name} template={editing.template} isNew={editing.id === null} {card} {catalog} {lookups} onsave={save}
+    <CardDesigner name={editing.name} template={editing.template} isNew={editing.id === null} config={designerConfig} {guildEmojis} onsave={save}
                   onclose={() => { editing = null; }} onimages={(images) => { if (card) card = { ...card, images }; }} {onerror} />
   {/key}
 {:else if card}
   <div class="space-y-6" in:fade={{ duration: 200 }}>
-    <div class="rounded-2xl border p-5 md:p-6"
+    <div class="rounded-xl border p-5 md:p-6"
          style="background: {$colorStore.primary}0c;
                 border-color: {$colorStore.primary}30;">
       <div class="flex flex-col md:flex-row md:items-center gap-4">
@@ -299,6 +300,8 @@
         </button>
       </div>
     </div>
+
+    <DesignsLinkCard />
 
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       {#snippet builtInActions()}
@@ -325,7 +328,7 @@
     </div>
 
     {#if card.designs.length > 0}
-      <div class="rounded-2xl border p-5 md:p-6"
+      <div class="rounded-xl border p-5 md:p-6"
            style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <h3 class="flex items-center gap-2 font-semibold mb-1" style="color: {$colorStore.text}">
@@ -346,7 +349,7 @@
                 <span class="block text-xs" style="color: {$colorStore.muted}">{rule.category ? m.achievements.cardsTabRuleCategory() : m.achievements.cardsTabRuleAchievement()}</span>
               </div>
               <div class="w-40 sm:w-48 shrink-0">
-                <DiscordSelector type="custom" options={designOptions} searchable={false} ariaLabel={m.achievements.cardsTabRuleDesignLabel({ name: rule.name })}
+                <DiscordSelector type="custom" customIcon="fa-palette" clearable={false} options={designOptions} searchable={false} ariaLabel={m.achievements.cardsTabRuleDesignLabel({ name: rule.name })}
                                  selected={rule.id.toString()}
                                  onchange={(d) => { if (typeof d.selected === "string") assign(rule.category, rule.key, d.selected); }} />
               </div>
@@ -365,11 +368,11 @@
           <div class="flex flex-col sm:flex-row sm:items-center gap-2 pt-2">
             <div class="flex-1 min-w-0">
               <DiscordSelector type="custom" options={targetOptions} selected={ruleTarget} ariaLabel={m.achievements.cardsTabTargetLabel()}
-                               placeholder={m.achievements.cardsTabTargetPlaceholder()} customIcon="fa-crown"
+                               placeholder={m.achievements.cardsTabTargetPlaceholder()} customIcon="fa-crown" clearable={false}
                                onchange={(d) => { ruleTarget = typeof d.selected === "string" ? d.selected : null; }} />
             </div>
             <div class="sm:w-48">
-              <DiscordSelector type="custom" options={designOptions} selected={ruleDesign} searchable={false}
+              <DiscordSelector type="custom" customIcon="fa-palette" clearable={false} options={designOptions} selected={ruleDesign} searchable={false}
                                ariaLabel={m.achievements.cardsTabDesignLabel()} placeholder={m.achievements.cardsTabDesignPlaceholder()}
                                onchange={(d) => { ruleDesign = typeof d.selected === "string" ? d.selected : null; }} />
             </div>

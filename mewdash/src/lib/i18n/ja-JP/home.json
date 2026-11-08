@@ -58,7 +58,6 @@
   "landing_multi_greets": "複数の挨拶",
   "landing_music_bot": "音楽ボット",
   "landing_no_servers_to_show_right_now": "現在表示できるサーバーはありません。",
-  "landing_or_just_hop_in_discord_for": "簡単な質問やヘルプは、Discord で気軽にどうぞ",
   "landing_our_top_servers": "人気のサーバー",
   "landing_per_server_bot_profile": "サーバーごとのボットプロフィール",
   "landing_polls_with_buttons": "ボタン付きの投票",
@@ -130,7 +129,5 @@
   "tails_subheading": "どのしっぽも、複数の役割を持っています。",
   "tails_tag_text": "メンバーはボタンまたはドロップダウンから自分のロールを選べます。",
   "tails_wrench_text": "独自のコマンドと返信を作成し、サーバーでのボットの見た目を変更できます。",
-  "tails_wrench_title": "自分好みにカスタマイズ",
-  "update_next": "次のアップデート",
-  "update_previous": "前のアップデート"
+  "tails_wrench_title": "自分好みにカスタマイズ"
 }

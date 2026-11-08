@@ -1,26 +1,19 @@
 <script lang="ts">
   import { m } from "$lib/i18n";
   import { untrack } from "svelte";
-  import { fade } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
-  import {
-    achievementsApi,
-    type AchievementCatalog,
-    type AchievementLookups,
-    type AchievementSettings
-  } from "$lib/api/index.ts";
+  import { achievementsApi, type AchievementLookups, type AchievementSettings } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
   import type { AutoSave } from "$lib/utils/autoSave.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
-  import DuoIcon from "./DuoIcon.svelte";
+  import SettingField from "$lib/components/forms/SettingField.svelte";
+  import PluginCard from "$lib/components/plugin/PluginCard.svelte";
 
-  /** Tab inputs. */
   interface Props {
     settings: AchievementSettings;
-    catalog: AchievementCatalog;
     lookups: AchievementLookups | null;
     autoSave: AutoSave;
     onsaved: (settings: AchievementSettings) => void;
@@ -37,12 +30,11 @@
   let revealHidden = $state(untrack(() => settings.revealHidden));
   let working = $state(false);
 
-  let roleOptions = $derived((lookups?.roles ?? []).map((r) => ({ id: r.id.toString(), name: r.name, color: r.color })));
-  let channelOptions = $derived(
+  const roleOptions = $derived((lookups?.roles ?? []).map((r) => ({ id: r.id.toString(), name: r.name, color: r.color })));
+  const channelOptions = $derived(
     (lookups?.channels ?? []).map((c) => ({ id: c.id.toString(), name: c.name, type: c.type }))
   );
 
-  /** Whether the XP field holds a whole number the bot accepts. */
   function xpValid(): boolean {
     const value: unknown = xpPerPoint;
     if (value === null || value === undefined || value === "") return false;
@@ -50,7 +42,6 @@
     return Number.isFinite(n) && n >= 0 && n <= 1000;
   }
 
-  /** Puts the form back to the last saved settings. */
   function restore() {
     excludedRoles = settings.excludedRoleIds.map((id) => id.toString());
     excludedChannels = settings.excludedChannelIds.map((id) => id.toString());
@@ -58,10 +49,6 @@
     revealHidden = settings.revealHidden;
   }
 
-  /**
-   * Saves the settings through the page's auto-save. An invalid XP value is left out until it is valid.
-   * @param instant True for pickers and toggles, false for the typed XP field
-   */
   function queue(instant: boolean) {
     const guildId = $currentGuild?.id;
     if (!guildId) return;
@@ -89,7 +76,6 @@
     else autoSave.schedule("achievementSettings", save);
   }
 
-  /** Asks the bot to check every member again. */
   async function recheck() {
     if (!$currentGuild?.id || working) return;
     working = true;
@@ -104,7 +90,6 @@
     }
   }
 
-  /** Clears every achievement in the server, after asking. */
   async function resetAll() {
     if (!$currentGuild?.id || working) return;
     const ok = await requestConfirmation({
@@ -128,88 +113,100 @@
   }
 </script>
 
-<div class="space-y-6" in:fade={{ duration: 200 }}>
-  <div class="relative rounded-2xl border p-5 md:p-6" style="z-index: 30;
-       background: {$colorStore.primary}0c;
-       border-color: {$colorStore.primary}30;">
-    <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
-      <DuoIcon icon="fa-filter" />
-      {m.achievements.settingsExcludeTitle()}
-    </h2>
-    <p class="text-sm mt-1 mb-5" style="color: {$colorStore.muted}">
-      {m.achievements.settingsExcludeHint()}
-    </p>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+<div class="space-y-4 min-w-0">
+  <PluginCard title={m.achievements.settingsExcludeTitle()} alwaysOpen>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
-        <span id="ach-ex-roles" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.roles()}</span>
-        <DiscordSelector type="role" multiple={true} options={roleOptions} selected={excludedRoles}
-                         placeholder={m.common.noRoles()} ariaLabelledby="ach-ex-roles"
-                         onchange={(d) => { excludedRoles = Array.isArray(d.selected) ? d.selected : []; queue(true); }} />
+        <span id="ach-ex-roles" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.common.roles()}</span>
+        <DiscordSelector
+          type="role"
+          multiple={true}
+          options={roleOptions}
+          selected={excludedRoles}
+          placeholder={m.common.noRoles()}
+          ariaLabelledby="ach-ex-roles"
+          onchange={(d) => {
+            excludedRoles = Array.isArray(d.selected) ? d.selected : [];
+            queue(true);
+          }}
+        />
       </div>
       <div>
-        <span id="ach-ex-channels" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.common.channels()}</span>
-        <DiscordSelector type="channel" multiple={true} options={channelOptions} selected={excludedChannels}
-                         placeholder={m.achievements.settingsNoChannels()} ariaLabelledby="ach-ex-channels"
-                         onchange={(d) => { excludedChannels = Array.isArray(d.selected) ? d.selected : []; queue(true); }} />
+        <span id="ach-ex-channels" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">{m.common.channels()}</span>
+        <DiscordSelector
+          type="channel"
+          multiple={true}
+          options={channelOptions}
+          selected={excludedChannels}
+          placeholder={m.achievements.settingsNoChannels()}
+          ariaLabelledby="ach-ex-channels"
+          onchange={(d) => {
+            excludedChannels = Array.isArray(d.selected) ? d.selected : [];
+            queue(true);
+          }}
+        />
       </div>
     </div>
-  </div>
+  </PluginCard>
 
-  <div class="relative rounded-2xl border p-5 md:p-6" style="z-index: 20;
-       background: {$colorStore.primary}0c;
-       border-color: {$colorStore.primary}30;">
-    <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
-      <DuoIcon icon="fa-sliders" />
-      {m.achievements.settingsExtras()}
-    </h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-5">
-      <div>
-        <label for="ach-xp-per-point" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.achievements.settingsXpPerPoint()}</label>
-        <input id="ach-xp-per-point" type="number" min="0" max="1000" bind:value={xpPerPoint}
-               oninput={() => queue(false)} onblur={() => autoSave.flush("achievementSettings")}
-               aria-invalid={!xpValid()}
-               class="w-full px-3 h-[44px] rounded-xl border text-sm"
-               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};" />
-        <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-          {m.achievements.settingsXpPerPointHint()}
-        </p>
-      </div>
-      <div>
-        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.achievements.settingsSecretTitle()}</span>
-        <ToggleRow checked={revealHidden} title={m.achievements.settingsRevealTitle()}
-                   colors={$colorStore} onchange={(v) => { revealHidden = v; queue(true); }} />
-        <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-          {m.achievements.settingsRevealHint()}
-        </p>
-      </div>
+  <PluginCard title={m.achievements.settingsExtras()} alwaysOpen>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+      <SettingField label={m.achievements.settingsXpPerPoint()} id="ach-xp-per-point">
+        <input
+          id="ach-xp-per-point"
+          type="number"
+          min="0"
+          max="1000"
+          inputmode="numeric"
+          bind:value={xpPerPoint}
+          oninput={() => queue(false)}
+          onblur={() => autoSave.flush("achievementSettings")}
+          aria-invalid={!xpValid()}
+          class="w-full p-3 rounded-lg border min-h-[50px]"
+          style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+        />
+      </SettingField>
+      <ToggleRow
+        checked={revealHidden}
+        title={m.achievements.settingsRevealTitle()}
+        subtitle={m.achievements.settingsRevealHint()}
+        colors={$colorStore}
+        onchange={(v) => {
+          revealHidden = v;
+          queue(true);
+        }}
+      />
     </div>
-  </div>
+  </PluginCard>
 
-  <div class="rounded-2xl border p-5 md:p-6"
-       style="background: #ef444410; border-color: #ef444430;">
-    <h2 class="flex items-center gap-2 text-lg font-semibold" style="color: {$colorStore.text}">
-      <DuoIcon icon="fa-circle-exclamation" color="#ef4444" />
-      {m.common.maintenance()}
-    </h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-      <div class="p-4 rounded-xl" style="background: {$colorStore.primary}08;">
-        <div class="font-semibold text-sm" style="color: {$colorStore.text}">{m.achievements.settingsRecheckTitle()}</div>
-        <p class="text-xs mt-1 mb-3" style="color: {$colorStore.muted}">
-          {m.achievements.settingsRecheckHint()}
-        </p>
-        <button type="button" class="px-4 py-2 rounded-xl min-h-[44px] text-sm font-medium disabled:opacity-50"
-                style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                disabled={working} onclick={recheck}>{m.achievements.settingsRecheckButton()}</button>
+  <PluginCard title={m.common.maintenance()} alwaysOpen>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+      <div class="p-3 rounded-lg" style="background: {$colorStore.primary}08;">
+        <div class="font-medium text-sm" style="color: {$colorStore.text}">{m.achievements.settingsRecheckTitle()}</div>
+        <p class="text-xs mt-1 mb-3" style="color: {$colorStore.muted}">{m.achievements.settingsRecheckHint()}</p>
+        <button
+          type="button"
+          class="px-4 rounded-lg min-h-[44px] text-sm font-medium disabled:opacity-50"
+          style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
+          disabled={working}
+          onclick={recheck}
+        >
+          {m.achievements.settingsRecheckButton()}
+        </button>
       </div>
-      <div class="p-4 rounded-xl" style="background: #ef444410;">
-        <div class="font-semibold text-sm" style="color: {$colorStore.text}">{m.achievements.settingsResetAllTitle()}</div>
-        <p class="text-xs mt-1 mb-3" style="color: {$colorStore.muted}">
-          {m.achievements.settingsResetAllHint()}
-        </p>
-        <button type="button" class="px-4 py-2 rounded-xl min-h-[44px] text-sm font-medium disabled:opacity-50"
-                style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
-                disabled={working} onclick={resetAll}>{m.common.resetEverything()}</button>
+      <div class="p-3 rounded-lg" style="background: #ef444410;">
+        <div class="font-medium text-sm" style="color: {$colorStore.text}">{m.achievements.settingsResetAllTitle()}</div>
+        <p class="text-xs mt-1 mb-3" style="color: {$colorStore.muted}">{m.achievements.settingsResetAllHint()}</p>
+        <button
+          type="button"
+          class="px-4 rounded-lg min-h-[44px] text-sm font-medium disabled:opacity-50"
+          style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
+          disabled={working}
+          onclick={resetAll}
+        >
+          {m.common.resetEverything()}
+        </button>
       </div>
     </div>
-  </div>
+  </PluginCard>
 </div>

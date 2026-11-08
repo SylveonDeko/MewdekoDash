@@ -46,7 +46,6 @@
   "import_post_in": "Publicar en",
   "import_retire_subtitle": "Detiene la configuración antigua por emoji y borra sus emojis. Si el bot publicó el mensaje original, se elimina.",
   "import_retire_title": "Retirar la configuración antigua",
-  "list_count": "{count} de {max} menús",
   "list_create_first": "Crea tu primer menú",
   "list_empty_text": "Publica un mensaje con un menú desplegable o botones y los miembros elegirán sus propios roles. Pronombres, colores, avisos, regiones: un menú para cada uno.",
   "list_empty_title": "Aún no hay menús de roles",

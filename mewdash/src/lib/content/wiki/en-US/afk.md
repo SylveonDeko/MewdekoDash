@@ -1,7 +1,7 @@
 ---
 title: AFK System
 slug: afk
-summary: Let members mark themselves away, tell anyone who pings them why, and clear the status automatically when they come back.
+summary: Lets members set an away message that people see when they ping them
 icon: fa-moon
 category: Actions
 dashboard: /dashboard/afk
@@ -12,7 +12,7 @@ related: [utility, administration]
 
 ## What it does
 
-A member runs `afk` with an optional message. From then on, whenever someone mentions them, the bot replies in that channel with the message and how long they have been away. When the member comes back, the status is cleared, a short "welcome back" notice is posted and deleted after five seconds, and the nickname is restored.
+A member runs `afk` with an optional message. From then on, whenever someone mentions them, the bot replies in that channel with the message and how long they have been away. When the member comes back, the status is cleared and the nickname is restored. A short "welcome back" notice is posted and deleted after five seconds.
 
 While a member is away the bot also tries to rename them to `[AFK] name`, trimmed to fit Discord's nickname limit, so the status is visible in the member list.
 
@@ -20,8 +20,7 @@ Running `afk` with no message toggles: it turns AFK on with a blank message if y
 
 ## Why you would use it
 
-- Members in busy servers stop being pinged repeatedly by people who did not see them say "brb".
-- Staff can see at a glance who is around and who is not.
+- Members in busy servers stop being pinged repeatedly by people who did not see them say "brb", and staff can see at a glance who is around.
 - Timed AFK covers "back in two hours" without anyone having to remember to clear it.
 
 ## How a status ends
@@ -35,7 +34,7 @@ The **AFK type** decides what the bot counts as coming back. It is the most impo
 | On type | The member starts typing in any channel. |
 | Either | A message or typing, whichever comes first. |
 
-The **AFK timeout** is a grace period measured from when the status was set. Inside that window, typing or sending a message does not clear the status, which stops the "afk, brb" message itself from ending the AFK straight away. The default is 0, meaning no grace period; set it with `afktimeout` or on the dashboard's **Advanced Settings** tab.
+The **grace period** (the `afktimeout` command) is measured from when the status was set. Inside that window, typing or sending a message does not clear the status, which stops the "afk, brb" message itself from ending the AFK straight away. The default is 0, meaning no grace period; set it with `afktimeout` or on the dashboard's **Settings** tab, in seconds up to 7200.
 
 Timed AFK is different: it runs until its timer expires regardless of type. Talking in between does not end it. When the timer runs out the status is cleared and the nickname restored without a channel notice.
 
@@ -45,9 +44,9 @@ Editing a message within five minutes of posting it counts the same as sending a
 
 When someone mentions an away member, the bot checks up to five mentioned users per message, ignores bots and self mentions, ignores messages that start with the command prefix, and skips channels on the disabled list. For each away member it finds, it posts a reply.
 
-By default the reply is an embed: the author line reads "user is currently away" with their avatar, the description is their AFK message, and the footer shows how long they have been away. If the bot is configured to show an invite button, one is attached.
+By default the reply is an embed with "user is currently away" and their avatar in the author line and their AFK message as the description. The footer shows how long they have been away. If the bot is configured to show an invite button, one is attached.
 
-You can replace this with your own message or embed using `customafkmessage`, or the **Custom AFK Embed Message** editor on the dashboard. The text is run through the embed parser, so anything the embed builder produces works. Set it to `-` to return to the default.
+You can replace this with your own message or embed using `customafkmessage`, or the **Reply message** editor on the dashboard. The text is run through the embed parser, so anything the embed builder produces works. Set it to `-` to return to the default.
 
 ### Placeholders
 
@@ -71,29 +70,35 @@ These are replaced inside a custom AFK message. General placeholders from the pl
 
 ## Settings
 
-All of these are on the AFK page, under the **Basic Settings** and **Advanced Settings** tabs.
+The AFK page has two tabs, **Settings** and **Members**. Settings save as you change them, and a failed save puts the field back.
 
-| Setting | Default | What it controls |
-| --- | --- | --- |
-| Auto-deletion time | 0 (never) | Seconds before the bot's reply to a mention deletes itself |
-| Max message length | 128 | Longest AFK message a member may set, 1 to 4096; longer ones are rejected |
-| AFK removal type | Self disable | One of the four types above |
-| AFK timeout | 0 (none) | The grace period after setting AFK, up to two hours |
-| Disabled channels | none | Channels where mentioning an away member gets no reply |
-| Custom AFK embed | default embed | Your own reply, with the placeholders above |
+### Settings tab
+
+| Card | Setting | Default | What it controls |
+| --- | --- | --- | --- |
+| Behavior | Clear AFK on | Self disable | One of the four types above |
+| Behavior | Max message length | 128 | Longest AFK message a member may set, 1 to 4096 characters |
+| Behavior | Grace period | 0 (none) | Seconds after going AFK before talking clears it, up to 7200 (two hours) |
+| Behavior | Delete replies after | 0 (keep) | Seconds before the bot's reply to a mention deletes itself |
+| Disabled channels | No reply in | none | Channels where mentioning an away member gets no reply |
+| Reply message | Click to write the reply | default embed | Your own reply, with the placeholders above. The editor lists the placeholders and previews the result. |
 
 > [!TIP]
 > Set auto-deletion to around thirty seconds. The person who pinged sees the reply, and the channel does not fill up with stale AFK notices.
 
-The **User Management** tab lists every member currently away and lets staff clear a status for one or several people at once.
+### Members tab
+
+The **Away members** card lists everyone currently away, with a **Permanent** or **Timed** badge. Each row shows when the status started and, for timed ones, when it expires. The card shows the total and how many are timed. Remove one member with the button on their row, or tick several (or select all) and click **Remove selected**. Each removal asks for confirmation. **Refresh** reloads the list.
+
+The **Set AFK for a member** card sets a status for someone else. Pick the member, type a **Message** and click **Set AFK**. Members who are already away are not offered.
 
 ## Setup walkthrough
 
-1. Open **AFK System** in the dashboard.
-2. Pick an **AFK removal type**. "On message" is the safest default; "Either" is the most convenient.
-3. Set **Auto-deletion time** to 30. Leave **Max message length** at 128 unless you want longer statuses.
-4. In **Advanced Settings**, add bot command channels and announcement channels to **Disabled channels**.
-5. Optionally build a custom reply in the embed editor using the placeholders above.
+1. Open **AFK** in the dashboard and stay on the **Settings** tab.
+2. Pick **Clear AFK on**. "On message" is the safest default; "Either" is the most convenient.
+3. Set **Delete replies after** to 30. Leave **Max message length** at 128 unless you want longer statuses.
+4. Add bot command channels and announcement channels under **Disabled channels**.
+5. Optionally write a custom reply in the **Reply message** editor using the placeholders above.
 6. Test it: run `afk testing`, ping yourself from another account, then send a message and watch the status clear.
 
 ## Commands

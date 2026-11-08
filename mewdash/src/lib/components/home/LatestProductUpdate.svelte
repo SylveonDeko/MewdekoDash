@@ -1,155 +1,55 @@
 <script lang="ts">
-  import { fade } from "svelte/transition";
   import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import type { ProductUpdate } from "$lib/content/productUpdates";
 
   interface Props {
     updates: ProductUpdate[];
-    intervalMs?: number;
+    /** How many of the newest updates to show. */
+    count?: number;
   }
 
-  let { updates, intervalMs = 9000 }: Props = $props();
+  let { updates, count = 3 }: Props = $props();
 
-  let index = $state(0);
-  let paused = $state(false);
-
-  let update = $derived(updates[Math.min(index, updates.length - 1)]);
-
-  /**
-   * Rotates through the updates on a timer, holding still while the reader is hovering or
-   * tabbing through the card and for anyone who asked for reduced motion.
-   */
-  $effect(() => {
-    if (paused || updates.length < 2) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const timer = setInterval(() => {
-      index = (index + 1) % updates.length;
-    }, intervalMs);
-
-    return () => clearInterval(timer);
-  });
-
-  /**
-   * Moves to the update before or after the one showing, wrapping at either end.
-   * @param delta -1 for the previous update, 1 for the next
-   */
-  function step(delta: number) {
-    index = (index + delta + updates.length) % updates.length;
-  }
+  let latest = $derived(updates.slice(0, count));
 </script>
 
 <section aria-labelledby="latest-update-heading" class="px-4 py-12 sm:py-16">
-  <div class="mx-auto max-w-5xl">
-    <article
-      class="grid grid-cols-[minmax(0,1fr)] overflow-hidden border md:grid-cols-[11rem_minmax(0,1fr)]"
-      style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;"
-      onmouseenter={() => (paused = true)}
-      onmouseleave={() => (paused = false)}
-      onfocusin={() => (paused = true)}
-      onfocusout={() => (paused = false)}
-    >
-      <div class="relative flex min-h-44 flex-col justify-between p-6 sm:p-8"
-           style="border-right: 1px solid {$colorStore.primary}20;">
-        {#key update.id}
-          <div class="font-mono text-sm font-bold"
-               style="color: {$colorStore.primary}" in:fade={{ duration: 220 }}>
-            {update.label}
-          </div>
-        {/key}
-        <div class="hash-grid absolute inset-x-6 bottom-6 h-16 opacity-70" aria-hidden="true">
-          {#each Array(24) as _, index}
-            <span style="background: {index % 5 === 0 || index % 7 === 0 ? $colorStore.primary : $colorStore.secondary}"></span>
-          {/each}
-        </div>
-      </div>
+  <div class="mx-auto max-w-6xl">
+    <div class="flex flex-wrap items-baseline justify-between gap-3 mb-8">
+      <h2 id="latest-update-heading" class="text-2xl font-bold sm:text-3xl" style="color: {$colorStore.text}">
+        {m.home.updateHeading()}
+      </h2>
+      <a href="/updates" class="text-sm font-semibold min-h-[44px] inline-flex items-center" style="color: {$colorStore.primary}">
+        {m.home.updateSeeAll()}
+      </a>
+    </div>
 
-      <div class="min-w-0 p-6 sm:p-8 md:p-10">
-        {#key update.id}
-          <div in:fade={{ duration: 220 }}>
-            <h2 id="latest-update-heading" class="text-2xl font-bold sm:text-3xl" style="color: {$colorStore.text}">
-              {update.title}
-            </h2>
-            <p class="mt-3 max-w-2xl text-base leading-relaxed sm:text-lg" style="color: {$colorStore.muted}">
-              {update.summary}
-            </p>
-
-            <ul class="mt-6 grid max-w-2xl gap-3 text-sm" style="color: {$colorStore.text}">
-              {#each update.details as detail}
-                <li class="border-l-2 pl-3 leading-relaxed" style="border-color: {$colorStore.primary}30;">
-                  {detail}
-                </li>
-              {/each}
-            </ul>
-
-            <a
-              class="mt-7 inline-flex items-center gap-2 border-b pb-1 text-sm font-semibold transition-opacity hover:opacity-70 focus:outline-hidden focus:ring-2 focus:ring-offset-4"
-              href={update.href}
-              style="color: {$colorStore.primary}; border-color: {$colorStore.primary}80; --tw-ring-color: {$colorStore.primary};"
-            >
-              {update.action}            </a>
-          </div>
-        {/key}
-
-        {#if updates.length > 1}
-          <div class="mt-8 flex items-center gap-3">
-            <button
-              type="button"
-              class="flex h-11 w-11 items-center justify-center rounded-xl focus:outline-hidden focus:ring-2"
-              style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;
-                     --tw-ring-color: {$colorStore.primary};"
-              aria-label={m.home.updatePrevious()}
-              onclick={() => step(-1)}
-            >
-              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-            </button>
-            <span class="min-w-[4.5rem] text-center text-sm tabular-nums" style="color: {$colorStore.muted}" aria-live="polite">
-              {m.common.currentOfTotal({ current: index + 1, total: updates.length })}
-            </span>
-            <button
-              type="button"
-              class="flex h-11 w-11 items-center justify-center rounded-xl focus:outline-hidden focus:ring-2"
-              style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;
-                     --tw-ring-color: {$colorStore.primary};"
-              aria-label={m.home.updateNext()}
-              onclick={() => step(1)}
-            >
-              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-            </button>
-          </div>
-        {/if}
-      </div>
-    </article>
+    <div class="grid grid-cols-1 md:grid-cols-3" style="--rule: {$colorStore.primary}20;">
+      {#each latest as update (update.id)}
+        <article class="min-w-0 py-6 md:py-0 md:px-6 first:md:pl-0 last:md:pr-0">
+          <div class="font-mono text-xs font-bold mb-2" style="color: {$colorStore.primary}">{update.label}</div>
+          <h3 class="text-lg font-bold leading-snug" style="color: {$colorStore.text}">{update.title}</h3>
+          <p class="mt-2 text-sm leading-relaxed" style="color: {$colorStore.muted}">{update.summary}</p>
+          <a class="mt-4 inline-flex items-center gap-2 border-b pb-1 text-sm font-semibold transition-opacity hover:opacity-70"
+             href={update.href} style="color: {$colorStore.primary}; border-color: {$colorStore.primary}80;">
+            {update.action}
+          </a>
+        </article>
+      {/each}
+    </div>
   </div>
 </section>
 
 <style>
-  .hash-grid {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 5px;
+  article + article {
+    border-top: 1px solid var(--rule);
   }
 
-  .hash-grid span {
-    opacity: 0.2;
-  }
-
-  .hash-grid span:nth-child(3n) {
-    opacity: 0.5;
-  }
-
-  @media (max-width: 767px) {
-    article > div:first-child {
-      min-height: 7.5rem;
-      border-right: 0;
-      border-bottom: 1px solid var(--color-primary);
-    }
-
-    .hash-grid {
-      inset: auto 1.5rem 1.5rem;
-      width: 7rem;
-      margin-left: auto;
+  @media (min-width: 768px) {
+    article + article {
+      border-top: 0;
+      border-left: 1px solid var(--rule);
     }
   }
 </style>

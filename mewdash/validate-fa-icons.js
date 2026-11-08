@@ -35,8 +35,6 @@ export function supportsUtilityDuo(iconId) {
 
 /**
  * Scans the source tree for utility duo icon names that are not in the font.
- * Covers the inline `fa-utility-duo fa-regular fa-x` class strings and the
- * `icon="fa-x"` props consumed by DashboardPageLayout, StatCard and FeatureCard.
  * Returns the process exit code.
  */
 export function validateSources(rootDir = __dirname) {
@@ -53,21 +51,41 @@ export function validateSources(rootDir = __dirname) {
 
   const patterns = [
     /fa-utility-duo\s+fa-regular\s+fa-([a-z0-9-]+)/g,
-    /\bicon="fa-([a-z0-9-]+)"/g
+    /\b[a-zA-Z]*[iI]con=["']fa-([a-z0-9-]+)["']/g
   ];
+  const dynamicDuo = /fa-utility-duo\s+fa-regular\s+\{([^}]*)\}/g;
+  const quotedIcon = /["'`]fa-([a-z0-9-]+)["'`]/g;
+  const objectIcon = /\b[a-zA-Z]*[iI]con\s*:\s*["'`]fa-([a-z0-9-]+)["'`]/g;
+  const duoConsumers = /<(DuoIcon|StatCard|FeatureCard|SectionHeader|AsyncState)\b|fa-utility-duo\s+fa-regular\s+\{/;
+  const solidOnly = /fa-(solid|brands)\s+\{/;
+  const solidEntry = /\bid\s*:.*\blabel\s*:|\blabel\s*:.*\baction\s*:|["']fa-(solid|regular|brands)["']/;
 
   const bad = [];
+  const report = (file, idx, icon) => {
+    if (!supportsUtilityDuo(icon)) bad.push({ file: path.relative(rootDir, file), line: idx + 1, icon });
+  };
   for (const file of files) {
-    const lines = fs.readFileSync(file, "utf8").split("\n");
+    const text = fs.readFileSync(file, "utf8");
+    const lines = text.split("\n");
+    const checkObjects = file.includes(`${path.sep}config${path.sep}`) || file.endsWith("Helpers.ts") ||
+      (duoConsumers.test(text) && !(solidOnly.test(text) && !/fa-utility-duo\s+fa-regular\s+\{/.test(text)));
     lines.forEach((line, idx) => {
       for (const re of patterns) {
         re.lastIndex = 0;
         let m;
-        while ((m = re.exec(line)) !== null) {
-          if (!supportsUtilityDuo(m[1])) {
-            bad.push({ file: path.relative(rootDir, file), line: idx + 1, icon: m[1] });
-          }
-        }
+        while ((m = re.exec(line)) !== null) report(file, idx, m[1]);
+      }
+      dynamicDuo.lastIndex = 0;
+      let d;
+      while ((d = dynamicDuo.exec(line)) !== null) {
+        quotedIcon.lastIndex = 0;
+        let q;
+        while ((q = quotedIcon.exec(d[1])) !== null) report(file, idx, q[1]);
+      }
+      if (checkObjects && !solidEntry.test(line)) {
+        objectIcon.lastIndex = 0;
+        let o;
+        while ((o = objectIcon.exec(line)) !== null) report(file, idx, o[1]);
       }
     });
   }

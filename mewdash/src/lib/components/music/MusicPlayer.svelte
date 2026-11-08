@@ -351,7 +351,7 @@ A comprehensive music player component for Discord bot music functionality.
 
       if (newIndex < 0 || newIndex >= musicStatus.Queue.length) return;
 
-      await musicApi.moveQueueItem($currentGuild.id, track.Index, newIndex);
+      await musicApi.moveQueueItem($currentGuild.id, track.Index, musicStatus.Queue[newIndex].Index);
       announceToScreenReader(direction === "up" ? m.music.srMovedUp({ title: track.Track.Title }) : m.music.srMovedDown({ title: track.Track.Title }));
     } catch (err) {
       logger.error("Failed to move track in queue:", err);

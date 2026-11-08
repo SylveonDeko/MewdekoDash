@@ -4,11 +4,13 @@
  * Counting patterns
  */
 export enum CountingPattern {
-  Sequential = 0,
-  SkipMultiples = 1,
-  Fibonacci = 2,
-  Primes = 3,
-  PowersOfTwo = 4,
+  Normal = 0,
+  Roman = 1,
+  Binary = 2,
+  Hexadecimal = 3,
+  Words = 4,
+  Fibonacci = 6,
+  Primes = 7,
 }
 
 /**
@@ -18,6 +20,7 @@ export enum LeaderboardType {
   Contributions = 0,
   Streak = 1,
   Accuracy = 2,
+  TotalNumbers = 3,
 }
 
 /**
@@ -61,6 +64,9 @@ export interface CountingConfigResponse {
   errorEmote: string | null;
   enableAchievements: boolean;
   enableCompetitions: boolean;
+  successMessage: string | null;
+  failureMessage: string | null;
+  milestoneMessage: string | null;
 }
 
 /**
@@ -113,10 +119,8 @@ export interface SavePointResponse {
  * Leaderboard response
  */
 export interface LeaderboardResponse {
-  users: CountingUserStatsResponse[];
-  totalUsers: number;
-  page: number;
-  pageSize: number;
+  type: string;
+  entries: CountingUserStatsResponse[];
 }
 
 /**
@@ -233,4 +237,16 @@ export interface SetMilestonesRequest {
 export interface PurgeChannelRequest {
   userId: bigint;
   reason?: string | null;
+}
+
+/**
+ * Violations in a recent window
+ * Maps to Mewdeko.Modules.Counting.Common.CountingViolationStats
+ */
+export interface CountingViolationStats {
+  totalViolations: number;
+  wrongNumberCount: number;
+  timeoutCount: number;
+  banCount: number;
+  topViolators: Array<{ userId: bigint; violationCount: number; lastViolation: string }>;
 }

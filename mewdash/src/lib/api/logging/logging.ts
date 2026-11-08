@@ -5,6 +5,8 @@ import type {
   LogType,
   SetIgnoredChannelsRequest,
   BulkUpdateLogChannelsRequest,
+  LoggingExport,
+  LoggingImportResult,
 } from "./models";
 
 export const loggingApi = {
@@ -77,6 +79,34 @@ export const loggingApi = {
     apiRequest<{ success: boolean; message: string }>(
       `logging/${guildId}/disable-all`,
       "DELETE",
+    ),
+
+  setupLogging: (guildId: bigint) =>
+    apiRequest<{ success: boolean; channels: Record<string, bigint> }>(
+      `logging/${guildId}/setup`,
+      "POST",
+    ),
+
+  exportConfig: (guildId: bigint) =>
+    apiRequest<LoggingExport>(`logging/${guildId}/export`),
+
+  importConfig: (guildId: bigint, code: string) =>
+    apiRequest<LoggingImportResult>(`logging/${guildId}/import`, "POST", {
+      code,
+    }),
+
+  setIgnoreBots: (guildId: bigint, ignoreBots: boolean) =>
+    apiRequest<{ success: boolean; ignoreBots: boolean }>(
+      `logging/${guildId}/ignore-bots`,
+      "PUT",
+      { ignoreBots },
+    ),
+
+  setIgnorePrefixes: (guildId: bigint, prefixes: string[]) =>
+    apiRequest<{ success: boolean; prefixes: string[] }>(
+      `logging/${guildId}/ignore-prefixes`,
+      "PUT",
+      { prefixes },
     ),
 
   getLoggingStatistics: (guildId: bigint) =>

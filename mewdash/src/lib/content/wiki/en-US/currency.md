@@ -1,27 +1,27 @@
 ---
 title: Currency
 slug: currency
-summary: A per-server economy with wallets and a bank, daily rewards, work and crime, a role and item shop, and more than twenty betting games, all tunable from the dashboard.
+summary: A per-server economy where members earn coins and spend them in the shop or on games
 icon: fa-money-bill
 category: Entertainment
 dashboard: /dashboard/currency
 module: Currency
-tags: [currency, economy, money, coins, shop, balance, bank, daily, work, crime, rob, pay, gambling, blackjack, roulette, slots, leaderboard]
-related: [xp, administration]
+tags: [currency, economy, money, coins, shop, balance, bank, daily, work, crime, rob, pay, gambling, blackjack, roulette, slots, leaderboard, setup, presets, designs]
+related: [xp, designs, administration]
 ---
 
 ## What it does
 
-Every member has a wallet and, if you leave the bank on, a bank balance. They earn currency by claiming a daily reward, running `work` and `crime` on cooldowns, winning games or being paid by other members. They spend it in your shop on roles, collectibles or text items, or wager it in games such as blackjack, roulette, slots, crash and keno.
+Every member has a wallet and, if you leave the bank on, a bank balance. They earn currency by claiming a daily reward, running `work` and `crime` on cooldowns, winning games or being paid by other members. They spend it in your shop on roles and collectibles, or wager it in games such as blackjack, roulette, slots, crash and keno.
 
 Staff decide how the economy behaves: whether gambling is on, bet limits, a house edge, how much work and crime pay, whether robbery exists, transfer tax, bank interest and daily streak bonuses. Every one of these is a setting on the **Configuration** tab or an `economyset` key, so you can tune the economy without touching the games.
 
-The bot records every credit and debit as a transaction, so members can see where their money went and the **Analytics** tab can show you the money supply, where it sits, and which games are paying out more than they take in.
+The bot records every credit and debit as a transaction, so members can see where their money went and the **Analytics** tab can show you the money supply, where it sits, where currency enters and leaves circulation, and which games are paying out more than they take in.
 
 ## Why you would use it
 
-- Give active members something to spend engagement on: a coloured role, a custom title, or a bit of fun in a games channel.
-- Run a games channel that stays fair because bet limits, a daily loss limit and a house edge are enforced for you.
+- Give active members something to spend engagement on, such as a coloured role or a bit of fun in a games channel.
+- Run a games channel that stays fair because bet limits, a daily loss limit, a game cooldown and a house edge are enforced for you.
 - Reward members with `modifybalance` or the **Adjust a balance** tool for helping out, and let them choose from the shop.
 - Watch the **Game performance** table to see the real return of each game and tune `payoutmultiplier` from data rather than guesswork.
 
@@ -31,7 +31,7 @@ The bot records every credit and debit as a transaction, so members can see wher
 
 Interest is paid when a member runs `bank`: if the interval since their last interest payment has passed, the bank balance earns **Interest (%)** once. It is not paid while nobody checks.
 
-`pay` sends wallet currency to another member, minus **Transfer tax (%)**, with a **Minimum transfer** and an optional cooldown. Bots cannot be paid.
+`pay` sends wallet currency to another member, minus **Transfer tax (%)**. A **Minimum transfer** and an optional cooldown apply too. Bots cannot be paid.
 
 `transactions` lists the last 250 entries for you or another member, ten per page. `cashleaderboard` ranks members by wallet plus bank.
 
@@ -80,20 +80,60 @@ Every wager goes through the same checks: gambling must be on, the bet must sit 
 
 ## Daily challenges
 
-Each member gets one random challenge per day: play five games, win three, spend 500, earn 300, or play a named game three times. The reward is the base amount plus up to 50 extra. `dailychallenge` shows it, `claimchallenge` pays it, and `challengeleaderboard` ranks the top ten by challenges completed in the last 30 days.
+Each member gets one random challenge per day: play five games, win three, spend 500, earn 300, or play a named game three times. The reward is the base amount plus up to 50 extra. `dailychallenge` shows it and `claimchallenge` pays it. `challengeleaderboard` ranks the top ten by challenges completed in the last 30 days.
 
 > [!WARNING]
 > Games do not currently report progress to the challenge tracker, so challenges show 0 progress and cannot be claimed yet.
 
 ## The shop
 
-Items live on the **Shop** tab or come from `shopadditem` and `shopaddrole`. Each item has a **Name**, **Price**, **Description**, **Type**, **Stock** (blank or -1 for unlimited), **Limit per user**, an optional **Required role** the buyer must hold, and a **Sort order**.
+Items live on the **Shop** tab or come from `shopadditem` and `shopaddrole`. The **Shop items** card lists every item with its type, stock, limit, required role and how many have been bought. **Add item** opens the **New shop item** form, and each row has edit, hide or show, and delete buttons. Deleting asks for confirmation and removes the item from everyone who owns one.
+
+The form has these fields:
+
+| Field | What it does |
+| --- | --- |
+| Name | The item's name, used by `buy` and `use` |
+| Description | Short text shown in the shop |
+| Price | What the buyer pays |
+| Type | **Role**, **Collectible**, **Text** or **Design** (see below) |
+| Role granted | Role items only. Required |
+| Design to sell | Design items only. Required. Lists designs set to **Sold in the shop** |
+| Delivered text | Text items only. Sent to the buyer |
+| Stock | `-1` for unlimited |
+| Limit per user | `0` for unlimited |
+| Sort order | Lower numbers list first |
+| Required role | A role the buyer must hold. Empty means anyone can buy |
+| Consumable | Can be used up after purchase |
+| Visible in shop | Members can see and buy the item |
+| Use it as soon as it is bought | Consumables only |
+| Purchase message | Plain text. `%user%`, `%item%` and `%price%` work |
+| Use message | Plain text, same placeholders |
 
 | Type | On purchase |
 | --- | --- |
 | Role | The bot adds the role to the buyer. Defaults to one per member. |
 | Collectible | Goes into the buyer's inventory; consumable, so `use` removes one. |
 | Text | The **Delivered text** is sent to the buyer by DM, and again on `use`. |
+| Design | The buyer owns the linked card design and can `equip` it. See [Designs](/wiki/designs). |
+
+Design items sell a rank card or achievement card design. Create the design on the **Designs** tab with its availability set to **Sold in the shop**, then add a shop item of type **Design** and pick it. The item's name is filled in from the design when you leave it empty. Deleting the design turns the shop item off.
+
+## Setup tab
+
+The **Setup** tab is the quick start for a new economy and opens first until the economy is configured. It covers the currency **Look** (name and **Currency emoji**), the **Daily reward** with its **Reward amount** and **Time between claims**. A **Style preset** is there too. Presets replace your betting, work, crime, robbery, bank and transfer settings in one go and ask for confirmation first:
+
+| Preset | What it does |
+| --- | --- |
+| Casual | Generous payouts and low risk, with crime and robbery off |
+| Balanced | Every feature on at moderate values |
+| Competitive | Robbery and crime on, higher stakes and taxed transfers |
+
+Fine tune anything afterwards on **Configuration**. **Add your first shop item** jumps to the **Shop** tab with a new item form open.
+
+## Designs tab
+
+The **Designs** tab holds the community's card designs, since the shop sells them. See [Designs](/wiki/designs) for how they work.
 
 `buy <name>` checks the item is enabled, the buyer has the required role, stock remains, they can afford it and they are under the per-user limit. Any failure after payment refunds automatically. `inventory` lists what a member owns. `shoptoggle` hides an item without deleting anyone's copies; `shopremove` deletes it and every copy.
 
@@ -112,50 +152,80 @@ These currency placeholders are available in chat trigger responses and other pl
 
 ## Settings
 
-The dashboard has four tabs: **Analytics**, **Configuration**, **Shop** and **Leaderboard**. The **Leaderboard** tab also holds **Adjust a balance**, which credits or debits a member with a reason recorded on the ledger.
+The dashboard has five tabs: **Analytics**, **Configuration**, **Shop**, **Boosts** and **Members**. The open tab is kept in the URL as `?tab=`.
 
-| Setting | Default | What it controls |
-| --- | --- | --- |
-| Enable gambling | On | Turns every wagering game on or off |
-| Minimum bet | 1 | Smallest stake |
-| Maximum bet | 0 (unlimited) | Largest stake |
-| Payout multiplier | 1.0 | Scales winnings only, 0.1 to 5.0 |
-| Daily loss limit | 0 (off) | Cuts a member off after losing this much in 24 hours |
-| Game cooldown (seconds) | 0 | Seconds between wagers per member |
-| Enable work | On | The `work` command |
-| Work minimum / maximum | 50 / 250 | Work payout range |
-| Work cooldown | 1800 seconds | `workcooldown`, command only |
-| Enable crime | On | The `crime` command |
-| Crime minimum / maximum | 200 / 800 | Crime payout range |
-| Crime success chance (%) | 45 | Chance a crime pays |
-| Crime fine minimum / maximum | 100 / 500 | Fine on failure |
-| Crime cooldown | 3600 seconds | `crimecooldown`, command only |
-| Enable bank | On | `bank`, `deposit`, `withdraw` |
-| Bank capacity | 0 (unlimited) | Most a member can bank |
-| Interest (%) | 0 | Paid per interval on the banked balance |
-| Interest interval (hours) | 24 | How often interest can be collected |
-| Enable transfers | On | The `pay` command |
-| Transfer tax (%) | 0 | Taken from each payment |
-| Minimum transfer | 1 | Smallest payment |
-| Pay cooldown | 0 | `paycooldown`, command only |
-| Enable robbery | Off | The `rob` command |
-| Success chance (%) | 35 | Chance a robbery works |
-| Maximum steal (%) | 20 | Share of the target's wallet a success can take |
-| Failure fine (%) | 15 | Share of the robber's wallet lost on failure |
-| Protected below | 100 | Targets with less cannot be robbed |
-| Rob cooldown | 3600 seconds | `robcooldown`, command only |
-| Enable streaks | On | Consecutive daily claims earn a bonus |
-| Bonus per day | 0 | Added per consecutive day beyond the first |
-| Maximum bonus | 0 (uncapped) | Cap on the streak bonus |
+### Analytics
 
-The daily reward amount and its cooldown are set with `setdaily`, not on the dashboard. `economyconfig` prints every key with its current value, and `economyreset` restores all defaults.
+Pick a window of 7 days, 30 days, 90 days or 1 year. The tab shows:
+
+- Tiles for **Money supply**, **Net change**, the **Gini** coefficient, and **Median holding**, with holder count, mean and the share held by the top 10 percent.
+- **Money supply over time**, with **Cumulative change** and **Daily net** charts.
+- **Where the money sits**, split into wallets (robbable, spendable) and banked (safe, idle).
+- **Faucets** (currency entering circulation) and **Sinks** (currency leaving circulation), with entry counts, and how much was destroyed as transfer tax in the window.
+- **Game performance**, a table of **Game**, **Plays**, **Wagered**, **Returned**, **House** and **RTP**. RTP is what players got back per unit wagered. Above 100% means the game is creating currency.
+
+### Configuration
+
+Each card has an on/off switch in its header and saves as you type. **Reset to defaults** at the bottom restores every setting after a confirmation. Cooldown fields show their value as a duration underneath.
+
+| Card | Setting | Default | What it controls |
+| --- | --- | --- | --- |
+| Betting | Enable gambling | On | Turns every wagering game on or off |
+| Betting | Minimum bet | 1 | Smallest stake |
+| Betting | Maximum bet | 0 (unlimited) | Largest stake |
+| Betting | Payout multiplier | 1.0 | Scales winnings only, never the returned stake. Below 1.0 widens the house edge |
+| Betting | Game cooldown (seconds) | 0 | Seconds between wagers per member |
+| Betting | Daily loss limit | 0 (off) | Cuts a member off after losing this much in 24 hours |
+| Daily reward streaks | Bonus per day | 0 | Added per consecutive day claimed |
+| Daily reward streaks | Maximum bonus | 0 (uncapped) | Cap on the streak bonus |
+| Enable work | Work minimum / Work maximum | 50 / 250 | Work payout range |
+| Enable work | Work cooldown (seconds) | 1800 | Time between `work` uses |
+| Enable crime | Crime minimum / Crime maximum | 200 / 800 | Crime payout range |
+| Enable crime | Crime success chance (%) | 45 | Chance a crime pays |
+| Enable crime | Crime fine minimum / Crime fine maximum | 100 / 500 | Fine on failure |
+| Enable crime | Crime cooldown (seconds) | 3600 | Time between `crime` uses |
+| Robbery | Success chance (%) | 35 | Chance a robbery works |
+| Robbery | Maximum steal (%) | 20 | Share of the target's wallet a success takes |
+| Robbery | Failure fine (%) | 15 | Share of the robber's wallet destroyed on failure |
+| Robbery | Protected below | 100 | Targets holding less cannot be robbed |
+| Robbery | Robbery cooldown (seconds) | 3600 | Time between `rob` uses |
+| Bank | Bank capacity | 0 (unlimited) | Most a member can bank |
+| Bank | Interest (%) | 0 | Paid per interval on the banked balance |
+| Bank | Interest interval (hours) | 24 | How often interest can be collected |
+| Transfers | Transfer tax (%) | 0 | Taken from each payment and destroyed |
+| Transfers | Transfer cooldown (seconds) | 0 | Time between `pay` uses |
+| Transfers | Minimum transfer | 1 | Smallest payment |
+
+The switches are **Enable gambling**, **Enable streaks**, **Enable work**, **Enable crime**, **Enable robbery** (off by default), **Enable bank** and **Enable transfers**. The daily reward amount and its cooldown are set with `setdaily`, not on the dashboard. `economyconfig` prints every key with its current value, and `economyreset` restores all defaults.
+
+### Shop
+
+The item form is described under The shop above.
+
+### Boosts
+
+The **Boosts** card lists your boosts, each with edit, disable or enable, and delete buttons. **New boost** opens a form:
+
+| Field | What it does |
+| --- | --- |
+| Name | Label for the boost |
+| Change (%) | Between -100 and 1000, and not 0 |
+| Lasts (minutes) | 1 to 525600 |
+| Commands | Which commands it applies to: **All games**, or any earning command (`daily`, `work`, `crime`, `rob`) or game. Empty means **Everything that pays out** |
+| Repeats | **Once**, **Daily**, **Weekly** or **Monthly** |
+| Starts | Start date and time |
+| Enabled | Switch the boost on or off |
+
+### Members
+
+**Members** has three cards. **Adjust a balance** credits or debits a **Member** by an **Amount** (not zero), with a **Reason** that is recorded on the ledger. **Inventories** shows a member's items with **Take one** and **Take all**, and lets you **Give item** by item and amount, optionally **Give it even when out of stock**. **Richest members** lists holders with their wallet, bank and net worth.
 
 ## Setup walkthrough
 
-1. Run `setdaily 500 24h` so members have something to claim.
-2. Open **Currency** in the dashboard and go to **Configuration**. Set **Maximum bet** and a **Daily loss limit** before opening a games channel.
+1. Open **Currency** in the dashboard. On **Setup**, pick a **Style preset**, set the **Daily reward** and the currency emoji. Or run `setdaily 500 24h` so members have something to claim.
+2. Go to **Configuration**. Set **Maximum bet** and a **Daily loss limit** before opening a games channel.
 3. Turn on **Enable robbery** only if your members are fine with losing wallet money; leave the bank on so they can protect it.
-4. On **Shop**, add a couple of role items and a collectible. Set a **Required role** on anything that should be members-only.
+4. On **Shop**, add a couple of role items and a collectible. Set a **Required role** on anything that should be members-only. Sell a card design too if you made one on **Designs**.
 5. Give a few members a starting balance with **Adjust a balance** or `modifybalance`.
 6. After a week, check **Analytics** and lower **Payout multiplier** if the games are paying out more than they take.
 
@@ -183,6 +253,7 @@ Run these with your server's prefix (`.` unless you changed it).
 | `buy <item>` | | Nobody | Buy an item |
 | `inventory [@user]` | | Nobody | Items a member owns |
 | `use <item>` | | Nobody | Use up one consumable |
+| `equip <design>` | | Nobody | Wear a card design you bought, earned or that is free. See [Designs](/wiki/designs) |
 | `coinflip <bet> <heads/tails>` | `flip` | Nobody | See games |
 | `highlow <higher/lower> [bet]` | | Nobody | See games |
 | `spinwheel [bet]` | `wheel` | Nobody | See games |

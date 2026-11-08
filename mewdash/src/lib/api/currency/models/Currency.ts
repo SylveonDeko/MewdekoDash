@@ -7,6 +7,7 @@ export enum ShopItemType {
   Role = 0,
   Collectible = 1,
   Text = 2,
+  Design = 4,
 }
 
 /** A single row of the currency leaderboard, resolved to a Discord user. */
@@ -157,6 +158,18 @@ export interface EconomyConfig {
  */
 export type UpdateEconomyConfigRequest = Partial<Omit<EconomyConfig, "id" | "guildId">>;
 
+/** First-run currency settings. `configured` is true once setup is complete or any transaction exists. */
+export interface CurrencySetup {
+  currencyEmoji: string;
+  rewardAmount: number;
+  rewardTimeoutSeconds: number;
+  setupComplete: boolean;
+  configured: boolean;
+}
+
+/** Partial setup update. */
+export type UpdateCurrencySetupRequest = Partial<Omit<CurrencySetup, "configured">>;
+
 /** A shop item, with its roles resolved to names where they still exist. */
 export interface ShopItem {
   id: number;
@@ -166,6 +179,8 @@ export interface ShopItem {
   itemType: ShopItemType;
   roleId: bigint | null;
   roleName: string | null;
+  designId: number | null;
+  designName: string | null;
   textContent: string | null;
   /** -1 means unlimited. */
   stock: number;
@@ -174,6 +189,9 @@ export interface ShopItem {
   requiredRoleId: bigint | null;
   requiredRoleName: string | null;
   consumable: boolean;
+  buyMessage: string | null;
+  useMessage: string | null;
+  useOnBuy: boolean;
   enabled: boolean;
   sortOrder: number;
   owned: number;
@@ -187,13 +205,49 @@ export interface ShopItemRequest {
   price: number;
   itemType: ShopItemType;
   roleId?: bigint | null;
+  designId?: number | null;
   textContent?: string | null;
   stock: number;
   maxPerUser: number;
   requiredRoleId?: bigint | null;
   consumable: boolean;
+  buyMessage?: string | null;
+  useMessage?: string | null;
+  useOnBuy: boolean;
   enabled: boolean;
   sortOrder: number;
+}
+
+/** A scheduled change to what an earning command or game pays. */
+export interface EconomyBoost {
+  id: number;
+  name: string;
+  /** -100 to 1000, never 0. */
+  percentChange: number;
+  /** Comma separated command keys; empty means every boostable command. */
+  commands: string;
+  /** 0 one off, 1 daily, 2 weekly, 3 monthly. */
+  scheduleType: number;
+  startsAt: string;
+  durationMinutes: number;
+  enabled: boolean;
+}
+
+/** Payload for creating or replacing a boost. */
+export interface EconomyBoostRequest {
+  name: string;
+  percentChange: number;
+  commands: string;
+  scheduleType: number;
+  startsAt: string;
+  durationMinutes: number;
+  enabled: boolean;
+}
+
+/** Payload for giving or taking shop items. */
+export interface InventoryAdjustRequest {
+  itemName: string;
+  amount: number;
 }
 
 /** One line of a user's inventory. */

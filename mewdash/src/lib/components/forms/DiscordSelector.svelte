@@ -28,6 +28,7 @@
     placeholder?: string;
     searchable?: boolean;
     disabled?: boolean;
+    clearable?: boolean;
     customIcon?: any; // Custom icon component for custom type
     id?: string;
     ariaLabel?: string;
@@ -43,6 +44,7 @@
     placeholder = m.common.selectPlaceholder(),
     searchable = true,
     disabled = false,
+    clearable = true,
     customIcon = null,
     id,
     ariaLabel,
@@ -335,7 +337,7 @@
   <button aria-label={ariaLabelledby ? undefined : (ariaLabel ?? placeholder)}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
-          class="group w-full px-3 h-[44px] rounded-xl border transition-all duration-200 text-left flex items-center relative overflow-hidden"
+          class="group w-full px-3 h-[44px] rounded-xl border transition-all duration-200 text-left flex items-center relative isolate overflow-hidden"
     class:cursor-not-allowed={disabled}
     class:opacity-50={disabled}
     {disabled}
@@ -403,9 +405,9 @@
 
     <!-- Right side controls -->
     <div class="flex items-center gap-1 shrink-0 ml-2 relative z-10">
-      {#if hasSelection && !disabled}
+      {#if clearable && hasSelection && !disabled}
         <span
-          class="p-1 hover:bg-black/20 rounded-sm shrink-0 cursor-pointer"
+          class="relative p-1 hover:bg-black/20 rounded-sm shrink-0 cursor-pointer before:absolute before:-inset-y-3 before:-left-5 before:-right-1"
           onclick={clearAll}
           onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); clearAll(e); } }}
           role="button"

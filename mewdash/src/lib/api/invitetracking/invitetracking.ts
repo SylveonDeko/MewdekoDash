@@ -10,6 +10,7 @@ import type {
   InviteLabel,
   InviteLabelRequest,
   InviteLeaderboardEntry,
+  InviteRolesConfig,
   InviterInfo,
   InviteTrackingSettings,
   InviteUser,
@@ -164,4 +165,23 @@ export const inviteTrackingApi = {
     const query = params.toString();
     return apiDownload(`InviteTracking/${guildId}/export/invited${query ? `?${query}` : ""}`);
   },
+};
+
+/**
+ * Invite milestone roles API
+ * Maps to Mewdeko.Controllers.InviteRolesController
+ */
+export const inviteRolesApi = {
+  get: (guildId: bigint) => apiRequest<InviteRolesConfig>(`InviteRoles/${guildId}`),
+
+  updateSettings: (guildId: bigint, request: { mode?: 0 | 1; removeOnDrop?: boolean }) =>
+    apiRequest<InviteRolesConfig>(`InviteRoles/${guildId}/settings`, "PUT", request),
+
+  setRole: (guildId: bigint, roleId: bigint, requiredInvites: number) =>
+    apiRequest<InviteRolesConfig>(`InviteRoles/${guildId}/roles/${roleId}`, "PUT", { requiredInvites }),
+
+  removeRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<InviteRolesConfig>(`InviteRoles/${guildId}/roles/${roleId}`, "DELETE"),
+
+  sync: (guildId: bigint) => apiRequest<{ changed: number }>(`InviteRoles/${guildId}/sync`, "POST"),
 };

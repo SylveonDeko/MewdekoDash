@@ -289,7 +289,7 @@
 
   <section class="min-w-0 space-y-4">
     {#if currentCategory}
-      <div class="rounded-2xl border p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-3"
+      <div class="rounded-xl border p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-3"
            style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <span class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
@@ -330,13 +330,13 @@
       <div>
         <span id="ach-grade-label" class="block text-xs font-medium mb-1.5" style="color: {$colorStore.muted}">{m.achievements.libraryGradeLabel()}</span>
         <DiscordSelector type="custom" options={gradeOptions} selected={gradeFilter} searchable={false}
-                         ariaLabelledby="ach-grade-label" customIcon="fa-trophy"
+                         ariaLabelledby="ach-grade-label" customIcon="fa-trophy" clearable={false}
                          onchange={(d) => { gradeFilter = typeof d.selected === "string" ? d.selected : "any"; }} />
       </div>
       <div>
         <span id="ach-sort-label" class="block text-xs font-medium mb-1.5" style="color: {$colorStore.muted}">{m.common.sortBy()}</span>
         <DiscordSelector type="custom" options={sortOptions} selected={sort} searchable={false}
-                         ariaLabelledby="ach-sort-label" customIcon="fa-arrow-down-wide-short"
+                         ariaLabelledby="ach-sort-label" customIcon="fa-arrow-down-wide-short" clearable={false}
                          onchange={(d) => { if (typeof d.selected === "string") sort = d.selected as Sort; }} />
       </div>
     </div>
@@ -345,7 +345,7 @@
       {#each filters as f (f.id)}
         {@const active = filter === f.id}
         <button type="button" aria-pressed={active}
-                class="px-3 py-2 rounded-lg text-sm min-h-[40px] transition-all"
+                class="px-3 py-2 rounded-lg text-sm min-h-[44px] transition-all"
                 style="background: {active ? $colorStore.primary + '20' : $colorStore.primary + '08'};
                        color: {active ? $colorStore.primary : $colorStore.text};
                        border: 1px solid {active ? $colorStore.primary + '40' : 'transparent'};"
@@ -356,20 +356,20 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-3 p-3 rounded-xl" style="background: {$colorStore.primary}08;">
-      <label class="flex items-center gap-2 text-sm min-h-[40px] cursor-pointer" style="color: {$colorStore.text}">
+      <label class="flex items-center gap-2 text-sm min-h-[44px] cursor-pointer" style="color: {$colorStore.text}">
         <input type="checkbox" checked={allShownSelected} onchange={toggleSelectAll} class="w-5 h-5 rounded"
                style="accent-color: {$colorStore.primary}" />
         {selected.size > 0 ? m.common.selectedCount({ count: selected.size }) : m.achievements.librarySelectAll({ count: selectableShown.length })}
       </label>
       {#if selected.size > 0}
         <div class="flex flex-wrap gap-2 sm:ml-auto" transition:slide={{ duration: 150 }}>
-          <button type="button" class="px-3 py-2 rounded-lg text-sm font-medium min-h-[40px] disabled:opacity-50"
+          <button type="button" class="px-3 py-2 rounded-lg text-sm font-medium min-h-[44px] disabled:opacity-50"
                   style="background: #10b98120; color: #10b981; border: 1px solid #10b98130;"
                   disabled={bulkBusy} onclick={() => bulkSet(true)}>{m.common.activate()}</button>
-          <button type="button" class="px-3 py-2 rounded-lg text-sm font-medium min-h-[40px] disabled:opacity-50"
+          <button type="button" class="px-3 py-2 rounded-lg text-sm font-medium min-h-[44px] disabled:opacity-50"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                   disabled={bulkBusy} onclick={() => bulkSet(false)}>{m.achievements.libraryDeactivate()}</button>
-          <button type="button" class="px-3 py-2 rounded-lg text-sm min-h-[40px]"
+          <button type="button" class="px-3 py-2 rounded-lg text-sm min-h-[44px]"
                   style="background: {$colorStore.primary}08; color: {$colorStore.text};"
                   onclick={() => { selected = new Set(); }}>{m.common.clear()}</button>
         </div>
@@ -377,7 +377,7 @@
     </div>
 
     {#if shown.length === 0}
-      <div class="rounded-2xl border p-10 text-center"
+      <div class="rounded-xl border p-10 text-center"
            style="background: {$colorStore.primary}0c;
                   border-color: {$colorStore.primary}30;">
         <DuoIcon icon="fa-crown" size={40} />
@@ -445,12 +445,12 @@
               <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2 shrink-0">
                 {#if a.isCustom && sort === "order" && siblingCount > 1}
                   <div class="flex gap-1">
-                    <button type="button" class="w-9 h-9 rounded-lg disabled:opacity-30" aria-label={m.common.ariaMoveNamedUp({ name: a.name })}
+                    <button type="button" class="w-11 h-11 rounded-lg disabled:opacity-30" aria-label={m.common.ariaMoveNamedUp({ name: a.name })}
                             style="background: {$colorStore.primary}08; color: {$colorStore.text};"
                             disabled={siblingIndex <= 0} onclick={() => move(a, -1)}>
                       <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
                     </button>
-                    <button type="button" class="w-9 h-9 rounded-lg disabled:opacity-30" aria-label={m.common.ariaMoveNamedDown({ name: a.name })}
+                    <button type="button" class="w-11 h-11 rounded-lg disabled:opacity-30" aria-label={m.common.ariaMoveNamedDown({ name: a.name })}
                             style="background: {$colorStore.primary}08; color: {$colorStore.text};"
                             disabled={siblingIndex >= siblingCount - 1} onclick={() => move(a, 1)}>
                       <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>

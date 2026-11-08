@@ -325,15 +325,13 @@
 
       <!-- Feature Showcases (Screenshot-based) -->
       <div class="mb-16 px-4">
-        <div class="max-w-6xl mx-auto space-y-12">
+        <div class="max-w-6xl mx-auto space-y-20">
 
           <!-- Forms Builder Showcase -->
-          <div class="rounded-2xl border overflow-hidden"
-               in:fly={{ y: 20, duration: 400, delay: 100 }}
-               style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
+          <div in:fly={{ y: 20, duration: 400, delay: 100 }}>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               <!-- Text side -->
-              <div class="p-6 sm:p-8 flex flex-col justify-center order-2 lg:order-1">
+              <div class="flex flex-col justify-center order-2 lg:order-1">
                 <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-3" style="color: {$colorStore.text}">
                   {m.home.landingFormBuilder()}
                 </h3>
@@ -361,10 +359,10 @@
               </div>
 
               <!-- Screenshot side -->
-              <div class="order-1 lg:order-2 relative p-4 sm:p-6 flex items-center justify-center">
+              <div class="order-1 lg:order-2">
                 <img
                   alt={m.home.landingMewdekoFormsBuilderInterface()}
-                  class="w-full h-auto"
+                  class="w-full h-auto rounded-xl"
                   loading="lazy"
                   src="/img/feature-forms-builder.png"
                 />
@@ -373,22 +371,20 @@
           </div>
 
           <!-- XP Leaderboard Showcase -->
-          <div class="rounded-2xl border overflow-hidden"
-               in:fly={{ y: 20, duration: 400, delay: 200 }}
-               style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
+          <div in:fly={{ y: 20, duration: 400, delay: 200 }}>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               <!-- Screenshot side (left on desktop) -->
-              <div class="relative">
+              <div>
                 <img
                   alt={m.home.landingMewdekoXpLeaderboard()}
-                  class="w-full h-full object-cover"
+                  class="w-full h-auto rounded-xl"
                   loading="lazy"
                   src="/img/feature-xp-leaderboard.png"
                 />
               </div>
 
               <!-- Text side (right on desktop) -->
-              <div class="p-6 sm:p-8 flex flex-col justify-center">
+              <div class="flex flex-col justify-center">
                 <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-3" style="color: {$colorStore.text}">
                   {m.home.landingXpAndLeveling()}
                 </h3>
@@ -414,12 +410,10 @@
           </div>
 
           <!-- Bot Customization Showcase -->
-          <div class="rounded-2xl border overflow-hidden"
-               in:fly={{ y: 20, duration: 400, delay: 300 }}
-               style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
+          <div in:fly={{ y: 20, duration: 400, delay: 300 }}>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               <!-- Text side -->
-              <div class="p-6 sm:p-8 flex flex-col justify-center order-2 lg:order-1">
+              <div class="flex flex-col justify-center order-2 lg:order-1">
                 <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-3" style="color: {$colorStore.text}">
                   {m.home.landingPerServerBotProfile()}
                 </h3>
@@ -439,10 +433,10 @@
               </div>
 
               <!-- Screenshot side -->
-              <div class="order-1 lg:order-2 relative p-4 sm:p-6 flex items-center justify-center">
+              <div class="order-1 lg:order-2">
                 <img
                   alt={m.home.landingMewdekoBotCustomization()}
-                  class="w-full h-auto"
+                  class="w-full h-auto rounded-xl"
                   loading="lazy"
                   src="/img/feature-bot-customization.png"
                 />
@@ -507,174 +501,144 @@
 
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <!-- Protection & Moderation -->
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.home.landingServerLogging()}
                   </div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landing35TrackedEvents()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.placeholders.categoryChatTrigger()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingCustomRepliesAndCommands()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.common.embedBuilder()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingBuildEmbedsWithoutWritingJson()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.wizardTicketsName()}
                   </div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingPrivateChannelsForSupport()}</div>
                 </div>
 
                 <!-- Engagement Features -->
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.giveawaysName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingTimedWithRandomWinners()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.home.landingVotingSystem()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingPollsWithButtons()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.suggestionsName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingFeedbackWithVoting()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.starboardName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingRepostsTheMostStarredMessages()}</div>
                 </div>
 
                 <!-- Community Tools -->
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.home.landingMultiGreets()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landing30WelcomeMessages()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.rolegreetsName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingAMessageWhenSomeoneGetsA()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.home.landingBirthdayTracking()}
                   </div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingAnnouncesMembersBirthdays()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.reputationName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingMembersThankEachOther()}</div>
                 </div>
 
                 <!-- Automation -->
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.repeatersName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingScheduledMessages()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.wizardFeedsName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingPostsNewItemsFromAFeed()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.streamsName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingTwitchYoutube()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.statusrolesName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingRolesFromCustomStatuses()}</div>
                 </div>
 
                 <!-- User Management -->
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.rolestatesName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingRolesComeBackOnRejoin()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.wizardInvitetrackingName()}
                   </div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingSeeWhoInvitedWhom()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.afkName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingTellsPeopleYouReAway()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.highlightsName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingADmWhenYourWordIs()}</div>
                 </div>
 
                 <!-- Content & Social -->
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.todoName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingSharedAndPersonalLists()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.confessionsName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingAnonymousPosts()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.chatsaverName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingExportConversations()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.messagestatsName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingWhoTalksAndWhere()}</div>
                 </div>
 
                 <!-- Fun & Games -->
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.home.landingEconomyGames()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landing20GamblingGames()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.common.games()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingTriviaHangmanTictactoe()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.common.countingGames()}
                   </div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingCountUpOneNumberEach()}</div>
                 </div>
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.home.landingMusicBot()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingYoutubeSpotifyAndSoundcloud()}</div>
                 </div>
 
                 <!-- Voice & Channels -->
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.features.customvoiceName()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingMembersGetTheirOwnVoiceChannel()}</div>
                 </div>
 
                 <!-- And More -->
-                <div class="p-3 sm:p-4 rounded-lg"
-                     style="background: {$colorStore.primary}06; border: 1px solid {$colorStore.primary}20;">
+                <div class="py-2">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">{m.home.landingAnd10More()}</div>
                   <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">{m.home.landingSeeFullList()}</div>
                 </div>
@@ -699,19 +663,13 @@
   <section
     class="py-16 relative overflow-hidden"
   >
-    <div class="container mx-auto px-4 max-w-7xl relative z-10">
-      <div class="mb-16 px-4">
-        <div class="max-w-4xl mx-auto">
-          <div class="rounded-2xl border p-6 sm:p-8"
-               in:fly={{ y: 20, duration: 400 }}
-               style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;">
-            <div class="flex flex-col md:flex-row items-center gap-6 md:gap-8">
-              <!-- Content -->
-              <div class="flex-1 text-center md:text-left">
+    <div class="container mx-auto px-4 max-w-6xl relative z-10">
+      <div class="border-t pt-12 grid grid-cols-1 md:grid-cols-2 gap-10" style="border-color: {$colorStore.primary}20;">
+        <div class="text-center md:text-left">
                 <h3 class="text-xl sm:text-2xl font-bold mb-3" style="color: {$colorStore.text}">
                   {m.home.landingFullyOpenSourceSince2020()}
                 </h3>
-                <div class="flex flex-wrap gap-3 sm:gap-4 justify-center md:justify-start text-xs sm:text-sm"
+                <div class="flex flex-wrap gap-3 sm:gap-4 justify-center md:justify-start text-xs sm:text-sm mb-5"
                      style="color: {$colorStore.muted}">
                   <span class="flex items-center gap-2">
                     <i class="fa-solid fa-star" style="color: {$colorStore.primary};"></i>
@@ -730,60 +688,58 @@
                     {m.home.landingAgplv3()}
                   </span>
                 </div>
-              </div>
-
-              <!-- CTA -->
-              <div class="flex-shrink-0">
                 <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-colors hover:bg-white/5"
                    href="https://github.com/SylveonDeko/Mewdeko"
                    rel="noreferrer"
                    style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                    target="_blank">
                   <i class="fa-brands fa-github"></i>
-                  {m.home.landingViewSource()}                </a>
-              </div>
-            </div>
+                  {m.home.landingViewSource()}
+                </a>
+        </div>
+
+        <div class="text-center md:text-left">
+          <h3 class="text-xl sm:text-2xl font-bold mb-3" style="color: {$colorStore.text}">
+            {m.features.featureRequestsName()}
+          </h3>
+          <p class="text-sm sm:text-base mb-5" style="color: {$colorStore.muted}">
+            {m.home.landingTellUsWhatMewdekoIsMissing()}
+          </p>
+          <div class="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+            <a class="px-6 py-3 rounded-xl font-semibold transition-colors hover:bg-white/5 inline-flex items-center justify-center gap-2"
+               href="/forms/0lIoQGzMlMBj"
+               style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;">
+              <i class="fa-solid fa-lightbulb"></i>
+              {m.common.suggestAFeature()}
+            </a>
+            <a class="px-6 py-3 rounded-xl font-semibold transition-colors hover:bg-white/5 inline-flex items-center justify-center gap-2"
+               href="https://discord.gg/twQw45rBjN"
+               rel="noreferrer"
+               style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+               target="_blank">
+              <i class="fa-brands fa-discord"></i>
+              {m.home.landingJoinDiscord()}
+            </a>
           </div>
         </div>
       </div>
+    </div>
+  </section>
 
-      <!-- Feature Request & Community Section -->
-      <div class="px-4 mb-16">
-        <div class="max-w-4xl mx-auto">
-          <div class="rounded-2xl border p-8 sm:p-10"
-               in:fly={{ y: 20, duration: 400 }}
-               style="background: {$colorStore.primary}06; border-color: {$colorStore.primary}20;">
-            <div class="text-center mb-8">
-              <h3 class="text-2xl sm:text-3xl font-bold mb-3" style="color: {$colorStore.text}">
-                {m.features.featureRequestsName()}
-              </h3>
-              <p class="text-base sm:text-lg leading-relaxed" style="color: {$colorStore.muted}">
-                {m.home.landingTellUsWhatMewdekoIsMissing()}
-              </p>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-              <a class="group relative px-8 py-4 rounded-xl font-bold transition-colors hover:bg-white/5 flex items-center justify-center gap-3 overflow-hidden"
-                 href="/forms/0lIoQGzMlMBj"
-                 style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;">
-                <i class="fa-solid fa-lightbulb"></i>
-                {m.common.suggestAFeature()}
-              </a>
-              <a class="group relative px-8 py-4 rounded-xl font-bold transition-colors hover:bg-white/5 flex items-center justify-center gap-3 overflow-hidden"
-                 href="https://discord.gg/twQw45rBjN"
-                 rel="noreferrer"
-                 style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                 target="_blank">
-                <i class="fa-brands fa-discord"></i>
-                {m.home.landingJoinDiscord()}
-              </a>
-            </div>
-
-            <p class="text-center text-xs sm:text-sm mt-6" style="color: {$colorStore.muted}">
-              {m.home.landingOrJustHopInDiscordFor()}
-            </p>
-          </div>
-        </div>
+  <section class="pb-16 relative overflow-hidden">
+    <div class="container mx-auto px-4 max-w-6xl relative z-10">
+      <div class="border-t pt-12 text-center" style="border-color: {$colorStore.primary}20;">
+        <h3 class="text-xl sm:text-2xl font-bold mb-3" style="color: {$colorStore.text}">
+          {m.customBot.homeTitle()}
+        </h3>
+        <p class="text-sm sm:text-base mb-5" style="color: {$colorStore.muted}">
+          {m.customBot.homeBody()}
+        </p>
+        <a class="inline-flex items-center justify-center gap-2 px-6 py-3 min-h-[44px] rounded-xl font-semibold transition-colors hover:bg-white/5"
+           href="/custom-bot"
+           style="color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;">
+          {m.customBot.homeButton()}
+        </a>
       </div>
     </div>
   </section>

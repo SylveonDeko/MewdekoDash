@@ -5,7 +5,6 @@
   "board_meta": "#{channel} · a cada {minutes}m · atualizado {updated}",
   "board_rows": "· {count} linhas",
   "boards_empty": "Nenhum live board ainda. Adicione um e o bot o publica e fixa na hora.",
-  "boards_subtitle": "Até 10 por servidor, cada um atualizado em seu próprio intervalo",
   "confirm_delete_message": "Excluir o {kind} em #{channel}? A mensagem dele também é removida.",
   "confirm_delete_title": "Excluir live board",
   "contents_activity": "💬 Mensagens, 🔊 tempo de voz e membros ativos",

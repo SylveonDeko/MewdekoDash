@@ -6,10 +6,7 @@ export interface NavigationItem {
   label: () => string;
   icon: string;
   href: string;
-  /**
-   * Grouping used by the Dashboard Access page and matched on by search. The sidebar lists
-   * features alphabetically and does not group by this.
-   */
+  /** Grouping used by the Dashboard Access page and matched on by search. */
   category: string;
   /** Localized display label for {@link category}. `category` stays the literal matching key. */
   categoryLabel: () => string;
@@ -58,7 +55,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     category: "Security",
     categoryLabel: m.features.categorySecurity,
     description: m.features.administrationDescription,
-    keywords: ["admin", "administration", "protection", "roles"],
+    keywords: ["admin", "administration", "server tools", "backup", "restore", "template", "lockdown", "slowmode", "purge", "roles"],
   },
   {
     label: m.features.afkName,
@@ -67,7 +64,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     category: "Actions",
     categoryLabel: m.features.categoryActions,
     description: m.features.afkDescription,
-    keywords: ["afk", "away", "status", "idle"],
+    keywords: ["afk", "afk system", "away", "status", "idle"],
   },
   {
     label: m.features.auditlogName,
@@ -148,7 +145,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     category: "Entertainment",
     categoryLabel: m.features.categoryEntertainment,
     description: m.features.currencyDescription,
-    keywords: ["currency", "economy", "money", "shop", "balance", "coins", "payout", "gambling"],
+    keywords: ["currency", "economy", "balance", "money", "shop", "balance", "coins", "payout", "gambling"],
   },
   {
     label: m.features.minecraftName,
@@ -187,13 +184,25 @@ export const allDashboardFeatures: NavigationItem[] = [
     keywords: ["embeds", "builder", "custom", "messages"],
   },
   {
-    label: m.features.feedsName,
-    icon: "fa-utility-duo fa-regular fa-newspaper",
-    href: "/dashboard/feeds",
+    label: m.common.alerts,
+    icon: "fa-utility-duo fa-regular fa-bell",
+    href: "/dashboard/alerts",
+    category: "Community",
+    categoryLabel: m.features.categoryCommunity,
+    description: m.features.alertsDescription,
+    keywords: [
+      "alerts", "feeds", "rss", "news", "updates", "streams", "twitch", "youtube", "kick", "notifications",
+      "go live", "free games", "epic", "steam", "gog", "chat bot", "streamer",
+    ],
+  },
+  {
+    label: m.features.automationsName,
+    icon: "fa-utility-duo fa-regular fa-wand-magic",
+    href: "/dashboard/automations",
     category: "Actions",
     categoryLabel: m.features.categoryActions,
-    description: m.features.feedsDescription,
-    keywords: ["feeds", "rss", "news", "updates"],
+    description: m.features.automationsDescription,
+    keywords: ["automations", "automation", "triggers", "actions", "rules", "workflows", "no code", "when", "then", "templates"],
   },
   {
     label: m.features.formsName,
@@ -220,7 +229,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     category: "Actions",
     categoryLabel: m.features.categoryActions,
     description: m.features.multigreetsDescription,
-    keywords: ["greets", "welcome", "goodbye", "messages", "join message", "leave message"],
+    keywords: ["greets", "multigreets", "multi greets", "welcome", "goodbye", "messages", "join message", "leave message"],
   },
   {
     label: m.features.highlightsName,
@@ -248,15 +257,6 @@ export const allDashboardFeatures: NavigationItem[] = [
     categoryLabel: m.features.analyticsName,
     description: m.features.serverstatsDescription,
     keywords: ["activity", "stats", "statbot", "voice", "games", "presence", "lookback", "top", "chart", "charts", "privacy", "snapshots", "growth"],
-  },
-  {
-    label: m.features.statrolesName,
-    icon: "fa-utility-duo fa-regular fa-trophy",
-    href: "/dashboard/statroles",
-    category: "Community",
-    categoryLabel: m.features.categoryCommunity,
-    description: m.features.statrolesDescription,
-    keywords: ["stat roles", "statroles", "activity roles", "active member", "inactive", "top chatter", "voice role", "invite rewards", "message rewards", "streak"],
   },
   {
     label: m.features.linkfixName,
@@ -304,13 +304,27 @@ export const allDashboardFeatures: NavigationItem[] = [
     keywords: ["message stats", "activity", "tracking", "analytics"],
   },
   {
-    label: m.features.filterName,
-    icon: "fa-utility-duo fa-regular fa-filter",
-    href: "/dashboard/filter",
+    label: m.automod.title,
+    icon: "fa-utility-duo fa-regular fa-shield-halved",
+    href: "/dashboard/automod",
     category: "Security",
     categoryLabel: m.features.categorySecurity,
-    description: m.features.filterDescription,
-    keywords: ["filter", "word filter", "invite filter", "link filter", "automod", "auto ban", "blacklist"],
+    description: m.automod.subtitle,
+    keywords: [
+      "automod",
+      "auto moderation",
+      "protection",
+      "anti raid",
+      "anti spam",
+      "anti alt",
+      "filter",
+      "word filter",
+      "invite filter",
+      "link filter",
+      "auto ban",
+      "blacklist",
+      "discord automod"
+    ],
   },
   {
     label: m.features.pollsName,
@@ -367,13 +381,26 @@ export const allDashboardFeatures: NavigationItem[] = [
     keywords: ["feature request", "suggest", "suggestion", "idea", "bug report", "feedback", "roadmap", "upvote"],
   },
   {
-    label: m.features.repeatersName,
+    label: m.features.channelMessagesName,
     icon: "fa-utility-duo fa-regular fa-sync",
-    href: "/dashboard/repeaters",
+    href: "/dashboard/channel-messages",
     category: "Actions",
     categoryLabel: m.features.categoryActions,
-    description: m.features.repeatersDescription,
-    keywords: ["repeaters", "recurring", "scheduled", "messages"],
+    description: m.features.channelMessagesDescription,
+    keywords: [
+      "channel messages",
+      "repeaters",
+      "repeater",
+      "recurring",
+      "scheduled",
+      "messages",
+      "sticky",
+      "stickies",
+      "pinned",
+      "auto reactions",
+      "auto react",
+      "reactions",
+    ],
   },
   {
     label: m.features.achievementsName,
@@ -394,31 +421,20 @@ export const allDashboardFeatures: NavigationItem[] = [
     keywords: ["reputation", "rep", "rewards", "karma"],
   },
   {
-    label: m.features.rolegreetsName,
-    icon: "fa-utility-duo fa-regular fa-user",
-    href: "/dashboard/rolegreets",
-    category: "Actions",
-    categoryLabel: m.features.categoryActions,
-    description: m.features.rolegreetsDescription,
-    keywords: ["role greets", "welcome", "roles", "messages"],
-  },
-  {
-    label: m.features.roleMenusName,
-    icon: "fa-utility-duo fa-regular fa-list-ul",
-    href: "/dashboard/role-menus",
-    category: "Actions",
-    categoryLabel: m.features.categoryActions,
-    description: m.features.roleMenusDescription,
-    keywords: ["role menus", "self roles", "self assign", "pick roles", "dropdown", "buttons", "pronouns", "color roles", "reaction roles"],
-  },
-  {
-    label: m.features.rolestatesName,
+    label: m.features.rolesName,
     icon: "fa-utility-duo fa-regular fa-tag",
-    href: "/dashboard/rolestates",
+    href: "/dashboard/roles",
     category: "Actions",
     categoryLabel: m.features.categoryActions,
-    description: m.features.rolestatesDescription,
-    keywords: ["role states", "persistence", "memory", "restore"],
+    description: m.features.rolesDescription,
+    keywords: [
+      "roles", "role menus", "self roles", "self assign", "pick roles", "dropdown", "buttons", "pronouns", "color roles", "reaction roles",
+      "role states", "sticky roles", "persistence", "restore",
+      "status roles", "custom status",
+      "stat roles", "statroles", "activity roles", "active member", "inactive", "top chatter", "voice role", "invite rewards", "message rewards", "streak",
+      "role greets", "role messages", "welcome",
+      "join timeout", "join role timeout", "time roles", "timed roles", "kick unverified"
+    ],
   },
   {
     label: m.features.settingsName,
@@ -437,33 +453,6 @@ export const allDashboardFeatures: NavigationItem[] = [
     categoryLabel: m.features.categoryCommunity,
     description: m.features.starboardDescription,
     keywords: ["starboard", "stars", "popular", "messages", "highlights"],
-  },
-  {
-    label: m.features.statusrolesName,
-    icon: "fa-utility-duo fa-regular fa-user-circle",
-    href: "/dashboard/statusroles",
-    category: "Actions",
-    categoryLabel: m.features.categoryActions,
-    description: m.features.statusrolesDescription,
-    keywords: ["status roles", "custom status", "roles", "automation"],
-  },
-  {
-    label: m.features.streamsName,
-    icon: "fa-utility-duo fa-regular fa-video",
-    href: "/dashboard/streams",
-    category: "Community",
-    categoryLabel: m.features.categoryCommunity,
-    description: m.features.streamsDescription,
-    keywords: ["streams", "twitch", "youtube", "notifications"],
-  },
-  {
-    label: m.features.twitchName,
-    icon: "fa-brands fa-twitch",
-    href: "/dashboard/twitch",
-    category: "Community",
-    categoryLabel: m.features.categoryCommunity,
-    description: m.features.twitchDescription,
-    keywords: ["twitch", "chat bot", "integration", "streamer"],
   },
   {
     label: m.features.suggestionsName,
@@ -499,7 +488,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     category: "Actions",
     categoryLabel: m.features.categoryActions,
     description: m.features.chatTriggersDescription,
-    keywords: ["triggers", "autoresponder", "reactions", "chat"],
+    keywords: ["triggers", "chat triggers", "custom commands", "autoresponder", "reactions", "chat"],
   },
   {
     label: m.features.votesName,
@@ -517,7 +506,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     category: "Community",
     categoryLabel: m.features.categoryCommunity,
     description: m.features.xpDescription,
-    keywords: ["xp", "experience", "levels", "ranking", "leaderboard"],
+    keywords: ["xp", "experience", "levels", "leveling", "ranking", "leaderboard"],
   },
   {
     label: m.features.importName,
@@ -576,6 +565,15 @@ export const ownerFeatures: NavigationItem[] = [
     keywords: ["docker", "containers", "compose", "images", "restart", "stop", "start", "selfhost", "fleet"],
   },
   {
+    label: m.customBot.ownerName,
+    icon: "fa-utility-duo fa-regular fa-wand-magic-sparkles",
+    href: "/owner/custom-bots",
+    category: "Analytics",
+    categoryLabel: m.features.analyticsName,
+    description: m.customBot.ownerDescription,
+    keywords: ["custom bot", "slots", "ko-fi", "grant", "paid", "hosting", "white label"],
+  },
+  {
     label: m.features.botHellsName,
     icon: "fa-utility-duo fa-regular fa-microchip",
     href: "/owner/bot-hells",
@@ -626,3 +624,116 @@ export const ownerFeatures: NavigationItem[] = [
  * Both lists together, for lookups by href that do not care which area a page lives in.
  */
 export const allFeatures: NavigationItem[] = [...allDashboardFeatures, ...ownerFeatures];
+
+/**
+ * A task group in the sidebar and the dashboard home tabs.
+ */
+export interface NavigationGroup {
+  id: string;
+  label: () => string;
+  /** Dashboard hrefs in display order. */
+  hrefs: string[];
+}
+
+/**
+ * Every dashboard page filed under the task it belongs to, in display order.
+ */
+export const navigationGroups: NavigationGroup[] = [
+  {
+    id: "essentials",
+    label: m.features.groupEssentials,
+    hrefs: [
+      "/dashboard/multigreets",
+      "/dashboard/roles",
+      "/dashboard/moderation",
+      "/dashboard/automod",
+      "/dashboard/logging",
+      "/dashboard/xp",
+      "/dashboard/achievements",
+      "/dashboard/starboard",
+    ],
+  },
+  {
+    id: "management",
+    label: m.features.groupManagement,
+    hrefs: [
+      "/dashboard/chat-triggers",
+      "/dashboard/automations",
+      "/dashboard/tickets",
+      "/dashboard/forms",
+      "/dashboard/invites",
+      "/dashboard/channel-access",
+      "/dashboard/bridges",
+      "/dashboard/administration",
+      "/dashboard/access",
+    ],
+  },
+  {
+    id: "utilities",
+    label: m.features.groupUtilities,
+    hrefs: [
+      "/dashboard/embedbuilder",
+      "/dashboard/polls",
+      "/dashboard/suggestions",
+      "/dashboard/channel-messages",
+      "/dashboard/statchannels",
+      "/dashboard/customvoice",
+      "/dashboard/linkfix",
+      "/dashboard/highlights",
+      "/dashboard/afk",
+      "/dashboard/todo",
+      "/dashboard/wordoftheday",
+      "/dashboard/chatsaver",
+      "/dashboard/minecraft",
+      "/dashboard/utility",
+    ],
+  },
+  {
+    id: "social",
+    label: m.features.groupSocial,
+    hrefs: ["/dashboard/alerts"],
+  },
+  {
+    id: "games",
+    label: m.features.groupGames,
+    hrefs: [
+      "/dashboard/currency",
+      "/dashboard/giveaways",
+      "/dashboard/birthday",
+      "/dashboard/counting",
+      "/dashboard/confessions",
+      "/dashboard/reputation",
+      "/dashboard/votes",
+      "/dashboard/music",
+    ],
+  },
+  {
+    id: "insights",
+    label: m.features.groupInsights,
+    hrefs: [
+      "/dashboard/serverstats",
+      "/dashboard/messagestats",
+      "/dashboard/liveboards",
+      "/dashboard/auditlog",
+    ],
+  },
+  {
+    id: "more",
+    label: m.features.groupMore,
+    hrefs: [
+      "/dashboard/settings",
+      "/dashboard/import",
+      "/dashboard/patreon",
+      "/dashboard/feature-requests",
+    ],
+  },
+];
+
+/**
+ * The dashboard pages of a group, in display order. Pages missing from the feature list are skipped.
+ */
+export function groupFeatures(group: NavigationGroup): NavigationItem[] {
+  return group.hrefs
+    .map((href) => allDashboardFeatures.find((item) => item.href === href))
+    .filter((item): item is NavigationItem => !!item);
+}

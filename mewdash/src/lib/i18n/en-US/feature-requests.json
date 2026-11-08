@@ -31,7 +31,7 @@
   "report_channel_unset": "No channel is set, so requests are stored but not posted.",
   "report_destination": "Requests go to #{channel}",
   "report_destination_in_guild": "Requests go to #{channel} in {guild}",
-  "search_placeholder": "Title, details, or submitter",
+  "search_placeholder": "Title or details, or submitter",
   "send_button": "Send to the developers",
   "sort_top": "Top",
   "stat_bugs": "Bugs",

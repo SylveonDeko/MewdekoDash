@@ -17,4 +17,12 @@ export interface Vote {
 export interface VoteLeaderboardEntry {
   userId: bigint;
   voteCount: number;
+  username?: string | null;
+}
+
+export interface VoteSummary {
+  totalVotes: number;
+  votesThisMonth: number;
+  uniqueVoters: number;
+  recent: Array<{ userId: bigint; username?: string | null; dateAdded: string | null }>;
 }

@@ -1,107 +1,54 @@
 {
-  "/dashboard/achievements": {
-    "tabs": [
-      {
-        "id": "overview",
-        "label": "Overview",
-        "icon": "fa-gauge"
-      },
-      {
-        "id": "library",
-        "label": "Achievements",
-        "icon": "fa-crown"
-      },
-      {
-        "id": "categories",
-        "label": "Categories",
-        "icon": "fa-layer-group"
-      },
-      {
-        "id": "announcements",
-        "label": "Announcements",
-        "icon": "fa-bullhorn"
-      },
-      {
-        "id": "cards",
-        "label": "Cards",
-        "icon": "fa-id-card"
-      },
-      {
-        "id": "members",
-        "label": "Members",
-        "icon": "fa-users"
-      },
-      {
-        "id": "settings",
-        "label": "Settings",
-        "icon": "fa-sliders"
-      }
-    ]
-  },
   "/dashboard/administration": {
     "tabs": [
       {
-        "id": "overview",
-        "label": "Overview",
-        "icon": "fa-chart-bar"
+        "id": "automation",
+        "label": "Automation",
+        "icon": "fa-solid fa-gear"
       },
       {
-        "id": "protection",
-        "label": "Protection Systems",
-        "icon": "fa-shield"
+        "id": "commands",
+        "label": "Commands",
+        "icon": "fa-solid fa-terminal"
       },
       {
         "id": "roles",
-        "label": "Roles & Permissions",
-        "icon": "fa-users"
+        "label": "Roles",
+        "icon": "fa-solid fa-users"
       },
       {
-        "id": "automation",
-        "label": "Automation & Settings",
-        "icon": "fa-gear"
+        "id": "backups",
+        "label": "Backups",
+        "icon": "fa-solid fa-box-archive"
       },
       {
-        "id": "advanced",
-        "label": "Advanced Operations",
-        "icon": "fa-bolt"
-      }
-    ]
-  },
-  "/dashboard/afk": {
-    "tabs": [
-      {
-        "id": "settings",
-        "label": "Basic Settings",
-        "icon": "fa-gear"
+        "id": "channels",
+        "label": "Channels",
+        "icon": "fa-solid fa-hashtag"
       },
       {
         "id": "advanced",
-        "label": "Advanced Settings",
-        "icon": "fa-clock"
-      },
-      {
-        "id": "users",
-        "label": "User Management",
-        "icon": "fa-users"
+        "label": "Advanced",
+        "icon": "fa-solid fa-bolt"
       }
     ]
   },
-  "/dashboard/birthday": {
+  "/dashboard/automod": {
     "tabs": [
       {
-        "id": "config",
-        "label": "Configuration",
-        "icon": "fa-gear"
+        "id": "protection",
+        "label": "Protection",
+        "icon": "fa-solid fa-shield"
       },
       {
-        "id": "users",
-        "label": "Users",
-        "icon": "fa-users"
+        "id": "filters",
+        "label": "Filters",
+        "icon": "fa-solid fa-filter"
       },
       {
-        "id": "stats",
-        "label": "Statistics",
-        "icon": "fa-chart-column"
+        "id": "discord",
+        "label": "Discord AutoMod",
+        "icon": "fa-brands fa-discord"
       }
     ]
   },
@@ -118,113 +65,60 @@
         "icon": "fa-inbox"
       },
       {
-        "id": "blacklist",
+        "id": "blocked",
         "label": "Blocked",
         "icon": "fa-ban"
       }
     ]
   },
-  "/dashboard/chat-triggers": {
+  "/dashboard/channel-messages": {
     "tabs": [
       {
-        "id": "simple",
-        "label": "Simple Mode",
-        "icon": "fa-bolt"
+        "id": "repeaters",
+        "label": "Repeaters",
+        "icon": "fa-clock"
       },
       {
-        "id": "advanced",
-        "label": "Advanced Mode",
-        "icon": "fa-gear"
+        "id": "stickies",
+        "label": "Stickies",
+        "icon": "fa-thumbtack"
+      },
+      {
+        "id": "reactions",
+        "label": "Reactions",
+        "icon": "fa-face-smile"
       }
     ]
   },
-  "/dashboard/confessions": {
+  "/dashboard/chatsaver": {
     "tabs": [
       {
-        "id": "config",
-        "label": "Configuration",
-        "icon": "fa-gear"
+        "id": "fetch",
+        "label": "Fetch messages",
+        "icon": "fa-magnifying-glass"
       },
       {
-        "id": "confessions",
-        "label": "Confessions",
-        "icon": "fa-comment"
-      },
-      {
-        "id": "stats",
-        "label": "Statistics",
-        "icon": "fa-chart-column"
-      }
-    ]
-  },
-  "/dashboard/counting": {
-    "tabs": [
-      {
-        "id": "channels",
-        "label": "Channels ()",
-        "icon": "fa-hashtag"
-      },
-      {
-        "id": "config",
-        "label": "Configuration",
-        "icon": "fa-gear"
-      },
-      {
-        "id": "stats",
-        "label": "Statistics",
-        "icon": "fa-chart-column"
-      },
-      {
-        "id": "leaderboard",
-        "label": "Leaderboard",
-        "icon": "fa-trophy"
-      },
-      {
-        "id": "management",
-        "label": "Management",
-        "icon": "fa-shield"
-      }
-    ]
-  },
-  "/dashboard/currency": {
-    "tabs": [
-      {
-        "id": "analytics",
-        "label": "Analytics",
-        "icon": "fa-chart-line"
-      },
-      {
-        "id": "config",
-        "label": "Configuration",
-        "icon": "fa-gear"
-      },
-      {
-        "id": "shop",
-        "label": "Shop",
-        "icon": "fa-bag-shopping"
-      },
-      {
-        "id": "leaderboard",
-        "label": "Leaderboard",
-        "icon": "fa-ranking-star"
+        "id": "saved",
+        "label": "Saved logs",
+        "icon": "fa-folder"
       }
     ]
   },
   "/dashboard/customvoice": {
     "tabs": [
       {
-        "id": "config",
-        "label": "Configuration",
-        "icon": "fa-gear"
-      },
-      {
-        "id": "channels",
-        "label": "Active Channels ()",
+        "id": "hubs",
+        "label": "Hubs",
         "icon": "fa-microphone"
       },
       {
-        "id": "preferences",
-        "label": "User Preferences",
+        "id": "channels",
+        "label": "Active channels",
+        "icon": "fa-list"
+      },
+      {
+        "id": "members",
+        "label": "Member preferences",
         "icon": "fa-user"
       }
     ]
@@ -268,127 +162,22 @@
       {
         "id": "browse",
         "label": "Browse",
-        "icon": "fa-lightbulb"
+        "icon": "fa-solid fa-lightbulb"
       },
       {
-        "id": "submit",
+        "id": "suggest",
         "label": "Suggest",
-        "icon": "fa-paper-plane"
+        "icon": "fa-solid fa-paper-plane"
       },
       {
         "id": "mine",
         "label": "Mine",
-        "icon": "fa-user"
+        "icon": "fa-solid fa-user"
       },
       {
         "id": "settings",
         "label": "Settings",
-        "icon": "fa-cog"
-      }
-    ]
-  },
-  "/dashboard/feeds": {
-    "tabs": [
-      {
-        "id": "list",
-        "label": "RSS Feeds",
-        "icon": "fa-newspaper"
-      },
-      {
-        "id": "add",
-        "label": "Add Feed",
-        "icon": "fa-plus"
-      },
-      {
-        "id": "stats",
-        "label": "Statistics",
-        "icon": "fa-chart-bar"
-      }
-    ]
-  },
-  "/dashboard/filter": {
-    "tabs": [
-      {
-        "id": "filters",
-        "label": "Filters",
-        "icon": "fa-filter"
-      },
-      {
-        "id": "words",
-        "label": "Filtered words",
-        "icon": "fa-comment-slash"
-      },
-      {
-        "id": "autoban",
-        "label": "Auto-ban words",
-        "icon": "fa-ban"
-      },
-      {
-        "id": "channels",
-        "label": "Channel Overrides",
-        "icon": "fa-hashtag"
-      }
-    ]
-  },
-  "/dashboard/forms": {
-    "tabs": [
-      {
-        "id": "list",
-        "label": "Forms",
-        "icon": "fa-list"
-      },
-      {
-        "id": "create",
-        "label": "Create",
-        "icon": "fa-plus"
-      },
-      {
-        "id": "settings",
-        "label": "Settings",
-        "icon": "fa-sliders"
-      }
-    ]
-  },
-  "/dashboard/giveaways": {
-    "tabs": [
-      {
-        "id": "active",
-        "label": "Active Giveaways",
-        "icon": "fa-gift"
-      },
-      {
-        "id": "create",
-        "label": "Create Giveaway",
-        "icon": "fa-plus"
-      },
-      {
-        "id": "ended",
-        "label": "Ended Giveaways",
-        "icon": "fa-trophy"
-      }
-    ]
-  },
-  "/dashboard/highlights": {
-    "tabs": [
-      {
-        "id": "highlights",
-        "label": "All Highlights",
-        "icon": "fa-bolt"
-      },
-      {
-        "id": "search",
-        "label": "Search",
-        "icon": "fa-magnifying-glass"
-      },
-      {
-        "id": "disabled",
-        "label": "Disabled Users",
-        "icon": "fa-eye-slash"
-      },
-      {
-        "id": "stats",
-        "label": "Statistics",
-        "icon": "fa-chart-column"
+        "icon": "fa-solid fa-gear"
       }
     ]
   },
@@ -406,85 +195,16 @@
       }
     ]
   },
-  "/dashboard/invites": {
-    "tabs": [
-      {
-        "id": "overview",
-        "label": "Overview",
-        "icon": "fa-chart-line"
-      },
-      {
-        "id": "leaderboard",
-        "label": "Leaderboard",
-        "icon": "fa-trophy"
-      },
-      {
-        "id": "members",
-        "label": "Members",
-        "icon": "fa-user-plus"
-      },
-      {
-        "id": "codes",
-        "label": "Codes & Labels",
-        "icon": "fa-link"
-      },
-      {
-        "id": "settings",
-        "label": "Settings",
-        "icon": "fa-gear"
-      }
-    ]
-  },
-  "/dashboard/liveboards": {
-    "tabs": [
-      {
-        "id": "boards",
-        "label": "Live Boards",
-        "icon": "fa-thumbtack"
-      },
-      {
-        "id": "reports",
-        "label": "Server Reports",
-        "icon": "fa-newspaper"
-      }
-    ]
-  },
-  "/dashboard/logging": {
-    "tabs": [
-      {
-        "id": "channels",
-        "label": "Log Channels",
-        "icon": "fa-hashtag"
-      },
-      {
-        "id": "ignored",
-        "label": "Ignored Channels ()",
-        "icon": "fa-xmark"
-      }
-    ]
-  },
   "/dashboard/messagestats": {
     "tabs": [
       {
-        "id": "stats",
-        "label": "Statistics",
-        "icon": "fa-chart-column"
-      },
-      {
-        "id": "manage",
-        "label": "Management",
-        "icon": "fa-bullseye"
-      }
-    ],
-    "subTabs": [
-      {
         "id": "overview",
         "label": "Overview",
-        "icon": "fa-message"
+        "icon": "fa-chart-simple"
       },
       {
         "id": "users",
-        "label": "Top Users",
+        "label": "Top users",
         "icon": "fa-users"
       },
       {
@@ -495,11 +215,11 @@
       {
         "id": "settings",
         "label": "Settings",
-        "icon": "fa-circle-check"
+        "icon": "fa-gear"
       },
       {
         "id": "export",
-        "label": "Export Data",
+        "label": "Export data",
         "icon": "fa-download"
       }
     ]
@@ -510,35 +230,16 @@
         "id": "servers",
         "label": "Servers",
         "icon": "fa-server"
-      }
-    ]
-  },
-  "/dashboard/moderation": {
-    "tabs": [
-      {
-        "id": "overview",
-        "label": "Overview",
-        "icon": "fa-chart-column"
       },
       {
-        "id": "warnings",
-        "label": "Warnings",
-        "icon": "fa-triangle-exclamation"
+        "id": "history",
+        "label": "History",
+        "icon": "fa-chart-simple"
       },
       {
-        "id": "punishments",
-        "label": "Punishments",
-        "icon": "fa-gavel"
-      },
-      {
-        "id": "activity",
-        "label": "Recent Activity",
-        "icon": "fa-clock"
-      },
-      {
-        "id": "banpurge",
-        "label": "Ban Purge",
-        "icon": "fa-broom"
+        "id": "console",
+        "label": "Console",
+        "icon": "fa-terminal"
       }
     ]
   },
@@ -546,142 +247,47 @@
     "tabs": [
       {
         "id": "music",
-        "label": "Music Settings",
+        "label": "Player",
         "icon": "fa-music"
       },
       {
         "id": "tts",
-        "label": "TTS Settings",
+        "label": "Text to speech",
         "icon": "fa-microphone"
       }
     ]
   },
-  "/dashboard/patreon": {
-    "tabs": [
-      {
-        "id": "overview",
-        "label": "Overview",
-        "icon": "fa-heart"
-      },
-      {
-        "id": "supporters",
-        "label": "Supporters",
-        "icon": "fa-users"
-      },
-      {
-        "id": "tiers",
-        "label": "Tier Mapping",
-        "icon": "fa-star"
-      },
-      {
-        "id": "settings",
-        "label": "Configuration",
-        "icon": "fa-gear"
-      }
-    ]
-  },
-  "/dashboard/polls": {
-    "tabs": [
-      {
-        "id": "active",
-        "label": "Polls",
-        "icon": "fa-chart-simple"
-      },
-      {
-        "id": "create",
-        "label": "Create",
-        "icon": "fa-plus"
-      },
-      {
-        "id": "scheduled",
-        "label": "Scheduled",
-        "icon": "fa-calendar"
-      },
-      {
-        "id": "templates",
-        "label": "Templates",
-        "icon": "fa-copy"
-      },
-      {
-        "id": "analytics",
-        "label": "Analytics",
-        "icon": "fa-chart-simple"
-      }
-    ]
-  },
-  "/dashboard/repeaters": {
-    "tabs": [
-      {
-        "id": "overview",
-        "label": "Overview",
-        "icon": "fa-chart-bar"
-      },
-      {
-        "id": "manage",
-        "label": "Manage Repeaters",
-        "icon": "fa-clock"
-      },
-      {
-        "id": "create",
-        "label": "Create New",
-        "icon": "fa-plus"
-      }
-    ]
-  },
-  "/dashboard/reputation": {
-    "tabs": [
-      {
-        "id": "config",
-        "label": "Configuration",
-        "icon": "fa-gear"
-      },
-      {
-        "id": "rewards",
-        "label": "Role Rewards",
-        "icon": "fa-star"
-      },
-      {
-        "id": "leaderboard",
-        "label": "Leaderboard",
-        "icon": "fa-star"
-      },
-      {
-        "id": "stats",
-        "label": "Statistics",
-        "icon": "fa-chart-bar"
-      }
-    ]
-  },
-  "/dashboard/role-menus": {
+  "/dashboard/roles": {
     "tabs": [
       {
         "id": "menus",
-        "label": "Menus",
-        "icon": "fa-list-check"
-      },
-      {
-        "id": "move",
-        "label": "Move older setups",
-        "icon": "fa-arrow-right-arrow-left"
-      }
-    ]
-  },
-  "/dashboard/rolestates": {
-    "tabs": [
-      {
-        "id": "settings",
-        "label": "Settings",
-        "icon": "fa-gear"
-      },
-      {
-        "id": "management",
-        "label": "Management",
-        "icon": "fa-users"
+        "label": "Role menus",
+        "icon": "fa-list-ul"
       },
       {
         "id": "states",
-        "label": "Role States",
-        "icon": "fa-user-plus"
+        "label": "Sticky roles",
+        "icon": "fa-users"
+      },
+      {
+        "id": "status",
+        "label": "Status roles",
+        "icon": "fa-user-check"
+      },
+      {
+        "id": "stats",
+        "label": "Activity roles",
+        "icon": "fa-trophy"
+      },
+      {
+        "id": "greets",
+        "label": "Role messages",
+        "icon": "fa-envelope"
+      },
+      {
+        "id": "timeout",
+        "label": "Join timeout",
+        "icon": "fa-clock"
       }
     ]
   },
@@ -690,22 +296,22 @@
       {
         "id": "overview",
         "label": "Overview",
-        "icon": "fa-chart-line"
+        "icon": "fa-solid fa-chart-line"
       },
       {
         "id": "top",
         "label": "Rankings",
-        "icon": "fa-trophy"
+        "icon": "fa-solid fa-trophy"
       },
       {
         "id": "lookup",
-        "label": "Member & Channel",
-        "icon": "fa-user"
+        "label": "Member & channel",
+        "icon": "fa-solid fa-user"
       },
       {
         "id": "settings",
         "label": "Settings",
-        "icon": "fa-gear"
+        "icon": "fa-solid fa-gear"
       }
     ]
   },
@@ -713,211 +319,18 @@
     "tabs": [
       {
         "id": "channels",
-        "label": "Stat Channels",
+        "label": "Channels",
         "icon": "fa-chart-simple"
       },
       {
-        "id": "add",
-        "label": "Add",
-        "icon": "fa-plus"
-      },
-      {
-        "id": "settings",
+        "id": "defaults",
         "label": "Defaults",
         "icon": "fa-sliders"
-      }
-    ]
-  },
-  "/dashboard/statroles": {
-    "tabs": [
-      {
-        "id": "roles",
-        "label": "Stat Roles",
-        "icon": "fa-trophy"
       },
       {
-        "id": "editor",
-        "label": "Create / Edit",
-        "icon": "fa-pen"
-      }
-    ]
-  },
-  "/dashboard/statusroles": {
-    "tabs": [
-      {
-        "id": "list",
-        "label": "Status Roles",
-        "icon": "fa-user-check"
-      },
-      {
-        "id": "add",
-        "label": "Add New",
-        "icon": "fa-plus"
-      },
-      {
-        "id": "stats",
-        "label": "Statistics",
-        "icon": "fa-chart-column"
-      }
-    ]
-  },
-  "/dashboard/streams": {
-    "tabs": [
-      {
-        "id": "list",
-        "label": "Streams",
-        "icon": "fa-radio"
-      },
-      {
-        "id": "add",
-        "label": "Follow Stream",
-        "icon": "fa-plus"
-      },
-      {
-        "id": "config",
-        "label": "Settings",
-        "icon": "fa-gear"
-      },
-      {
-        "id": "stats",
-        "label": "Statistics",
-        "icon": "fa-chart-column"
-      }
-    ]
-  },
-  "/dashboard/suggestions": {
-    "tabs": [
-      {
-        "id": "suggestions",
-        "label": "Suggestions",
-        "icon": "fa-inbox"
-      },
-      {
-        "id": "settings",
-        "label": "Settings",
-        "icon": "fa-gear"
-      }
-    ],
-    "subTabs": [
-      {
-        "id": "general",
-        "label": "Basic Settings",
-        "icon": "fa-gear"
-      },
-      {
-        "id": "messages",
-        "label": "Messages",
-        "icon": "fa-gear"
-      },
-      {
-        "id": "channels",
-        "label": "Channels",
-        "icon": "fa-gear"
-      },
-      {
-        "id": "archive",
-        "label": "Archive",
-        "icon": "fa-gear"
-      },
-      {
-        "id": "emotes",
-        "label": "Emotes",
-        "icon": "fa-gear"
-      }
-    ]
-  },
-  "/dashboard/tickets": {
-    "tabs": [
-      {
-        "id": "overview",
-        "label": "Overview",
-        "icon": "fa-chart-line"
-      },
-      {
-        "id": "tickets",
-        "label": "Tickets",
-        "icon": "fa-ticket"
-      },
-      {
-        "id": "panels",
-        "label": "Ticket Panels",
-        "icon": "fa-table-cells"
-      },
-      {
-        "id": "configuration",
-        "label": "Configuration",
-        "icon": "fa-sliders"
-      },
-      {
-        "id": "cases",
-        "label": "Cases",
-        "icon": "fa-folder-open"
-      },
-      {
-        "id": "advanced",
-        "label": "Advanced",
-        "icon": "fa-screwdriver-wrench"
-      }
-    ]
-  },
-  "/dashboard/twitch": {
-    "tabs": [
-      {
-        "id": "setup",
-        "label": "Setup",
-        "icon": "fa-plug"
-      },
-      {
-        "id": "commands",
-        "label": "Commands",
-        "icon": "fa-terminal"
-      },
-      {
-        "id": "events",
-        "label": "Events",
-        "icon": "fa-bolt"
-      },
-      {
-        "id": "links",
-        "label": "Account links",
-        "icon": "fa-link"
-      }
-    ],
-    "subTabs": [
-      {
-        "id": "connect",
-        "label": "Connect",
-        "icon": "fa-key"
-      },
-      {
-        "id": "botsettings",
-        "label": "Bot Settings",
-        "icon": "fa-comments"
-      },
-      {
-        "id": "custom",
-        "label": "Custom commands",
-        "icon": "fa-code"
-      },
-      {
-        "id": "timers",
-        "label": "Timers",
-        "icon": "fa-rotate"
-      },
-      {
-        "id": "quotes",
-        "label": "Quotes",
-        "icon": "fa-comment"
-      },
-      {
-        "id": "alerts",
-        "label": "Alerts",
-        "icon": "fa-bell"
-      },
-      {
-        "id": "live",
-        "label": "Live Tools",
-        "icon": "fa-sliders"
+        "id": "counters",
+        "label": "Counters",
+        "icon": "fa-list"
       }
     ]
   },
@@ -939,38 +352,24 @@
         "icon": "fa-bullhorn"
       },
       {
+        "id": "streamrole",
+        "label": "Stream role",
+        "icon": "fa-video"
+      },
+      {
         "id": "ai",
         "label": "AI assistant",
         "icon": "fa-robot"
       },
       {
         "id": "nsfw",
-        "label": "NSFW Filter",
+        "label": "NSFW filter",
         "icon": "fa-eye-slash"
       },
       {
         "id": "rolemonitor",
         "label": "Role monitor",
         "icon": "fa-user-shield"
-      }
-    ]
-  },
-  "/dashboard/votes": {
-    "tabs": [
-      {
-        "id": "config",
-        "label": "Configuration",
-        "icon": "fa-gear"
-      },
-      {
-        "id": "roles",
-        "label": "Vote Roles",
-        "icon": "fa-crown"
-      },
-      {
-        "id": "stats",
-        "label": "Statistics",
-        "icon": "fa-chart-column"
       }
     ]
   },
@@ -988,47 +387,13 @@
       },
       {
         "id": "words",
-        "label": "Custom Words",
+        "label": "Custom words",
         "icon": "fa-list"
       },
       {
         "id": "history",
         "label": "History",
         "icon": "fa-clock-rotate-left"
-      }
-    ]
-  },
-  "/dashboard/xp": {
-    "tabs": [
-      {
-        "id": "settings",
-        "label": "Settings",
-        "icon": "fa-gear"
-      },
-      {
-        "id": "stats",
-        "label": "Stats",
-        "icon": "fa-chart-bar"
-      },
-      {
-        "id": "leaderboard",
-        "label": "Leaderboard",
-        "icon": "fa-users"
-      },
-      {
-        "id": "rewards",
-        "label": "Rewards",
-        "icon": "fa-star"
-      },
-      {
-        "id": "template",
-        "label": "Template",
-        "icon": "fa-image"
-      },
-      {
-        "id": "exclusions",
-        "label": "Exclusions",
-        "icon": "fa-bell"
       }
     ]
   },

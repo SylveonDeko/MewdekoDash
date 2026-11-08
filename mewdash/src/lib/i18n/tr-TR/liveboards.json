@@ -5,7 +5,6 @@
   "board_meta": "#{channel} · her {minutes} dk · güncelleme {updated}",
   "board_rows": "· {count} satır",
   "boards_empty": "Henüz canlı pano yok. Bir tane ekle, bot hemen gönderip sabitleyecek.",
-  "boards_subtitle": "Sunucu başına en fazla 10 tane, her biri kendi aralığında yenilenir",
   "confirm_delete_message": "#{channel} kanalındaki {kind} silinsin mi? Mesajı da kaldırılacak.",
   "confirm_delete_title": "Canlı panoyu sil",
   "contents_activity": "💬 Mesajlar, 🔊 ses süresi ve aktif üyeler",
