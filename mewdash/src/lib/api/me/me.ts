@@ -241,6 +241,18 @@ export const meApi = {
     ),
 
   /**
+   * Toggles whether members can leave the user messages while AFK
+   * @param guildId The guild ID (for route consistency)
+   * @param userId The user ID
+   * @returns New opt-out status
+   */
+  toggleAfkMessages: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ afkMessagesOptOut: boolean }>(
+      `me/${guildId}/${userId}/profile/toggle-afk-messages`,
+      "POST",
+    ),
+
+  /**
    * Toggles stats opt-out
    * @param guildId The guild ID (for route consistency)
    * @param userId The user ID

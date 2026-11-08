@@ -104,6 +104,36 @@ export const afkApi = {
     apiRequest<void>(`afk/${guildId}/timeout`, "POST", timeout),
 
   /**
+   * Gets whether AFK replies offer a DM when the member is back
+   * @param guildId The guild ID
+   */
+  getAfkNotifyButton: (guildId: bigint) =>
+    apiRequest<boolean>(`afk/${guildId}/notify-button`),
+
+  /**
+   * Sets whether AFK replies offer a DM when the member is back
+   * @param guildId The guild ID
+   * @param enabled Whether to offer it
+   */
+  afkNotifyButtonSet: (guildId: bigint, enabled: boolean) =>
+    apiRequest<void>(`afk/${guildId}/notify-button`, "POST", enabled),
+
+  /**
+   * Gets whether members can leave messages for AFK members
+   * @param guildId The guild ID
+   */
+  getAfkMessages: (guildId: bigint) =>
+    apiRequest<boolean>(`afk/${guildId}/messages`),
+
+  /**
+   * Sets whether members can leave messages for AFK members
+   * @param guildId The guild ID
+   * @param enabled Whether messages are allowed
+   */
+  afkMessagesSet: (guildId: bigint, enabled: boolean) =>
+    apiRequest<void>(`afk/${guildId}/messages`, "POST", enabled),
+
+  /**
    * Gets the disabled AFK channels
    * @param guildId The guild ID
    * @returns Comma-separated string of channel IDs

@@ -7,6 +7,8 @@
   import type { AutoSave } from "$lib/utils/autoSave.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import SettingField from "$lib/components/forms/SettingField.svelte";
+  import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
+  import { colorStore } from "$lib/stores/colorStore";
   import MessageField from "$lib/components/plugin/MessageField.svelte";
   import NumberField from "$lib/components/plugin/NumberField.svelte";
   import PluginCard from "$lib/components/plugin/PluginCard.svelte";
@@ -27,6 +29,8 @@
     maxLength: number;
     type: number;
     timeout: number;
+    notify: boolean;
+    leaveMessages: boolean;
     disabled: string[];
     message: string;
   };
@@ -58,11 +62,13 @@
 
   async function load() {
     try {
-      const [deletion, maxLength, type, timeout, disabled, message] = await Promise.all([
+      const [deletion, maxLength, type, timeout, notify, leaveMessages, disabled, message] = await Promise.all([
         afkApi.getAfkDel(guildId),
         afkApi.getAfkLength(guildId),
         afkApi.getAfkType(guildId),
         afkApi.getAfkTimeout(guildId),
+        afkApi.getAfkNotifyButton(guildId).catch(() => false),
+        afkApi.getAfkMessages(guildId).catch(() => false),
         afkApi.getDisabledAfkChannels(guildId),
         afkApi.getCustomAfkMessage(guildId)
       ]);
@@ -72,6 +78,8 @@
         maxLength,
         type,
         timeout,
+        notify: notify === true,
+        leaveMessages: leaveMessages === true,
         disabled: raw && raw !== "0" ? raw.split(",").filter(Boolean) : [],
         message: message ?? ""
       };
@@ -166,6 +174,23 @@
           }}
         />
       </div>
+      <ToggleRow
+        id="afk-notify"
+        class="mt-2"
+        title={m.afk.notifyBackTitle()}
+        subtitle={m.afk.notifyBackHint()}
+        checked={values.notify}
+        colors={$colorStore}
+        onchange={(next) => persist("notify", next, () => afkApi.afkNotifyButtonSet(guildId, next), "now")}
+      />
+      <ToggleRow
+        id="afk-leave-messages"
+        title={m.afk.leaveMessagesTitle()}
+        subtitle={m.afk.leaveMessagesHint()}
+        checked={values.leaveMessages}
+        colors={$colorStore}
+        onchange={(next) => persist("leaveMessages", next, () => afkApi.afkMessagesSet(guildId, next), "now")}
+      />
     </PluginCard>
 
     <PluginCard title={m.afk.channelsTitle()} alwaysOpen>

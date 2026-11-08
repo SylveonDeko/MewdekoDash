@@ -216,6 +216,19 @@
   }
 
   // Toggle functions
+  async function toggleAfkMessages() {
+    saving = true;
+    try {
+      const result = await meApi.toggleAfkMessages(BigInt("0"), userId);
+      (userProfile as any).afkMessagesOptOut = result.afkMessagesOptOut;
+      showMessage(result.afkMessagesOptOut ? m.me.toastAfkMessagesBlocked() : m.me.toastAfkMessagesAllowed(), "success");
+    } catch (err) {
+      showMessage(m.common.notifyUpdateFailed(), "error");
+    } finally {
+      saving = false;
+    }
+  }
+
   async function toggleGreetDms() {
     saving = true;
     try {
@@ -729,6 +742,29 @@
                     <span
                       class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform block"
                        class:translate-x-5={userProfile.greetDmsOptOut}>
+                  </span>
+                </span>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-sm font-medium" style="color: {$colorStore.text}">{m.me.blockAfkMessages()}</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">{m.me.blockAfkMessagesHint()}</div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={userProfile.afkMessagesOptOut}
+                  onchange={toggleAfkMessages}
+                  disabled={saving}
+                  class="sr-only"
+                >
+                <span class="w-11 h-6 rounded-full transition-all relative shadow-inner block"
+                     style="background: {userProfile.afkMessagesOptOut ? $colorStore.primary : '#374151'};">
+                    <span
+                      class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform block"
+                       class:translate-x-5={userProfile.afkMessagesOptOut}>
                   </span>
                 </span>
               </label>

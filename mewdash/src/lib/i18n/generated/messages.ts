@@ -3357,6 +3357,10 @@ export const m = {
     labelSince: () => t("afk", "label_since", "Since:"),
     /** Type: */
     labelType: () => t("afk", "label_type", "Type:"),
+    /** Adds a Leave a message button to AFK replies. The person reads them when they're back. */
+    leaveMessagesHint: () => t("afk", "leave_messages_hint", "Adds a Leave a message button to AFK replies. The person reads them when they're back."),
+    /** Leave a message */
+    leaveMessagesTitle: () => t("afk", "leave_messages_title", "Leave a message"),
     /** Loading AFK settings... */
     loadingSettings: () => t("afk", "loading_settings", "Loading AFK settings..."),
     /** Loading AFK users... */
@@ -3371,6 +3375,10 @@ export const m = {
     membersTitle: () => t("afk", "members_title", "Away members"),
     /** No message */
     noMessage: () => t("afk", "no_message", "No message"),
+    /** Adds a button to AFK replies. Members who press it get a DM when the person is back. */
+    notifyBackHint: () => t("afk", "notify_back_hint", "Adds a button to AFK replies. Members who press it get a DM when the person is back."),
+    /** Notify when back */
+    notifyBackTitle: () => t("afk", "notify_back_title", "Notify when back"),
     /** Failed to remove AFK status from user(s): {error} */
     notifyBulkRemoveFailed: (p: { error: P }) => t("afk", "notify_bulk_remove_failed", "Failed to remove AFK status from user(s): {error}", p),
     /** Removed AFK status from {count} user(s) */
@@ -12943,6 +12951,10 @@ export const m = {
     birthday2: () => t("me", "birthday_2", "Birthday:"),
     /** Birthday announcements */
     birthdayAnnouncements: () => t("me", "birthday_announcements", "Birthday announcements"),
+    /** Block AFK messages */
+    blockAfkMessages: () => t("me", "block_afk_messages", "Block AFK messages"),
+    /** Stop members leaving you messages while you're AFK */
+    blockAfkMessagesHint: () => t("me", "block_afk_messages_hint", "Stop members leaving you messages while you're AFK"),
     /** Block message tracking */
     blockMessageTracking: () => t("me", "block_message_tracking", "Block message tracking"),
     /** Block welcome DMs */
@@ -13117,6 +13129,10 @@ export const m = {
     theseApplyInEveryServer: () => t("me", "these_apply_in_every_server", "These apply in every server."),
     /** they/them, she/her, he/him... */
     theyThemSheHerHe: () => t("me", "they_them_she_her_he", "they/them, she/her, he/him..."),
+    /** AFK messages allowed */
+    toastAfkMessagesAllowed: () => t("me", "toast_afk_messages_allowed", "AFK messages allowed"),
+    /** AFK messages blocked */
+    toastAfkMessagesBlocked: () => t("me", "toast_afk_messages_blocked", "AFK messages blocked"),
     /** Birthday announcements disabled */
     toastBirthdayAnnouncementsDisabled: () => t("me", "toast_birthday_announcements_disabled", "Birthday announcements disabled"),
     /** Birthday announcements enabled */

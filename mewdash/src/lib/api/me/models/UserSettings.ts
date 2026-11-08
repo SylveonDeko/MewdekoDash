@@ -39,6 +39,7 @@ export interface UserProfileRequest {
   profilePrivacy?: number | null;
   birthdayDisplayMode?: number | null;
   greetDmsOptOut?: boolean | null;
+  afkMessagesOptOut?: boolean | null;
   statsOptOut?: boolean | null;
   birthday?: string | null;
   birthdayTimezone?: string | null;
@@ -93,6 +94,7 @@ export interface UserProfile {
   profilePrivacy: number;
   birthdayDisplayMode: number;
   greetDmsOptOut: boolean;
+  afkMessagesOptOut?: boolean;
   statsOptOut: boolean;
   birthday: string | null;
   birthdayTimezone: string;
