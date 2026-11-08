@@ -178,15 +178,27 @@
     {/if}
 
     {#if windowed}
-      <NumberField
-        id="sr-lookback"
-        label={m.statroles.fieldWindow()}
-        hint={m.statroles.fieldWindowHint()}
-        value={draft.lookbackDays}
-        min={draft.limitType === StatRoleLimit.DailyStreak ? 1 : 0}
-        max={90}
-        onchange={(v) => (draft.lookbackDays = v ?? 0)}
-      />
+      {#if draft.limitType !== StatRoleLimit.DailyStreak}
+        <ToggleRow
+          id="sr-daily"
+          title={m.statroles.toggleResetDaily()}
+          subtitle={m.statroles.toggleResetDailyHint()}
+          colors={$colorStore}
+          checked={draft.lookbackDays === -1}
+          onchange={(v) => (draft.lookbackDays = v ? -1 : 1)}
+        />
+      {/if}
+      {#if draft.lookbackDays !== -1 || draft.limitType === StatRoleLimit.DailyStreak}
+        <NumberField
+          id="sr-lookback"
+          label={m.statroles.fieldWindow()}
+          hint={m.statroles.fieldWindowHint()}
+          value={Math.max(draft.lookbackDays, 0)}
+          min={draft.limitType === StatRoleLimit.DailyStreak ? 1 : 0}
+          max={90}
+          onchange={(v) => (draft.lookbackDays = v ?? 0)}
+        />
+      {/if}
     {/if}
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">

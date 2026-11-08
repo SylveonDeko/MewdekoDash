@@ -88,5 +88,7 @@
   "toggle_invert": "Invert",
   "toggle_invert_hint": "Members who do not qualify get it",
   "toggle_permanent_hint": "Never removed once earned",
+  "toggle_reset_daily": "Reset every day",
+  "toggle_reset_daily_hint": "Counts from midnight UTC",
   "update_failed": "Failed to update the activity role"
 }

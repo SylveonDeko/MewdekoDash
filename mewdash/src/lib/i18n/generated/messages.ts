@@ -18775,6 +18775,10 @@ export const m = {
     toggleInvertHint: () => t("statroles", "toggle_invert_hint", "Members who do not qualify get it"),
     /** Never removed once earned */
     togglePermanentHint: () => t("statroles", "toggle_permanent_hint", "Never removed once earned"),
+    /** Reset every day */
+    toggleResetDaily: () => t("statroles", "toggle_reset_daily", "Reset every day"),
+    /** Counts from midnight UTC */
+    toggleResetDailyHint: () => t("statroles", "toggle_reset_daily_hint", "Counts from midnight UTC"),
     /** Failed to update the activity role */
     updateFailed: () => t("statroles", "update_failed", "Failed to update the activity role"),
   },
