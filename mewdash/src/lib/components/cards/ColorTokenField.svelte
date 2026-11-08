@@ -84,13 +84,13 @@
           {m.common.custom()}
           <input type="color" class="h-8 w-14 rounded-lg border" style="border-color: {$colorStore.primary}30;"
                  value={parsed.base.startsWith("#") ? parsed.base : (resolved ?? "#ffffff").slice(0, 7)}
-                 onchange={(e) => onchange(build(e.currentTarget.value, parsed.alpha))} />
+                 onchange={(e) => onchange(build((e.target as HTMLInputElement).value, parsed.alpha))} />
         </label>
         <label class="block text-xs" style="color: {$colorStore.muted}">
           {m.xp.editorOpacityPercent({ percent: Math.round(parsed.alpha / 2.55) })}
           <input type="range" min="0" max="255" value={parsed.alpha} class="w-full"
                  style="accent-color: {$colorStore.primary}"
-                 oninput={(e) => onchange(build(parsed.base, Number(e.currentTarget.value)))} />
+                 oninput={(e) => onchange(build(parsed.base, Number((e.target as HTMLInputElement).value)))} />
         </label>
       {/if}
     </div>

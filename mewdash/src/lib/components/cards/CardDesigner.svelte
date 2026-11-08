@@ -512,7 +512,7 @@
    * @param fallback The value to keep
    */
   function num(event: Event, fallback: number): number {
-    const value = Number((event.currentTarget as HTMLInputElement).value);
+    const value = Number((event.target as HTMLInputElement).value);
     return Number.isFinite(value) ? value : fallback;
   }
 
@@ -780,7 +780,7 @@
           {m.achievements.cardDesignerLayerName()}
           <input type="text" value={selected.name} maxlength="40" placeholder={kind?.label()}
                  class="mt-1 w-full px-2.5 py-2 rounded-lg border text-sm min-h-[40px]" style={inputStyle}
-                 oninput={(e) => { selected!.name = e.currentTarget.value; }} />
+                 oninput={(e) => { selected!.name = (e.target as HTMLInputElement).value; }} />
         </label>
         {#if card.states}
           {@render segmented(m.achievements.cardDesignerShowOn(), [{ id: "always", label: m.achievements.cardDesignerShowAll() }, { id: "unlocked", label: m.common.unlocked() }, { id: "locked", label: m.common.locked() }],
@@ -797,7 +797,7 @@
           <label class="block text-xs" style="color: {$colorStore.muted}">
             {m.xp.editorOpacityPercent({ percent: Math.round(selected.opacity * 100) })}
             <input type="range" min="0" max="1" step="0.05" value={selected.opacity} class="w-full mt-3"
-                   style="accent-color: {$colorStore.primary}" oninput={(e) => { selected!.opacity = Number(e.currentTarget.value); }} />
+                   style="accent-color: {$colorStore.primary}" oninput={(e) => { selected!.opacity = Number((e.target as HTMLInputElement).value); }} />
           </label>
         </div>
         <div class="space-y-1">
@@ -1002,7 +1002,7 @@
             <label class="block text-xs" style="color: {$colorStore.muted}">
               {m.achievements.cardDesignerDarken({ percent: Math.round(draft.background.dim * 100) })}
               <input type="range" min="0" max="1" step="0.05" value={draft.background.dim} class="w-full"
-                     style="accent-color: {$colorStore.primary}" oninput={(e) => { draft.background.dim = Number(e.currentTarget.value); }} />
+                     style="accent-color: {$colorStore.primary}" oninput={(e) => { draft.background.dim = Number((e.target as HTMLInputElement).value); }} />
             </label>
           {/if}
           <ToggleRow title={m.achievements.cardDesignerPaletteWash()} subtitle={m.achievements.cardDesignerPaletteWashHint()} colors={$colorStore}

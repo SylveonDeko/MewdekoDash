@@ -19,7 +19,7 @@
   let { id, label, hint, value, min = 0, max, decimal = false, nullable = false, onchange }: Props = $props();
 
   function read(event: Event) {
-    const raw = (event.currentTarget as HTMLInputElement).value;
+    const raw = (event.target as HTMLInputElement).value;
     if (raw.trim() === "") {
       onchange(nullable ? null : min);
       return;
