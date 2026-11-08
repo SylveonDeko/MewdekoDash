@@ -347,13 +347,13 @@
   }
 
   function markStepComplete(stepIndex: number) {
-    completedSteps.add(stepIndex);
-    completedSteps = completedSteps; // Trigger reactivity
+    completedSteps = new Set(completedSteps).add(stepIndex);
   }
 
   function markStepIncomplete(stepIndex: number) {
-    completedSteps.delete(stepIndex);
-    completedSteps = completedSteps; // Trigger reactivity
+    const next = new Set(completedSteps);
+    next.delete(stepIndex);
+    completedSteps = next;
   }
 
   // Keyboard navigation

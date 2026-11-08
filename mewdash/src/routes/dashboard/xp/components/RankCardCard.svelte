@@ -1,6 +1,6 @@
 <script lang="ts">
   import { m } from "$lib/i18n";
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount, untrack } from "svelte";
   import { browser } from "$app/environment";
   import { xpApi } from "$lib/api/index.ts";
   import { ApiError } from "$lib/api/core";
@@ -301,7 +301,7 @@
           localTemplate.outputSizeY !== activeBackground.naturalHeight) {
         localTemplate.outputSizeX = activeBackground.naturalWidth;
         localTemplate.outputSizeY = activeBackground.naturalHeight;
-        changedSettings = changedSettings.add("template");
+        changedSettings = new Set(changedSettings).add("template");
       }
       if (previewCanvas.width !== activeBackground.naturalWidth) previewCanvas.width = activeBackground.naturalWidth;
       if (previewCanvas.height !== activeBackground.naturalHeight) previewCanvas.height = activeBackground.naturalHeight;
@@ -434,7 +434,7 @@
           (localTemplate.outputSizeX !== img.naturalWidth || localTemplate.outputSizeY !== img.naturalHeight)) {
         localTemplate.outputSizeX = img.naturalWidth;
         localTemplate.outputSizeY = img.naturalHeight;
-        changedSettings = changedSettings.add("template");
+        changedSettings = new Set(changedSettings).add("template");
       }
       renderPreview();
     };
@@ -467,7 +467,7 @@
       if (localTemplate && (localTemplate.outputSizeX !== img.naturalWidth || localTemplate.outputSizeY !== img.naturalHeight)) {
         localTemplate.outputSizeX = img.naturalWidth;
         localTemplate.outputSizeY = img.naturalHeight;
-        changedSettings = changedSettings.add("template");
+        changedSettings = new Set(changedSettings).add("template");
       }
       previewBgUrl = url;
       previewBgImage = img;
@@ -483,6 +483,13 @@
 
   $effect(() => {
     if (previewCanvas && localTemplate) renderPreview();
+  });
+
+  let wasEditing = false;
+  $effect(() => {
+    const open = showEditor;
+    if (wasEditing && !open && changedSettings.has("template")) untrack(() => void saveTemplate());
+    wasEditing = open;
   });
 
   const buttonStyle = $derived(
