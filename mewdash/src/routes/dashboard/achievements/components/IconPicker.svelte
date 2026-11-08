@@ -7,6 +7,7 @@
 
 <script lang="ts">
   import { m } from "$lib/i18n";
+  import { readImageForUpload } from "$lib/utils/imageUpload";
   import { slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -143,19 +144,14 @@
     const file = input.files?.[0];
     input.value = "";
     if (!file || !$currentGuild?.id) return;
-    if (file.size > 4 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       onerror(m.achievements.iconErrorSize());
       return;
     }
 
     uploading = true;
     try {
-      const data = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      });
+      const data = await readImageForUpload(file);
       const uploaded = await achievementsApi.uploadIcon($currentGuild.id, data);
       localUploads = [...localUploads, uploaded];
       onuploadschanged?.();

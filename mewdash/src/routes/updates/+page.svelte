@@ -17,15 +17,9 @@
     <ol class="mt-10">
       {#each productUpdates as update (update.id)}
         <li id={update.id} class="py-8 border-t first:border-t-0 first:pt-0" style="border-color: {$colorStore.primary}20;">
-          <div class="font-mono text-xs font-bold mb-2" style="color: {$colorStore.primary}">{update.label}</div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{update.title}</h2>
           <p class="mt-2 leading-relaxed" style="color: {$colorStore.muted}">{update.summary}</p>
-          <ul class="mt-4 space-y-2 text-sm" style="color: {$colorStore.text}">
-            {#each update.details as detail (detail)}
-              <li class="border-l-2 pl-3 leading-relaxed" style="border-color: {$colorStore.primary}30;">{detail}</li>
-            {/each}
-          </ul>
-          <a class="mt-5 inline-flex items-center gap-2 border-b pb-1 text-sm font-semibold transition-opacity hover:opacity-70"
+          <a class="mt-4 inline-flex items-center gap-2 border-b pb-1 text-sm font-semibold transition-opacity hover:opacity-70"
              href={update.href} style="color: {$colorStore.primary}; border-color: {$colorStore.primary}80;">
             {update.action}
           </a>

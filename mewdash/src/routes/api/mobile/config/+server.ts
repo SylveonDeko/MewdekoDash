@@ -15,13 +15,16 @@ const DEFAULT_MOBILE_REDIRECT_URI = "mewdeko-mobile://oauth/callback";
  * Discord application.
  */
 export const GET: RequestHandler = async () => {
+  const oauth = {
+    clientId: env.DISCORD_CLIENT_ID,
+    redirectUri: env.MOBILE_OAUTH_REDIRECT_URI ?? DEFAULT_MOBILE_REDIRECT_URI,
+    scopes: env.DISCORD_SCOPES,
+    authorizeUrl: "https://discord.com/api/oauth2/authorize",
+  };
   return json({
-    discord: {
-      clientId: env.DISCORD_CLIENT_ID,
-      redirectUri: env.MOBILE_OAUTH_REDIRECT_URI ?? DEFAULT_MOBILE_REDIRECT_URI,
-      scopes: env.DISCORD_SCOPES,
-      authorizeUrl: "https://discord.com/api/oauth2/authorize",
-    },
+    platform: "discord",
+    oauth,
+    discord: oauth,
     instance: {
       name: env.PUBLIC_INSTANCE_NAME ?? "Mewdeko",
       inviteUrl: env.PUBLIC_BOT_INVITE_URL ?? null,

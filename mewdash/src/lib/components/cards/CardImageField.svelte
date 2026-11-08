@@ -10,6 +10,7 @@
   import { slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { readImageForUpload } from "$lib/utils/imageUpload";
   import type { CardImage } from "$lib/api/cards/models";
   import { logger } from "$lib/logger";
 
@@ -95,19 +96,14 @@
     const file = input.files?.[0];
     input.value = "";
     if (!file) return;
-    if (file.size > 4 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       onerror(m.achievements.iconErrorSize());
       return;
     }
 
     uploading = true;
     try {
-      const data = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      });
+      const data = await readImageForUpload(file);
       const uploaded = await store(data);
       onimages([...images, uploaded]);
       onchange(uploaded.icon);

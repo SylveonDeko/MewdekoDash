@@ -1,5 +1,6 @@
 <script lang="ts">
   import { m } from "$lib/i18n";
+  import { readImageForUpload } from "$lib/utils/imageUpload";
   import { onMount, untrack } from "svelte";
   import { achievementsApi, cardPresetsApi, designsApi } from "$lib/api/index.ts";
   import type { AchievementCard, AchievementCatalog } from "$lib/api/index.ts";
@@ -110,17 +111,12 @@
     const file = input.files?.[0];
     input.value = "";
     if (!file) return;
-    if (file.size > 4 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       onerror(m.achievements.iconErrorSize());
       return;
     }
     try {
-      newUpload = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      });
+      newUpload = await readImageForUpload(file);
       uploadRemoved = false;
     } catch (err) {
       logger.error("Failed to read the upload", err);

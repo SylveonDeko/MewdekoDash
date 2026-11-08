@@ -9,7 +9,7 @@
     count?: number;
   }
 
-  let { updates, count = 3 }: Props = $props();
+  let { updates, count = 2 }: Props = $props();
 
   let latest = $derived(updates.slice(0, count));
 </script>
@@ -25,10 +25,9 @@
       </a>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3" style="--rule: {$colorStore.primary}20;">
+    <div class="grid grid-cols-1 md:grid-cols-2" style="--rule: {$colorStore.primary}20;">
       {#each latest as update (update.id)}
         <article class="min-w-0 py-6 md:py-0 md:px-6 first:md:pl-0 last:md:pr-0">
-          <div class="font-mono text-xs font-bold mb-2" style="color: {$colorStore.primary}">{update.label}</div>
           <h3 class="text-lg font-bold leading-snug" style="color: {$colorStore.text}">{update.title}</h3>
           <p class="mt-2 text-sm leading-relaxed" style="color: {$colorStore.muted}">{update.summary}</p>
           <a class="mt-4 inline-flex items-center gap-2 border-b pb-1 text-sm font-semibold transition-opacity hover:opacity-70"

@@ -82,10 +82,6 @@
                 {m.dashboard.productUpdateEverythingNew()}
               </h2>
             {:else}
-              <span class="block text-xs"
-                    style="color: {$colorStore.muted}">
-                {current.label}
-              </span>
               <h2 id="product-update-title" class="text-lg font-semibold" style="color: {$colorStore.text}">
                 {current.title}
               </h2>
@@ -105,11 +101,7 @@
           <div class="max-h-[55vh] space-y-5 overflow-y-auto p-6">
             {#each productUpdates as update (update.id)}
               <div class="border-b pb-5 last:border-0 last:pb-0" style="border-color: {$colorStore.primary}15;">
-                <span class="block text-xs"
-                      style="color: {$colorStore.muted}">
-                  {update.label}
-                </span>
-                <h3 class="mt-0.5 text-base font-semibold" style="color: {$colorStore.text}">{update.title}</h3>
+                <h3 class="text-base font-semibold" style="color: {$colorStore.text}">{update.title}</h3>
                 <p class="mt-1 text-sm leading-relaxed" style="color: {$colorStore.muted}">{update.summary}</p>
                 <a
                   class="mt-2 inline-flex text-sm font-medium hover:opacity-70"
@@ -117,24 +109,14 @@
                   onclick={ondismiss}
                   style="color: {$colorStore.primary}"
                 >
-                  {m.dashboard.productUpdateActionArrow({ action: update.action })}
+                  {update.action}
                 </a>
               </div>
             {/each}
           </div>
         {:else}
-          <div class="space-y-4 p-6">
+          <div class="p-6">
             <p class="text-sm leading-relaxed" style="color: {$colorStore.muted}">{current.summary}</p>
-
-            <ul class="space-y-2">
-              {#each current.details as detail (detail)}
-                <li class="flex gap-2.5 text-sm" style="color: {$colorStore.muted}">
-                  <i class="fa-solid fa-check mt-1 shrink-0" style="color: {$colorStore.primary}; font-size: 12px;"
-                     aria-hidden="true"></i>
-                  <span>{detail}</span>
-                </li>
-              {/each}
-            </ul>
           </div>
         {/if}
 
@@ -144,18 +126,17 @@
               {m.common.currentOfTotal({ current: index + 1, total: updates.length })}
             </span>
           {/if}
+          {#if updates.length > 0}
+            <button
+              class="min-h-[44px] text-sm font-medium hover:opacity-70"
+              style="color: {$colorStore.primary};"
+              onclick={() => (chosenView = !showingArchive)}
+            >
+              {showingArchive ? m.common.back() : m.dashboard.productUpdateSeeAll()}
+            </button>
+          {/if}
 
           <div class="ml-auto flex flex-wrap items-center gap-3">
-            {#if updates.length > 0}
-              <button
-                class="flex min-h-[44px] items-center rounded-xl px-4 text-sm font-medium transition-all hover:opacity-80"
-                style="background: {$colorStore.primary}20; color: {$colorStore.primary};
-                       border: 1px solid {$colorStore.primary}30;"
-                onclick={() => (chosenView = !showingArchive)}
-              >
-                {showingArchive ? m.common.back() : m.dashboard.productUpdateSeeAll()}
-              </button>
-            {/if}
 
             {#if !showingArchive}
               <a
