@@ -942,6 +942,12 @@
   onMount(async () => {
     const shareCode = $page.params.formId;
 
+    if (!data.user) {
+      showLoginPrompt = true;
+      loading = false;
+      return;
+    }
+
     // First, get all instances to find which one has this share code
     let instances: any[] = [];
     try {

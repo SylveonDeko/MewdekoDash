@@ -1,8 +1,7 @@
 // routes/api/music/stream/+server.ts
 import { error } from "@sveltejs/kit";
 import type { RequestHandler } from "@sveltejs/kit";
-import { env } from "$env/dynamic/private";
-import { defaultInstanceURL, resolveInstanceURL, resolveInstanceURLByPort } from "$lib/server/instances";
+import { apiKeyFor, defaultInstanceURL, resolveInstanceURL, resolveInstanceURLByPort } from "$lib/server/instances";
 import { mintBackendToken } from "$lib/server/backendJwt";
 import { getSession, verifyAccessToken } from "$lib/server/mobileJwt";
 import { logger } from "$lib/logger";
@@ -60,7 +59,7 @@ export const GET: RequestHandler = async ({ url, locals, request }) => {
   if (!backend) throw error(503, "No bot instance available");
 
   const headers: Record<string, string> = {
-    "X-API-Key": env.MEWDEKO_API_KEY,
+    "X-API-Key": apiKeyFor(backend),
     Accept: "text/event-stream",
   };
   const token = mintBackendToken(user);

@@ -41,7 +41,7 @@
   let tabs = $derived([
     ...(serverEmojis.length ? [{ id: "server" as Tab, label: m.achievements.iconTabEmojis(), icon: "fa-face-smile" }] : []),
     { id: "emoji" as Tab, label: m.common.emoji(), icon: "fa-face-laugh" },
-    { id: "icon" as Tab, label: m.achievements.iconTabIcons(), icon: "fa-sparkles" },
+    { id: "icon" as Tab, label: m.achievements.iconTabIcons(), icon: "fa-icons" },
     { id: "placeholder" as Tab, label: m.common.placeholders(), icon: "fa-code" }
   ]);
 

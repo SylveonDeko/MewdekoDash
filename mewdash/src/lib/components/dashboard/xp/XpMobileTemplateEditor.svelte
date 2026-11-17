@@ -1983,7 +1983,7 @@
               <div>
                 <h3 class="text-sm font-semibold flex items-center gap-2 mb-3"
                     style="color: {$colorStore.text}">
-                  <i class="fa-solid fa-wand-magic-sparkles" style="color: {$colorStore.primary}; font-size: 16px;"></i>
+                  <i class="fa-solid fa-palette" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                   {m.xp.editorPresets()}
                 </h3>
                 <div class="grid grid-cols-3 gap-1 mb-2">

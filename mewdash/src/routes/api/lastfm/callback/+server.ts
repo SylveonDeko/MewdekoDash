@@ -1,8 +1,7 @@
-import { env } from "$env/dynamic/private";
 import { redirect } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { logger } from "$lib/logger";
-import { defaultInstanceURL, resolveInstanceURLByPort } from "$lib/server/instances";
+import { apiKeyFor, defaultInstanceURL, resolveInstanceURLByPort } from "$lib/server/instances";
 import { mintBackendToken } from "$lib/server/backendJwt";
 
 const linked = async (url: URL, user: NonNullable<App.Locals["user"]>): Promise<boolean> => {
@@ -13,7 +12,7 @@ const linked = async (url: URL, user: NonNullable<App.Locals["user"]>): Promise<
   const backend = Number.isInteger(port) ? await resolveInstanceURLByPort(port) : await defaultInstanceURL();
   if (!backend) return false;
 
-  const headers: Record<string, string> = { "X-API-Key": env.MEWDEKO_API_KEY };
+  const headers: Record<string, string> = { "X-API-Key": apiKeyFor(backend) };
   const backendToken = mintBackendToken(user);
   if (backendToken) headers["Authorization"] = `Bearer ${backendToken}`;
 

@@ -351,7 +351,7 @@
   "templates_welcome_detailed_field_start_value": "Stell dich in <#introductions> vor!",
   "templates_welcome_detailed_footer": "Du bist Mitglied #%server.membercount%",
   "templates_welcome_detailed_name": "Ausführliches Willkommen",
-  "templates_welcome_detailed_title": "Willkommen auf %server.name%! ✨",
+  "templates_welcome_detailed_title": "Willkommen auf %server.name%!",
   "validation_dismiss_error": "Fehler ausblenden",
   "validation_dismiss_suggestion": "Vorschlag ausblenden",
   "validation_dismiss_warning": "Warnung ausblenden",

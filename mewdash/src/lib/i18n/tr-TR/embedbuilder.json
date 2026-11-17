@@ -351,7 +351,7 @@
   "templates_welcome_detailed_field_start_value": "<#introductions> kanalında kendini tanıt!",
   "templates_welcome_detailed_footer": "Sen %server.membercount% numaralı üyesin",
   "templates_welcome_detailed_name": "Ayrıntılı Karşılama",
-  "templates_welcome_detailed_title": "%server.name% sunucusuna hoş geldin! ✨",
+  "templates_welcome_detailed_title": "%server.name% sunucusuna hoş geldin!",
   "validation_dismiss_error": "Hatayı kapat",
   "validation_dismiss_suggestion": "Öneriyi kapat",
   "validation_dismiss_warning": "Uyarıyı kapat",

@@ -47,7 +47,7 @@
         name={template.name}
         moreLabel={m.common.moreActions()}
         actions={[
-          { label: m.common.use(), icon: "fa-wand-magic-sparkles", run: () => onuse(template) },
+          { label: m.common.use(), icon: "fa-arrow-right-to-bracket", run: () => onuse(template) },
           { label: m.common.delete(), icon: "fa-trash", run: () => remove(template) }
         ]}
       />

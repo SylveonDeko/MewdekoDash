@@ -106,7 +106,7 @@
   <div class="max-w-4xl mx-auto space-y-6">
     <header class="flex items-center gap-4">
       <div class="p-4 rounded-xl shrink-0" style="background: {$colorStore.primary}15;">
-        <i class="fa-utility-duo fa-regular fa-wand-magic-sparkles text-2xl"
+        <i class="fa-utility-duo fa-regular fa-robot text-2xl"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"
            aria-hidden="true"></i>
       </div>

@@ -1,7 +1,6 @@
 // routes/api/pm2/download/+server.ts
-import { env } from "$env/dynamic/private";
 import type { RequestHandler } from "./$types";
-import { defaultInstanceURL, resolveInstanceURLByPort } from "$lib/server/instances";
+import { apiKeyFor, defaultInstanceURL, resolveInstanceURLByPort } from "$lib/server/instances";
 import { mintBackendToken } from "$lib/server/backendJwt";
 import { logger } from "$lib/logger";
 
@@ -44,7 +43,7 @@ export const GET: RequestHandler = async ({ url, request, locals }) => {
     }
   }
 
-  const headers: Record<string, string> = { "X-API-Key": env.MEWDEKO_API_KEY };
+  const headers: Record<string, string> = { "X-API-Key": apiKeyFor(backend) };
   const token = mintBackendToken(user);
   if (token) headers["Authorization"] = `Bearer ${token}`;
 

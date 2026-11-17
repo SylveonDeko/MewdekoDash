@@ -2,6 +2,8 @@ import { env } from "$env/dynamic/private";
 import { env as publicEnv } from "$env/dynamic/public";
 import { logger } from "$lib/logger";
 import JSONbig from "json-bigint";
+import { mintBackendToken } from "$lib/server/backendJwt";
+import type { DiscordUser } from "$lib/types/discord";
 
 const CACHE_TTL_MS = 15_000;
 
@@ -69,16 +71,53 @@ async function fetchInstances(): Promise<RawInstance[]> {
     return cache.raw;
   }
 
-  const response = await fetch(`${primary}/InstanceManagement`, {
-    headers: { "X-API-Key": env.MEWDEKO_API_KEY },
-  });
-  if (!response.ok) {
-    logger.warn(`Mobile instance discovery failed (${response.status}) at ${primary}`);
-    throw new Error("primary_unreachable");
+  inflight ??= (async () => {
+    try {
+      const response = await fetch(`${primary}/InstanceManagement`, {
+        headers: { "X-API-Key": env.MEWDEKO_API_KEY },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) throw new Error(`status ${response.status}`);
+      const raw = JSONbig.parse(await response.text()) as RawInstance[];
+      await refreshInstanceKeys(primary, raw);
+      cache = { fetchedAt: Date.now(), raw };
+      return raw;
+    } catch (err) {
+      logger.warn(`Mobile instance discovery failed at ${primary}`, err);
+      if (cache) return cache.raw;
+      throw new Error("primary_unreachable");
+    } finally {
+      inflight = null;
+    }
+  })();
+  return inflight;
+}
+
+let inflight: Promise<RawInstance[]> | null = null;
+
+let keysByBase = new Map<string, string>();
+
+async function refreshInstanceKeys(primary: string, raw: RawInstance[]): Promise<void> {
+  try {
+    const response = await fetch(`${primary}/InstanceManagement/keys`, {
+      headers: { "X-API-Key": env.MEWDEKO_API_KEY, "X-Key-Exchange": "1" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) throw new Error(`status ${response.status}`);
+    const keys = JSON.parse(await response.text()) as Record<string, string>;
+    const next = new Map<string, string>();
+    for (const instance of raw) {
+      const key = keys[String(instance.port)];
+      if (key) next.set(instanceUrl(instance), key);
+    }
+    keysByBase = next;
+  } catch (err) {
+    logger.warn("Per-instance API keys could not be loaded, keeping the last known keys", err);
   }
-  const raw = JSONbig.parse(await response.text()) as RawInstance[];
-  cache = { fetchedAt: Date.now(), raw };
-  return raw;
+}
+
+export function apiKeyFor(base: string): string {
+  return keysByBase.get(base) ?? env.MEWDEKO_API_KEY;
 }
 
 /**
@@ -105,14 +144,17 @@ export async function listMobileInstances(): Promise<MobileInstance[]> {
  * are dropped.
  *
  * @param instances The instances to consider.
- * @param userId The Discord user whose access is being resolved.
+ * @param user The Discord user whose access is being resolved.
  * @returns The subset the user can administer.
  */
 export async function filterInstancesForUser(
   instances: MobileInstance[],
-  userId: string,
+  user: DiscordUser,
 ): Promise<MobileInstance[]> {
   const raw = await fetchInstances();
+  const userId = user.id.toString();
+  const backendToken = mintBackendToken(user);
+  if (!backendToken) return [];
   const checks = await Promise.all(
     instances.map(async (instance) => {
       const match = raw.find((i) => i.botId.toString() === instance.botId);
@@ -120,7 +162,12 @@ export async function filterInstancesForUser(
       try {
         const response = await fetch(
           `${instanceUrl(match)}/ClientOperations/mutualguilds/${userId}?adminOnly=true`,
-          { headers: { "X-API-Key": env.MEWDEKO_API_KEY } },
+          {
+            headers: {
+              "X-API-Key": apiKeyFor(instanceUrl(match)),
+              Authorization: `Bearer ${backendToken}`,
+            },
+          },
         );
         if (!response.ok) {
           logger.warn(
@@ -152,10 +199,14 @@ export async function resolveInstanceURL(botId: string): Promise<string | null> 
 
 /** Finds an active instance, refetching the list once on a miss. */
 async function findActiveInstance(predicate: (instance: RawInstance) => boolean): Promise<RawInstance | null> {
-  const match = (await fetchInstances()).find((i) => predicate(i) && i.isActive);
-  if (match) return match;
-  cache = null;
-  return (await fetchInstances()).find((i) => predicate(i) && i.isActive) ?? null;
+  try {
+    const match = (await fetchInstances()).find((i) => predicate(i) && i.isActive);
+    if (match) return match;
+    cache = null;
+    return (await fetchInstances()).find((i) => predicate(i) && i.isActive) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -176,9 +227,10 @@ export async function resolveInstanceURLByPort(port: number): Promise<string | n
  * surface a "select an instance" error.
  */
 export async function defaultInstanceURL(): Promise<string | null> {
-  const raw = await fetchInstances();
-  const active = raw.filter((i) => i.isActive);
-  if (active.length === 1) return instanceUrl(active[0]);
+  try {
+    const active = (await fetchInstances()).filter((i) => i.isActive);
+    if (active.length === 1) return instanceUrl(active[0]);
+  } catch {}
   return primaryInstanceUrl();
 }
 
@@ -189,7 +241,7 @@ export async function defaultInstanceURL(): Promise<string | null> {
 export async function botApiGet<T>(base: string, path: string): Promise<T | null> {
   try {
     const response = await fetch(`${base}/${path}`, {
-      headers: { "X-API-Key": env.MEWDEKO_API_KEY },
+      headers: { "X-API-Key": apiKeyFor(base) },
       signal: AbortSignal.timeout(4000),
     });
     if (!response.ok) return null;

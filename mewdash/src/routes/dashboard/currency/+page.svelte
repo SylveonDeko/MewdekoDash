@@ -51,7 +51,7 @@
   const tab = $derived(requestedTab ?? defaultTab ?? "analytics");
 
   const labels = $derived<Record<TabId, { label: string; icon: string }>>({
-    setup: { label: m.common.setup(), icon: "fa-wand-magic-sparkles" },
+    setup: { label: m.common.setup(), icon: "fa-screwdriver-wrench" },
     analytics: { label: m.features.analyticsName(), icon: "fa-chart-line" },
     config: { label: m.common.configuration(), icon: "fa-gear" },
     shop: { label: m.currency.tabShop(), icon: "fa-bag-shopping" },

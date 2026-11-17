@@ -351,7 +351,7 @@
   "templates_welcome_detailed_field_start_value": "到 <#introductions> 做个自我介绍吧！",
   "templates_welcome_detailed_footer": "你是第 %server.membercount% 位成员",
   "templates_welcome_detailed_name": "详细欢迎",
-  "templates_welcome_detailed_title": "欢迎来到 %server.name%！✨",
+  "templates_welcome_detailed_title": "欢迎来到 %server.name%！",
   "validation_dismiss_error": "关闭错误提示",
   "validation_dismiss_suggestion": "关闭建议",
   "validation_dismiss_warning": "关闭警告",

@@ -7713,8 +7713,8 @@ export const m = {
     pageWitchMessage2: () => t("dashboard", "page_witch_message_2", "Trick or treat! 🧙‍♀️"),
     /** Happy Halloween! 👻 */
     pageWitchMessage3: () => t("dashboard", "page_witch_message_3", "Happy Halloween! 👻"),
-    /** Color swap spell cast! ✨ */
-    pageWitchMessage4: () => t("dashboard", "page_witch_message_4", "Color swap spell cast! ✨"),
+    /** Color swap spell cast! */
+    pageWitchMessage4: () => t("dashboard", "page_witch_message_4", "Color swap spell cast!"),
     /** Boo! 🦇 */
     pageWitchMessage5: () => t("dashboard", "page_witch_message_5", "Boo! 🦇"),
     /** {action} */

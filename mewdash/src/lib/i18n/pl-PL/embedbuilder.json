@@ -357,7 +357,7 @@
   "templates_welcome_detailed_field_start_value": "Przedstaw się na <#introductions>!",
   "templates_welcome_detailed_footer": "Jesteś członkiem #%server.membercount%",
   "templates_welcome_detailed_name": "Rozbudowane powitanie",
-  "templates_welcome_detailed_title": "Witaj na %server.name%! ✨",
+  "templates_welcome_detailed_title": "Witaj na %server.name%!",
   "validation_dismiss_error": "Odrzuć błąd",
   "validation_dismiss_suggestion": "Odrzuć sugestię",
   "validation_dismiss_warning": "Odrzuć ostrzeżenie",

@@ -76,7 +76,7 @@
     {
       id: ImportSource.Arcane,
       name: () => "Arcane",
-      icon: "fa-wand-magic-sparkles",
+      icon: "fa-hat-wizard",
       input: "file",
       brings: m.import.flowSectionLevels,
       how: m.import.flowSourceArcaneHow,
@@ -94,7 +94,7 @@
     {
       id: ImportSource.Tatsu,
       name: () => "Tatsu",
-      icon: "fa-sparkles",
+      icon: "fa-ranking-star",
       input: "key",
       brings: m.common.xp,
       how: m.import.flowSourceTatsuHow

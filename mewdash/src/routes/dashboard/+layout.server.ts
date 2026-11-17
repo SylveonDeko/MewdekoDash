@@ -1,7 +1,6 @@
-import { env } from "$env/dynamic/private";
 import JSONbig from "json-bigint";
 import { logger } from "$lib/logger";
-import { defaultInstanceURL, resolveInstanceURL } from "$lib/server/instances";
+import { apiKeyFor, defaultInstanceURL, resolveInstanceURL } from "$lib/server/instances";
 import { mintBackendToken } from "$lib/server/backendJwt";
 import type { LayoutServerLoad } from "./$types";
 
@@ -35,7 +34,7 @@ async function loadGuilds(user: App.Locals["user"], botId: string | undefined) {
     const instanceUrl = await resolveInstance(botId);
     if (!instanceUrl) return null;
 
-    const headers: Record<string, string> = { "X-API-Key": env.MEWDEKO_API_KEY };
+    const headers: Record<string, string> = { "X-API-Key": apiKeyFor(instanceUrl) };
     const token = mintBackendToken(user);
     if (token) headers["Authorization"] = `Bearer ${token}`;
 

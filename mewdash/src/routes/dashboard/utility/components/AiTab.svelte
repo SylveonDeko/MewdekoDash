@@ -230,7 +230,7 @@
           {#if models.length > 0}
             <DiscordSelector
               type="custom"
-              customIcon="fa-sparkles"
+              customIcon="fa-robot"
               clearable={false}
               options={models.map((md) => ({ id: md.id, name: md.name, label: `${md.name} (${md.id})` }))}
               selected={form.model || null}

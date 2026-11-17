@@ -29,7 +29,7 @@ export const ELEMENT_KINDS: Record<string, { label: () => string; icon: string; 
   ellipse: { label: m.common.ellipse, icon: "fa-circle", hint: m.achievements.cardHelpersKindEllipseHint },
   text: { label: m.common.text, icon: "fa-font", hint: m.achievements.cardHelpersKindTextHint },
   image: { label: m.common.image, icon: "fa-image", hint: m.achievements.cardHelpersKindImageHint },
-  glyph: { label: m.achievements.editorIconLabel, icon: "fa-sparkles", hint: m.achievements.cardHelpersKindGlyphHint },
+  glyph: { label: m.achievements.editorIconLabel, icon: "fa-icons", hint: m.achievements.cardHelpersKindGlyphHint },
   username: { label: m.common.username, icon: "fa-user", hint: m.achievements.cardHelpersKindUsernameHint },
   servername: { label: m.achievements.cardHelpersKindServernameLabel, icon: "fa-server", hint: m.achievements.cardHelpersKindServernameHint },
   servericon: { label: m.achievements.cardHelpersKindServericonLabel, icon: "fa-shield", hint: m.achievements.cardHelpersKindServericonHint },

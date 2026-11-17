@@ -1,38 +1,61 @@
-import { env } from "$env/dynamic/private";
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import JSONbig from "json-bigint";
 import { logger } from "$lib/logger";
 import { getSession, verifyAccessToken } from "$lib/server/mobileJwt";
 import {
+  apiKeyFor,
   defaultInstanceURL,
   resolveInstanceURL,
   resolveInstanceURLByPort,
 } from "$lib/server/instances";
-import { mintBackendToken } from "$lib/server/backendJwt";
+import { canMintBackendToken, mintBackendToken } from "$lib/server/backendJwt";
 import type { DiscordUser } from "$lib/types/discord";
 
 /**
- * Resolved backend target plus the dashboard user behind the request, if one
- * could be identified. `user` drives the per-request backend JWT; it is `null`
- * only for unauthenticated callers (which the bot still accepts via API key
- * during the auth cutover).
+ * Resolved backend target, the API key of that instance and the dashboard user
+ * behind the request. `user` is `null` only for the public routes listed in
+ * `PUBLIC_ROUTES`; every other unauthenticated call is refused before this is built.
  */
 interface ResolvedBackend {
   backend: string;
+  apiKey: string;
   user: DiscordUser | null;
 }
 
+const PUBLIC_ROUTES: ReadonlyArray<{ method: string; pattern: RegExp }> = [
+  { method: "GET", pattern: /^reviews$/ },
+  { method: "GET", pattern: /^forms\/status\/[a-z0-9_-]{8,128}$/ },
+];
+
+const BLOCKED_PATHS = ["instancemanagement/keys"];
+
+function normalizedPath(path: string): string | null {
+  if (/[\\%?#]|\.\.|\/\//.test(path)) return null;
+  return path.replace(/^\/+|\/+$/g, "").toLowerCase();
+}
+
+function isBlockedPath(path: string): boolean {
+  const normalized = normalizedPath(path);
+  return normalized === null || BLOCKED_PATHS.some((blocked) => normalized === blocked || normalized.startsWith(`${blocked}/`));
+}
+
+function isPublicRoute(method: string, path: string): boolean {
+  const normalized = normalizedPath(path);
+  if (normalized === null) return false;
+  return PUBLIC_ROUTES.some((route) => route.method === method && route.pattern.test(normalized));
+}
+
 /**
- * Builds the outbound headers for a proxied bot API call. Always sends the
- * server-only `X-API-Key`; additionally sends a short-lived `Authorization:
- * Bearer` backend JWT when the user is known, so the bot can attribute the
- * request to a Discord user for the dashboard audit log.
+ * Builds the outbound headers for a proxied bot API call. Sends the server-only
+ * per-instance `X-API-Key`; additionally sends a short-lived `Authorization:
+ * Bearer` backend JWT when the user is known, so the bot can identify the
+ * caller and attribute the request in the dashboard audit log.
  */
-function botHeaders(user: DiscordUser | null, includeContentType = false): HeadersInit {
-  const headers: Record<string, string> = { "X-API-Key": env.MEWDEKO_API_KEY };
+function botHeaders(resolved: ResolvedBackend, includeContentType = false): HeadersInit {
+  const headers: Record<string, string> = { "X-API-Key": resolved.apiKey };
   if (includeContentType) headers["Content-Type"] = "application/json";
-  const backendToken = user ? mintBackendToken(user) : null;
+  const backendToken = resolved.user ? mintBackendToken(resolved.user) : null;
   if (backendToken) headers["Authorization"] = `Bearer ${backendToken}`;
   return headers;
 }
@@ -132,7 +155,7 @@ async function resolveMobileBackend(
       if (!resolved) {
         return json({ error: "unknown_instance" }, { status: 404 });
       }
-      return { backend: resolved, user };
+      return { backend: resolved, apiKey: apiKeyFor(resolved), user };
     }
     const fallback = await defaultInstanceURL();
     if (!fallback) {
@@ -144,7 +167,7 @@ async function resolveMobileBackend(
         { status: 409 },
       );
     }
-    return { backend: fallback, user };
+    return { backend: fallback, apiKey: apiKeyFor(fallback), user };
   } catch (err) {
     logger.error("Mobile instance resolution failed", err);
     return json(
@@ -157,7 +180,12 @@ async function resolveMobileBackend(
 async function resolveBackend(
   request: Request,
   locals: App.Locals,
+  path: string,
 ): Promise<ResolvedBackend | Response> {
+  if (isBlockedPath(path)) {
+    return json({ error: "forbidden" }, { status: 403 });
+  }
+
   const authHeader = request.headers.get("authorization");
   if (authHeader?.toLowerCase().startsWith("bearer ")) {
     return resolveMobileBackend(
@@ -167,6 +195,15 @@ async function resolveBackend(
   }
 
   const user = locals.user ?? null;
+  if (!user && !isPublicRoute(request.method, path)) {
+    return json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  if (user && !canMintBackendToken()) {
+    logger.error("BOT_JWT_SECRET is missing or too short; refusing to proxy without a user token");
+    return json({ error: "backend_auth_unavailable" }, { status: 503 });
+  }
+
   const portHeader = request.headers.get("x-instance-port");
 
   if (!portHeader) {
@@ -180,7 +217,7 @@ async function resolveBackend(
         { status: 503 },
       );
     }
-    return { backend: fallback, user };
+    return { backend: fallback, apiKey: apiKeyFor(fallback), user };
   }
 
   const port = Number.parseInt(portHeader, 10);
@@ -199,20 +236,20 @@ async function resolveBackend(
     );
   }
 
-  return { backend, user };
+  return { backend, apiKey: apiKeyFor(backend), user };
 }
 
 export const GET: RequestHandler = async ({ url, params, request, locals }) => {
-  const resolved = await resolveBackend(request, locals);
+  const resolved = await resolveBackend(request, locals, params.path);
   if (resolved instanceof Response) return resolved;
 
   const finalUrl = `${resolved.backend}/${params.path}${url.search || ""}`;
 
-  return makeRequest(finalUrl, "GET", botHeaders(resolved.user));
+  return makeRequest(finalUrl, "GET", botHeaders(resolved));
 };
 
 export const POST: RequestHandler = async ({ request, params, locals }) => {
-  const resolved = await resolveBackend(request, locals);
+  const resolved = await resolveBackend(request, locals, params.path);
   if (resolved instanceof Response) return resolved;
   const url = new URL(request.url);
 
@@ -243,13 +280,13 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
   return makeRequest(
     finalUrl,
     "POST",
-    botHeaders(resolved.user, true),
+    botHeaders(resolved, true),
     jsonBody,
   );
 };
 
 export const PUT: RequestHandler = async ({ request, params, locals }) => {
-  const resolved = await resolveBackend(request, locals);
+  const resolved = await resolveBackend(request, locals, params.path);
   if (resolved instanceof Response) return resolved;
   const url = new URL(request.url);
 
@@ -273,13 +310,13 @@ export const PUT: RequestHandler = async ({ request, params, locals }) => {
   return makeRequest(
     finalUrl,
     "PUT",
-    botHeaders(resolved.user, true),
+    botHeaders(resolved, true),
     jsonBody,
   );
 };
 
 export const PATCH: RequestHandler = async ({ request, params, locals }) => {
-  const resolved = await resolveBackend(request, locals);
+  const resolved = await resolveBackend(request, locals, params.path);
   if (resolved instanceof Response) return resolved;
   const url = new URL(request.url);
 
@@ -293,13 +330,13 @@ export const PATCH: RequestHandler = async ({ request, params, locals }) => {
   return makeRequest(
     finalUrl,
     "PATCH",
-    botHeaders(resolved.user, true),
+    botHeaders(resolved, true),
     body ? JSONbig.stringify(body) : undefined,
   );
 };
 
 export const DELETE: RequestHandler = async ({ request, params, locals }) => {
-  const resolved = await resolveBackend(request, locals);
+  const resolved = await resolveBackend(request, locals, params.path);
   if (resolved instanceof Response) return resolved;
   const url = new URL(request.url);
 
@@ -313,7 +350,7 @@ export const DELETE: RequestHandler = async ({ request, params, locals }) => {
   return makeRequest(
     finalUrl,
     "DELETE",
-    botHeaders(resolved.user, true),
+    botHeaders(resolved, true),
     body ? JSONbig.stringify(body) : undefined,
   );
 };

@@ -128,7 +128,7 @@
       {
         "id": "templates",
         "label": "Templates",
-        "icon": "fa-sparkles"
+        "icon": "fa-layer-group"
       },
       {
         "id": "editor",

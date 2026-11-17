@@ -137,7 +137,7 @@ Replaces the binary enable/disable pattern with progressive options
               class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
             >
-              <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 10px;"></i>
+              <i class="fa-solid fa-lightbulb" style="font-size: 10px;"></i>
               {suggestionReason}
             </span>
           {:else if recommended}
@@ -265,7 +265,7 @@ Replaces the binary enable/disable pattern with progressive options
            style="background: {stateConfig[setupState !== 'skip' ? setupState : 'full'].color}15; border-color: {stateConfig[setupState !== 'skip' ? setupState : 'full'].color}30;">
         <span class="text-sm font-bold flex items-center gap-2"
               style="color: {stateConfig[setupState !== 'skip' ? setupState : 'full'].color};">
-          <i class="fa-solid fa-sparkles" style="font-size: 14px;"></i>
+          <i class="fa-solid fa-circle-check" style="font-size: 14px;"></i>
           {m.wizard.setupCardBenefitsTitle()}
         </span>
         <button

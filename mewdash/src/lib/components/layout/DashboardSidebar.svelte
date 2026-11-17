@@ -706,7 +706,7 @@
           onmouseleave={hideTooltip}
         >
           <span class="relative shrink-0" style="width: 20px; text-align: center;">
-            <i class="fa-utility-duo fa-regular fa-sparkles text-base"
+            <i class="fa-utility-duo fa-regular fa-bullhorn text-base"
                style="--fa-primary-color: {$unreadUpdateCount > 0 ? $colorStore.primary : $colorStore.muted};
                       --fa-secondary-color: {$unreadUpdateCount > 0 ? $colorStore.secondary : $colorStore.muted};
                       --fa-secondary-opacity: 0.4;"

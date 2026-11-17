@@ -351,7 +351,7 @@
   "templates_welcome_detailed_field_start_value": "<#introductions>에서 자기소개를 남겨 주세요!",
   "templates_welcome_detailed_footer": "당신은 #%server.membercount%번째 멤버예요",
   "templates_welcome_detailed_name": "자세한 환영",
-  "templates_welcome_detailed_title": "%server.name%에 오신 것을 환영해요! ✨",
+  "templates_welcome_detailed_title": "%server.name%에 오신 것을 환영해요!",
   "validation_dismiss_error": "오류 닫기",
   "validation_dismiss_suggestion": "제안 닫기",
   "validation_dismiss_warning": "경고 닫기",

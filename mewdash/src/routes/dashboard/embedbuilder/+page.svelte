@@ -246,7 +246,7 @@
 
   // Main tab configuration for DashboardPageLayout
   const tabs = $derived([
-    { id: "templates", label: m.common.templates(), icon: "fa-sparkles" },
+    { id: "templates", label: m.common.templates(), icon: "fa-layer-group" },
     { id: "editor", label: m.common.editor(), icon: "fa-layer-group" },
     { id: "components", label: m.embedbuilder.tabComponents(), icon: "fa-comment" },
     { id: "json", label: m.embedbuilder.tabJson(), icon: "fa-code" },

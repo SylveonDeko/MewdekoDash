@@ -614,11 +614,13 @@ A unified navigation component that provides responsive navigation with server a
     if (!browser || initialized) return;
 
     try {
-      if (currentUser) {
-        await checkOwnership();
+      if (!currentUser) {
+        initialized = true;
+        return;
       }
 
-      // Always initialize instances, but handle dashboard differently
+      await checkOwnership();
+
       await initializeInstances();
 
       // Explicitly check if we have a current instance now
@@ -1103,7 +1105,7 @@ A unified navigation component that provides responsive navigation with server a
                   role="menuitem"
                 >
                   <div class="p-1.5 rounded transition-all" style="background: {$colorStore.primary}20;">
-                    <i class="fa-solid fa-wand-magic-sparkles" style="color: {$colorStore.primary}; font-size: 14px;"></i>
+                    <i class="fa-solid fa-robot" style="color: {$colorStore.primary}; font-size: 14px;"></i>
                   </div>
                   <div class="flex-1">
                     <div class="font-semibold">{m.customBot.navTitle()}</div>
@@ -1339,7 +1341,7 @@ A unified navigation component that provides responsive navigation with server a
             onclick={closeMobileMenu}
           >
             <div class="p-2 rounded transition-all" style="background: {$colorStore.primary}20;">
-              <i class="fa-solid fa-wand-magic-sparkles" style="color: {$colorStore.primary}; font-size: 16px;"></i>
+              <i class="fa-solid fa-robot" style="color: {$colorStore.primary}; font-size: 16px;"></i>
             </div>
             <div class="flex-1">
               <div class="font-semibold">{m.customBot.navTitle()}</div>

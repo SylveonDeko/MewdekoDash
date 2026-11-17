@@ -264,7 +264,7 @@
   ]);
 
   const categories = $derived([
-    { id: 'all', name: m.embedbuilder.templatesCategoryAll(), icon: "fa-sparkles" },
+    { id: 'all', name: m.embedbuilder.templatesCategoryAll(), icon: "fa-layer-group" },
     { id: 'welcome', name: m.common.welcome(), icon: "fa-users" },
     { id: 'announcements', name: m.common.announcements(), icon: "fa-bell" },
     { id: 'rules', name: m.common.rules(), icon: "fa-shield" },
@@ -371,7 +371,7 @@
     <div class="text-center py-12">
       <div class="mx-auto w-24 h-24 rounded-full flex items-center justify-center mb-4"
            style="background: {$colorStore.primary}10;">
-        <i class="fa-utility-duo fa-regular fa-sparkles" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 32px;"></i>
+        <i class="fa-utility-duo fa-regular fa-layer-group" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 32px;"></i>
       </div>
       <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text};">{m.embedbuilder.templatesEmptyTitle()}</h3>
       <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.templatesEmptyHint()}</p>

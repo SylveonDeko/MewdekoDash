@@ -357,7 +357,7 @@
   "templates_welcome_detailed_field_start_value": "Представтеся в <#introductions>!",
   "templates_welcome_detailed_footer": "Ви учасник №%server.membercount%",
   "templates_welcome_detailed_name": "Детальне привітання",
-  "templates_welcome_detailed_title": "Ласкаво просимо на %server.name%! ✨",
+  "templates_welcome_detailed_title": "Ласкаво просимо на %server.name%!",
   "validation_dismiss_error": "Закрити помилку",
   "validation_dismiss_suggestion": "Закрити пропозицію",
   "validation_dismiss_warning": "Закрити попередження",

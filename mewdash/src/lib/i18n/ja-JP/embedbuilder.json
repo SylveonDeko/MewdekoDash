@@ -351,7 +351,7 @@
   "templates_welcome_detailed_field_start_value": "<#introductions> で自己紹介をしてください！",
   "templates_welcome_detailed_footer": "あなたは #%server.membercount% 人目のメンバーです",
   "templates_welcome_detailed_name": "詳しいウェルカム",
-  "templates_welcome_detailed_title": "%server.name% へようこそ！✨",
+  "templates_welcome_detailed_title": "%server.name% へようこそ！",
   "validation_dismiss_error": "エラーを閉じる",
   "validation_dismiss_suggestion": "提案を閉じる",
   "validation_dismiss_warning": "警告を閉じる",

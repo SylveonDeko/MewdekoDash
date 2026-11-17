@@ -4,6 +4,7 @@ import { timingSafeEqual } from "node:crypto";
 import { env } from "$env/dynamic/private";
 import { createSession } from "$lib/server/mobileJwt";
 import { defaultInstanceURL } from "$lib/server/instances";
+import { mintBackendToken } from "$lib/server/backendJwt";
 import { logger } from "$lib/logger";
 import type { DiscordUser } from "$lib/types/discord";
 
@@ -33,7 +34,9 @@ async function lookupDemoProfile(
 ): Promise<{ username: string; avatarUrl: string | null } | null> {
   const backend = await defaultInstanceURL();
   if (!backend) return null;
-  const headers = { "X-API-Key": env.MEWDEKO_API_KEY };
+  const headers: Record<string, string> = { "X-API-Key": env.MEWDEKO_API_KEY };
+  const token = mintBackendToken({ id: userId, username: "demo" } as unknown as DiscordUser);
+  if (token) headers["Authorization"] = `Bearer ${token}`;
 
   try {
     const guildsResponse = await fetch(

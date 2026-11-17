@@ -99,7 +99,7 @@
 <PluginCard title={m.logging.setupTitle()} alwaysOpen>
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
     <button type="button" class="flex items-center justify-center gap-2 px-5 rounded-xl min-h-[50px] font-medium disabled:opacity-50" style={buttonStyle} disabled={busy} onclick={setup}>
-      <i class="fa-solid {creating ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}" aria-hidden="true"></i>{creating ? m.common.creating() : m.logging.createChannels()}
+      <i class="fa-solid {creating ? 'fa-spinner fa-spin' : 'fa-screwdriver-wrench'}" aria-hidden="true"></i>{creating ? m.common.creating() : m.logging.createChannels()}
     </button>
     <button type="button" class="flex items-center justify-center gap-2 px-5 rounded-xl min-h-[50px] font-medium disabled:opacity-50" style={buttonStyle} disabled={busy} onclick={openExport}>
       <i class="fa-solid fa-file-export" aria-hidden="true"></i>{m.logging.exportAction()}
