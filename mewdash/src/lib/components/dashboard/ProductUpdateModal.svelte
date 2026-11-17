@@ -69,7 +69,7 @@
             style="background: {$colorStore.primary}20;"
           >
             <i
-              class="fa-utility-duo fa-regular fa-bullhorn"
+              class="fa-utility-duo fa-regular fa-newspaper"
               style="--fa-primary-color: {$colorStore.primary};
                      --fa-secondary-color: {$colorStore.primary};
                      font-size: 20px;"

@@ -21,7 +21,7 @@ export const FALLBACK_GRADES: AchievementGrade[] = [
 
 /** Where unlocks can be announced, with what each choice does. */
 export const ANNOUNCE_MODES = [
-  { value: 0, icon: "fa-gears", title: "Automatic", text: "The log channel when one is set, otherwise the channel it happened in." },
+  { value: 0, icon: "fa-gear", title: "Automatic", text: "The log channel when one is set, otherwise the channel it happened in." },
   { value: 1, icon: "fa-location-dot", title: "Where it happened", text: "In the channel the member was active in, falling back to the log channel." },
   { value: 2, icon: "fa-bell", title: "Log channel only", text: "Only in the log channel. Nothing is sent without one." },
   { value: 3, icon: "fa-envelope", title: "DMs only", text: "Only in members' DMs, for those who allow it." },

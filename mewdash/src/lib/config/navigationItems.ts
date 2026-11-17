@@ -566,7 +566,7 @@ export const ownerFeatures: NavigationItem[] = [
   },
   {
     label: m.customBot.ownerName,
-    icon: "fa-utility-duo fa-regular fa-robot",
+    icon: "fa-utility-duo fa-regular fa-id-card",
     href: "/owner/custom-bots",
     category: "Analytics",
     categoryLabel: m.features.analyticsName,
