@@ -2,6 +2,8 @@ import { env } from "$env/dynamic/public";
 import { authenticateUser } from "$lib/server/discordApi";
 import { logBackendJwtInit } from "$lib/server/backendJwt";
 import { recordPageView } from "$lib/server/analyticsBeacon";
+import { startDatabase } from "$lib/server/db";
+import { startTranslations } from "$lib/server/translations/startup";
 import * as Sentry from "@sentry/sveltekit";
 import { sequence } from "@sveltejs/kit/hooks";
 import type { Handle } from "@sveltejs/kit";
@@ -17,6 +19,8 @@ Sentry.init({
 });
 
 logBackendJwtInit();
+startDatabase();
+startTranslations();
 
 /**
  * Dashboard paths the bot owner tools lived under before they moved to /owner.

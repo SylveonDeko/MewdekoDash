@@ -17,7 +17,9 @@
     "generate-tab-index": "node generate-tab-index.js",
     "check-tab-index": "node generate-tab-index.js --check",
     "check-fa-icons": "node validate-fa-icons.js",
-    "check-contrast": "node check-contrast.js"
+    "check-contrast": "node check-contrast.js",
+    "test:unit": "node unit-tests/run.mjs",
+    "test:integration": "node unit-tests/integration/run.mjs store.int.ts && node unit-tests/integration/run.mjs fallback.int.ts && node unit-tests/integration/run.mjs translations.int.ts && node unit-tests/integration/run.mjs translations-fallback.int.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",
@@ -29,6 +31,7 @@
     "@types/crypto-js": "^4.2.2",
     "@types/json-bigint": "^1.0.4",
     "@types/node": "^24.7.0",
+    "@types/pg": "^8.23.1",
     "@types/showdown": "^2.0.6",
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.46.0",
@@ -71,6 +74,7 @@
     "glob": "^11.0.3",
     "nanoid": "^5.1.6",
     "node-vibrant": "^4.0.3",
+    "pg": "^8.23.1",
     "sitemap": "^8.0.0",
     "svelte-dnd-action": "^0.9.65",
     "svelte-persisted-store": "^0.12.0",

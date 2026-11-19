@@ -14,7 +14,7 @@ src/lib/i18n/
   runtime.ts          placeholder formatting and the locale hook for future translations
 ```
 
-The wiki is localized by folder instead: `src/lib/content/wiki/<locale>/<slug>.md`. Only `en-US` exists today.
+The wiki is localized per article in the wiki database (one version per locale). The Markdown files in `src/lib/content/wiki/<locale>/<slug>.md` seed that database on first start and are served read-only when the database is not available.
 
 ## Using messages
 
@@ -112,6 +112,17 @@ stored into `$state` at event time. Keep text in accessors until render time.
 On the server, `hooks.server.ts` resolves the locale per request (cookie `locale`, then
 `Accept-Language`) and runs the request inside it, so concurrent requests in different languages
 never share state. It also fills `<html lang>`.
+
+## Approved translations
+
+Translations approved in the translation tool (`/translate`, catalog `dash`) are kept in the
+database and laid over the built-in catalogs without a build. `t()` in `runtime.svelte.ts` asks
+`resolveTemplate` in `lookup.ts` for the template: the approved translation first, then the
+built-in catalog of the language, then the en-US text, and any failure while reading returns the
+en-US text. On the server the overlay is read from memory once per request in `runWithLocale`. The
+root layout passes it to the browser, and `setLocale()` fetches `/api/translations/overlay` when
+the language is switched. The built-in JSON files stay the source of the keys, so a new key still
+starts as a message in `en-US/<module>.json`.
 
 ## Adding a locale
 

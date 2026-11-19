@@ -23,6 +23,8 @@ function isValidRedirect(url: string): boolean {
            url.startsWith('/contacts') ||
            url.startsWith('/staff') ||
            url.startsWith('/placeholders') ||
+           url.startsWith('/translate') ||
+           url.startsWith('/wiki') ||
            url.startsWith('/credguide') ||
            url.startsWith('/privacy') ||
            url.startsWith('/terms') ||

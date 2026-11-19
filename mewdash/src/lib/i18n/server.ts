@@ -6,15 +6,16 @@
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { Cookies } from "@sveltejs/kit";
+import { overlayFor } from "$lib/server/translations/overlay";
 import { availableLocales, loadCatalog, setServerLocaleResolver, sourceLocale, type Catalog } from "./runtime.svelte";
 
 /** The cookie the language switcher writes. */
 export const LOCALE_COOKIE = "locale";
 
-const storage = new AsyncLocalStorage<{ locale: string; catalog: Catalog | null }>();
+const storage = new AsyncLocalStorage<{ locale: string; catalog: Catalog | null; overlay: Catalog | null }>();
 const loaded = new Map<string, Promise<Catalog | null>>();
 
-setServerLocaleResolver(() => storage.getStore() ?? { locale: sourceLocale, catalog: null });
+setServerLocaleResolver(() => storage.getStore() ?? { locale: sourceLocale, catalog: null, overlay: null });
 
 /** Picks the request locale: the cookie first, then Accept-Language, then the source locale. */
 export function resolveLocale(cookies: Cookies, acceptLanguage: string | null): string {
@@ -33,7 +34,11 @@ export function resolveLocale(cookies: Cookies, acceptLanguage: string | null): 
   return sourceLocale;
 }
 
-/** Runs `fn` with `locale` active for every message lookup inside it. Catalogs are cached per locale. */
+/**
+ * Runs `fn` with `locale` active for every message lookup inside it. Catalogs are cached per
+ * locale. The approved dashboard translations for the locale are read from memory once, so every
+ * lookup in the request sees the same ones.
+ */
 export async function runWithLocale<T>(locale: string, fn: () => Promise<T>): Promise<T> {
   let pending = loaded.get(locale);
   if (!pending) {
@@ -41,5 +46,6 @@ export async function runWithLocale<T>(locale: string, fn: () => Promise<T>): Pr
     loaded.set(locale, pending);
   }
   const catalog = await pending;
-  return storage.run({ locale: catalog ? locale : sourceLocale, catalog }, fn);
+  const served = catalog ? locale : sourceLocale;
+  return storage.run({ locale: served, catalog, overlay: catalog ? overlayFor(served) : null }, fn);
 }

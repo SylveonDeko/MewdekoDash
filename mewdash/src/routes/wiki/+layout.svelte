@@ -9,14 +9,29 @@
 
   let sidebarQuery = $state("");
 
-  // Flat and alphabetical, matching the dashboard sidebar: one list to scan rather than
-  // category blocks to hunt through.
+  let manageHref = $derived(data.wikiAccess.canEdit ? "/wiki/manage" : "/wiki/manage/mine");
+  let showManage = $derived(data.wikiAccess.databaseAvailable && data.wikiAccess.signedIn);
+  let managing = $derived($page.url.pathname.startsWith("/wiki/manage"));
+
   let sidebarArticles = $derived(
     data.all.filter((a) => !sidebarQuery.trim() || a.title.toLowerCase().includes(sidebarQuery.toLowerCase()))
   );
 
   let activeSlug = $derived($page.params.slug ?? null);
 </script>
+
+{#snippet manageLink()}
+  <a
+    href={manageHref}
+    class="flex items-center gap-2.5 px-3 rounded-lg text-sm font-semibold min-h-[44px] transition-all"
+    style="background: {managing ? $colorStore.primary + '20' : 'transparent'};
+           color: {managing ? $colorStore.primary : $colorStore.muted};"
+  >
+    <i class="fa-utility-duo fa-regular fa-pen-to-square w-4 text-center"
+       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
+    <span>{data.wikiAccess.canEdit ? m.wikiManage.manageLink() : m.wikiManage.mineLink()}</span>
+  </a>
+{/snippet}
 
 <main
   class="min-h-screen"
@@ -36,6 +51,9 @@
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             <span>{m.wiki.wikiHome()}</span>
           </a>
+          {#if showManage}
+            {@render manageLink()}
+          {/if}
           <input
             type="search"
             placeholder={m.wiki.filterArticles()}
@@ -65,6 +83,11 @@
       </aside>
 
       <div class="min-w-0">
+        {#if showManage}
+          <div class="lg:hidden mb-4">
+            {@render manageLink()}
+          </div>
+        {/if}
         {@render children()}
       </div>
     </div>

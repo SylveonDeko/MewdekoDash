@@ -12,7 +12,8 @@
   import {goto} from "$app/navigation";
   import {registerTabFeatures} from "$lib/stores/searchStore";
   import { page } from "$app/state";
-  import { getWikiArticleForPath } from "$lib/wiki";
+  import { wikiCall } from "$lib/wiki/client";
+  import type { WikiArticle } from "$lib/wiki/types";
   import WikiDrawer from "$lib/components/wiki/WikiDrawer.svelte";
   import SaveStatus from "$lib/components/ui/SaveStatus.svelte";
   import type { AutoSave } from "$lib/utils/autoSave.svelte";
@@ -80,8 +81,26 @@
   // Reactive: show notification when message is set
   let showNotification = $derived(notificationMessage.length > 0);
 
-  let wikiArticle = $derived(getWikiArticleForPath(page.url.pathname));
+  let wikiArticle = $state<WikiArticle | undefined>();
   let wikiOpen = $state(false);
+  const wikiByPath = new Map<string, WikiArticle | null>();
+
+  $effect(() => {
+    const path = page.url.pathname;
+    if (!browser) return;
+    const known = wikiByPath.get(path);
+    if (known !== undefined) {
+      wikiArticle = known ?? undefined;
+      return;
+    }
+    wikiArticle = undefined;
+    void wikiCall<{ article: WikiArticle | null }>("GET", `/api/wiki/for-path?path=${encodeURIComponent(path)}`).then((result) => {
+      if (!result.ok) return;
+      const article = result.data?.article ?? null;
+      wikiByPath.set(path, article);
+      if (page.url.pathname === path) wikiArticle = article ?? undefined;
+    });
+  });
 
   function handleNotificationDismiss() {
     notificationMessage = "";

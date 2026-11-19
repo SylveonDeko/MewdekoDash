@@ -4,7 +4,7 @@
   import type { WikiArticle } from "$lib/wiki/types";
 
   interface Props {
-    article: WikiArticle;
+    article: Pick<WikiArticle, "html">;
     /** Compact spacing for use inside a drawer or panel. */
     compact?: boolean;
   }

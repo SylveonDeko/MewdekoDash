@@ -7239,8 +7239,8 @@ export const m = {
     guildStrip: (p: { name: P }) => t("custom-bot", "guild_strip", "Run by {name}", p),
     /** Custom bot */
     guildStripLink: () => t("custom-bot", "guild_strip_link", "Custom bot"),
-    /** Your bot's name and avatar, every feature, hosted by us. */
-    homeBody: () => t("custom-bot", "home_body", "Your bot's name and avatar, every feature, hosted by us."),
+    /** Mewdeko under your bot's name and avatar, hosted for you. */
+    homeBody: () => t("custom-bot", "home_body", "Mewdeko under your bot's name and avatar, hosted for you."),
     /** Get your own bot */
     homeButton: () => t("custom-bot", "home_button", "Get your own bot"),
     /** Your own Mewdeko */
@@ -7255,14 +7255,14 @@ export const m = {
     logsTitle: (p: { name: P }) => t("custom-bot", "logs_title", "Logs for {name}", p),
     /** More actions for {name} */
     menuMore: (p: { name: P }) => t("custom-bot", "menu_more", "More actions for {name}", p),
-    /** Your own bot, hosted by us */
-    navHint: () => t("custom-bot", "nav_hint", "Your own bot, hosted by us"),
+    /** Mewdeko under your bot's name */
+    navHint: () => t("custom-bot", "nav_hint", "Mewdeko under your bot's name"),
     /** Custom bot */
     navTitle: () => t("custom-bot", "nav_title", "Custom bot"),
-    /** No servers yet. Invite the bot to one first. */
-    noServers: () => t("custom-bot", "no_servers", "No servers yet. Invite the bot to one first."),
-    /** Every slot and custom bot, and manual slot grants */
-    ownerDescription: () => t("custom-bot", "owner_description", "Every slot and custom bot, and manual slot grants"),
+    /** No servers yet. */
+    noServers: () => t("custom-bot", "no_servers", "No servers yet."),
+    /** Manage custom bot slots */
+    ownerDescription: () => t("custom-bot", "owner_description", "Manage custom bot slots"),
     /** No slots yet. */
     ownerEmpty: () => t("custom-bot", "owner_empty", "No slots yet."),
     /** Days (optional) */
@@ -7291,12 +7291,10 @@ export const m = {
     pageTitle: () => t("custom-bot", "page_title", "Custom bot"),
     /** Need another bot? */
     pitchAnother: () => t("custom-bot", "pitch_another", "Need another bot?"),
-    /** Every feature, hosted by us. */
-    pitchBody: () => t("custom-bot", "pitch_body", "Every feature, hosted by us."),
+    /** Every feature is included and the price only covers hosting. */
+    pitchBody: () => t("custom-bot", "pitch_body", "Every feature is included and the price only covers hosting."),
     /** Get a custom bot */
     pitchBuy: () => t("custom-bot", "pitch_buy", "Get a custom bot"),
-    /** Features stay free. You pay for the hosting. */
-    pitchFree: () => t("custom-bot", "pitch_free", "Features stay free. You pay for the hosting."),
     /** Your own Mewdeko */
     pitchTitle: () => t("custom-bot", "pitch_title", "Your own Mewdeko"),
     /** Remove {name}? Its servers go back to Mewdeko and the slot is freed. */
@@ -19924,6 +19922,114 @@ export const m = {
     /** {count} to do */
     statPending: (p: { count: P }) => t("todo", "stat_pending", "{count} to do", p),
   },
+  translate: {
+    /** All groups */
+    allGroups: () => t("translate", "all_groups", "All groups"),
+    /** All languages */
+    allLanguages: () => t("translate", "all_languages", "All languages"),
+    /** Catalog */
+    catalogAria: () => t("translate", "catalog_aria", "Catalog"),
+    /** Bot messages */
+    catalogBot: () => t("translate", "catalog_bot", "Bot messages"),
+    /** Dashboard text */
+    catalogDash: () => t("translate", "catalog_dash", "Dashboard text"),
+    /** Nothing to translate yet. */
+    catalogsEmpty: () => t("translate", "catalogs_empty", "Nothing to translate yet."),
+    /** The translation database is not available. */
+    databaseUnavailable: () => t("translate", "database_unavailable", "The translation database is not available."),
+    /** That language is not available. */
+    errorLocale: () => t("translate", "error_locale", "That language is not available."),
+    /** Keep the same placeholders as the English text. */
+    errorPlaceholders: () => t("translate", "error_placeholders", "Keep the same placeholders as the English text."),
+    /** Enter a translation. */
+    errorTextEmpty: () => t("translate", "error_text_empty", "Enter a translation."),
+    /** Use at most {max} characters. */
+    errorTextTooLong: (p: { max: P }) => t("translate", "error_text_too_long", "Use at most {max} characters.", p),
+    /** You have {max} open suggestions. Wait for a review before adding more. */
+    errorTooManySuggestions: (p: { max: P }) => t("translate", "error_too_many_suggestions", "You have {max} open suggestions. Wait for a review before adding more.", p),
+    /** Translation of {key} */
+    fieldAria: (p: { key: P }) => t("translate", "field_aria", "Translation of {key}", p),
+    /** Filter strings */
+    filterAria: () => t("translate", "filter_aria", "Filter strings"),
+    /** Has suggestions */
+    hasSuggestions: () => t("translate", "has_suggestions", "Has suggestions"),
+    /** Translations */
+    heading: () => t("translate", "heading", "Translations"),
+    /** No history yet. */
+    historyEmpty: () => t("translate", "history_empty", "No history yet."),
+    /** {name} on {when} */
+    historyMeta: (p: { name: P; when: P }) => t("translate", "history_meta", "{name} on {when}", p),
+    /** History of {key} */
+    historyTitle: (p: { key: P }) => t("translate", "history_title", "History of {key}", p),
+    /** Choose a language */
+    languagePlaceholder: () => t("translate", "language_placeholder", "Choose a language"),
+    /** Log in to suggest translations. */
+    loginPrompt: () => t("translate", "login_prompt", "Log in to suggest translations."),
+    /** You have not suggested any translations. */
+    mineEmpty: () => t("translate", "mine_empty", "You have not suggested any translations."),
+    /** Translation sections */
+    navAria: () => t("translate", "nav_aria", "Translation sections"),
+    /** Translate */
+    navTitle: () => t("translate", "nav_title", "Translate"),
+    /** Outdated */
+    outdated: () => t("translate", "outdated", "Outdated"),
+    /** Suggest translations for the Mewdeko bot and dashboard. */
+    pageDescription: () => t("translate", "page_description", "Suggest translations for the Mewdeko bot and dashboard."),
+    /** Translate Mewdeko */
+    pageTitle: () => t("translate", "page_title", "Translate Mewdeko"),
+    /** Earlier English text: */
+    previousSource: () => t("translate", "previous_source", "Earlier English text:"),
+    /** Keep the same HTML tags as the English text. */
+    problemHtml: () => t("translate", "problem_html", "Keep the same HTML tags as the English text."),
+    /** The English text has no placeholders. */
+    problemNoPlaceholders: () => t("translate", "problem_no_placeholders", "The English text has no placeholders."),
+    /** Placeholders must match the English text: {placeholders} */
+    problemPlaceholders: (p: { placeholders: P }) => t("translate", "problem_placeholders", "Placeholders must match the English text: {placeholders}", p),
+    /** {done} of {total} translated */
+    progress: (p: { done: P; total: P }) => t("translate", "progress", "{done} of {total} translated", p),
+    /** Translation progress */
+    progressAria: () => t("translate", "progress_aria", "Translation progress"),
+    /** No suggestions to review. */
+    queueEmpty: () => t("translate", "queue_empty", "No suggestions to review."),
+    /** Use built-in text */
+    revert: () => t("translate", "revert", "Use built-in text"),
+    /** The saved translation is removed. Its history stays. */
+    revertMessage: () => t("translate", "revert_message", "The saved translation is removed. Its history stays."),
+    /** Use the built-in text? */
+    revertTitle: () => t("translate", "revert_title", "Use the built-in text?"),
+    /** Saved by {name} */
+    savedBy: (p: { name: P }) => t("translate", "saved_by", "Saved by {name}", p),
+    /** Search strings */
+    searchAria: () => t("translate", "search_aria", "Search strings"),
+    /** The English text changed after this was written. */
+    sourceChanged: () => t("translate", "source_changed", "The English text changed after this was written."),
+    /** No strings match. */
+    stringsEmpty: () => t("translate", "strings_empty", "No strings match."),
+    /** Suggest translation */
+    suggest: () => t("translate", "suggest", "Suggest translation"),
+    /** Sent for review. */
+    suggestSent: () => t("translate", "suggest_sent", "Sent for review."),
+    /** Suggested translation */
+    suggestedTranslation: () => t("translate", "suggested_translation", "Suggested translation"),
+    /** Strings */
+    tabBrowse: () => t("translate", "tab_browse", "Strings"),
+    /** Review queue */
+    tabQueue: () => t("translate", "tab_queue", "Review queue"),
+    /** Translators */
+    tabTranslators: () => t("translate", "tab_translators", "Translators"),
+    /** No translation yet. */
+    translationNone: () => t("translate", "translation_none", "No translation yet."),
+    /** Add a translator */
+    translatorAddTitle: () => t("translate", "translator_add_title", "Add a translator"),
+    /** They will no longer be able to edit this language. */
+    translatorRemoveMessage: () => t("translate", "translator_remove_message", "They will no longer be able to edit this language."),
+    /** No translators yet. */
+    translatorsEmpty: () => t("translate", "translators_empty", "No translators yet."),
+    /** Untranslated */
+    untranslated: () => t("translate", "untranslated", "Untranslated"),
+    /** Your suggestion is waiting for review. */
+    waitingForReview: () => t("translate", "waiting_for_review", "Your suggestion is waiting for review."),
+  },
   twitch: {
     /** Disconnect bot account */
     botDisconnectBot: () => t("twitch", "bot_disconnect_bot", "Disconnect bot account"),
@@ -20849,6 +20955,214 @@ export const m = {
     whatEachFeatureDoesWhy: () => t("wiki", "what_each_feature_does_why", "What each feature does and how to set it up."),
     /** Wiki home */
     wikiHome: () => t("wiki", "wiki_home", "Wiki home"),
+  },
+  wikiManage: {
+    /** Back to the article */
+    backToArticle: () => t("wiki-manage", "back_to_article", "Back to the article"),
+    /** Use an existing category */
+    categoryExisting: () => t("wiki-manage", "category_existing", "Use an existing category"),
+    /** Create a category */
+    categoryNew: () => t("wiki-manage", "category_new", "Create a category"),
+    /** {language} by {name} on {when} */
+    changeMeta: (p: { language: P; name: P; when: P }) => t("wiki-manage", "change_meta", "{language} by {name} on {when}", p),
+    /** The wiki database is not available. */
+    databaseUnavailable: () => t("wiki-manage", "database_unavailable", "The wiki database is not available."),
+    /** Reason for declining */
+    declineReason: () => t("wiki-manage", "decline_reason", "Reason for declining"),
+    /** The page is hidden from the wiki. Its history is kept. */
+    deleteMessage: () => t("wiki-manage", "delete_message", "The page is hidden from the wiki. Its history is kept."),
+    /** Delete {name} from the wiki? */
+    deleteTitle: (p: { name: P }) => t("wiki-manage", "delete_title", "Delete {name} from the wiki?", p),
+    /** No differences */
+    diffNoChanges: () => t("wiki-manage", "diff_no_changes", "No differences"),
+    /** {added} added, {deleted} removed */
+    diffStats: (p: { added: P; deleted: P }) => t("wiki-manage", "diff_stats", "{added} added, {deleted} removed", p),
+    /** Unpublished */
+    draft: () => t("wiki-manage", "draft", "Unpublished"),
+    /** Drag to reorder {name} */
+    dragLabel: (p: { name: P }) => t("wiki-manage", "drag_label", "Drag to reorder {name}", p),
+    /** Edit this page */
+    editThisPage: () => t("wiki-manage", "edit_this_page", "Edit this page"),
+    /** Add an editor */
+    editorAddTitle: () => t("wiki-manage", "editor_add_title", "Add an editor"),
+    /** They will no longer be able to edit the wiki. */
+    editorRemoveMessage: () => t("wiki-manage", "editor_remove_message", "They will no longer be able to edit the wiki."),
+    /** Remove {name}? */
+    editorRemoveTitle: (p: { name: P }) => t("wiki-manage", "editor_remove_title", "Remove {name}?", p),
+    /** No editors yet. */
+    editorsEmpty: () => t("wiki-manage", "editors_empty", "No editors yet."),
+    /** Enter a category of up to 40 characters. */
+    errorCategoryInvalid: () => t("wiki-manage", "error_category_invalid", "Enter a category of up to 40 characters."),
+    /** Someone else changed this. Reload and try again. */
+    errorConflict: () => t("wiki-manage", "error_conflict", "Someone else changed this. Reload and try again."),
+    /** You do not have access to this. */
+    errorForbidden: () => t("wiki-manage", "error_forbidden", "You do not have access to this."),
+    /** Enter a path such as /dashboard/afk. */
+    errorHrefInvalid: () => t("wiki-manage", "error_href_invalid", "Enter a path such as /dashboard/afk."),
+    /** Choose an icon. */
+    errorIconInvalid: () => t("wiki-manage", "error_icon_invalid", "Choose an icon."),
+    /** The list changed. Reload and try again. */
+    errorListChanged: () => t("wiki-manage", "error_list_changed", "The list changed. Reload and try again."),
+    /** Enter a valid module name. */
+    errorModuleInvalid: () => t("wiki-manage", "error_module_invalid", "Enter a valid module name."),
+    /** Nothing changed. */
+    errorNoChanges: () => t("wiki-manage", "error_no_changes", "Nothing changed."),
+    /** That page no longer exists. */
+    errorNotFound: () => t("wiki-manage", "error_not_found", "That page no longer exists."),
+    /** Pick related pages that exist. */
+    errorRelatedInvalid: () => t("wiki-manage", "error_related_invalid", "Pick related pages that exist."),
+    /** Use lowercase letters, numbers and single hyphens. */
+    errorSlugInvalid: () => t("wiki-manage", "error_slug_invalid", "Use lowercase letters, numbers and single hyphens."),
+    /** That address is reserved. */
+    errorSlugReserved: () => t("wiki-manage", "error_slug_reserved", "That address is reserved."),
+    /** Another page already uses that address. */
+    errorSlugTaken: () => t("wiki-manage", "error_slug_taken", "Another page already uses that address."),
+    /** Enter a title. */
+    errorTitleRequired: () => t("wiki-manage", "error_title_required", "Enter a title."),
+    /** One of the fields is too long. */
+    errorTooLong: () => t("wiki-manage", "error_too_long", "One of the fields is too long."),
+    /** No feedback. */
+    feedbackEmpty: () => t("wiki-manage", "feedback_empty", "No feedback."),
+    /** Helpful */
+    feedbackHelpful: () => t("wiki-manage", "feedback_helpful", "Helpful"),
+    /** {answer} in {language} on {when} */
+    feedbackMeta: (p: { answer: P; language: P; when: P }) => t("wiki-manage", "feedback_meta", "{answer} in {language} on {when}", p),
+    /** Not helpful */
+    feedbackNotHelpful: () => t("wiki-manage", "feedback_not_helpful", "Not helpful"),
+    /** Tell us more */
+    feedbackNote: () => t("wiki-manage", "feedback_note", "Tell us more"),
+    /** Was this page helpful? */
+    feedbackQuestion: () => t("wiki-manage", "feedback_question", "Was this page helpful?"),
+    /** What was wrong? */
+    feedbackReason: () => t("wiki-manage", "feedback_reason", "What was wrong?"),
+    /** Resolve */
+    feedbackResolve: () => t("wiki-manage", "feedback_resolve", "Resolve"),
+    /** Resolved */
+    feedbackResolved: () => t("wiki-manage", "feedback_resolved", "Resolved"),
+    /** Send feedback */
+    feedbackSend: () => t("wiki-manage", "feedback_send", "Send feedback"),
+    /** Thanks for the feedback. */
+    feedbackThanks: () => t("wiki-manage", "feedback_thanks", "Thanks for the feedback."),
+    /** Body */
+    fieldBody: () => t("wiki-manage", "field_body", "Body"),
+    /** Dashboard page */
+    fieldDashboardPage: () => t("wiki-manage", "field_dashboard_page", "Dashboard page"),
+    /** Page icon */
+    fieldIcon: () => t("wiki-manage", "field_icon", "Page icon"),
+    /** What changed */
+    fieldNote: () => t("wiki-manage", "field_note", "What changed"),
+    /** Related pages */
+    fieldRelated: () => t("wiki-manage", "field_related", "Related pages"),
+    /** Page address */
+    fieldSlug: () => t("wiki-manage", "field_slug", "Page address"),
+    /** Summary */
+    fieldSummary: () => t("wiki-manage", "field_summary", "Summary"),
+    /** Search tags */
+    fieldTags: () => t("wiki-manage", "field_tags", "Search tags"),
+    /** Wiki editor */
+    heading: () => t("wiki-manage", "heading", "Wiki editor"),
+    /** No revisions yet. */
+    historyEmpty: () => t("wiki-manage", "history_empty", "No revisions yet."),
+    /** Show older revisions */
+    historyLoadMore: () => t("wiki-manage", "history_load_more", "Show older revisions"),
+    /** Restore this revision */
+    historyRestore: () => t("wiki-manage", "history_restore", "Restore this revision"),
+    /** The text of this revision is saved as a new revision. */
+    historyRestoreMessage: () => t("wiki-manage", "history_restore_message", "The text of this revision is saved as a new revision."),
+    /** Restored revision {id} */
+    historyRestoreNote: (p: { id: P }) => t("wiki-manage", "history_restore_note", "Restored revision {id}", p),
+    /** Restore this revision? */
+    historyRestoreTitle: () => t("wiki-manage", "history_restore_title", "Restore this revision?"),
+    /** Revision by {name} on {when} */
+    historyRevisionTitle: (p: { name: P; when: P }) => t("wiki-manage", "history_revision_title", "Revision by {name} on {when}", p),
+    /** Compare to current */
+    historyVsCurrent: () => t("wiki-manage", "history_vs_current", "Compare to current"),
+    /** Compare to previous */
+    historyVsPrevious: () => t("wiki-manage", "history_vs_previous", "Compare to previous"),
+    /** Edit the wiki */
+    manageLink: () => t("wiki-manage", "manage_link", "Edit the wiki"),
+    /** You have not suggested any edits. */
+    mineEmpty: () => t("wiki-manage", "mine_empty", "You have not suggested any edits."),
+    /** My suggestions */
+    mineLink: () => t("wiki-manage", "mine_link", "My suggestions"),
+    /** {status} in {language} on {when} */
+    mineMeta: (p: { language: P; status: P; when: P }) => t("wiki-manage", "mine_meta", "{status} in {language} on {when}", p),
+    /** Wiki editor sections */
+    navAria: () => t("wiki-manage", "nav_aria", "Wiki editor sections"),
+    /** New page */
+    newPage: () => t("wiki-manage", "new_page", "New page"),
+    /** This language has no text yet. The English text is shown. */
+    notTranslated: () => t("wiki-manage", "not_translated", "This language has no text yet. The English text is shown."),
+    /** 1 open suggestion */
+    openSuggestionsOne: () => t("wiki-manage", "open_suggestions_one", "1 open suggestion"),
+    /** {count} open suggestions */
+    openSuggestionsOther: (p: { count: P }) => t("wiki-manage", "open_suggestions_other", "{count} open suggestions", p),
+    /** Edit the Mewdeko wiki */
+    pageTitle: () => t("wiki-manage", "page_title", "Edit the Mewdeko wiki"),
+    /** There are no pages yet. */
+    pagesEmpty: () => t("wiki-manage", "pages_empty", "There are no pages yet."),
+    /** Editor view */
+    paneSwitchAria: () => t("wiki-manage", "pane_switch_aria", "Editor view"),
+    /** Write */
+    paneWrite: () => t("wiki-manage", "pane_write", "Write"),
+    /** Published */
+    publishedToggle: () => t("wiki-manage", "published_toggle", "Published"),
+    /** Incorrect */
+    reasonIncorrect: () => t("wiki-manage", "reason_incorrect", "Incorrect"),
+    /** Missing information */
+    reasonMissing: () => t("wiki-manage", "reason_missing", "Missing information"),
+    /** Out of date */
+    reasonOutdated: () => t("wiki-manage", "reason_outdated", "Out of date"),
+    /** Hard to follow */
+    reasonUnclear: () => t("wiki-manage", "reason_unclear", "Hard to follow"),
+    /** No changes yet. */
+    recentEmpty: () => t("wiki-manage", "recent_empty", "No changes yet."),
+    /** Saved. */
+    saved: () => t("wiki-manage", "saved", "Saved."),
+    /** Page sections */
+    sectionsAria: () => t("wiki-manage", "sections_aria", "Page sections"),
+    /** Not approved */
+    statusDeclined: () => t("wiki-manage", "status_declined", "Not approved"),
+    /** Replaced */
+    statusReplaced: () => t("wiki-manage", "status_replaced", "Replaced"),
+    /** Suggest an edit */
+    suggestAnEdit: () => t("wiki-manage", "suggest_an_edit", "Suggest an edit"),
+    /** Suggest an edit - Mewdeko Wiki */
+    suggestPageTitle: () => t("wiki-manage", "suggest_page_title", "Suggest an edit - Mewdeko Wiki"),
+    /** Sending again replaces your open suggestion. */
+    suggestReplacing: () => t("wiki-manage", "suggest_replacing", "Sending again replaces your open suggestion."),
+    /** Thanks. An editor will review it. */
+    suggestSent: () => t("wiki-manage", "suggest_sent", "Thanks. An editor will review it."),
+    /** Send suggestion */
+    suggestSubmit: () => t("wiki-manage", "suggest_submit", "Send suggestion"),
+    /** Changes */
+    suggestionChanges: () => t("wiki-manage", "suggestion_changes", "Changes"),
+    /** Decline suggestion */
+    suggestionDecline: () => t("wiki-manage", "suggestion_decline", "Decline suggestion"),
+    /** The article changed after this was written. */
+    suggestionOutdated: () => t("wiki-manage", "suggestion_outdated", "The article changed after this was written."),
+    /** Review */
+    suggestionReview: () => t("wiki-manage", "suggestion_review", "Review"),
+    /** No suggestions. */
+    suggestionsEmpty: () => t("wiki-manage", "suggestions_empty", "No suggestions."),
+    /** Article */
+    tabArticle: () => t("wiki-manage", "tab_article", "Article"),
+    /** Editors */
+    tabEditors: () => t("wiki-manage", "tab_editors", "Editors"),
+    /** Feedback */
+    tabFeedback: () => t("wiki-manage", "tab_feedback", "Feedback"),
+    /** Pages */
+    tabPages: () => t("wiki-manage", "tab_pages", "Pages"),
+    /** Recent changes */
+    tabRecent: () => t("wiki-manage", "tab_recent", "Recent changes"),
+    /** Edit suggestions */
+    tabSuggestions: () => t("wiki-manage", "tab_suggestions", "Edit suggestions"),
+    /** Tags can be up to {max} characters. */
+    tagTooLong: (p: { max: P }) => t("wiki-manage", "tag_too_long", "Tags can be up to {max} characters.", p),
+    /** Use at most {max} tags. */
+    tagsTooMany: (p: { max: P }) => t("wiki-manage", "tags_too_many", "Use at most {max} tags.", p),
+    /** View article */
+    viewArticle: () => t("wiki-manage", "view_article", "View article"),
   },
   wizard: {
     /** Back to dashboard */
@@ -22187,4 +22501,4 @@ export const m = {
 } as const;
 
 /** Module names that exist in the source locale, for loading other locales lazily later. */
-export const modules = ["_common","access","achievements","administration","administration-roles","afk","alerts","analytics","auditlog","automations","automod","birthday","brand","bridges","channel-access","channel-messages","chat-triggers","chatsaver","confessions","counting","currency","custom-bot","customvoice","dashboard","designs","embedbuilder","feature-requests","features","feeds","filter","forms","giveaways","highlights","home","import","invites","join-role-timeout","layout","legal","linkfix","liveboards","logging","me","messagestats","minecraft","moderation","monitoring","multigreets","music","owner","patreon","placeholders","plugin","polls","public","repeaters","reputation","role-menus","rolegreets","roles","rolestates","server-tools","serverstats","settings","shared","shortcuts","starboard","statchannels","statroles","statusroles","streams","suggestions","tickets","todo","twitch","utility","votes","widgets","wiki","wizard","wordoftheday","xp"] as const;
+export const modules = ["_common","access","achievements","administration","administration-roles","afk","alerts","analytics","auditlog","automations","automod","birthday","brand","bridges","channel-access","channel-messages","chat-triggers","chatsaver","confessions","counting","currency","custom-bot","customvoice","dashboard","designs","embedbuilder","feature-requests","features","feeds","filter","forms","giveaways","highlights","home","import","invites","join-role-timeout","layout","legal","linkfix","liveboards","logging","me","messagestats","minecraft","moderation","monitoring","multigreets","music","owner","patreon","placeholders","plugin","polls","public","repeaters","reputation","role-menus","rolegreets","roles","rolestates","server-tools","serverstats","settings","shared","shortcuts","starboard","statchannels","statroles","statusroles","streams","suggestions","tickets","todo","translate","twitch","utility","votes","widgets","wiki","wiki-manage","wizard","wordoftheday","xp"] as const;

@@ -14,6 +14,7 @@
  * request's locale; this module never shares one locale across requests.
  */
 import { browser } from "$app/environment";
+import { resolveTemplate } from "./lookup";
 
 type ModuleCatalog = Record<string, string>;
 export type Catalog = Record<string, ModuleCatalog>;
@@ -21,20 +22,27 @@ export type Catalog = Record<string, ModuleCatalog>;
 /** The source locale. Everything falls back to it. */
 export const sourceLocale = "en-US";
 
-/** Client state. Reading it inside a reactive context subscribes to locale changes. */
-const client = $state<{ locale: string; catalog: Catalog | null }>({ locale: sourceLocale, catalog: null });
+type Active = { locale: string; catalog: Catalog | null; overlay: Catalog | null };
 
-/** Server-side resolver, set once by hooks.server.ts. Returns the current request's locale and catalog. */
-let serverResolver: (() => { locale: string; catalog: Catalog | null }) | null = null;
+/** Client state. Reading it inside a reactive context subscribes to locale changes. */
+const client = $state<Active>({ locale: sourceLocale, catalog: null, overlay: null });
+
+/** Server-side resolver, set once by hooks.server.ts. Returns the current request's locale, catalog and overlay. */
+let serverResolver: (() => Active) | null = null;
 
 /** Registers the per-request locale source used during SSR. */
 export function setServerLocaleResolver(resolver: typeof serverResolver): void {
   serverResolver = resolver;
 }
 
-function active(): { locale: string; catalog: Catalog | null } {
+function active(): Active {
   if (browser) return client;
-  return serverResolver?.() ?? { locale: sourceLocale, catalog: null };
+  return serverResolver?.() ?? { locale: sourceLocale, catalog: null, overlay: null };
+}
+
+/** The approved translations laid over the built-in text for the active language, if any. */
+export function getOverlay(): Catalog | null {
+  return active().overlay;
 }
 
 /** The locale whose text is currently served. */
@@ -75,15 +83,32 @@ export async function loadCatalog(locale: string): Promise<Catalog | null> {
  * Switches the served locale in the browser and re-renders everything that reads a message.
  * Unknown locales fall back to the source locale. Safe to call repeatedly.
  */
-export async function setLocale(locale: string): Promise<void> {
-  const catalog = await loadCatalog(locale);
-  setCatalog(catalog ? locale : sourceLocale, catalog);
+export async function setLocale(locale: string, overlay?: Catalog | null): Promise<void> {
+  const [catalog, approved] = await Promise.all([loadCatalog(locale), overlay === undefined ? fetchOverlay(locale) : overlay]);
+  setCatalog(catalog ? locale : sourceLocale, catalog, approved);
 }
 
 /** Installs an already loaded catalog as the active one (browser only; the server uses the resolver). */
-export function setCatalog(locale: string, catalog: Catalog | null): void {
+export function setCatalog(locale: string, catalog: Catalog | null, overlay: Catalog | null = null): void {
   client.locale = locale;
   client.catalog = locale === sourceLocale ? null : catalog;
+  client.overlay = locale === sourceLocale ? null : overlay;
+}
+
+/**
+ * Asks the dashboard for the approved translations of a language. Any failure, a slow answer
+ * included, returns null and the built-in text is used.
+ */
+async function fetchOverlay(locale: string): Promise<Catalog | null> {
+  if (locale === sourceLocale) return null;
+  try {
+    const response = await fetch(`/api/translations/overlay?locale=${encodeURIComponent(locale)}`, { signal: AbortSignal.timeout(3000) });
+    if (!response.ok) return null;
+    const body = (await response.json()) as { entries?: unknown };
+    return body.entries && typeof body.entries === "object" ? (body.entries as Catalog) : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Replaces `{name}` placeholders with the matching values. Unknown placeholders are left as is. */
@@ -103,33 +128,14 @@ export function format(template: string, params?: Record<string, string | number
  * @param params Placeholder values.
  */
 export function t(module: string, key: string, fallback: string, params?: Record<string, string | number>): string {
-  const { locale, catalog } = active();
-  const entries = catalog?.[module];
-  const text = (entries && pluralVariant(entries, locale, key, params)) ?? entries?.[key] ?? fallback;
+  const text = resolveTemplate(
+    () => {
+      const { locale, catalog, overlay } = active();
+      return { locale, builtin: catalog?.[module], overlay: overlay?.[module] };
+    },
+    key,
+    fallback,
+    params
+  );
   return format(text, params);
-}
-
-const pluralRules = new Map<string, Intl.PluralRules>();
-
-/**
- * Components pick `<base>_one` or `<base>_other` the English way. Languages with more plural
- * forms (Polish: 2-4 vs 5+) add `<base>_few` / `<base>_many` / `<base>_two` / `<base>_zero`,
- * and this picks the right one from the `count` parameter using the locale's CLDR rules.
- */
-function pluralVariant(
-  entries: ModuleCatalog,
-  locale: string,
-  key: string,
-  params?: Record<string, string | number>
-): string | undefined {
-  const count = params?.count;
-  if (typeof count !== "number") return undefined;
-  const match = /^(.*)_(one|other)$/.exec(key);
-  if (!match) return undefined;
-  let rules = pluralRules.get(locale);
-  if (!rules) {
-    rules = new Intl.PluralRules(locale);
-    pluralRules.set(locale, rules);
-  }
-  return entries[`${match[1]}_${rules.select(count)}`];
 }

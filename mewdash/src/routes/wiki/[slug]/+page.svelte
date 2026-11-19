@@ -6,6 +6,7 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
   import WikiArticle from "$lib/components/wiki/WikiArticle.svelte";
+  import WikiFeedback from "$lib/components/wiki/WikiFeedback.svelte";
   import { wikiIconClass } from "$lib/wiki";
   import ComponentEmbed from "$lib/components/layout/ComponentEmbed.svelte";
   import { buttons, container, header, linkButton, plain, SITE_ORIGIN, separator, text } from "$lib/componentEmbed";
@@ -156,10 +157,38 @@
             <WikiArticle article={data.article} />
           </div>
 
+          {#if data.pageId}
+            {#if data.wikiAccess.signedIn}
+              <WikiFeedback pageId={data.pageId} locale={data.articleLocale} />
+            {/if}
+            {#if data.wikiAccess.signedIn || data.wikiAccess.canEdit}
+              <div class="mt-6 flex flex-wrap gap-3">
+                {#if data.wikiAccess.canEdit}
+                  <a
+                    href="/wiki/manage/{data.pageId}?locale={data.articleLocale}"
+                    class="inline-flex items-center justify-center gap-2 px-5 rounded-xl font-medium min-h-[50px] transition-colors hover:brightness-110"
+                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                  >
+                    <i class="fa-solid fa-pen" aria-hidden="true"></i>{m.wikiManage.editThisPage()}
+                  </a>
+                {/if}
+                {#if data.wikiAccess.signedIn}
+                  <a
+                    href="/wiki/{data.article.slug}/suggest?locale={data.articleLocale}"
+                    class="inline-flex items-center justify-center gap-2 px-5 rounded-xl font-medium min-h-[50px] transition-colors hover:brightness-110"
+                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                  >
+                    <i class="fa-solid fa-comments" aria-hidden="true"></i>{m.wikiManage.suggestAnEdit()}
+                  </a>
+                {/if}
+              </div>
+            {/if}
+          {/if}
+
           {#if data.related.length > 0}
             <section class="mt-10">
               <h2 class="text-lg font-bold mb-4" style="color: {$colorStore.text}">{m.wiki.relatedFeatures()}</h2>
-              <div class="grid gap-3 sm:grid-cols-2">
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {#each data.related as r (r.slug)}
                   <a
                     href="/wiki/{r.slug}"

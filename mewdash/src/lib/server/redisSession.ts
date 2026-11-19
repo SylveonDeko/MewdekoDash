@@ -138,6 +138,25 @@ export class RedisSessionManager {
     }
   }
 
+  /**
+   * Publishes a message on a Redis channel. Does nothing when Redis is off.
+   *
+   * @param channel The channel, used as is with no key prefix.
+   * @param message The message.
+   * @returns True when Redis accepted the message.
+   */
+  async publish(channel: string, message: string): Promise<boolean> {
+    if (!this.enabled || !this.redis) return false;
+
+    try {
+      await this.redis.publish(channel, message);
+      return true;
+    } catch (error) {
+      logger.error("Failed to publish to Redis:", error);
+      return false;
+    }
+  }
+
   async disconnect(): Promise<void> {
     if (this.redis) {
       this.redis.disconnect();

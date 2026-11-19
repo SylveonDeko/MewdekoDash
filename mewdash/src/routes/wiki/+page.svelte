@@ -4,7 +4,7 @@
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
-  import { searchWiki, wikiIconClass } from "$lib/wiki";
+  import { searchWikiIndex, wikiIconClass } from "$lib/wiki";
   import ComponentEmbed from "$lib/components/layout/ComponentEmbed.svelte";
   import { buttons, container, header, linkButton, SITE_ORIGIN, separator, text } from "$lib/componentEmbed";
 
@@ -26,7 +26,7 @@
 
   let query = $state("");
   let searching = $derived(query.trim().length > 0);
-  let results = $derived(searchWiki(query));
+  let results = $derived(searchWikiIndex(data.articles, query));
 
   function handleGlobalKeydown(event: KeyboardEvent) {
     if ((event.ctrlKey || event.metaKey) && event.key === "k") {

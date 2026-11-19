@@ -83,6 +83,7 @@
       elements: [
         { href: "/reviews", title: m.common.reviews() },
         { href: "/placeholders", title: m.common.placeholders() },
+        { href: "/translate", title: m.translate.navTitle() },
         { href: "/credguide", title: m.home.navCredentialsGuide() },
         { title: m.common.privacy(), href: "/privacy" },
         { title: m.home.navTerms(), href: "/terms" }

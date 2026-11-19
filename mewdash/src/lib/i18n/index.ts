@@ -3,6 +3,7 @@ export {
   availableLocales,
   format,
   getLocale,
+  getOverlay,
   loadCatalog,
   setCatalog,
   setLocale,

@@ -49,7 +49,6 @@
       {hasBots ? m.customBot.pitchAnother() : m.customBot.pitchTitle()}
     </h2>
     <p class="text-sm" style="color: {$colorStore.text}">{m.customBot.pitchBody()}</p>
-    <p class="text-sm" style="color: {$colorStore.muted}">{m.customBot.pitchFree()}</p>
   </div>
 
   <a

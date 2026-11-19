@@ -1,6 +1,7 @@
 /**
- * A single wiki article, authored as Markdown under `src/lib/content/wiki` and loaded at build
- * time. The frontmatter describes the feature; the body explains it.
+ * A single wiki article, stored in the wiki database. The built-in Markdown files under
+ * `src/lib/content/wiki` describe the same shape and are served when the database is not
+ * available.
  */
 export interface WikiArticleMeta {
   /** URL segment under `/wiki/`. Matches the file name without its extension. */
