@@ -11,6 +11,7 @@
   import ValidationCard from "./ValidationCard.svelte";
   import Notification from "$lib/components/ui/Notification.svelte";
   import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
+  import PlaceholderButton from "$lib/components/forms/PlaceholderButton.svelte";
   import { fade, slide } from "svelte/transition";
   import { chatTriggersApi, embedsApi } from "$lib/api/index.ts";
   import type { ChatTrigger } from "$lib/api/chattriggers/models/ChatTrigger";
@@ -18,6 +19,11 @@
   import { logger } from "$lib/logger.ts";
   import type { DiscordUser } from "$lib/types/discord";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+  import BuilderToolbar from "./BuilderToolbar.svelte";
+  import SimpleEmbedForm from "./SimpleEmbedForm.svelte";
+  import GuidedTour from "$lib/components/GuidedTour.svelte";
+  import { createBuilderMode, usesAdvancedFeatures, type BuilderMode } from "$lib/embedbuilder/mode.svelte";
+  import { advancedTourSteps, simpleTourSteps } from "$lib/embedbuilder/tourSteps";
 
   interface Props {
     // Bound value - the JSON output
@@ -149,6 +155,22 @@
   // State
   let isOpen = $state(false);
   let activeTab = $state("editor");
+  const builder = createBuilderMode();
+  const simpleMode = $derived(builder.mode === "simple");
+  let tourOpen = $state(false);
+  const componentsTabShown = $derived(allowComponents && !restrictedComponentTypes.includes("all"));
+  const buttonsAllowed = $derived(componentsTabShown && !restrictedComponentTypes.includes("button"));
+  const tourSteps = $derived(
+    simpleMode
+      ? simpleTourSteps({ message: allowContent, buttons: buttonsAllowed, save: true })
+      : advancedTourSteps({ popup: true, components: componentsTabShown, saved: !!user?.id })
+  );
+
+  function setMode(next: BuilderMode) {
+    builder.set(next);
+    validateEmbeds();
+    validateComponents();
+  }
   let embeds: Embed[] = $state([]);
   let content = $state("");
   let showContentPlaceholders = $state(false);
@@ -451,6 +473,8 @@
     initialSnapshot = serializeDraft();
     editHistory = [initialSnapshot];
     historyIndex = 0;
+    builder.init();
+    if (usesAdvancedFeatures(embeds, componentRows)) builder.openAdvancedForSession();
     isOpen = true;
     loadChatTriggers();
     loadSavedEmbeds();
@@ -464,6 +488,7 @@
 
   function close() {
     if (historyDebounce) clearTimeout(historyDebounce);
+    tourOpen = false;
     isOpen = false;
     onclose?.();
     // Restore body scrolling
@@ -1191,6 +1216,14 @@
           });
         }
 
+        if (!component.isSelect && component.style === 5 && component.url?.trim() && !component.url.includes("%") && !/^(https|discord):\/\//.test(component.url)) {
+          validationErrors.push({
+            id: `component-${component.componentKey}-scheme`,
+            message: m.embedbuilder.fullscreenValidationLinkNeedsHttps({ name: component.displayName }),
+            field: `components[${index}].url`
+          });
+        }
+
         if (component.isSelect && component.options.length === 0) {
           validationErrors.push({
             id: `component-${component.componentKey}-options`,
@@ -1392,6 +1425,7 @@
             style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
             onclick={save}
             type="button"
+            data-tour="save"
           >
             {m.common.save()}
           </button>
@@ -1442,16 +1476,25 @@
               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
               onclick={save}
               type="button"
+              data-tour="save"
             >
               {m.common.save()}
             </button>
           </div>
         </div>
 
+        <div
+          class="flex flex-wrap items-center gap-2 px-3 md:px-6 py-2 border-b"
+          style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;"
+        >
+          <BuilderToolbar mode={builder.mode} onmode={setMode} ontour={() => (tourOpen = true)} />
+        </div>
+
         <!-- Main Content Area -->
         <div class="flex-1 overflow-hidden flex flex-col lg:flex-row">
           <!-- Editor Side -->
           <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:w-1/2">
+            {#if !simpleMode}
             <!-- Tabs -->
             <div class="flex gap-2 mb-4 flex-wrap">
               {#if allowContent || embeds.length > 0}
@@ -1460,6 +1503,7 @@
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; {activeTab === 'editor' ? 'filter: brightness(0.9);' : ''}"
                   onclick={() => activeTab = 'editor'}
                   type="button"
+                  data-tour="tab-editor"
                 >
                   <i class="fa-solid fa-layer-group mr-2"></i>
                   {m.embedbuilder.fullscreenTabEmbed()}
@@ -1472,6 +1516,7 @@
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; {activeTab === 'components' ? 'filter: brightness(0.9);' : ''}"
                   onclick={() => activeTab = 'components'}
                   type="button"
+                  data-tour="tab-components"
                 >
                   <i class="fa-solid fa-comment mr-2"></i>
                   {m.embedbuilder.tabComponents()}
@@ -1483,6 +1528,7 @@
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; {activeTab === 'json' ? 'filter: brightness(0.9);' : ''}"
                 onclick={() => { activeTab = 'json'; refreshJsonPreview(); }}
                 type="button"
+                data-tour="tab-json"
               >
                 <i class="fa-solid fa-code mr-2"></i>
                 {m.embedbuilder.tabJson()}
@@ -1494,43 +1540,57 @@
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; {activeTab === 'saved' ? 'filter: brightness(0.9);' : ''}"
                   onclick={() => { activeTab = 'saved'; loadSavedEmbeds(); }}
                   type="button"
+                  data-tour="tab-saved"
                 >
                   <i class="fa-solid fa-floppy-disk mr-2"></i>
                   {m.common.saved()}
                 </button>
               {/if}
             </div>
+            {/if}
 
             <!-- Tab Content -->
             <div class="space-y-4">
-              {#if activeTab === 'editor'}
+              {#if simpleMode}
+                <SimpleEmbedForm
+                  bind:content
+                  bind:embeds
+                  bind:componentRows
+                  placeholders={allPlaceholders}
+                  {allowContent}
+                  allowButtons={buttonsAllowed}
+                  onswitch={() => builder.openAdvancedForSession()}
+                  onchange={() => {
+                    validateEmbeds();
+                    validateComponents();
+                  }}
+                />
+              {:else if activeTab === 'editor'}
                 <!-- Message Content -->
                 {#if allowContent}
                   <div>
-                    <label for="message-content" class="block text-sm font-medium mb-2"
+                    <label for="message-content" class="block text-sm font-medium mb-1"
                            style="color: {$colorStore.text};">
-                      {m.common.messageContent()} <span class="text-xs">{m.common.optionalSuffix()}</span>
+                      {m.embedbuilder.pageContentLabel()}
                     </label>
+                    <p class="text-sm mb-2" style="color: {$colorStore.muted};">{m.embedbuilder.pageContentHint()}</p>
                     <div class="relative">
                       <textarea
                         id="message-content"
                         rows="3"
-                        class="w-full px-3 py-2 pr-10 rounded-lg border resize-y"
+                        class="w-full px-3 py-2 rounded-lg border resize-y"
                         style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                         placeholder={m.embedbuilder.fullscreenContentPlaceholder()}
                         bind:value={content}
                         bind:this={contentTextarea}
                         oninput={(e) => checkContentImage(e.currentTarget.value)}
                       ></textarea>
-                      <button
-                        class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
-                        style="color: {$colorStore.muted};"
-                        onclick={() => { showContentPlaceholders = !showContentPlaceholders; contentPlaceholderSearch = ""; }}
-                        title={m.embedbuilder.editorInsertPlaceholder()}
-                        type="button"
-                      >
-                        %
-                      </button>
+                      <div class="mt-2">
+                        <PlaceholderButton
+                          expanded={showContentPlaceholders}
+                          onclick={() => { showContentPlaceholders = !showContentPlaceholders; contentPlaceholderSearch = ""; }}
+                        />
+                      </div>
                       <PlaceholderPicker
                         visible={showContentPlaceholders}
                         placeholders={allPlaceholders}
@@ -1910,7 +1970,8 @@
 
           <!-- Preview Side (Desktop only) -->
           <div class="hidden lg:block lg:w-1/2 border-l overflow-y-auto"
-               style="background: {$colorStore.primary}03; border-color: {$colorStore.primary}30;">
+               style="background: {$colorStore.primary}03; border-color: {$colorStore.primary}30;"
+               data-tour="preview">
             <div class="sticky top-0 p-4 border-b"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;">
               <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">{m.embedbuilder.fullscreenLivePreview()}</h3>
@@ -1958,6 +2019,12 @@
         {/if}
       </div>
     </div>
+
+    <GuidedTour
+      bind:open={tourOpen}
+      steps={tourSteps}
+      label={m.embedbuilder.tourAria()}
+    />
 
     <!-- Notification -->
     {#if showNotification}

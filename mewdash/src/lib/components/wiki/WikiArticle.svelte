@@ -244,4 +244,115 @@
   .wiki-article :global(.wiki-callout-example) {
     --callout: #a78bfa;
   }
+
+  .wiki-article :global(.wiki-example) {
+    margin: 1.25rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .wiki-article :global(.wiki-example-row) {
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: start;
+  }
+
+  .wiki-article :global(.wiki-example-label) {
+    justify-self: start;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.4;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.375rem;
+    background: color-mix(in srgb, var(--wiki-primary) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--wiki-primary) 20%, transparent);
+    color: var(--wiki-text);
+  }
+
+  .wiki-article :global(.wiki-example-card) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.75rem 0.9rem;
+    border-left: 4px solid #5865f2;
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--wiki-text) 6%, transparent);
+  }
+
+  .wiki-article :global(.wiki-example-part) {
+    min-width: 0;
+    font-size: 0.9rem;
+    color: var(--wiki-text);
+  }
+
+  .wiki-article :global(.wiki-example-part-title) {
+    font-weight: 700;
+  }
+
+  .wiki-article :global(.wiki-example-part-author),
+  .wiki-article :global(.wiki-example-part-footer) {
+    font-size: 0.8rem;
+    color: var(--wiki-muted);
+  }
+
+  .wiki-article :global(.wiki-example-part-color) {
+    min-height: 0.5rem;
+    border-radius: 999px;
+    background: #5865f2;
+    font-size: 0;
+  }
+
+  .wiki-article :global(.wiki-example-part-image),
+  .wiki-article :global(.wiki-example-part-thumbnail) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 4.5rem;
+    padding: 0.5rem;
+    border: 1px dashed color-mix(in srgb, var(--wiki-text) 35%, transparent);
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--wiki-muted);
+    overflow-wrap: anywhere;
+  }
+
+  .wiki-article :global(.wiki-example-part-thumbnail) {
+    width: 5rem;
+    min-height: 5rem;
+  }
+
+  .wiki-article :global(.wiki-example-part-button),
+  .wiki-article :global(.wiki-example-part-trigger),
+  .wiki-article :global(.wiki-example-part-select) {
+    width: fit-content;
+    max-width: 100%;
+    padding: 0.4rem 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--wiki-text) 25%, transparent);
+    border-radius: 0.375rem;
+    background: color-mix(in srgb, var(--wiki-text) 12%, transparent);
+    font-weight: 600;
+  }
+
+  .wiki-article :global(.wiki-example-part-button::after) {
+    content: " \2197";
+  }
+
+  .wiki-article :global(.wiki-example-part-select) {
+    width: 100%;
+    font-weight: 400;
+  }
+
+  .wiki-article :global(.wiki-example-part-select::after) {
+    content: " \25BE";
+    float: right;
+  }
+
+  @media (max-width: 640px) {
+    .wiki-article :global(.wiki-example-row) {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.35rem;
+    }
+  }
 </style>

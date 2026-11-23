@@ -24,6 +24,7 @@
     canSend: boolean;
     hasValidationErrors: boolean;
     lastResult: SendEmbedResult | null;
+    simple?: boolean;
     onmanage: () => void;
     onsend: () => void;
   }
@@ -48,6 +49,7 @@
     canSend,
     hasValidationErrors,
     lastResult,
+    simple = false,
     onmanage,
     onsend
   }: Props = $props();
@@ -61,7 +63,7 @@
   }
 </script>
 
-<div class="space-y-6">
+<div class="space-y-6" data-tour={simple ? "simple-send" : undefined}>
   {#if !guildName}
     <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.pageSendNoGuild()}</p>
   {:else}
@@ -88,7 +90,14 @@
       {/if}
     </div>
 
-    {#if selectedChannel}
+    {#if selectedChannel && simple}
+      {#if embedPermissionBlock}
+        <p class="text-sm" style="color: #ED4245;">{embedPermissionBlock}</p>
+      {/if}
+      {#if !selectedChannel.canMentionEveryone}
+        <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.pageSendMentionsStripped()}</p>
+      {/if}
+    {:else if selectedChannel}
       <div class="p-4 rounded-lg border space-y-2" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
         <h4 class="text-sm font-semibold" style="color: {$colorStore.text};">
           {m.embedbuilder.pageSendPermissionsHeading({ channel: selectedChannel.name })}
@@ -119,6 +128,7 @@
           <input type="checkbox" class="size-5" bind:checked={sendAsWebhook} disabled={!webhookAvailable} />
           {m.embedbuilder.pageSendWebhookToggle()}
         </label>
+        <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.pageSendWebhookHint()}</p>
 
         {#if !webhookAvailable}
           <p class="text-sm" style="color: #ED4245;">
@@ -236,7 +246,7 @@
       </div>
     {/if}
 
-    {#if blockedChannels.length > 0}
+    {#if blockedChannels.length > 0 && !simple}
       <div class="space-y-2">
         <h4 class="text-sm font-semibold" style="color: {$colorStore.text};">
           {m.embedbuilder.pageSendUnavailable({ count: blockedChannels.length })}

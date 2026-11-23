@@ -41,7 +41,7 @@ const allowedAttributes: Record<string, readonly string[]> = {
 const classPatterns: Record<string, RegExp> = {
   a: /^wiki-anchor$/,
   code: /^language-[a-z0-9_+#.-]{1,30}$/,
-  div: /^(wiki-table|wiki-callout wiki-callout-(tip|note|warning|permission|example)|wiki-callout-label)$/,
+  div: /^(wiki-table|wiki-callout wiki-callout-(tip|note|warning|permission|example)|wiki-callout-label|wiki-example|wiki-example-card|wiki-example-row|wiki-example-label|wiki-example-part wiki-example-part-(message|author|title|description|field|image|thumbnail|footer|color|button|trigger|select))$/,
 };
 
 const tagPattern =

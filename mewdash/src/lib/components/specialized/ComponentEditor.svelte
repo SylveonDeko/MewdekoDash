@@ -8,12 +8,17 @@
   import { clientApi } from "$lib/api/client/client";
   import type { GuildEmojiInfo } from "$lib/api/client/models";
   import type { DiscordUser } from "$lib/types/discord";
-
+  import ReplyEditor from "$lib/components/specialized/ReplyEditor.svelte";
+  import { actionOf, actionPatch, hasButtonClick, isBuilderTrigger, replyBody, type ButtonAction, type SavedMessageOption } from "$lib/embedbuilder/buttons";
 
   interface Props {
     // Props
     component: any;
     triggers?: any[];
+    triggersLoading?: boolean;
+    savedMessages?: SavedMessageOption[];
+    placeholders?: any[];
+    allowReplyButtons?: boolean;
     isEditing?: boolean;
       user?: DiscordUser | null;
       onupdate?: (detail: { component: any }) => void;
@@ -25,6 +30,10 @@
     let {
       component = $bindable(),
       triggers = [],
+      triggersLoading = false,
+      savedMessages = [],
+      placeholders = [],
+      allowReplyButtons = false,
       isEditing = false,
       user,
       onupdate,
@@ -59,9 +68,43 @@
     { id: "1", name: m.common.primary(), icon: "🟦" },
     { id: "2", name: m.common.secondary(), icon: "⬜" },
     { id: "3", name: m.common.success(), icon: "🟩" },
-    { id: "4", name: m.common.danger(), icon: "🟥" },
-    { id: "5", name: m.embedbuilder.personaAvatarLink(), icon: "🔗" }
+    { id: "4", name: m.common.danger(), icon: "🟥" }
   ]);
+
+  const clickActions = $derived([
+    { id: "link", name: m.embedbuilder.componentsOnClickLink() },
+    ...(allowReplyButtons ? [{ id: "message", name: m.embedbuilder.componentsOnClickMessage() }] : []),
+    { id: "trigger", name: m.embedbuilder.componentsOnClickTrigger() }
+  ]);
+
+  const action = $derived(actionOf(component));
+
+  function triggerOptionsFor(selectedId: string | null | undefined) {
+    return triggers
+      .filter(t => !isBuilderTrigger(t) || String(t.id) === String(selectedId))
+      .map(t => ({
+        id: t.id.toString(),
+        name: t.trigger || m.embedbuilder.componentsTriggerUnnamed(),
+        label: t.response || m.common.noResponse()
+      }));
+  }
+
+  function needsButtonClick(id: string | null | undefined): boolean {
+    const trigger = id ? triggers.find(t => String(t.id) === String(id)) : undefined;
+    return !!trigger && !hasButtonClick(trigger);
+  }
+
+  function setAction(selected: string | string[] | null) {
+    if (selected !== "link" && selected !== "message" && selected !== "trigger") return;
+    if (selected === action) return;
+    patchComponent(actionPatch(component, selected as ButtonAction));
+  }
+
+  function patchComponent(patch: Record<string, unknown>) {
+    const updatedComponent = { ...component, ...patch };
+    component = updatedComponent;
+    onupdate?.({ component: updatedComponent });
+  }
 
   // Helper functions
   function updateComponent(field: string, value: any) {
@@ -190,13 +233,47 @@
 
   // Validation
     let isButtonValid = $derived(component.isSelect ||
-    (component.style === 5 ? isValidUrl(component.url) : component.id !== null));
+    (action === "link" ? isValidUrl(component.url) : action === "message" ? replyBody(component).length > 0 : !!component.id));
 
     let isSelectValid = $derived(!component.isSelect ||
     (component.options && component.options.every((opt: any) => opt.id && opt.description?.trim())));
 
   let isValid = $derived(isButtonValid && isSelectValid);
 </script>
+
+{#snippet triggerPicker(selectedId: string | null, labelId: string, onselect: (id: string | string[] | null) => void, options: any[])}
+  {#if triggers.length === 0 && !triggersLoading}
+    <div class="space-y-2">
+      <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.componentsTriggersEmpty()}</p>
+      <a
+        href="/dashboard/chat-triggers"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="min-h-[44px] px-3 rounded-lg text-sm font-medium inline-flex items-center gap-2"
+        style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
+      >
+        <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+        {m.embedbuilder.componentsTriggersEmptyLink()}
+      </a>
+    </div>
+  {:else}
+    <div class="min-h-[40px] sm:min-h-[50px]">
+      <DiscordSelector
+        type="custom"
+        customIcon="fa-bolt"
+        {options}
+        selected={selectedId}
+        ariaLabelledby={labelId}
+        placeholder={m.embedbuilder.componentsTriggerPlaceholder()}
+        onchange={(detail) => onselect(detail.selected)}
+      />
+    </div>
+    <p class="text-sm mt-2" style="color: {$colorStore.muted};">{m.embedbuilder.componentsTriggerExplain()}</p>
+    {#if needsButtonClick(selectedId)}
+      <p class="text-sm mt-2" style="color: {$colorStore.text};">{m.embedbuilder.componentsTriggerWillEnable()}</p>
+    {/if}
+  {/if}
+{/snippet}
 
 {#if isEditing}
   <!-- Edit Mode -->
@@ -274,49 +351,25 @@
           >
         </div>
 
-        <!-- Style -->
+        <!-- Click Action -->
         <div>
-          <span id="button-style-label" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
+          <span id="click-action-label" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
                 style="color: {$colorStore.text};">
-            {m.embedbuilder.componentsButtonStyle()}
+            {m.embedbuilder.componentsOnClick()}
           </span>
           <DiscordSelector
             type="custom"
-            options={buttonStyles}
-            selected={component.style?.toString()}
-            placeholder={m.embedbuilder.componentsButtonStylePlaceholder()}
+            customIcon="fa-hand-pointer"
+            options={clickActions}
+            selected={action}
             searchable={false}
             clearable={false}
-            customIcon="fa-palette"
-            ariaLabel={m.embedbuilder.componentsButtonStyle()}
-            onchange={(detail) => {
-              if (detail.selected && typeof detail.selected === 'string') {
-                updateComponent('style', parseInt(detail.selected));
-              }
-            }}
+            ariaLabelledby="click-action-label"
+            onchange={(detail) => setAction(detail.selected)}
           />
         </div>
 
-        <!-- Emoji -->
-        <div>
-          <label for="button-emoji-picker" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
-                 style="color: {$colorStore.text};">
-            {m.common.emoji()} <span class="text-[10px] sm:text-xs">{m.common.optionalSuffix()}</span>
-          </label>
-          <EmojiPicker
-            {guildEmojis}
-            selected={component.emoji || null}
-            multiple={false}
-            placeholder={m.common.selectEmojiPlaceholder()}
-            searchable={true}
-            groupByGuild={true}
-            onchange={(detail) => {
-              updateComponent('emoji', detail.selected || '');
-            }}
-          />
-        </div>
-
-        {#if component.style === 5}
+        {#if action === "link"}
           <!-- URL for Link Button -->
           <div>
             <label for="input-4138" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
@@ -338,31 +391,68 @@
             {/if}
           </div>
         {:else}
-          <!-- Trigger Selection -->
-          <div>
-            <span id="trigger-action-label" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
-                  style="color: {$colorStore.text};">
-              {m.embedbuilder.componentsTriggerAction()}
-            </span>
-            <div class="min-h-[40px] sm:min-h-[50px]">
-              <DiscordSelector
-                type="custom"
-                customIcon="fa-bolt"
-                options={triggers.map(t => ({
-                  id: t.id.toString(),
-                  name: t.trigger || m.embedbuilder.componentsTriggerUnnamed(),
-                  label: t.response || m.common.noResponse()
-                }))}
-                selected={component.id}
-                ariaLabel={m.embedbuilder.componentsTriggerAction()}
-                placeholder={m.embedbuilder.componentsTriggerPlaceholder()}
-                onchange={(detail) => {
-                  updateComponent('id', detail.selected);
-                }}
-              />
+          {#if action === "message"}
+            <ReplyEditor
+              button={component}
+              idPrefix="component-{component.componentKey}"
+              {savedMessages}
+              {placeholders}
+              onpatch={patchComponent}
+            />
+          {:else}
+            <!-- Trigger Selection -->
+            <div>
+              <span id="trigger-action-label" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
+                    style="color: {$colorStore.text};">
+                {m.embedbuilder.componentsTriggerAction()}
+              </span>
+              {@render triggerPicker(component.id, "trigger-action-label", (id) => updateComponent('id', id), triggerOptionsFor(component.id))}
             </div>
+          {/if}
+
+          <!-- Style -->
+          <div>
+            <span id="button-style-label" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
+                  style="color: {$colorStore.text};">
+              {m.embedbuilder.componentsButtonStyle()}
+            </span>
+            <DiscordSelector
+              type="custom"
+              options={buttonStyles}
+              selected={component.style?.toString()}
+              placeholder={m.embedbuilder.componentsButtonStylePlaceholder()}
+              searchable={false}
+              clearable={false}
+              customIcon="fa-palette"
+              ariaLabel={m.embedbuilder.componentsButtonStyle()}
+              onchange={(detail) => {
+                if (detail.selected && typeof detail.selected === 'string') {
+                  updateComponent('style', parseInt(detail.selected));
+                }
+              }}
+            />
           </div>
         {/if}
+
+        <!-- Emoji -->
+        <div>
+          <label for="button-emoji-picker" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
+                 style="color: {$colorStore.text};">
+            {m.common.emoji()} <span class="text-[10px] sm:text-xs">{m.common.optionalSuffix()}</span>
+          </label>
+          <EmojiPicker
+            {guildEmojis}
+            selected={component.emoji || null}
+            multiple={false}
+            placeholder={m.common.selectEmojiPlaceholder()}
+            searchable={true}
+            groupByGuild={true}
+            onchange={(detail) => {
+              updateComponent('emoji', detail.selected || '');
+            }}
+          />
+        </div>
+
       </div>
 
     {:else}
@@ -372,7 +462,7 @@
         <div>
           <label for="input-9302" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
                  style="color: {$colorStore.text};">
-            {m.common.placeholderText()}
+            {m.embedbuilder.componentsMenuText()}
             <span class="text-[10px] sm:text-xs ml-1 sm:ml-2" style="color: {$colorStore.muted};">
               {component.displayName?.length || 0}/150
             </span>
@@ -540,23 +630,7 @@
                           style="color: {$colorStore.text};">
                       {m.embedbuilder.componentsTriggerAction()}
                     </span>
-                    <div class="min-h-[36px] sm:min-h-[44px]">
-                      <DiscordSelector
-                        type="custom"
-                        customIcon="fa-bolt"
-                        options={triggers.map(t => ({
-                          id: t.id.toString(),
-                          name: t.trigger || m.embedbuilder.componentsTriggerUnnamed(),
-                          label: t.response || m.common.noResponse()
-                        }))}
-                        selected={option.id}
-                        ariaLabel={m.embedbuilder.componentsTriggerAction()}
-                        placeholder={m.embedbuilder.componentsTriggerPlaceholder()}
-                        onchange={(detail) => {
-                          updateOption(index, 'id', detail.selected);
-                        }}
-                      />
-                    </div>
+                    {@render triggerPicker(option.id, `option-trigger-label-${index}`, (id) => updateOption(index, 'id', id), triggerOptionsFor(option.id))}
                   </div>
                 </div>
               </div>
@@ -580,10 +654,13 @@
         <div class="text-xs sm:text-sm text-red-700 dark:text-red-300">
           <p class="font-medium mb-0.5 sm:mb-1">{m.embedbuilder.componentsValidationErrors()}</p>
           <ul class="list-disc list-inside space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs">
-            {#if !component.isSelect && component.style !== 5 && !component.id}
+            {#if !component.isSelect && action === "trigger" && !component.id}
               <li>{m.embedbuilder.componentsErrorSelectTrigger()}</li>
             {/if}
-            {#if component.style === 5 && !isValidUrl(component.url)}
+            {#if !component.isSelect && action === "message" && replyBody(component).length === 0}
+              <li>{m.embedbuilder.componentsErrorReplyEmpty()}</li>
+            {/if}
+            {#if action === "link" && !isValidUrl(component.url)}
               <li>{m.embedbuilder.componentsErrorLinkUrl()}</li>
             {/if}
             {#if component.isSelect && component.options}

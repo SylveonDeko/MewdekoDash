@@ -28,6 +28,7 @@
       disabled?: boolean;
     }>;
     statusMessages?: Snippet;
+    headerActions?: Snippet;
     children: Snippet;
   }
 
@@ -41,6 +42,7 @@
     autoSave,
     actionButtons = [],
     statusMessages,
+    headerActions,
     children
   }: Props = $props();
 </script>
@@ -73,6 +75,7 @@
   {autoSave}
   {actionButtons}
   {statusMessages}
+  {headerActions}
   titleAction={enabled !== undefined ? masterSwitch : undefined}
 >
   {@render children()}

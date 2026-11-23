@@ -3,3 +3,4 @@
 export * from "./SavedEmbed";
 export * from "./SendEmbed";
 export * from "./EmbedPersona";
+export * from "./EmbedImage";

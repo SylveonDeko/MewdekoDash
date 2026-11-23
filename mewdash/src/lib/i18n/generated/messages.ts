@@ -7989,6 +7989,12 @@ export const m = {
     unlockWhen: () => t("designs", "unlock_when", "Unlocks when"),
   },
   embedbuilder: {
+    /** Button click was turned on for {names} so the buttons that run it work. */
+    buttonNoticeEnabled: (p: { names: P }) => t("embedbuilder", "button_notice_enabled", "Button click was turned on for {names} so the buttons that run it work.", p),
+    /** A button could not be saved, so check that you can manage chat triggers on this server. */
+    buttonSyncFailed: () => t("embedbuilder", "button_sync_failed", "A button could not be saved, so check that you can manage chat triggers on this server."),
+    /** Pick a server first so the buttons can be saved. */
+    buttonSyncNeedsServer: () => t("embedbuilder", "button_sync_needs_server", "Pick a server first so the buttons can be saved."),
     /** Click to edit button */
     componentsButtonPreviewAria: () => t("embedbuilder", "components_button_preview_aria", "Click to edit button"),
     /** Button style */
@@ -7999,32 +8005,44 @@ export const m = {
     componentsButtonTextPlaceholder: () => t("embedbuilder", "components_button_text_placeholder", "Button text"),
     /** Click to edit */
     componentsClickToEdit: () => t("embedbuilder", "components_click_to_edit", "Click to edit"),
-    /** Delete component */
-    componentsDeleteComponent: () => t("embedbuilder", "components_delete_component", "Delete component"),
-    /** Duplicate component */
-    componentsDuplicateComponent: () => t("embedbuilder", "components_duplicate_component", "Duplicate component"),
+    /** Delete this button or menu */
+    componentsDeleteComponent: () => t("embedbuilder", "components_delete_component", "Delete this button or menu"),
+    /** Duplicate this button or menu */
+    componentsDuplicateComponent: () => t("embedbuilder", "components_duplicate_component", "Duplicate this button or menu"),
     /** Duplicate option */
     componentsDuplicateOption: () => t("embedbuilder", "components_duplicate_option", "Duplicate option"),
     /** Edit button */
     componentsEditButton: () => t("embedbuilder", "components_edit_button", "Edit button"),
     /** Edit select menu */
     componentsEditSelect: () => t("embedbuilder", "components_edit_select", "Edit select menu"),
-    /** Please enter a valid URL for link button */
-    componentsErrorLinkUrl: () => t("embedbuilder", "components_error_link_url", "Please enter a valid URL for link button"),
-    /** Option "{name}" needs a description */
-    componentsErrorOptionNeedsDescription: (p: { name: P }) => t("embedbuilder", "components_error_option_needs_description", "Option \"{name}\" needs a description", p),
-    /** Option "{name}" needs a trigger */
-    componentsErrorOptionNeedsTrigger: (p: { name: P }) => t("embedbuilder", "components_error_option_needs_trigger", "Option \"{name}\" needs a trigger", p),
-    /** Please select a trigger for this button */
-    componentsErrorSelectTrigger: () => t("embedbuilder", "components_error_select_trigger", "Please select a trigger for this button"),
+    /** The link is not a valid address, so check that it starts with https://. */
+    componentsErrorLinkUrl: () => t("embedbuilder", "components_error_link_url", "The link is not a valid address, so check that it starts with https://."),
+    /** Option "{name}" has no description, so type a short one. */
+    componentsErrorOptionNeedsDescription: (p: { name: P }) => t("embedbuilder", "components_error_option_needs_description", "Option \"{name}\" has no description, so type a short one.", p),
+    /** Option "{name}" has no trigger chosen, so pick the one it should run. */
+    componentsErrorOptionNeedsTrigger: (p: { name: P }) => t("embedbuilder", "components_error_option_needs_trigger", "Option \"{name}\" has no trigger chosen, so pick the one it should run.", p),
+    /** Write the reply this button should show. */
+    componentsErrorReplyEmpty: () => t("embedbuilder", "components_error_reply_empty", "Write the reply this button should show."),
+    /** Pick the trigger this button should run. */
+    componentsErrorSelectTrigger: () => t("embedbuilder", "components_error_select_trigger", "Pick the trigger this button should run."),
     /** Max options */
     componentsMaxOptions: () => t("embedbuilder", "components_max_options", "Max options"),
     /** Max */
     componentsMaxShort: () => t("embedbuilder", "components_max_short", "Max"),
+    /** Text shown on the menu */
+    componentsMenuText: () => t("embedbuilder", "components_menu_text", "Text shown on the menu"),
     /** Min options */
     componentsMinOptions: () => t("embedbuilder", "components_min_options", "Min options"),
     /** Min */
     componentsMinShort: () => t("embedbuilder", "components_min_short", "Min"),
+    /** When clicked */
+    componentsOnClick: () => t("embedbuilder", "components_on_click", "When clicked"),
+    /** Open a link */
+    componentsOnClickLink: () => t("embedbuilder", "components_on_click_link", "Open a link"),
+    /** Show a message */
+    componentsOnClickMessage: () => t("embedbuilder", "components_on_click_message", "Show a message"),
+    /** Run a trigger */
+    componentsOnClickTrigger: () => t("embedbuilder", "components_on_click_trigger", "Run a trigger"),
     /** Option description */
     componentsOptionDescriptionPlaceholder: () => t("embedbuilder", "components_option_description_placeholder", "Option description"),
     /** Option name */
@@ -8037,22 +8055,34 @@ export const m = {
     componentsSelectPlaceholderExample: () => t("embedbuilder", "components_select_placeholder_example", "Choose an option..."),
     /** Click to edit select menu */
     componentsSelectPreviewAria: () => t("embedbuilder", "components_select_preview_aria", "Click to edit select menu"),
-    /** Has validation errors */
-    componentsStatusInvalid: () => t("embedbuilder", "components_status_invalid", "Has validation errors"),
+    /** Has problems to fix */
+    componentsStatusInvalid: () => t("embedbuilder", "components_status_invalid", "Has problems to fix"),
     /** Valid */
     componentsStatusValid: () => t("embedbuilder", "components_status_valid", "Valid"),
-    /** Trigger action */
-    componentsTriggerAction: () => t("embedbuilder", "components_trigger_action", "Trigger action"),
+    /** Trigger to run */
+    componentsTriggerAction: () => t("embedbuilder", "components_trigger_action", "Trigger to run"),
+    /** A trigger is a saved action from the chat triggers page that the bot runs when the butt... */
+    componentsTriggerExplain: () => t("embedbuilder", "components_trigger_explain", "A trigger is a saved action from the chat triggers page that the bot runs when the button is clicked."),
     /** Select a trigger */
     componentsTriggerPlaceholder: () => t("embedbuilder", "components_trigger_placeholder", "Select a trigger"),
     /** Unnamed trigger */
     componentsTriggerUnnamed: () => t("embedbuilder", "components_trigger_unnamed", "Unnamed trigger"),
-    /** Validation errors: */
-    componentsValidationErrors: () => t("embedbuilder", "components_validation_errors", "Validation errors:"),
+    /** Button click is off for this trigger, so it will be turned on when you save or send. */
+    componentsTriggerWillEnable: () => t("embedbuilder", "components_trigger_will_enable", "Button click is off for this trigger, so it will be turned on when you save or send."),
+    /** There are no triggers on this server yet, and you can create one on the chat triggers p... */
+    componentsTriggersEmpty: () => t("embedbuilder", "components_triggers_empty", "There are no triggers on this server yet, and you can create one on the chat triggers page."),
+    /** Open chat triggers */
+    componentsTriggersEmptyLink: () => t("embedbuilder", "components_triggers_empty_link", "Open chat triggers"),
+    /** Fix these first: */
+    componentsValidationErrors: () => t("embedbuilder", "components_validation_errors", "Fix these first:"),
+    /** This is the main text inside the colored box. */
+    descriptionHint: () => t("embedbuilder", "description_hint", "This is the main text inside the colored box."),
+    /** Text inside the box */
+    descriptionLabel: () => t("embedbuilder", "description_label", "Text inside the box"),
     /** Author name */
     editorAuthorNamePlaceholder: () => t("embedbuilder", "editor_author_name_placeholder", "Author name"),
-    /** URL (makes author name clickable) */
-    editorAuthorUrl: () => t("embedbuilder", "editor_author_url", "URL (makes author name clickable)"),
+    /** Link (makes the author name clickable) */
+    editorAuthorUrl: () => t("embedbuilder", "editor_author_url", "Link (makes the author name clickable)"),
     /** Black */
     editorColorBlack: () => t("embedbuilder", "editor_color_black", "Black"),
     /** Brand green */
@@ -8069,10 +8099,10 @@ export const m = {
     editorColorYellow: () => t("embedbuilder", "editor_color_yellow", "Yellow"),
     /** Or enter custom hex color: */
     editorCustomColor: () => t("embedbuilder", "editor_custom_color", "Or enter custom hex color:"),
-    /** Supports **bold**, *italic*, __underline__, ~~strikethrough~~, `code`, and more. Click ... */
-    editorDescriptionHint: () => t("embedbuilder", "editor_description_hint", "Supports **bold**, *italic*, __underline__, ~~strikethrough~~, `code`, and more. Click % for placeholders."),
-    /** Enter embed description... (supports Discord markdown) */
-    editorDescriptionPlaceholder: () => t("embedbuilder", "editor_description_placeholder", "Enter embed description... (supports Discord markdown)"),
+    /** Supports **bold**, *italic*, __underline__, ~~strikethrough~~ and `code`. */
+    editorDescriptionHint: () => t("embedbuilder", "editor_description_hint", "Supports **bold**, *italic*, __underline__, ~~strikethrough~~ and `code`."),
+    /** Type the text that goes inside the box */
+    editorDescriptionPlaceholder: () => t("embedbuilder", "editor_description_placeholder", "Type the text that goes inside the box"),
     /** Duplicate embed */
     editorDuplicateEmbed: () => t("embedbuilder", "editor_duplicate_embed", "Duplicate embed"),
     /** Embed color */
@@ -8081,8 +8111,8 @@ export const m = {
     editorEmbedColorPlaceholder: () => t("embedbuilder", "editor_embed_color_placeholder", "Select embed color"),
     /** Embed {number} */
     editorEmbedNumber: (p: { number: P }) => t("embedbuilder", "editor_embed_number", "Embed {number}", p),
-    /** Display inline (up to 3 fields per row) */
-    editorFieldInline: () => t("embedbuilder", "editor_field_inline", "Display inline (up to 3 fields per row)"),
+    /** Show next to other fields (up to 3 in a row) */
+    editorFieldInline: () => t("embedbuilder", "editor_field_inline", "Show next to other fields (up to 3 in a row)"),
     /** Field name */
     editorFieldNamePlaceholder: () => t("embedbuilder", "editor_field_name_placeholder", "Field name"),
     /** Field {number} */
@@ -8097,28 +8127,30 @@ export const m = {
     editorFooter: () => t("embedbuilder", "editor_footer", "Footer"),
     /** Footer text */
     editorFooterTextPlaceholder: () => t("embedbuilder", "editor_footer_text_placeholder", "Footer text"),
-    /** Icon URL */
-    editorIconUrl: () => t("embedbuilder", "editor_icon_url", "Icon URL"),
+    /** Small icon */
+    editorIconUrl: () => t("embedbuilder", "editor_icon_url", "Small icon"),
     /** https://example.com/icon.png */
     editorIconUrlPlaceholder: () => t("embedbuilder", "editor_icon_url_placeholder", "https://example.com/icon.png"),
     /** {placeholder} is an image */
     editorImageChip: (p: { placeholder: P }) => t("embedbuilder", "editor_image_chip", "{placeholder} is an image", p),
+    /** Large picture at the bottom */
+    editorImageLabel: () => t("embedbuilder", "editor_image_label", "Large picture at the bottom"),
     /** https://example.com/image.png */
     editorImagePlaceholder: () => t("embedbuilder", "editor_image_placeholder", "https://example.com/image.png"),
-    /** Insert placeholder */
-    editorInsertPlaceholder: () => t("embedbuilder", "editor_insert_placeholder", "Insert placeholder"),
-    /** Use direct image URLs (ending in .png, .jpg, etc.) */
-    editorMediaTipDirect: () => t("embedbuilder", "editor_media_tip_direct", "Use direct image URLs (ending in .png, .jpg, etc.)"),
-    /** Supported formats: PNG, JPG, GIF, WebP */
-    editorMediaTipFormats: () => t("embedbuilder", "editor_media_tip_formats", "Supported formats: PNG, JPG, GIF, WebP"),
-    /** Maximum image size: 8MB */
-    editorMediaTipMax: () => t("embedbuilder", "editor_media_tip_max", "Maximum image size: 8MB"),
-    /** Images should be publicly accessible */
-    editorMediaTipPublic: () => t("embedbuilder", "editor_media_tip_public", "Images should be publicly accessible"),
-    /** Recommended thumbnail size: 80x80px */
-    editorMediaTipThumbnail: () => t("embedbuilder", "editor_media_tip_thumbnail", "Recommended thumbnail size: 80x80px"),
-    /** Media tips: */
-    editorMediaTips: () => t("embedbuilder", "editor_media_tips", "Media tips:"),
+    /** Insert a placeholder */
+    editorInsertPlaceholder: () => t("embedbuilder", "editor_insert_placeholder", "Insert a placeholder"),
+    /** A link must point straight at the picture file, such as one ending in .png or .jpg. */
+    editorMediaTipDirect: () => t("embedbuilder", "editor_media_tip_direct", "A link must point straight at the picture file, such as one ending in .png or .jpg."),
+    /** Pictures can be PNG, JPG, GIF or WebP files. */
+    editorMediaTipFormats: () => t("embedbuilder", "editor_media_tip_formats", "Pictures can be PNG, JPG, GIF or WebP files."),
+    /** An uploaded picture can be up to 8 MB. */
+    editorMediaTipMax: () => t("embedbuilder", "editor_media_tip_max", "An uploaded picture can be up to 8 MB."),
+    /** Anyone must be able to open the picture link without logging in. */
+    editorMediaTipPublic: () => t("embedbuilder", "editor_media_tip_public", "Anyone must be able to open the picture link without logging in."),
+    /** A small picture works best at 80 by 80 pixels. */
+    editorMediaTipThumbnail: () => t("embedbuilder", "editor_media_tip_thumbnail", "A small picture works best at 80 by 80 pixels."),
+    /** Picture tips: */
+    editorMediaTips: () => t("embedbuilder", "editor_media_tips", "Picture tips:"),
     /** Move to image */
     editorMoveToImage: () => t("embedbuilder", "editor_move_to_image", "Move to image"),
     /** Move to thumbnail */
@@ -8137,22 +8169,22 @@ export const m = {
     editorTabsAria: () => t("embedbuilder", "editor_tabs_aria", "Embed editor sections"),
     /** https://example.com/thumbnail.png */
     editorThumbnailPlaceholder: () => t("embedbuilder", "editor_thumbnail_placeholder", "https://example.com/thumbnail.png"),
-    /** Thumbnail URL */
-    editorThumbnailUrl: () => t("embedbuilder", "editor_thumbnail_url", "Thumbnail URL"),
+    /** Small picture in the corner */
+    editorThumbnailUrl: () => t("embedbuilder", "editor_thumbnail_url", "Small picture in the corner"),
     /** Enter embed title... */
     editorTitlePlaceholder: () => t("embedbuilder", "editor_title_placeholder", "Enter embed title..."),
-    /** Please enter a valid URL */
-    editorUrlInvalid: () => t("embedbuilder", "editor_url_invalid", "Please enter a valid URL"),
+    /** That is not a valid link, so check that it starts with https://. */
+    editorUrlInvalid: () => t("embedbuilder", "editor_url_invalid", "That is not a valid link, so check that it starts with https://."),
     /** https://example.com */
     editorUrlPlaceholder: () => t("embedbuilder", "editor_url_placeholder", "https://example.com"),
-    /** URL (makes title clickable) */
-    editorUrlTitle: () => t("embedbuilder", "editor_url_title", "URL (makes title clickable)"),
+    /** Link (makes the title clickable) */
+    editorUrlTitle: () => t("embedbuilder", "editor_url_title", "Link (makes the title clickable)"),
     /** Add embed */
     fullscreenAddEmbed: () => t("embedbuilder", "fullscreen_add_embed", "Add embed"),
     /** Add row */
     fullscreenAddRow: () => t("embedbuilder", "fullscreen_add_row", "Add row"),
-    /** Add select */
-    fullscreenAddSelect: () => t("embedbuilder", "fullscreen_add_select", "Add select"),
+    /** Add select menu */
+    fullscreenAddSelect: () => t("embedbuilder", "fullscreen_add_select", "Add select menu"),
     /** Back to editor */
     fullscreenBackToEditor: () => t("embedbuilder", "fullscreen_back_to_editor", "Back to editor"),
     /** Clear all embeds */
@@ -8161,14 +8193,14 @@ export const m = {
     fullscreenClearEverything: () => t("embedbuilder", "fullscreen_clear_everything", "Clear everything"),
     /** Close preview */
     fullscreenClosePreview: () => t("embedbuilder", "fullscreen_close_preview", "Close preview"),
-    /** Click "Add Row" to start adding buttons or select menus */
-    fullscreenComponentsEmptyHint: () => t("embedbuilder", "fullscreen_components_empty_hint", "Click \"Add Row\" to start adding buttons or select menus"),
-    /** No components yet */
-    fullscreenComponentsEmptyTitle: () => t("embedbuilder", "fullscreen_components_empty_title", "No components yet"),
-    /** Rows: {rows}/5 • Max 5 buttons per row */
-    fullscreenComponentsLimits: (p: { rows: P }) => t("embedbuilder", "fullscreen_components_limits", "Rows: {rows}/5 • Max 5 buttons per row", p),
-    /** Optional message content that appears above the embed. Use % to mention the user or ins... */
-    fullscreenContentPlaceholder: () => t("embedbuilder", "fullscreen_content_placeholder", "Optional message content that appears above the embed. Use % to mention the user or insert other placeholders."),
+    /** Press Add row to start adding buttons or menus. */
+    fullscreenComponentsEmptyHint: () => t("embedbuilder", "fullscreen_components_empty_hint", "Press Add row to start adding buttons or menus."),
+    /** No buttons or menus yet */
+    fullscreenComponentsEmptyTitle: () => t("embedbuilder", "fullscreen_components_empty_title", "No buttons or menus yet"),
+    /** Rows used: {rows} of 5, with up to 5 buttons in each row. */
+    fullscreenComponentsLimits: (p: { rows: P }) => t("embedbuilder", "fullscreen_components_limits", "Rows used: {rows} of 5, with up to 5 buttons in each row.", p),
+    /** Optional plain text that appears above the box. */
+    fullscreenContentPlaceholder: () => t("embedbuilder", "fullscreen_content_placeholder", "Optional plain text that appears above the box."),
     /** Click to create an embed */
     fullscreenDefaultPlaceholder: () => t("embedbuilder", "fullscreen_default_placeholder", "Click to create an embed"),
     /** Are you sure you want to delete "{name}"? This cannot be undone. */
@@ -8179,34 +8211,34 @@ export const m = {
     fullscreenEmbedsEmptyTitle: () => t("embedbuilder", "fullscreen_embeds_empty_title", "No embeds"),
     /** Embeds ({count}/{max}) */
     fullscreenEmbedsHeading: (p: { count: P; max: P }) => t("embedbuilder", "fullscreen_embeds_heading", "Embeds ({count}/{max})", p),
-    /** Issues */
-    fullscreenIssues: () => t("embedbuilder", "fullscreen_issues", "Issues"),
-    /** Components aren't supported here: any <code>components</code> in pasted JSON are ignored. */
-    fullscreenJsonComponentsIgnored: () => t("embedbuilder", "fullscreen_json_components_ignored", "Components aren't supported here: any <code>components</code> in pasted JSON are ignored."),
-    /** Raw JSON */
-    fullscreenJsonHeading: () => t("embedbuilder", "fullscreen_json_heading", "Raw JSON"),
-    /** View or edit embed JSON, or paste it directly */
-    fullscreenJsonHint: () => t("embedbuilder", "fullscreen_json_hint", "View or edit embed JSON, or paste it directly"),
-    /** That isn't valid JSON. */
-    fullscreenJsonParseError: () => t("embedbuilder", "fullscreen_json_parse_error", "That isn't valid JSON."),
-    /** Paste embed JSON here, e.g. { "content": "...", "embeds": [...] } */
-    fullscreenJsonPlaceholder: () => t("embedbuilder", "fullscreen_json_placeholder", "Paste embed JSON here, e.g. { \"content\": \"...\", \"embeds\": [...] }"),
+    /** Problems */
+    fullscreenIssues: () => t("embedbuilder", "fullscreen_issues", "Problems"),
+    /** Buttons and menus are not supported here, so any in pasted code are ignored. */
+    fullscreenJsonComponentsIgnored: () => t("embedbuilder", "fullscreen_json_components_ignored", "Buttons and menus are not supported here, so any in pasted code are ignored."),
+    /** Your message as code */
+    fullscreenJsonHeading: () => t("embedbuilder", "fullscreen_json_heading", "Your message as code"),
+    /** This is the text version of your message, which other bot features can use and which yo... */
+    fullscreenJsonHint: () => t("embedbuilder", "fullscreen_json_hint", "This is the text version of your message, which other bot features can use and which you can paste here to load."),
+    /** That is not valid message code. */
+    fullscreenJsonParseError: () => t("embedbuilder", "fullscreen_json_parse_error", "That is not valid message code."),
+    /** Paste message code here, for example { "content": "...", "embeds": [...] } */
+    fullscreenJsonPlaceholder: () => t("embedbuilder", "fullscreen_json_placeholder", "Paste message code here, for example { \"content\": \"...\", \"embeds\": [...] }"),
     /** Live preview */
     fullscreenLivePreview: () => t("embedbuilder", "fullscreen_live_preview", "Live preview"),
     /** No saved embeds yet */
     fullscreenMineEmpty: () => t("embedbuilder", "fullscreen_mine_empty", "No saved embeds yet"),
     /** My embeds ({count}) */
     fullscreenMineHeading: (p: { count: P }) => t("embedbuilder", "fullscreen_mine_heading", "My embeds ({count})", p),
-    /** New select */
-    fullscreenNewSelectLabel: () => t("embedbuilder", "fullscreen_new_select_label", "New select"),
+    /** New select menu */
+    fullscreenNewSelectLabel: () => t("embedbuilder", "fullscreen_new_select_label", "New select menu"),
     /** Button added */
     fullscreenNotifyButtonAdded: () => t("embedbuilder", "fullscreen_notify_button_added", "Button added"),
     /** Button components are not allowed */
     fullscreenNotifyButtonNotAllowed: () => t("embedbuilder", "fullscreen_notify_button_not_allowed", "Button components are not allowed"),
-    /** Component duplicated */
-    fullscreenNotifyComponentDuplicated: () => t("embedbuilder", "fullscreen_notify_component_duplicated", "Component duplicated"),
-    /** Component removed */
-    fullscreenNotifyComponentRemoved: () => t("embedbuilder", "fullscreen_notify_component_removed", "Component removed"),
+    /** Button or menu duplicated */
+    fullscreenNotifyComponentDuplicated: () => t("embedbuilder", "fullscreen_notify_component_duplicated", "Button or menu duplicated"),
+    /** Button or menu removed */
+    fullscreenNotifyComponentRemoved: () => t("embedbuilder", "fullscreen_notify_component_removed", "Button or menu removed"),
     /** Failed to delete embed */
     fullscreenNotifyDeleteFailed: () => t("embedbuilder", "fullscreen_notify_delete_failed", "Failed to delete embed"),
     /** New embed added */
@@ -8223,12 +8255,12 @@ export const m = {
     fullscreenNotifyFixProblemsOne: (p: { count: P }) => t("embedbuilder", "fullscreen_notify_fix_problems_one", "Fix {count} problem before saving", p),
     /** Fix {count} problems before saving */
     fullscreenNotifyFixProblemsOther: (p: { count: P }) => t("embedbuilder", "fullscreen_notify_fix_problems_other", "Fix {count} problems before saving", p),
-    /** JSON applied to builder */
-    fullscreenNotifyJsonApplied: () => t("embedbuilder", "fullscreen_notify_json_applied", "JSON applied to builder"),
-    /** JSON applied (components aren't allowed here and were skipped) */
-    fullscreenNotifyJsonAppliedSkipped: () => t("embedbuilder", "fullscreen_notify_json_applied_skipped", "JSON applied (components aren't allowed here and were skipped)"),
-    /** Invalid JSON */
-    fullscreenNotifyJsonInvalid: () => t("embedbuilder", "fullscreen_notify_json_invalid", "Invalid JSON"),
+    /** Message code loaded into the builder */
+    fullscreenNotifyJsonApplied: () => t("embedbuilder", "fullscreen_notify_json_applied", "Message code loaded into the builder"),
+    /** Message code loaded, and the buttons and menus were skipped because they are not allowe... */
+    fullscreenNotifyJsonAppliedSkipped: () => t("embedbuilder", "fullscreen_notify_json_applied_skipped", "Message code loaded, and the buttons and menus were skipped because they are not allowed here."),
+    /** That message code is not valid */
+    fullscreenNotifyJsonInvalid: () => t("embedbuilder", "fullscreen_notify_json_invalid", "That message code is not valid"),
     /** Failed to load saved embeds */
     fullscreenNotifyLoadSavedFailed: () => t("embedbuilder", "fullscreen_notify_load_saved_failed", "Failed to load saved embeds"),
     /** Loaded "{name}" */
@@ -8237,16 +8269,16 @@ export const m = {
     fullscreenNotifyLoginRequired: () => t("embedbuilder", "fullscreen_notify_login_required", "You must be logged in to save embeds"),
     /** Maximum 5 buttons per row */
     fullscreenNotifyMaxButtons: () => t("embedbuilder", "fullscreen_notify_max_buttons", "Maximum 5 buttons per row"),
-    /** Maximum 25 components allowed */
-    fullscreenNotifyMaxComponents: () => t("embedbuilder", "fullscreen_notify_max_components", "Maximum 25 components allowed"),
+    /** Maximum 25 buttons and menus allowed */
+    fullscreenNotifyMaxComponents: () => t("embedbuilder", "fullscreen_notify_max_components", "Maximum 25 buttons and menus allowed"),
     /** Please enter a name for the embed */
     fullscreenNotifyNameRequired: () => t("embedbuilder", "fullscreen_notify_name_required", "Please enter a name for the embed"),
     /** Nothing to save yet */
     fullscreenNotifyNothingToSave: () => t("embedbuilder", "fullscreen_notify_nothing_to_save", "Nothing to save yet"),
     /** New row added */
     fullscreenNotifyRowAdded: () => t("embedbuilder", "fullscreen_notify_row_added", "New row added"),
-    /** Cannot add components to a row with a select menu */
-    fullscreenNotifyRowHasSelect: () => t("embedbuilder", "fullscreen_notify_row_has_select", "Cannot add components to a row with a select menu"),
+    /** A row with a select menu cannot hold buttons */
+    fullscreenNotifyRowHasSelect: () => t("embedbuilder", "fullscreen_notify_row_has_select", "A row with a select menu cannot hold buttons"),
     /** Row removed */
     fullscreenNotifyRowRemoved: () => t("embedbuilder", "fullscreen_notify_row_removed", "Row removed"),
     /** Failed to save embed. The name may already be in use. */
@@ -8263,10 +8295,10 @@ export const m = {
     fullscreenNotifyServerRequired: () => t("embedbuilder", "fullscreen_notify_server_required", "A server must be selected to save a shared embed"),
     /** This row is empty */
     fullscreenRowEmpty: () => t("embedbuilder", "fullscreen_row_empty", "This row is empty"),
-    /** Row {number} ({count} component) */
-    fullscreenRowHeaderOne: (p: { count: P; number: P }) => t("embedbuilder", "fullscreen_row_header_one", "Row {number} ({count} component)", p),
-    /** Row {number} ({count} components) */
-    fullscreenRowHeaderOther: (p: { count: P; number: P }) => t("embedbuilder", "fullscreen_row_header_other", "Row {number} ({count} components)", p),
+    /** Row {number} ({count} item) */
+    fullscreenRowHeaderOne: (p: { count: P; number: P }) => t("embedbuilder", "fullscreen_row_header_one", "Row {number} ({count} item)", p),
+    /** Row {number} ({count} items) */
+    fullscreenRowHeaderOther: (p: { count: P; number: P }) => t("embedbuilder", "fullscreen_row_header_other", "Row {number} ({count} items)", p),
     /** Save current embed */
     fullscreenSaveHeading: () => t("embedbuilder", "fullscreen_save_heading", "Save current embed"),
     /** Embed name */
@@ -8283,64 +8315,76 @@ export const m = {
     fullscreenSharedHeading: (p: { count: P }) => t("embedbuilder", "fullscreen_shared_heading", "Shared on this server ({count})", p),
     /** Embed */
     fullscreenTabEmbed: () => t("embedbuilder", "fullscreen_tab_embed", "Embed"),
-    /** Embed {number} author needs a name when it has an icon or link */
-    fullscreenValidationAuthorNeedsName: (p: { number: P }) => t("embedbuilder", "fullscreen_validation_author_needs_name", "Embed {number} author needs a name when it has an icon or link", p),
-    /** A button needs a label */
-    fullscreenValidationButtonNeedsLabel: () => t("embedbuilder", "fullscreen_validation_button_needs_label", "A button needs a label"),
-    /** Button "{name}" needs a trigger */
-    fullscreenValidationButtonNeedsTrigger: (p: { name: P }) => t("embedbuilder", "fullscreen_validation_button_needs_trigger", "Button \"{name}\" needs a trigger", p),
-    /** Embed {number} description exceeds 4096 characters */
-    fullscreenValidationDescriptionTooLong: (p: { number: P }) => t("embedbuilder", "fullscreen_validation_description_too_long", "Embed {number} description exceeds 4096 characters", p),
-    /** Embed {number} is empty and won't be sent */
-    fullscreenValidationEmbedEmpty: (p: { number: P }) => t("embedbuilder", "fullscreen_validation_embed_empty", "Embed {number} is empty and won't be sent", p),
-    /** Embed {embed} field {field} needs both a name and a value */
-    fullscreenValidationFieldIncomplete: (p: { embed: P; field: P }) => t("embedbuilder", "fullscreen_validation_field_incomplete", "Embed {embed} field {field} needs both a name and a value", p),
-    /** Embed {number} footer needs text when it has an icon */
-    fullscreenValidationFooterNeedsText: (p: { number: P }) => t("embedbuilder", "fullscreen_validation_footer_needs_text", "Embed {number} footer needs text when it has an icon", p),
-    /** Link button "{name}" needs a URL */
-    fullscreenValidationLinkNeedsUrl: (p: { name: P }) => t("embedbuilder", "fullscreen_validation_link_needs_url", "Link button \"{name}\" needs a URL", p),
-    /** Option {number} of "{name}" needs a name */
-    fullscreenValidationOptionNeedsName: (p: { name: P; number: P }) => t("embedbuilder", "fullscreen_validation_option_needs_name", "Option {number} of \"{name}\" needs a name", p),
-    /** Select menu "{name}" needs at least one option */
-    fullscreenValidationSelectNeedsOptions: (p: { name: P }) => t("embedbuilder", "fullscreen_validation_select_needs_options", "Select menu \"{name}\" needs at least one option", p),
-    /** Select menu "{name}" needs a trigger */
-    fullscreenValidationSelectNeedsTrigger: (p: { name: P }) => t("embedbuilder", "fullscreen_validation_select_needs_trigger", "Select menu \"{name}\" needs a trigger", p),
-    /** Embed {number} title exceeds 256 characters */
-    fullscreenValidationTitleTooLong: (p: { number: P }) => t("embedbuilder", "fullscreen_validation_title_too_long", "Embed {number} title exceeds 256 characters", p),
+    /** Embed {number} has an author icon or link but no author name, so add a name or clear them. */
+    fullscreenValidationAuthorNeedsName: (p: { number: P }) => t("embedbuilder", "fullscreen_validation_author_needs_name", "Embed {number} has an author icon or link but no author name, so add a name or clear them.", p),
+    /** A button has no text, so type the text it should show. */
+    fullscreenValidationButtonNeedsLabel: () => t("embedbuilder", "fullscreen_validation_button_needs_label", "A button has no text, so type the text it should show."),
+    /** Button "{name}" has no reply, so write what it should show. */
+    fullscreenValidationButtonNeedsReply: (p: { name: P }) => t("embedbuilder", "fullscreen_validation_button_needs_reply", "Button \"{name}\" has no reply, so write what it should show.", p),
+    /** Button "{name}" has no trigger chosen, so pick the one it should run. */
+    fullscreenValidationButtonNeedsTrigger: (p: { name: P }) => t("embedbuilder", "fullscreen_validation_button_needs_trigger", "Button \"{name}\" has no trigger chosen, so pick the one it should run.", p),
+    /** The text inside embed {number} is longer than 4096 characters, so shorten it. */
+    fullscreenValidationDescriptionTooLong: (p: { number: P }) => t("embedbuilder", "fullscreen_validation_description_too_long", "The text inside embed {number} is longer than 4096 characters, so shorten it.", p),
+    /** Embed {number} has nothing in it, so it will not be sent unless you add something. */
+    fullscreenValidationEmbedEmpty: (p: { number: P }) => t("embedbuilder", "fullscreen_validation_embed_empty", "Embed {number} has nothing in it, so it will not be sent unless you add something.", p),
+    /** Field {field} in embed {embed} needs both a name and a value, so fill in the missing one. */
+    fullscreenValidationFieldIncomplete: (p: { embed: P; field: P }) => t("embedbuilder", "fullscreen_validation_field_incomplete", "Field {field} in embed {embed} needs both a name and a value, so fill in the missing one.", p),
+    /** Embed {number} has a footer icon but no footer text, so add the text or remove the icon. */
+    fullscreenValidationFooterNeedsText: (p: { number: P }) => t("embedbuilder", "fullscreen_validation_footer_needs_text", "Embed {number} has a footer icon but no footer text, so add the text or remove the icon.", p),
+    /** The link on button "{name}" must start with https:// or discord://, so fix the address. */
+    fullscreenValidationLinkNeedsHttps: (p: { name: P }) => t("embedbuilder", "fullscreen_validation_link_needs_https", "The link on button \"{name}\" must start with https:// or discord://, so fix the address.", p),
+    /** Button "{name}" opens a link but has no address, so paste the link. */
+    fullscreenValidationLinkNeedsUrl: (p: { name: P }) => t("embedbuilder", "fullscreen_validation_link_needs_url", "Button \"{name}\" opens a link but has no address, so paste the link.", p),
+    /** Option {number} of menu "{name}" has no name, so type one. */
+    fullscreenValidationOptionNeedsName: (p: { name: P; number: P }) => t("embedbuilder", "fullscreen_validation_option_needs_name", "Option {number} of menu \"{name}\" has no name, so type one.", p),
+    /** Menu "{name}" has no options, so add at least one. */
+    fullscreenValidationSelectNeedsOptions: (p: { name: P }) => t("embedbuilder", "fullscreen_validation_select_needs_options", "Menu \"{name}\" has no options, so add at least one.", p),
+    /** Menu "{name}" has no trigger chosen, so pick the one it should run. */
+    fullscreenValidationSelectNeedsTrigger: (p: { name: P }) => t("embedbuilder", "fullscreen_validation_select_needs_trigger", "Menu \"{name}\" has no trigger chosen, so pick the one it should run.", p),
+    /** The title of embed {number} is longer than 256 characters, so shorten it. */
+    fullscreenValidationTitleTooLong: (p: { number: P }) => t("embedbuilder", "fullscreen_validation_title_too_long", "The title of embed {number} is longer than 256 characters, so shorten it.", p),
+    /** Builder mode */
+    modeAria: () => t("embedbuilder", "mode_aria", "Builder mode"),
+    /** This message uses parts that Simple does not show, and they stay as they are. */
+    modeNotice: () => t("embedbuilder", "mode_notice", "This message uses parts that Simple does not show, and they stay as they are."),
+    /** Switch to Advanced */
+    modeNoticeSwitch: () => t("embedbuilder", "mode_notice_switch", "Switch to Advanced"),
+    /** Simple */
+    modeSimple: () => t("embedbuilder", "mode_simple", "Simple"),
     /** Cancel edits */
     pageActionCancelEdits: () => t("embedbuilder", "page_action_cancel_edits", "Cancel edits"),
-    /** Copy JSON */
-    pageActionCopyJson: () => t("embedbuilder", "page_action_copy_json", "Copy JSON"),
+    /** Copy message code */
+    pageActionCopyJson: () => t("embedbuilder", "page_action_copy_json", "Copy message code"),
     /** Row */
     pageAddRowShort: () => t("embedbuilder", "page_add_row_short", "Row"),
     /** Button {name} */
     pageComponentAriaButton: (p: { name: P }) => t("embedbuilder", "page_component_aria_button", "Button {name}", p),
     /** Select menu {name} */
     pageComponentAriaSelect: (p: { name: P }) => t("embedbuilder", "page_component_aria_select", "Select menu {name}", p),
-    /** R:{rows}/5 • B:5/row */
-    pageComponentsLimitsShort: (p: { rows: P }) => t("embedbuilder", "page_components_limits_short", "R:{rows}/5 • B:5/row", p),
-    /** Click % for placeholders */
-    pageContentHint: () => t("embedbuilder", "page_content_hint", "Click % for placeholders"),
-    /** Message content (optional) */
-    pageContentLabel: () => t("embedbuilder", "page_content_label", "Message content (optional)"),
-    /** Optional message content that appears above the embed... */
-    pageContentPlaceholder: () => t("embedbuilder", "page_content_placeholder", "Optional message content that appears above the embed..."),
+    /** {rows} of 5 rows used */
+    pageComponentsLimitsShort: (p: { rows: P }) => t("embedbuilder", "page_components_limits_short", "{rows} of 5 rows used", p),
+    /** This plain text appears above the colored box. */
+    pageContentHint: () => t("embedbuilder", "page_content_hint", "This plain text appears above the colored box."),
+    /** Text above the box (optional) */
+    pageContentLabel: () => t("embedbuilder", "page_content_label", "Text above the box (optional)"),
+    /** Optional text shown above the box */
+    pageContentPlaceholder: () => t("embedbuilder", "page_content_placeholder", "Optional text shown above the box"),
     /** Apply to builder */
     pageJsonApply: () => t("embedbuilder", "page_json_apply", "Apply to builder"),
-    /** Apply JSON to builder */
-    pageJsonApplyAria: () => t("embedbuilder", "page_json_apply_aria", "Apply JSON to builder"),
+    /** Apply message code to builder */
+    pageJsonApplyAria: () => t("embedbuilder", "page_json_apply_aria", "Apply message code to builder"),
     /** Paste a full {payload} payload or a single embed object, then click "Apply to Builder" ... */
     pageJsonFooter: (p: { payload: P }) => t("embedbuilder", "page_json_footer", "Paste a full {payload} payload or a single embed object, then click \"Apply to Builder\" to load it into the editor.", p),
     /** Refresh from builder */
     pageJsonRefresh: () => t("embedbuilder", "page_json_refresh", "Refresh from builder"),
-    /** Refresh JSON from builder */
-    pageJsonRefreshAria: () => t("embedbuilder", "page_json_refresh_aria", "Refresh JSON from builder"),
-    /** Failed to copy JSON */
-    pageNotifyCopyFailed: () => t("embedbuilder", "page_notify_copy_failed", "Failed to copy JSON"),
+    /** Refresh message code from builder */
+    pageJsonRefreshAria: () => t("embedbuilder", "page_json_refresh_aria", "Refresh message code from builder"),
+    /** Could not copy the message code */
+    pageNotifyCopyFailed: () => t("embedbuilder", "page_notify_copy_failed", "Could not copy the message code"),
     /** Cannot duplicate select menu in same row */
     pageNotifyDuplicateSelect: () => t("embedbuilder", "page_notify_duplicate_select", "Cannot duplicate select menu in same row"),
-    /** JSON copied */
-    pageNotifyJsonCopied: () => t("embedbuilder", "page_notify_json_copied", "JSON copied"),
+    /** Message code copied */
+    pageNotifyJsonCopied: () => t("embedbuilder", "page_notify_json_copied", "Message code copied"),
     /** Maximum 5 rows allowed */
     pageNotifyMaxRows: () => t("embedbuilder", "page_notify_max_rows", "Maximum 5 rows allowed"),
     /** Nothing to send yet */
@@ -8367,8 +8411,8 @@ export const m = {
     pageNotifyTemplateApplied: (p: { name: P }) => t("embedbuilder", "page_notify_template_applied", "Applied template: {name}", p),
     /** Add button to row */
     pageRowAddButtonAria: () => t("embedbuilder", "page_row_add_button_aria", "Add button to row"),
-    /** Components in row {number} */
-    pageRowComponentsAria: (p: { number: P }) => t("embedbuilder", "page_row_components_aria", "Components in row {number}", p),
+    /** Buttons and menus in row {number} */
+    pageRowComponentsAria: (p: { number: P }) => t("embedbuilder", "page_row_components_aria", "Buttons and menus in row {number}", p),
     /** Drag handle for row {number} */
     pageRowDragAria: (p: { number: P }) => t("embedbuilder", "page_row_drag_aria", "Drag handle for row {number}", p),
     /** Drag to reorder row */
@@ -8409,8 +8453,8 @@ export const m = {
     pageSendAsPersonaAria: (p: { name: P }) => t("embedbuilder", "page_send_as_persona_aria", "Send as {name}", p),
     /** Sends are recorded in the audit log. */
     pageSendAuditHint: () => t("embedbuilder", "page_send_audit_hint", "Sends are recorded in the audit log."),
-    /** Fix the issues in the live preview before sending. */
-    pageSendBlockedByErrors: () => t("embedbuilder", "page_send_blocked_by_errors", "Fix the issues in the live preview before sending."),
+    /** Fix the problems listed above the live preview before sending. */
+    pageSendBlockedByErrors: () => t("embedbuilder", "page_send_blocked_by_errors", "Fix the problems listed above the live preview before sending."),
     /** Send message */
     pageSendButton: () => t("embedbuilder", "page_send_button", "Send message"),
     /** Channel to send the message to */
@@ -8421,8 +8465,8 @@ export const m = {
     pageSendConfirmMessageBot: (p: { channel: P; server: P }) => t("embedbuilder", "page_send_confirm_message_bot", "Send this message to {channel} in {server}? Everyone in the channel will see it, and the send is recorded in the audit log.", p),
     /** Send this message to {channel} in {server} as "{persona}"? Everyone in the channel will... */
     pageSendConfirmMessagePersona: (p: { channel: P; persona: P; server: P }) => t("embedbuilder", "page_send_confirm_message_persona", "Send this message to {channel} in {server} as \"{persona}\"? Everyone in the channel will see it, and the send is recorded in the audit log.", p),
-    /** Send this message to {channel} in {server} through a webhook? Everyone in the channel w... */
-    pageSendConfirmMessageWebhook: (p: { channel: P; server: P }) => t("embedbuilder", "page_send_confirm_message_webhook", "Send this message to {channel} in {server} through a webhook? Everyone in the channel will see it, and the send is recorded in the audit log.", p),
+    /** Send this message to {channel} in {server} under a custom name and avatar? Everyone in ... */
+    pageSendConfirmMessageWebhook: (p: { channel: P; server: P }) => t("embedbuilder", "page_send_confirm_message_webhook", "Send this message to {channel} in {server} under a custom name and avatar? Everyone in the channel will see it, and the send is recorded in the audit log.", p),
     /** Use a one-off name and avatar */
     pageSendCustomAria: () => t("embedbuilder", "page_send_custom_aria", "Use a one-off name and avatar"),
     /** The bot does not have the Embed Links permission in this channel. */
@@ -8439,8 +8483,8 @@ export const m = {
     pageSendJump: () => t("embedbuilder", "page_send_jump", "Jump to message"),
     /** Links only. */
     pageSendLinksOnly: () => t("embedbuilder", "page_send_links_only", "Links only."),
-    /** Manage saved personas */
-    pageSendManageAria: () => t("embedbuilder", "page_send_manage_aria", "Manage saved personas"),
+    /** Manage saved senders */
+    pageSendManageAria: () => t("embedbuilder", "page_send_manage_aria", "Manage saved senders"),
     /** Mass mentions, including role mentions, are removed from this message. */
     pageSendMentionsStripped: () => t("embedbuilder", "page_send_mentions_stripped", "Mass mentions, including role mentions, are removed from this message."),
     /** There are no channels you and the bot can both post in. */
@@ -8457,34 +8501,36 @@ export const m = {
     pageSendResultBot: (p: { channel: P }) => t("embedbuilder", "page_send_result_bot", "Sent to #{channel} as the bot.", p),
     /** Sent to #{channel} as "{persona}". */
     pageSendResultPersona: (p: { channel: P; persona: P }) => t("embedbuilder", "page_send_result_persona", "Sent to #{channel} as \"{persona}\".", p),
-    /** Sent to #{channel} via webhook. */
-    pageSendResultWebhook: (p: { channel: P }) => t("embedbuilder", "page_send_result_webhook", "Sent to #{channel} via webhook.", p),
-    /** Save a persona to upload an image. */
-    pageSendSavePersona: () => t("embedbuilder", "page_send_save_persona", "Save a persona to upload an image."),
+    /** Sent to #{channel} under a custom name. */
+    pageSendResultWebhook: (p: { channel: P }) => t("embedbuilder", "page_send_result_webhook", "Sent to #{channel} under a custom name.", p),
+    /** Save a sender to upload an image. */
+    pageSendSavePersona: () => t("embedbuilder", "page_send_save_persona", "Save a sender to upload an image."),
     /** Unavailable channels ({count}) */
     pageSendUnavailable: (p: { count: P }) => t("embedbuilder", "page_send_unavailable", "Unavailable channels ({count})", p),
-    /** Webhook avatar URL (optional) */
-    pageSendWebhookAvatarPlaceholder: () => t("embedbuilder", "page_send_webhook_avatar_placeholder", "Webhook avatar URL (optional)"),
-    /** Webhook display name (optional) */
-    pageSendWebhookNamePlaceholder: () => t("embedbuilder", "page_send_webhook_name_placeholder", "Webhook display name (optional)"),
+    /** Avatar link (optional) */
+    pageSendWebhookAvatarPlaceholder: () => t("embedbuilder", "page_send_webhook_avatar_placeholder", "Avatar link (optional)"),
+    /** This uses a webhook, which lets the bot post under any name and avatar you choose. */
+    pageSendWebhookHint: () => t("embedbuilder", "page_send_webhook_hint", "This uses a webhook, which lets the bot post under any name and avatar you choose."),
+    /** Display name (optional) */
+    pageSendWebhookNamePlaceholder: () => t("embedbuilder", "page_send_webhook_name_placeholder", "Display name (optional)"),
     /** The bot needs the Manage Webhooks permission in this channel. */
     pageSendWebhookNeedBot: () => t("embedbuilder", "page_send_webhook_need_bot", "The bot needs the Manage Webhooks permission in this channel."),
     /** You need the Manage Webhooks permission in this channel. */
     pageSendWebhookNeedUser: () => t("embedbuilder", "page_send_webhook_need_user", "You need the Manage Webhooks permission in this channel."),
-    /** Send through a webhook with a custom name and avatar */
-    pageSendWebhookToggle: () => t("embedbuilder", "page_send_webhook_toggle", "Send through a webhook with a custom name and avatar"),
+    /** Post under a different name and avatar */
+    pageSendWebhookToggle: () => t("embedbuilder", "page_send_webhook_toggle", "Post under a different name and avatar"),
     /** Start from scratch */
     pageStartFromScratch: () => t("embedbuilder", "page_start_from_scratch", "Start from scratch"),
-    /** Build and send embeds */
-    pageSubtitle: () => t("embedbuilder", "page_subtitle", "Build and send embeds"),
+    /** Build a message and send it to a channel */
+    pageSubtitle: () => t("embedbuilder", "page_subtitle", "Build a message and send it to a channel"),
     /** Builder sections */
     pageTabsAria: () => t("embedbuilder", "page_tabs_aria", "Builder sections"),
     /** Choose a template */
     pageTemplatesHeading: () => t("embedbuilder", "page_templates_heading", "Choose a template"),
     /** Discord embed builder */
     pageTitle: () => t("embedbuilder", "page_title", "Discord embed builder"),
-    /** Embed {number} is empty */
-    pageValidationEmbedEmpty: (p: { number: P }) => t("embedbuilder", "page_validation_embed_empty", "Embed {number} is empty", p),
+    /** Embed {number} has no title or text, so it will be left out. */
+    pageValidationEmbedEmpty: (p: { number: P }) => t("embedbuilder", "page_validation_embed_empty", "Embed {number} has no title or text, so it will be left out.", p),
     /** Link */
     personaAvatarLink: () => t("embedbuilder", "persona_avatar_link", "Link"),
     /** The avatar must be an image */
@@ -8495,66 +8541,88 @@ export const m = {
     personaAvatarUploadAria: () => t("embedbuilder", "persona_avatar_upload_aria", "Upload an image"),
     /** Use an image URL */
     personaAvatarUseUrlAria: () => t("embedbuilder", "persona_avatar_use_url_aria", "Use an image URL"),
-    /** Back to the persona list */
-    personaBackAria: () => t("embedbuilder", "persona_back_aria", "Back to the persona list"),
+    /** Back to the sender list */
+    personaBackAria: () => t("embedbuilder", "persona_back_aria", "Back to the sender list"),
     /** Choose a different image */
     personaChooseDifferent: () => t("embedbuilder", "persona_choose_different", "Choose a different image"),
     /** Choose an image file */
     personaChooseFileAria: () => t("embedbuilder", "persona_choose_file_aria", "Choose an image file"),
     /** Choose an image */
     personaChooseImage: () => t("embedbuilder", "persona_choose_image", "Choose an image"),
-    /** Create persona */
-    personaCreate: () => t("embedbuilder", "persona_create", "Create persona"),
-    /** Create a new persona */
-    personaCreateAria: () => t("embedbuilder", "persona_create_aria", "Create a new persona"),
+    /** Create sender */
+    personaCreate: () => t("embedbuilder", "persona_create", "Create sender"),
+    /** Create a new sender */
+    personaCreateAria: () => t("embedbuilder", "persona_create_aria", "Create a new sender"),
     /** Created "{name}" */
     personaCreated: (p: { name: P }) => t("embedbuilder", "persona_created", "Created \"{name}\"", p),
-    /** Failed to delete persona */
-    personaDeleteFailed: () => t("embedbuilder", "persona_delete_failed", "Failed to delete persona"),
-    /** Delete the persona "{name}"? Messages already sent as it are unaffected. */
-    personaDeleteMessage: (p: { name: P }) => t("embedbuilder", "persona_delete_message", "Delete the persona \"{name}\"? Messages already sent as it are unaffected.", p),
-    /** this persona */
-    personaDeleteThis: () => t("embedbuilder", "persona_delete_this", "this persona"),
-    /** Delete persona */
-    personaDeleteTitle: () => t("embedbuilder", "persona_delete_title", "Delete persona"),
+    /** Failed to delete sender */
+    personaDeleteFailed: () => t("embedbuilder", "persona_delete_failed", "Failed to delete sender"),
+    /** Delete the sender "{name}"? Messages already sent as it are unaffected. */
+    personaDeleteMessage: (p: { name: P }) => t("embedbuilder", "persona_delete_message", "Delete the sender \"{name}\"? Messages already sent as it are unaffected.", p),
+    /** this sender */
+    personaDeleteThis: () => t("embedbuilder", "persona_delete_this", "this sender"),
+    /** Delete sender */
+    personaDeleteTitle: () => t("embedbuilder", "persona_delete_title", "Delete sender"),
     /** Deleted "{name}" */
     personaDeleted: (p: { name: P }) => t("embedbuilder", "persona_deleted", "Deleted \"{name}\"", p),
-    /** No personas yet */
-    personaEmpty: () => t("embedbuilder", "persona_empty", "No personas yet"),
-    /** You must be logged in to save personas */
-    personaLoginRequired: () => t("embedbuilder", "persona_login_required", "You must be logged in to save personas"),
-    /** Give the persona a name */
-    personaNameRequired: () => t("embedbuilder", "persona_name_required", "Give the persona a name"),
-    /** New persona */
-    personaNew: () => t("embedbuilder", "persona_new", "New persona"),
+    /** No senders yet */
+    personaEmpty: () => t("embedbuilder", "persona_empty", "No senders yet"),
+    /** You must be logged in to save senders */
+    personaLoginRequired: () => t("embedbuilder", "persona_login_required", "You must be logged in to save senders"),
+    /** Give the sender a name */
+    personaNameRequired: () => t("embedbuilder", "persona_name_required", "Give the sender a name"),
+    /** New sender */
+    personaNew: () => t("embedbuilder", "persona_new", "New sender"),
     /** Personal */
     personaPersonal: () => t("embedbuilder", "persona_personal", "Personal"),
     /** How messages will appear */
     personaPreviewHint: () => t("embedbuilder", "persona_preview_hint", "How messages will appear"),
     /** Could not read that image */
     personaReadFailed: () => t("embedbuilder", "persona_read_failed", "Could not read that image"),
-    /** Save persona */
-    personaSaveAria: () => t("embedbuilder", "persona_save_aria", "Save persona"),
-    /** Failed to save persona */
-    personaSaveFailed: () => t("embedbuilder", "persona_save_failed", "Failed to save persona"),
-    /** Select a server to share a persona */
-    personaShareNeedsServer: () => t("embedbuilder", "persona_share_needs_server", "Select a server to share a persona"),
+    /** Save sender */
+    personaSaveAria: () => t("embedbuilder", "persona_save_aria", "Save sender"),
+    /** Failed to save sender */
+    personaSaveFailed: () => t("embedbuilder", "persona_save_failed", "Failed to save sender"),
+    /** Select a server to share a sender */
+    personaShareNeedsServer: () => t("embedbuilder", "persona_share_needs_server", "Select a server to share a sender"),
     /** Share with everyone in {server} */
     personaShareWithEveryone: (p: { server: P }) => t("embedbuilder", "persona_share_with_everyone", "Share with everyone in {server}", p),
     /** Shared with {server} */
     personaSharedWith: (p: { server: P }) => t("embedbuilder", "persona_shared_with", "Shared with {server}", p),
-    /** Edit persona */
-    personaTitleEdit: () => t("embedbuilder", "persona_title_edit", "Edit persona"),
-    /** Send as personas */
-    personaTitleList: () => t("embedbuilder", "persona_title_list", "Send as personas"),
-    /** Unnamed persona */
-    personaUnnamed: () => t("embedbuilder", "persona_unnamed", "Unnamed persona"),
+    /** Edit sender */
+    personaTitleEdit: () => t("embedbuilder", "persona_title_edit", "Edit sender"),
+    /** Saved senders */
+    personaTitleList: () => t("embedbuilder", "persona_title_list", "Saved senders"),
+    /** Unnamed sender */
+    personaUnnamed: () => t("embedbuilder", "persona_unnamed", "Unnamed sender"),
     /** Updated "{name}" */
     personaUpdated: (p: { name: P }) => t("embedbuilder", "persona_updated", "Updated \"{name}\"", p),
-    /** PNG or JPG images and GIFs up to 8MB. Uploaded avatars use one webhook per channel this... */
-    personaUploadHint: () => t("embedbuilder", "persona_upload_hint", "PNG or JPG images and GIFs up to 8MB. Uploaded avatars use one webhook per channel this persona posts in; a link does not."),
+    /** A picture can be up to 8MB, and each uploaded avatar uses one of the 15 webhooks a chan... */
+    personaUploadHint: () => t("embedbuilder", "persona_upload_hint", "A picture can be up to 8MB, and each uploaded avatar uses one of the 15 webhooks a channel can hold."),
     /** An uploaded image is already saved. */
     personaUploadSaved: () => t("embedbuilder", "persona_upload_saved", "An uploaded image is already saved."),
+    /** Paste a link to a picture or upload one, and it shows large at the bottom of the box. */
+    pictureHint: () => t("embedbuilder", "picture_hint", "Paste a link to a picture or upload one, and it shows large at the bottom of the box."),
+    /** Picture */
+    pictureLabel: () => t("embedbuilder", "picture_label", "Picture"),
+    /** Pick a server first so the picture can be stored. */
+    pictureNeedsServer: () => t("embedbuilder", "picture_needs_server", "Pick a server first so the picture can be stored."),
+    /** That picture could not be read. */
+    pictureReadFailed: () => t("embedbuilder", "picture_read_failed", "That picture could not be read."),
+    /** The picture must be 8 MB or smaller. */
+    pictureTooLarge: () => t("embedbuilder", "picture_too_large", "The picture must be 8 MB or smaller."),
+    /** Upload picture */
+    pictureUpload: () => t("embedbuilder", "picture_upload", "Upload picture"),
+    /** The picture could not be uploaded, so paste a link to it instead. */
+    pictureUploadFailed: () => t("embedbuilder", "picture_upload_failed", "The picture could not be uploaded, so paste a link to it instead."),
+    /** The picture was uploaded and its link is in the field. */
+    pictureUploaded: () => t("embedbuilder", "picture_uploaded", "The picture was uploaded and its link is in the field."),
+    /** Uploading... */
+    pictureUploading: () => t("embedbuilder", "picture_uploading", "Uploading..."),
+    /** Pick a PNG, JPG, GIF or WebP picture. */
+    pictureWrongType: () => t("embedbuilder", "picture_wrong_type", "Pick a PNG, JPG, GIF or WebP picture."),
+    /** A placeholder is a word between percent signs, such as %user%, that the bot swaps for t... */
+    placeholderExplain: () => t("embedbuilder", "placeholder_explain", "A placeholder is a word between percent signs, such as %user%, that the bot swaps for the real value when the message is sent."),
     /** Footer icon */
     previewAltFooterIcon: () => t("embedbuilder", "preview_alt_footer_icon", "Footer icon"),
     /** Your embed preview will appear here */
@@ -8569,10 +8637,52 @@ export const m = {
     previewSampleServer: () => t("embedbuilder", "preview_sample_server", "Example server"),
     /** ExampleUser */
     previewSampleUser: () => t("embedbuilder", "preview_sample_user", "ExampleUser"),
-    /** Components */
-    tabComponents: () => t("embedbuilder", "tab_components", "Components"),
-    /** JSON */
-    tabJson: () => t("embedbuilder", "tab_json", "JSON"),
+    /** This is what the person sees after they click the button. */
+    replyHint: () => t("embedbuilder", "reply_hint", "This is what the person sees after they click the button."),
+    /** What the reply says */
+    replyKindAria: () => t("embedbuilder", "reply_kind_aria", "What the reply says"),
+    /** Use a saved message */
+    replyKindSaved: () => t("embedbuilder", "reply_kind_saved", "Use a saved message"),
+    /** Write a reply */
+    replyKindText: () => t("embedbuilder", "reply_kind_text", "Write a reply"),
+    /** Reply */
+    replyLabel: () => t("embedbuilder", "reply_label", "Reply"),
+    /** Thanks for clicking! */
+    replyPlaceholder: () => t("embedbuilder", "reply_placeholder", "Thanks for clicking!"),
+    /** Only the person who clicked sees it */
+    replyPrivate: () => t("embedbuilder", "reply_private", "Only the person who clicked sees it"),
+    /** Turn this off to show the reply to everyone in the channel. */
+    replyPrivateHint: () => t("embedbuilder", "reply_private_hint", "Turn this off to show the reply to everyone in the channel."),
+    /** This button keeps the saved message you chose before. */
+    replySavedKept: () => t("embedbuilder", "reply_saved_kept", "This button keeps the saved message you chose before."),
+    /** Saved message to show */
+    replySavedLabel: () => t("embedbuilder", "reply_saved_label", "Saved message to show"),
+    /** Choose a saved message */
+    replySavedPlaceholder: () => t("embedbuilder", "reply_saved_placeholder", "Choose a saved message"),
+    /** Add a button that opens a link */
+    simpleAddLinkButton: () => t("embedbuilder", "simple_add_link_button", "Add a button that opens a link"),
+    /** Add a button that shows a message */
+    simpleAddMessageButton: () => t("embedbuilder", "simple_add_message_button", "Add a button that shows a message"),
+    /** Label of button {number} */
+    simpleButtonLabelAria: (p: { number: P }) => t("embedbuilder", "simple_button_label_aria", "Label of button {number}", p),
+    /** Link the button opens */
+    simpleButtonLink: () => t("embedbuilder", "simple_button_link", "Link the button opens"),
+    /** Text on the button */
+    simpleButtonText: () => t("embedbuilder", "simple_button_text", "Text on the button"),
+    /** Link of button {number} */
+    simpleButtonUrlAria: (p: { number: P }) => t("embedbuilder", "simple_button_url_aria", "Link of button {number}", p),
+    /** Buttons appear under the message. */
+    simpleButtonsHint: () => t("embedbuilder", "simple_buttons_hint", "Buttons appear under the message."),
+    /** Custom color */
+    simpleColorCustom: () => t("embedbuilder", "simple_color_custom", "Custom color"),
+    /** Link buttons */
+    simpleLinkButtons: () => t("embedbuilder", "simple_link_buttons", "Link buttons"),
+    /** Other kinds of buttons and menus are in Advanced mode. */
+    simpleMoreButtons: () => t("embedbuilder", "simple_more_buttons", "Other kinds of buttons and menus are in Advanced mode."),
+    /** Buttons and menus */
+    tabComponents: () => t("embedbuilder", "tab_components", "Buttons and menus"),
+    /** Message code */
+    tabJson: () => t("embedbuilder", "tab_json", "Message code"),
     /** Important information for all members of %server.name%. */
     templatesAnnouncementBasicBody: () => t("embedbuilder", "templates_announcement_basic_body", "Important information for all members of %server.name%."),
     /** Simple server announcement */
@@ -8715,32 +8825,80 @@ export const m = {
     templatesWelcomeDetailedName: () => t("embedbuilder", "templates_welcome_detailed_name", "Detailed welcome"),
     /** Welcome to %server.name%! */
     templatesWelcomeDetailedTitle: () => t("embedbuilder", "templates_welcome_detailed_title", "Welcome to %server.name%!"),
+    /** Builder tour */
+    tourAria: () => t("embedbuilder", "tour_aria", "Builder tour"),
+    /** A button can open a link or show a reply that only the person who clicked sees. */
+    tourButtons: () => t("embedbuilder", "tour_buttons", "A button can open a link or show a reply that only the person who clicked sees."),
+    /** A link button opens its address when someone clicks it. */
+    tourButtonsLink: () => t("embedbuilder", "tour_buttons_link", "A link button opens its address when someone clicks it."),
+    /** The color is the bar down the left side of the embed. */
+    tourColor: () => t("embedbuilder", "tour_color", "The color is the bar down the left side of the embed."),
+    /** The text inside the box is the main part of the message. */
+    tourDescription: () => t("embedbuilder", "tour_description", "The text inside the box is the main part of the message."),
+    /** Paste a picture link or press Upload picture to show a large picture at the bottom of t... */
+    tourImage: () => t("embedbuilder", "tour_image", "Paste a picture link or press Upload picture to show a large picture at the bottom of the message."),
+    /** Use this builder to make a message and send it to a channel. */
+    tourIntro: () => t("embedbuilder", "tour_intro", "Use this builder to make a message and send it to a channel."),
+    /** The text above the box is shown on its own, before the colored box. */
+    tourMessage: () => t("embedbuilder", "tour_message", "The text above the box is shown on its own, before the colored box."),
+    /** Switch between Simple and Advanced here. */
+    tourMode: () => t("embedbuilder", "tour_mode", "Switch between Simple and Advanced here."),
+    /** Switch back to Simple for a shorter form. */
+    tourModeAdvanced: () => t("embedbuilder", "tour_mode_advanced", "Switch back to Simple for a shorter form."),
+    /** The preview shows the message as it will look in Discord, with any problems listed abov... */
+    tourPreview: () => t("embedbuilder", "tour_preview", "The preview shows the message as it will look in Discord, with any problems listed above it."),
+    /** Show me how */
+    tourReplay: () => t("embedbuilder", "tour_replay", "Show me how"),
+    /** Press {button} to see this again. */
+    tourReplayStep: (p: { button: P }) => t("embedbuilder", "tour_replay_step", "Press {button} to see this again.", p),
+    /** Save applies your changes to the page you opened this from. */
+    tourSave: () => t("embedbuilder", "tour_save", "Save applies your changes to the page you opened this from."),
+    /** Pick a channel and press Send message to post it. */
+    tourSend: () => t("embedbuilder", "tour_send", "Pick a channel and press Send message to post it."),
+    /** Buttons and menus is where you add buttons that open a link or run a trigger, and selec... */
+    tourTabComponents: () => t("embedbuilder", "tour_tab_components", "Buttons and menus is where you add buttons that open a link or run a trigger, and select menus."),
+    /** Buttons and menus is where you add select menus and buttons, and a button can show a re... */
+    tourTabComponentsReply: () => t("embedbuilder", "tour_tab_components_reply", "Buttons and menus is where you add select menus and buttons, and a button can show a reply of its own."),
+    /** The editor holds the text above the box and every embed, and each picture field has an ... */
+    tourTabEditor: () => t("embedbuilder", "tour_tab_editor", "The editor holds the text above the box and every embed, and each picture field has an Upload picture button."),
+    /** Message code shows the message as text and loads one you paste. */
+    tourTabJson: () => t("embedbuilder", "tour_tab_json", "Message code shows the message as text and loads one you paste."),
+    /** Saved keeps messages so you can load them again. */
+    tourTabSaved: () => t("embedbuilder", "tour_tab_saved", "Saved keeps messages so you can load them again."),
+    /** Send posts the message to a channel. */
+    tourTabSend: () => t("embedbuilder", "tour_tab_send", "Send posts the message to a channel."),
+    /** Templates give you a ready made starting point. */
+    tourTabTemplates: () => t("embedbuilder", "tour_tab_templates", "Templates give you a ready made starting point."),
+    /** Each tab covers one part of the builder. */
+    tourTabs: () => t("embedbuilder", "tour_tabs", "Each tab covers one part of the builder."),
+    /** The title is the bold line at the top of the embed. */
+    tourTitle: () => t("embedbuilder", "tour_title", "The title is the bold line at the top of the embed."),
     /** Dismiss error */
     validationDismissError: () => t("embedbuilder", "validation_dismiss_error", "Dismiss error"),
     /** Dismiss suggestion */
     validationDismissSuggestion: () => t("embedbuilder", "validation_dismiss_suggestion", "Dismiss suggestion"),
     /** Dismiss warning */
     validationDismissWarning: () => t("embedbuilder", "validation_dismiss_warning", "Dismiss warning"),
-    /** {count} error */
-    validationErrorCountOne: (p: { count: P }) => t("embedbuilder", "validation_error_count_one", "{count} error", p),
-    /** {count} errors */
-    validationErrorCountOther: (p: { count: P }) => t("embedbuilder", "validation_error_count_other", "{count} errors", p),
+    /** {count} problem */
+    validationErrorCountOne: (p: { count: P }) => t("embedbuilder", "validation_error_count_one", "{count} problem", p),
+    /** {count} problems */
+    validationErrorCountOther: (p: { count: P }) => t("embedbuilder", "validation_error_count_other", "{count} problems", p),
     /** Field: {field} */
     validationField: (p: { field: P }) => t("embedbuilder", "validation_field", "Field: {field}", p),
-    /** Errors ({count}) */
-    validationHeadingErrors: (p: { count: P }) => t("embedbuilder", "validation_heading_errors", "Errors ({count})", p),
-    /** Warnings ({count}) */
-    validationHeadingWarnings: (p: { count: P }) => t("embedbuilder", "validation_heading_warnings", "Warnings ({count})", p),
+    /** Must fix ({count}) */
+    validationHeadingErrors: (p: { count: P }) => t("embedbuilder", "validation_heading_errors", "Must fix ({count})", p),
+    /** Worth a look ({count}) */
+    validationHeadingWarnings: (p: { count: P }) => t("embedbuilder", "validation_heading_warnings", "Worth a look ({count})", p),
     /** {count} tip */
     validationTipCountOne: (p: { count: P }) => t("embedbuilder", "validation_tip_count_one", "{count} tip", p),
     /** {count} tips */
     validationTipCountOther: (p: { count: P }) => t("embedbuilder", "validation_tip_count_other", "{count} tips", p),
-    /** Validation issues */
-    validationTitleDefault: () => t("embedbuilder", "validation_title_default", "Validation issues"),
-    /** {count} warning */
-    validationWarningCountOne: (p: { count: P }) => t("embedbuilder", "validation_warning_count_one", "{count} warning", p),
-    /** {count} warnings */
-    validationWarningCountOther: (p: { count: P }) => t("embedbuilder", "validation_warning_count_other", "{count} warnings", p),
+    /** Problems to fix */
+    validationTitleDefault: () => t("embedbuilder", "validation_title_default", "Problems to fix"),
+    /** {count} thing to check */
+    validationWarningCountOne: (p: { count: P }) => t("embedbuilder", "validation_warning_count_one", "{count} thing to check", p),
+    /** {count} things to check */
+    validationWarningCountOther: (p: { count: P }) => t("embedbuilder", "validation_warning_count_other", "{count} things to check", p),
   },
   featureRequests: {
     /** Yours */

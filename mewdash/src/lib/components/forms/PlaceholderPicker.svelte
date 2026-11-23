@@ -354,6 +354,9 @@
         transition:fly={{ y: inlinePosition.direction === 'above' ? 10 : -10, duration: 200, easing: cubicOut }}
         tabindex="-1"
       >
+        <p id="picker-description" class="px-3 pt-3 text-xs" style="color: {$colorStore.muted};">
+          {m.embedbuilder.placeholderExplain()}
+        </p>
         <!-- Search Header -->
         <div class="p-3 border-b" style="border-color: {$colorStore.primary}30;">
           <div class="relative">
@@ -482,6 +485,9 @@
       transition:fade={{ duration: 150 }}
       tabindex="-1"
     >
+      <p class="px-3 pt-3 text-xs" style="color: {$colorStore.muted};">
+        {m.embedbuilder.placeholderExplain()}
+      </p>
       <!-- Search Header -->
       <div class="p-3 border-b" style="border-color: {$colorStore.primary}30;">
         <div class="relative">

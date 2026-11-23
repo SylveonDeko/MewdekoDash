@@ -87,6 +87,64 @@ function convertCallouts(html: string, label: (kind: string) => string): string 
   return result + html.slice(cursor);
 }
 
+const exampleOutside = new Set(["message", "button", "trigger", "select"]);
+const exampleInside = new Set(["author", "title", "description", "field", "image", "thumbnail", "footer", "color"]);
+const exampleBlock = /<pre><code class="language-embed-example">([\s\S]*?)<\/code><\/pre>/g;
+const exampleLimits = { lines: 30, label: 60, text: 400 };
+
+function decodeCodeText(value: string): string {
+  return value
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&");
+}
+
+function exampleRow(kind: string, label: string, text: string): string {
+  return (
+    `<div class="wiki-example-row"><div class="wiki-example-label">${escapeHtml(label)}</div>` +
+    `<div class="wiki-example-part wiki-example-part-${kind}">${escapeHtml(text)}</div></div>`
+  );
+}
+
+/**
+ * Turns a fenced `embed-example` block into a labelled picture of a message. Each line is
+ * `kind | label | text`, where kind is one of message, author, title, description, field, image,
+ * thumbnail, footer, color, button, trigger or select. Lines with another kind are dropped, and
+ * the label and text are escaped, so the block cannot carry markup or styles.
+ */
+function convertExamples(html: string): string {
+  return html.replace(exampleBlock, (_match, body: string) => {
+    const lines = decodeCodeText(body).split("\n").slice(0, exampleLimits.lines);
+    let out = '<div class="wiki-example">';
+    let card = "";
+
+    const flushCard = () => {
+      if (card) out += `<div class="wiki-example-card">${card}</div>`;
+      card = "";
+    };
+
+    for (const line of lines) {
+      const parts = line.split("|").map((part) => part.trim());
+      if (parts.length < 2) continue;
+      const kind = parts[0].toLowerCase();
+      const label = parts[1].slice(0, exampleLimits.label);
+      const text = parts.slice(2).join("|").trim().slice(0, exampleLimits.text);
+
+      if (exampleInside.has(kind)) {
+        card += exampleRow(kind, label, text);
+      } else if (exampleOutside.has(kind)) {
+        flushCard();
+        out += exampleRow(kind, label, text);
+      }
+    }
+
+    flushCard();
+    return out + "</div>";
+  });
+}
+
 /**
  * Renders article Markdown.
  *
@@ -96,7 +154,7 @@ function convertCallouts(html: string, label: (kind: string) => string): string 
  */
 export function renderMarkdown(markdown: string, calloutLabel: (kind: string) => string): { html: string; headings: WikiHeading[] } {
   const raw = parser.parse(markdown, { async: false }) as string;
-  const withCallouts = convertCallouts(raw, calloutLabel);
+  const withCallouts = convertCallouts(convertExamples(raw), calloutLabel);
   const { html, headings } = addHeadingIds(withCallouts);
   const wrappedTables = html
     .replace(/<table>/g, '<div class="wiki-table"><table>')

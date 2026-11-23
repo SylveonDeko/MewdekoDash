@@ -192,11 +192,11 @@
     editingId = null;
   }
 
-  function ids(value: string): string[] {
-    return value.split(/\s+/).filter(Boolean);
+  function ids(value: string | null | undefined): string[] {
+    return value ? value.split(/\s+/).filter(Boolean) : [];
   }
 
-  function roleNames(value: string): string {
+  function roleNames(value: string | null | undefined): string {
     const list = ids(value);
     if (!list.length) return m.common.none();
     return list.map(id => roles.find(r => r.id === id)?.name ?? m.common.unknownRole()).join(", ");

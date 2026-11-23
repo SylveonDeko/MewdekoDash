@@ -3,6 +3,7 @@ import { apiRequest } from "../core";
 import type {
   CreateEmbedPersonaRequest,
   CreateSavedEmbedRequest,
+  EmbedImage,
   EmbedPersona,
   SavedEmbed,
   SendableChannel,
@@ -123,6 +124,14 @@ export const embedsApi = {
    */
   updatePersona: (id: number, request: UpdateEmbedPersonaRequest) =>
     apiRequest<EmbedPersona>(`Embeds/personas/${id}`, "PUT", request),
+
+  /**
+   * Stores a picture for use in a message and returns its public address.
+   * @param guildId The guild ID
+   * @param data The picture as a data URI
+   */
+  uploadImage: (guildId: bigint, data: string) =>
+    apiRequest<EmbedImage>(`Embeds/images/${guildId}`, "POST", { data }),
 
   /**
    * Deletes a persona.

@@ -39,6 +39,8 @@
     </div>
   </div>
 
+  <p class="text-sm" style="color: {$colorStore.muted};">{m.embedbuilder.fullscreenJsonHint()}</p>
+
   <textarea
     rows="20"
     spellcheck="false"

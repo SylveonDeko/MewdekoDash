@@ -5,8 +5,11 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import TabNavigation from "$lib/components/specialized/TabNavigation.svelte";
   import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
+  import PlaceholderButton from "$lib/components/forms/PlaceholderButton.svelte";
+  import PictureField from "$lib/components/specialized/PictureField.svelte";
   import ImagePlaceholderChip from "$lib/components/specialized/ImagePlaceholderChip.svelte";
   import { isImagePlaceholder, newImagePlaceholder, removePlaceholder } from "$lib/utils/imagePlaceholders";
+  import { embedColorOptions } from "$lib/embedbuilder/colors";
 
   interface Props {
     // Props
@@ -36,20 +39,7 @@
   ]);
 
   // Discord color options
-  const discordColors = $derived([
-    { id: '#5865F2', name: m.common.blurple(), icon: '🟦' },
-    { id: '#57F287', name: m.common.colorGreen(), icon: '🟩' },
-    { id: '#FEE75C', name: m.embedbuilder.editorColorYellow(), icon: '🟨' },
-    { id: '#ED4245', name: m.common.red(), icon: '🟥' },
-    { id: '#EB459E', name: m.embedbuilder.editorColorFuchsia(), icon: '🟪' },
-    { id: '#00D166', name: m.embedbuilder.editorColorBrandGreen(), icon: '💚' },
-    { id: '#3498DB', name: m.common.blue(), icon: '🔵' },
-    { id: '#9C59B6', name: m.embedbuilder.editorColorPurple(), icon: '🟣' },
-    { id: '#E67E22', name: m.embedbuilder.editorColorOrange(), icon: '🟠' },
-    { id: '#95A5A6', name: m.common.colorGrey(), icon: '⚪' },
-    { id: '#000000', name: m.embedbuilder.editorColorBlack(), icon: '⚫' },
-    { id: '#FFFFFF', name: m.embedbuilder.editorColorWhite(), icon: '⚪' }
-  ]);
+  const discordColors = $derived(embedColorOptions());
 
   // Update embed and dispatch
   function updateEmbed(field: string, value: any) {
@@ -250,37 +240,13 @@
 {/snippet}
 
 {#snippet imageUrlInput(id: string, field: string, value: string, placeholderText: string)}
-  <div class="relative">
-    <input
-      {id}
-      type="url"
-      class="w-full px-3 py-2 pr-12 rounded-lg border min-h-[44px]"
-      style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-      placeholder={placeholderText}
-      {value}
-      oninput={(e) => handleInput(e, field)}
-    >
-    <button
-      type="button"
-      class="absolute right-1 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] rounded-sm hover:bg-black/10"
-      style="color: {$colorStore.muted};"
-      onclick={() => togglePlaceholderDropdown(id)}
-      title={m.embedbuilder.editorInsertPlaceholder()}
-      aria-label={m.embedbuilder.editorInsertPlaceholder()}
-    >
-      %
-    </button>
-    <PlaceholderPicker
-      visible={showPlaceholderDropdown === id}
-      placeholders={imagePlaceholderOptions}
-      searchTerm={placeholderSearch}
-      inline={true}
-      inputElement={currentInputElement}
-      onselect={(detail) => { insertPlaceholder(detail.placeholder, id); }}
-      onclose={() => showPlaceholderDropdown = ''}
-      onsearch={(detail) => placeholderSearch = detail.term}
-    />
-  </div>
+  <PictureField
+    {id}
+    {value}
+    placeholder={placeholderText}
+    placeholders={imagePlaceholderOptions}
+    onchange={(next) => updateEmbed(field, next)}
+  />
 {/snippet}
 
 <div class="space-y-6">
@@ -345,14 +311,9 @@
               maxlength="256"
               oninput={(e) => handleInput(e, 'title')}
             >
-            <button
-                    class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
-              style="color: {$colorStore.muted};"
-              onclick={() => togglePlaceholderDropdown(`embed-title-${index}`)}
-              title={m.embedbuilder.editorInsertPlaceholder()}
-            >
-              %
-            </button>
+            <div class="mt-2">
+              <PlaceholderButton expanded={showPlaceholderDropdown === `embed-title-${index}`} onclick={() => togglePlaceholderDropdown(`embed-title-${index}`)} />
+            </div>
             
             <!-- Inline Placeholder Picker -->
             <PlaceholderPicker
@@ -371,12 +332,13 @@
 
         <!-- Description -->
         <div>
-          <label for="embed-description-{index}" class="block text-sm font-medium mb-2 z-50" style="color: {$colorStore.text};">
-            {m.common.description()}
+          <label for="embed-description-{index}" class="block text-sm font-medium mb-1 z-50" style="color: {$colorStore.text};">
+            {m.embedbuilder.descriptionLabel()}
             <span class="text-xs ml-2" style="color: {getCharCountColor(getCharCount(embed.description), 4096)};">
               {getCharCount(embed.description)}/4096
             </span>
           </label>
+          <p class="text-sm mb-2" style="color: {$colorStore.muted};">{m.embedbuilder.descriptionHint()}</p>
           <div class="relative">
             <textarea
               id="embed-description-{index}"
@@ -390,14 +352,9 @@
               maxlength="4096"
               oninput={(e) => handleInput(e, 'description')}
             ></textarea>
-            <button
-                    class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
-              style="color: {$colorStore.muted};"
-              onclick={() => togglePlaceholderDropdown(`embed-description-${index}`)}
-              title={m.embedbuilder.editorInsertPlaceholder()}
-            >
-              %
-            </button>
+            <div class="mt-2">
+              <PlaceholderButton expanded={showPlaceholderDropdown === `embed-description-${index}`} onclick={() => togglePlaceholderDropdown(`embed-description-${index}`)} />
+            </div>
             
             <!-- Inline Placeholder Picker -->
             <PlaceholderPicker
@@ -495,14 +452,9 @@
                   maxlength="256"
                   oninput={(e) => handleInput(e, 'author.name')}
                 >
-                <button
-                        class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
-                  style="color: {$colorStore.muted};"
-                  onclick={() => togglePlaceholderDropdown(`author-name-${index}`)}
-                  title={m.embedbuilder.editorInsertPlaceholder()}
-                >
-                  %
-                </button>
+                <div class="mt-2">
+                  <PlaceholderButton expanded={showPlaceholderDropdown === `author-name-${index}`} onclick={() => togglePlaceholderDropdown(`author-name-${index}`)} />
+                </div>
                 
                 <!-- Inline Placeholder Picker -->
                 <PlaceholderPicker
@@ -566,14 +518,9 @@
                   maxlength="2048"
                   oninput={(e) => handleInput(e, 'footer.text')}
                 >
-                <button
-                        class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
-                  style="color: {$colorStore.muted};"
-                  onclick={() => togglePlaceholderDropdown(`footer-text-${index}`)}
-                  title={m.embedbuilder.editorInsertPlaceholder()}
-                >
-                  %
-                </button>
+                <div class="mt-2">
+                  <PlaceholderButton expanded={showPlaceholderDropdown === `footer-text-${index}`} onclick={() => togglePlaceholderDropdown(`footer-text-${index}`)} />
+                </div>
                 
                 <!-- Inline Placeholder Picker -->
                 <PlaceholderPicker
@@ -654,14 +601,9 @@
                       maxlength="256"
                       oninput={(e) => handleFieldInput(e, fieldIndex, 'name')}
                     >
-                    <button
-                            class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
-                      style="color: {$colorStore.muted};"
-                      onclick={() => togglePlaceholderDropdown(`field-name-${index}-${fieldIndex}`)}
-                      title={m.embedbuilder.editorInsertPlaceholder()}
-                    >
-                      %
-                    </button>
+                    <div class="mt-2">
+                      <PlaceholderButton expanded={showPlaceholderDropdown === `field-name-${index}-${fieldIndex}`} onclick={() => togglePlaceholderDropdown(`field-name-${index}-${fieldIndex}`)} />
+                    </div>
                     
                     <!-- Inline Placeholder Picker -->
                     <PlaceholderPicker
@@ -697,14 +639,9 @@
                       maxlength="1024"
                       oninput={(e) => handleFieldInput(e, fieldIndex, 'value')}
                     ></textarea>
-                    <button
-                            class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
-                      style="color: {$colorStore.muted};"
-                      onclick={() => togglePlaceholderDropdown(`field-value-${index}-${fieldIndex}`)}
-                      title={m.embedbuilder.editorInsertPlaceholder()}
-                    >
-                      %
-                    </button>
+                    <div class="mt-2">
+                      <PlaceholderButton expanded={showPlaceholderDropdown === `field-value-${index}-${fieldIndex}`} onclick={() => togglePlaceholderDropdown(`field-value-${index}-${fieldIndex}`)} />
+                    </div>
                     
                     <!-- Inline Placeholder Picker -->
                     <PlaceholderPicker
@@ -759,7 +696,7 @@
         <!-- Image -->
         <div>
           <label for="image-{index}" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-            {m.common.imageUrl()}
+            {m.embedbuilder.editorImageLabel()}
           </label>
           {@render imageUrlInput(`image-${index}`, 'image.url', embed.image?.url || '', m.embedbuilder.editorImagePlaceholder())}
         </div>

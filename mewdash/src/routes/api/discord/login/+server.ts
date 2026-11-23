@@ -34,6 +34,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
   authorizeUrl.searchParams.append("response_type", "code");
   authorizeUrl.searchParams.append("scope", env.DISCORD_SCOPES);
   authorizeUrl.searchParams.append("state", state);
+  authorizeUrl.searchParams.append("prompt", "none");
 
   redirect(302, authorizeUrl.toString());
 };

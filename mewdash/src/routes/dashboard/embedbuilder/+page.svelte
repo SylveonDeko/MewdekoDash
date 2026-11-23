@@ -2,7 +2,7 @@
 <script lang="ts">
   import { m } from "$lib/i18n";
   import type { PageData } from "./$types";
-  import { onDestroy, onMount, untrack } from "svelte";
+  import { onDestroy, onMount, tick, untrack } from "svelte";
   import { get } from "svelte/store";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { chatTriggersApi, embedsApi } from "$lib/api/index.ts";
@@ -31,6 +31,21 @@
   import Notification from "$lib/components/ui/Notification.svelte";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
   import PluginPage from "$lib/components/plugin/PluginPage.svelte";
+  import BuilderToolbar from "$lib/components/specialized/BuilderToolbar.svelte";
+  import SimpleEmbedForm from "$lib/components/specialized/SimpleEmbedForm.svelte";
+  import GuidedTour from "$lib/components/GuidedTour.svelte";
+  import { createBuilderMode, markTourSeen, tourSeen, type BuilderMode } from "$lib/embedbuilder/mode.svelte";
+  import { advancedTourSteps, simpleTourSteps } from "$lib/embedbuilder/tourSteps";
+  import {
+    actionOf,
+    hydrateButtons,
+    newButton,
+    replyBody,
+    type ButtonComponent,
+    type SavedMessageOption
+  } from "$lib/embedbuilder/buttons";
+  import PlaceholderButton from "$lib/components/forms/PlaceholderButton.svelte";
+  import { syncButtonTriggers } from "./components/buttonTriggers";
   import JsonTab from "./components/JsonTab.svelte";
   import SavedTab from "./components/SavedTab.svelte";
   import SendTab from "./components/SendTab.svelte";
@@ -79,26 +94,7 @@
     fields: Field[];
   }
 
-  interface NewEmbedSelectOption {
-    id: string | null;
-    name: string;
-    emoji: string;
-    description: string;
-  }
-
-  interface NewEmbedComponent {
-    componentKey: string; // Unique identifier for the component
-    id: string | null; // Trigger ID
-    rowIndex: number; // Which row (0-4) this component belongs to
-    displayName: string;
-    style: number;
-    url: string;
-    emoji: string;
-    isSelect: boolean;
-    maxOptions: number;
-    minOptions: number;
-    options: NewEmbedSelectOption[];
-  }
+  type NewEmbedComponent = ButtonComponent;
 
   interface ComponentRow {
     componentKey: string; // Unique identifier (same as rowKey for consistency)
@@ -129,7 +125,27 @@
     let content = $state("");
   let componentRows: ComponentRow[] = $state([]);
     let chatTriggers: ChatTrigger[] = $state([]);
+  let triggersLoaded = $state(false);
+  let buttonNotice = $state("");
+  let syncInFlight: Promise<boolean> | null = null;
 
+
+  const builder = createBuilderMode();
+  const simpleMode = $derived(builder.mode === "simple");
+  let tourOpen = $state(false);
+  const tourSteps = $derived(
+    simpleMode ? simpleTourSteps({ send: true, messageButtons: true }) : advancedTourSteps({ messageButtons: true })
+  );
+
+  function setMode(next: BuilderMode) {
+    builder.set(next);
+    validateEmbeds();
+    validateComponents();
+  }
+
+  function startTour() {
+    tourOpen = true;
+  }
 
   // Main navigation state
   const TAB_IDS = ["templates", "editor", "components", "json", "saved", "send"];
@@ -267,6 +283,8 @@
 
   // Component initialization
   onMount(() => {
+    builder.init();
+    if (!tourSeen()) void tick().then(startTour);
     validateEmbeds();
     validateComponents();
     queueMicrotask(() => {
@@ -291,10 +309,62 @@
   // Load chat triggers
   async function loadChatTriggers(guildId: bigint) {
     try {
-      chatTriggers = await chatTriggersApi.getChatTriggers(guildId);
+      chatTriggers = (await chatTriggersApi.getChatTriggers(guildId)) ?? [];
+      componentRows = hydrateButtons(componentRows, chatTriggers);
     } catch (error) {
       logger.error('Failed to load chat triggers:', error);
+    } finally {
+      triggersLoaded = true;
     }
+  }
+
+  const savedMessages = $derived<SavedMessageOption[]>(
+    [...savedGuildEmbeds, ...savedUserEmbeds].map(saved => ({
+      id: String(saved.id),
+      name: saved.embedName ?? m.embedbuilder.fullscreenSavedNameFallback(),
+      jsonCode: saved.jsonCode
+    }))
+  );
+
+  async function runButtonSync(): Promise<boolean> {
+    const buttons = componentRows.flatMap(row => row.components);
+    const needsSync = buttons.some(button =>
+      button.isSelect ? button.options.some(option => option.id) : actionOf(button) !== "link"
+    );
+    if (!needsSync) return true;
+
+    const guild = get(currentGuild);
+    if (!guild || !data.user?.id) {
+      showNotificationMessage(m.embedbuilder.buttonSyncNeedsServer(), "error");
+      return false;
+    }
+
+    try {
+      const result = await syncButtonTriggers(BigInt(guild.id), data.user.id, buttons);
+      chatTriggers = result.triggers;
+      buttonNotice = result.enabled.length > 0 ? m.embedbuilder.buttonNoticeEnabled({ names: result.enabled.join(", ") }) : "";
+
+      if (result.replyIds.size > 0) {
+        const withId = (button: NewEmbedComponent): NewEmbedComponent => {
+          const id = result.replyIds.get(button.componentKey);
+          return id ? { ...button, id, replyTriggerId: id } : button;
+        };
+        componentRows = componentRows.map(row => ({ ...row, components: row.components.map(withId) }));
+        if (editingComponent) editingComponent = withId(editingComponent);
+      }
+      return true;
+    } catch (error: any) {
+      logger.error("Failed to save the triggers behind buttons:", error);
+      showNotificationMessage(error?.message || m.embedbuilder.buttonSyncFailed(), "error");
+      return false;
+    }
+  }
+
+  function syncButtons(): Promise<boolean> {
+    syncInFlight ??= runButtonSync().finally(() => {
+      syncInFlight = null;
+    });
+    return syncInFlight;
   }
 
   // Load saved embeds (personal for the current user, plus guild-shared if a guild is selected)
@@ -314,7 +384,7 @@
   }
 
   // Builds the export payload shared by JSON copy/preview and saved-embed persistence
-  function buildExportData() {
+  function buildExportData(forDraft = false) {
     const cleanedEmbeds = embeds
       .map(cleanEmbed)
       .filter((cleaned: any) => !!(cleaned.title || cleaned.description || cleaned.fields?.length || cleaned.image ||
@@ -334,7 +404,7 @@
       const cleanedComponents: any[] = [];
       componentRows.forEach(row => {
         row.components.forEach(component => {
-          cleanedComponents.push(cleanComponent(component));
+          cleanedComponents.push(cleanComponent(component, forDraft));
         });
       });
 
@@ -347,7 +417,7 @@
   }
 
   function serializeDraft(): string {
-    const output = buildExportData();
+    const output = buildExportData(true);
     return Object.keys(output).length === 0 ? "" : JSON.stringify(output);
   }
 
@@ -394,7 +464,8 @@
   });
 
   // Refreshes the editable JSON textarea from the current builder state
-  function refreshJsonPreview() {
+  async function refreshJsonPreview() {
+    await syncButtons();
     jsonText = JSON.stringify(buildExportData(), null, 2);
     jsonParseError = "";
   }
@@ -453,9 +524,10 @@
           rowsByIndex.set(rowIndex, row);
         }
 
+        const reply = c.reply ?? {};
         row.components.push({
           componentKey: `comp-${Date.now()}-${componentIndex}-${Math.random().toString(36).substr(2, 9)}`,
-          id: c.id ?? null,
+          id: c.id != null ? String(c.id) : null,
           rowIndex,
           displayName: c.displayName ?? "",
           style: c.style ?? 1,
@@ -465,17 +537,29 @@
           maxOptions: c.maxOptions ?? 1,
           minOptions: c.minOptions ?? 1,
           options: (c.options ?? []).map((o: any) => ({
-            id: o.id ?? null,
+            id: o.id != null ? String(o.id) : null,
             name: o.name ?? "",
             emoji: o.emoji ?? "",
             description: o.description ?? ""
-          }))
+          })),
+          ...(c.action ? {
+            action: c.action,
+            replyKind: reply.kind === "saved" ? "saved" : "text",
+            replyText: reply.text ?? "",
+            replyJson: reply.json ?? "",
+            replyEmbedId: reply.embedId ?? null,
+            replyPrivate: reply.private !== false,
+            replyTriggerId: reply.triggerId ?? null
+          } : {})
         });
       });
 
-      componentRows = Array.from(rowsByIndex.keys())
-        .sort((a, b) => a - b)
-        .map(key => rowsByIndex.get(key)!);
+      componentRows = hydrateButtons(
+        Array.from(rowsByIndex.keys())
+          .sort((a, b) => a - b)
+          .map(key => rowsByIndex.get(key)!),
+        chatTriggers
+      );
     } else {
       componentRows = [];
     }
@@ -505,6 +589,8 @@
       showNotificationMessage(m.embedbuilder.fullscreenNotifyNameRequired(), "error");
       return;
     }
+
+    if (!(await syncButtons())) return;
 
     const exportData = buildExportData();
     if (Object.keys(exportData).length === 0) {
@@ -561,6 +647,8 @@
 
   async function writeSavedEmbed(saved: SavedEmbed | null) {
     if (!saved || !data.user?.id) return;
+
+    if (!(await syncButtons())) return;
 
     const exportData = buildExportData();
     if (Object.keys(exportData).length === 0) {
@@ -682,24 +770,30 @@
       return;
     }
 
-    const exportData = buildExportData();
-    if (Object.keys(exportData).length === 0) {
-      showNotificationMessage(m.embedbuilder.pageNotifyNothingToSend(), "error");
+    sending = true;
+    if (!(await syncButtons())) {
+      sending = false;
       return;
     }
 
-    sending = true;
+    const exportData = buildExportData();
+    if (Object.keys(exportData).length === 0) {
+      showNotificationMessage(m.embedbuilder.pageNotifyNothingToSend(), "error");
+      sending = false;
+      return;
+    }
+
     try {
       lastSendResult = await embedsApi.sendEmbed(BigInt(guild.id), {
         userId: data.user.id,
         channelId: BigInt(selectedSendChannelId),
         jsonCode: JSON.stringify(exportData),
-        useWebhook: sendAsWebhook,
-        personaId: sendAsWebhook ? selectedPersonaId : null,
+        useWebhook: viaWebhook,
+        personaId: viaWebhook ? selectedPersonaId : null,
         webhookUsername:
-          sendAsWebhook && !selectedPersonaId && webhookUsername.trim() ? webhookUsername.trim() : null,
+          viaWebhook && !selectedPersonaId && webhookUsername.trim() ? webhookUsername.trim() : null,
         webhookAvatarUrl:
-          sendAsWebhook && !selectedPersonaId && webhookAvatarUrl.trim() ? webhookAvatarUrl.trim() : null
+          viaWebhook && !selectedPersonaId && webhookAvatarUrl.trim() ? webhookAvatarUrl.trim() : null
       });
 
       showNotificationMessage(
@@ -811,24 +905,23 @@
       return;
     }
 
-    const componentKey = `component-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const newComponent: NewEmbedComponent = {
-      componentKey,
-      id: null,
-      rowIndex, // Track which row this belongs to
-      displayName: type === "button" ? m.common.newButton() : m.embedbuilder.fullscreenNewSelectLabel(),
-      style: type === "button" ? 1 : 0,
-      url: "",
-      emoji: "",
-      isSelect: type === "select",
-      maxOptions: 1,
-      minOptions: 1,
-      options: type === "select" ? [] : []
-    };
+    const newComponent: NewEmbedComponent = type === "button"
+      ? { ...newButton("message", rowIndex), displayName: m.common.newButton() }
+      : {
+        ...newButton("trigger", rowIndex),
+        displayName: m.embedbuilder.fullscreenNewSelectLabel(),
+        style: 0,
+        isSelect: true,
+        action: undefined
+      };
 
     row.components = [...row.components, newComponent];
     componentRows = [...componentRows];
     showNotificationMessage(type === "button" ? m.embedbuilder.fullscreenNotifyButtonAdded() : m.embedbuilder.fullscreenNotifySelectAdded());
+  }
+
+  function detachedReply(component: NewEmbedComponent) {
+    return !component.isSelect && actionOf(component) === "message" ? { id: null, replyTriggerId: null } : {};
   }
 
   function removeRow(rowKey: string) {
@@ -864,7 +957,8 @@
     const duplicatedComponents = row.components.map((comp, idx) => ({
       ...JSON.parse(JSON.stringify(comp)),
       componentKey: `component-${timestamp}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
-      rowIndex: newRowIndex // Update rowIndex for the new row
+      rowIndex: newRowIndex, // Update rowIndex for the new row
+      ...detachedReply(comp)
     }));
 
     const newRow: ComponentRow = {
@@ -906,7 +1000,8 @@
         const duplicated = {
           ...JSON.parse(JSON.stringify(component)),
           componentKey: `component-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          rowIndex: rowIdx // Ensure correct rowIndex
+          rowIndex: rowIdx, // Ensure correct rowIndex
+          ...detachedReply(component)
         };
 
         const index = row.components.indexOf(component);
@@ -1354,8 +1449,8 @@
   });
 
   // Placeholder handling
-  function showPlaceholderFromButton(buttonElement: HTMLButtonElement, field: string) {
-    const inputElement = buttonElement.previousElementSibling as HTMLInputElement | HTMLTextAreaElement;
+  function showPlaceholderFor(inputId: string, field: string) {
+    const inputElement = document.getElementById(inputId) as HTMLInputElement | HTMLTextAreaElement | null;
     if (inputElement) {
       currentEditingElement = inputElement;
       currentEditingField = field;
@@ -1433,11 +1528,43 @@
     validationErrors = validationErrors.filter(err => !err.id.startsWith("component-"));
 
     flattenedComponents.forEach((component, index) => {
-      if (!component.isSelect && component.style !== 5 && !component.id) {
+      if (!component.isSelect && actionOf(component) === "trigger" && !component.id) {
         validationErrors.push({
           id: `component-${component.componentKey}-trigger`,
-          message: component.isSelect ? m.embedbuilder.fullscreenValidationSelectNeedsTrigger({ name: component.displayName }) : m.embedbuilder.fullscreenValidationButtonNeedsTrigger({ name: component.displayName }),
+          message: m.embedbuilder.fullscreenValidationButtonNeedsTrigger({ name: component.displayName }),
           field: `components[${index}]`
+        });
+      }
+
+      if (!component.isSelect && actionOf(component) === "message" && !replyBody(component)) {
+        validationErrors.push({
+          id: `component-${component.componentKey}-reply`,
+          message: m.embedbuilder.fullscreenValidationButtonNeedsReply({ name: component.displayName }),
+          field: `components[${index}]`
+        });
+      }
+
+      if (!component.isSelect && !component.displayName?.trim()) {
+        validationErrors.push({
+          id: `component-${component.componentKey}-label`,
+          message: m.embedbuilder.fullscreenValidationButtonNeedsLabel(),
+          field: `components[${index}]`
+        });
+      }
+
+      if (!component.isSelect && component.style === 5 && !component.url?.trim()) {
+        validationErrors.push({
+          id: `component-${component.componentKey}-url`,
+          message: m.embedbuilder.fullscreenValidationLinkNeedsUrl({ name: component.displayName }),
+          field: `components[${index}].url`
+        });
+      }
+
+      if (!component.isSelect && component.style === 5 && component.url?.trim() && !component.url.includes("%") && !/^(https|discord):\/\//.test(component.url)) {
+        validationErrors.push({
+          id: `component-${component.componentKey}-scheme`,
+          message: m.embedbuilder.fullscreenValidationLinkNeedsHttps({ name: component.displayName }),
+          field: `components[${index}].url`
         });
       }
 
@@ -1505,7 +1632,7 @@
   }
 
   // Clean component for export
-  function cleanComponent(component: NewEmbedComponent) {
+  function cleanComponent(component: NewEmbedComponent, forDraft = false) {
     const cleaned: any = {
       row: component.rowIndex, // Use the component's own rowIndex
       displayName: component.displayName,
@@ -1514,13 +1641,25 @@
     };
 
     // Add trigger ID if present
-    if (component.id) {
+    if (component.id && (component.isSelect || actionOf(component) !== "link")) {
       cleaned.id = component.id;
     }
 
     // Add URL for link buttons
     if (component.style === 5 && component.url?.trim()) {
       cleaned.url = component.url;
+    }
+
+    if (forDraft && !component.isSelect) {
+      cleaned.action = actionOf(component);
+      cleaned.reply = {
+        kind: component.replyKind ?? "text",
+        text: component.replyText ?? "",
+        json: component.replyJson ?? "",
+        embedId: component.replyEmbedId ?? null,
+        private: component.replyPrivate !== false,
+        triggerId: component.replyTriggerId ?? null
+      };
     }
 
     // Add emoji if present
@@ -1554,6 +1693,7 @@
 
   // JSON export
   async function copyJson() {
+    if (!(await syncButtons())) return;
     try {
       await navigator.clipboard.writeText(JSON.stringify(buildExportData(), null, 2));
       jsonCopied = true;
@@ -1677,15 +1817,25 @@
           : null
   );
 
+  let viaWebhook = $derived(sendAsWebhook && !simpleMode);
+
   let sendConfirmMessage = $derived.by(() => {
     const args = {
       channel: selectedSendChannel ? `#${selectedSendChannel.name}` : m.embedbuilder.pageSendConfirmChannelFallback(),
       server: $currentGuild?.name ?? m.common.thisServer()
     };
-    if (!sendAsWebhook) return m.embedbuilder.pageSendConfirmMessageBot(args);
+    if (!viaWebhook) return m.embedbuilder.pageSendConfirmMessageBot(args);
     return selectedPersona
       ? m.embedbuilder.pageSendConfirmMessagePersona({ ...args, persona: selectedPersona.name })
       : m.embedbuilder.pageSendConfirmMessageWebhook(args);
+  });
+
+  $effect(() => {
+    if (!builder.ready || !simpleMode) return;
+    untrack(() => {
+      const guild = get(currentGuild);
+      if (guild) loadSendableChannels(BigInt(guild.id));
+    });
   });
 
   // Switching to a channel without webhook permissions must not leave webhook delivery armed
@@ -1727,13 +1877,13 @@
       disabled: historyIndex >= editHistory.length - 1,
       loading: false
     },
-    {
+    ...(simpleMode ? [] : [{
       label: m.embedbuilder.pageActionCancelEdits(),
       icon: "fa-xmark",
       action: cancelEdits,
       disabled: historyIndex <= 0,
       loading: false
-    },
+    }]),
     {
       label: jsonCopied ? m.common.copied() : m.embedbuilder.pageActionCopyJson(),
       icon: "fa-copy",
@@ -1753,6 +1903,12 @@
   {/if}
 {/snippet}
 
+{#snippet headerControls()}
+  {#if builder.ready}
+    <BuilderToolbar mode={builder.mode} onmode={setMode} ontour={startTour} />
+  {/if}
+{/snippet}
+
 <PluginPage
   title={m.embedbuilder.pageTitle()}
   subtitle={m.embedbuilder.pageSubtitle()}
@@ -1760,12 +1916,15 @@
   guildName={$currentGuild?.name ?? m.common.embedBuilder()}
   {actionButtons}
   statusMessages={statusMessageContent}
+  headerActions={headerControls}
 >
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 [&>:last-child:nth-child(odd)]:col-span-2 sm:[&>:last-child:nth-child(odd)]:col-span-1" role="group" aria-label={m.embedbuilder.pageTabsAria()}>
+  {#if builder.ready && !simpleMode}
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 [&>:last-child:nth-child(odd)]:col-span-2 sm:[&>:last-child:nth-child(odd)]:col-span-1" role="group" aria-label={m.embedbuilder.pageTabsAria()} data-tour="tabs">
     {#each tabs as tab (tab.id)}
       {@const selected = activeMainTab === tab.id}
       <button
         type="button"
+        data-tour="tab-{tab.id}"
         class="min-h-[44px] px-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2"
         style="background: {selected ? $colorStore.selectedSurface : `${$colorStore.primary}08`}; border-color: {selected ? $colorStore.selectedBorder : `${$colorStore.primary}20`}; color: {$colorStore.text};"
         aria-pressed={selected}
@@ -1776,8 +1935,9 @@
       </button>
     {/each}
   </div>
+  {/if}
 
-  {#if openSavedEmbed}
+  {#if openSavedEmbed && !simpleMode}
     <div
       class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg border"
       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;"
@@ -1798,13 +1958,76 @@
     </div>
   {/if}
 
+  {#if buttonNotice}
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg border"
+      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;"
+      role="status"
+    >
+      <p class="text-sm" style="color: {$colorStore.text};">{buttonNotice}</p>
+      <button
+        type="button"
+        class="min-h-[44px] px-4 rounded-lg text-sm font-medium shrink-0"
+        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+        onclick={() => (buttonNotice = "")}
+      >
+        {m.common.dismiss()}
+      </button>
+    </div>
+  {/if}
+
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
     <section
       class="rounded-2xl border min-w-0"
       style="background: {$colorStore.surface}; border-color: {$colorStore.primary}30;"
     >
       <div class="p-4 sm:p-6 lg:min-h-[600px]">
-        {#if activeMainTab === "templates"}
+        {#if !builder.ready}
+          <p class="text-sm" style="color: {$colorStore.muted};">{m.common.loading()}</p>
+        {:else if simpleMode}
+          <div class="space-y-6">
+            <SimpleEmbedForm
+              bind:content
+              bind:embeds
+              bind:componentRows
+              {placeholders}
+              {savedMessages}
+              allowReplyButtons
+              onswitch={() => builder.openAdvancedForSession()}
+              onchange={() => {
+                validateEmbeds();
+                validateComponents();
+              }}
+            />
+
+            <div class="pt-6 border-t" style="border-color: {$colorStore.primary}20;">
+              <SendTab
+                simple
+                guildName={$currentGuild?.name ?? null}
+                channelOptions={sendableChannelOptions}
+                loadingChannels={loadingSendChannels}
+                channelsError={sendChannelsError}
+                bind:selectedChannelId={selectedSendChannelId}
+                selectedChannel={selectedSendChannel}
+                {blockedChannels}
+                {embedPermissionBlock}
+                bind:sendAsWebhook
+                {webhookAvailable}
+                {personas}
+                {loadingPersonas}
+                bind:selectedPersonaId
+                bind:webhookUsername
+                bind:webhookAvatarUrl
+                {sending}
+                canSend={!sending && !!selectedSendChannelId && canCopyJson && !embedPermissionBlock && validationErrors.length === 0}
+                hasValidationErrors={validationErrors.length > 0}
+                lastResult={lastSendResult}
+                onmanage={() => (showPersonaManager = true)}
+                onsend={() => (showSendConfirm = true)}
+              />
+            </div>
+          </div>
+        {:else if activeMainTab === "templates"}
           <div class="space-y-6">
             <h2 class="text-xl font-semibold" style="color: {$colorStore.text};">{m.embedbuilder.pageTemplatesHeading()}</h2>
 
@@ -1831,28 +2054,22 @@
           <div class="space-y-6">
             <!-- Message Content -->
             <div>
-              <label for="embed-title" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+              <label for="embed-title" class="block text-sm font-medium mb-1" style="color: {$colorStore.text};">
                 {m.embedbuilder.pageContentLabel()}
               </label>
-              <div class="relative">
+              <p class="text-sm mb-2" style="color: {$colorStore.muted};">{m.embedbuilder.pageContentHint()}</p>
+              <div>
                 <textarea id="embed-title"
                           rows="3"
-                          class="w-full px-3 py-2 pr-10 rounded-lg border resize-y"
+                          class="w-full px-3 py-2 rounded-lg border resize-y"
                           style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           placeholder={m.embedbuilder.pageContentPlaceholder()}
                           bind:value={content}
                           oninput={(e) => checkContentImage(e.currentTarget.value)}
                 ></textarea>
-                <button
-                  type="button"
-                  class="absolute right-1 top-1 min-h-[44px] min-w-[44px] rounded-sm hover:bg-black/10"
-                  style="color: {$colorStore.muted};"
-                  onclick={(e) => showPlaceholderFromButton(e.currentTarget, 'content')}
-                  title={m.embedbuilder.editorInsertPlaceholder()}
-                  aria-label={m.embedbuilder.editorInsertPlaceholder()}
-                >
-                  %
-                </button>
+                <div class="mt-2">
+                  <PlaceholderButton expanded={showPlaceholderPicker} onclick={() => showPlaceholderFor('embed-title', 'content')} />
+                </div>
               </div>
               {#if contentImageToken}
                 <ImagePlaceholderChip
@@ -2073,6 +2290,10 @@
                           <ComponentEditor
                             component={editingComponent}
                             triggers={chatTriggers}
+                            triggersLoading={!triggersLoaded}
+                            {savedMessages}
+                            {placeholders}
+                            allowReplyButtons
                             isEditing={true}
                             user={data.user}
                             onupdate={(detail) => {
@@ -2264,6 +2485,7 @@
     <section
       class="rounded-2xl border lg:sticky lg:top-4 self-start min-w-0"
       style="background: {$colorStore.surface}; border-color: {$colorStore.primary}30;"
+      data-tour="preview"
     >
       <div class="p-4">
         <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">{m.embedbuilder.fullscreenLivePreview()}</h3>
@@ -2331,6 +2553,13 @@
   confirmText={m.common.send()}
   variant="warning"
   onconfirm={sendCurrentEmbed}
+/>
+
+<GuidedTour
+  bind:open={tourOpen}
+  steps={tourSteps}
+  label={m.embedbuilder.tourAria()}
+  onclose={markTourSeen}
 />
 
 <PersonaManager
