@@ -8641,6 +8641,8 @@ export const m = {
     replyHint: () => t("embedbuilder", "reply_hint", "This is what the person sees after they click the button."),
     /** What the reply says */
     replyKindAria: () => t("embedbuilder", "reply_kind_aria", "What the reply says"),
+    /** Design an embed */
+    replyKindEmbed: () => t("embedbuilder", "reply_kind_embed", "Design an embed"),
     /** Use a saved message */
     replyKindSaved: () => t("embedbuilder", "reply_kind_saved", "Use a saved message"),
     /** Write a reply */

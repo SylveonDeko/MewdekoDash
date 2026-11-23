@@ -325,6 +325,7 @@
   "preview_sample_user": "ExampleUser",
   "reply_hint": "This is what the person sees after they click the button.",
   "reply_kind_aria": "What the reply says",
+  "reply_kind_embed": "Design an embed",
   "reply_kind_saved": "Use a saved message",
   "reply_kind_text": "Write a reply",
   "reply_label": "Reply",

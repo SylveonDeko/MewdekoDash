@@ -1,11 +1,13 @@
 import type { ChatTrigger } from "$lib/api/chattriggers/models/ChatTrigger";
 
 export type ButtonAction = "link" | "message" | "trigger";
-export type ReplyKind = "text" | "saved";
+export type ReplyKind = "text" | "embed" | "saved";
 
 export const BUILDER_CATEGORY = "Embed builder buttons";
 export const BUTTON_CLICK_FLAG = 4;
 export const MAX_REPLY_LENGTH = 2000;
+export const MAX_REPLY_TITLE = 256;
+export const DEFAULT_REPLY_COLOR = "#5865F2";
 export const MAX_BUTTON_LABEL = 80;
 
 export interface SavedMessageOption {
@@ -29,6 +31,8 @@ export interface ButtonComponent {
   action?: ButtonAction;
   replyKind?: ReplyKind;
   replyText?: string;
+  replyTitle?: string;
+  replyColor?: string;
   replyJson?: string;
   replyEmbedId?: string | null;
   replyPrivate?: boolean;
@@ -55,6 +59,8 @@ export function newButton(action: ButtonAction, rowIndex = 0): ButtonComponent {
     action,
     replyKind: "text",
     replyText: "",
+    replyTitle: "",
+    replyColor: DEFAULT_REPLY_COLOR,
     replyJson: "",
     replyEmbedId: null,
     replyPrivate: true,
@@ -108,7 +114,50 @@ export function stripComponents(jsonCode: string): string {
 
 export function replyBody(component: ButtonComponent): string {
   if (component.replyKind === "saved") return (component.replyJson ?? "").trim();
-  return (component.replyText ?? "").trim();
+
+  const text = (component.replyText ?? "").trim();
+  if (component.replyKind !== "embed") return text;
+
+  const title = (component.replyTitle ?? "").trim();
+  if (!title && !text) return "";
+
+  return JSON.stringify({
+    embeds: [
+      {
+        ...(title ? { title } : {}),
+        ...(text ? { description: text } : {}),
+        color: component.replyColor || DEFAULT_REPLY_COLOR
+      }
+    ]
+  });
+}
+
+/**
+ * Reads a reply back into the embed fields when it is a single embed holding nothing but a title, a text
+ * and a color, which is what a "Design an embed" reply is saved as.
+ */
+function designedEmbed(response: string): Partial<ButtonComponent> | null {
+  try {
+    const parsed = JSON.parse(response);
+    if (!parsed || typeof parsed !== "object" || Object.keys(parsed).some(key => key !== "embeds")) return null;
+    if (!Array.isArray(parsed.embeds) || parsed.embeds.length !== 1) return null;
+
+    const embed = parsed.embeds[0];
+    if (!embed || typeof embed !== "object") return null;
+    if (Object.keys(embed).some(key => !["title", "description", "color"].includes(key))) return null;
+    if (Object.values(embed).some(value => typeof value !== "string")) return null;
+    if ((embed.description ?? "").length > MAX_REPLY_LENGTH) return null;
+
+    return {
+      replyKind: "embed",
+      replyTitle: embed.title ?? "",
+      replyText: embed.description ?? "",
+      replyColor: embed.color ?? DEFAULT_REPLY_COLOR,
+      replyJson: ""
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function triggerTextFor(label: string): string {
@@ -123,6 +172,9 @@ function replyFields(trigger: ChatTrigger): Partial<ButtonComponent> {
     replyKind: saved ? "saved" : "text",
     replyText: saved ? "" : response,
     replyJson: saved ? response : "",
+    replyTitle: "",
+    replyColor: DEFAULT_REPLY_COLOR,
+    ...(saved ? designedEmbed(response) : null),
     replyEmbedId: null,
     replyPrivate: trigger.ephemeralResponse
   };

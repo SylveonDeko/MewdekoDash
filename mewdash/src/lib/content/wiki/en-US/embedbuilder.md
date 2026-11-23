@@ -68,7 +68,12 @@ Each button has **Text on the button**, up to 80 characters. A button can be swi
 
 For **Open a link**, paste the address in **Link the button opens**. It must start with `https://` or `discord://`. In Discord, any other address turns the button into a disabled red button that shows an error.
 
-For **Show a message**, write the reply in **Reply**, up to 2000 characters, or press **Use a saved message** to pick one of your saved messages as the reply. That choice only appears once you have saved messages. A saved message used as a reply is copied when you pick it, so later changes to the saved message do not change the reply, and any buttons inside it are left out. **Only the person who clicked sees it** is on by default, so the reply shows to the person who clicked and nobody else in the channel. Turn it off to show the reply to everyone in the channel.
+For **Show a message**, choose under **What the reply says** how the reply is made:
+
+- **Write a reply** shows plain text, written in **Reply**, up to 2000 characters.
+- **Design an embed** shows the reply as an embed with a **Title**, a text of up to 2000 characters and a **Color**. It needs a title or a text.
+- **Use a saved message** shows one of your saved messages. That choice only appears once you have saved messages.
+A saved message used as a reply is copied when you pick it, so later changes to the saved message do not change the reply, and any buttons inside it are left out. **Only the person who clicked sees it** is on by default, so the reply shows to the person who clicked and nobody else in the channel. Turn it off to show the reply to everyone in the channel.
 
 A button without text, a link button without an address or with an address that does not start with `https://` or `discord://`, and a message button without a reply are listed under **Problems** and block sending.
 
@@ -152,7 +157,7 @@ Placeholders that resolve to a picture or GIF, such as `%user.avatar%`, `%server
 Each button has **Display name** and **When clicked**, with three choices.
 
 - **Open a link** opens a web address. This is the link button from Simple mode.
-- **Show a message** shows a reply, written in **Reply** or taken from a saved message, with the **Only the person who clicked sees it** switch. It works the same as in Simple mode, and it adds a **Button style** of Primary, Secondary, Success or Danger.
+- **Show a message** shows a reply, written as plain text, designed as an embed or taken from a saved message, with the **Only the person who clicked sees it** switch. It works the same as in Simple mode, and it adds a **Button style** of Primary, Secondary, Success or Danger.
 - **Run a trigger** runs a chat trigger from this server. A trigger is a saved action that you set up on the chat triggers page, and it adds a **Button style** too.
 
 If the server has no triggers yet, **Run a trigger** says so and links to the chat triggers page. Triggers that the builder made for message buttons are left out of the list, because **Show a message** is the way to edit them.

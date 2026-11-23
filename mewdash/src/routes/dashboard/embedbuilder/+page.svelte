@@ -41,6 +41,7 @@
     hydrateButtons,
     newButton,
     replyBody,
+    DEFAULT_REPLY_COLOR,
     type ButtonComponent,
     type SavedMessageOption
   } from "$lib/embedbuilder/buttons";
@@ -544,8 +545,10 @@
           })),
           ...(c.action ? {
             action: c.action,
-            replyKind: reply.kind === "saved" ? "saved" : "text",
+            replyKind: reply.kind === "saved" || reply.kind === "embed" ? reply.kind : "text",
             replyText: reply.text ?? "",
+            replyTitle: reply.title ?? "",
+            replyColor: reply.color ?? DEFAULT_REPLY_COLOR,
             replyJson: reply.json ?? "",
             replyEmbedId: reply.embedId ?? null,
             replyPrivate: reply.private !== false,
@@ -1655,6 +1658,8 @@
       cleaned.reply = {
         kind: component.replyKind ?? "text",
         text: component.replyText ?? "",
+        title: component.replyTitle ?? "",
+        color: component.replyColor ?? DEFAULT_REPLY_COLOR,
         json: component.replyJson ?? "",
         embedId: component.replyEmbedId ?? null,
         private: component.replyPrivate !== false,
