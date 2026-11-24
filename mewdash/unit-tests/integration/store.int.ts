@@ -5,6 +5,7 @@ import { builtinSeedEntries } from "$lib/server/wiki/builtin";
 import { getCatalog } from "$lib/server/wiki";
 import { closeDatabase, databaseReady, ensureDatabase, query } from "$lib/server/db";
 import { runMigrations } from "$lib/server/migrate";
+import * as categories from "$lib/server/wiki/categories";
 import * as store from "$lib/server/wiki/store";
 import { WikiError } from "$lib/server/wiki/errors";
 
@@ -40,6 +41,8 @@ describe("wiki database", () => {
       assert.deepEqual(applied.rows, [
         { version: 1, name: "wiki" },
         { version: 2, name: "translations" },
+        { version: 3, name: "wiki_features" },
+        { version: 4, name: "translations_history_blocks_settings" },
       ]);
       const counts = async () =>
         (await pool.query<{ t: string; n: string }>(
@@ -49,7 +52,7 @@ describe("wiki database", () => {
       const first = await counts();
       await runMigrations(pool);
       assert.equal(await counts(), first);
-      assert.equal((await pool.query("select * from dash_schema_migrations")).rowCount, 2);
+      assert.equal((await pool.query("select * from dash_schema_migrations")).rowCount, applied.rowCount);
     });
 
     it("seeds the same counts per locale as the built-in files", async () => {
@@ -92,6 +95,10 @@ describe("wiki database", () => {
     let r1 = "";
     let r2 = "";
     let r3 = "";
+
+    before(async () => {
+      await categories.createCategory({ name: "ItCat", icon: "fa-book" });
+    });
 
     it("creates a page unpublished with a first revision", async () => {
       pageId = await store.createPage(
@@ -256,6 +263,7 @@ describe("wiki database", () => {
     let s2 = "";
 
     before(async () => {
+      await categories.createCategory({ name: "SuggCat", icon: "fa-book" });
       pageId = await store.createPage(
         { slug: "it-sugg", icon: "fa-book", category: "SuggCat", dashboardHref: null, module: null, related: [], published: false },
         article("Base", "base text"),
@@ -339,10 +347,13 @@ describe("wiki database", () => {
       await store.submitFeedback(pageId, "en-US", true, "outdated", "ignored", other.id);
       open = await store.listFeedback("open", 50);
       assert.deepEqual([open[0].helpful, open[0].reason, open[0].note], [true, "", ""]);
-      await store.resolveFeedback(open[0].id, editor);
+      await store.setFeedbackStatus(open[0].id, "resolved", editor);
       assert.equal((await store.listFeedback("open", 50)).length, 0);
-      assert.equal((await store.listFeedback("resolved", 50))[0].status, "resolved");
-      await rejectsWith(store.resolveFeedback(open[0].id, editor), "not_found", 404);
+      assert.equal((await store.listFeedback("closed", 50))[0].status, "resolved");
+      await store.setFeedbackStatus(open[0].id, "dismissed", editor);
+      assert.equal((await store.listFeedback("closed", 50))[0].status, "dismissed");
+      await store.setFeedbackStatus(open[0].id, "resolved", editor);
+      await rejectsWith(store.setFeedbackStatus("999999999", "resolved", editor), "not_found", 404);
       await store.submitFeedback(pageId, "en-US", true, "", "", other.id);
       assert.equal((await store.listFeedback(null, 50)).length, 2);
     });

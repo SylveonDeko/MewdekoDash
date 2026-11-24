@@ -12,6 +12,7 @@ export function questionTypeLabel(id: string | number): string {
     case "email": return m.forms.labelQuestionEmail();
     case "url": return m.common.url();
     case "section_break": return m.forms.labelQuestionSectionBreak();
+    case "image": return m.forms.labelQuestionImage();
     default: return String(id);
   }
 }
@@ -27,6 +28,7 @@ export function questionTypeDescription(id: string | number): string {
     case "email": return m.forms.labelQuestionEmailDescription();
     case "url": return m.forms.labelQuestionUrlDescription();
     case "section_break": return m.forms.labelQuestionSectionBreakDescription();
+    case "image": return m.forms.labelQuestionImageDescription();
     default: return String(id);
   }
 }
@@ -90,6 +92,8 @@ export function conditionalOperatorLabel(id: string | number): string {
     case "contains": return m.forms.labelOperatorContains();
     case "greater_than": return m.forms.labelOperatorGreaterThan();
     case "less_than": return m.forms.labelOperatorLessThan();
+    case "is_answered": return m.forms.labelOperatorIsAnswered();
+    case "is_not_answered": return m.forms.labelOperatorIsNotAnswered();
     default: return String(id);
   }
 }

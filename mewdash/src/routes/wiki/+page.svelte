@@ -1,10 +1,12 @@
 <!-- routes/wiki/+page.svelte -->
 <script lang="ts">
-  import { m } from "$lib/i18n";
+  import { getLocale, m } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
-  import { searchWikiIndex, wikiIconClass } from "$lib/wiki";
+  import { wikiIconClass } from "$lib/wiki";
+  import { wikiCall } from "$lib/wiki/client";
+  import type { SearchHit } from "$lib/wiki/search";
   import ComponentEmbed from "$lib/components/layout/ComponentEmbed.svelte";
   import { buttons, container, header, linkButton, SITE_ORIGIN, separator, text } from "$lib/componentEmbed";
 
@@ -26,7 +28,26 @@
 
   let query = $state("");
   let searching = $derived(query.trim().length > 0);
-  let results = $derived(searchWikiIndex(data.articles, query));
+  let results = $state<SearchHit[]>([]);
+  let settled = $state("");
+  let requestId = 0;
+
+  $effect(() => {
+    const term = query.trim();
+    const id = ++requestId;
+    if (!term) {
+      results = [];
+      settled = "";
+      return;
+    }
+    const timer = setTimeout(async () => {
+      const result = await wikiCall<{ hits: SearchHit[] }>("GET", `/api/wiki/search?q=${encodeURIComponent(term)}&locale=${encodeURIComponent(getLocale())}`);
+      if (id !== requestId) return;
+      results = result.data?.hits ?? [];
+      settled = term;
+    }, 250);
+    return () => clearTimeout(timer);
+  });
 
   function handleGlobalKeydown(event: KeyboardEvent) {
     if ((event.ctrlKey || event.metaKey) && event.key === "k") {
@@ -88,15 +109,17 @@
 
   {#if searching}
     <section class="mt-8" in:fly={{ y: 12, duration: 250 }}>
-      <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-        {results.length === 1 ? m.wiki.searchResultsOne({ query }) : m.wiki.searchResultsOther({ count: results.length, query })}
-      </p>
-      {#if results.length === 0}
+      {#if settled === ""}
+        <p class="text-sm mb-3" style="color: {$colorStore.muted}" role="status">{m.common.loading()}</p>
+      {:else if results.length === 0}
         <div class="text-center py-16">
           <i class="fa-solid fa-magnifying-glass text-4xl mb-4" style="color: {$colorStore.muted}"></i>
-          <p class="text-lg" style="color: {$colorStore.muted}">Nothing matches "{query}" yet.</p>
+          <p class="text-lg" style="color: {$colorStore.muted}">{m.wiki.searchNone({ query: settled })}</p>
         </div>
       {:else}
+        <p class="text-sm mb-3" style="color: {$colorStore.muted}" role="status">
+          {results.length === 1 ? m.wiki.searchResultsOne({ query: settled }) : m.wiki.searchResultsOther({ count: results.length, query: settled })}
+        </p>
         <ul class="rounded-2xl overflow-hidden" style="border: 1px solid {$colorStore.primary}25;">
           {#each results as article, i (article.slug)}
             <li style="border-top: {i === 0 ? 'none' : `1px solid ${$colorStore.primary}15`};">
@@ -109,7 +132,7 @@
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                 <div class="min-w-0 flex-1">
                   <div class="font-semibold" style="color: {$colorStore.text}">{article.title}</div>
-                  <div class="text-sm truncate" style="color: {$colorStore.muted}">{article.summary}</div>
+                  <div class="text-sm line-clamp-2" style="color: {$colorStore.muted}">{article.snippet}</div>
                 </div>
               </a>
             </li>
@@ -154,22 +177,33 @@
     <!-- The sidebar is desktop only, so phones get the same A to Z list inline. -->
     <section class="lg:hidden mt-8">
       <h2 class="text-lg font-bold mb-4" style="color: {$colorStore.text}">{m.wiki.allGuides()}</h2>
-      <ul class="rounded-2xl overflow-hidden" style="border: 1px solid {$colorStore.primary}25;">
-        {#each data.articles as article, i (article.slug)}
-          <li style="border-top: {i === 0 ? 'none' : `1px solid ${$colorStore.primary}15`};">
-            <a
-              href="/wiki/{article.slug}"
-              class="flex items-center gap-3 px-4 py-3 min-h-[44px]"
-              style="background: {$colorStore.primary}06; color: {$colorStore.text};"
-            >
-              <i class="{wikiIconClass(article.icon)} w-5 text-center shrink-0"
+      <div class="space-y-6">
+        {#each data.groups as group (group.name)}
+          <div>
+            <h3 class="flex items-center gap-2 mb-2 text-sm font-semibold" style="color: {$colorStore.muted}">
+              <i class="{wikiIconClass(group.icon)} w-5 text-center" aria-hidden="true"
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-              <span class="flex-1 truncate">{article.title}</span>
-              <i class="fa-solid fa-chevron-right text-xs" style="color: {$colorStore.muted}"></i>
-            </a>
-          </li>
+              {group.name}
+            </h3>
+            <ul class="rounded-2xl overflow-hidden" style="border: 1px solid {$colorStore.primary}25;">
+              {#each group.articles as article, i (article.slug)}
+                <li style="border-top: {i === 0 ? 'none' : `1px solid ${$colorStore.primary}15`};">
+                  <a
+                    href="/wiki/{article.slug}"
+                    class="flex items-center gap-3 px-4 py-3 min-h-[44px]"
+                    style="background: {$colorStore.primary}06; color: {$colorStore.text};"
+                  >
+                    <i class="{wikiIconClass(article.icon)} w-5 text-center shrink-0"
+                       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
+                    <span class="flex-1 truncate">{article.title}</span>
+                    <i class="fa-solid fa-chevron-right text-xs" style="color: {$colorStore.muted}"></i>
+                  </a>
+                </li>
+              {/each}
+            </ul>
+          </div>
         {/each}
-      </ul>
+      </div>
     </section>
   {/if}
 </div>

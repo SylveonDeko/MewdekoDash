@@ -1,5 +1,6 @@
 import { m } from "$lib/i18n";
 import { renderMarkdown } from "./renderCore";
+import type { ImageRewriter } from "./sanitize";
 import type { WikiHeading } from "./types";
 
 export { slugifyHeading } from "./renderCore";
@@ -21,8 +22,9 @@ function calloutLabel(kind: string): string {
  * raw HTML in it is shown as text and the result is passed through the allow-list sanitiser.
  *
  * @param markdown The article body.
+ * @param rewriteImage Gives the address to load for an image, or null to leave the image's source out.
  * @returns HTML plus the headings found in it.
  */
-export function renderWikiMarkdown(markdown: string): { html: string; headings: WikiHeading[] } {
-  return renderMarkdown(markdown, calloutLabel);
+export function renderWikiMarkdown(markdown: string, rewriteImage?: ImageRewriter): { html: string; headings: WikiHeading[] } {
+  return renderMarkdown(markdown, calloutLabel, rewriteImage);
 }

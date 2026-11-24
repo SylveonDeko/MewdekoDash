@@ -1,32 +1,33 @@
-import type pg from "pg";
 import { query, withTransaction } from "$lib/server/db";
 import { isUniqueViolation, WikiError } from "$lib/server/wiki/errors";
 import { knownName, type Actor } from "$lib/server/wiki/store";
 import { canReviewLocale, canViewHistoryEntry, type TranslationScope } from "$lib/translate/permissions";
 import type {
   CatalogOverview,
+  CurrentTranslation,
   HistoryEntry,
+  HistoryOrigin,
+  HistoryStatus,
   LanguageProgress,
   OverrideResult,
+  QueueStatus,
   StringPage,
   StringQuery,
   StringRow,
+  StringSort,
   SuggestionPage,
   SuggestionRecord,
+  TranslationOrigin,
   TranslationStatus,
   TranslatorRecord,
 } from "$lib/translate/records";
 import { cleanTranslation, escapeLike, structureProblem, translationLimits, translationProblem, translationSourceLocale } from "$lib/translate/rules";
+import { isBlocked } from "./contributors";
+import { TranslationError } from "./errors";
 import { refreshOverlay } from "./overlay";
 import { notifyReload } from "./reload";
-
-type Run = <T extends pg.QueryResultRow>(text: string, params?: unknown[]) => Promise<pg.QueryResult<T>>;
-
-const poolRun: Run = <T extends pg.QueryResultRow>(text: string, params: unknown[] = []) => query<T>(text, params);
-const clientRun =
-  (client: pg.PoolClient): Run =>
-  <T extends pg.QueryResultRow>(text: string, params: unknown[] = []) =>
-    client.query<T>(text, params);
+import { clientRun, poolRun, type Run } from "./run";
+import { getSettings } from "./settings";
 
 const iso = (value: Date): string => value.toISOString();
 const isoOrNull = (value: Date | null): string | null => (value ? value.toISOString() : null);
@@ -44,12 +45,12 @@ export async function allLocales(run: Run = poolRun): Promise<string[]> {
   return result.rows.map((row) => row.locale).filter((locale) => locale !== translationSourceLocale);
 }
 
-async function requireLocale(run: Run, catalog: string, locale: string): Promise<void> {
+export async function requireLocale(run: Run, catalog: string, locale: string): Promise<void> {
   if (locale === translationSourceLocale) throw new WikiError("locale_invalid", 400, "locale");
   if (!(await catalogLocales(catalog, run)).includes(locale)) throw new WikiError("locale_invalid", 400, "locale");
 }
 
-async function requireCatalog(run: Run, catalog: string): Promise<void> {
+export async function requireCatalog(run: Run, catalog: string): Promise<void> {
   const found = await run("select 1 from dash_tr_catalogs where catalog = $1", [catalog]);
   if ((found.rowCount ?? 0) === 0) throw new WikiError("not_found", 404);
 }
@@ -113,6 +114,13 @@ interface StringDbRow {
   mine_text: string | null;
 }
 
+const stringOrder: Record<StringSort, string> = {
+  key: "s.grp, s.key",
+  added: "s.updated_at desc, s.grp, s.key",
+  approved: "o.updated_at desc nulls last, s.grp, s.key",
+  suggested: "last_suggested desc nulls last, s.grp, s.key",
+};
+
 function toStringRow(row: StringDbRow): StringRow {
   const hasOverride = row.override_text !== null;
   const outdated = hasOverride && row.override_source !== row.source_text;
@@ -150,6 +158,7 @@ export async function listStrings(input: StringQuery, viewerId: string | null): 
     where.push(`s.grp = $${params.length}`);
   }
   const term = input.search.trim().slice(0, translationLimits.searchMax);
+  const order = stringOrder[input.sort] ?? stringOrder.key;
   if (term) {
     params.push(`%${escapeLike(term)}%`);
     const p = `$${params.length}`;
@@ -158,6 +167,7 @@ export async function listStrings(input: StringQuery, viewerId: string | null): 
     );
   }
   if (input.filter === "untranslated") where.push("(o.key is null and (b.key is null or b.text = s.source_text))");
+  if (input.filter === "approved") where.push("not (o.key is null and (b.key is null or b.text = s.source_text))");
   if (input.filter === "outdated") where.push("(o.key is not null and o.source_text <> s.source_text)");
   if (input.filter === "suggestions") {
     where.push(
@@ -181,12 +191,13 @@ export async function listStrings(input: StringQuery, viewerId: string | null): 
     `select s.key, s.grp, s.source_text, b.text as baseline_text, o.text as override_text, o.source_text as override_source,
             o.updated_at as override_updated_at, o.updated_by_name as override_updated_by_name,
             (select count(*) from dash_tr_suggestions q where q.catalog = s.catalog and q.key = s.key and q.locale = $2 and q.status = 'open') as open_suggestions,
+            (select max(q.created_at) from dash_tr_suggestions q where q.catalog = s.catalog and q.key = s.key and q.locale = $2 and q.status = 'open') as last_suggested,
             mine.id as mine_id, mine.text as mine_text
        ${from}
        left join dash_tr_suggestions mine on mine.catalog = s.catalog and mine.key = s.key and mine.locale = $2
                                          and mine.user_id = ${viewer}::text and mine.status = 'open'
       where ${condition}
-      order by s.grp, s.key
+      order by ${order}
       limit ${limit} offset ${offset}`,
     rowParams,
   );
@@ -201,15 +212,25 @@ interface HistoryDbRow {
   user_id: string;
   user_name: string;
   status: TranslationStatus;
+  origin: HistoryOrigin;
   decline_reason: string;
   created_at: Date;
   reviewed_at: Date | null;
   reviewed_by_name: string | null;
 }
 
+interface EventDbRow {
+  id: string;
+  previous_text: string;
+  actor_id: string;
+  actor_name: string;
+  created_at: Date;
+}
+
 /**
- * Every suggestion and direct edit of one string in one language, newest first. Approved text is
- * shown to everyone, the rest to its author and to reviewers of the language.
+ * Every suggestion, direct edit, import, restore and removal of one string in one language, newest
+ * first. Approved text and removals are shown to everyone, the rest to its author and to
+ * reviewers of the language.
  *
  * @param catalog The catalog.
  * @param key The string's key.
@@ -222,14 +243,23 @@ export async function getHistory(catalog: string, key: string, locale: string, v
   if ((exists.rowCount ?? 0) === 0) throw new WikiError("not_found", 404);
   await requireLocale(poolRun, catalog, locale);
 
-  const result = await query<HistoryDbRow>(
-    `select id, text, source_text, user_id, user_name, status, decline_reason, created_at, reviewed_at, reviewed_by_name
-       from dash_tr_suggestions
-      where catalog = $1 and key = $2 and locale = $3
-      order by id desc limit 200`,
-    [catalog, key, locale],
-  );
-  return result.rows
+  const [result, events] = await Promise.all([
+    query<HistoryDbRow>(
+      `select id, text, source_text, user_id, user_name, status, origin, decline_reason, created_at, reviewed_at, reviewed_by_name
+         from dash_tr_suggestions
+        where catalog = $1 and key = $2 and locale = $3
+        order by id desc limit 200`,
+      [catalog, key, locale],
+    ),
+    query<EventDbRow>(
+      `select id, previous_text, actor_id, actor_name, created_at
+         from dash_tr_events
+        where catalog = $1 and key = $2 and locale = $3
+        order by id desc limit 200`,
+      [catalog, key, locale],
+    ),
+  ]);
+  const suggestions: HistoryEntry[] = result.rows
     .filter((row) => canViewHistoryEntry(scope, viewerId, { status: row.status, locale, userId: row.user_id }))
     .map((row) => ({
       id: row.id,
@@ -237,20 +267,84 @@ export async function getHistory(catalog: string, key: string, locale: string, v
       sourceText: row.source_text,
       userId: row.user_id,
       userName: row.user_name,
-      status: row.status,
+      status: row.status as HistoryStatus,
+      origin: row.origin,
       declineReason: row.decline_reason,
       createdAt: iso(row.created_at),
       reviewedAt: isoOrNull(row.reviewed_at),
       reviewedByName: row.reviewed_by_name,
     }));
+  const removals: HistoryEntry[] = events.rows.map((row) => ({
+    id: `revert-${row.id}`,
+    text: row.previous_text,
+    sourceText: "",
+    userId: row.actor_id,
+    userName: row.actor_name,
+    status: "reverted",
+    origin: "revert",
+    declineReason: "",
+    createdAt: iso(row.created_at),
+    reviewedAt: iso(row.created_at),
+    reviewedByName: null,
+  }));
+  return [...suggestions, ...removals].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 200);
 }
 
-interface CurrentState {
+/**
+ * The translation in force for one string in one language, with who wrote it and who approved it.
+ * Null when the string has only its English text.
+ *
+ * @param catalog The catalog.
+ * @param key The string's key.
+ * @param locale The language.
+ */
+export async function getCurrentTranslation(catalog: string, key: string, locale: string): Promise<CurrentTranslation | null> {
+  await requireLocale(poolRun, catalog, locale);
+  const result = await query<{
+    source_text: string;
+    override_text: string | null;
+    override_at: Date | null;
+    override_by_name: string | null;
+    baseline_text: string | null;
+    written_by_name: string | null;
+    approved_by_name: string | null;
+  }>(
+    `select s.source_text, o.text as override_text, o.updated_at as override_at, o.updated_by_name as override_by_name,
+            b.text as baseline_text, a.user_name as written_by_name, a.reviewed_by_name as approved_by_name
+       from dash_tr_strings s
+       left join dash_tr_overrides o on o.catalog = s.catalog and o.key = s.key and o.locale = $3
+       left join dash_tr_baselines b on b.catalog = s.catalog and b.key = s.key and b.locale = $3
+       left join lateral (
+         select x.user_name, x.reviewed_by_name from dash_tr_suggestions x
+          where x.catalog = o.catalog and x.key = o.key and x.locale = o.locale and x.status = 'approved' and x.text = o.text
+          order by x.id desc limit 1
+       ) a on true
+      where s.catalog = $1 and s.key = $2`,
+    [catalog, key, locale],
+  );
+  const row = result.rows[0];
+  if (!row) throw new WikiError("not_found", 404);
+  if (row.override_text !== null) {
+    return {
+      text: row.override_text,
+      builtIn: false,
+      writtenByName: row.written_by_name ?? row.override_by_name,
+      approvedByName: row.approved_by_name ?? row.override_by_name,
+      approvedAt: isoOrNull(row.override_at),
+    };
+  }
+  if (row.baseline_text !== null && row.baseline_text !== row.source_text) {
+    return { text: row.baseline_text, builtIn: true, writtenByName: null, approvedByName: null, approvedAt: null };
+  }
+  return null;
+}
+
+export interface CurrentState {
   source: string;
   current: string | null;
 }
 
-async function readCurrent(run: Run, catalog: string, key: string, locale: string): Promise<CurrentState> {
+export async function readCurrent(run: Run, catalog: string, key: string, locale: string): Promise<CurrentState> {
   const result = await run<{ source_text: string; override_text: string | null; baseline_text: string | null }>(
     `select s.source_text, o.text as override_text, b.text as baseline_text
        from dash_tr_strings s
@@ -265,7 +359,7 @@ async function readCurrent(run: Run, catalog: string, key: string, locale: strin
   return { source: row.source_text, current: row.override_text ?? row.baseline_text };
 }
 
-function checkedText(catalog: string, state: CurrentState, raw: unknown): string {
+export function checkedText(catalog: string, state: CurrentState, raw: unknown): string {
   const text = cleanTranslation(raw);
   if (text === null) throw new WikiError("bad_request", 400, "text");
   const problem = translationProblem(catalog, state.source, text, state.current);
@@ -275,7 +369,9 @@ function checkedText(catalog: string, state: CurrentState, raw: unknown): string
 
 /**
  * Stores a member's suggestion for a string in a language. The member's earlier open suggestion
- * for the same string and language is marked as replaced. A member can have 200 open suggestions.
+ * for the same string and language is marked as replaced. A member can have as many open
+ * suggestions as the settings allow, 200 until an admin changes it. Blocked members and a tool
+ * that is closed for suggestions turn the call down.
  *
  * @param catalog The catalog.
  * @param key The string's key.
@@ -289,6 +385,9 @@ export async function submitSuggestion(catalog: string, key: string, locale: str
     return await withTransaction(async (client) => {
       const run = clientRun(client);
       await run("select pg_advisory_xact_lock(hashtext($1))", [`dash_tr_user:${actor.id}`]);
+      const settings = await getSettings(run);
+      if (!settings.suggestionsOpen) throw new TranslationError("suggestions_closed", 403);
+      if (await isBlocked(actor.id, run)) throw new TranslationError("blocked", 403);
       await requireLocale(run, catalog, locale);
       const state = await readCurrent(run, catalog, key, locale);
       const text = checkedText(catalog, state, raw);
@@ -298,7 +397,7 @@ export async function submitSuggestion(catalog: string, key: string, locale: str
           where user_id = $1 and status = 'open' and not (catalog = $2 and key = $3 and locale = $4)`,
         [actor.id, catalog, key, locale],
       );
-      if (Number(others.rows[0].n) >= translationLimits.openSuggestionsMax) throw new WikiError("too_many_suggestions", 409);
+      if (Number(others.rows[0].n) >= settings.openSuggestionsMax) throw new WikiError("too_many_suggestions", 409);
 
       await run(
         `update dash_tr_suggestions set status = 'replaced', open_mark = null
@@ -385,26 +484,29 @@ export async function listMySuggestions(userId: string, page: number): Promise<S
 }
 
 /**
- * Open suggestions waiting for review, oldest first, 50 at a time. Only languages the viewer may
- * review are included, and strings that no longer exist are left out.
+ * Suggestions for review, 50 at a time. Open ones come oldest first, approved and declined ones
+ * and the combined view newest first. Only languages the viewer may review are included, and
+ * strings that no longer exist are left out.
  *
  * @param scope What the viewer may review.
- * @param filter Optional catalog and language to narrow to.
+ * @param filter Optional catalog, language and status to narrow to. The status is open when left out.
  * @param page The page, starting at 1.
  */
 export async function listQueue(
   scope: TranslationScope,
-  filter: { catalog: string | null; locale: string | null },
+  filter: { catalog: string | null; locale: string | null; status?: QueueStatus },
   page: number,
 ): Promise<SuggestionPage> {
   const at = Math.max(1, Math.floor(page));
   const allowed = scope.admin ? null : [...scope.locales];
   if (allowed !== null && allowed.length === 0) return { rows: [], total: 0, page: at, pageSize: translationLimits.pageSize };
 
-  const params = [allowed, filter.catalog, filter.locale];
-  const condition = `x.status = 'open' and s.key is not null
+  const status: QueueStatus = filter.status ?? "open";
+  const params = [allowed, filter.catalog, filter.locale, status];
+  const condition = `(case when $4::text = 'all' then x.status <> 'replaced' else x.status = $4::text end) and s.key is not null
       and ($1::text[] is null or x.locale = any($1::text[]))
       and ($2::text is null or x.catalog = $2) and ($3::text is null or x.locale = $3)`;
+  const order = status === "open" ? "x.created_at, x.id" : "x.id desc";
   const total = await query<{ n: string }>(
     `select count(*) as n from dash_tr_suggestions x
        join dash_tr_strings s on s.catalog = x.catalog and s.key = x.key
@@ -412,22 +514,22 @@ export async function listQueue(
     params,
   );
   const rows = await query<SuggestionDbRow>(
-    `${suggestionSelect} where ${condition} order by x.created_at, x.id limit $4 offset $5`,
+    `${suggestionSelect} where ${condition} order by ${order} limit $5 offset $6`,
     [...params, translationLimits.pageSize, (at - 1) * translationLimits.pageSize],
   );
   return { rows: rows.rows.map(toSuggestion), total: Number(total.rows[0].n), page: at, pageSize: translationLimits.pageSize };
 }
 
-async function bumpVersion(run: Run, catalog: string): Promise<void> {
+export async function bumpVersion(run: Run, catalog: string): Promise<void> {
   await run("update dash_tr_catalogs set version = version + 1 where catalog = $1", [catalog]);
 }
 
-async function afterOverrideChange(catalog: string): Promise<void> {
+export async function afterOverrideChange(catalog: string): Promise<void> {
   if (catalog === "dash") await refreshOverlay();
   await notifyReload(catalog);
 }
 
-function requireReviewer(scope: TranslationScope, locale: string): void {
+export function requireReviewer(scope: TranslationScope, locale: string): void {
   if (!canReviewLocale(scope, locale)) throw new WikiError("forbidden", 403);
 }
 
@@ -451,29 +553,69 @@ export async function saveOverride(catalog: string, key: string, locale: string,
     const state = await readCurrent(run, catalog, key, locale);
     const clean = checkedText(catalog, state, raw);
 
-    await run(
-      `insert into dash_tr_overrides (catalog, key, locale, text, source_text, updated_by, updated_by_name)
-       values ($1, $2, $3, $4, $5, $6, $7)
-       on conflict (catalog, key, locale) do update
-         set text = excluded.text, source_text = excluded.source_text, updated_at = now(),
-             updated_by = excluded.updated_by, updated_by_name = excluded.updated_by_name`,
-      [catalog, key, locale, clean, state.source, actor.id, actor.name],
-    );
-    await run(
-      `update dash_tr_suggestions set status = 'replaced', open_mark = null
-        where catalog = $1 and key = $2 and locale = $3 and user_id = $4 and status = 'open'`,
-      [catalog, key, locale, actor.id],
-    );
-    await run(
-      `insert into dash_tr_suggestions (catalog, key, locale, text, source_text, user_id, user_name, status, open_mark, reviewed_at, reviewed_by, reviewed_by_name)
-       values ($1, $2, $3, $4, $5, $6, $7, 'approved', null, now(), $6, $7)`,
-      [catalog, key, locale, clean, state.source, actor.id, actor.name],
-    );
+    await writeOverrides(run, catalog, locale, [{ key, text: clean, source: state.source }], actor, "edit");
     await bumpVersion(run, catalog);
     return clean;
   });
   await afterOverrideChange(catalog);
   return { catalog, key, locale, text };
+}
+
+/** One approved text to store: the string's key, the translation and the English text it was written for. */
+export interface OverrideWrite {
+  key: string;
+  text: string;
+  source: string;
+}
+
+const writeBatchSize = 1000;
+
+/**
+ * Stores approved translations in a language. Each one becomes the override of its string and an
+ * approved entry of its history with the given origin, and the person's own open suggestions for
+ * those strings are marked as replaced. The caller checks the texts, raises the catalog's version
+ * and calls {@link afterOverrideChange}.
+ *
+ * @param run Where to run the statements, normally inside a transaction.
+ * @param catalog The catalog.
+ * @param locale The language.
+ * @param rows The checked texts.
+ * @param actor The person who saves them.
+ * @param origin Where they came from.
+ */
+export async function writeOverrides(
+  run: Run,
+  catalog: string,
+  locale: string,
+  rows: readonly OverrideWrite[],
+  actor: Actor,
+  origin: TranslationOrigin,
+): Promise<void> {
+  for (let start = 0; start < rows.length; start += writeBatchSize) {
+    const batch = rows.slice(start, start + writeBatchSize);
+    const keys = batch.map((row) => row.key);
+    const texts = batch.map((row) => row.text);
+    const sources = batch.map((row) => row.source);
+    await run(
+      `insert into dash_tr_overrides (catalog, key, locale, text, source_text, updated_by, updated_by_name)
+       select $1, x.key, $2, x.text, x.source, $3, $4 from unnest($5::text[], $6::text[], $7::text[]) as x(key, text, source)
+       on conflict (catalog, key, locale) do update
+         set text = excluded.text, source_text = excluded.source_text, updated_at = now(),
+             updated_by = excluded.updated_by, updated_by_name = excluded.updated_by_name`,
+      [catalog, locale, actor.id, actor.name, keys, texts, sources],
+    );
+    await run(
+      `update dash_tr_suggestions set status = 'replaced', open_mark = null
+        where catalog = $1 and locale = $2 and user_id = $3 and status = 'open' and key = any($4::text[])`,
+      [catalog, locale, actor.id, keys],
+    );
+    await run(
+      `insert into dash_tr_suggestions (catalog, key, locale, text, source_text, user_id, user_name, status, open_mark, reviewed_at, reviewed_by, reviewed_by_name, origin)
+       select $1, x.key, $2, x.text, x.source, $3, $4, 'approved', null, now(), $3, $4, $5
+         from unnest($6::text[], $7::text[], $8::text[]) as x(key, text, source)`,
+      [catalog, locale, actor.id, actor.name, origin, keys, texts, sources],
+    );
+  }
 }
 
 /**
@@ -562,14 +704,22 @@ export async function declineSuggestion(suggestionId: string, reviewer: Actor, s
  * @param catalog The catalog.
  * @param key The string's key.
  * @param locale The language.
+ * @param actor The translator or admin removing it, recorded in the string's history.
  * @param scope What the person may review.
  */
-export async function revertOverride(catalog: string, key: string, locale: string, scope: TranslationScope): Promise<OverrideResult> {
+export async function revertOverride(catalog: string, key: string, locale: string, actor: Actor, scope: TranslationScope): Promise<OverrideResult> {
   requireReviewer(scope, locale);
   const builtIn = await withTransaction(async (client) => {
     const run = clientRun(client);
-    const removed = await run("delete from dash_tr_overrides where catalog = $1 and key = $2 and locale = $3", [catalog, key, locale]);
+    const removed = await run<{ text: string }>(
+      "delete from dash_tr_overrides where catalog = $1 and key = $2 and locale = $3 returning text",
+      [catalog, key, locale],
+    );
     if ((removed.rowCount ?? 0) === 0) throw new WikiError("not_found", 404);
+    await run(
+      "insert into dash_tr_events (catalog, key, locale, kind, previous_text, actor_id, actor_name) values ($1, $2, $3, 'revert', $4, $5, $6)",
+      [catalog, key, locale, removed.rows[0].text, actor.id, actor.name],
+    );
     await bumpVersion(run, catalog);
     const baseline = await run<{ text: string }>(
       "select text from dash_tr_baselines where catalog = $1 and key = $2 and locale = $3",

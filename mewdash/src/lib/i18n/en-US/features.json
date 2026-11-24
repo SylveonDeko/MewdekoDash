@@ -77,6 +77,8 @@
   "feeds_name": "Feeds",
   "filter_description": "Block words and links, invites included",
   "filter_name": "Message filters",
+  "form_funnel_description": "How many people start each form and how many send it",
+  "form_funnel_name": "Form funnel",
   "forms_description": "Custom forms and surveys",
   "forms_name": "Forms",
   "giveaways_description": "Manage server giveaways",

@@ -5,6 +5,13 @@ export const translationLimits = {
   reasonMax: 300,
   nameMax: 80,
   searchMax: 100,
+  keyMax: 200,
+  bulkMax: 100,
+  openSuggestionsCap: 1000,
+  importChars: 4_000_000,
+  importItems: 20_000,
+  problemsListed: 100,
+  samplesListed: 10,
 } as const;
 
 /** The language every string is written in. It is never translated in the tool. */

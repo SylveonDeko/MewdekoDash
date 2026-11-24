@@ -25,10 +25,10 @@
     }
   }
 
-  async function resolve(id: string) {
+  async function close(id: string, status: "resolved" | "dismissed") {
     busyId = id;
     error = null;
-    const result = await wikiCall("POST", `/api/wiki/feedback/${id}`);
+    const result = await wikiCall("POST", `/api/wiki/feedback/${id}`, { status });
     busyId = null;
     if (!result.ok) {
       error = wikiErrorMessage(result.error);
@@ -85,7 +85,14 @@
             {#if item.status === "open"}
               <button type="button" class="px-4 rounded-lg min-h-[44px] text-sm font-medium disabled:opacity-50"
                       style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                      disabled={busyId === item.id} onclick={() => resolve(item.id)}>{m.wikiManage.feedbackResolve()}</button>
+                      disabled={busyId === item.id} onclick={() => close(item.id, "resolved")}>{m.wikiManage.feedbackResolve()}</button>
+              <button type="button" class="px-4 rounded-lg min-h-[44px] text-sm font-medium disabled:opacity-50"
+                      style="background: {$colorStore.primary}10; color: {$colorStore.text};"
+                      disabled={busyId === item.id} onclick={() => close(item.id, "dismissed")}>{m.common.dismiss()}</button>
+            {:else}
+              <span class="inline-flex items-center text-sm" style="color: {$colorStore.muted}">
+                {item.status === "dismissed" ? m.wikiManage.feedbackDismissed() : m.wikiManage.feedbackResolved()}
+              </span>
             {/if}
           </div>
         </li>

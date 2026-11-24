@@ -31,6 +31,7 @@
   "reading_minutes": "{minutes} min read",
   "reading_minutes_about": "About {minutes} min read",
   "related_features": "Related features",
+  "search_none": "Nothing matches \"{query}\" yet.",
   "search_placeholder": "Search {count} guides, e.g. anti-raid, afk, welcome message",
   "search_results_one": "1 match for \"{query}\"",
   "search_results_other": "{count} matches for \"{query}\"",

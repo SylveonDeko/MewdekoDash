@@ -9159,6 +9159,10 @@ export const m = {
     filterDescription: () => t("features", "filter_description", "Block words and links, invites included"),
     /** Message filters */
     filterName: () => t("features", "filter_name", "Message filters"),
+    /** How many people start each form and how many send it */
+    formFunnelDescription: () => t("features", "form_funnel_description", "How many people start each form and how many send it"),
+    /** Form funnel */
+    formFunnelName: () => t("features", "form_funnel_name", "Form funnel"),
     /** Custom forms and surveys */
     formsDescription: () => t("features", "forms_description", "Custom forms and surveys"),
     /** Forms */
@@ -10261,6 +10265,18 @@ export const m = {
     editTextValidation: () => t("forms", "edit_text_validation", "Text validation"),
     /** Text contains invalid characters. Zalgo/corrupted text is not allowed. */
     editZalgoInvalid: () => t("forms", "edit_zalgo_invalid", "Text contains invalid characters. Zalgo/corrupted text is not allowed."),
+    /** Anonymous, so no starts are recorded */
+    funnelAnonymous: () => t("forms", "funnel_anonymous", "Anonymous, so no starts are recorded"),
+    /** Started and sent */
+    funnelColumnFinished: () => t("forms", "funnel_column_finished", "Started and sent"),
+    /** Finished */
+    funnelColumnRate: () => t("forms", "funnel_column_rate", "Finished"),
+    /** Started */
+    funnelColumnStarted: () => t("forms", "funnel_column_started", "Started"),
+    /** No form activity in this window. */
+    funnelEmpty: () => t("forms", "funnel_empty", "No form activity in this window."),
+    /** The form funnel could not be loaded. */
+    funnelLoadFailed: () => t("forms", "funnel_load_failed", "The form funnel could not be loaded."),
     /** Answer-Based */
     labelConditionType0: () => t("forms", "label_condition_type_0", "Answer-Based"),
     /** Show based on previous answers */
@@ -10301,6 +10317,10 @@ export const m = {
     labelOperatorEquals: () => t("forms", "label_operator_equals", "Equals"),
     /** Greater than */
     labelOperatorGreaterThan: () => t("forms", "label_operator_greater_than", "Greater than"),
+    /** Is answered */
+    labelOperatorIsAnswered: () => t("forms", "label_operator_is_answered", "Is answered"),
+    /** Is not answered */
+    labelOperatorIsNotAnswered: () => t("forms", "label_operator_is_not_answered", "Is not answered"),
     /** Less than */
     labelOperatorLessThan: () => t("forms", "label_operator_less_than", "Less than"),
     /** Does not equal */
@@ -10319,6 +10339,10 @@ export const m = {
     labelQuestionEmail: () => t("forms", "label_question_email", "Email"),
     /** Email address */
     labelQuestionEmailDescription: () => t("forms", "label_question_email_description", "Email address"),
+    /** Picture upload */
+    labelQuestionImage: () => t("forms", "label_question_image", "Picture upload"),
+    /** The person uploads a picture */
+    labelQuestionImageDescription: () => t("forms", "label_question_image_description", "The person uploads a picture"),
     /** Long text */
     labelQuestionLongText: () => t("forms", "label_question_long_text", "Long text"),
     /** Multi-line text area */
@@ -10637,6 +10661,10 @@ export const m = {
     publicIfApprovedYouWillBe: () => t("forms", "public_if_approved_you_will_be", "If approved, you will be automatically unbanned"),
     /** If approved, you'll receive an invite link to join the server */
     publicIfApprovedYoullReceiveAn: () => t("forms", "public_if_approved_youll_receive_an", "If approved, you'll receive an invite link to join the server"),
+    /** Uploaded picture */
+    publicImageAlt: () => t("forms", "public_image_alt", "Uploaded picture"),
+    /** PNG, JPG, GIF or WebP, up to 8 MB. */
+    publicImageHint: () => t("forms", "public_image_hint", "PNG, JPG, GIF or WebP, up to 8 MB."),
     /** Join application form */
     publicJoinApplicationForm: () => t("forms", "public_join_application_form", "Join application form"),
     /** This form link is invalid or expired. Ask the server administrator for a new one. */
@@ -10847,6 +10875,10 @@ export const m = {
     settingsAllowAnonymous: () => t("forms", "settings_allow_anonymous", "Submit anonymously"),
     /** No submitter is stored, so nobody can be messaged or given roles. */
     settingsAllowAnonymousHint: () => t("forms", "settings_allow_anonymous_hint", "No submitter is stored, so nobody can be messaged or given roles."),
+    /** Let people edit their answers */
+    settingsAllowEditing: () => t("forms", "settings_allow_editing", "Let people edit their answers"),
+    /** Until a reviewer decides their response. */
+    settingsAllowEditingHint: () => t("forms", "settings_allow_editing_hint", "Until a reviewer decides their response."),
     /** Allow people outside the server */
     settingsAllowExternal: () => t("forms", "settings_allow_external", "Allow people outside the server"),
     /** Anyone with the link can submit. */
@@ -15525,6 +15557,18 @@ export const m = {
     choose: () => t("placeholders", "choose", "Choose randomly from pipe-separated options"),
     /** Current date */
     date: () => t("placeholders", "date", "Current date"),
+    /** When the form closes */
+    formExpiresat: () => t("placeholders", "form_expiresat", "When the form closes"),
+    /** The address of the form */
+    formLink: () => t("placeholders", "form_link", "The address of the form"),
+    /** The name of the form */
+    formName: () => t("placeholders", "form_name", "The name of the form"),
+    /** When the form opens */
+    formOpensat: () => t("placeholders", "form_opensat", "When the form opens"),
+    /** The role needed to fill in the form */
+    formRole: () => t("placeholders", "form_role", "The role needed to fill in the form"),
+    /** How many answers the form takes */
+    formSubmissions: () => t("placeholders", "form_submissions", "How many answers the form takes"),
     /** Random baka reaction GIF */
     gifBaka: () => t("placeholders", "gif_baka", "Random baka reaction GIF"),
     /** Random bite reaction GIF */
@@ -15871,6 +15915,8 @@ export const m = {
     userDisplayname: () => t("placeholders", "user_displayname", "Birthday user's display name"),
     /** Full username */
     userFullname: () => t("placeholders", "user_fullname", "Full username"),
+    /** The submitter's display name */
+    userGlobalname: () => t("placeholders", "user_globalname", "The submitter's display name"),
     /** User ID */
     userId: () => t("placeholders", "user_id", "User ID"),
     /** Server join date (dd.MM.yyyy) */
@@ -20087,6 +20133,14 @@ export const m = {
     allGroups: () => t("translate", "all_groups", "All groups"),
     /** All languages */
     allLanguages: () => t("translate", "all_languages", "All languages"),
+    /** {count} could not be saved. */
+    bulkFailed: (p: { count: P }) => t("translate", "bulk_failed", "{count} could not be saved.", p),
+    /** {count} need a fix first. */
+    bulkInvalid: (p: { count: P }) => t("translate", "bulk_invalid", "{count} need a fix first.", p),
+    /** {count} translations saved. */
+    bulkSaved: (p: { count: P }) => t("translate", "bulk_saved", "{count} translations saved.", p),
+    /** {count} suggestions sent for review. */
+    bulkSent: (p: { count: P }) => t("translate", "bulk_sent", "{count} suggestions sent for review.", p),
     /** Catalog */
     catalogAria: () => t("translate", "catalog_aria", "Catalog"),
     /** Bot messages */
@@ -20095,34 +20149,124 @@ export const m = {
     catalogDash: () => t("translate", "catalog_dash", "Dashboard text"),
     /** Nothing to translate yet. */
     catalogsEmpty: () => t("translate", "catalogs_empty", "Nothing to translate yet."),
+    /** They can no longer send suggestions. Their open suggestions stay in the queue. */
+    contributorBlockMessage: () => t("translate", "contributor_block_message", "They can no longer send suggestions. Their open suggestions stay in the queue."),
+    /** Block {name}? */
+    contributorBlockTitle: (p: { name: P }) => t("translate", "contributor_block_title", "Block {name}?", p),
+    /** Cannot suggest */
+    contributorBlocked: () => t("translate", "contributor_blocked", "Cannot suggest"),
+    /** {suggested} suggested, {approved} approved, {declined} declined, {open} open */
+    contributorCounts: (p: { approved: P; declined: P; open: P; suggested: P }) => t("translate", "contributor_counts", "{suggested} suggested, {approved} approved, {declined} declined, {open} open", p),
+    /** {count} saved directly */
+    contributorDirect: (p: { count: P }) => t("translate", "contributor_direct", "{count} saved directly", p),
+    /** {percent}% of decided suggestions were approved */
+    contributorRate: (p: { percent: P }) => t("translate", "contributor_rate", "{percent}% of decided suggestions were approved", p),
+    /** Show suggestions */
+    contributorShow: () => t("translate", "contributor_show", "Show suggestions"),
+    /** No suggestion has been decided yet. */
+    contributorUndecided: () => t("translate", "contributor_undecided", "No suggestion has been decided yet."),
+    /** Nobody has sent a translation yet. */
+    contributorsEmpty: () => t("translate", "contributors_empty", "Nobody has sent a translation yet."),
     /** The translation database is not available. */
     databaseUnavailable: () => t("translate", "database_unavailable", "The translation database is not available."),
+    /** You already suggested this text. */
+    errorAlreadySuggested: () => t("translate", "error_already_suggested", "You already suggested this text."),
+    /** You can no longer send suggestions. */
+    errorBlocked: () => t("translate", "error_blocked", "You can no longer send suggestions."),
+    /** There is nothing to save. */
+    errorBulkEmpty: () => t("translate", "error_bulk_empty", "There is nothing to save."),
+    /** Too many strings were sent at once. */
+    errorBulkTooMany: () => t("translate", "error_bulk_too_many", "Too many strings were sent at once."),
+    /** This string appears twice. */
+    errorDuplicate: () => t("translate", "error_duplicate", "This string appears twice."),
+    /** That text can no longer be restored. */
+    errorHistoryNotRestorable: () => t("translate", "error_history_not_restorable", "That text can no longer be restored."),
+    /** The file could not be read. */
+    errorImportInvalid: () => t("translate", "error_import_invalid", "The file could not be read."),
+    /** The file is for another catalog or language. */
+    errorImportTargetMismatch: () => t("translate", "error_import_target_mismatch", "The file is for another catalog or language."),
+    /** The file is too large. */
+    errorImportTooLarge: () => t("translate", "error_import_too_large", "The file is too large."),
+    /** The file has too many strings. */
+    errorImportTooMany: () => t("translate", "error_import_too_many", "The file has too many strings."),
+    /** The key is not valid. */
+    errorKeyInvalid: () => t("translate", "error_key_invalid", "The key is not valid."),
     /** That language is not available. */
     errorLocale: () => t("translate", "error_locale", "That language is not available."),
     /** Keep the same placeholders as the English text. */
     errorPlaceholders: () => t("translate", "error_placeholders", "Keep the same placeholders as the English text."),
+    /** That string does not exist. */
+    errorStringNotFound: () => t("translate", "error_string_not_found", "That string does not exist."),
+    /** Suggestions are closed right now. */
+    errorSuggestionsClosed: () => t("translate", "error_suggestions_closed", "Suggestions are closed right now."),
     /** Enter a translation. */
     errorTextEmpty: () => t("translate", "error_text_empty", "Enter a translation."),
     /** Use at most {max} characters. */
     errorTextTooLong: (p: { max: P }) => t("translate", "error_text_too_long", "Use at most {max} characters.", p),
-    /** You have {max} open suggestions. Wait for a review before adding more. */
-    errorTooManySuggestions: (p: { max: P }) => t("translate", "error_too_many_suggestions", "You have {max} open suggestions. Wait for a review before adding more.", p),
+    /** You have too many open suggestions. Wait for a review before adding more. */
+    errorTooManySuggestions: () => t("translate", "error_too_many_suggestions", "You have too many open suggestions. Wait for a review before adding more."),
+    /** Download */
+    exportDownload: () => t("translate", "export_download", "Download"),
+    /** File format */
+    exportFormatAria: () => t("translate", "export_format_aria", "File format"),
+    /** One file per group in a folder named for the language, ready to copy into the project. */
+    exportResourceHint: () => t("translate", "export_resource_hint", "One file per group in a folder named for the language, ready to copy into the project."),
+    /** What to include */
+    exportScopeAria: () => t("translate", "export_scope_aria", "What to include"),
+    /** Export a language */
+    exportTitle: () => t("translate", "export_title", "Export a language"),
     /** Translation of {key} */
     fieldAria: (p: { key: P }) => t("translate", "field_aria", "Translation of {key}", p),
     /** Filter strings */
     filterAria: () => t("translate", "filter_aria", "Filter strings"),
+    /** Resource files (zip) */
+    formatResource: () => t("translate", "format_resource", "Resource files (zip)"),
     /** Has suggestions */
     hasSuggestions: () => t("translate", "has_suggestions", "Has suggestions"),
     /** Translations */
     heading: () => t("translate", "heading", "Translations"),
+    /** Approved by {name} */
+    historyApprovedBy: (p: { name: P }) => t("translate", "history_approved_by", "Approved by {name}", p),
+    /** This is the built-in text. */
+    historyBuiltIn: () => t("translate", "history_built_in", "This is the built-in text."),
+    /** Current translation */
+    historyCurrent: () => t("translate", "history_current", "Current translation"),
     /** No history yet. */
     historyEmpty: () => t("translate", "history_empty", "No history yet."),
     /** {name} on {when} */
     historyMeta: (p: { name: P; when: P }) => t("translate", "history_meta", "{name} on {when}", p),
+    /** It becomes the translation again and stays in the history. */
+    historyRestoreMessage: () => t("translate", "history_restore_message", "It becomes the translation again and stays in the history."),
+    /** Restore this text? */
+    historyRestoreTitle: () => t("translate", "history_restore_title", "Restore this text?"),
+    /** Text restored. */
+    historyRestored: () => t("translate", "history_restored", "Text restored."),
     /** History of {key} */
     historyTitle: (p: { key: P }) => t("translate", "history_title", "History of {key}", p),
+    /** Written by {name} */
+    historyWrittenBy: (p: { name: P }) => t("translate", "history_written_by", "Written by {name}", p),
+    /** Save {count} translations */
+    importApply: (p: { count: P }) => t("translate", "import_apply", "Save {count} translations", p),
+    /** Check file */
+    importCheck: () => t("translate", "import_check", "Check file"),
+    /** Choose a file */
+    importFile: () => t("translate", "import_file", "Choose a file"),
+    /** JSON and CSV files written by the export can be uploaded again. */
+    importHint: () => t("translate", "import_hint", "JSON and CSV files written by the export can be uploaded again."),
+    /** Nothing in this file would change. */
+    importNone: () => t("translate", "import_none", "Nothing in this file would change."),
+    /** Strings with problems: */
+    importProblems: () => t("translate", "import_problems", "Strings with problems:"),
+    /** The first strings that would be saved: */
+    importSamples: () => t("translate", "import_samples", "The first strings that would be saved:"),
+    /** {total} strings in the file, {valid} to save, {unchanged} unchanged, {empty} empty, {fa... */
+    importSummary: (p: { empty: P; failed: P; total: P; unchanged: P; valid: P }) => t("translate", "import_summary", "{total} strings in the file, {valid} to save, {unchanged} unchanged, {empty} empty, {failed} with problems.", p),
+    /** Import translations */
+    importTitle: () => t("translate", "import_title", "Import translations"),
     /** Choose a language */
     languagePlaceholder: () => t("translate", "language_placeholder", "Choose a language"),
+    /** English (source text) */
+    languageSource: () => t("translate", "language_source", "English (source text)"),
     /** Log in to suggest translations. */
     loginPrompt: () => t("translate", "login_prompt", "Log in to suggest translations."),
     /** You have not suggested any translations. */
@@ -20131,6 +20275,12 @@ export const m = {
     navAria: () => t("translate", "nav_aria", "Translation sections"),
     /** Translate */
     navTitle: () => t("translate", "nav_title", "Translate"),
+    /** Saved directly */
+    originEdit: () => t("translate", "origin_edit", "Saved directly"),
+    /** Imported */
+    originImport: () => t("translate", "origin_import", "Imported"),
+    /** Restored */
+    originRestore: () => t("translate", "origin_restore", "Restored"),
     /** Outdated */
     outdated: () => t("translate", "outdated", "Outdated"),
     /** Suggest translations for the Mewdeko bot and dashboard. */
@@ -20149,20 +20299,64 @@ export const m = {
     progress: (p: { done: P; total: P }) => t("translate", "progress", "{done} of {total} translated", p),
     /** Translation progress */
     progressAria: () => t("translate", "progress_aria", "Translation progress"),
+    /** {count} waiting for review */
+    progressPending: (p: { count: P }) => t("translate", "progress_pending", "{count} waiting for review", p),
+    /** Progress by language */
+    progressTitle: () => t("translate", "progress_title", "Progress by language"),
+    /** {count} untranslated */
+    progressUntranslated: (p: { count: P }) => t("translate", "progress_untranslated", "{count} untranslated", p),
     /** No suggestions to review. */
     queueEmpty: () => t("translate", "queue_empty", "No suggestions to review."),
+    /** Reviewed by {name} */
+    queueReviewedBy: (p: { name: P }) => t("translate", "queue_reviewed_by", "Reviewed by {name}", p),
+    /** Show suggestions by status */
+    queueStatusAria: () => t("translate", "queue_status_aria", "Show suggestions by status"),
+    /** Text removed */
+    removed: () => t("translate", "removed", "Text removed"),
     /** Use built-in text */
     revert: () => t("translate", "revert", "Use built-in text"),
     /** The saved translation is removed. Its history stays. */
     revertMessage: () => t("translate", "revert_message", "The saved translation is removed. Its history stays."),
     /** Use the built-in text? */
     revertTitle: () => t("translate", "revert_title", "Use the built-in text?"),
+    /** Save all changes */
+    saveAll: () => t("translate", "save_all", "Save all changes"),
     /** Saved by {name} */
     savedBy: (p: { name: P }) => t("translate", "saved_by", "Saved by {name}", p),
+    /** Every string */
+    scopeAll: () => t("translate", "scope_all", "Every string"),
+    /** Approved only */
+    scopeApproved: () => t("translate", "scope_approved", "Approved only"),
     /** Search strings */
     searchAria: () => t("translate", "search_aria", "Search strings"),
+    /** Open suggestions per person */
+    settingsOpenMax: () => t("translate", "settings_open_max", "Open suggestions per person"),
+    /** Accept suggestions */
+    settingsSuggestionsOpen: () => t("translate", "settings_suggestions_open", "Accept suggestions"),
+    /** When off, only translators and admins can change translations. */
+    settingsSuggestionsOpenHint: () => t("translate", "settings_suggestions_open_hint", "When off, only translators and admins can change translations."),
+    /** Newest added */
+    sortAdded: () => t("translate", "sort_added", "Newest added"),
+    /** Recently approved */
+    sortApproved: () => t("translate", "sort_approved", "Recently approved"),
+    /** Sort strings */
+    sortAria: () => t("translate", "sort_aria", "Sort strings"),
+    /** Key name */
+    sortKey: () => t("translate", "sort_key", "Key name"),
+    /** Recently suggested */
+    sortSuggested: () => t("translate", "sort_suggested", "Recently suggested"),
+    /** Save {count} English texts */
+    sourceApply: (p: { count: P }) => t("translate", "source_apply", "Save {count} English texts", p),
     /** The English text changed after this was written. */
     sourceChanged: () => t("translate", "source_changed", "The English text changed after this was written."),
+    /** {count} English texts saved. */
+    sourceDone: (p: { count: P }) => t("translate", "source_done", "{count} English texts saved.", p),
+    /** New strings are added and changed ones are updated. Nothing is removed. */
+    sourceHint: () => t("translate", "source_hint", "New strings are added and changed ones are updated. Nothing is removed."),
+    /** {total} strings in the file, {added} new, {changed} changed, {unchanged} unchanged, {fa... */
+    sourceSummary: (p: { added: P; changed: P; failed: P; total: P; unchanged: P }) => t("translate", "source_summary", "{total} strings in the file, {added} new, {changed} changed, {unchanged} unchanged, {failed} with problems.", p),
+    /** Upload English text */
+    sourceTitle: () => t("translate", "source_title", "Upload English text"),
     /** No strings match. */
     stringsEmpty: () => t("translate", "strings_empty", "No strings match."),
     /** Suggest translation */
@@ -20173,8 +20367,12 @@ export const m = {
     suggestedTranslation: () => t("translate", "suggested_translation", "Suggested translation"),
     /** Strings */
     tabBrowse: () => t("translate", "tab_browse", "Strings"),
+    /** Contributors */
+    tabContributors: () => t("translate", "tab_contributors", "Contributors"),
     /** Review queue */
     tabQueue: () => t("translate", "tab_queue", "Review queue"),
+    /** Import or export */
+    tabTransfer: () => t("translate", "tab_transfer", "Import or export"),
     /** Translators */
     tabTranslators: () => t("translate", "tab_translators", "Translators"),
     /** No translation yet. */
@@ -20185,6 +20383,10 @@ export const m = {
     translatorRemoveMessage: () => t("translate", "translator_remove_message", "They will no longer be able to edit this language."),
     /** No translators yet. */
     translatorsEmpty: () => t("translate", "translators_empty", "No translators yet."),
+    /** 1 unsaved translation */
+    unsavedOne: () => t("translate", "unsaved_one", "1 unsaved translation"),
+    /** {count} unsaved translations */
+    unsavedOther: (p: { count: P }) => t("translate", "unsaved_other", "{count} unsaved translations", p),
     /** Untranslated */
     untranslated: () => t("translate", "untranslated", "Untranslated"),
     /** Your suggestion is waiting for review. */
@@ -21103,6 +21305,8 @@ export const m = {
     readingMinutesAbout: (p: { minutes: P }) => t("wiki", "reading_minutes_about", "About {minutes} min read", p),
     /** Related features */
     relatedFeatures: () => t("wiki", "related_features", "Related features"),
+    /** Nothing matches "{query}" yet. */
+    searchNone: (p: { query: P }) => t("wiki", "search_none", "Nothing matches \"{query}\" yet.", p),
     /** Search {count} guides, e.g. anti-raid, afk, welcome message */
     searchPlaceholder: (p: { count: P }) => t("wiki", "search_placeholder", "Search {count} guides, e.g. anti-raid, afk, welcome message", p),
     /** 1 match for "{query}" */
@@ -21117,12 +21321,60 @@ export const m = {
     wikiHome: () => t("wiki", "wiki_home", "Wiki home"),
   },
   wikiManage: {
+    /** Views per day */
+    analyticsChartLabel: () => t("wiki-manage", "analytics_chart_label", "Views per day"),
+    /** No views in this period. */
+    analyticsEmpty: () => t("wiki-manage", "analytics_empty", "No views in this period."),
+    /** All pages */
+    analyticsFilterAll: () => t("wiki-manage", "analytics_filter_all", "All pages"),
+    /** Rated */
+    analyticsFilterRated: () => t("wiki-manage", "analytics_filter_rated", "Rated"),
+    /** With reports */
+    analyticsFilterReported: () => t("wiki-manage", "analytics_filter_reported", "With reports"),
+    /** Searches with no results */
+    analyticsMisses: () => t("wiki-manage", "analytics_misses", "Searches with no results"),
+    /** No missed searches. */
+    analyticsMissesEmpty: () => t("wiki-manage", "analytics_misses_empty", "No missed searches."),
+    /** No pages match. */
+    analyticsNoPages: () => t("wiki-manage", "analytics_no_pages", "No pages match."),
+    /** Time period */
+    analyticsPeriodAria: () => t("wiki-manage", "analytics_period_aria", "Time period"),
+    /** Open reports */
+    analyticsReports: () => t("wiki-manage", "analytics_reports", "Open reports"),
+    /** Helpful share */
+    analyticsShare: () => t("wiki-manage", "analytics_share", "Helpful share"),
+    /** Sort pages by */
+    analyticsSortAria: () => t("wiki-manage", "analytics_sort_aria", "Sort pages by"),
+    /** Article views */
+    analyticsViews: () => t("wiki-manage", "analytics_views", "Article views"),
     /** Back to the article */
     backToArticle: () => t("wiki-manage", "back_to_article", "Back to the article"),
-    /** Use an existing category */
-    categoryExisting: () => t("wiki-manage", "category_existing", "Use an existing category"),
-    /** Create a category */
-    categoryNew: () => t("wiki-manage", "category_new", "Create a category"),
+    /** Block a user from suggesting */
+    blockAddTitle: () => t("wiki-manage", "block_add_title", "Block a user from suggesting"),
+    /** They will be able to send suggestions again. */
+    blockRemoveMessage: () => t("wiki-manage", "block_remove_message", "They will be able to send suggestions again."),
+    /** Unblock {name}? */
+    blockRemoveTitle: (p: { name: P }) => t("wiki-manage", "block_remove_title", "Unblock {name}?", p),
+    /** Nobody is blocked. */
+    blockedEmpty: () => t("wiki-manage", "blocked_empty", "Nobody is blocked."),
+    /** Blocked from suggesting */
+    blockedHeading: () => t("wiki-manage", "blocked_heading", "Blocked from suggesting"),
+    /** There are no categories yet. */
+    categoriesEmpty: () => t("wiki-manage", "categories_empty", "There are no categories yet."),
+    /** Add category */
+    categoryAdd: () => t("wiki-manage", "category_add", "Add category"),
+    /** Only categories without pages can be deleted. */
+    categoryDeleteMessage: () => t("wiki-manage", "category_delete_message", "Only categories without pages can be deleted."),
+    /** Delete the category {name}? */
+    categoryDeleteTitle: (p: { name: P }) => t("wiki-manage", "category_delete_title", "Delete the category {name}?", p),
+    /** Edit category */
+    categoryEdit: () => t("wiki-manage", "category_edit", "Edit category"),
+    /** Category icon */
+    categoryIcon: () => t("wiki-manage", "category_icon", "Category icon"),
+    /** 1 page */
+    categoryPagesOne: () => t("wiki-manage", "category_pages_one", "1 page"),
+    /** {count} pages */
+    categoryPagesOther: (p: { count: P }) => t("wiki-manage", "category_pages_other", "{count} pages", p),
     /** {language} by {name} on {when} */
     changeMeta: (p: { language: P; name: P; when: P }) => t("wiki-manage", "change_meta", "{language} by {name} on {when}", p),
     /** The wiki database is not available. */
@@ -21145,14 +21397,24 @@ export const m = {
     editThisPage: () => t("wiki-manage", "edit_this_page", "Edit this page"),
     /** Add an editor */
     editorAddTitle: () => t("wiki-manage", "editor_add_title", "Add an editor"),
+    /** Insert image */
+    editorInsertImage: () => t("wiki-manage", "editor_insert_image", "Insert image"),
     /** They will no longer be able to edit the wiki. */
     editorRemoveMessage: () => t("wiki-manage", "editor_remove_message", "They will no longer be able to edit the wiki."),
     /** Remove {name}? */
     editorRemoveTitle: (p: { name: P }) => t("wiki-manage", "editor_remove_title", "Remove {name}?", p),
+    /** Uploading the image... */
+    editorUploading: () => t("wiki-manage", "editor_uploading", "Uploading the image..."),
     /** No editors yet. */
     editorsEmpty: () => t("wiki-manage", "editors_empty", "No editors yet."),
+    /** That user is already blocked. */
+    errorAlreadyBlocked: () => t("wiki-manage", "error_already_blocked", "That user is already blocked."),
     /** Enter a category of up to 40 characters. */
     errorCategoryInvalid: () => t("wiki-manage", "error_category_invalid", "Enter a category of up to 40 characters."),
+    /** Move the pages out of this category first. */
+    errorCategoryNotEmpty: () => t("wiki-manage", "error_category_not_empty", "Move the pages out of this category first."),
+    /** Another category already has that name. */
+    errorCategoryTaken: () => t("wiki-manage", "error_category_taken", "Another category already has that name."),
     /** Someone else changed this. Reload and try again. */
     errorConflict: () => t("wiki-manage", "error_conflict", "Someone else changed this. Reload and try again."),
     /** You do not have access to this. */
@@ -21161,14 +21423,22 @@ export const m = {
     errorHrefInvalid: () => t("wiki-manage", "error_href_invalid", "Enter a path such as /dashboard/afk."),
     /** Choose an icon. */
     errorIconInvalid: () => t("wiki-manage", "error_icon_invalid", "Choose an icon."),
+    /** Choose a PNG, JPEG, GIF or WebP image. */
+    errorImageInvalid: () => t("wiki-manage", "error_image_invalid", "Choose a PNG, JPEG, GIF or WebP image."),
+    /** Images can be up to {size} MB. */
+    errorImageTooLarge: (p: { size: P }) => t("wiki-manage", "error_image_too_large", "Images can be up to {size} MB.", p),
     /** The list changed. Reload and try again. */
     errorListChanged: () => t("wiki-manage", "error_list_changed", "The list changed. Reload and try again."),
+    /** The text has too many headings, links or nested quotes to display. */
+    errorMarkdownTooComplex: () => t("wiki-manage", "error_markdown_too_complex", "The text has too many headings, links or nested quotes to display."),
     /** Enter a valid module name. */
     errorModuleInvalid: () => t("wiki-manage", "error_module_invalid", "Enter a valid module name."),
     /** Nothing changed. */
     errorNoChanges: () => t("wiki-manage", "error_no_changes", "Nothing changed."),
     /** That page no longer exists. */
     errorNotFound: () => t("wiki-manage", "error_not_found", "That page no longer exists."),
+    /** Too many requests. Try again later. */
+    errorRateLimited: () => t("wiki-manage", "error_rate_limited", "Too many requests. Try again later."),
     /** Pick related pages that exist. */
     errorRelatedInvalid: () => t("wiki-manage", "error_related_invalid", "Pick related pages that exist."),
     /** Use lowercase letters, numbers and single hyphens. */
@@ -21181,6 +21451,8 @@ export const m = {
     errorTitleRequired: () => t("wiki-manage", "error_title_required", "Enter a title."),
     /** One of the fields is too long. */
     errorTooLong: () => t("wiki-manage", "error_too_long", "One of the fields is too long."),
+    /** Report dismissed */
+    feedbackDismissed: () => t("wiki-manage", "feedback_dismissed", "Report dismissed"),
     /** No feedback. */
     feedbackEmpty: () => t("wiki-manage", "feedback_empty", "No feedback."),
     /** Helpful */
@@ -21239,6 +21511,18 @@ export const m = {
     historyVsCurrent: () => t("wiki-manage", "history_vs_current", "Compare to current"),
     /** Compare to previous */
     historyVsPrevious: () => t("wiki-manage", "history_vs_previous", "Compare to previous"),
+    /** {page}, {language}: {state} */
+    languagesCell: (p: { language: P; page: P; state: P }) => t("wiki-manage", "languages_cell", "{page}, {language}: {state}", p),
+    /** Up to date */
+    languagesCurrent: () => t("wiki-manage", "languages_current", "Up to date"),
+    /** No text yet */
+    languagesMissing: () => t("wiki-manage", "languages_missing", "No text yet"),
+    /** Only pages that need work */
+    languagesOnlyOpen: () => t("wiki-manage", "languages_only_open", "Only pages that need work"),
+    /** Behind the English text */
+    languagesOutdated: () => t("wiki-manage", "languages_outdated", "Behind the English text"),
+    /** {done} of {total} up to date */
+    languagesProgress: (p: { done: P; total: P }) => t("wiki-manage", "languages_progress", "{done} of {total} up to date", p),
     /** Edit the wiki */
     manageLink: () => t("wiki-manage", "manage_link", "Edit the wiki"),
     /** You have not suggested any edits. */
@@ -21281,6 +21565,8 @@ export const m = {
     saved: () => t("wiki-manage", "saved", "Saved."),
     /** Page sections */
     sectionsAria: () => t("wiki-manage", "sections_aria", "Page sections"),
+    /** Accept edit suggestions */
+    settingsSuggestionsOpen: () => t("wiki-manage", "settings_suggestions_open", "Accept edit suggestions"),
     /** Not approved */
     statusDeclined: () => t("wiki-manage", "status_declined", "Not approved"),
     /** Replaced */
@@ -21303,6 +21589,10 @@ export const m = {
     suggestionOutdated: () => t("wiki-manage", "suggestion_outdated", "The article changed after this was written."),
     /** Review */
     suggestionReview: () => t("wiki-manage", "suggestion_review", "Review"),
+    /** You cannot send edit suggestions for the wiki. */
+    suggestionsBlocked: () => t("wiki-manage", "suggestions_blocked", "You cannot send edit suggestions for the wiki."),
+    /** Edit suggestions for the wiki are closed right now. */
+    suggestionsClosed: () => t("wiki-manage", "suggestions_closed", "Edit suggestions for the wiki are closed right now."),
     /** No suggestions. */
     suggestionsEmpty: () => t("wiki-manage", "suggestions_empty", "No suggestions."),
     /** Article */
@@ -21311,6 +21601,8 @@ export const m = {
     tabEditors: () => t("wiki-manage", "tab_editors", "Editors"),
     /** Feedback */
     tabFeedback: () => t("wiki-manage", "tab_feedback", "Feedback"),
+    /** Languages */
+    tabLanguages: () => t("wiki-manage", "tab_languages", "Languages"),
     /** Pages */
     tabPages: () => t("wiki-manage", "tab_pages", "Pages"),
     /** Recent changes */
@@ -21321,6 +21613,8 @@ export const m = {
     tagTooLong: (p: { max: P }) => t("wiki-manage", "tag_too_long", "Tags can be up to {max} characters.", p),
     /** Use at most {max} tags. */
     tagsTooMany: (p: { max: P }) => t("wiki-manage", "tags_too_many", "Use at most {max} tags.", p),
+    /** Let {name} suggest edits again */
+    unblockNamed: (p: { name: P }) => t("wiki-manage", "unblock_named", "Let {name} suggest edits again", p),
     /** View article */
     viewArticle: () => t("wiki-manage", "view_article", "View article"),
   },

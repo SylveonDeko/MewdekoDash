@@ -137,12 +137,12 @@
       },
       {
         "id": "components",
-        "label": "Components",
+        "label": "Buttons and menus",
         "icon": "fa-comment"
       },
       {
         "id": "json",
-        "label": "JSON",
+        "label": "Message code",
         "icon": "fa-code"
       },
       {

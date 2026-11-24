@@ -1,6 +1,6 @@
 <script lang="ts">
   import { m } from "$lib/i18n";
-  import { COMMON_PERMISSIONS, CONDITIONAL_OPERATORS, type FormQuestionCondition } from "$lib/api/index.ts";
+  import { COMMON_PERMISSIONS, CONDITIONAL_OPERATORS, isPresenceOperator, type FormQuestionCondition } from "$lib/api/index.ts";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
@@ -150,15 +150,17 @@
                   onchange={({ selected }) => update(groupIndex, conditionIndex, { operator: selected as FormQuestionCondition["operator"] })}
                 />
               </div>
-              <input
-                type="text"
-                value={condition.expectedValue ?? ""}
-                oninput={(e) => update(groupIndex, conditionIndex, { expectedValue: e.currentTarget.value })}
-                placeholder={m.forms.multiConditionValuePlaceholder()}
-                aria-label={m.forms.conditionalExpectedValue()}
-                class="grow min-w-0 p-3 rounded-lg border min-h-[50px]"
-                style={inputStyle}
-              />
+              {#if !isPresenceOperator(condition.operator)}
+                <input
+                  type="text"
+                  value={condition.expectedValue ?? ""}
+                  oninput={(e) => update(groupIndex, conditionIndex, { expectedValue: e.currentTarget.value })}
+                  placeholder={m.forms.multiConditionValuePlaceholder()}
+                  aria-label={m.forms.conditionalExpectedValue()}
+                  class="grow min-w-0 p-3 rounded-lg border min-h-[50px]"
+                  style={inputStyle}
+                />
+              {/if}
             </div>
           {:else if condition.conditionType === 1}
             <DiscordSelector

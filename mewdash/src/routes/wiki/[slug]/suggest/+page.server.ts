@@ -2,6 +2,9 @@ import { error, redirect } from "@sveltejs/kit";
 import { availableLocales } from "$lib/i18n";
 import { getWikiPageRef } from "$lib/server/wiki";
 import { getAccess } from "$lib/server/wiki/access";
+import { isBlocked } from "$lib/server/wiki/blocks";
+import { findRedirect } from "$lib/server/wiki/insights";
+import { readSettings } from "$lib/server/wiki/settings";
 import { getOpenSuggestion, getVersion } from "$lib/server/wiki/store";
 import { sourceLocale } from "$lib/wiki/catalog";
 import type { PageServerLoad } from "./$types";
@@ -13,15 +16,23 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
   }
 
   const ref = await getWikiPageRef(params.slug);
-  if (!ref) error(404, `No wiki page for "${params.slug}" yet`);
+  if (!ref) {
+    const moved = await findRedirect(params.slug).catch(() => null);
+    if (moved) redirect(301, `/wiki/${moved}/suggest${url.search}`);
+    error(404, `No wiki page for "${params.slug}" yet`);
+  }
 
   const locales = availableLocales();
   const requested = url.searchParams.get("locale");
   const locale = requested && locales.includes(requested) ? requested : ref.locale;
 
   if (!ref.pageId || !access.databaseAvailable) {
-    return { available: false as const, slug: params.slug, locale, locales };
+    return { available: false as const, notice: "database" as const, slug: params.slug, locale, locales };
   }
+
+  const [settings, blocked] = await Promise.all([readSettings(), isBlocked(access.userId)]);
+  if (!settings.suggestionsOpen) return { available: false as const, notice: "closed" as const, slug: params.slug, locale, locales };
+  if (blocked) return { available: false as const, notice: "blocked" as const, slug: params.slug, locale, locales };
 
   const [existing, own, source] = await Promise.all([
     getOpenSuggestion(ref.pageId, locale, access.userId),

@@ -4,7 +4,7 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
   import { draftProblem, groupLabel, translationErrorMessage } from "$lib/translate/client";
-  import type { OverrideResult, StringRow } from "$lib/translate/records";
+  import type { OverrideResult, RowDraft, StringRow } from "$lib/translate/records";
   import { cleanTranslation } from "$lib/translate/rules";
   import { formatWhen, wikiCall } from "$lib/wiki/client";
 
@@ -14,29 +14,40 @@
     locale: string;
     signedIn: boolean;
     canReview: boolean;
+    /** Why the person cannot send a suggestion, or null when they can. */
+    closedMessage: string | null;
+    /** The text kept for this row while the page changed, if any. */
+    draft: string | undefined;
+    /** Why the last bulk save of this row failed. */
+    error: string | null;
     onupdate: (row: StringRow) => void;
     onhistory: (key: string) => void;
+    ondraft: (key: string, entry: RowDraft | null) => void;
   }
 
-  let { row, catalog, locale, signedIn, canReview, onupdate, onhistory }: Props = $props();
+  let { row, catalog, locale, signedIn, canReview, closedMessage, draft: kept, error, onupdate, onhistory, ondraft }: Props = $props();
 
   let draft = $state("");
   let seeded: string | null = null;
   let busy = $state(false);
-  let message = $state<string | null>(null);
-  let error = $state<string | null>(null);
+  let revertError = $state<string | null>(null);
 
+  const canEdit = $derived(signedIn && (canReview || closedMessage === null));
   const startText = $derived(canReview ? (row.translation ?? "") : (row.mine?.text ?? row.translation ?? ""));
   const cleaned = $derived(cleanTranslation(draft) ?? "");
   const problem = $derived(draftProblem(catalog, row.source, draft));
   const dirty = $derived(cleaned !== startText.trim());
-  const canSend = $derived(dirty && cleaned.length > 0 && problem === null && !busy);
+  const ready = $derived(dirty && cleaned.length > 0 && problem === null);
 
   $effect(() => {
     if (seeded !== startText) {
       seeded = startText;
-      draft = startText;
+      draft = kept ?? startText;
     }
+  });
+
+  $effect(() => {
+    ondraft(row.key, canEdit && dirty ? { text: cleaned, ready } : null);
   });
 
   const field = $derived(
@@ -45,33 +56,6 @@
 
   function suggestionsLabel(count: number): string {
     return count === 1 ? m.wikiManage.openSuggestionsOne() : m.wikiManage.openSuggestionsOther({ count });
-  }
-
-  async function send() {
-    if (!canSend) return;
-    busy = true;
-    message = null;
-    error = null;
-    const body = { catalog, key: row.key, locale, text: cleaned };
-    if (canReview) {
-      const result = await wikiCall<OverrideResult>("PUT", "/api/translations/overrides", body);
-      busy = false;
-      if (!result.ok) {
-        error = translationErrorMessage(result.error);
-        return;
-      }
-      message = m.wikiManage.saved();
-      onupdate({ ...row, translation: cleaned, hasOverride: true, untranslated: false, outdated: false, previousSource: null, updatedByName: null, updatedAt: null });
-      return;
-    }
-    const result = await wikiCall<{ id: string }>("POST", "/api/translations/suggestions", body);
-    busy = false;
-    if (!result.ok || !result.data) {
-      error = translationErrorMessage(result.error);
-      return;
-    }
-    message = m.translate.suggestSent();
-    onupdate({ ...row, mine: { id: result.data.id, text: cleaned }, openSuggestions: row.mine ? row.openSuggestions : row.openSuggestions + 1 });
   }
 
   async function revert() {
@@ -83,13 +67,12 @@
     });
     if (!ok) return;
     busy = true;
-    message = null;
-    error = null;
+    revertError = null;
     const query = new URLSearchParams({ catalog, key: row.key, locale });
     const result = await wikiCall<OverrideResult>("DELETE", `/api/translations/overrides?${query}`);
     busy = false;
     if (!result.ok || !result.data) {
-      error = translationErrorMessage(result.error);
+      revertError = translationErrorMessage(result.error);
       return;
     }
     const builtIn = result.data.text;
@@ -132,7 +115,7 @@
     </p>
   {/if}
 
-  {#if signedIn}
+  {#if canEdit}
     <textarea
       bind:value={draft}
       rows="2"
@@ -147,17 +130,22 @@
     {#if row.mine}
       <p class="text-sm" style="color: {$colorStore.muted}">{dirty ? m.wikiManage.suggestReplacing() : m.translate.waitingForReview()}</p>
     {/if}
-  {:else if row.translation !== null && !row.untranslated}
-    <p class="whitespace-pre-wrap break-words" style="color: {$colorStore.text}">{row.translation}</p>
   {:else}
-    <p style="color: {$colorStore.muted}">{m.translate.translationNone()}</p>
+    {#if row.translation !== null && !row.untranslated}
+      <p class="whitespace-pre-wrap break-words" style="color: {$colorStore.text}">{row.translation}</p>
+    {:else}
+      <p style="color: {$colorStore.muted}">{m.translate.translationNone()}</p>
+    {/if}
+    {#if signedIn && closedMessage}
+      <p class="text-sm" style="color: {$colorStore.muted}">{closedMessage}</p>
+    {/if}
   {/if}
 
   {#if error}
     <p class="text-sm text-red-400" role="alert">{error}</p>
   {/if}
-  {#if message}
-    <p class="text-sm" style="color: {$colorStore.muted}" role="status">{message}</p>
+  {#if revertError}
+    <p class="text-sm text-red-400" role="alert">{revertError}</p>
   {/if}
   {#if row.hasOverride && row.updatedByName && row.updatedAt}
     <p class="text-xs" style="color: {$colorStore.muted}">
@@ -166,11 +154,6 @@
   {/if}
 
   <div class="flex flex-wrap gap-2">
-    {#if signedIn && canSend}
-      <button type="button" class="px-5 rounded-lg min-h-[44px] font-semibold"
-              style="background: {$colorStore.primary}; color: {$colorStore.onPrimary};"
-              onclick={send}>{canReview ? m.common.save() : m.translate.suggest()}</button>
-    {/if}
     {#if canReview && row.hasOverride && !busy}
       <button type="button" class="px-4 rounded-lg min-h-[44px] text-sm font-medium"
               style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"

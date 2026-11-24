@@ -1,12 +1,14 @@
 import { logger } from "$lib/logger";
 import { databaseConfigured, databaseReady, ensureDatabase } from "$lib/server/db";
 import { findByDashboardPath, searchWikiIndex, wikiSourceLocale } from "$lib/wiki";
-import { entryToMeta, pickCatalogSource, resolveEntries, type Catalog, type CatalogSource, type ResolvedEntry } from "$lib/wiki/catalog";
+import { entryToMeta, pickCatalogSource, resolveEntries, type Catalog, type CatalogCategory, type CatalogSource, type ResolvedEntry } from "$lib/wiki/catalog";
 import { renderWikiMarkdown } from "$lib/wiki/render";
 import type { WikiArticle, WikiArticleMeta } from "$lib/wiki/types";
 import { builtinCatalog } from "./builtin";
 import { cacheGeneration, cachedCatalog, storeCatalog } from "./cache";
+import { proxiedImageSrc } from "./imageProxy";
 import { loadCatalog } from "./store";
+import { searchEntries, type SearchHit } from "$lib/wiki/search";
 
 export { invalidateWikiCache } from "./cache";
 
@@ -83,7 +85,7 @@ async function resolved(locale: string): Promise<Resolved> {
 }
 
 function toArticle(entry: ResolvedEntry): WikiArticle {
-  const { html, headings } = renderWikiMarkdown(entry.version.markdown);
+  const { html, headings } = renderWikiMarkdown(entry.version.markdown, proxiedImageSrc);
   return { ...entryToMeta(entry), markdown: entry.version.markdown, html, headings };
 }
 
@@ -142,6 +144,21 @@ export async function getWikiArticleForPath(pathname: string, locale: string = w
  */
 export async function searchWiki(query: string, locale: string = wikiSourceLocale): Promise<WikiArticleMeta[]> {
   return searchWikiIndex(await getWikiIndex(locale), query);
+}
+
+/**
+ * Searches titles, summaries, tags and the article text, with a snippet for each hit.
+ *
+ * @param query What the reader typed.
+ * @param locale The locale to search.
+ */
+export async function searchWikiText(query: string, locale: string = wikiSourceLocale): Promise<SearchHit[]> {
+  return searchEntries((await resolved(locale)).entries, query);
+}
+
+/** The categories in display order. */
+export async function getWikiCategories(): Promise<CatalogCategory[]> {
+  return (await getCatalog()).catalog.categories;
 }
 
 /** Slugs of every readable article, for the sitemap. */

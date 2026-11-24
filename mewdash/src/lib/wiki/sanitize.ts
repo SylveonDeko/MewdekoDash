@@ -97,6 +97,7 @@ export function safeUrl(value: string, allowMail: boolean): string | null {
   const decoded = decodeEntities(value).trim();
   const probe = withoutInvisible(decoded).toLowerCase();
   if (!probe) return null;
+  if (/^[/\\]{2}/.test(probe) || probe.startsWith("/\\") || probe.startsWith("\\")) return null;
   const scheme = /^([a-z][a-z0-9+.-]*):/.exec(probe);
   if (scheme) {
     if (scheme[1] === "http" || scheme[1] === "https") return decoded;
@@ -117,7 +118,10 @@ function readAttributes(source: string): Array<[string, string]> {
   return attributes;
 }
 
-function rebuildTag(name: string, attributes: Array<[string, string]>): string | null {
+/** Gives the address an image is loaded from, or null when the image must not be shown. */
+export type ImageRewriter = (src: string) => string | null;
+
+function rebuildTag(name: string, attributes: Array<[string, string]>, rewriteImage?: ImageRewriter): string | null {
   if (!Object.hasOwn(allowedAttributes, name)) return null;
   const allowed = allowedAttributes[name];
 
@@ -130,7 +134,8 @@ function rebuildTag(name: string, attributes: Array<[string, string]>): string |
       if (href !== null) kept.set(key, href);
     } else if (key === "src") {
       const src = safeUrl(value, false);
-      if (src !== null) kept.set(key, src);
+      const shown = src !== null && rewriteImage ? rewriteImage(src) : src;
+      if (shown !== null) kept.set(key, shown);
     } else if (key === "class") {
       if (classPatterns[name]?.test(value)) kept.set(key, value);
     } else if (key === "id") {
@@ -158,6 +163,11 @@ function rebuildTag(name: string, attributes: Array<[string, string]>): string |
       kept.set("rel", "noopener noreferrer");
     }
   }
+  if (name === "img") {
+    kept.set("loading", "lazy");
+    kept.set("decoding", "async");
+    kept.set("referrerpolicy", "no-referrer");
+  }
 
   let out = `<${name}`;
   for (const [key, value] of kept) {
@@ -170,9 +180,10 @@ function rebuildTag(name: string, attributes: Array<[string, string]>): string |
  * Sanitises rendered HTML.
  *
  * @param html HTML produced by the Markdown renderer.
+ * @param rewriteImage Gives the address to load for an image, or null to leave the image's source out.
  * @returns HTML containing only the allowed tags and attributes.
  */
-export function sanitizeHtml(html: string): string {
+export function sanitizeHtml(html: string, rewriteImage?: ImageRewriter): string {
   let out = "";
   let cursor = 0;
   while (cursor < html.length) {
@@ -200,7 +211,7 @@ export function sanitizeHtml(html: string): string {
       if (!voidTags.has(name)) out += `</${name}>`;
       continue;
     }
-    const tag = rebuildTag(name, readAttributes(match[3]));
+    const tag = rebuildTag(name, readAttributes(match[3]), rewriteImage);
     if (tag !== null) out += tag;
   }
   return out;

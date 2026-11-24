@@ -94,14 +94,16 @@ describe("translations database", () => {
       assert.deepEqual(applied.rows, [
         { version: 1, name: "wiki" },
         { version: 2, name: "translations" },
+        { version: 3, name: "wiki_features" },
+        { version: 4, name: "translations_history_blocks_settings" },
       ]);
       const tables = await pool.query<{ tablename: string }>("select tablename from pg_tables where schemaname = $1 and (tablename like 'dash\\_tr\\_%' or tablename = 'dash_translators') order by tablename", [schema]);
       assert.deepEqual(
         tables.rows.map((row) => row.tablename),
-        ["dash_tr_baselines", "dash_tr_catalogs", "dash_tr_overrides", "dash_tr_strings", "dash_tr_suggestions", "dash_translators"],
+        ["dash_tr_baselines", "dash_tr_blocks", "dash_tr_catalogs", "dash_tr_events", "dash_tr_overrides", "dash_tr_settings", "dash_tr_strings", "dash_tr_suggestions", "dash_translators"],
       );
       await runMigrations(pool);
-      assert.equal((await pool.query("select * from dash_schema_migrations")).rowCount, 2);
+      assert.equal((await pool.query("select * from dash_schema_migrations")).rowCount, 4);
     });
 
     it("has the columns, defaults and keys of the contract", async () => {
@@ -126,7 +128,7 @@ describe("translations database", () => {
       const suggestions = await columns("dash_tr_suggestions");
       assert.deepEqual(
         suggestions.map((c) => c.column_name),
-        ["id", "catalog", "key", "locale", "text", "source_text", "user_id", "user_name", "status", "open_mark", "decline_reason", "created_at", "reviewed_at", "reviewed_by", "reviewed_by_name"],
+        ["id", "catalog", "key", "locale", "text", "source_text", "user_id", "user_name", "status", "open_mark", "decline_reason", "created_at", "reviewed_at", "reviewed_by", "reviewed_by_name", "origin"],
       );
       assert.equal(suggestions.find((c) => c.column_name === "open_mark")?.data_type, "smallint");
       assert.equal(suggestions.find((c) => c.column_name === "open_mark")?.column_default, "1");
@@ -591,7 +593,7 @@ describe("translations database", () => {
       assert.equal(await version("bot"), 2);
       await store.saveOverride("bot", "p.k002", "de-DE", "Seite zwei, nochmals", carol, germanScope);
       assert.equal(await version("bot"), 3);
-      await store.revertOverride("bot", "p.k002", "de-DE", germanScope);
+      await store.revertOverride("bot", "p.k002", "de-DE", carol, germanScope);
       assert.equal(await version("bot"), 4);
     });
 
@@ -599,7 +601,7 @@ describe("translations database", () => {
       await store.saveOverride("bot", "p.k004", "de-DE", "Seite vier neu", carol, germanScope);
       sent.length = 0;
       const before = await version("bot");
-      const result = await store.revertOverride("bot", "p.k004", "de-DE", germanScope);
+      const result = await store.revertOverride("bot", "p.k004", "de-DE", carol, germanScope);
       assert.deepEqual(result, { catalog: "bot", key: "p.k004", locale: "de-DE", text: "Seite 4" });
       assert.equal((await pool.query("select 1 from dash_tr_overrides where key = 'p.k004'")).rowCount, 0);
       assert.equal(await version("bot"), before + 1);
@@ -612,7 +614,7 @@ describe("translations database", () => {
 
     it("reverts to nothing when there is no built-in translation", async () => {
       await store.saveOverride("bot", "a.only_en", "de-DE", "Nur Englisch", carol, germanScope);
-      const result = await store.revertOverride("bot", "a.only_en", "de-DE", adminScope);
+      const result = await store.revertOverride("bot", "a.only_en", "de-DE", carol, adminScope);
       assert.equal(result.text, null);
       const row = (await store.listStrings({ catalog: "bot", locale: "de-DE", group: "a", filter: "all", search: "only english", page: 1 }, null)).rows[0];
       assert.equal(row.untranslated, true);
@@ -620,16 +622,16 @@ describe("translations database", () => {
 
     it("refuses to revert what has no override, or outside the language scope", async () => {
       const before = await version("bot");
-      await rejectsWith(store.revertOverride("bot", "p.k006", "de-DE", germanScope), "not_found", 404);
-      await rejectsWith(store.revertOverride("bot", "a.hello", "fr-FR", germanScope), "forbidden", 403);
-      await rejectsWith(store.revertOverride("bot", "a.hello", "fr-FR", memberScope), "forbidden", 403);
+      await rejectsWith(store.revertOverride("bot", "p.k006", "de-DE", carol, germanScope), "not_found", 404);
+      await rejectsWith(store.revertOverride("bot", "a.hello", "fr-FR", carol, germanScope), "forbidden", 403);
+      await rejectsWith(store.revertOverride("bot", "a.hello", "fr-FR", carol, memberScope), "forbidden", 403);
       assert.equal(await version("bot"), before);
     });
 
     it("tells nobody about changes to a catalog the bots do not read", async () => {
       sent.length = 0;
       await store.saveOverride("dash", "_common.cancel", "de-DE", "Abbruch", carol, germanScope);
-      await store.revertOverride("dash", "_common.cancel", "de-DE", germanScope);
+      await store.revertOverride("dash", "_common.cancel", "de-DE", carol, germanScope);
       assert.deepEqual(sent, []);
     });
 
@@ -641,7 +643,7 @@ describe("translations database", () => {
         const result = await store.saveOverride("bot", "p.k008", "de-DE", "Seite acht neu", carol, germanScope);
         assert.equal(result.text, "Seite acht neu");
         setReloadPublisher(async () => false);
-        await store.revertOverride("bot", "p.k008", "de-DE", germanScope);
+        await store.revertOverride("bot", "p.k008", "de-DE", carol, germanScope);
       } finally {
         setReloadPublisher(async (channel, message) => {
           sent.push([channel, message]);
@@ -694,18 +696,18 @@ describe("translations database", () => {
       await store.submitSuggestion("bot", "a.only_en", "de-DE", "Noch ein Versuch", bob);
 
       const asAnon = await store.getHistory("bot", "a.only_en", "de-DE", null, memberScope);
-      assert.deepEqual(asAnon.map((e) => e.status), ["approved"]);
+      assert.deepEqual(asAnon.map((e) => e.status), ["approved", "reverted"]);
       assert.equal(asAnon[0].text, "Nur Englisch");
       const asAlice = await store.getHistory("bot", "a.only_en", "de-DE", alice.id, memberScope);
-      assert.deepEqual(asAlice.map((e) => e.status), ["approved", "open", "declined"]);
+      assert.deepEqual(asAlice.map((e) => e.status), ["approved", "open", "declined", "reverted"]);
       const asBob = await store.getHistory("bot", "a.only_en", "de-DE", bob.id, memberScope);
-      assert.deepEqual(asBob.map((e) => e.status), ["open", "approved"]);
+      assert.deepEqual(asBob.map((e) => e.status), ["open", "approved", "reverted"]);
       const asReviewer = await store.getHistory("bot", "a.only_en", "de-DE", carol.id, germanScope);
-      assert.deepEqual(asReviewer.map((e) => e.status), ["open", "approved", "open", "declined"]);
+      assert.deepEqual(asReviewer.map((e) => e.status), ["open", "approved", "open", "declined", "reverted"]);
       assert.equal(asReviewer[3].declineReason, "No");
       assert.equal(asReviewer[3].reviewedByName, "Carol");
       const asFrench = await store.getHistory("bot", "a.only_en", "de-DE", carol.id, frenchScope);
-      assert.deepEqual(asFrench.map((e) => e.status), ["approved"]);
+      assert.deepEqual(asFrench.map((e) => e.status), ["approved", "reverted"]);
       await rejectsWith(store.getHistory("bot", "a.gone", "de-DE", null, memberScope), "not_found", 404);
     });
 
@@ -813,7 +815,7 @@ describe("translations database", () => {
       assert.equal(overlayFor("de-DE")?._common?.save, "Sichern");
       assert.equal(overlayFor("fr-FR"), null);
 
-      await store.revertOverride("dash", "_common.save", "de-DE", germanScope);
+      await store.revertOverride("dash", "_common.save", "de-DE", carol, germanScope);
       assert.equal(await version("dash"), 2);
       assert.equal(overlayFor("de-DE"), null);
     });
@@ -828,7 +830,7 @@ describe("translations database", () => {
       await registerDashCatalog(bundled);
       await refreshOverlay();
       assert.equal(overlayFor("de-DE")?.achievements?.cards_tab_intro, "Standard ist <strong>{name}</strong>.");
-      await store.revertOverride("dash", "achievements.cards_tab_intro", "de-DE", adminScope);
+      await store.revertOverride("dash", "achievements.cards_tab_intro", "de-DE", carol, adminScope);
     });
 
     it("enforces HTML tags for the dashboard catalog only", async () => {
@@ -841,7 +843,7 @@ describe("translations database", () => {
       await rejectsWith(store.submitSuggestion("dash", "home.landing_forms_bullet_appeals", "de-DE", "Ohne Tags", alice), "html_mismatch", 400);
       await store.saveOverride("dash", "home.landing_forms_bullet_appeals", "de-DE", "Mit <strong>Tags</strong> versehen", carol, germanScope);
       await store.submitSuggestion("bot", "a.hello", "de-DE", "<b>Hallo</b> {0}", alice);
-      await store.revertOverride("dash", "home.landing_forms_bullet_appeals", "de-DE", germanScope);
+      await store.revertOverride("dash", "home.landing_forms_bullet_appeals", "de-DE", carol, germanScope);
     });
   });
 });

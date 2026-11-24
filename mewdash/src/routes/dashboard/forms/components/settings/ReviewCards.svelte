@@ -99,9 +99,10 @@
         id="form-reviewer-role"
         type="role"
         options={roles}
-        selected={settings.reviewerRoleId}
+        selected={settings.reviewerRoleIds}
+        multiple
         placeholder={m.forms.settingsManageServerOnlyPlaceholder()}
-        onchange={({ selected }) => (settings.reviewerRoleId = pick(selected))}
+        onchange={({ selected }) => (settings.reviewerRoleIds = pickMany(selected))}
       />
     </SettingField>
 

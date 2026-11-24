@@ -28,6 +28,7 @@ export interface FormSettings {
   maxResponses: number | null;
   allowMultipleSubmissions: boolean;
   allowResubmitAfterRejection: boolean;
+  allowEditing: boolean;
   requireCaptcha: boolean;
   announceChannelId: string;
   announceRoleId: string;
@@ -41,7 +42,7 @@ export interface FormSettings {
 
   // Reviewing
   requireApproval: boolean;
-  reviewerRoleId: string;
+  reviewerRoleIds: string[];
   approveEmote: string | null;
   rejectEmote: string | null;
   approvalAddRoleIds: string[];
@@ -88,6 +89,7 @@ export function defaultFormSettings(): FormSettings {
     maxResponses: null,
     allowMultipleSubmissions: false,
     allowResubmitAfterRejection: false,
+    allowEditing: true,
     requireCaptcha: false,
     announceChannelId: "",
     announceRoleId: "",
@@ -99,7 +101,7 @@ export function defaultFormSettings(): FormSettings {
     notificationWebhookUrl: "",
 
     requireApproval: false,
-    reviewerRoleId: "",
+    reviewerRoleIds: [],
     approveEmote: null,
     rejectEmote: null,
     approvalAddRoleIds: [],
@@ -154,6 +156,7 @@ export function settingsFromForm(form: Form): FormSettings {
     maxResponses: form.maxResponses ?? null,
     allowMultipleSubmissions: form.allowMultipleSubmissions,
     allowResubmitAfterRejection: form.allowResubmitAfterRejection ?? false,
+    allowEditing: form.allowEditing ?? true,
     requireCaptcha: form.requireCaptcha,
     announceChannelId: form.announceChannelId?.toString() ?? "",
     announceRoleId: form.announceRoleId?.toString() ?? "",
@@ -165,7 +168,7 @@ export function settingsFromForm(form: Form): FormSettings {
     notificationWebhookUrl: form.notificationWebhookUrl ?? "",
 
     requireApproval: form.requireApproval ?? false,
-    reviewerRoleId: form.reviewerRoleId?.toString() ?? "",
+    reviewerRoleIds: readIds(form.reviewerRoleIds),
     approveEmote: form.approveEmote ?? null,
     rejectEmote: form.rejectEmote ?? null,
     approvalAddRoleIds: readIds(form.approvalAddRoleIds),
@@ -223,6 +226,7 @@ export function settingsToForm(settings: FormSettings): Partial<Form> {
     maxResponses: settings.maxResponses || undefined,
     allowMultipleSubmissions: settings.allowMultipleSubmissions,
     allowResubmitAfterRejection: settings.allowResubmitAfterRejection,
+    allowEditing: settings.allowEditing,
     requireCaptcha: settings.requireCaptcha,
     announceChannelId: id(settings.announceChannelId),
     announceRoleId: settings.announceChannelId ? id(settings.announceRoleId) : undefined,
@@ -234,7 +238,7 @@ export function settingsToForm(settings: FormSettings): Partial<Form> {
     notificationWebhookUrl: settings.notificationWebhookUrl || undefined,
 
     requireApproval: settings.formType === "Regular" ? settings.requireApproval : true,
-    reviewerRoleId: reviews ? id(settings.reviewerRoleId) : undefined,
+    reviewerRoleIds: reviews ? ids(settings.reviewerRoleIds) : undefined,
     approveEmote: reviews ? settings.approveEmote || undefined : undefined,
     rejectEmote: reviews ? settings.rejectEmote || undefined : undefined,
 

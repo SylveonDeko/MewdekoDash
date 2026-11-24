@@ -21,11 +21,20 @@ export interface CatalogVersion {
   tags: string[];
 }
 
-/** Every readable page in display order, with each page's versions by locale. */
+export interface CatalogCategory {
+  name: string;
+  icon: string;
+  sortOrder: number;
+}
+
+/** Every readable page in display order, with each page's versions by locale and the categories in display order. */
 export interface Catalog {
   pages: CatalogPage[];
   versions: Map<string, Map<string, CatalogVersion>>;
+  categories: CatalogCategory[];
 }
+
+export const defaultCategoryIcon = "fa-folder";
 
 export interface ResolvedEntry {
   page: CatalogPage;
@@ -125,5 +134,34 @@ export function catalogFromSeed(entries: SeedEntry[]): { catalog: Catalog; skipp
     byLocale.set(e.locale, { title: e.title, summary: e.summary, markdown: e.markdown, tags: e.tags });
     versions.set(e.slug, byLocale);
   }
-  return { catalog: { pages, versions }, skipped };
+  const names = [...new Set(pages.map((p) => p.category))].sort((a, b) => a.localeCompare(b));
+  const categories = names.map((name, index): CatalogCategory => ({ name, icon: defaultCategoryIcon, sortOrder: index }));
+  return { catalog: { pages, versions, categories }, skipped };
+}
+
+export interface CategoryGroup {
+  name: string;
+  icon: string;
+  articles: WikiArticleMeta[];
+}
+
+/**
+ * Splits articles into their categories, in the order the categories are given. A category with
+ * no readable article is left out, and an article whose category is not listed goes into a group
+ * of its own after the listed ones.
+ *
+ * @param articles Articles in display order.
+ * @param categories Categories in display order.
+ */
+export function groupByCategory(articles: readonly WikiArticleMeta[], categories: readonly CatalogCategory[]): CategoryGroup[] {
+  const groups = new Map<string, CategoryGroup>(categories.map((c) => [c.name, { name: c.name, icon: c.icon, articles: [] }]));
+  for (const article of articles) {
+    let group = groups.get(article.category);
+    if (!group) {
+      group = { name: article.category, icon: defaultCategoryIcon, articles: [] };
+      groups.set(article.category, group);
+    }
+    group.articles.push(article);
+  }
+  return [...groups.values()].filter((g) => g.articles.length > 0);
 }

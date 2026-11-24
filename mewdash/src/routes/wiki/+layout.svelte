@@ -13,8 +13,13 @@
   let showManage = $derived(data.wikiAccess.databaseAvailable && data.wikiAccess.signedIn);
   let managing = $derived($page.url.pathname.startsWith("/wiki/manage"));
 
-  let sidebarArticles = $derived(
-    data.all.filter((a) => !sidebarQuery.trim() || a.title.toLowerCase().includes(sidebarQuery.toLowerCase()))
+  let sidebarGroups = $derived(
+    data.groups
+      .map((group) => ({
+        ...group,
+        articles: group.articles.filter((a) => !sidebarQuery.trim() || a.title.toLowerCase().includes(sidebarQuery.toLowerCase())),
+      }))
+      .filter((group) => group.articles.length > 0)
   );
 
   let activeSlug = $derived($page.params.slug ?? null);
@@ -61,24 +66,35 @@
             class="w-full px-3 py-2 rounded-lg text-sm outline-none focus:ring-2"
             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}25; color: {$colorStore.text};"
           />
-          <ul class="space-y-0.5 max-h-[calc(100vh-13rem)] overflow-y-auto pr-1 scrollbar-thin">
-            {#each sidebarArticles as a (a.slug)}
-              <li>
-                <a
-                  href="/wiki/{a.slug}"
-                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all"
-                  style="background: {a.slug === activeSlug ? $colorStore.primary + '20' : 'transparent'};
-                         color: {a.slug === activeSlug ? $colorStore.primary : $colorStore.muted};"
-                >
-                  <i class="{wikiIconClass(a.icon)} w-4 text-center"
+          <div class="space-y-3 max-h-[calc(100vh-13rem)] overflow-y-auto pr-1 scrollbar-thin">
+            {#each sidebarGroups as group (group.name)}
+              <section aria-label={group.name}>
+                <h2 class="flex items-center gap-2 px-3 py-1 text-xs font-semibold uppercase tracking-wide" style="color: {$colorStore.muted}">
+                  <i class="{wikiIconClass(group.icon)} w-4 text-center" aria-hidden="true"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-                  <span class="truncate">{a.title}</span>
-                </a>
-              </li>
+                  <span class="truncate">{group.name}</span>
+                </h2>
+                <ul class="space-y-0.5">
+                  {#each group.articles as a (a.slug)}
+                    <li>
+                      <a
+                        href="/wiki/{a.slug}"
+                        class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all"
+                        style="background: {a.slug === activeSlug ? $colorStore.primary + '20' : 'transparent'};
+                               color: {a.slug === activeSlug ? $colorStore.primary : $colorStore.muted};"
+                      >
+                        <i class="{wikiIconClass(a.icon)} w-4 text-center"
+                           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
+                        <span class="truncate">{a.title}</span>
+                      </a>
+                    </li>
+                  {/each}
+                </ul>
+              </section>
             {:else}
-              <li class="px-3 py-2 text-sm" style="color: {$colorStore.muted}">{m.common.noMatches()}</li>
+              <p class="px-3 py-2 text-sm" style="color: {$colorStore.muted}">{m.common.noMatches()}</p>
             {/each}
-          </ul>
+          </div>
         </div>
       </aside>
 

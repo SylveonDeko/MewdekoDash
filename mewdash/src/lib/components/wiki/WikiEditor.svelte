@@ -3,6 +3,7 @@
   import type { Snippet } from "svelte";
   import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
+  import { wikiErrorMessage, wikiUpload } from "$lib/wiki/client";
   import { renderWikiMarkdown } from "$lib/wiki/render";
   import { wikiLimits } from "$lib/wiki/validation";
   import TagInput from "./TagInput.svelte";
@@ -19,6 +20,7 @@
     error?: string | null;
     onsubmit: () => void;
     actions?: Snippet;
+    canUpload?: boolean;
   }
 
   let {
@@ -32,7 +34,33 @@
     error = null,
     onsubmit,
     actions,
+    canUpload = false,
   }: Props = $props();
+
+  let bodyField = $state<HTMLTextAreaElement | null>(null);
+  let fileInput = $state<HTMLInputElement | null>(null);
+  let uploading = $state(false);
+  let uploadError = $state<string | null>(null);
+
+  async function upload(event: Event & { currentTarget: HTMLInputElement }) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file || uploading) return;
+    uploading = true;
+    uploadError = null;
+    const result = await wikiUpload<{ url: string }>("/api/wiki/images", file);
+    uploading = false;
+    if (!result.ok || !result.data) {
+      uploadError = wikiErrorMessage(result.error);
+      return;
+    }
+    const alt = file.name.replace(/\.[^.]+$/, "").replace(/[\[\]()\n]/g, " ").trim();
+    const insert = `![${alt}](${result.data.url})`;
+    const start = bodyField?.selectionStart ?? markdown.length;
+    const end = bodyField?.selectionEnd ?? start;
+    markdown = markdown.slice(0, start) + insert + markdown.slice(end);
+  }
 
   let pane = $state<"write" | "preview">("write");
   let previewHtml = $state("");
@@ -81,8 +109,19 @@
       </div>
       <div>
         <label for="wiki-edit-body" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.wikiManage.fieldBody()}</label>
-        <textarea id="wiki-edit-body" bind:value={markdown} maxlength={wikiLimits.markdownMax} rows="22" spellcheck="true"
+        <textarea id="wiki-edit-body" bind:this={bodyField} bind:value={markdown} maxlength={wikiLimits.markdownMax} rows="22" spellcheck="true"
                   class="w-full p-3 rounded-lg border font-mono text-sm min-h-[50vh]" style={field}></textarea>
+        {#if canUpload}
+          <input bind:this={fileInput} type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="hidden" onchange={upload}>
+          <button type="button" class="mt-2 inline-flex items-center gap-2 px-4 rounded-lg min-h-[44px] text-sm font-medium disabled:opacity-50"
+                  style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
+                  disabled={uploading} onclick={() => fileInput?.click()}>
+            <i class="fa-solid fa-image" aria-hidden="true"></i>{uploading ? m.wikiManage.editorUploading() : m.wikiManage.editorInsertImage()}
+          </button>
+          {#if uploadError}
+            <p class="mt-2 text-sm text-red-400" role="alert">{uploadError}</p>
+          {/if}
+        {/if}
       </div>
     </div>
 

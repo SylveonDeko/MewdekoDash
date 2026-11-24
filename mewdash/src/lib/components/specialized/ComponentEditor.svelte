@@ -359,7 +359,7 @@
           </span>
           <DiscordSelector
             type="custom"
-            customIcon="fa-hand-pointer"
+            customIcon="fa-arrow-pointer"
             options={clickActions}
             selected={action}
             searchable={false}

@@ -73,7 +73,7 @@
     </span>
     <DiscordSelector
       type="custom"
-      customIcon="fa-reply"
+      customIcon="fa-comment"
       options={kinds}
       selected={kind}
       searchable={false}

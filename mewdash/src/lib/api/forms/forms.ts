@@ -4,6 +4,8 @@ import type {
   ApprovalResponse,
   EligibilityCheckResponse,
   Form,
+  FormFunnelRow,
+  FormImage,
   FormQuestion,
   FormQuestionCondition,
   FormDraft,
@@ -546,4 +548,28 @@ export const formsApi = {
     apiRequest<FormResponseRevision[]>(
       `forms/responses/${responseId}/revisions`,
     ),
+
+  /**
+   * Stores a picture for a picture question
+   * @param formId The form the picture answers
+   * @param data The picture as a data URL or raw base64
+   * @returns The address of the stored copy, which is what the answer carries
+   */
+  uploadAnswerImage: (formId: number, data: string) =>
+    apiRequest<FormImage>(`forms/${formId}/image`, "POST", { data }),
+
+  /**
+   * Records that the signed in person began filling in a form
+   * @param formId The form
+   */
+  markStarted: (formId: number) =>
+    apiRequest<void>(`forms/${formId}/started`, "POST"),
+
+  /**
+   * Compares the people who started each form with the people who submitted it. Bot owners only.
+   * @param days How many days back to look
+   * @returns One row per form with activity in the window
+   */
+  getFunnel: (days: number) =>
+    apiRequest<FormFunnelRow[]>(`forms/funnel?days=${days}`),
 };

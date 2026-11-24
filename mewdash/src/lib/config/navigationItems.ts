@@ -592,6 +592,15 @@ export const ownerFeatures: NavigationItem[] = [
     keywords: ["leave feedback", "kick feedback", "why removed", "churn", "exit survey"],
   },
   {
+    label: m.features.formFunnelName,
+    icon: "fa-utility-duo fa-regular fa-clipboard-check",
+    href: "/owner/forms",
+    category: "Analytics",
+    categoryLabel: m.features.analyticsName,
+    description: m.features.formFunnelDescription,
+    keywords: ["forms", "funnel", "started", "submitted", "completion", "drop off", "applications"],
+  },
+  {
     label: m.features.analyticsName,
     icon: "fa-utility-duo fa-regular fa-chart-simple",
     href: "/owner/analytics",

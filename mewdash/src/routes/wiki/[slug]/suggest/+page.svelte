@@ -58,7 +58,9 @@
   <h1 class="text-2xl font-bold" style="color: {$colorStore.text}">{m.wikiManage.suggestAnEdit()}</h1>
 
   {#if !data.available}
-    <p style="color: {$colorStore.muted}">{m.wikiManage.databaseUnavailable()}</p>
+    <p style="color: {$colorStore.muted}">
+      {data.notice === "closed" ? m.wikiManage.suggestionsClosed() : data.notice === "blocked" ? m.wikiManage.suggestionsBlocked() : m.wikiManage.databaseUnavailable()}
+    </p>
   {:else if sent}
     <div class="space-y-4">
       <p style="color: {$colorStore.text}" role="status">{m.wikiManage.suggestSent()}</p>

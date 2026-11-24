@@ -1,5 +1,6 @@
 import { Marked } from "marked";
-import { escapeHtml, sanitizeHtml } from "./sanitize.ts";
+import { isTooComplex, outputTooLarge } from "./limits.ts";
+import { escapeHtml, sanitizeHtml, type ImageRewriter } from "./sanitize.ts";
 import type { WikiHeading } from "./types.ts";
 
 /**
@@ -150,14 +151,30 @@ function convertExamples(html: string): string {
  *
  * @param markdown The article body.
  * @param calloutLabel Gives the heading of a callout block for its kind, in the viewer's language.
- * @returns Sanitised HTML plus the headings found in it.
+ * @param rewriteImage Gives the address to load for an image, or null to leave the image out.
+ * @returns Sanitised HTML plus the headings found in it. Markdown that is too complex for the
+ * parser is returned as escaped plain text.
  */
-export function renderMarkdown(markdown: string, calloutLabel: (kind: string) => string): { html: string; headings: WikiHeading[] } {
-  const raw = parser.parse(markdown, { async: false }) as string;
-  const withCallouts = convertCallouts(convertExamples(raw), calloutLabel);
-  const { html, headings } = addHeadingIds(withCallouts);
-  const wrappedTables = html
-    .replace(/<table>/g, '<div class="wiki-table"><table>')
-    .replace(/<\/table>/g, "</table></div>");
-  return { html: sanitizeHtml(wrappedTables), headings };
+export function renderMarkdown(
+  markdown: string,
+  calloutLabel: (kind: string) => string,
+  rewriteImage?: ImageRewriter,
+): { html: string; headings: WikiHeading[] } {
+  if (isTooComplex(markdown)) return asText(markdown);
+  try {
+    const raw = parser.parse(markdown, { async: false }) as string;
+    if (outputTooLarge(markdown, raw)) return asText(markdown);
+    const withCallouts = convertCallouts(convertExamples(raw), calloutLabel);
+    const { html, headings } = addHeadingIds(withCallouts);
+    const wrappedTables = html
+      .replace(/<table>/g, '<div class="wiki-table"><table>')
+      .replace(/<\/table>/g, "</table></div>");
+    return { html: sanitizeHtml(wrappedTables, rewriteImage), headings };
+  } catch {
+    return asText(markdown);
+  }
+}
+
+function asText(markdown: string): { html: string; headings: WikiHeading[] } {
+  return { html: `<pre><code>${escapeHtml(markdown)}</code></pre>`, headings: [] };
 }

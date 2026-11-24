@@ -7,6 +7,9 @@
   import SettingField from "$lib/components/forms/SettingField.svelte";
   import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
   import { formTypeDescription, formTypeLabel } from "$lib/components/forms/formLabels";
+  import PlaceholderButton from "$lib/components/forms/PlaceholderButton.svelte";
+  import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
+  import { formPlaceholderList } from "$lib/utils/formPlaceholders";
   import PluginCard from "$lib/components/plugin/PluginCard.svelte";
   import NumberField from "../NumberField.svelte";
   import type { Named } from "../formsModel";
@@ -29,6 +32,18 @@
 
   function chooseType(type: FormType) {
     settings.formType = type;
+  }
+
+  let pickerOpen = $state(false);
+  let pickerSearch = $state("");
+  let pickerElement = $state<HTMLTextAreaElement | null>(null);
+
+  const formPlaceholders = $derived(formPlaceholderList());
+
+  function togglePicker() {
+    pickerElement = document.getElementById("form-success") as HTMLTextAreaElement | null;
+    pickerOpen = !pickerOpen;
+    pickerSearch = "";
   }
 </script>
 
@@ -106,12 +121,35 @@
       class="w-full p-3 rounded-lg border resize-none"
       style={inputStyle}
     ></textarea>
+    <div class="mt-2">
+      <PlaceholderButton expanded={pickerOpen} onclick={togglePicker} />
+    </div>
+    <PlaceholderPicker
+      visible={pickerOpen}
+      placeholders={formPlaceholders}
+      searchTerm={pickerSearch}
+      inline={true}
+      inputElement={pickerElement}
+      onselect={() => (pickerOpen = false)}
+      onclose={() => (pickerOpen = false)}
+      onsearch={(detail) => (pickerSearch = detail.term)}
+    />
   </SettingField>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     <ToggleRow colors={$colorStore} checked={settings.isDraft} title={m.forms.listDraft()} subtitle={m.forms.settingsIsDraftHint()} onchange={(on) => (settings.isDraft = on)} />
     <ToggleRow colors={$colorStore} checked={settings.isActive} title={m.forms.settingsIsActive()} onchange={(on) => (settings.isActive = on)} />
   </div>
+
+  {#if !settings.allowAnonymous}
+    <ToggleRow
+      colors={$colorStore}
+      checked={settings.allowEditing}
+      title={m.forms.settingsAllowEditing()}
+      subtitle={m.forms.settingsAllowEditingHint()}
+      onchange={(on) => (settings.allowEditing = on)}
+    />
+  {/if}
 </PluginCard>
 
 <PluginCard title={m.forms.settingsWhoCanSubmitTitle()} alwaysOpen>

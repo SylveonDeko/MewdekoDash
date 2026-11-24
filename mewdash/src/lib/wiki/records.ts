@@ -83,7 +83,7 @@ export interface FeedbackRecord {
   reason: string;
   note: string;
   userId: string;
-  status: "open" | "resolved";
+  status: "open" | "resolved" | "dismissed";
   createdAt: string;
   resolvedAt: string | null;
 }
@@ -93,4 +93,59 @@ export interface EditorRecord {
   displayName: string;
   addedBy: string;
   addedAt: string;
+}
+
+export interface BlockedUserRecord {
+  userId: string;
+  displayName: string;
+  addedBy: string;
+  addedAt: string;
+}
+
+export interface CategoryRecord {
+  id: string;
+  name: string;
+  icon: string;
+  sortOrder: number;
+  pageCount: number;
+}
+
+export interface LanguageRow {
+  id: string;
+  slug: string;
+  title: string;
+  published: boolean;
+  locales: string[];
+  outdated: string[];
+}
+
+export interface AnalyticsItem {
+  pageId: string;
+  slug: string;
+  title: string;
+  category: string;
+  views: number;
+  helpful: number;
+  notHelpful: number;
+  openReports: number;
+}
+
+export interface AnalyticsOverview {
+  days: number;
+  views: number;
+  helpful: number;
+  notHelpful: number;
+  reports: number;
+  daily: Array<{ day: string; views: number }>;
+  items: AnalyticsItem[];
+  misses: Array<{ query: string; count: number }>;
+}
+
+export interface PublicRevision {
+  id: string;
+  locale: string;
+  title: string;
+  note: string;
+  authorName: string;
+  createdAt: string;
 }

@@ -2,6 +2,7 @@
   import { m } from "$lib/i18n";
   import { colorStore } from "$lib/stores/colorStore";
   import type { FormSettings } from "$lib/utils/formSettings";
+  import { formPlaceholderList } from "$lib/utils/formPlaceholders";
   import type { DiscordUser } from "$lib/types/discord";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import SettingField from "$lib/components/forms/SettingField.svelte";
@@ -24,6 +25,7 @@
   const inputStyle = $derived(`background: ${$colorStore.primary}10; border-color: ${$colorStore.primary}30; color: ${$colorStore.text};`);
 
   const placeholders = $derived([
+    ...formPlaceholderList(false),
     { category: m.features.categoryServer(), name: "%server%", description: m.placeholders.server() },
     { category: m.features.categoryServer(), name: "%server.members%", description: m.placeholders.serverMembers() }
   ]);

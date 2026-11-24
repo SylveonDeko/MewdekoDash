@@ -9,10 +9,14 @@
   const links = $derived(
     [
       { href: "/wiki/manage", label: m.wikiManage.tabPages(), show: data.manage.canEdit, exact: true },
+      { href: "/wiki/manage/categories", label: m.common.categories(), show: data.manage.canEdit, exact: false },
+      { href: "/wiki/manage/languages", label: m.wikiManage.tabLanguages(), show: data.manage.canEdit, exact: false },
       { href: "/wiki/manage/recent", label: m.wikiManage.tabRecent(), show: data.manage.canEdit, exact: false },
       { href: "/wiki/manage/suggestions", label: m.wikiManage.tabSuggestions(), show: data.manage.canEdit, exact: false },
       { href: "/wiki/manage/feedback", label: m.wikiManage.tabFeedback(), show: data.manage.canEdit, exact: false },
+      { href: "/wiki/manage/analytics", label: m.features.analyticsName(), show: data.manage.canEdit, exact: false },
       { href: "/wiki/manage/editors", label: m.wikiManage.tabEditors(), show: data.manage.canManageEditors, exact: false },
+      { href: "/wiki/manage/settings", label: m.common.settings(), show: data.manage.canManageEditors, exact: false },
       { href: "/wiki/manage/mine", label: m.wikiManage.mineLink(), show: true, exact: false },
       { href: "/translate", label: m.translate.navTitle(), show: true, exact: false },
     ].filter((link) => link.show)

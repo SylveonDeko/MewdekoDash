@@ -194,6 +194,7 @@
         bind:markdown
         bind:note
         {busy}
+        canUpload
         error={articleError}
         submitLabel={m.common.save()}
         onsubmit={saveArticle}

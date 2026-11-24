@@ -8,8 +8,32 @@ import { cleanTranslation, htmlProblem, isHtmlCatalog, placeholdersMatch, placeh
  *
  * @param code The code from the endpoint.
  */
-export function translationErrorMessage(code: WikiErrorCode | null): string {
+export function translationErrorMessage(code: string | null): string {
   switch (code) {
+    case "duplicate":
+      return m.translate.errorDuplicate();
+    case "already_suggested":
+      return m.translate.errorAlreadySuggested();
+    case "blocked":
+      return m.translate.errorBlocked();
+    case "suggestions_closed":
+      return m.translate.errorSuggestionsClosed();
+    case "bulk_empty":
+      return m.translate.errorBulkEmpty();
+    case "bulk_too_many":
+      return m.translate.errorBulkTooMany();
+    case "history_not_restorable":
+      return m.translate.errorHistoryNotRestorable();
+    case "import_invalid":
+      return m.translate.errorImportInvalid();
+    case "import_target_mismatch":
+      return m.translate.errorImportTargetMismatch();
+    case "import_too_large":
+      return m.translate.errorImportTooLarge();
+    case "import_too_many":
+      return m.translate.errorImportTooMany();
+    case "key_invalid":
+      return m.translate.errorKeyInvalid();
     case "translation_empty":
       return m.translate.errorTextEmpty();
     case "translation_too_long":
@@ -21,12 +45,17 @@ export function translationErrorMessage(code: WikiErrorCode | null): string {
     case "html_mismatch":
       return m.translate.problemHtml();
     case "too_many_suggestions":
-      return m.translate.errorTooManySuggestions({ max: translationLimits.openSuggestionsMax });
+      return m.translate.errorTooManySuggestions();
     case "locale_invalid":
       return m.translate.errorLocale();
     default:
-      return wikiErrorMessage(code);
+      return wikiErrorMessage(code as WikiErrorCode | null);
   }
+}
+
+/** The message for the problem of one string in a bulk save or an upload. */
+export function itemErrorMessage(code: string | null): string {
+  return code === "not_found" ? m.translate.errorStringNotFound() : translationErrorMessage(code);
 }
 
 /** A group's file name without the leading underscore of the shared group. */

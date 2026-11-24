@@ -13,9 +13,12 @@ import type {
   SuggestionStatus,
   VersionRecord,
 } from "$lib/wiki/records";
-import type { ArticleFields, PageFields } from "$lib/wiki/validation";
+import type { ArticleFields, FeedbackStatus, PageFields } from "$lib/wiki/validation";
 import { invalidateWikiCache } from "./cache";
+import { isBlocked } from "./blocks";
+import { assertCategoryExists } from "./categories";
 import { isUniqueViolation, WikiError } from "./errors";
+import { readSettings } from "./settings";
 
 /** Who is making a change. */
 export interface Actor {
@@ -70,7 +73,14 @@ export async function loadCatalog(): Promise<Catalog> {
     byLocale.set(row.locale, { title: row.title, summary: row.summary, markdown: row.markdown, tags: row.tags });
     byslug.set(row.slug, byLocale);
   }
-  return { pages: catalogPages, versions: byslug };
+  const categories = await query<{ name: string; icon: string; sort_order: number }>(
+    "select name, icon, sort_order from dash_wiki_categories order by sort_order, id",
+  );
+  return {
+    pages: catalogPages,
+    versions: byslug,
+    categories: categories.rows.map((row) => ({ name: row.name, icon: row.icon, sortOrder: row.sort_order })),
+  };
 }
 
 interface PageRow {
@@ -179,12 +189,10 @@ export async function listVersionLocales(pageId: string): Promise<string[]> {
   return result.rows.map((row) => row.locale);
 }
 
-/** Categories of live pages, in the order they first appear. */
+/** The names of the categories, in display order. */
 export async function listCategories(): Promise<string[]> {
-  const result = await query<{ category: string }>(
-    "select category from dash_wiki_pages where deleted_at is null group by category order by min(sort_order), category",
-  );
-  return result.rows.map((row) => row.category);
+  const result = await query<{ name: string }>("select name from dash_wiki_categories order by sort_order, id");
+  return result.rows.map((row) => row.name);
 }
 
 interface RevisionRow {
@@ -321,13 +329,22 @@ async function writeVersion(
     [args.pageId, args.locale, args.article.title, args.article.summary, args.article.markdown, args.article.tags, args.note, args.authorId, args.authorName],
   );
   const revisionId = revision.rows[0].id;
+  let sourceRevisionId: string | null = null;
+  if (args.locale !== sourceLocale) {
+    const source = await client.query<{ current_revision_id: string | null }>(
+      "select current_revision_id from dash_wiki_versions where page_id = $1 and locale = $2",
+      [args.pageId, sourceLocale],
+    );
+    sourceRevisionId = source.rows[0]?.current_revision_id ?? null;
+  }
   await client.query(
-    `insert into dash_wiki_versions (page_id, locale, title, summary, markdown, tags, current_revision_id, updated_at, updated_by_name)
-     values ($1, $2, $3, $4, $5, $6, $7, now(), $8)
+    `insert into dash_wiki_versions (page_id, locale, title, summary, markdown, tags, current_revision_id, source_revision_id, updated_at, updated_by_name)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, now(), $9)
      on conflict (page_id, locale) do update
        set title = excluded.title, summary = excluded.summary, markdown = excluded.markdown, tags = excluded.tags,
-           current_revision_id = excluded.current_revision_id, updated_at = now(), updated_by_name = excluded.updated_by_name`,
-    [args.pageId, args.locale, args.article.title, args.article.summary, args.article.markdown, args.article.tags, revisionId, args.authorName],
+           current_revision_id = excluded.current_revision_id, source_revision_id = excluded.source_revision_id,
+           updated_at = now(), updated_by_name = excluded.updated_by_name`,
+    [args.pageId, args.locale, args.article.title, args.article.summary, args.article.markdown, args.article.tags, revisionId, sourceRevisionId, args.authorName],
   );
   await client.query("update dash_wiki_pages set updated_at = now() where id = $1", [args.pageId]);
   return revisionId;
@@ -345,6 +362,8 @@ export async function createPage(fields: PageFields, article: ArticleFields, act
   try {
     const id = await withTransaction(async (client) => {
       await assertRelatedExist(client, fields.related, fields.slug);
+      await assertCategoryExists(client, fields.category);
+      await client.query("delete from dash_wiki_redirects where old_slug = $1", [fields.slug]);
       const inserted = await client.query<{ id: string }>(
         `insert into dash_wiki_pages (slug, icon, category, dashboard_href, module, related, sort_order, published)
          values ($1, $2, $3, $4, $5, $6, (select coalesce(max(sort_order), -1) + 1 from dash_wiki_pages where deleted_at is null), false)
@@ -384,6 +403,9 @@ export async function updatePage(pageId: string, patch: Partial<PageFields>): Pr
     await withTransaction(async (client) => {
       const page = await lockLivePage(client, pageId);
       if (patch.related) await assertRelatedExist(client, patch.related, patch.slug ?? page.slug);
+      if (patch.category !== undefined) await assertCategoryExists(client, patch.category);
+      const slugChanged = patch.slug !== undefined && patch.slug !== page.slug;
+      if (slugChanged) await client.query("delete from dash_wiki_redirects where old_slug = $1", [patch.slug]);
 
       const sets: string[] = [];
       const values: unknown[] = [pageId];
@@ -395,10 +417,15 @@ export async function updatePage(pageId: string, patch: Partial<PageFields>): Pr
       if (sets.length === 0) return;
       await client.query(`update dash_wiki_pages set ${sets.join(", ")}, updated_at = now() where id = $1`, values);
 
-      if (patch.slug !== undefined && patch.slug !== page.slug) {
+      if (slugChanged) {
         await client.query(
           "update dash_wiki_pages set related = array_replace(related, $1, $2) where $1 = any(related) and id <> $3",
           [page.slug, patch.slug, pageId],
+        );
+        await client.query(
+          `insert into dash_wiki_redirects (old_slug, page_id) values ($1, $2)
+           on conflict (old_slug) do update set page_id = excluded.page_id, created_at = now()`,
+          [page.slug, pageId],
         );
       }
     });
@@ -611,6 +638,8 @@ export async function getOpenSuggestion(pageId: string, locale: string, userId: 
  * @returns The new suggestion id.
  */
 export async function submitSuggestion(pageId: string, locale: string, article: ArticleFields, note: string, actor: Actor): Promise<string> {
+  if (!(await readSettings()).suggestionsOpen) throw new WikiError("suggestions_closed", 403);
+  if (await isBlocked(actor.id)) throw new WikiError("suggestions_blocked", 403);
   try {
     return await withTransaction(async (client) => {
       await lockLivePage(client, pageId, true);
@@ -740,10 +769,10 @@ export async function submitFeedback(pageId: string, locale: string, helpful: bo
 /**
  * Feedback, newest first.
  *
- * @param status Only this status, or null for all.
+ * @param status Only open feedback, only closed feedback (resolved or dismissed), or null for all.
  * @param limit How many to return.
  */
-export async function listFeedback(status: "open" | "resolved" | null, limit: number): Promise<FeedbackRecord[]> {
+export async function listFeedback(status: "open" | "closed" | null, limit: number): Promise<FeedbackRecord[]> {
   const result = await query<{
     id: string;
     page_id: string;
@@ -752,7 +781,7 @@ export async function listFeedback(status: "open" | "resolved" | null, limit: nu
     reason: string;
     note: string;
     user_id: string;
-    status: "open" | "resolved";
+    status: FeedbackRecord["status"];
     created_at: Date;
     resolved_at: Date | null;
     slug: string;
@@ -763,7 +792,7 @@ export async function listFeedback(status: "open" | "resolved" | null, limit: nu
        from dash_wiki_feedback f
        join dash_wiki_pages p on p.id = f.page_id and p.deleted_at is null
        left join dash_wiki_versions v on v.page_id = p.id and v.locale = $1
-      where ($2::text is null or f.status = $2)
+      where ($2::text is null or ($2::text = 'open' and f.status = 'open') or ($2::text = 'closed' and f.status <> 'open'))
       order by f.created_at desc, f.id desc limit $3`,
     [sourceLocale, status, limit],
   );
@@ -783,11 +812,21 @@ export async function listFeedback(status: "open" | "resolved" | null, limit: nu
   }));
 }
 
-/** Marks feedback as resolved. */
-export async function resolveFeedback(feedbackId: string, resolver: Actor): Promise<void> {
+/**
+ * Moves feedback to a status. Reopening clears who closed it.
+ *
+ * @param feedbackId The feedback.
+ * @param status The new status.
+ * @param resolver The editor making the change.
+ */
+export async function setFeedbackStatus(feedbackId: string, status: FeedbackStatus, resolver: Actor): Promise<void> {
   const result = await query(
-    "update dash_wiki_feedback set status = 'resolved', resolved_at = now(), resolved_by = $2 where id = $1 and status = 'open'",
-    [feedbackId, resolver.id],
+    `update dash_wiki_feedback
+        set status = $2,
+            resolved_at = case when $2 = 'open' then null else now() end,
+            resolved_by = case when $2 = 'open' then null else $3 end
+      where id = $1`,
+    [feedbackId, status, resolver.id],
   );
   if (result.rowCount === 0) throw new WikiError("not_found", 404);
 }

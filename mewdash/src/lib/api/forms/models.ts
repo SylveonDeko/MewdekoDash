@@ -24,14 +24,17 @@ export type QuestionType =
   | "number"
   | "email"
   | "url"
-  | "section_break";
+  | "section_break"
+  | "image";
 
 export type ConditionalOperator =
   | "equals"
   | "not_equals"
   | "contains"
   | "greater_than"
-  | "less_than";
+  | "less_than"
+  | "is_answered"
+  | "is_not_answered";
 
 export type ConditionalType =
   | "QuestionBased"
@@ -107,8 +110,10 @@ export interface Form {
   submitRoleIds?: string;
   /** Role held while a response awaits review, removed on decision. */
   pendingRoleId?: bigint | null;
-  /** Role permitted to decide this form's responses from Discord. Null requires Manage Server. */
-  reviewerRoleId?: bigint | null;
+  /** Comma separated roles permitted to decide this form's responses from Discord. Empty requires Manage Server. */
+  reviewerRoleIds?: string | null;
+  /** Whether a submitter may change their answers after sending, until the response is decided. */
+  allowEditing: boolean;
 
   /** Emote on this form's approve button. Null falls back to the guild default. */
   approveEmote?: string | null;
@@ -293,6 +298,31 @@ export interface FormSubmissionResponse {
   responseId: number;
   statusCheckToken: string;
   statusCheckUrl: string;
+  /** The form's success message with its placeholders filled in, as plain text. Null when the form has none. */
+  successMessage?: string | null;
+}
+
+/** One form's started and submitted counts over a window. */
+export interface FormFunnelRow {
+  formId: number;
+  name: string;
+  guildId: bigint;
+  guildName?: string | null;
+  /** A form that records no submitter has no starts. */
+  anonymous: boolean;
+  started: number;
+  startedAndSubmitted: number;
+  submitted: number;
+}
+
+/** A picture stored for a picture question. */
+export interface FormImage {
+  url: string;
+}
+
+/** Whether a condition operator only asks if the question was answered, so it compares against no value. */
+export function isPresenceOperator(operator: string | null | undefined): boolean {
+  return operator === "is_answered" || operator === "is_not_answered";
 }
 
 export interface PaginatedResponses {
@@ -562,6 +592,14 @@ export const QUESTION_TYPES: QuestionTypeMetadata[] = [
     supportsOptions: false,
     supportsValidation: false,
   },
+  {
+    type: "image",
+    get label() { return questionTypeLabel("image"); },
+    icon: "fa-image",
+    get description() { return questionTypeDescription("image"); },
+    supportsOptions: false,
+    supportsValidation: false,
+  },
 ];
 
 /** Question types that take no answer and exist only to lay the form out. */
@@ -633,6 +671,8 @@ export const CONDITIONAL_OPERATORS: Array<{
   { value: "contains", get label() { return conditionalOperatorLabel("contains"); } },
   { value: "greater_than", get label() { return conditionalOperatorLabel("greater_than"); } },
   { value: "less_than", get label() { return conditionalOperatorLabel("less_than"); } },
+  { value: "is_answered", get label() { return conditionalOperatorLabel("is_answered"); } },
+  { value: "is_not_answered", get label() { return conditionalOperatorLabel("is_not_answered"); } },
 ];
 
 export const ROLE_ACTION_TYPES: Array<{

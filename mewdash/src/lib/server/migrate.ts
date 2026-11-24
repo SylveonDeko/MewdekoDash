@@ -66,6 +66,12 @@ async function seedIfEmpty(client: pg.PoolClient): Promise<void> {
   await client.query("begin");
   try {
     await client.query("set local statement_timeout = '120s'");
+    for (const category of catalog.categories) {
+      await client.query(
+        "insert into dash_wiki_categories (name, icon, sort_order) values ($1, $2, $3) on conflict do nothing",
+        [category.name, category.icon, category.sortOrder * 10],
+      );
+    }
     for (const page of catalog.pages) {
       const inserted = await client.query<{ id: string }>(
         `insert into dash_wiki_pages (slug, icon, category, dashboard_href, module, related, sort_order)
@@ -87,6 +93,12 @@ async function seedIfEmpty(client: pg.PoolClient): Promise<void> {
          insert into dash_wiki_versions (page_id, locale, title, summary, markdown, tags, current_revision_id, updated_by_name)
          select $1::bigint, locale, title, summary, markdown, tags, id, $3::text from revision`,
         [pageId, JSON.stringify(texts), seedAuthorName],
+      );
+      await client.query(
+        `update dash_wiki_versions v set source_revision_id = s.current_revision_id
+           from dash_wiki_versions s
+          where v.page_id = $1 and s.page_id = v.page_id and s.locale = 'en-US' and v.locale <> 'en-US'`,
+        [pageId],
       );
     }
     await client.query("commit");

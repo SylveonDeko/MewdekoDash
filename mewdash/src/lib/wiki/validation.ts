@@ -1,3 +1,5 @@
+import { isTooComplex } from "./limits.ts";
+
 export const wikiLimits = {
   slugMax: 64,
   titleMax: 120,
@@ -14,6 +16,10 @@ export const wikiLimits = {
   hrefMax: 120,
   relatedMax: 12,
   nameMax: 80,
+  imageMax: 4 * 1024 * 1024,
+  voterKeyMin: 16,
+  voterKeyMax: 64,
+  searchMax: 100,
 } as const;
 
 /** Slugs that would shadow a fixed route under `/wiki/`. */
@@ -53,7 +59,18 @@ export type WikiErrorCode =
   | "translation_unchanged"
   | "placeholders_mismatch"
   | "html_mismatch"
-  | "too_many_suggestions";
+  | "too_many_suggestions"
+  | "category_taken"
+  | "category_not_empty"
+  | "markdown_too_complex"
+  | "suggestions_closed"
+  | "suggestions_blocked"
+  | "already_blocked"
+  | "rate_limited"
+  | "image_invalid"
+  | "image_too_large"
+  | "status_invalid"
+  | "setting_invalid";
 
 export type Validated<T> = { ok: true; value: T } | { ok: false; error: WikiErrorCode; field?: string };
 
@@ -174,6 +191,7 @@ export function validateArticle(input: unknown, unchangedTags?: readonly string[
 
   const markdown = (typeof raw.markdown === "string" ? raw.markdown : "").replace(/\r\n?/g, "\n").replace(/\u0000/g, "");
   if (markdown.length > wikiLimits.markdownMax) return fail("markdown_too_long", "markdown");
+  if (isTooComplex(markdown)) return fail("markdown_too_complex", "markdown");
 
   const tags = normalizeTags(raw.tags, unchangedTags);
   if (!tags.ok) return tags;
@@ -308,4 +326,72 @@ export function optionalText(value: unknown, max: number, code: WikiErrorCode): 
   const text = collapseWhitespace(value);
   if ([...text].length > max) return fail(code);
   return { ok: true, value: text };
+}
+
+/** The fields of a category. */
+export interface CategoryFields {
+  name: string;
+  icon: string;
+}
+
+/**
+ * Checks the name and icon of a category.
+ *
+ * @param input The submitted object.
+ */
+export function validateCategory(input: unknown): Validated<CategoryFields> {
+  if (typeof input !== "object" || input === null) return fail("bad_request");
+  const raw = input as Record<string, unknown>;
+  const name = typeof raw.name === "string" ? collapseWhitespace(raw.name) : "";
+  if (!name || [...name].length > wikiLimits.categoryMax) return fail("category_invalid", "name");
+  const icon = typeof raw.icon === "string" ? collapseWhitespace(raw.icon) : "";
+  if (!icon || icon.length > wikiLimits.iconMax || !iconPattern.test(icon)) return fail("icon_invalid", "icon");
+  return { ok: true, value: { name, icon } };
+}
+
+const voterKeyPattern = /^[A-Za-z0-9_-]+$/;
+
+/**
+ * Checks a "Was this page helpful?" vote. A signed out reader's browser sends a random key it keeps.
+ *
+ * @param input The submitted object.
+ */
+export function validateVote(input: Record<string, unknown>): Validated<{ helpful: boolean; browserKey: string | null }> {
+  if (typeof input.helpful !== "boolean") return fail("feedback_invalid", "helpful");
+  const key = input.browserKey;
+  if (key === undefined || key === null || key === "") return { ok: true, value: { helpful: input.helpful, browserKey: null } };
+  if (typeof key !== "string" || key.length < wikiLimits.voterKeyMin || key.length > wikiLimits.voterKeyMax || !voterKeyPattern.test(key)) {
+    return fail("bad_request", "browserKey");
+  }
+  return { ok: true, value: { helpful: input.helpful, browserKey: key } };
+}
+
+export const feedbackStatuses = ["open", "resolved", "dismissed"] as const;
+
+export type FeedbackStatus = (typeof feedbackStatuses)[number];
+
+/** True when the value is a status feedback can be moved to. */
+export function isFeedbackStatus(value: unknown): value is FeedbackStatus {
+  return typeof value === "string" && (feedbackStatuses as readonly string[]).includes(value);
+}
+
+/** The settings editors of the wiki can change. */
+export interface WikiSettings {
+  suggestionsOpen: boolean;
+}
+
+export const defaultSettings: WikiSettings = { suggestionsOpen: true };
+
+/**
+ * Checks a settings update. Only the fields that are present are returned.
+ *
+ * @param input The submitted object.
+ */
+export function validateSettings(input: Record<string, unknown>): Validated<Partial<WikiSettings>> {
+  const out: Partial<WikiSettings> = {};
+  if (input.suggestionsOpen !== undefined) {
+    if (typeof input.suggestionsOpen !== "boolean") return fail("setting_invalid", "suggestionsOpen");
+    out.suggestionsOpen = input.suggestionsOpen;
+  }
+  return { ok: true, value: out };
 }

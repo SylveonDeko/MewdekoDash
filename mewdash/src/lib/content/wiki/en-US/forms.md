@@ -52,8 +52,19 @@ Questions are added in the **Questions** section of the form editor with **Add q
 | Email | A valid email address | |
 | URL | An `http` or `https` address | |
 | Section break | Nothing; it splits the form into pages and carries a title and **Section description** | |
+| Picture upload | A picture the person uploads | PNG, JPG, GIF or WebP up to 8 MB |
 
 Question text is limited to 500 characters and placeholders to 200. Any answer can be up to 4000 characters. Each question can have a **Question image URL** (http or https only) and can be marked **Required question**. A question can also be required only when an earlier answer matches a condition.
+
+### Picture uploads
+
+A picture is checked by its contents rather than its name, and anything that is not a PNG, JPG, GIF or WebP is refused. The bot decodes it and saves a new WebP copy with the longest side cut to 2048 pixels, so an animated picture keeps only its first frame. Pictures over 40 million pixels are refused. The answer holds the address of that copy, and an answer pointing anywhere else is rejected on submit, so a typed address cannot stand in for an upload. Each person can upload 30 pictures an hour per form. The first picture of a response is shown at the bottom of the submission embed, and the Responses tab shows every picture. Pictures are deleted with the form. Uploads need the bot to have a CDN folder configured; without one the upload is refused with a message. Drafts and previews of unpublished forms can only upload pictures for people who have Manage Server or own the server.
+
+### Pictures and emotes in text
+
+Question text and section descriptions accept Markdown pictures written as `![description](address)`, and custom Discord emotes written as `<:name:id>` or `<a:name:id>`, which show as the emote picture. Emotes only ever load from Discord's own CDN, and a section title shows an emote as `:name:`.
+
+A picture from Discord's CDN loads directly. Every other http or https picture, including the **Question image URL**, loads through the dashboard's picture proxy, so a visitor's browser never contacts the server hosting it. The proxy only fetches addresses the dashboard signed, only on the default port, never an address on a private or local network, and follows at most 3 redirects. It gives up after 10 seconds and refuses files over 8 MB or that are not PNG, JPEG, GIF, WebP or AVIF. It answers 120 requests a minute per visitor, 16 at a time. It needs `BOT_JWT_SECRET` (at least 32 characters) or `FORMS_IMAGE_PROXY_KEY` in the dashboard environment; with neither, outside pictures are left out.
 
 ### Answer piping
 
@@ -65,14 +76,14 @@ Each question can be shown only when a condition holds. Hidden questions are ski
 
 | Condition type | Shown when |
 | --- | --- |
-| Answer-Based | An earlier answer matches: **Equals**, **Does not equal**, **Contains**, **Greater than**, or **Less than** |
+| Answer-Based | An earlier answer matches: **Equals**, **Does not equal**, **Contains**, **Greater than**, **Less than**, **Is answered** or **Is not answered** |
 | Role-Based | The member holds **Any Of**, **All Of**, or **None Of** the chosen roles |
 | Server tenure | The member has been in the server for at least N days, or their account is at least N days old |
 | Boost/Nitro | The member is boosting. The Nitro check is a best guess from avatar and boost data. |
 | Permission-Based | The member has all of the chosen permissions |
 | Multiple Conditions | Several rows combined. Rows in the same group must all be true (AND); any group being true shows the question (OR). Answer rows can only point at questions that are already saved. |
 
-Text comparisons ignore case. Greater than and less than compare numbers.
+Text comparisons ignore case. Greater than and less than compare numbers. **Is answered** and **Is not answered** need no value to compare against. They only hold when the earlier question was shown, so a question that a condition hid is neither answered nor not answered. The same operators work for a question that is required only when an earlier answer matches.
 
 ## Who can submit
 
@@ -88,7 +99,27 @@ The public page requires a Discord login. Answers are saved as a draft about a s
 
 A progress bar shows answered questions. The last page ends with **Review & Continue**, which lists every answer with an **Edit** link, then **Confirm & Submit**. Afterwards the page shows your **Message after submitting** (or a default per type) and a **Check Your Status** link. The status page also links to **My submissions** at `/forms/submissions`, which lists every non-anonymous response the signed-in user has made across servers.
 
-Submitters can edit their answers from the status page while the response is still pending, as long as the form is not anonymous and has not closed. Earlier answers are kept as revisions. There is no way for a submitter to withdraw a response.
+Submitters can edit their answers from the status page while the response is still pending or under review, as long as the form is not anonymous, has not closed and **Let people edit their answers** is on. Earlier answers are kept as revisions. Existing forms keep editing on, and the switch is hidden on anonymous forms because they can never be edited. There is no way for a submitter to withdraw a response.
+
+### Placeholders
+
+**Message after submitting** and **Announcement text** can use these placeholders, written with percent signs like the rest of the bot. Anything that is not a known placeholder is left as written.
+
+| Placeholder | Becomes |
+| --- | --- |
+| `%form.name%` | The form's name |
+| `%form.link%` | The address of the form, empty until the form has a share link |
+| `%form.role%` | The role needed to submit |
+| `%form.submissions%` | **Total responses accepted**, or Unlimited when more than one answer per person is allowed, otherwise 1 |
+| `%form.opensat%`, `%form.expiresat%` | The opening and closing times, empty when not set |
+| `%server.name%`, `%server.id%` | The server's name and ID |
+| `%user.mention%`, `%user.id%`, `%user.name%`, `%user.globalname%` | The submitter, empty in the announcement because it has no submitter |
+
+The confirmation page shows the message as plain text, so a mention appears as `@name`, the role as `@Role name` and times as `2026-11-23 18:00 UTC`, and nothing in it is ever treated as markup. In the announcement and the approval DM a mention is a real mention and times are Discord timestamps. The announcement also accepts the general server placeholders such as `%server.members%`.
+
+### Started and sent
+
+Bot owners can open **Form funnel** under the owner tools to compare how many people started each form with how many sent it over 7, 30 or 90 days. A person counts as started the first time they type an answer or a draft is saved, and as finished when they have a response to that form. Anonymous forms record no starts. The page shows started, started and sent, the share that finished, and the number of responses.
 
 ## What happens on submit
 
@@ -101,7 +132,7 @@ Anonymous forms store no user ID, so they cannot change roles and their response
 
 ## The review process
 
-Responses move from Pending review to Approved or Rejected. **Who may approve or reject** names a role; anyone with Manage Server or Administrator can always decide. If no reviewer role is set, holders of the approval roles can also decide.
+Responses move from Pending review to Approved or Rejected. **Who may approve or reject** names one or more roles, and holding any one of them is enough. Anyone with Manage Server or Administrator can always decide. If no reviewer role is set, holders of the approval roles can also decide. Roles that do not exist in the server are dropped when the form is saved.
 
 In Discord, **Approve** decides immediately. **Reject** opens a modal asking for a reason, which is required because it is sent to the submitter. Either way the embed is recoloured and loses its buttons. It also gains an **Approved** or **Rejected** field showing the reviewer and the time, and the reason is added if there is one. On the dashboard, the same decision is made from the queue with a **Notes for the submitter** box.
 
@@ -133,7 +164,7 @@ The **Forms** card lists every form with badges for its type, Draft, Expired or 
 | Copy link | Shows the permanent **Share link** |
 | Publish | Takes a draft live. Only shown for drafts |
 | Pause or Activate | Closes or reopens the form without deleting it |
-| Duplicate | Copies the form |
+| Duplicate | Copies every setting and question into a new draft that is switched off |
 | Delete | Removes the form and all its responses after a confirmation |
 
 The editor has **Settings**, **Questions** and **Version history** sections. Creating and editing share the same settings, and **Version history** appears only for saved forms. Press **Create** or **Save changes** to save.
@@ -155,7 +186,8 @@ The settings are grouped into cards: **Basics**, **Who can submit**, **When it i
 | Name | empty, required | Title of the form, up to 255 characters |
 | Description | empty | Shown under the title and in Discord link previews |
 | Where answers are posted | none | Channel for the submission embed; empty keeps answers on the dashboard only |
-| Message after submitting | none | Text on the confirmation page and in the approval DM |
+| Message after submitting | none | Text on the confirmation page and in the approval DM, up to 1000 characters, with placeholders |
+| Let people edit their answers | on | Whether a submitter can change a response until it is decided. Hidden on anonymous forms |
 | Draft | on for new forms | Drafts cannot be submitted to |
 | Accepting responses | on | Turn off to close without deleting |
 | Role required to submit | Anyone in the server | Gate by role |
@@ -167,13 +199,13 @@ The settings are grouped into cards: **Basics**, **Who can submit**, **When it i
 | Allow more than one answer per person | off | |
 | Let rejected people try again | off | |
 | Require a captcha | off | Turnstile at the review step |
-| Announce the opening in, Ping with the announcement, Announcement text | none | Launch message, sent within about a minute of **Opens at** or on publish. Plain text is wrapped in an embed with a closing countdown; a message built with the embed editor is sent as written. `%server%` and `%server.members%` work in it |
+| Announce the opening in, Ping with the announcement, Announcement text | none | Launch message, sent within about a minute of **Opens at** or on publish. Plain text is wrapped in an embed with a closing countdown; a message built with the embed editor is sent as written. The form placeholders above and `%server%` and `%server.members%` work in it |
 | Ping when a response arrives | none | Role mentioned with each submission |
 | Roles given on submitting | none | Granted straight away |
 | Role while awaiting review | none | Removed on decision |
 | Send to a webhook | none | Discord webhook URL that also receives each submission embed and each approve or reject decision |
 | Answers need approving | off | Adds review to a regular form |
-| Who may approve or reject | Manage Server only | Reviewer role |
+| Who may approve or reject | Manage Server only | One or more reviewer roles |
 | Approve button emote, Reject button emote | server default | |
 | Add/Remove on approval, Add/Remove on rejection | none | Role changes on decision |
 | One rejection is final, Wait after the ban, Appeals allowed, Wait between appeals | off, No wait, Unlimited, No wait | Ban appeals only |

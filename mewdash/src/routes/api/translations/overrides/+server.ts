@@ -15,6 +15,12 @@ export const PUT: RequestHandler = translateEndpoint("reviewer", true, async ({ 
 
 export const DELETE: RequestHandler = translateEndpoint("reviewer", true, async ({ url }, access) => {
   return json(
-    await revertOverride(requiredParam(url, "catalog", 32), requiredParam(url, "key", 200), requiredParam(url, "locale", 32), access.scope),
+    await revertOverride(
+      requiredParam(url, "catalog", 32),
+      requiredParam(url, "key", 200),
+      requiredParam(url, "locale", 32),
+      actorOf(access),
+      access.scope,
+    ),
   );
 });

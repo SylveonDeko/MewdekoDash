@@ -4,6 +4,7 @@
     COMMON_PERMISSIONS,
     CONDITIONAL_OPERATORS,
     CONDITIONAL_TYPES,
+    isPresenceOperator,
     ROLE_LOGIC_TYPES,
     type FormQuestion,
     type RoleLogicType
@@ -101,15 +102,17 @@
               onchange={({ selected }) => onupdate({ conditionalOperator: selected as FormQuestion["conditionalOperator"] })}
             />
           </div>
-          <input
-            type="text"
-            value={question.conditionalExpectedValue ?? ""}
-            oninput={(e) => onupdate({ conditionalExpectedValue: e.currentTarget.value })}
-            placeholder={m.forms.conditionalExpectedValuePlaceholder()}
-            aria-label={m.forms.conditionalExpectedValue()}
-            class="grow min-w-0 p-3 rounded-lg border min-h-[50px]"
-            style={inputStyle}
-          />
+          {#if !isPresenceOperator(question.conditionalOperator)}
+            <input
+              type="text"
+              value={question.conditionalExpectedValue ?? ""}
+              oninput={(e) => onupdate({ conditionalExpectedValue: e.currentTarget.value })}
+              placeholder={m.forms.conditionalExpectedValuePlaceholder()}
+              aria-label={m.forms.conditionalExpectedValue()}
+              class="grow min-w-0 p-3 rounded-lg border min-h-[50px]"
+              style={inputStyle}
+            />
+          {/if}
         </div>
       {/if}
     </div>
@@ -201,15 +204,17 @@
             onchange={({ selected }) => onupdate({ requiredWhenOperator: selected as FormQuestion["requiredWhenOperator"] })}
           />
         </div>
-        <input
-          type="text"
-          value={question.requiredWhenValue ?? ""}
-          oninput={(e) => onupdate({ requiredWhenValue: e.currentTarget.value })}
-          placeholder={m.forms.conditionalExpectedValuePlaceholder()}
-          aria-label={m.forms.conditionalExpectedValue()}
-          class="grow min-w-0 p-3 rounded-lg border min-h-[50px]"
-          style={inputStyle}
-        />
+        {#if !isPresenceOperator(question.requiredWhenOperator)}
+          <input
+            type="text"
+            value={question.requiredWhenValue ?? ""}
+            oninput={(e) => onupdate({ requiredWhenValue: e.currentTarget.value })}
+            placeholder={m.forms.conditionalExpectedValuePlaceholder()}
+            aria-label={m.forms.conditionalExpectedValue()}
+            class="grow min-w-0 p-3 rounded-lg border min-h-[50px]"
+            style={inputStyle}
+          />
+        {/if}
       </div>
     {/if}
   </div>

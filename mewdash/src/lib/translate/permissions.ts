@@ -35,7 +35,7 @@ export function canManageTranslators(admin: boolean): boolean {
 }
 
 /**
- * Whether a history entry may be shown to a viewer. Approved text is public. Open, declined and
+ * Whether a history entry may be shown to a viewer. Approved text and removals are public. Open, declined and
  * replaced suggestions are shown to their author and to reviewers of that language.
  *
  * @param scope The viewer's scope.
@@ -47,7 +47,7 @@ export function canViewHistoryEntry(
   viewerId: string | null,
   entry: { status: string; locale: string; userId: string },
 ): boolean {
-  if (entry.status === "approved") return true;
+  if (entry.status === "approved" || entry.status === "reverted") return true;
   if (canReviewLocale(scope, entry.locale)) return true;
   return viewerId !== null && viewerId === entry.userId;
 }

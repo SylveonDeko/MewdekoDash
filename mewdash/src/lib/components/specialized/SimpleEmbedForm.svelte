@@ -313,7 +313,7 @@
               </span>
               <DiscordSelector
                 type="custom"
-                customIcon="fa-hand-pointer"
+                customIcon="fa-arrow-pointer"
                 options={actionOptions}
                 selected={action}
                 searchable={false}

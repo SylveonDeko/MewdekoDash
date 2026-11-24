@@ -30,10 +30,12 @@
       list.push({ id: page.id, page });
       byCategory.set(page.category, list);
     }
-    groups = [...byCategory].map(([category, items]) => ({ category, items }));
+    const known = data.categories.filter((name) => byCategory.has(name));
+    const extra = [...byCategory.keys()].filter((name) => !data.categories.includes(name));
+    groups = [...known, ...extra].map((category) => ({ category, items: byCategory.get(category) ?? [] }));
   });
 
-  const categories = $derived(groups.map((g) => g.category));
+  const categories = $derived(data.categories);
   const pageChoices = $derived(data.pages.map((p) => ({ slug: p.slug, title: p.title })));
 
   async function saveOrder(category: string, items: DragItem[]) {

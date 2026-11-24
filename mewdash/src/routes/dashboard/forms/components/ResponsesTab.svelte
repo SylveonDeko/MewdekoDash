@@ -308,9 +308,15 @@
                     <div class="text-xs" style="color: {$colorStore.muted}">
                       {answer.questionText ?? question?.questionText ?? m.forms.queueQuestionRemoved()}
                     </div>
-                    <div class="text-sm whitespace-pre-wrap break-words" style="color: {$colorStore.text}">
-                      {answer.answerDisplay ?? answer.answerText ?? answer.answerValues?.join(", ") ?? m.forms.queueNoAnswer()}
-                    </div>
+                    {#if answer.questionType === "image" && answer.answerText}
+                      <a href={answer.answerText} target="_blank" rel="noopener noreferrer">
+                        <img src={answer.answerText} alt={m.forms.publicImageAlt()} class="mt-1 rounded-lg max-h-48 w-auto" loading="lazy" />
+                      </a>
+                    {:else}
+                      <div class="text-sm whitespace-pre-wrap break-words" style="color: {$colorStore.text}">
+                        {answer.answerDisplay ?? answer.answerText ?? answer.answerValues?.join(", ") ?? m.forms.queueNoAnswer()}
+                      </div>
+                    {/if}
                   </div>
                 {:else}
                   <p class="text-sm" style="color: {$colorStore.muted}">{m.forms.queueNoAnswers()}</p>

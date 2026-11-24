@@ -13,8 +13,9 @@
     instanceManagementApi
   } from "$lib/api/index.ts";
   import { guildApi } from "$lib/api/index.ts";
-  import { paginateQuestions } from "$lib/api/forms/models";
-  import { isSafeUrl, renderFormText, renderFormTextPlain } from "$lib/utils/formMarkdown";
+  import { isPresenceOperator, paginateQuestions } from "$lib/api/forms/models";
+  import { imageSource, renderFormText, renderFormTextPlain, type ImageLinks } from "$lib/utils/formMarkdown";
+  import { loadImageLinks } from "$lib/utils/formImages";
   import { currentInstance } from "$lib/stores/instanceStore";
   import type { PageData } from "./$types";
   import { colorStore } from "$lib/stores/colorStore";
@@ -57,6 +58,10 @@
   let showLoginPrompt = $state(false);
   let statusCheckUrl = $state<string>("");
   let statusCheckToken = $state<string>("");
+  let successText = $state<string | null>(null);
+  let startReported = false;
+  let imageLinks = $state<ImageLinks>({});
+  let uploadingImages = $state<Record<number, boolean>>({});
   let userGuildMember = $state<any>(null); // Guild member data for Discord conditionals
 
   /**
@@ -145,6 +150,11 @@
     if (!form || isPreviewMode || isEditing || success || !data.user) return;
     if (Object.keys(answers).length === 0) return;
 
+    if (!startReported) {
+      startReported = true;
+      formsApi.markStarted(formId).catch(() => {});
+    }
+
     scheduleDraftSave();
   });
 
@@ -230,8 +240,34 @@
     }
   }
 
+  /** An answer as the single piece of text a condition compares against. */
+  function answerText(answer: string | string[] | undefined): string {
+    if (Array.isArray(answer)) return answer.join(",");
+    return answer === undefined || answer === null ? "" : String(answer);
+  }
+
+  /**
+   * Whether an earlier question is on the page. The answered and not answered operators only hold
+   * for a question that is shown, which is how the bot judges them too.
+   */
+  function parentIsShown(question: FormQuestion, parentId: number): boolean {
+    const parentIndex = questions.findIndex((q) => q.id === parentId);
+    const ownIndex = questions.findIndex((q) => q.id === question.id);
+
+    if (parentIndex < 0 || parentIndex >= ownIndex) return false;
+
+    return shouldShowQuestion(questions[parentIndex]);
+  }
+
   function evaluateQuestionBasedCondition(question: FormQuestion): boolean {
     if (!question.conditionalParentQuestionId) return true;
+
+    if (isPresenceOperator(question.conditionalOperator)) {
+      return (
+        parentIsShown(question, question.conditionalParentQuestionId) &&
+        evaluateCondition(answerText(answers[question.conditionalParentQuestionId]), question.conditionalOperator!, "")
+      );
+    }
 
     const parentAnswer = answers[question.conditionalParentQuestionId];
     if (!parentAnswer) return false;
@@ -335,7 +371,7 @@
       let groupResult = true;
 
       for (const condition of groupConditions) {
-        const conditionResult = evaluateSingleCondition(condition);
+        const conditionResult = evaluateSingleCondition(condition, question);
 
         if (condition.logicType.toUpperCase() === "AND") {
           groupResult = groupResult && conditionResult;
@@ -356,9 +392,16 @@
     return groupResults.some(r => r);
   }
 
-  function evaluateSingleCondition(condition: FormQuestionCondition): boolean {
+  function evaluateSingleCondition(condition: FormQuestionCondition, question: FormQuestion): boolean {
     switch (condition.conditionType) {
       case 0: // QuestionBased
+        if (condition.targetQuestionId && isPresenceOperator(condition.operator)) {
+          return (
+            parentIsShown(question, condition.targetQuestionId) &&
+            evaluateCondition(answerText(answers[condition.targetQuestionId]), condition.operator!, "")
+          );
+        }
+
         if (!condition.targetQuestionId || !answers[condition.targetQuestionId]) {
           return false;
         }
@@ -423,6 +466,10 @@
         return parseFloat(actualStr) > parseFloat(expectedValue);
       case "less_than":
         return parseFloat(actualStr) < parseFloat(expectedValue);
+      case "is_answered":
+        return actualStr.trim().length > 0;
+      case "is_not_answered":
+        return actualStr.trim().length === 0;
       default:
         return true;
     }
@@ -431,6 +478,13 @@
   // Check if question is conditionally required
   function isQuestionConditionallyRequired(question: FormQuestion): boolean {
     if (!question.requiredWhenParentQuestionId) return false;
+
+    if (isPresenceOperator(question.requiredWhenOperator)) {
+      return (
+        parentIsShown(question, question.requiredWhenParentQuestionId) &&
+        evaluateCondition(answerText(answers[question.requiredWhenParentQuestionId]), question.requiredWhenOperator!, "")
+      );
+    }
 
     const parentAnswer = answers[question.requiredWhenParentQuestionId];
     if (!parentAnswer) return false;
@@ -575,6 +629,7 @@
 
       form = await formsApi.getForm(formId);
       questions = await formsApi.getFormQuestions(formId);
+      void refreshImageLinks();
 
       // Loaded before the eligibility check, so even a refused form still says which server
       // turned the person away.
@@ -665,6 +720,52 @@
     } finally {
       loading = false;
     }
+  }
+
+  /** Asks for the addresses the form's outside pictures are loaded from, so none is fetched from its owner's server. */
+  async function refreshImageLinks() {
+    imageLinks = await loadImageLinks(formId);
+  }
+
+  async function uploadAnswerImage(question: FormQuestion, event: Event & { currentTarget: HTMLInputElement }) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+
+    if (!["image/png", "image/jpeg", "image/gif", "image/webp"].includes(file.type)) {
+      validationErrors[question.id] = m.embedbuilder.pictureWrongType();
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      validationErrors[question.id] = m.embedbuilder.pictureTooLarge();
+      return;
+    }
+
+    uploadingImages[question.id] = true;
+
+    try {
+      const data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+        reader.onerror = () => reject(new Error(m.embedbuilder.pictureReadFailed()));
+        reader.readAsDataURL(file);
+      });
+
+      const stored = await formsApi.uploadAnswerImage(formId, data);
+      answers[question.id] = stored.url;
+      clearValidationError(question.id);
+    } catch (err) {
+      validationErrors[question.id] = err instanceof Error && err.message ? err.message : m.embedbuilder.pictureUploadFailed();
+    } finally {
+      uploadingImages[question.id] = false;
+    }
+  }
+
+  function removeAnswerImage(question: FormQuestion) {
+    const { [question.id]: _removed, ...rest } = answers;
+    answers = rest;
   }
 
   /** Fills the form with what the submitter already sent, so they correct it rather than retype it. */
@@ -858,6 +959,7 @@
 
       const result = await formsApi.submitForm(formId, request);
       success = true;
+      successText = result.successMessage ?? null;
       statusCheckToken = result.statusCheckToken;
       // Validate URL before using in href to prevent XSS
       const rawUrl = result.statusCheckUrl || `/forms/status/${result.statusCheckToken}`;
@@ -1203,8 +1305,8 @@
           <p class="text-lg mb-6" style="color: {$colorStore.text};">
             {#if isEditing}
               {m.forms.publicSuccessEdit()}
-            {:else if form?.successMessage}
-              {(form.successMessage)}
+            {:else if successText}
+              {successText}
             {:else if form?.formType === 1}
               {m.forms.publicSuccessAppeal()}
             {:else if form?.formType === 2}
@@ -1615,6 +1717,12 @@
                             <li>{(value)}</li>
                           {/each}
                         </ul>
+                      {:else if question.questionType === "image"}
+                        <img
+                          src={String(answers[question.id])}
+                          alt={m.forms.publicImageAlt()}
+                          class="rounded-lg max-h-64 w-auto"
+                        />
                       {:else}
                         <div class="whitespace-pre-wrap">
                           {(String(answers[question.id] || ""))}
@@ -1710,7 +1818,7 @@
                 </h2>
                 {#if pageHeading.placeholder}
                   <div class="form-prose text-sm" style="color: {$colorStore.muted};">
-                    {@html renderFormText(pageHeading.placeholder)}
+                    {@html renderFormText(pageHeading.placeholder, imageLinks)}
                   </div>
                 {/if}
               </div>
@@ -1738,9 +1846,9 @@
                              than a span. -->
                         <div class="form-prose font-semibold inline-block" style="color: {$colorStore.text};">
                           {#if question.enableAnswerPiping}
-                            {@html renderFormText(applyAnswerPiping(question.questionText))}
+                            {@html renderFormText(applyAnswerPiping(question.questionText), imageLinks)}
                           {:else}
-                            {@html renderFormText(question.questionText)}
+                            {@html renderFormText(question.questionText, imageLinks)}
                           {/if}
                         </div>
                         {#if question.isRequired || isQuestionConditionallyRequired(question)}
@@ -1749,11 +1857,12 @@
                       </div>
                     </div>
 
-                    {#if question.imageUrl && isSafeUrl(question.imageUrl)}
+                    {#if imageSource(question.imageUrl, imageLinks)}
                       <img
-                        src={question.imageUrl}
+                        src={imageSource(question.imageUrl, imageLinks)}
                         alt=""
                         loading="lazy"
+                        referrerpolicy="no-referrer"
                         class="mb-3 rounded-lg max-h-64 w-auto"
                         style="border: 1px solid {$colorStore.primary}20;"
                       />
@@ -1879,6 +1988,48 @@
                           clearValidationError(question.id);
                         }}
                       />
+                    {:else if question.questionType === "image"}
+                      <div class="space-y-2">
+                        <input
+                          type="file"
+                          id="question-image-{question.id}"
+                          class="hidden"
+                          accept="image/png,image/jpeg,image/gif,image/webp"
+                          disabled={uploadingImages[question.id]}
+                          onchange={(e) => uploadAnswerImage(question, e)}
+                        />
+                        <div class="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            class="min-h-[44px] px-4 rounded-lg text-sm font-medium inline-flex items-center gap-2 disabled:opacity-50"
+                            style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+                            disabled={uploadingImages[question.id]}
+                            onclick={() => document.getElementById(`question-image-${question.id}`)?.click()}
+                          >
+                            <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
+                            {uploadingImages[question.id] ? m.embedbuilder.pictureUploading() : m.embedbuilder.pictureUpload()}
+                          </button>
+                          {#if answers[question.id]}
+                            <button
+                              type="button"
+                              class="min-h-[44px] px-4 rounded-lg text-sm font-medium"
+                              style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+                              onclick={() => removeAnswerImage(question)}
+                            >
+                              {m.common.remove()}
+                            </button>
+                          {/if}
+                        </div>
+                        <p class="text-sm" style="color: {$colorStore.muted};">{m.forms.publicImageHint()}</p>
+                        {#if typeof answers[question.id] === "string" && answers[question.id]}
+                          <img
+                            src={String(answers[question.id])}
+                            alt={m.forms.publicImageAlt()}
+                            class="rounded-lg max-h-64 w-auto"
+                            style="border: 1px solid {$colorStore.primary}20;"
+                          />
+                        {/if}
+                      </div>
                     {/if}
                   </label>
 
@@ -2009,6 +2160,21 @@
 
   .form-prose :global(a) {
     text-decoration: underline;
+  }
+
+  .form-prose :global(.form-emote) {
+    display: inline;
+    height: 1.375em;
+    width: auto;
+    vertical-align: -0.3em;
+  }
+
+  .form-prose :global(.form-text-image) {
+    display: block;
+    max-width: 100%;
+    max-height: 16rem;
+    margin: 0.5rem 0;
+    border-radius: 0.5rem;
   }
 
   .form-prose :global(code) {

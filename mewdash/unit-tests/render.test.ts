@@ -73,7 +73,25 @@ describe("html sanitiser", () => {
     assert.equal(sanitizeHtml("<script>alert(1)</script>"), "alert(1)");
     assert.equal(sanitizeHtml('<div class="evil">x</div>'), "<div>x</div>");
     assert.equal(sanitizeHtml('<a href="javascript:alert(1)">x</a>'), "<a>x</a>");
-    assert.equal(sanitizeHtml('<img src="javascript:alert(1)" onerror="x">'), "<img>");
+    assert.equal(sanitizeHtml('<img src="javascript:alert(1)" onerror="x">'), '<img loading="lazy" decoding="async" referrerpolicy="no-referrer">');
+  });
+
+  it("drops protocol relative addresses", () => {
+    assert.equal(safeUrl("//evil.example/x.png", false), null);
+    assert.equal(safeUrl("/\\evil.example/x.png", false), null);
+    assert.equal(safeUrl("/cdn/wiki/a.png", false), "/cdn/wiki/a.png");
+  });
+
+  it("lets the caller rewrite or drop image sources and keeps images lazy and without referrer", () => {
+    const html = sanitizeHtml('<img src="https://a.example/x.png" alt="a">', (src) => `/proxy?u=${src}`);
+    assert.equal(html, '<img src="/proxy?u=https://a.example/x.png" alt="a" loading="lazy" decoding="async" referrerpolicy="no-referrer">');
+    assert.ok(!sanitizeHtml('<img src="https://a.example/x.png">', () => null).includes("src="));
+  });
+
+  it("shows text that is too complex to parse as plain text", () => {
+    const html = render("#\n".repeat(1100));
+    assert.ok(html.startsWith("<pre><code>"));
+    assert.ok(!html.includes("<h1"));
   });
 
   it("escapes a stray less-than sign and broken tags", () => {

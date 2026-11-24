@@ -7,6 +7,7 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import TranslationDiff from "$lib/components/translate/TranslationDiff.svelte";
   import { groupLabel, translationErrorMessage } from "$lib/translate/client";
+  import { queueStatuses, type QueueStatus } from "$lib/translate/records";
   import { translationLimits } from "$lib/translate/rules";
   import { formatWhen, localeLabel, wikiCall } from "$lib/wiki/client";
 
@@ -40,9 +41,23 @@
     return catalog === "bot" ? m.translate.catalogBot() : catalog === "dash" ? m.translate.catalogDash() : catalog;
   }
 
-  function go(next: { catalog?: string | null; locale?: string | null; page?: number }, scroll = false) {
-    const merged = { catalog: data.catalog, locale: data.locale, page: 1, ...next };
+  function statusLabel(status: QueueStatus): string {
+    switch (status) {
+      case "open":
+        return m.common.open();
+      case "approved":
+        return m.common.approved();
+      case "declined":
+        return m.wikiManage.statusDeclined();
+      default:
+        return m.common.all();
+    }
+  }
+
+  function go(next: { catalog?: string | null; locale?: string | null; status?: QueueStatus; page?: number }, scroll = false) {
+    const merged = { catalog: data.catalog, locale: data.locale, status: data.status, page: 1, ...next };
     const params = new URLSearchParams();
+    if (merged.status !== "open") params.set("status", merged.status);
     if (merged.catalog) params.set("catalog", merged.catalog);
     if (merged.locale) params.set("locale", merged.locale);
     if (merged.page > 1) params.set("page", String(merged.page));
@@ -66,6 +81,13 @@
 </script>
 
 <div class="space-y-5">
+  <div class="flex flex-wrap gap-2" role="group" aria-label={m.translate.queueStatusAria()}>
+    {#each queueStatuses as status (status)}
+      <button type="button" class="px-4 rounded-lg min-h-[44px] text-sm font-medium" style={chip(data.status === status)}
+              aria-pressed={data.status === status} onclick={() => go({ status })}>{statusLabel(status)}</button>
+    {/each}
+  </div>
+
   {#if data.catalogs.length > 1}
     <div class="flex flex-wrap gap-2" role="group" aria-label={m.translate.catalogAria()}>
       <button type="button" class="px-4 rounded-lg min-h-[44px] text-sm font-medium" style={chip(data.catalog === null)}
@@ -112,6 +134,14 @@
             <p class="whitespace-pre-wrap break-words" style="color: {$colorStore.text}">{suggestion.text}</p>
           {/if}
 
+          {#if suggestion.status !== "open"}
+            <p class="text-sm" style="color: {$colorStore.muted}">
+              <span class="font-medium" style="color: {$colorStore.text}">{statusLabel(suggestion.status === "approved" || suggestion.status === "declined" ? suggestion.status : "all")}</span>
+              {#if suggestion.reviewedByName}{m.translate.queueReviewedBy({ name: suggestion.reviewedByName })}{/if}
+              {#if suggestion.status === "declined" && suggestion.declineReason}{suggestion.declineReason}{/if}
+            </p>
+          {/if}
+
           {#if decliningId === suggestion.id}
             <div>
               <label for="decline-reason-{suggestion.id}" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">{m.wikiManage.declineReason()}</label>
@@ -123,7 +153,7 @@
             <p class="text-sm text-red-400" role="alert">{errors[suggestion.id]}</p>
           {/if}
 
-          {#if busyId !== suggestion.id}
+          {#if busyId !== suggestion.id && suggestion.status === "open"}
             <div class="flex flex-wrap gap-2">
               {#if decliningId === suggestion.id}
                 <button type="button" class="px-5 rounded-lg min-h-[50px] font-medium"

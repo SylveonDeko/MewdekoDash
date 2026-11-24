@@ -7,7 +7,9 @@
   import { currentGuild } from "$lib/stores/currentGuild";
   import WikiArticle from "$lib/components/wiki/WikiArticle.svelte";
   import WikiFeedback from "$lib/components/wiki/WikiFeedback.svelte";
+  import WikiPublicHistory from "$lib/components/wiki/WikiPublicHistory.svelte";
   import { wikiIconClass } from "$lib/wiki";
+  import { wikiCall } from "$lib/wiki/client";
   import ComponentEmbed from "$lib/components/layout/ComponentEmbed.svelte";
   import { buttons, container, header, linkButton, plain, SITE_ORIGIN, separator, text } from "$lib/componentEmbed";
 
@@ -35,6 +37,14 @@
 
   let mounted = $state(false);
   let activeHeading = $state("");
+  let showHistory = $state(false);
+
+  $effect(() => {
+    const pageId = data.pageId;
+    const locale = data.articleLocale;
+    if (!mounted || !pageId) return;
+    void wikiCall("POST", "/api/wiki/view", { pageId, locale });
+  });
 
   let dashboardLink = $derived(
     data.article.dashboardHref
@@ -158,11 +168,22 @@
           </div>
 
           {#if data.pageId}
-            {#if data.wikiAccess.signedIn}
-              <WikiFeedback pageId={data.pageId} locale={data.articleLocale} />
+            <WikiFeedback pageId={data.pageId} locale={data.articleLocale} signedIn={data.wikiAccess.signedIn} />
+            <div class="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                class="inline-flex items-center justify-center gap-2 px-5 rounded-xl font-medium min-h-[50px] transition-colors hover:brightness-110"
+                style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}20;"
+                onclick={() => { showHistory = true; }}
+              >
+                <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>{m.common.history()}
+              </button>
+            </div>
+            {#if showHistory}
+              <WikiPublicHistory pageId={data.pageId} locale={data.articleLocale} onclose={() => { showHistory = false; }} />
             {/if}
-            {#if data.wikiAccess.signedIn || data.wikiAccess.canEdit}
-              <div class="mt-6 flex flex-wrap gap-3">
+            {#if data.canSuggest || data.wikiAccess.canEdit}
+              <div class="mt-3 flex flex-wrap gap-3">
                 {#if data.wikiAccess.canEdit}
                   <a
                     href="/wiki/manage/{data.pageId}?locale={data.articleLocale}"
@@ -172,7 +193,7 @@
                     <i class="fa-solid fa-pen" aria-hidden="true"></i>{m.wikiManage.editThisPage()}
                   </a>
                 {/if}
-                {#if data.wikiAccess.signedIn}
+                {#if data.canSuggest}
                   <a
                     href="/wiki/{data.article.slug}/suggest?locale={data.articleLocale}"
                     class="inline-flex items-center justify-center gap-2 px-5 rounded-xl font-medium min-h-[50px] transition-colors hover:brightness-110"

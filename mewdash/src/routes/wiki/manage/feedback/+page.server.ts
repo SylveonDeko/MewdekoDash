@@ -7,5 +7,5 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   const access = await requireEditor(locals, url);
   const resolved = url.searchParams.get("show") === "resolved";
   if (!access.databaseAvailable) return { resolved, feedback: [] as FeedbackRecord[] };
-  return { resolved, feedback: await listFeedback(resolved ? "resolved" : "open", 100) };
+  return { resolved, feedback: await listFeedback(resolved ? "closed" : "open", 100) };
 };

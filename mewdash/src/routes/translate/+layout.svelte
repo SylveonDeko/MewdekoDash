@@ -9,8 +9,12 @@
   const links = $derived(
     [
       { href: "/translate", label: m.translate.tabBrowse(), show: true, exact: true },
+      { href: "/translate/progress", label: m.common.progress(), show: true, exact: false },
       { href: "/translate/manage", label: m.translate.tabQueue(), show: data.tr.isReviewer, exact: true },
       { href: "/translate/manage/translators", label: m.translate.tabTranslators(), show: data.tr.isAdmin, exact: false },
+      { href: "/translate/manage/contributors", label: m.translate.tabContributors(), show: data.tr.isAdmin, exact: false },
+      { href: "/translate/manage/transfer", label: m.translate.tabTransfer(), show: data.tr.isAdmin, exact: false },
+      { href: "/translate/manage/settings", label: m.common.settings(), show: data.tr.isAdmin, exact: false },
       { href: "/translate/manage/mine", label: m.wikiManage.mineLink(), show: data.tr.signedIn, exact: false },
     ].filter((link) => link.show)
   );
